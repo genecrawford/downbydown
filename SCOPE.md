@@ -411,3 +411,12 @@ Unchanged from the brief: accounts, paid tiers, betting picks or affiliate links
 Also open: playmapped.com, drivemapped.com, fieldcharted.com, yardsdrawn.com, snapcharted.com, offthechalkboard.com, chalkedplaybook.com, playsonfield.com, playbyplaymap.com.
 
 **Decided: downbydown.com, purchased by Gene on 2026-10-30.** Site name "Down by Down". Plugin slug, prefixes, shortcode and repo name updated throughout this document to match. Tagline stays "every snap, drawn on the field". The Desktop project folder is `~/Desktop/downbydown_com/` (renamed by Gene 2026-10-30).
+
+---
+
+## 12. Backlog (post-launch)
+
+- **Top-level admin menu** (Gene, 2026-10-30): move Settings › Down by Down to its own entry in the WordPress admin sidebar, with the pennant or tile as its icon. Queued for the next plugin build.
+- Skeleton reveal (transitions.dev 14) while a team's play file loads.
+- Pretty URLs (`/team/min/`, `/game/…/`), Open Graph images per matchup.
+- Knockout logo and a dark footer are no longer needed (light only).
