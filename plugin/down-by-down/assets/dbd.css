@@ -150,7 +150,7 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 .dbd-slate td:last-child{text-align:right}
 @media (max-width:1200px){.dbd-slate .dbd-at{display:none}.dbd-slate .dbd-num{padding-right:10px}.dbd-slate td{padding:9px 7px}}
 @media (max-width:1000px){.dbd-slate .dbd-tm span{display:none}}
-@media (max-width:760px){.dbd-slate .dbd-ln,.dbd-slate td:last-child{display:none}.dbd-slate td{padding:8px 6px}.dbd-slate .dbd-tm b{font-size:19px}.dbd-slate .dbd-num{font-size:17px;padding-right:6px}.dbd-slate .dbd-tm .dbd-mk{width:24px;height:24px}}
+@media (max-width:760px){.dbd-slate .dbd-ln,.dbd-slate td:last-child{display:none}.dbd-slate td{padding:8px 4px}.dbd-slate .dbd-when{font-size:11px;padding-left:0}.dbd-slate .dbd-when .dbd-badge{font-size:9px;padding:1px 5px;letter-spacing:.08em}.dbd-slate .dbd-tm{gap:6px}.dbd-slate .dbd-tm .dbd-mk{width:22px;height:22px}.dbd-slate .dbd-tm b{font-size:18px}.dbd-slate .dbd-num{font-size:17px;padding:8px 4px}}
 
 /* ---- week switcher ---- */
 .dbd-wkbar{overflow-x:auto;scrollbar-width:thin;padding:2px 2px 6px}
@@ -340,7 +340,7 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
   .dbd-stand .dbd-nmi .full{display:none}.dbd-stand .dbd-nmi .short{display:inline}.dbd-stand td{padding-left:4px;padding-right:4px}.dbd-stand td:first-child{padding-left:0}.dbd-stand col.c-rec{width:52px}.dbd-stand col.c-rk{width:40px}.dbd-stand .dbd-nmi{gap:8px}.dbd-stand .dbd-nmi .dbd-mk{width:20px;height:20px}
   .dbd-takes,.dbd-zones,.dbd-about,.dbd-sprays{grid-template-columns:minmax(0,1fr)}
   .dbd-take{border-left:0}.dbd-take+.dbd-take{border-top:1px solid var(--dbd-line)}
-  .dbd-slate .dbd-ln,.dbd-slate td:last-child{display:none}
+  .dbd-slate .dbd-ln,.dbd-slate td:last-child{display:none}.dbd-slate td{padding:8px 4px}.dbd-slate .dbd-when{font-size:11px;padding-left:0}.dbd-slate .dbd-when .dbd-badge{font-size:9px;padding:1px 5px;letter-spacing:.08em}.dbd-slate .dbd-tm{gap:6px}.dbd-slate .dbd-tm .dbd-mk{width:22px;height:22px}.dbd-slate .dbd-tm b{font-size:18px}.dbd-slate .dbd-num{font-size:17px;padding:8px 4px}
   .dbd-h2h td.lg,.dbd-h2h thead th.lg{display:none}
   .dbd-mtitle h1 .vs{display:block;margin:6px 0 2px;vertical-align:baseline}
 }
