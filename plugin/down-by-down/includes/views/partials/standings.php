@@ -9,7 +9,7 @@ $rb      = function ( $r ) use ( $tier ) {
 	if ( ! $r ) { return '<span class="dbd-note">–</span>'; }
 	return '<div class="dbd-rb"><b>' . (int) $r . '</b><i class="' . $tier( $r ) . '" style="--w:' . round( ( 33 - $r ) / 32 * 100 ) . '%"></i></div>';
 };
-echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>' . esc_html( $conf ) . '</b> · EPA per play, ranked 1 to 32</span><span class="dbd-badge">Off · Def</span></div><div class="dbd-tw"><table class="dbd-stand">';
+echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>' . esc_html( $conf ) . '</b> · EPA per play, ranked 1 to 32</span><span class="dbd-badge">Off · Def</span></div><div class="dbd-tw"><table class="dbd-stand"><colgroup><col><col class="c-rec"><col class="c-rk"><col class="c-rk"></colgroup>';
 foreach ( array( 'East', 'North', 'South', 'West' ) as $d ) {
 	$div = "$conf $d";
 	$rows = array_filter( $teams, function ( $t ) use ( $div ) { return ( $t['div'] ?? '' ) === $div; } );
