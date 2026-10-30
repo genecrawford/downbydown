@@ -1,0 +1,141 @@
+/* Down by Down: mock v4. Concept: the box score. Brand palette (navy, red, chalk), flat and ruled, no cards,
+   square corners, scoreboard idioms. Field green lives only inside charts. Light only. */
+:root{
+  --paper:#f4f1ea; --paper-2:#ebe7dd; --white:#fffdf8;
+  --ink:#121417; --navy:#161e36; --navy-2:#0f1527; --red:#cb2026; --muted:#6b6f78; --rule:#d7d2c6; --rule-2:#bfb9aa;
+  --good:#1e7f4a; --bad:#b4261f;
+  --field:#2c4a35;
+  --hero:"Tourney","Arial Black",Impact,sans-serif;
+  --display:"Barlow Condensed","Arial Narrow",sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font:15px/1.5 var(--body);overflow-x:clip}
+a{color:inherit}
+h1,h2,h3{margin:0;text-wrap:balance}
+.wrap{max-width:1280px;margin:0 auto;padding:0 clamp(16px,3vw,40px)}
+.num{font-variant-numeric:tabular-nums}
+:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+
+/* ---- site bar: logo on paper, navy rule beneath ---- */
+.bar{background:var(--white);border-bottom:4px solid var(--navy)}
+.bar .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;height:72px}
+.bar img{display:block;height:46px;width:auto}
+.bar nav{display:flex;gap:26px;font:700 13px var(--display);text-transform:uppercase;letter-spacing:.14em}
+.bar nav a{text-decoration:none;padding:4px 0;border-bottom:2px solid transparent}
+.bar nav a:hover,.bar nav a[aria-current]{border-color:var(--red)}
+
+/* ---- hero: split, statement left, game of the week right, ghost yard numerals behind ---- */
+.hero{position:relative;overflow:hidden;border-bottom:1px solid var(--rule)}
+.hero .ghost{position:absolute;inset:auto 0 -.18em 0;font:800 clamp(160px,28vw,360px)/1 var(--hero);color:var(--navy);opacity:.045;letter-spacing:.08em;white-space:nowrap;pointer-events:none;user-select:none;text-align:center}
+.hero .wrap{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(300px,.9fr);gap:clamp(24px,4vw,64px);align-items:end;padding-top:56px;padding-bottom:56px;position:relative}
+@media (max-width:900px){.hero .wrap{grid-template-columns:1fr;align-items:start;padding-top:36px;padding-bottom:36px}}
+.kicker{font:700 12px var(--display);text-transform:uppercase;letter-spacing:.2em;color:var(--red);margin:0 0 14px;display:flex;align-items:center;gap:10px}
+.kicker::before{content:"";width:28px;height:2px;background:var(--red)}
+.hero h1{font:800 clamp(44px,6.8vw,96px)/.92 var(--hero);text-transform:uppercase;letter-spacing:.005em;color:var(--navy)}
+.hero h1 em{font-style:normal;color:var(--red)}
+.hero .sub{margin:22px 0 0;font-size:17px;max-width:46ch;color:var(--ink)}
+.hero .sub a{font-weight:600;text-decoration-thickness:2px;text-underline-offset:3px}
+/* game of the week module */
+.gotw{background:var(--navy);color:#fff;padding:18px 20px 16px;position:relative}
+.gotw::before{content:"";position:absolute;left:0;top:0;width:100%;height:4px;background:var(--red)}
+.gotw .lab{font:700 11px var(--display);text-transform:uppercase;letter-spacing:.2em;color:rgba(255,255,255,.6);display:flex;justify-content:space-between}
+.gotw .teams{margin:14px 0 10px;display:grid;grid-template-columns:1fr auto;row-gap:8px;align-items:center}
+.gotw .t{display:flex;align-items:baseline;gap:10px;border-left:4px solid var(--tc);padding-left:10px}
+.gotw .t b{font:700 34px/1 var(--display);text-transform:uppercase;letter-spacing:.02em}
+.gotw .t span{font-size:14px;color:rgba(255,255,255,.75)}
+.gotw .rk{font:600 12px var(--mono);color:rgba(255,255,255,.7);text-align:right;white-space:nowrap}
+.gotw .line{font:500 12px var(--mono);color:rgba(255,255,255,.65);border-top:1px solid rgba(255,255,255,.14);padding-top:10px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.gotw p{margin:12px 0 0;font-size:14px;line-height:1.45;color:rgba(255,255,255,.9)}
+.gotw .cta{display:inline-block;margin-top:14px;font:700 12px var(--display);text-transform:uppercase;letter-spacing:.16em;color:#fff;text-decoration:none;border-bottom:2px solid var(--red);padding-bottom:3px}
+
+/* ---- bottom line: the week's scores as a dark ticker strip ---- */
+.ticker{background:var(--navy-2);color:#fff;border-top:1px solid #000}
+.ticker .wrap{display:flex;align-items:stretch;gap:0;overflow-x:auto;scrollbar-width:thin;padding:0}
+.ticker .tl{flex:0 0 auto;font:700 11px var(--display);text-transform:uppercase;letter-spacing:.18em;color:var(--red);padding:0 18px;display:flex;align-items:center;border-right:1px solid rgba(255,255,255,.12);position:sticky;left:0;background:var(--navy-2)}
+.tk{flex:0 0 auto;display:grid;grid-template-columns:auto auto;column-gap:10px;row-gap:1px;padding:9px 16px;border-right:1px solid rgba(255,255,255,.12);text-decoration:none;font-size:12px;line-height:1.25;min-width:118px}
+.tk:hover{background:rgba(255,255,255,.06)}
+.tk .a{font:700 13px var(--display);letter-spacing:.04em}
+.tk .s{font:800 13px var(--hero);text-align:right;font-variant-numeric:tabular-nums}
+.tk .w{color:#fff} .tk .l{color:rgba(255,255,255,.55)}
+.tk .st{grid-column:1/-1;font:600 10px var(--display);text-transform:uppercase;letter-spacing:.12em;color:rgba(255,255,255,.5);margin-top:2px}
+.tk .st.fin{color:var(--red)}
+
+/* ---- sections ---- */
+section{padding:44px 0 8px}
+.sh{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;border-bottom:3px solid var(--navy);padding-bottom:8px;margin-bottom:0}
+.sh h2{font:700 34px/1 var(--display);text-transform:uppercase;letter-spacing:.02em;color:var(--navy)}
+.sh h2 small{font:700 14px var(--display);letter-spacing:.16em;color:var(--red);margin-left:12px;vertical-align:.35em}
+.sh span{font-size:13px;color:var(--muted)}
+
+/* ---- the slate: game rows ---- */
+.slate{width:100%;border-collapse:collapse}
+.slate tr.day th{text-align:left;font:700 12px var(--display);text-transform:uppercase;letter-spacing:.18em;color:var(--red);padding:22px 0 6px;border-bottom:1px solid var(--rule-2)}
+.slate td{padding:12px 10px;border-bottom:1px solid var(--rule);vertical-align:middle;font-variant-numeric:tabular-nums}
+.slate td:first-child{padding-left:0} .slate td:last-child{padding-right:0;text-align:right}
+.slate tr.g:hover td{background:var(--white)}
+.slate .when{font:600 12px var(--mono);color:var(--muted);white-space:nowrap;width:1%}
+.slate .when b{display:block;font:700 12px var(--display);letter-spacing:.1em;color:var(--red)}
+.slate .tm{display:flex;align-items:baseline;gap:9px;border-left:4px solid var(--tc);padding-left:10px;white-space:nowrap}
+.slate .tm b{font:700 26px/1 var(--display);letter-spacing:.02em;min-width:52px}
+.slate .tm span{font-size:14px;color:var(--muted)}
+.slate .sc{font:800 24px/1 var(--hero);text-align:right;width:1%;padding-right:26px}
+.slate .sc.l{color:var(--muted);font-weight:800;opacity:.55}
+.slate .at{font:600 11px var(--display);text-transform:uppercase;letter-spacing:.16em;color:var(--muted);text-align:center;width:1%}
+.slate .ln{font:500 13px var(--mono);color:var(--muted);white-space:nowrap}
+.slate .ln b{color:var(--ink);font-weight:600}
+.slate .go{font:700 12px var(--display);text-transform:uppercase;letter-spacing:.14em;text-decoration:none;border-bottom:2px solid var(--red);padding-bottom:2px;white-space:nowrap}
+.slate .go:hover{color:var(--red)}
+@media (max-width:760px){
+  .slate .ln,.slate .at,.slate .tm span,.slate td:last-child{display:none}
+  .slate td{padding:10px 6px}
+  .slate .tm b{font-size:22px;min-width:40px}
+  .slate .sc{font-size:20px;padding-right:6px}
+  .slate .when{font-size:11px}
+  .slate tr.g{cursor:pointer}
+  .hero .ghost{font-size:120px}
+}
+
+/* ---- teams: two conference tables with rank bars ---- */
+.confs{display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,4vw,56px)}
+@media (max-width:900px){.confs{grid-template-columns:1fr}}
+.conf h3{font:700 22px/1 var(--display);text-transform:uppercase;letter-spacing:.04em;color:var(--navy);padding:22px 0 8px;border-bottom:2px solid var(--navy);display:flex;justify-content:space-between;align-items:baseline}
+.conf h3 span{font:600 11px var(--display);letter-spacing:.16em;color:var(--muted);white-space:nowrap}
+@media (max-width:1100px){.conf h3 span{display:none}}
+.stand{width:100%;border-collapse:collapse}
+.stand tr.dv th{text-align:left;font:700 11px var(--display);text-transform:uppercase;letter-spacing:.18em;color:var(--red);padding:16px 0 4px;border-bottom:1px solid var(--rule-2)}
+.stand td{padding:8px 8px;border-bottom:1px solid var(--rule);vertical-align:middle;font-variant-numeric:tabular-nums}
+.stand td:first-child{padding-left:0}.stand td:last-child{padding-right:0}
+.stand tr.t:hover td{background:var(--white)}
+.stand .nm{border-left:4px solid var(--tc);padding-left:10px;font-weight:600;white-space:nowrap}
+.stand .nm a{text-decoration:none}.stand .nm a:hover{text-decoration:underline;text-underline-offset:3px}
+.stand .nm small{display:block;font:600 10px var(--display);text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.stand .rec{font:700 18px/1 var(--display);text-align:right;width:1%;white-space:nowrap}
+.stand .rec i{font:700 10px var(--display);font-style:normal;color:var(--red);letter-spacing:.12em;margin-left:8px;vertical-align:.25em}
+.rb{display:grid;grid-template-columns:24px minmax(44px,1fr);align-items:center;gap:8px;min-width:72px}
+.stand td.rk{width:19%}
+.rb b{font:700 13px var(--display);text-align:right;font-variant-numeric:tabular-nums}
+.rb i{display:block;height:8px;background:var(--rule);position:relative}
+.rb i::after{content:"";position:absolute;left:0;top:0;bottom:0;width:var(--w);background:var(--c)}
+.stand tr.dv th.rh{color:var(--muted);letter-spacing:.14em;padding-left:8px}
+@media (max-width:520px){.stand .nm{white-space:normal}}
+
+/* ---- about + footer ---- */
+.about{border-top:1px solid var(--rule);margin-top:48px;padding:28px 0 40px;display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.4fr);gap:32px}
+@media (max-width:760px){.about{grid-template-columns:1fr}}
+.about h2{font:700 26px/1 var(--display);text-transform:uppercase;color:var(--navy)}
+.about p{margin:0;font-size:15px;max-width:66ch}
+footer{background:var(--navy);color:rgba(255,255,255,.7);font-size:12px}
+footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:22px clamp(16px,3vw,40px)}
+footer b{font:700 14px var(--display);text-transform:uppercase;letter-spacing:.12em;color:#fff}
+@media (max-width:600px){
+  .bar .wrap{height:60px}
+  .bar img{height:34px}
+  .bar nav{gap:14px;font-size:12px;letter-spacing:.1em}
+  .hero .ghost{letter-spacing:.02em}
+  .ticker .tl{padding:0 12px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}

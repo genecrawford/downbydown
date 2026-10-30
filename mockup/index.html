@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Play Explorer Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: WordPress-style site bar, hero, this week's game cards, then a 4-column division grid of teams */
+:root{
+  --bg:#f5f4f8; --surface:#ffffff; --ink:#1d1a26; --muted:#6a6577; --line:#e2dfe9;
+  --accent:#4f2683; --gold:#d9a514; --good:#1f9d5c; --bad:#cf3d33;
+  --display:"Barlow Condensed","Arial Narrow",sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){--bg:#14121a;--surface:#1d1a25;--ink:#ece9f3;--muted:#a29db0;--line:#302b3c;--accent:#a98be6;--gold:#f2c94c;--good:#3ecf86;--bad:#f07067;color-scheme:dark}
+}
+:root[data-theme="dark"]{--bg:#14121a;--surface:#1d1a25;--ink:#ece9f3;--muted:#a29db0;--line:#302b3c;--accent:#a98be6;--gold:#f2c94c;--good:#3ecf86;--bad:#f07067;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.5 var(--body)}
+a{color:inherit}
+h1,h2,h3{font-family:var(--display);text-transform:uppercase;margin:0;text-wrap:balance}
+.wpbar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:14px clamp(16px,3vw,36px);background:#17141f;color:#fff}
+.wpbar a{color:#fff;text-decoration:none}
+.brand{font:700 22px var(--display);text-transform:uppercase;letter-spacing:.02em}
+.wpbar nav{display:flex;gap:18px;font:500 14px var(--body)}
+.wpbar nav a{opacity:.8}.wpbar nav a:hover,.wpbar nav a:focus-visible{opacity:1}
+.mockbar{background:color-mix(in srgb,var(--gold) 22%,var(--surface));border-bottom:1px solid var(--line);padding:8px clamp(16px,3vw,36px);font-size:13px}
+main{max-width:1240px;margin:0 auto;padding:28px clamp(16px,3vw,36px) 48px}
+.hero{margin-bottom:28px}
+.stripe{display:inline-block;width:44px;height:6px;background:linear-gradient(90deg,var(--accent) 60%,var(--gold) 60%);border-radius:3px;margin-bottom:10px}
+.hero h1{font-size:clamp(34px,5vw,52px);line-height:1}
+.hero p{color:var(--muted);max-width:62ch;margin:8px 0 0;font-size:15px}
+section{margin-bottom:32px}
+.sh{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.sh h2{font-size:24px}
+.sh span{font-size:13px;color:var(--muted)}
+.games{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.gcard{display:flex;flex-direction:column;gap:6px;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:10px;text-decoration:none;transition:border-color .15s,transform .15s}
+.gcard:hover,.gcard:focus-visible{border-color:var(--accent);transform:translateY(-1px)}
+.gcard:focus-visible,.team:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.gcard.live{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.when{font:600 11px var(--body);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.row{display:flex;justify-content:space-between;align-items:center}
+.sc{font:700 20px var(--display);font-variant-numeric:tabular-nums}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:14px;padding-left:8px;border-left:4px solid var(--tc)}
+.chip b{font:700 17px var(--display)}
+.meta{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.go{font:600 12px var(--body);color:var(--accent);margin-top:2px}
+.note{font-size:12px;color:var(--muted);margin:-4px 0 12px}
+.divs{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+@media (max-width:1000px){.divs{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:520px){.divs{grid-template-columns:1fr}}
+.div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px}
+.div h3{font-size:15px;color:var(--muted);margin-bottom:6px}
+.team{display:flex;flex-direction:column;gap:2px;padding:8px 10px;border-left:4px solid var(--tc);border-radius:4px;text-decoration:none;margin-top:6px}
+.team:hover{background:color-mix(in srgb,var(--tc) 10%,transparent)}
+.tn{font-weight:600;display:flex;justify-content:space-between;gap:8px}
+.tn small{font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums}
+.tr{font-size:12px;color:var(--muted)}
+.rk{display:inline-block;min-width:30px;text-align:center;font:600 11px var(--body);padding:0 4px;border-radius:4px;margin-right:6px}
+.rk.g{background:color-mix(in srgb,var(--good) 18%,transparent);color:var(--good)}
+.rk.b{background:color-mix(in srgb,var(--bad) 18%,transparent);color:var(--bad)}
+.rk.m{background:color-mix(in srgb,var(--muted) 15%,transparent);color:var(--muted)}
+footer{border-top:1px solid var(--line);padding:18px clamp(16px,3vw,36px);font-size:12px;color:var(--muted);text-align:center}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#17141f;color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;display:none}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wpbar"><a class="brand" href="index.html">Play Explorer</a><nav><a href="#matchups">Matchups</a><a href="#teams">Teams</a><a href="#" data-mock="1">About</a></nav></div>
+<div class="mockbar"><b>Mockup.</b> Live data, but only the Vikings team page and the Vikings at Lions matchup are wired up. Other links show a placeholder.</div>
+<main>
+  <header class="hero">
+    <span class="stripe" aria-hidden="true"></span>
+    <h1>See how every team actually plays</h1>
+    <p>Every snap of the NFL season, drawn on the field. Open a game to see how each offense stacks up against the other defense, or pick a team to dig through its plays.</p>
+  </header>
+
+  <section id="matchups">
+    <div class="sh"><h2>Week 8 matchups</h2><span>Lines and totals from nflverse</span></div>
+    <div class="games">
+<a class="gcard" href="#" data-mock="1">
+<span class="when">Final</span>
+<span class="row"><span class="chip" style="--tc:#0085CA"><b>CAR</b> Panthers</span><span class="sc">19</span></span>
+<span class="row"><span class="chip" style="--tc:#203731"><b>GB</b> Packers</span><span class="sc">27</span></span>
+<span class="meta">GB -3.5 · O/U 47.5</span>
+<span class="go">Recap</span></a>
+<a class="gcard" href="#" data-mock="1">
+<span class="when">Sun Nov 1, 1:00 PM ET</span>
+<span class="row"><span class="chip" style="--tc:#241773"><b>BAL</b> Ravens</span><span class="sc"></span></span>
+<span class="row"><span class="chip" style="--tc:#00338D"><b>BUF</b> Bills</span><span class="sc"></span></span>
+<span class="meta">BUF -3 · O/U 54.5</span>
+<span class="go">View matchup</span></a>
+<a class="gcard" href="#" data-mock="1">
+<span class="when">Sun Nov 1, 1:00 PM ET</span>
+<span class="row"><span class="chip" style="--tc:#4495D2"><b>TEN</b> Titans</span><span class="sc"></span></span>
+<span class="row"><span class="chip" style="--tc:#FB4F14"><b>CIN</b> Bengals</span><span class="sc"></span></span>
+<span class="meta">CIN -12.5 · O/U 46.5</span>
+<span class="go">View matchup</span></a>
+<a class="gcard" href="#" data-mock="1">
+<span class="when">Sun Nov 1, 1:00 PM ET</span>
+<span class="row"><span class="chip" style="--tc:#97233F"><b>ARI</b> Cardinals</span><span class="sc"></span></span>
+<span class="row"><span class="chip" style="--tc:#002244"><b>DAL</b> Cowboys</span><span class="sc"></span></span>
+<span class="meta">DAL -7 · O/U 54.5</span>
+<span class="go">View matchup</span></a>
+<a class="gcard live" href="matchup.html" >
+<span class="when">Sun Nov 1, 1:00 PM ET</span>
+<span class="row"><span class="chip" style="--tc:#4F2683"><b>MIN</b> Vikings</span><span class="sc"></span></span>
+<span class="row"><span class="chip" style="--tc:#0076B6"><b>DET</b> Lions</span><span class="sc"></span></span>
+<span class="meta">DET -3 · O/U 46.5</span>
+<span class="go">View matchup</span></a>
+<a class="gcard" href="#" data-mock="1">
+<span class="when">Sun Nov 1, 1:00 PM ET</span>
+<span class="row"><span class="chip" style="--tc:#002C5F"><b>IND</b> Colts</span><span class="sc"></span></span>
+<span class="row"><span class="chip" style="--tc:#006778"><b>JAX</b> Jaguars</span><span class="sc"></span></span>
+<span class="meta">JAX -10 · O/U 46.5</span>
+<span class="go">View matchup</span></a>
+<a class="gcard" href="#" data-mock="1">
+<span class="when">Sun Nov 1, 1:00 PM ET</span>
+<span class="row"><span class="chip" style="--tc:#000000"><b>LV</b> Raiders</span><span class="sc"></span></span>
+<span class="row"><span class="chip" style="--tc:#003F2D"><b>NYJ</b> Jets</span><span class="sc"></span></span>
+<span class="meta">NYJ -1.5 · O/U 45.5</span>
+<span class="go">View matchup</span></a>
+<a class="gcard" href="#" data-mock="1">
+<span class="when">Sun Nov 1, 1:00 PM ET</span>
+<span class="row"><span class="chip" style="--tc:#FF3C00"><b>CLE</b> Browns</span><span class="sc"></span></span>
+<span class="row"><span class="chip" style="--tc:#000000"><b>PIT</b> Steelers</span><span class="sc"></span></span>
+<span class="meta">PIT -3.5 · O/U 39.5</span>
+<span class="go">View matchup</span></a>
+<a class="gcard" href="#" data-mock="1">
+<span class="when">Sun Nov 1, 1:00 PM ET</span>
+<span class="row"><span class="chip" style="--tc:#A71930"><b>ATL</b> Falcons</span><span class="sc"></span></span>
+<span class="row"><span class="chip" style="--tc:#A71930"><b>TB</b> Buccaneers</span><span class="sc"></span></span>
+<span class="meta">TB -2.5 · O/U 43.5</span>
+<span class="go">View matchup</span></a>
+<a class="gcard" href="#" data-mock="1">
+<span class="when">Sun Nov 1, 4:05 PM ET</span>
+<span class="row"><span class="chip" style="--tc:#007BC7"><b>LAC</b> Chargers</span><span class="sc"></span></span>
+<span class="row"><span class="chip" style="--tc:#003594"><b>LA</b> Rams</span><span class="sc"></span></span>
+<span class="meta">LA -6.5 · O/U 45.5</span>
+<span class="go">View matchup</span></a>
+<a class="gcard" href="#" data-mock="1">
+<span class="when">Sun Nov 1, 4:25 PM ET</span>
+<span class="row"><span class="chip" style="--tc:#E31837"><b>KC</b> Chiefs</span><span class="sc"></span></span>
+<span class="row"><span class="chip" style="--tc:#002244"><b>DEN</b> Broncos</span><span class="sc"></span></span>
+<span class="meta">KC -1.5 · O/U 40.5</span>
+<span class="go">View matchup</span></a>
+<a class="gcard" href="#" data-mock="1">
+<span class="when">Sun Nov 1, 4:25 PM ET</span>
+<span class="row"><span class="chip" style="--tc:#002244"><b>NE</b> Patriots</span><span class="sc"></span></span>
+<span class="row"><span class="chip" style="--tc:#008E97"><b>MIA</b> Dolphins</span><span class="sc"></span></span>
+<span class="meta">NE -7 · O/U 43.5</span>
+<span class="go">View matchup</span></a>
+<a class="gcard" href="#" data-mock="1">
+<span class="when">Sun Nov 1, 8:20 PM ET</span>
+<span class="row"><span class="chip" style="--tc:#004C54"><b>PHI</b> Eagles</span><span class="sc"></span></span>
+<span class="row"><span class="chip" style="--tc:#5A1414"><b>WAS</b> Commanders</span><span class="sc"></span></span>
+<span class="meta">WAS -6 · O/U 40.5</span>
+<span class="go">View matchup</span></a>
+<a class="gcard" href="#" data-mock="1">
+<span class="when">Mon Nov 2, 8:15 PM ET</span>
+<span class="row"><span class="chip" style="--tc:#0B162A"><b>CHI</b> Bears</span><span class="sc"></span></span>
+<span class="row"><span class="chip" style="--tc:#002244"><b>SEA</b> Seahawks</span><span class="sc"></span></span>
+<span class="meta">SEA -3 · O/U 46.5</span>
+<span class="go">View matchup</span></a>
+    </div>
+  </section>
+
+  <section id="teams">
+    <div class="sh"><h2>Teams</h2></div>
+    <p class="note">Ranks are EPA per play out of 32. Offense #1 moves the ball best; defense #1 allows the least.</p>
+    <div class="divs"><div class="div"><h3>AFC East</h3><a class="team" style="--tc:#00338D" href="#" data-mock="1"><span class="tn">Buffalo Bills<small>5-1</small></span><span class="tr">Off <span class="rk g">#1</span> Def <span class="rk b">#29</span></span></a><a class="team" style="--tc:#008E97" href="#" data-mock="1"><span class="tn">Miami Dolphins<small>1-5</small></span><span class="tr">Off <span class="rk m">#22</span> Def <span class="rk b">#30</span></span></a><a class="team" style="--tc:#002244" href="#" data-mock="1"><span class="tn">New England Patriots<small>4-3</small></span><span class="tr">Off <span class="rk g">#10</span> Def <span class="rk m">#19</span></span></a><a class="team" style="--tc:#003F2D" href="#" data-mock="1"><span class="tn">New York Jets<small>2-5</small></span><span class="tr">Off <span class="rk m">#15</span> Def <span class="rk m">#16</span></span></a></div><div class="div"><h3>AFC North</h3><a class="team" style="--tc:#241773" href="#" data-mock="1"><span class="tn">Baltimore Ravens<small>4-3</small></span><span class="tr">Off <span class="rk g">#8</span> Def <span class="rk m">#17</span></span></a><a class="team" style="--tc:#FB4F14" href="#" data-mock="1"><span class="tn">Cincinnati Bengals<small>4-2</small></span><span class="tr">Off <span class="rk g">#7</span> Def <span class="rk g">#10</span></span></a><a class="team" style="--tc:#FF3C00" href="#" data-mock="1"><span class="tn">Cleveland Browns<small>5-2</small></span><span class="tr">Off <span class="rk b">#26</span> Def <span class="rk m">#13</span></span></a><a class="team" style="--tc:#000000" href="#" data-mock="1"><span class="tn">Pittsburgh Steelers<small>5-2</small></span><span class="tr">Off <span class="rk b">#23</span> Def <span class="rk g">#9</span></span></a></div><div class="div"><h3>AFC South</h3><a class="team" style="--tc:#03202F" href="#" data-mock="1"><span class="tn">Houston Texans<small>2-5</small></span><span class="tr">Off <span class="rk m">#13</span> Def <span class="rk m">#21</span></span></a><a class="team" style="--tc:#002C5F" href="#" data-mock="1"><span class="tn">Indianapolis Colts<small>2-5</small></span><span class="tr">Off <span class="rk b">#27</span> Def <span class="rk m">#22</span></span></a><a class="team" style="--tc:#006778" href="#" data-mock="1"><span class="tn">Jacksonville Jaguars<small>4-2</small></span><span class="tr">Off <span class="rk g">#3</span> Def <span class="rk m">#12</span></span></a><a class="team" style="--tc:#4495D2" href="#" data-mock="1"><span class="tn">Tennessee Titans<small>1-6</small></span><span class="tr">Off <span class="rk b">#31</span> Def <span class="rk b">#24</span></span></a></div><div class="div"><h3>AFC West</h3><a class="team" style="--tc:#002244" href="#" data-mock="1"><span class="tn">Denver Broncos<small>5-2</small></span><span class="tr">Off <span class="rk b">#24</span> Def <span class="rk g">#7</span></span></a><a class="team" style="--tc:#E31837" href="#" data-mock="1"><span class="tn">Kansas City Chiefs<small>5-1</small></span><span class="tr">Off <span class="rk g">#5</span> Def <span class="rk g">#6</span></span></a><a class="team" style="--tc:#000000" href="#" data-mock="1"><span class="tn">Las Vegas Raiders<small>3-4</small></span><span class="tr">Off <span class="rk m">#17</span> Def <span class="rk b">#23</span></span></a><a class="team" style="--tc:#007BC7" href="#" data-mock="1"><span class="tn">Los Angeles Chargers<small>0-6</small></span><span class="tr">Off <span class="rk b">#32</span> Def <span class="rk m">#11</span></span></a></div><div class="div"><h3>NFC East</h3><a class="team" style="--tc:#002244" href="#" data-mock="1"><span class="tn">Dallas Cowboys<small>3-4</small></span><span class="tr">Off <span class="rk g">#6</span> Def <span class="rk b">#32</span></span></a><a class="team" style="--tc:#0B2265" href="#" data-mock="1"><span class="tn">New York Giants<small>4-2-1</small></span><span class="tr">Off <span class="rk m">#14</span> Def <span class="rk m">#18</span></span></a><a class="team" style="--tc:#004C54" href="#" data-mock="1"><span class="tn">Philadelphia Eagles<small>2-5</small></span><span class="tr">Off <span class="rk b">#30</span> Def <span class="rk b">#28</span></span></a><a class="team" style="--tc:#5A1414" href="#" data-mock="1"><span class="tn">Washington Commanders<small>1-4-1</small></span><span class="tr">Off <span class="rk m">#18</span> Def <span class="rk b">#25</span></span></a></div><div class="div"><h3>NFC North</h3><a class="team" style="--tc:#0B162A" href="#" data-mock="1"><span class="tn">Chicago Bears<small>5-2</small></span><span class="tr">Off <span class="rk m">#11</span> Def <span class="rk m">#15</span></span></a><a class="team" style="--tc:#0076B6" href="#" data-mock="1"><span class="tn">Detroit Lions<small>4-2</small></span><span class="tr">Off <span class="rk g">#4</span> Def <span class="rk b">#31</span></span></a><a class="team" style="--tc:#203731" href="#" data-mock="1"><span class="tn">Green Bay Packers<small>5-3</small></span><span class="tr">Off <span class="rk m">#16</span> Def <span class="rk g">#4</span></span></a><a class="team" style="--tc:#4F2683" href="team.html" ><span class="tn">Minnesota Vikings<small>6-0</small></span><span class="tr">Off <span class="rk b">#29</span> Def <span class="rk g">#1</span></span></a></div><div class="div"><h3>NFC South</h3><a class="team" style="--tc:#A71930" href="#" data-mock="1"><span class="tn">Atlanta Falcons<small>3-4</small></span><span class="tr">Off <span class="rk b">#25</span> Def <span class="rk m">#14</span></span></a><a class="team" style="--tc:#0085CA" href="#" data-mock="1"><span class="tn">Carolina Panthers<small>3-4</small></span><span class="tr">Off <span class="rk m">#12</span> Def <span class="rk m">#20</span></span></a><a class="team" style="--tc:#D3BC8D" href="#" data-mock="1"><span class="tn">New Orleans Saints<small>2-5</small></span><span class="tr">Off <span class="rk m">#20</span> Def <span class="rk b">#26</span></span></a><a class="team" style="--tc:#A71930" href="#" data-mock="1"><span class="tn">Tampa Bay Buccaneers<small>2-5</small></span><span class="tr">Off <span class="rk b">#28</span> Def <span class="rk g">#3</span></span></a></div><div class="div"><h3>NFC West</h3><a class="team" style="--tc:#97233F" href="#" data-mock="1"><span class="tn">Arizona Cardinals<small>2-5</small></span><span class="tr">Off <span class="rk m">#19</span> Def <span class="rk b">#27</span></span></a><a class="team" style="--tc:#003594" href="#" data-mock="1"><span class="tn">Los Angeles Rams<small>3-4</small></span><span class="tr">Off <span class="rk g">#9</span> Def <span class="rk g">#5</span></span></a><a class="team" style="--tc:#AA0000" href="#" data-mock="1"><span class="tn">San Francisco 49ers<small>6-1</small></span><span class="tr">Off <span class="rk g">#2</span> Def <span class="rk g">#8</span></span></a><a class="team" style="--tc:#002244" href="#" data-mock="1"><span class="tn">Seattle Seahawks<small>4-3</small></span><span class="tr">Off <span class="rk m">#21</span> Def <span class="rk g">#2</span></span></a></div></div>
+  </section>
+</main>
+<footer>Data: nflverse play-by-play, through Week 7. Not affiliated with the NFL or any team.</footer>
+<div class="toast" id="toast" role="status">This page isn't built in the mockup yet.</div>
+<script>
+document.addEventListener('click',e=>{const a=e.target.closest('[data-mock]');if(!a)return;e.preventDefault();const t=document.getElementById('toast');t.style.display='block';clearTimeout(t._h);t._h=setTimeout(()=>t.style.display='none',1800);});
+</script>
+</body>
+</html>

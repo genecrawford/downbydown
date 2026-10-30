@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Team marks | Down by Down</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tourney:wght@800&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="dbd.css">
+<script>try{const t=localStorage.getItem('dbd-theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<script src="data/teams.js"></script>
+<style>
+.sheet{display:flex;flex-direction:column;gap:18px}
+.vh{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.vh h2{font:800 22px/1 var(--hero);text-transform:uppercase}
+.vh p{margin:0;font-size:13px;color:var(--ink-2);max-width:70ch}
+.grid32{display:grid;grid-template-columns:repeat(8,1fr);gap:10px;padding:14px}
+@media (max-width:1100px){.grid32{grid-template-columns:repeat(4,1fr)}}
+@media (max-width:600px){.grid32{grid-template-columns:repeat(2,1fr)}}
+.cell{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 6px;border:1px solid var(--line);border-radius:var(--r);background:var(--bg)}
+.cell svg{display:block}
+.cell small{font:500 10px var(--mono);color:var(--muted)}
+.sizes{display:flex;align-items:center;gap:18px;padding:12px 14px;border-top:1px solid var(--line);flex-wrap:wrap}
+.sizes .s{display:flex;align-items:center;gap:8px;font:500 10px var(--mono);color:var(--muted)}
+.ctx{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:900px){.ctx{grid-template-columns:1fr}}
+.row2{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.row2 b{font:700 15px var(--body);font-weight:600}
+.row2 small{font:500 11px var(--mono);color:var(--muted)}
+.pick{font:700 10px var(--display);text-transform:uppercase;letter-spacing:.16em;color:var(--red-ink)}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="side">
+    <a class="logo" href="index.html"><img class="k" src="assets/dxd-logo-knockout.svg" alt="Down by Down" width="153" height="40"><img class="c" src="assets/dxd-logo.svg" alt="Down by Down" width="153" height="40"></a>
+    <nav class="grp"><div class="gl">Design</div><a href="marks.html" aria-current="page"><i></i>Team marks</a><a href="index.html"><i></i>Back to the hub</a></nav>
+  </aside>
+  <div>
+    <div class="top"><div class="crumb">downbydown <span>›</span> <b>team marks</b></div><div class="r"><button class="tog" id="tog" type="button">Light</button></div></div>
+    <main class="content sheet">
+      <div class="ttitle"><div><p class="kicker">Design sheet · 2026-10-30</p><h1>Team marks</h1><p class="sub">Four systems, each generated from nothing but a team's two colors and its abbreviation. No league artwork anywhere. Four teams share the same navy and three are black, so every system carries the abbreviation and leans on the second color.</p></div></div>
+      <div id="sheet"></div>
+      <section class="panel"><div class="ph"><span class="lab"><b>In context</b> · the places a mark would live</span><span class="badge" id="ctxlab">Showing: tile</span></div><div class="pb ctx" id="ctx"></div></section>
+    </main>
+  </div>
+</div>
+<script>
+const tog=document.getElementById('tog');const paint=()=>{tog.textContent=document.documentElement.dataset.theme==='light'?'Dark':'Light';};
+tog.onclick=()=>{const l=document.documentElement.dataset.theme==='light';if(l)delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme='light';try{localStorage.setItem('dbd-theme',l?'':'light');}catch(e){}paint();};paint();
+const TEAMS=window.DBD_TEAMS;
+function lum(hex){const [r,g,b]=[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16)/255).map(c=>c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4));return .2126*r+.7152*g+.0722*b;}
+function contrast(a,b){const [h,l]=[lum(a),lum(b)].sort((x,y)=>y-x);return (h+.05)/(l+.05);}
+/* text color inside a mark: the second color if it reads on the first, else white, else near-black */
+const ink=(c1,c2)=>contrast(c2,c1)>=3?c2:contrast('#ffffff',c1)>=3?'#ffffff':'#121417';
+const F='font-family:Tourney,Arial Black,sans-serif;font-weight:800';
+const SYS={
+  tile:{name:'Jersey tile',blurb:'A square in the primary color, a sleeve stripe in the secondary, the abbreviation set in Tourney. Reads like a number on a jersey. Most legible at small sizes.',
+    svg:(a,c1,c2,s=40)=>`<svg width="${s}" height="${s}" viewBox="0 0 40 40" role="img" aria-label="${a}"><rect width="40" height="40" rx="4" fill="${c1}"/><rect x="0" y="33" width="40" height="7" fill="${c2}"/><text x="20" y="25" text-anchor="middle" font-size="${a.length>2?13:16}" style="${F}" fill="${ink(c1,c2)}">${a}</text></svg>`},
+  pennant:{name:'Pennant',blurb:'A pointed flag in the primary color with a hoist stripe in the secondary. The most "football" of the four. Needs more width than the others.',
+    svg:(a,c1,c2,s=40)=>`<svg width="${s*1.6}" height="${s}" viewBox="0 0 64 40" role="img" aria-label="${a}"><polygon points="0,0 64,20 0,40" fill="${c1}"/><polygon points="0,0 9,2.8 9,37.2 0,40" fill="${c2}"/><text x="14" y="25.5" font-size="${a.length>2?13:15}" style="${F}" fill="${ink(c1,c2)}">${a}</text></svg>`},
+  chevron:{name:'Chevron plate',blurb:'Two stacked chevrons in the two colors behind the abbreviation. Abstract and sharp, like a rank insignia. Secondary color gets the most play here.',
+    svg:(a,c1,c2,s=40)=>`<svg width="${s}" height="${s}" viewBox="0 0 40 40" role="img" aria-label="${a}"><rect width="40" height="40" rx="4" fill="${c1}"/><polygon points="0,40 20,26 40,40" fill="${c2}"/><polygon points="0,33 20,19 40,33 40,40 20,26 0,40" fill="${c1}" opacity=".35"/><text x="20" y="20" text-anchor="middle" font-size="${a.length>2?12:14}" style="${F}" fill="${ink(c1,c2)}">${a}</text></svg>`},
+  ring:{name:'Monogram ring',blurb:'A disc in the primary color with a thick ring in the secondary. Rounder and friendlier; the one that sits best next to a face or in a circle avatar slot.',
+    svg:(a,c1,c2,s=40)=>`<svg width="${s}" height="${s}" viewBox="0 0 40 40" role="img" aria-label="${a}"><circle cx="20" cy="20" r="18" fill="${c1}" stroke="${c2}" stroke-width="4"/><text x="20" y="25" text-anchor="middle" font-size="${a.length>2?12:14}" style="${F}" fill="${ink(c1,c2)}">${a}</text></svg>`},
+};
+const order=Object.entries(TEAMS).sort((a,b)=>a[1].div.localeCompare(b[1].div)||a[0].localeCompare(b[0]));
+document.getElementById('sheet').innerHTML=Object.entries(SYS).map(([k,v])=>`<section class="panel" data-sys="${k}"><div class="ph"><span class="lab"><b>${v.name}</b></span><button class="tog" data-pick="${k}">Show in context</button></div>
+  <div class="pb" style="padding-bottom:0"><p style="margin:0;font-size:13px;color:var(--ink-2);max-width:72ch">${v.blurb}</p></div>
+  <div class="grid32">${order.map(([a,t])=>`<div class="cell">${v.svg(a,t.c1,t.c2,44)}<small>${a}</small></div>`).join('')}</div>
+  <div class="sizes"><span class="pick">Sizes</span>${[16,24,32,48].map(s=>`<span class="s">${v.svg('MIN',TEAMS.MIN.c1,TEAMS.MIN.c2,s)}${v.svg('KC',TEAMS.KC.c1,TEAMS.KC.c2,s)}${v.svg('PIT',TEAMS.PIT.c1,TEAMS.PIT.c2,s)}${v.svg('SEA',TEAMS.SEA.c1,TEAMS.SEA.c2,s)}${s}px</span>`).join('')}</div></section>`).join('');
+function ctx(k){const v=SYS[k];document.getElementById('ctxlab').textContent='Showing: '+v.name.toLowerCase();
+  const m=(a,s)=>v.svg(a,TEAMS[a].c1,TEAMS[a].c2,s);
+  document.getElementById('ctx').innerHTML=`
+  <div><p class="pick" style="margin:0 0 8px">Scoreboard strip card</p>
+    <a class="sc" style="display:flex;width:180px" href="#"><div class="hd"><span class="badge fin">Final</span></div>
+      <div class="row l" style="border-left:0;padding-left:0;grid-template-columns:auto 1fr auto;gap:8px">${m('CAR',26)}<div><b>Panthers</b><small>3-4</small></div><span class="s">19</span></div>
+      <div class="row" style="border-left:0;padding-left:0;grid-template-columns:auto 1fr auto;gap:8px">${m('GB',26)}<div><b>Packers</b><small>5-3</small></div><span class="s">27</span></div></a>
+    <p class="pick" style="margin:18px 0 8px">Standings rows</p>
+    ${['BUF','NE','NYJ','MIA'].map(a=>`<div class="row2">${m(a,28)}<div><b>${TEAMS[a].name}</b> <small>${a}</small></div><span class="num" style="font:600 13px var(--mono)">${TEAMS[a].rec}</span></div>`).join('')}
+  </div>
+  <div><p class="pick" style="margin:0 0 8px">Matchup title</p>
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap"><span>${m('MIN',56)}</span><h1 style="font:800 34px/1 var(--hero);text-transform:uppercase">Vikings offense <span style="font:600 14px var(--display);color:var(--muted);letter-spacing:.12em;margin:0 6px;vertical-align:.5em">vs</span> Lions defense</h1><span>${m('DET',56)}</span></div>
+    <p class="pick" style="margin:18px 0 8px">Game picker</p>
+    <div class="gstrip">${[['GB','WK 1 vs','W 39-22'],['CHI','WK 2 at','W 9-3'],['TB','WK 3 at','W 23-16'],['MIA','WK 4 vs','W 15-10']].map(([a,w,r])=>`<button class="game" type="button" style="flex-direction:row;align-items:center;gap:10px">${m(a,32)}<span style="display:flex;flex-direction:column"><span class="wk">${w}</span><span class="opp">${a}</span><span class="res"><b>W</b> ${r.slice(2)}</span></span></button>`).join('')}</div>
+    <p class="pick" style="margin:18px 0 8px">Team page title</p>
+    <div style="display:flex;align-items:center;gap:14px">${m('MIN',64)}<div><p class="kicker" style="margin:0 0 6px">2026 season · Weeks 1 to 7 · 6-0</p><h1 style="font:800 40px/1 var(--hero);text-transform:uppercase">Vikings offense</h1></div></div>
+  </div>`;}
+document.getElementById('sheet').addEventListener('click',e=>{const b=e.target.closest('[data-pick]');if(!b)return;ctx(b.dataset.pick);document.getElementById('ctx').scrollIntoView({behavior:'smooth',block:'start'});});
+ctx('tile');
+</script>
+</body>
+</html>

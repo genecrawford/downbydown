@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Matchup | Down by Down</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tourney:wght@800&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="dbd.css">
+<script src="data/teams.js"></script>
+<script>requestAnimationFrame(()=>document.documentElement.classList.add('anim'));setTimeout(()=>document.documentElement.classList.add('anim-done'),1200);</script>
+</head>
+<body>
+<div class="wpbar"><a class="brand" href="index.html"><img src="assets/dxd-logo.svg" alt="Down by Down" width="184" height="48"></a><nav><a href="index.html#matchups">Matchups</a><a href="index.html#teams">Teams</a><a href="index.html#about">About</a></nav></div>
+<div class="mockbar"><span class="teampick">Mock controls.<label><input type="checkbox" id="earlypick"> Early-season state (under 3 games)</label></span></div>
+<section class="band mh" id="band"></section>
+<main>
+<div id="app"></div>
+</main>
+<footer class="site">Data: nflverse play-by-play and rosters, pulled Oct 30, 2026. Scrambles are excluded from run stats. Red zone TD rate counts drives that reached the 20. Not affiliated with the NFL or any team.</footer>
+
+<script>
+/* ---------- query ---------- */
+const Q=new URLSearchParams(location.search);
+const GAME=Q.get('game')||'2026_08_MIN_DET';
+const SIDE=Q.get('side')==='home'?'home':'away';
+const EARLY=Q.get('state')==='early';
+const [,WK,AWAY,HOME]=GAME.split('_');
+const TEAMS=window.DBD_TEAMS;
+const OFF=SIDE==='away'?AWAY:HOME, DEF=SIDE==='away'?HOME:AWAY;
+const O=TEAMS[OFF], D=TEAMS[DEF];
+document.getElementById('earlypick').checked=EARLY;
+document.getElementById('earlypick').onchange=e=>{Q.set('state',e.target.checked?'early':'');location.search=Q.toString();};
+
+/* contrast guard, same as team page */
+function lum(hex){const [r,g,b]=[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16)/255).map(c=>c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4));return .2126*r+.7152*g+.0722*b;}
+function contrast(a,b){const [h,l]=[lum(a),lum(b)].sort((x,y)=>y-x);return (h+.05)/(l+.05);}
+function accent(t,bg='#ffffff',fallback='#15191a'){const ok=c=>c&&contrast(c,bg)>=3;return ok(t.c1)?t.c1:ok(t.c2)?t.c2:fallback;}
+const BAND='#17402a';
+document.documentElement.style.setProperty('--team',accent(O));
+document.documentElement.style.setProperty('--team2',accent(D));
+document.title=`${O.nick} offense vs ${D.nick} defense | Down by Down`;
+const CRUMB=`Week ${+WK}: ${TEAMS[AWAY].nick} at ${TEAMS[HOME].nick}`;
+
+/* ---------- metrics (production: metrics.json). Real numbers for MIN offense vs DET defense from the approved mock.
+   The flipped side (DET offense vs MIN defense) and any other game use PLACEHOLDER numbers until the data build runs. ---------- */
+const LEAGUE={epa:0.01,sr:0.43,ypp:5.4,expl:0.09,pass_epa:0.04,sack:0.06,run_epa:-0.08,ypc:4.1,third:0.41,rz_td:0.61,WR_yds_pg:149,TE_yds_pg:54,TE_tgt_pg:7.6,RB_yds_pg:32};
+const REAL={ off:{epa:[-0.10,29],sr:[0.36,32],ypp:[4.9,24],expl:[0.09,16],pass_epa:[-0.08,24],sack:[0.10,30],run_epa:[-0.20,28],ypc:[3.8,20],third:[0.40,16],rz_td:[0.53,23],WR_yds_pg:[104,32],TE_yds_pg:[58,13],TE_tgt_pg:[7.7,15],RB_yds_pg:[19,28],games:6,
+  zones:{deep_left:[0.65,.10,12],deep_middle:[0.33,.03,4],deep_right:[-0.20,.07,9],short_left:[0.05,.25,31],short_middle:[0.21,.22,27],short_right:[-0.12,.33,41]}},
+  def:{epa:[0.14,31],sr:[0.46,25],ypp:[5.6,20],expl:[0.11,32],pass_epa:[0.21,28],sack:[0.08,7],run_epa:[-0.07,19],ypc:[4.0,14],third:[0.48,28],rz_td:[0.72,27],WR_yds_pg:[188,30],TE_yds_pg:[100,32],TE_tgt_pg:[12.2,32],RB_yds_pg:[24,9],games:6,
+  zones:{deep_left:[0.35,null,14],deep_middle:[1.18,null,17],deep_right:[0.90,null,15],short_left:[-0.05,null,60],short_middle:[0.25,null,48],short_right:[0.02,null,55]}} };
+const PLACEHOLDER={ off:{epa:[0.15,4],sr:[0.48,5],ypp:[6.1,3],expl:[0.12,2],pass_epa:[0.24,3],sack:[0.05,8],run_epa:[0.02,6],ypc:[4.6,7],third:[0.46,6],rz_td:[0.66,9],WR_yds_pg:[172,8],TE_yds_pg:[49,17],TE_tgt_pg:[6.1,22],RB_yds_pg:[41,5],games:6,
+  zones:{deep_left:[0.40,.08,10],deep_middle:[0.95,.06,8],deep_right:[0.55,.09,11],short_left:[0.12,.24,30],short_middle:[0.30,.26,33],short_right:[0.08,.27,34]}},
+  def:{epa:[-0.12,1],sr:[0.38,2],ypp:[4.7,3],expl:[0.07,6],pass_epa:[-0.10,1],sack:[0.09,3],run_epa:[-0.14,4],ypc:[3.7,5],third:[0.33,2],rz_td:[0.50,6],WR_yds_pg:[121,4],TE_yds_pg:[62,19],TE_tgt_pg:[8.4,20],RB_yds_pg:[36,24],games:6,
+  zones:{deep_left:[-0.20,null,12],deep_middle:[0.10,null,9],deep_right:[0.42,null,13],short_left:[-0.15,null,52],short_middle:[0.05,null,44],short_right:[-0.08,null,49]}} };
+const isReal = GAME==='2026_08_MIN_DET' && SIDE==='away';
+const M = isReal?REAL:PLACEHOLDER;
+if(EARLY){M.off.games=2;M.def.games=2;}
+
+/* ---------- formatting ---------- */
+const pct=v=>Math.round(v*100)+'%', sgn=v=>(v>0?'+':'')+v.toFixed(2), one=v=>v.toFixed(1), int=v=>Math.round(v);
+const FMT={epa:sgn,sr:pct,ypp:one,expl:pct,pass_epa:sgn,sack:pct,run_epa:sgn,ypc:one,third:pct,rz_td:pct,WR_yds_pg:int,TE_yds_pg:int,TE_tgt_pg:one,RB_yds_pg:int};
+const ordn=n=>n+(n%100>=11&&n%100<=13?'th':['th','st','nd','rd'][n%10]||'th');
+const rk=n=>`<span class="rk ${n<=10?'g':n>=23?'b':'m'}">#${n}</span>`;
+
+/* ---------- edge score + pill (SCOPE section 6; ranks are already oriented so 1 = best for that side) ---------- */
+const score=(or,dr)=>((33-or)/32+dr/32)/2;
+function pill(s){
+  if(s>=.68) return `<span class="pill off">${O.nick} edge</span>`;
+  if(s>=.56) return `<span class="pill off soft">Lean ${O.nick}</span>`;
+  if(s<=.32) return `<span class="pill def">${D.nick} edge</span>`;
+  if(s<=.44) return `<span class="pill def soft">Lean ${D.nick}</span>`;
+  return `<span class="pill">Even</span>`;
+}
+
+/* ---------- rows + takeaway templates ---------- */
+const ROWS=[
+  ['Overall',[['epa','EPA per play'],['sr','Success rate'],['ypp','Yards per play'],['expl','Explosive play rate']]],
+  ['Passing',[['pass_epa','Pass EPA per dropback'],['sack','Sack rate']]],
+  ['Running',[['run_epa','Run EPA per carry'],['ypc','Yards per carry']]],
+  ['Money downs',[['third','3rd down conversion'],['rz_td','Red zone TD rate (per trip)']]],
+  ['Targets by position',[['WR_yds_pg','WR yards per game'],['TE_yds_pg','TE yards per game'],['TE_tgt_pg','TE targets per game'],['RB_yds_pg','RB receiving yards per game']]],
+];
+const GROUP={epa:'overall',sr:'overall',ypp:'overall',expl:'overall',pass_epa:'passing',sack:'passing',run_epa:'running',ypc:'running',third:'money',rz_td:'money',WR_yds_pg:'position',TE_yds_pg:'position',TE_tgt_pg:'position',RB_yds_pg:'position'};
+const POS={WR_yds_pg:'wide receiver',TE_yds_pg:'tight end',TE_tgt_pg:'tight end',RB_yds_pg:'running back'};
+const T=(k)=>{ /* sentence templates */
+  const [ov,or]=M.off[k],[dv,dr]=M.def[k],f=FMT[k],lg=f(LEAGUE[k]);
+  const ovs=f(ov),dvs=f(dv),ors=ordn(or),drs=ordn(dr);
+  switch(k){
+    case 'epa': return `${O.nick} average ${ovs} EPA per play (${ors}). ${D.nick} allow ${dvs} (${drs}). League average is ${lg}.`;
+    case 'sr': return `${O.nick} succeed on ${ovs} of plays (${ors}) against a defense that allows ${dvs} (${drs}).`;
+    case 'ypp': return `${O.nick} gain ${ovs} yards per play (${ors}). ${D.nick} give up ${dvs} (${drs}), with the league at ${lg}.`;
+    case 'expl': return `${O.nick} create explosive plays on ${ovs} of snaps (${ors}). ${D.nick} give them up at ${dvs} (${drs}).`;
+    case 'pass_epa': return `${O.nick} gain ${ovs} EPA per dropback (${ors}). ${D.nick} allow ${dvs} (${drs}).`;
+    case 'sack': return `${O.nick} take a sack on ${ovs} of dropbacks (${ors}). ${D.nick} get home on ${dvs} (${drs}). League average is ${lg}.`;
+    case 'run_epa': return `${O.nick}' run game is ${ors} in EPA per carry (${ovs}). ${D.nick} allow ${dvs} (${drs}).`;
+    case 'ypc': return `${O.nick} average ${ovs} yards per carry (${ors}). ${D.nick} allow ${dvs} (${drs}).`;
+    case 'third': return `${O.nick} convert ${ovs} of third downs (${ors}). ${D.nick} allow ${dvs} (${drs}).`;
+    case 'rz_td': return `${O.nick} score a touchdown on ${ovs} of red zone trips (${ors}). ${D.nick} allow ${dvs} (${drs}).`;
+    default: { const k2=k.includes('tgt')?'targets':'yards'; return `${D.nick} give up ${dvs} ${k2} a game to ${POS[k]}s (${drs}), against a league average of ${lg}. ${O.nick}' ${POS[k]}s produce ${ovs} (${ors}).`; }
+  }
+};
+const HEAD={ /* [edge heading, watch-out heading] */
+  epa:[`Efficiency gap favors ${O.nick}`,`${D.nick} win the efficiency battle`], sr:['Down-to-down consistency','Stalled drives ahead'], ypp:['Chunk yardage','Yards come hard'], expl:['Big plays are there','Big plays will be scarce'],
+  pass_epa:['Throw it','Passing lanes are closed'], sack:['Clean pockets','Pressure problem'], run_epa:['Run it at them','Nowhere to run'], ypc:['Ground game edge','Ground game stalls'],
+  third:[`Third downs favor ${O.nick}`,`Third downs favor ${D.nick}`], rz_td:['Red zone touchdowns','Field goals, not touchdowns'],
+  WR_yds_pg:['Wideouts feast','Wideouts get blanketed'], TE_yds_pg:['Tight ends feast','Tight ends go quiet'], TE_tgt_pg:['Tight ends feast','Tight ends go quiet'], RB_yds_pg:['Backs catch passes','Checkdowns go nowhere'],
+};
+const ZONE_LABEL={deep_left:'deep left',deep_middle:'deep middle',deep_right:'deep right',short_left:'short left',short_middle:'short middle',short_right:'short right'};
+
+function takeaways(){
+  const cand=Object.keys(GROUP).filter(k=>GROUP[k]!=='overall').map(k=>({k,s:score(M.off[k][1],M.def[k][1]),gap:Math.abs(M.off[k][1]-M.def[k][1])}));
+  cand.sort((a,b)=>b.s-a.s||b.gap-a.gap);
+  const best=cand[0], worst=cand[cand.length-1];
+  const used=new Set([best.k,worst.k]);
+  /* opportunity: the defense's worst zone with at least 10 throws */
+  const zones=Object.entries(M.def.zones).filter(([,v])=>v[2]>=10).sort((a,b)=>b[1][0]-a[1][0]);
+  const [zk,zv]=zones[0]; const share=M.off.zones[zk][1];
+  let opp=`${D.nick} are worst against ${ZONE_LABEL[zk]} throws, allowing ${sgn(zv[0])} EPA per attempt. ${O.nick} send ${pct(share)} of their throws there.`;
+  if(share<.10) opp+=' That is a small part of their offense so far.';
+  /* wash: overall metric closest to .50 */
+  const wash=Object.keys(GROUP).filter(k=>GROUP[k]==='overall'&&!used.has(k)).map(k=>({k,d:Math.abs(score(M.off[k][1],M.def[k][1])-.5)})).sort((a,b)=>a.d-b.d)[0];
+  const sub=EARLY?'<span class="sub">Early season: small samples</span>':'';
+  return `
+  <div class="card take"><div class="tag">Biggest edge</div><h2>${HEAD[best.k][0]}</h2><p>${T(best.k)}</p>${sub}</div>
+  <div class="card take opp"><div class="tag">Opportunity</div><h2>${ZONE_LABEL[zk].replace(/^\w/,c=>c.toUpperCase())} is open</h2><p>${opp}</p>${sub}</div>
+  <div class="card take warn"><div class="tag">Watch out</div><h2>${HEAD[worst.k][1]}</h2><p>${T(worst.k)}</p>${sub}</div>
+  <div class="card take even"><div class="tag">Wash</div><h2>${ROWS.flatMap(g=>g[1]).find(r=>r[0]===wash.k)[1]}</h2><p>Call this one even. ${T(wash.k)}</p>${sub}</div>`;
+}
+
+function table(){
+  return ROWS.map(([g,rows])=>`<tr class="grp"><th colspan="5">${g}</th></tr>`+rows.map(([k,l])=>{
+    const [ov,or]=M.off[k],[dv,dr]=M.def[k],f=FMT[k];
+    return `<tr><td>${l}</td><td class="v">${f(ov)} ${rk(or)}</td><td class="v">${f(dv)} ${rk(dr)}</td><td class="v lg">${f(LEAGUE[k])}</td><td>${pill(score(or,dr))}</td></tr>`;}).join('')).join('');
+}
+function zoneGrid(side,title){
+  const z=M[side].zones;
+  const cell=k=>{const [epa,share,n]=z[k];
+    if(n<5) return `<div class="z thin"><b>${n} throws</b><span>too few</span></div>`;
+    const c=epa>=0?'var(--hot)':'var(--cold)', mix=Math.min(100,Math.round(Math.abs(epa)/0.8*100));
+    return `<div class="z" style="background:color-mix(in srgb,${c} ${mix}%,var(--surface))"><b>${sgn(epa)}</b><span>${side==='off'?pct(share)+' of throws':n+' throws'}</span></div>`;};
+  return `<div class="zone"><h3>${title}</h3><div class="grid"><div></div><div class="zh">Left</div><div class="zh">Middle</div><div class="zh">Right</div>
+  <div class="zl">Deep</div>${cell('deep_left')}${cell('deep_middle')}${cell('deep_right')}
+  <div class="zl">Short</div>${cell('short_left')}${cell('short_middle')}${cell('short_right')}</div></div>`;
+}
+
+const venue = `Week ${+WK} at ${TEAMS[HOME].nick==='Lions'?'Ford Field':TEAMS[HOME].nick+' home field'}, Sunday 1:00 PM ET.`;
+const flipHref=`matchup.html?game=${GAME}&side=${SIDE==='away'?'home':'away'}${EARLY?'&state=early':''}`;
+document.getElementById('band').innerHTML=`<div class="wrap">
+  <nav class="crumb"><a href="index.html">Home</a> / ${CRUMB}</nav>
+  <p class="kicker">Week ${+WK} · Sunday 1:00 PM ET · ${TEAMS[HOME].nick==='Lions'?'Ford Field':TEAMS[HOME].nick+' home field'}</p>
+  <h1><span class="o" style="--u:${accent(O,BAND,'#ffffff')}">${O.nick} offense</span><span class="vs">vs</span><span class="d" style="--u:${accent(D,BAND,'#ffffff')}">${D.nick} defense</span></h1>
+  <p class="sub">Season numbers through Week ${+WK-1}: ${M.off.games} games for ${O.nick}, ${M.def.games} for ${D.nick}.</p>
+  <p class="flip">Flip it: <a href="${flipHref}">${D.nick} offense vs ${O.nick} defense</a></p>
+</div>`;
+document.getElementById('app').innerHTML=`
+${isReal?'':`<div class="banner"><b>Mock placeholder.</b> The numbers on this side are made up to show the layout and the generated copy. Real numbers for every game and both sides come from metrics.json.</div>`}
+${EARLY?`<div class="banner">Fewer than three games for one or both teams. Ranks are shown, but treat every number as a small sample.</div>`:''}
+<section class="cards" aria-label="Key takeaways">${takeaways()}</section>
+<section class="main">
+  <div class="card">
+    <h2 style="margin-bottom:6px">Head to head</h2>
+    <div class="tw"><table class="h2h">
+      <thead><tr><th>Stat</th><th class="co">${OFF} offense</th><th class="cd">${DEF} defense allows</th><th>NFL avg</th><th>Edge</th></tr></thead>
+      <tbody>${table()}</tbody></table></div>
+    <p class="note">Ranks are out of 32. For ${O.nick}, #1 is the best offense. For ${D.nick}, #1 is the stingiest defense. Green ranks are top 10, red are bottom 10.</p>
+  </div>
+  <div class="card zones">
+    <div><h2>Where the ball goes</h2><p class="note" style="margin-top:2px">Green means the throws gain more than expected (positive EPA), red means they lose value. Deep is 15+ air yards. Cells with fewer than 5 throws are grayed out.</p></div>
+    ${zoneGrid('off',`${O.nick}: EPA per throw`)}
+    ${zoneGrid('def',`${D.nick}: EPA allowed per throw`)}
+  </div>
+</section>`;
+</script>
+</body>
+</html>

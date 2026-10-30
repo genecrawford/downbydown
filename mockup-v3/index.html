@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Down by Down</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tourney:wght@800&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="dbd.css">
+<script src="data/teams.js"></script>
+<script>requestAnimationFrame(()=>document.documentElement.classList.add('anim'));setTimeout(()=>document.documentElement.classList.add('anim-done'),1200);</script>
+</head>
+<body>
+<div class="wpbar"><a class="brand" href="index.html"><img src="assets/dxd-logo.svg" alt="Down by Down" width="184" height="48"></a><nav><a href="#matchups">Matchups</a><a href="#teams">Teams</a><a href="#about">About</a></nav></div>
+<section class="band hero"><div class="wrap">
+    <p class="kicker" id="kicker">2026 season · Week 8</p>
+    <span class="stripe" aria-hidden="true"></span>
+    <h1>See how every team actually plays</h1>
+    <p class="lede">Every snap of the NFL season, drawn on the field. Open a game to see how each offense stacks up against the other defense, or pick a team to dig through its plays.</p>
+    <div class="stats" id="herostats"></div>
+</div></section>
+<main>
+  <section id="matchups">
+    <div class="sh"><h2 id="wkh">Week 8 matchups</h2><span>Lines and totals from nflverse. Kickoffs in your local time.</span></div>
+    <div class="games" id="games"></div>
+  </section>
+  <section id="teams">
+    <div class="sh"><h2>Teams</h2></div>
+    <p class="note" id="teamnote">Ranks are EPA per play out of 32. Offense #1 moves the ball best; defense #1 allows the least.</p>
+    <div class="divs" id="divs"></div>
+  </section>
+  <section id="about" class="card">
+    <h2>About</h2>
+    <p style="margin:6px 0 0;max-width:70ch">Down by Down is a free site built on public play-by-play data from <a href="https://github.com/nflverse/nflverse-data">nflverse</a>. It updates every night during the season. EPA is expected points added. A play is a success when it gains 40% of needed yards on 1st down, 60% on 2nd, and 100% on 3rd and 4th. Made by <a href="https://period-three.com">Period Three</a> in Columbia, SC.</p>
+  </section>
+</main>
+<footer class="site">Data: nflverse play-by-play, through Week <span id="thru">7</span>. Not affiliated with the NFL or any team.</footer>
+
+<script>
+const Q=new URLSearchParams(location.search);
+const PRE=Q.get('state')==='pre';
+const TEAMS=window.DBD_TEAMS;
+
+/* schedule.json for the week (mock data; Thursday final, the rest upcoming) */
+const WEEK = PRE?1:8;
+const GAMES = PRE ? [
+  {id:'2026_01_DAL_PHI',day:'Thursday',date:'2026-09-10',time:'20:20',away:'DAL',home:'PHI',spread:7,total:47.5},
+  {id:'2026_01_KC_LAC',day:'Friday',date:'2026-09-11',time:'20:00',away:'KC',home:'LAC',spread:-3,total:45.5,stadium:'Sao Paulo'},
+  {id:'2026_01_GB_MIN',day:'Sunday',date:'2026-09-13',time:'13:00',away:'GB',home:'MIN',spread:1.5,total:44.5},
+  {id:'2026_01_CAR_JAX',day:'Sunday',date:'2026-09-13',time:'13:00',away:'CAR',home:'JAX',spread:3,total:46.5},
+  {id:'2026_01_MIA_IND',day:'Sunday',date:'2026-09-13',time:'13:00',away:'MIA',home:'IND',spread:1,total:46.5},
+  {id:'2026_01_PIT_NYJ',day:'Sunday',date:'2026-09-13',time:'13:00',away:'PIT',home:'NYJ',spread:-3,total:38.5},
+  {id:'2026_01_LV_NE',day:'Sunday',date:'2026-09-13',time:'13:00',away:'LV',home:'NE',spread:2.5,total:43.5},
+  {id:'2026_01_ARI_NO',day:'Sunday',date:'2026-09-13',time:'13:00',away:'ARI',home:'NO',spread:-6,total:42.5},
+  {id:'2026_01_NYG_WAS',day:'Sunday',date:'2026-09-13',time:'13:00',away:'NYG',home:'WAS',spread:6,total:45.5},
+  {id:'2026_01_CIN_CLE',day:'Sunday',date:'2026-09-13',time:'13:00',away:'CIN',home:'CLE',spread:-5.5,total:47.5},
+  {id:'2026_01_TB_ATL',day:'Sunday',date:'2026-09-13',time:'13:00',away:'TB',home:'ATL',spread:1.5,total:47.5},
+  {id:'2026_01_TEN_DEN',day:'Sunday',date:'2026-09-13',time:'16:05',away:'TEN',home:'DEN',spread:8.5,total:42.5},
+  {id:'2026_01_SF_SEA',day:'Sunday',date:'2026-09-13',time:'16:05',away:'SF',home:'SEA',spread:-2.5,total:44.5},
+  {id:'2026_01_DET_HOU',day:'Sunday',date:'2026-09-13',time:'16:25',away:'DET',home:'HOU',spread:-1,total:48.5},
+  {id:'2026_01_BAL_LA',day:'Sunday',date:'2026-09-13',time:'16:25',away:'BAL',home:'LA',spread:0,total:49.5},
+  {id:'2026_01_BUF_CHI',day:'Sunday',date:'2026-09-13',time:'20:20',away:'BUF',home:'CHI',spread:-3.5,total:51.5},
+] : [
+  {id:'2026_08_CAR_GB',day:'Thursday',date:'2026-10-29',time:'20:15',away:'CAR',home:'GB',spread:3.5,total:47.5,away_score:19,home_score:27},
+  {id:'2026_08_BAL_BUF',day:'Sunday',date:'2026-11-01',time:'13:00',away:'BAL',home:'BUF',spread:3,total:54.5},
+  {id:'2026_08_TEN_CIN',day:'Sunday',date:'2026-11-01',time:'13:00',away:'TEN',home:'CIN',spread:12.5,total:46.5},
+  {id:'2026_08_ARI_DAL',day:'Sunday',date:'2026-11-01',time:'13:00',away:'ARI',home:'DAL',spread:7,total:54.5},
+  {id:'2026_08_MIN_DET',day:'Sunday',date:'2026-11-01',time:'13:00',away:'MIN',home:'DET',spread:3,total:46.5},
+  {id:'2026_08_IND_JAX',day:'Sunday',date:'2026-11-01',time:'13:00',away:'IND',home:'JAX',spread:10,total:46.5},
+  {id:'2026_08_LV_NYJ',day:'Sunday',date:'2026-11-01',time:'13:00',away:'LV',home:'NYJ',spread:1.5,total:45.5},
+  {id:'2026_08_CLE_PIT',day:'Sunday',date:'2026-11-01',time:'13:00',away:'CLE',home:'PIT',spread:3.5,total:39.5},
+  {id:'2026_08_ATL_TB',day:'Sunday',date:'2026-11-01',time:'13:00',away:'ATL',home:'TB',spread:2.5,total:43.5},
+  {id:'2026_08_LAC_LA',day:'Sunday',date:'2026-11-01',time:'16:05',away:'LAC',home:'LA',spread:6.5,total:45.5},
+  {id:'2026_08_KC_DEN',day:'Sunday',date:'2026-11-01',time:'16:25',away:'KC',home:'DEN',spread:-1.5,total:40.5},
+  {id:'2026_08_NE_MIA',day:'Sunday',date:'2026-11-01',time:'16:25',away:'NE',home:'MIA',spread:-7,total:43.5},
+  {id:'2026_08_PHI_WAS',day:'Sunday',date:'2026-11-01',time:'20:20',away:'PHI',home:'WAS',spread:6,total:40.5},
+  {id:'2026_08_CHI_SEA',day:'Monday',date:'2026-11-02',time:'20:15',away:'CHI',home:'SEA',spread:3,total:46.5},
+];
+document.getElementById('wkh').textContent=`Week ${WEEK} matchups`;
+document.getElementById('kicker').textContent=`2026 season · Week ${WEEK}`;
+const finals=GAMES.filter(g=>g.home_score!=null).length;
+document.getElementById('herostats').innerHTML=[['Games this week',GAMES.length],['Final',PRE?0:finals],['Teams on bye',PRE?0:32-GAMES.length*2],['Snaps charted',PRE?'0':'14,212']].map(([l,v])=>`<div class="stat"><div class="l">${l}</div><div class="v">${v}</div></div>`).join('');
+document.getElementById('thru').textContent=PRE?'0 (season starts Sep 10)':'7';
+
+/* spread_line is positive when the home team is favored: show as HOME -X */
+function line(g){ if(g.spread==null) return ''; if(g.spread===0) return 'PK'; return g.spread>0?`${g.home} -${g.spread}`:`${g.away} -${-g.spread}`; }
+function kick(g){ const off=g.date>='2026-11-01'&&g.date<'2027-03-08'?'-05:00':'-04:00'; /* ET, standard or daylight; production stores UTC */
+  const d=new Date(`${g.date}T${g.time}:00${off}`); /* the browser shows local */
+  return d.toLocaleString([], {weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}); }
+function chip(t,score,won){const T=TEAMS[t];return `<span class="row"><span class="chip" style="--tc:${T.c1}"><b>${t}</b> ${T.nick}</span><span class="sc ${score==null?'':won?'w':'l'}">${score??''}</span></span>`;}
+function card(g){
+  const fin=g.home_score!=null;
+  const aw=fin&&g.away_score>g.home_score, hw=fin&&g.home_score>g.away_score;
+  return `<a class="gcard${fin?' final':''}" href="matchup.html?game=${g.id}">
+    <span class="when"><span class="${fin?'fin':''}">${fin?'Final':kick(g)}</span>${g.stadium?`<span>${g.stadium}</span>`:''}</span>
+    ${chip(g.away,g.away_score,aw)}${chip(g.home,g.home_score,hw)}
+    <span class="meta">${line(g)} · O/U ${g.total}</span>
+    <span class="go">${fin?'Recap':'View matchup'}</span></a>`;
+}
+let html='',lastDay=null;
+for(const g of GAMES){ if(g.day!==lastDay){html+=`<div class="daygrp">${g.day}</div>`;lastDay=g.day;} html+=card(g); }
+document.getElementById('games').innerHTML=html;
+
+/* teams by division; byes = teams not in this week's schedule */
+const playing=new Set(GAMES.flatMap(g=>[g.away,g.home]));
+const DIVS=['AFC East','AFC North','AFC South','AFC West','NFC East','NFC North','NFC South','NFC West'];
+const rk=n=>`<span class="rk ${n<=10?'g':n>=23?'b':'m'}">#${n}</span>`;
+document.getElementById('divs').innerHTML=DIVS.map(d=>`<div class="div"><h3>${d}</h3>`+Object.entries(TEAMS).filter(([,t])=>t.div===d).map(([a,t])=>`
+  <a class="team" style="--tc:${t.c1}" href="team.html?team=${a}${PRE?'&state=pre':''}">
+    <span class="tn">${t.name}<small>${PRE?'0-0':t.rec}</small></span>
+    ${PRE?'':`<span class="tr">${!playing.has(a)?'<span class="byetag">Bye</span>':''}Off ${rk(t.off)} Def ${rk(t.defn)}</span>`}
+  </a>`).join('')+'</div>').join('');
+if(PRE) document.getElementById('teamnote').textContent='Ranks appear after Week 1.';
+</script>
+</body>
+</html>

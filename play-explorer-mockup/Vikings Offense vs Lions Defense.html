@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vikings Offense vs Lions Defense</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: header, four takeaway cards, then matchup table (left) beside pass-zone heatmaps (right) */
+:root{
+  --bg:#f5f4f8; --surface:#ffffff; --ink:#1d1a26; --muted:#6a6577; --line:#e2dfe9;
+  --min:#4f2683; --det:#0076b6; --gold:#d9a514;
+  --hot:#1f9d5c; --cold:#cf3d33; --good:#1f9d5c; --bad:#cf3d33;
+  --display:"Barlow Condensed","Arial Narrow",sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14121a; --surface:#1d1a25; --ink:#ece9f3; --muted:#a29db0; --line:#302b3c;
+    --min:#a98be6; --det:#5fb4e8; --gold:#f2c94c; --hot:#3ecf86; --cold:#f07067; --good:#3ecf86; --bad:#f07067;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14121a; --surface:#1d1a25; --ink:#ece9f3; --muted:#a29db0; --line:#302b3c;
+  --min:#a98be6; --det:#5fb4e8; --gold:#f2c94c; --hot:#3ecf86; --cold:#f07067; --good:#3ecf86; --bad:#f07067;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.5 var(--body);padding:24px clamp(16px,3vw,36px) 40px;max-width:1280px;margin:0 auto}
+h1,h2,h3{font-family:var(--display);text-transform:uppercase;margin:0;text-wrap:balance}
+h1{font-size:clamp(30px,4vw,42px);line-height:1}
+h1 .m{color:var(--min)} h1 .d{color:var(--det)}
+h2{font-size:20px}
+h3{font-size:15px;color:var(--muted);margin-bottom:8px}
+header p{margin:6px 0 18px;color:var(--muted)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:18px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.take{border-left:4px solid var(--min)}
+.take.warn{border-left-color:var(--bad)}
+.take.even{border-left-color:var(--muted)}
+.take .tag{font:600 11px var(--body);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.take h2{margin:2px 0 6px}
+.take p{margin:0;font-size:13px}
+.main{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:900px){.main{grid-template-columns:1fr}}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{font:600 11px var(--body);text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:right;padding:6px;border-bottom:2px solid var(--line)}
+thead th:first-child{text-align:left}
+thead th.cm{color:var(--min)} thead th.cd{color:var(--det)}
+td{padding:6px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+td.v{text-align:right;white-space:nowrap}
+td.lg{color:var(--muted)}
+td:last-child{text-align:right}
+tr.grp th{text-align:left;font:600 15px var(--display);text-transform:uppercase;padding:12px 6px 4px;color:var(--ink)}
+.rk{display:inline-block;min-width:34px;text-align:center;font:600 11px var(--body);padding:1px 5px;border-radius:4px;margin-left:4px}
+.rk.g{background:color-mix(in srgb,var(--good) 18%,transparent);color:var(--good)}
+.rk.b{background:color-mix(in srgb,var(--bad) 18%,transparent);color:var(--bad)}
+.rk.m{background:color-mix(in srgb,var(--muted) 15%,transparent);color:var(--muted)}
+.pill{display:inline-block;font:600 11px var(--body);text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:99px;background:color-mix(in srgb,var(--muted) 15%,transparent);color:var(--muted);white-space:nowrap}
+.pill.min{background:var(--min);color:#fff}
+.pill.min.soft{background:color-mix(in srgb,var(--min) 18%,transparent);color:var(--min)}
+.pill.det{background:var(--det);color:#fff}
+.pill.det.soft{background:color-mix(in srgb,var(--det) 18%,transparent);color:var(--det)}
+.zones{display:flex;flex-direction:column;gap:18px}
+.grid{display:grid;grid-template-columns:44px repeat(3,1fr);gap:4px}
+.zh{font:600 11px var(--body);text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:center}
+.zl{font:600 11px var(--body);text-transform:uppercase;letter-spacing:.05em;color:var(--muted);align-self:center}
+.z{border-radius:6px;padding:10px 6px;text-align:center;display:flex;flex-direction:column;border:1px solid var(--line)}
+.z b{font:700 22px var(--display);font-variant-numeric:tabular-nums}
+.z span{font-size:11px;color:var(--ink);opacity:.8}
+.note{font-size:12px;color:var(--muted);margin:10px 0 0}
+footer{margin-top:20px;font-size:12px;color:var(--muted)}
+footer a{color:var(--min)}
+</style>
+</head>
+<body>
+<header>
+  <h1><span class="m">Vikings offense</span> vs <span class="d">Lions defense</span></h1>
+  <p>Week 9 at Ford Field, Sunday 1:00 PM. Season numbers through Week 8: six games for each side.</p>
+</header>
+
+<section class="cards" aria-label="Key takeaways">
+  <div class="card take">
+    <div class="tag">Biggest edge</div>
+    <h2>Tight ends feast</h2>
+    <p>Detroit gives up 100 yards a game to tight ends, the most in the league and nearly double the 54 average. Minnesota's tight end targets rank 3rd in EPA. Good news for Hockenson.</p>
+  </div>
+  <div class="card take">
+    <div class="tag">Opportunity</div>
+    <h2>Shots downfield</h2>
+    <p>The Lions are 32nd in explosive plays allowed and bleed deep middle and deep right. Minnesota's best zone is deep left, but only 20% of their throws go deep.</p>
+  </div>
+  <div class="card take warn">
+    <div class="tag">Watch out</div>
+    <h2>Kyler under pressure</h2>
+    <p>Minnesota allows a sack on 9.9% of dropbacks (30th). Detroit's pass rush gets home on 7.6% (7th best). Drive killers are the main risk.</p>
+  </div>
+  <div class="card take even">
+    <div class="tag">Wash</div>
+    <h2>Ground game</h2>
+    <p>Detroit is average against the run (19th in EPA), but Minnesota's run game is 28th. Expect volume for the backs, not efficiency.</p>
+  </div>
+</section>
+
+<section class="main">
+  <div class="card">
+    <h2 style="margin-bottom:6px">Head to head</h2>
+    <div class="tw"><table>
+      <thead><tr><th>Stat</th><th class="cm">MIN offense</th><th class="cd">DET defense allows</th><th>NFL avg</th><th>Edge</th></tr></thead>
+      <tbody>
+<tr class="grp"><th colspan="5">Overall</th></tr>
+<tr><td>EPA per play</td><td class="v">-0.10 <span class="rk b">#29</span></td><td class="v">+0.14 <span class="rk b">#31</span></td><td class="v lg">+0.01</td><td><span class="pill">Even</span></td></tr>
+<tr><td>Success rate</td><td class="v">36% <span class="rk b">#32</span></td><td class="v">46% <span class="rk b">#25</span></td><td class="v lg">43%</td><td><span class="pill det soft">Lean Lions</span></td></tr>
+<tr><td>Yards per play</td><td class="v">4.9 <span class="rk b">#24</span></td><td class="v">5.6 <span class="rk m">#20</span></td><td class="v lg">5.4</td><td><span class="pill">Even</span></td></tr>
+<tr><td>Explosive play rate</td><td class="v">9% <span class="rk m">#16</span></td><td class="v">11% <span class="rk b">#32</span></td><td class="v lg">9%</td><td><span class="pill min">Vikings edge</span></td></tr>
+<tr class="grp"><th colspan="5">Passing</th></tr>
+<tr><td>Pass EPA per dropback</td><td class="v">-0.08 <span class="rk b">#24</span></td><td class="v">+0.21 <span class="rk b">#28</span></td><td class="v lg">+0.04</td><td><span class="pill min soft">Lean Vikings</span></td></tr>
+<tr><td>Sack rate</td><td class="v">10% <span class="rk b">#30</span></td><td class="v">8% <span class="rk g">#7</span></td><td class="v lg">6%</td><td><span class="pill det">Lions edge</span></td></tr>
+<tr class="grp"><th colspan="5">Running</th></tr>
+<tr><td>Run EPA per carry</td><td class="v">-0.20 <span class="rk b">#28</span></td><td class="v">-0.07 <span class="rk m">#19</span></td><td class="v lg">-0.08</td><td><span class="pill det soft">Lean Lions</span></td></tr>
+<tr><td>Yards per carry</td><td class="v">3.8 <span class="rk m">#20</span></td><td class="v">4.0 <span class="rk m">#14</span></td><td class="v lg">4.1</td><td><span class="pill det soft">Lean Lions</span></td></tr>
+<tr class="grp"><th colspan="5">Money downs</th></tr>
+<tr><td>3rd down conversion</td><td class="v">40% <span class="rk m">#16</span></td><td class="v">48% <span class="rk b">#28</span></td><td class="v lg">41%</td><td><span class="pill min">Vikings edge</span></td></tr>
+<tr><td>Red zone TD rate (per trip)</td><td class="v">53% <span class="rk b">#23</span></td><td class="v">72% <span class="rk b">#27</span></td><td class="v lg">61%</td><td><span class="pill min soft">Lean Vikings</span></td></tr>
+<tr class="grp"><th colspan="5">Targets by position</th></tr>
+<tr><td>WR yards per game</td><td class="v">104 <span class="rk b">#32</span></td><td class="v">188 <span class="rk b">#30</span></td><td class="v lg">149</td><td><span class="pill">Even</span></td></tr>
+<tr><td>TE yards per game</td><td class="v">58 <span class="rk m">#13</span></td><td class="v">100 <span class="rk b">#32</span></td><td class="v lg">54</td><td><span class="pill min">Vikings edge</span></td></tr>
+<tr><td>TE targets per game</td><td class="v">7.7 <span class="rk m">#15</span></td><td class="v">12.2 <span class="rk b">#32</span></td><td class="v lg">7.6</td><td><span class="pill min">Vikings edge</span></td></tr>
+<tr><td>RB receiving yards per game</td><td class="v">19 <span class="rk b">#28</span></td><td class="v">24 <span class="rk g">#9</span></td><td class="v lg">32</td><td><span class="pill det">Lions edge</span></td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Ranks are out of 32. For the Vikings, #1 is the best offense. For the Lions, #1 is the stingiest defense. Green ranks are top 10, red are bottom 10.</p>
+  </div>
+  <div class="card zones">
+    <div>
+      <h2>Where the ball goes</h2>
+      <p class="note" style="margin-top:2px">Green means the throws gain more than expected (positive EPA), red means they lose value. Deep is 15+ air yards.</p>
+    </div>
+    <div class="zone"><h3>Vikings: EPA per throw</h3><div class="grid"><div></div><div class="zh">Left</div><div class="zh">Middle</div><div class="zh">Right</div><div class="zl">Deep</div><div class="z" style="background:color-mix(in srgb,var(--hot) 63%,var(--surface))"><b>+0.65</b><span>10% of throws</span></div><div class="z" style="background:color-mix(in srgb,var(--hot) 36%,var(--surface))"><b>+0.33</b><span>3% of throws</span></div><div class="z" style="background:color-mix(in srgb,var(--cold) 11%,var(--surface))"><b>-0.04</b><span>7% of throws</span></div><div class="zl">Short</div><div class="z" style="background:color-mix(in srgb,var(--cold) 24%,var(--surface))"><b>-0.19</b><span>31% of throws</span></div><div class="z" style="background:color-mix(in srgb,var(--hot) 28%,var(--surface))"><b>+0.23</b><span>16% of throws</span></div><div class="z" style="background:color-mix(in srgb,var(--hot) 17%,var(--surface))"><b>+0.11</b><span>33% of throws</span></div></div></div>
+    <div class="zone"><h3>Lions: EPA allowed per throw</h3><div class="grid"><div></div><div class="zh">Left</div><div class="zh">Middle</div><div class="zh">Right</div><div class="zl">Deep</div><div class="z" style="background:color-mix(in srgb,var(--hot) 38%,var(--surface))"><b>+0.35</b><span>14 throws</span></div><div class="z" style="background:color-mix(in srgb,var(--hot) 93%,var(--surface))"><b>+1.18</b><span>17 throws</span></div><div class="z" style="background:color-mix(in srgb,var(--hot) 93%,var(--surface))"><b>+1.29</b><span>21 throws</span></div><div class="zl">Short</div><div class="z" style="background:color-mix(in srgb,var(--hot) 19%,var(--surface))"><b>+0.13</b><span>69 throws</span></div><div class="z" style="background:color-mix(in srgb,var(--hot) 50%,var(--surface))"><b>+0.50</b><span>40 throws</span></div><div class="z" style="background:color-mix(in srgb,var(--hot) 24%,var(--surface))"><b>+0.18</b><span>95 throws</span></div></div></div>
+    <p class="note">The overlap to look for: Detroit is worst against deep right and deep middle, where Minnesota rarely throws. Short middle is green on both maps, which is tight end territory.</p>
+  </div>
+</section>
+
+<footer>Data: <a href="https://github.com/nflverse/nflverse-data">nflverse play-by-play</a> and rosters, pulled Oct 30, 2026. Scrambles are excluded from run stats. Red zone TD rate counts drives that reached the 20.</footer>
+</body>
+</html>

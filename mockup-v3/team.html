@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Offense Play Explorer | Down by Down</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tourney:wght@800&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="dbd.css">
+<script src="data/teams.js"></script>
+<script>requestAnimationFrame(()=>document.documentElement.classList.add('anim'));setTimeout(()=>document.documentElement.classList.add('anim-done'),1200);</script>
+</head>
+<body>
+<div class="wpbar"><a class="brand" href="index.html"><img src="assets/dxd-logo.svg" alt="Down by Down" width="184" height="48"></a><nav><a href="index.html#matchups">Matchups</a><a href="index.html#teams">Teams</a><a href="index.html#about">About</a></nav></div>
+<div class="mockbar"><span class="teampick">Mock controls. Switch team: <select id="teampick"></select> <label><input type="checkbox" id="prepick"> Pre-season state</label></span></div>
+<main>
+<nav class="crumb"><a href="index.html">Home</a> / <span id="crumb"></span></nav>
+<div id="app"></div>
+</main>
+<footer class="site">Data: nflverse play-by-play, pulled <span id="pulled">Oct 30, 2026</span>. EPA is expected points added. Not affiliated with the NFL or any team.</footer>
+<div class="tt" id="tt" role="tooltip"></div>
+
+<script>
+/* ---------- page config (production: localized by PHP from teams.json + query args) ---------- */
+const Q = new URLSearchParams(location.search);
+const TEAM = (Q.get('team') || 'MIN').toUpperCase();
+const PRE = Q.get('state') === 'pre';
+const TEAMS = window.DBD_TEAMS;
+const T = TEAMS[TEAM] || TEAMS.MIN;
+const SEASON = 2026;
+
+/* contrast guard: team c1 on the white card surface must reach 3:1, else c2, else ink */
+function lum(hex){const [r,g,b]=[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16)/255).map(c=>c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4));return .2126*r+.7152*g+.0722*b;}
+function contrast(a,b){const [h,l]=[lum(a),lum(b)].sort((x,y)=>y-x);return (h+.05)/(l+.05);}
+function accentFor(t){
+  const ok=c=>c&&contrast(c,'#ffffff')>=3;
+  const team = ok(t.c1)?t.c1:ok(t.c2)?t.c2:'#1d1a26';
+  const team2 = (team===t.c1&&ok(t.c2))?t.c2:(team===t.c2?t.c1:'#6a6577');
+  return {team,team2};
+}
+const AC = accentFor(T);
+document.documentElement.style.setProperty('--team',AC.team);
+document.documentElement.style.setProperty('--team2',AC.team2);
+document.title = `${T.nick} Offense Play Explorer | Down by Down`;
+document.getElementById('crumb').textContent = `${T.name} offense`;
+
+/* mock-only team switcher */
+const pick=document.getElementById('teampick');
+pick.innerHTML=Object.keys(TEAMS).sort().map(a=>`<option value="${a}"${a===TEAM?' selected':''}>${a} ${TEAMS[a].nick}</option>`).join('');
+pick.onchange=e=>{location.search='?team='+e.target.value+(PRE?'&state=pre':'');};
+const pre=document.getElementById('prepick'); pre.checked=PRE;
+pre.onchange=e=>{location.search='?team='+TEAM+(e.target.checked?'&state=pre':'');};
+
+/* ---------- load the team's play file (production: fetch /uploads/down-by-down/plays/{TEAM}.json?v=hash) ---------- */
+function loadData(abbr){
+  return new Promise(res=>{
+    const s=document.createElement('script'); s.src=`data/${abbr}.js`;
+    s.onload=()=>res(window.DBD_DATA); s.onerror=()=>res(null);
+    document.head.appendChild(s);
+  });
+}
+(async()=>{
+  if(PRE){ renderPre(); return; }
+  let data = await loadData(TEAM), placeholder=false;
+  if(!data){ data = await loadData('MIN'); placeholder=true; }
+  if(data.placeholder) placeholder=true;
+  boot(data, placeholder);
+})();
+
+/* ---------- pre-season empty state ---------- */
+function renderPre(){
+  document.getElementById('app').innerHTML=`
+  <header class="page"><div><p class="kicker">${SEASON} season · Preseason</p><span class="stripe" aria-hidden="true"></span>
+    <h1>${T.nick} Offense Play Explorer</h1>
+    <p>Every ${T.nick} offensive snap of the ${SEASON} season, drawn on the field. Pick games and filters, then hover or click any play to see what happened.</p></div></header>
+  <div class="empty"><h2>No plays yet</h2><p>The ${SEASON} season kicks off Thursday, September 10. This page fills in the morning after the ${T.nick} play their first game.</p>
+  <p class="note">The Week 1 schedule, with lines and kickoff times, is on the <a href="index.html?state=pre">home page</a>.</p></div>`;
+}
+
+/* ---------- explorer ---------- */
+function boot(RAW, placeholder){
+const K = RAW.keys;
+const P = RAW.plays.map((r,i)=>{const o={i};K.forEach((k,j)=>o[k]=r[j]);return o;});
+const G = RAW.games;
+const gIndex = Object.fromEntries(G.map(g=>[g.id,g]));
+const ABBR = TEAM;
+const lastWeek = Math.max(...G.map(g=>g.week));
+const played = new Set(G.map(g=>g.week));
+const byes = Array.from({length:lastWeek},(_,i)=>i+1).filter(w=>!played.has(w)); /* production: RAW.byes from build_data.py */
+const LEAGUE_PASSRATE = 0.57; /* production: metrics.json league.passrate */
+
+const app=document.getElementById('app');
+app.innerHTML=`
+${placeholder?`<div class="banner"><b>Mock placeholder.</b> This team's own play file is not in the mock, so Vikings plays are shown under ${T.nick} labels to prove the page is team-agnostic. Real data flows from the nightly build.</div>`:''}
+<header class="page">
+  <div>
+    <p class="kicker">${SEASON} season · Weeks 1 to ${lastWeek} · ${G.filter(g=>g.pf>g.pa).length}-${G.filter(g=>g.pf<g.pa).length}</p>
+    <span class="stripe" aria-hidden="true"></span>
+    <h1>${T.nick} Offense Play Explorer</h1>
+    <p>Every ${T.name.split(' ').slice(0,-1).join(' ')} offensive snap from the ${SEASON} season so far (Weeks 1 to ${lastWeek}${byes.length?`, bye in Week ${byes.join(' and ')}`:''}). Pick games and filters, then hover or click any play to see what happened.</p>
+  </div>
+</header>
+<div class="gpick" id="games" role="group" aria-label="Games"></div>
+<div class="filters">
+  <div class="fg"><span>Down</span><div class="seg" id="f-down"></div></div>
+  <div class="fg"><span>Play type</span><div class="seg" id="f-type"></div></div>
+  <div class="fg"><span>Field zone</span><div class="seg" id="f-zone"></div></div>
+  <div class="fg"><span>Formation</span><div class="seg" id="f-sg"></div></div>
+  <div class="fg"><label for="f-q">Quarter</label><select id="f-q"><option value="">All</option><option>1</option><option>2</option><option>3</option><option>4</option><option value="5">OT</option></select></div>
+  <div class="fg"><label for="f-pl">Player</label><select id="f-pl"></select></div>
+  <button class="reset" id="reset" type="button">Reset filters</button>
+</div>
+<div class="tiles" id="tiles"></div>
+<div class="work">
+  <div class="card">
+    <div class="tabs" role="tablist">
+      <button role="tab" id="tab-drive" aria-selected="true" type="button">Drive chart</button>
+      <button role="tab" id="tab-spray" aria-selected="false" type="button">Pass &amp; run map</button>
+      <button role="tab" id="tab-down" aria-selected="false" type="button">Tendencies</button>
+    </div>
+    <div id="view-drive">
+      <div class="legend">
+        <span><i style="background:var(--run)"></i>Run</span>
+        <span><i style="background:var(--pass)"></i>Completion</span>
+        <span><i style="background:var(--inc)"></i>Incompletion (air yards)</span>
+        <span><i style="background:var(--sack)"></i>Sack / INT</span>
+        <span><i style="background:var(--td)"></i>Touchdown</span>
+      </div>
+      <div class="scroll" id="drive"></div>
+      <p class="note">Each row is one snap. ${T.nick} always move left to right. Rows are grouped by game and drive; a dot marks the line of scrimmage.</p>
+    </div>
+    <div id="view-spray" hidden>
+      <div class="sprays">
+        <div><h3>Pass targets by depth</h3><div id="passmap"></div></div>
+        <div><h3>Runs by gap</h3><div id="runmap"></div></div>
+      </div>
+      <p class="note">Pass map plots where the ball was thrown (air yards beyond the line of scrimmage, the thick 0 line) and to which side. Sacks and scrambles are left out. Run map shows designed runs by the gap they went through.</p>
+    </div>
+    <div id="view-down" hidden><div id="tend"></div></div>
+  </div>
+  <div class="panel">
+    <div class="card detail" id="detail"></div>
+    <div class="card">
+      <h2>Who gets the ball</h2>
+      <div class="tw"><table id="usage"></table></div>
+      <p class="note">Click a player to filter every chart to his plays.</p>
+    </div>
+  </div>
+</div>`;
+
+const st = {games:new Set(), down:'', type:'', zone:'', sg:'', q:'', pl:'', sel:null, selAuto:true, tab:'drive'};
+const $ = s=>document.querySelector(s);
+const esc = s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt = (n,d=1)=>n==null||isNaN(n)?'-':(+n).toFixed(d);
+const sign = n=>(n>0?'+':'')+fmt(n,2);
+
+function color(p){
+  if(p.td) return 'var(--td)';
+  if(p.k==='sack'||p.k==='int') return 'var(--sack)';
+  if(p.k==='inc') return 'var(--inc)';
+  if(p.pt==='run') return 'var(--run)';
+  return 'var(--pass)';
+}
+function label(p){return {run:'Run',comp:'Completion',inc:'Incomplete',int:'Interception',sack:'Sack',scramble:'Scramble'}[p.k]||p.k;}
+function ord(n){return ['','1st','2nd','3rd','4th'][n]||n}
+function yardText(yl){return yl==50?'50':yl>50?ABBR+' '+(100-yl):'OPP '+yl}
+
+/* controls */
+function seg(id,key,opts){
+  const el=$(id);
+  el.innerHTML=opts.map(([v,t])=>`<button type="button" data-v="${v}" aria-pressed="${st[key]===v}">${t}</button>`).join('');
+  el.onclick=e=>{const b=e.target.closest('button');if(!b)return;st[key]=b.dataset.v;seg(id,key,opts);render();};
+}
+const SEGS=[
+  ['#f-down','down',[['','All'],['1','1st'],['2','2nd'],['3','3rd'],['4','4th']]],
+  ['#f-type','type',[['','All'],['pass','Pass'],['run','Run']]],
+  ['#f-zone','zone',[['','All'],['own','Own half'],['opp','Opp half'],['rz','Red zone']]],
+  ['#f-sg','sg',[['','All'],['1','Shotgun'],['0','Under center']]],
+];
+SEGS.forEach(a=>seg(...a));
+
+function drawGames(){
+  const all=st.games.size===0;
+  $('#games').innerHTML=`<button class="game" type="button" data-g="" aria-pressed="${all}"><span class="wk">Season</span><span class="opp">All games</span><span class="sc">${G.length} games, ${G.filter(g=>g.pf>g.pa).length}-${G.filter(g=>g.pf<g.pa).length}</span></button>`+
+  G.map(g=>`<button class="game" type="button" data-g="${g.id}" aria-pressed="${st.games.has(g.id)}"><span class="wk">Week ${g.week} ${g.home?'vs':'at'}</span><span class="opp">${g.opp}</span><span class="sc"><b>${g.pf>g.pa?'W':'L'}</b> ${g.pf}-${g.pa}</span></button>`).join('');
+}
+$('#games').onclick=e=>{const b=e.target.closest('.game');if(!b)return;const g=b.dataset.g;
+  if(!g) st.games.clear(); else st.games.has(g)?st.games.delete(g):st.games.add(g);
+  if(st.games.size===G.length) st.games.clear();
+  render();};
+$('#f-q').onchange=e=>{st.q=e.target.value;render();};
+$('#f-pl').onchange=e=>{st.pl=e.target.value;render();};
+$('#reset').onclick=()=>{Object.assign(st,{games:new Set(),down:'',type:'',zone:'',sg:'',q:'',pl:''});SEGS.forEach(a=>seg(...a));$('#f-q').value='';render();};
+
+const players=[...new Set(P.map(p=>p.pl).filter(Boolean))].map(n=>[n,P.filter(p=>p.pl===n).length]).sort((a,b)=>b[1]-a[1]);
+$('#f-pl').innerHTML='<option value="">All players</option>'+players.map(([n,c])=>`<option value="${esc(n)}">${esc(n)} (${c})</option>`).join('');
+
+['drive','spray','down'].forEach(t=>{$('#tab-'+t).onclick=()=>{st.tab=t;['drive','spray','down'].forEach(x=>{$('#tab-'+x).setAttribute('aria-selected',x===t);$('#view-'+x).hidden=x!==t;});};});
+
+/* filtering */
+function filtered(){
+  return P.filter(p=>
+    (st.games.size===0||st.games.has(p.g)) &&
+    (!st.down||p.dn==+st.down) &&
+    (!st.type||p.pt===st.type) &&
+    (!st.zone||(st.zone==='own'&&p.yl>50)||(st.zone==='opp'&&p.yl<=50)||(st.zone==='rz'&&p.yl<=20)) &&
+    (st.sg===''||p.sg==+st.sg) &&
+    (!st.q||p.q==+st.q) &&
+    (!st.pl||p.pl===st.pl));
+}
+
+/* tiles */
+function tiles(F){
+  const n=F.length, pass=F.filter(p=>p.pt==='pass').length;
+  const epa=F.reduce((a,p)=>a+(p.epa||0),0)/(n||1);
+  const succ=F.filter(p=>p.succ).length/(n||1);
+  const yds=F.reduce((a,p)=>a+(p.yds||0),0);
+  const tds=F.filter(p=>p.td).length, fd=F.filter(p=>p.fd).length;
+  const expl=F.filter(p=>(p.pt==='pass'&&p.yds>=20)||(p.pt==='run'&&p.yds>=10)).length;
+  const t=[
+    ['Plays',n,`${pass} pass, ${n-pass} run`],
+    ['Pass rate',n?Math.round(pass/n*100)+'%':'-',`league avg is ${Math.round(LEAGUE_PASSRATE*100)}%`],
+    ['EPA / play',n?`<span class="${epa>=0?'pos':'neg'}">${sign(epa)}</span>`:'-','above 0 beats expectation'],
+    ['Success rate',n?Math.round(succ*100)+'%':'-','good offenses top 45%'],
+    ['Yards / play',n?fmt(yds/n):'-',`${yds} total yards`],
+    ['Explosive plays',expl,'20+ yd pass, 10+ yd run'],
+    ['First downs / TDs',`${fd} / ${tds}`,'by play'],
+  ];
+  $('#tiles').innerHTML=t.map(([l,v,s])=>`<div class="tile"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('');
+}
+
+/* drive chart */
+function drive(F){
+  const W=760, EZ=40, FW=W-EZ*2, s=FW/100, RH=9, HDR=24, DH=8;
+  let y=8; const rows=[]; let lastG=null,lastD=null;
+  for(const p of F){
+    if(p.g!==lastG){ if(lastG) y+=10; rows.push({hdr:gIndex[p.g],y}); y+=HDR; lastG=p.g; lastD=null; }
+    if(p.drv!==lastD){ if(lastD!=null) y+=DH; lastD=p.drv; }
+    rows.push({p,y}); y+=RH;
+  }
+  const H=Math.max(y+12,180);
+  const x=yd=>EZ+yd*s;
+  let g=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;min-width:560px" role="img" aria-label="Drive chart of ${F.length} plays">`;
+  g+=`<rect x="0" y="0" width="${EZ}" height="${H}" fill="color-mix(in srgb,var(--team) 35%,transparent)"/><rect x="${W-EZ}" y="0" width="${EZ}" height="${H}" fill="rgba(0,0,0,.18)"/>`;
+  for(let i=0;i<=100;i+=10){g+=`<line x1="${x(i)}" x2="${x(i)}" y1="0" y2="${H}" stroke="var(--field-line)" stroke-width="${i===50?2:1}"/>`;}
+  for(let i=10;i<100;i+=10){const lab=i<=50?i:100-i;g+=`<text x="${x(i)}" y="${H-4}" fill="var(--field-ink)" font-size="10" text-anchor="middle">${lab}</text>`;}
+  g+=`<text x="${EZ/2}" y="${H/2}" fill="var(--field-ink)" font-size="11" text-anchor="middle" transform="rotate(-90 ${EZ/2} ${H/2})">${ABBR} GOAL</text>`;
+  g+=`<text x="${W-EZ/2}" y="${H/2}" fill="var(--field-ink)" font-size="11" text-anchor="middle" transform="rotate(90 ${W-EZ/2} ${H/2})">OPPONENT END ZONE</text>`;
+  for(const r of rows){
+    if(r.hdr){const h=r.hdr;g+=`<text x="${EZ+6}" y="${r.y+15}" fill="#fff" font-size="12" font-weight="600">WEEK ${h.week} ${h.home?'VS':'AT'} ${h.opp}  ·  ${h.pf>h.pa?'W':'L'} ${h.pf}-${h.pa}</text>`;continue;}
+    const p=r.p, los=100-p.yl, cy=r.y+RH/2;
+    let end;
+    if(p.k==='inc'||p.k==='int') end=los+(p.air??0); else end=los+(p.yds??0);
+    end=Math.max(-2,Math.min(102,end));
+    const dash=(p.k==='inc')?' stroke-dasharray="3 3"':'';
+    const sel=st.sel===p.i?' sel':'';
+    g+=`<g class="play${sel}" data-i="${p.i}"><rect x="0" y="${r.y}" width="${W}" height="${RH}" fill="transparent"/>`;
+    if(p.k==='comp'&&p.air!=null){const ca=Math.max(-2,Math.min(102,los+p.air));
+      g+=`<line x1="${x(los)}" x2="${x(ca)}" y1="${cy}" y2="${cy}" stroke="${color(p)}" stroke-width="2" stroke-opacity=".55" stroke-dasharray="2 2"/>`;
+      g+=`<line x1="${x(ca)}" x2="${x(end)}" y1="${cy}" y2="${cy}" stroke="${color(p)}" stroke-width="3" stroke-linecap="round"/>`;
+    } else {
+      g+=`<line x1="${x(los)}" x2="${x(end)}" y1="${cy}" y2="${cy}" stroke="${color(p)}" stroke-width="3" stroke-linecap="round"${dash}/>`;
+    }
+    g+=`<circle cx="${x(los)}" cy="${cy}" r="2.2" fill="#fff"/></g>`;
+  }
+  if(!F.length) g+=`<text x="${W/2}" y="90" fill="#fff" text-anchor="middle" font-size="14">No plays match these filters.</text>`;
+  g+='</svg>';
+  $('#drive').innerHTML=g;
+}
+
+/* pass + run maps */
+function hash(i){let h=i*2654435761%4294967296;return (h/4294967296);}
+function passmap(F){
+  const D=F.filter(p=>['comp','inc','int'].includes(p.k)&&p.air!=null);
+  const W=360,H=420,T=40,B=30,L=34,R=10,minA=Math.min(-10,Math.floor(Math.min(...D.map(p=>p.air),0)/5)*5),maxA=Math.max(40,...D.map(p=>p.air));
+  const y=a=>T+(maxA-a)/(maxA-minA)*(H-T-B), lw=(W-L-R)/3, lanes={left:0,middle:1,right:2};
+  let g=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;background:var(--field);border-radius:8px" role="img" aria-label="Pass target map">`;
+  for(let a=-10;a<=maxA;a+=10){g+=`<line x1="${L}" x2="${W-R}" y1="${y(a)}" y2="${y(a)}" stroke="var(--field-line)" stroke-width="${a===0?2:1}"/><text x="${L-6}" y="${y(a)+4}" fill="var(--field-ink)" font-size="10" text-anchor="end">${a}</text>`;}
+  g+=`<text x="${L-6}" y="${T-24}" fill="var(--field-ink)" font-size="10" text-anchor="end">air yds</text>`;
+  ['Left','Middle','Right'].forEach((n,i)=>{g+=`<text x="${L+lw*i+lw/2}" y="${H-10}" fill="var(--field-ink)" font-size="11" text-anchor="middle">${n}</text>`;if(i)g+=`<line x1="${L+lw*i}" x2="${L+lw*i}" y1="${T}" y2="${H-B}" stroke="var(--field-line)" stroke-dasharray="2 4"/>`;});
+  const byLane={left:[],middle:[],right:[]};
+  for(const p of D){const li=lanes[p.loc]??1;byLane[p.loc||'middle']?.push(p);
+    const cx=L+lw*li+lw*(.12+.76*hash(p.i+1)), cy=y(p.air);
+    g+=`<g class="play${st.sel===p.i?' sel':''}" data-i="${p.i}"><circle cx="${cx}" cy="${cy}" r="${st.sel===p.i?7:5}" fill="${color(p)}" fill-opacity=".85" stroke="${st.sel===p.i?'#fff':'rgba(0,0,0,.35)'}" stroke-width="${st.sel===p.i?2:1}"/></g>`;}
+  Object.entries(byLane).forEach(([k,a])=>{if(!a.length)return;const c=a.filter(p=>p.k==='comp').length;const i=lanes[k];
+    g+=`<text x="${L+lw*i+lw/2}" y="${T-24}" fill="#fff" font-size="11" font-weight="600" text-anchor="middle">${c}/${a.length} · ${Math.round(c/a.length*100)}%</text>`;});
+  g+='</svg>';
+  $('#passmap').innerHTML=g;
+}
+function runmap(F){
+  const R=F.filter(p=>p.pt==='run'&&p.k==='run');
+  const cols=[['left','end','L End'],['left','tackle','L Tackle'],['left','guard','L Guard'],['middle',null,'Middle'],['right','guard','R Guard'],['right','tackle','R Tackle'],['right','end','R End']];
+  const data=cols.map(([loc,gap,n])=>{const a=R.filter(p=>p.loc===loc&&(loc==='middle'||p.gap===gap));
+    return {n,c:a.length,ypc:a.length?a.reduce((s,p)=>s+(p.yds||0),0)/a.length:0,sr:a.length?a.filter(p=>p.succ).length/a.length:0,epa:a.length?a.reduce((s,p)=>s+(p.epa||0),0)/a.length:0};});
+  const W=360,H=420,T=50,B=70,L=10,Rr=10,maxC=Math.max(1,...data.map(d=>d.c)),cw=(W-L-Rr)/7;
+  let g=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;background:var(--field);border-radius:8px" role="img" aria-label="Run gap chart">`;
+  g+=`<text x="${W/2}" y="18" fill="var(--field-ink)" font-size="10" text-anchor="middle">bar height = carries · label = yards per carry</text>`;
+  data.forEach((d,i)=>{const bh=(H-T-B)*d.c/maxC, bx=L+cw*i+5, by=H-B-bh;
+    const fill=d.c? (d.epa>=0?'var(--td)':d.sr>=.4?'var(--run)':'var(--sack)'):'transparent';
+    g+=`<rect x="${bx}" y="${by}" width="${cw-10}" height="${bh}" rx="3" fill="${fill}" fill-opacity=".85"/>`;
+    if(d.c) g+=`<text x="${bx+(cw-10)/2}" y="${by-6}" fill="#fff" font-size="12" font-weight="600" text-anchor="middle">${fmt(d.ypc)}</text>`;
+    g+=`<text x="${bx+(cw-10)/2}" y="${H-B+16}" fill="var(--field-ink)" font-size="10" text-anchor="middle">${d.n.split(' ')[0]}</text>`;
+    g+=`<text x="${bx+(cw-10)/2}" y="${H-B+28}" fill="var(--field-ink)" font-size="10" text-anchor="middle">${d.n.split(' ')[1]||''}</text>`;
+    g+=`<text x="${bx+(cw-10)/2}" y="${H-B+46}" fill="#fff" font-size="11" text-anchor="middle">${d.c}</text>`;
+    g+=`<text x="${bx+(cw-10)/2}" y="${H-B+60}" fill="var(--field-ink)" font-size="10" text-anchor="middle">${d.c?Math.round(d.sr*100)+'%':''}</text>`;});
+  g+=`<text x="4" y="${H-B+46}" fill="var(--field-ink)" font-size="9">n</text><text x="4" y="${H-B+60}" fill="var(--field-ink)" font-size="9">SR</text>`;
+  g+='</svg><div class="legend" style="margin-top:8px"><span><i style="background:var(--td)"></i>Positive EPA</span><span><i style="background:var(--run)"></i>Negative EPA, 40%+ success rate</span><span><i style="background:var(--sack)"></i>Under 40% success rate</span></div>';
+  $('#runmap').innerHTML=g;
+}
+
+/* tendencies */
+function tend(F){
+  const buckets=[['1st & 10+',p=>p.dn==1&&p.togo>=10],['1st & short',p=>p.dn==1&&p.togo<10],['2nd & 7+',p=>p.dn==2&&p.togo>=7],['2nd & 3-6',p=>p.dn==2&&p.togo>=3&&p.togo<7],['2nd & 1-2',p=>p.dn==2&&p.togo<3],['3rd & 7+',p=>p.dn==3&&p.togo>=7],['3rd & 3-6',p=>p.dn==3&&p.togo>=3&&p.togo<7],['3rd & 1-2',p=>p.dn==3&&p.togo<3],['4th down',p=>p.dn==4]];
+  const rowsDD=buckets.map(([n,f])=>{const a=F.filter(f),ps=a.filter(p=>p.pt==='pass').length;
+    return `<tr><td>${n}</td><td>${a.length}</td><td><span class="bar" style="width:${a.length?ps/a.length*60:0}px"></span>${a.length?Math.round(ps/a.length*100)+'%':'-'}</td><td>${a.length?Math.round(a.filter(p=>p.succ).length/a.length*100)+'%':'-'}</td><td class="${a.reduce((s,p)=>s+(p.epa||0),0)>=0?'pos':'neg'}">${a.length?sign(a.reduce((s,p)=>s+(p.epa||0),0)/a.length):'-'}</td><td>${(n.startsWith('3rd')||n.startsWith('4th'))&&a.length?Math.round(a.filter(p=>p.fd||p.td).length/a.length*100)+'%':''}</td></tr>`;}).join('');
+  const qs=[1,2,3,4].map(q=>{const a=F.filter(p=>p.q==q),ps=a.filter(p=>p.pt==='pass').length;return `<tr><td>Q${q}</td><td>${a.length}</td><td>${a.length?Math.round(ps/a.length*100)+'%':'-'}</td><td class="${a.reduce((s,p)=>s+(p.epa||0),0)>=0?'pos':'neg'}">${a.length?sign(a.reduce((s,p)=>s+(p.epa||0),0)/a.length):'-'}</td></tr>`;}).join('');
+  const sit=[['Leading',p=>p.sd>0],['Tied',p=>p.sd==0],['Trailing',p=>p.sd<0]].map(([n,f])=>{const a=F.filter(f),ps=a.filter(p=>p.pt==='pass').length;return `<tr><td>${n}</td><td>${a.length}</td><td>${a.length?Math.round(ps/a.length*100)+'%':'-'}</td><td class="${a.reduce((s,p)=>s+(p.epa||0),0)>=0?'pos':'neg'}">${a.length?sign(a.reduce((s,p)=>s+(p.epa||0),0)/a.length):'-'}</td></tr>`;}).join('');
+  $('#tend').innerHTML=`<h2 style="margin-bottom:8px">Down and distance</h2><div class="tw"><table><tr><th>Situation</th><th>Plays</th><th>Pass rate</th><th>Success</th><th>EPA/play</th><th>Converted</th></tr>${rowsDD}</table></div>
+  <div class="sprays" style="margin-top:20px"><div><h2 style="margin-bottom:8px">By quarter</h2><table><tr><th>Qtr</th><th>Plays</th><th>Pass rate</th><th>EPA/play</th></tr>${qs}</table></div>
+  <div><h2 style="margin-bottom:8px">By game score</h2><table><tr><th>When</th><th>Plays</th><th>Pass rate</th><th>EPA/play</th></tr>${sit}</table></div></div>`;
+}
+
+/* usage */
+function usage(F){
+  const m={};
+  for(const p of F){if(!p.pl)continue;const u=m[p.pl]??={n:p.pl,tg:0,rec:0,car:0,yds:0,epa:0,td:0,rz:0};
+    if(['comp','inc','int'].includes(p.k)){u.tg++;if(p.k==='comp')u.rec++;}
+    else if(p.k==='run'||p.k==='scramble')u.car++;
+    else continue;
+    u.yds+=p.yds||0;u.epa+=p.epa||0;u.td+=p.td||0;if(p.yl<=20)u.rz++;}
+  const a=Object.values(m).sort((x,y)=>(y.tg+y.car)-(x.tg+x.car)).slice(0,12);
+  $('#usage').innerHTML=`<tr><th>Player</th><th>Tgt</th><th>Rec</th><th>Car</th><th>Yds</th><th>RZ</th><th>EPA</th></tr>`+
+    a.map(u=>`<tr class="clk${st.pl===u.n?' on':''}" data-pl="${esc(u.n)}"><td>${esc(u.n)}</td><td>${u.tg||''}</td><td>${u.rec||''}</td><td>${u.car||''}</td><td>${u.yds}</td><td>${u.rz||''}</td><td class="${u.epa>=0?'pos':'neg'}">${fmt(u.epa,1)}</td></tr>`).join('')+
+    (a.length?'':'<tr><td colspan="7">No plays match.</td></tr>');
+}
+$('#usage').onclick=e=>{const r=e.target.closest('tr[data-pl]');if(!r)return;st.pl=st.pl===r.dataset.pl?'':r.dataset.pl;$('#f-pl').value=st.pl;render();};
+
+/* detail. Fix for the brief's known bug: the auto flag is decided here, in one place. */
+function detail(F){
+  let p=st.sel==null?null:P[st.sel];
+  if(p==null||!F.includes(p)){p=F.slice().sort((a,b)=>(b.epa??-9)-(a.epa??-9))[0];st.sel=p?p.i:null;st.selAuto=true;}
+  if(!p){$('#detail').innerHTML='<h2>Play detail</h2><p class="note">No plays match these filters.</p>';return;}
+  const g=gIndex[p.g];
+  const pills=[`<span class="pill">${label(p)}</span>`];
+  if(p.td)pills.push('<span class="pill good">Touchdown</span>');
+  else if(p.fd)pills.push('<span class="pill good">First down</span>');
+  pills.push(`<span class="pill ${p.succ?'good':'bad'}">${p.succ?'Successful':'Unsuccessful'}</span>`);
+  if(p.sg)pills.push('<span class="pill">Shotgun</span>');
+  $('#detail').innerHTML=`<h3>Week ${g.week} ${g.home?'vs':'at'} ${g.opp} · Q${p.q} ${esc(p.t)}</h3>
+  <h2 style="margin-top:4px">${ord(p.dn)} &amp; ${p.togo} at ${yardText(p.yl)}</h2>
+  <div class="meta">${pills.join('')}</div>
+  <p class="desc">${esc(p.desc)}</p>
+  <dl class="kv"><dt>Yards</dt><dd>${p.yds??0}</dd>
+  ${p.air!=null?`<dt>Air yards</dt><dd>${p.air}${p.yac!=null?` + ${p.yac} after catch`:''}</dd>`:''}
+  ${p.loc?`<dt>Direction</dt><dd>${p.loc}${p.gap?' '+p.gap:''}${p.len?' · '+p.len:''}</dd>`:''}
+  <dt>EPA</dt><dd class="${(p.epa||0)>=0?'pos':'neg'}">${sign(p.epa||0)}</dd>
+  <dt>Score</dt><dd>${p.sd>0?'Up '+p.sd:p.sd<0?'Down '+(-p.sd):'Tied'}</dd></dl>
+  <p class="note">${st.selAuto?'Showing the best play by EPA in this filter. ':'Showing the play you clicked. '}Click any play in the charts to inspect it.</p>`;
+}
+
+/* interaction */
+const tt=$('#tt');
+document.addEventListener('mouseover',e=>{const g=e.target.closest('.play');if(!g){tt.style.display='none';return;}
+  const p=P[+g.dataset.i], gm=gIndex[p.g];
+  tt.innerHTML=`<b>Wk ${gm.week} ${gm.opp} · Q${p.q} ${esc(p.t)} · ${ord(p.dn)} &amp; ${p.togo}</b><br>${esc(p.desc)}<br><span class="${(p.epa||0)>=0?'pos':'neg'}">EPA ${sign(p.epa||0)}</span>`;
+  tt.style.display='block';});
+document.addEventListener('mousemove',e=>{if(tt.style.display==='block'){const x=Math.min(e.clientX+14,innerWidth-330);tt.style.left=x+'px';tt.style.top=(e.clientY+14)+'px';}});
+document.addEventListener('click',e=>{const g=e.target.closest('.play');if(!g)return;st.sel=+g.dataset.i;st.selAuto=false;render();});
+
+function render(){
+  const F=filtered();
+  drawGames();tiles(F);drive(F);passmap(F);runmap(F);tend(F);usage(F);detail(F);
+}
+render();
+}
+</script>
+</body>
+</html>

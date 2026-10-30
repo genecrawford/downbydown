@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Down by Down</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tourney:wght@800&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="dbd.css">
+<script src="data/teams.js"></script>
+</head>
+<body>
+<div class="bar"><div class="wrap">
+  <a href="index.html"><img src="assets/dxd-logo.svg" alt="Down by Down" width="176" height="46"></a>
+  <nav><a href="#slate" aria-current="page">Slate</a><a href="#teams">Teams</a><a href="#about">About</a></nav>
+</div></div>
+
+<header class="hero">
+  <div class="ghost" aria-hidden="true">10 20 30 40 50 40 30</div>
+  <div class="wrap">
+    <div>
+      <p class="kicker" id="kicker">2026 season · Week 8</p>
+      <h1>Every snap,<br>drawn on<br>the <em>field.</em></h1>
+      <p class="sub">How every NFL offense actually plays, from public play-by-play, updated every night. <a href="#slate">Open a game</a> to see how the offense matches up against the defense, or <a href="#teams">pick a team</a> and dig through its plays.</p>
+    </div>
+    <aside class="gotw" id="gotw" aria-label="Game of the week"></aside>
+  </div>
+</header>
+
+<div class="ticker" aria-label="This week's scores"><div class="wrap"><span class="tl">Week 8</span><div id="ticker" style="display:contents"></div></div></div>
+
+<main>
+<section id="slate"><div class="wrap">
+  <div class="sh"><h2>The slate <small id="slatecount"></small></h2><span>Lines and totals from nflverse. Kickoffs in your local time.</span></div>
+  <table class="slate" id="slatetable"></table>
+</div></section>
+
+<section id="teams"><div class="wrap">
+  <div class="sh"><h2>Teams <small>EPA per play, ranked 1 to 32</small></h2><span>Offense #1 moves the ball best. Defense #1 allows the least.</span></div>
+  <div class="confs" id="confs"></div>
+</div></section>
+
+<div class="wrap"><div class="about" id="about">
+  <h2>What this is</h2>
+  <p>Down by Down is a free site built on public play-by-play data from <a href="https://github.com/nflverse/nflverse-data">nflverse</a>. It updates every night during the season. EPA is expected points added. A play counts as a success when it gains 40% of the needed yards on 1st down, 60% on 2nd, and 100% on 3rd and 4th. Made by <a href="https://period-three.com">Period Three</a> in Columbia, SC.</p>
+</div></div>
+</main>
+<footer><div class="wrap"><b>Down by Down</b><span>Data: nflverse play-by-play, through Week 7. Not affiliated with the NFL or any team.</span></div></footer>
+
+<script>
+const TEAMS=window.DBD_TEAMS;
+const WEEK=8;
+const GAMES=[
+  {id:'2026_08_CAR_GB',day:'Thursday',date:'2026-10-29',time:'20:15',away:'CAR',home:'GB',spread:3.5,total:47.5,away_score:19,home_score:27},
+  {id:'2026_08_BAL_BUF',day:'Sunday',date:'2026-11-01',time:'13:00',away:'BAL',home:'BUF',spread:3,total:54.5},
+  {id:'2026_08_TEN_CIN',day:'Sunday',date:'2026-11-01',time:'13:00',away:'TEN',home:'CIN',spread:12.5,total:46.5},
+  {id:'2026_08_ARI_DAL',day:'Sunday',date:'2026-11-01',time:'13:00',away:'ARI',home:'DAL',spread:7,total:54.5},
+  {id:'2026_08_MIN_DET',day:'Sunday',date:'2026-11-01',time:'13:00',away:'MIN',home:'DET',spread:3,total:46.5,gotw:true},
+  {id:'2026_08_IND_JAX',day:'Sunday',date:'2026-11-01',time:'13:00',away:'IND',home:'JAX',spread:10,total:46.5},
+  {id:'2026_08_LV_NYJ',day:'Sunday',date:'2026-11-01',time:'13:00',away:'LV',home:'NYJ',spread:1.5,total:45.5},
+  {id:'2026_08_CLE_PIT',day:'Sunday',date:'2026-11-01',time:'13:00',away:'CLE',home:'PIT',spread:3.5,total:39.5},
+  {id:'2026_08_ATL_TB',day:'Sunday',date:'2026-11-01',time:'13:00',away:'ATL',home:'TB',spread:2.5,total:43.5},
+  {id:'2026_08_LAC_LA',day:'Sunday',date:'2026-11-01',time:'16:05',away:'LAC',home:'LA',spread:6.5,total:45.5},
+  {id:'2026_08_KC_DEN',day:'Sunday',date:'2026-11-01',time:'16:25',away:'KC',home:'DEN',spread:-1.5,total:40.5},
+  {id:'2026_08_NE_MIA',day:'Sunday',date:'2026-11-01',time:'16:25',away:'NE',home:'MIA',spread:-7,total:43.5},
+  {id:'2026_08_PHI_WAS',day:'Sunday',date:'2026-11-01',time:'20:20',away:'PHI',home:'WAS',spread:6,total:40.5},
+  {id:'2026_08_CHI_SEA',day:'Monday',date:'2026-11-02',time:'20:15',away:'CHI',home:'SEA',spread:3,total:46.5},
+];
+const line=g=>g.spread==null?'':g.spread===0?'PK':g.spread>0?`${g.home} -${g.spread}`:`${g.away} -${-g.spread}`;
+function kick(g,opts){const off=g.date>='2026-11-01'?'-05:00':'-04:00';return new Date(`${g.date}T${g.time}:00${off}`).toLocaleString([],opts||{hour:'numeric',minute:'2-digit'});}
+const isFinal=g=>g.home_score!=null;
+
+/* game of the week: the matchup with the biggest generated edge (mock: MIN at DET) */
+const gw=GAMES.find(g=>g.gotw);
+document.getElementById('gotw').innerHTML=`
+  <div class="lab"><span>Game of the week</span><span>Sun ${kick(gw)}</span></div>
+  <div class="teams">
+    <div class="t" style="--tc:${TEAMS[gw.away].c1}"><b>${gw.away}</b><span>${TEAMS[gw.away].nick} · ${TEAMS[gw.away].rec}</span></div><div class="rk">OFF #${TEAMS[gw.away].off} · DEF #${TEAMS[gw.away].defn}</div>
+    <div class="t" style="--tc:${TEAMS[gw.home].c1}"><b>${gw.home}</b><span>${TEAMS[gw.home].nick} · ${TEAMS[gw.home].rec}</span></div><div class="rk">OFF #${TEAMS[gw.home].off} · DEF #${TEAMS[gw.home].defn}</div>
+  </div>
+  <div class="line"><span>${line(gw)}</span><span>O/U ${gw.total}</span><span>Ford Field</span></div>
+  <p>Lions give up 100 yards a game to tight ends, most in the league. Vikings take a sack on 10% of dropbacks, 30th. Something has to give.</p>
+  <a class="cta" href="matchup.html?game=${gw.id}">Open the matchup</a>`;
+
+/* ticker */
+document.getElementById('ticker').innerHTML=GAMES.map(g=>{const f=isFinal(g),aw=f&&g.away_score>g.home_score,hw=f&&g.home_score>g.away_score;
+  return `<a class="tk" href="matchup.html?game=${g.id}">
+    <span class="a ${f?(aw?'w':'l'):''}">${g.away}</span><span class="s ${f?(aw?'w':'l'):''}">${f?g.away_score:''}</span>
+    <span class="a ${f?(hw?'w':'l'):''}">${g.home}</span><span class="s ${f?(hw?'w':'l'):''}">${f?g.home_score:''}</span>
+    <span class="st ${f?'fin':''}">${f?'Final':kick(g,{weekday:'short',hour:'numeric',minute:'2-digit'})}</span></a>`;}).join('');
+
+/* the slate */
+document.getElementById('slatecount').textContent=`${GAMES.length} games`;
+let rows='',last=null;
+for(const g of GAMES){
+  if(g.day!==last){rows+=`<tr class="day"><th colspan="7">${g.day}, ${new Date(g.date+'T12:00:00').toLocaleDateString([], {month:'short',day:'numeric'})}</th></tr>`;last=g.day;}
+  const f=isFinal(g),aw=f&&g.away_score>g.home_score,hw=f&&g.home_score>g.away_score;
+  const tm=(t,won)=>`<td><div class="tm" style="--tc:${TEAMS[t].c1}"><b>${t}</b><span>${TEAMS[t].nick}${f&&!won?'':''}</span></div></td>`;
+  rows+=`<tr class="g">
+    <td class="when">${f?'<b>Final</b>':kick(g)}</td>
+    ${tm(g.away,aw)}<td class="sc ${f&&!aw?'l':''}">${f?g.away_score:''}</td>
+    <td class="at">at</td>
+    ${tm(g.home,hw)}<td class="sc ${f&&!hw?'l':''}">${f?g.home_score:''}</td>
+    <td class="ln"><b>${line(g)}</b> · O/U ${g.total}</td>
+    <td><a class="go" href="matchup.html?game=${g.id}">${f?'Recap':'Matchup'}</a></td></tr>`;
+}
+document.getElementById('slatetable').innerHTML=rows;
+document.getElementById('slatetable').addEventListener('click',e=>{if(e.target.closest('a'))return;const r=e.target.closest('tr.g');if(r)location.href=r.querySelector('a.go').href;});
+
+/* teams: two conference tables, rank bars */
+const playing=new Set(GAMES.flatMap(g=>[g.away,g.home]));
+const tier=r=>r<=10?'var(--good)':r>=23?'var(--bad)':'var(--navy)';
+const rb=r=>`<div class="rb"><b>${r}</b><i style="--w:${Math.round((33-r)/32*100)}%;--c:${tier(r)}"></i></div>`;
+const wpct=r=>{const [w,l,t=0]=r.split('-').map(Number);return (w+t/2)/Math.max(1,w+l+t);};
+const DIVS=['East','North','South','West'];
+document.getElementById('confs').innerHTML=['AFC','NFC'].map(conf=>`<div class="conf"><h3>${conf} <span>Record · Off rank · Def rank</span></h3><table class="stand">`+
+  DIVS.map(d=>`<tr class="dv"><th colspan="2">${conf} ${d}</th><th class="rh">Off</th><th class="rh">Def</th></tr>`+Object.entries(TEAMS).filter(([,t])=>t.div===`${conf} ${d}`).sort((a,b)=>wpct(b[1].rec)-wpct(a[1].rec)||a[1].off-b[1].off).map(([a,t])=>`
+    <tr class="t"><td class="nm" style="--tc:${t.c1}"><a href="team.html?team=${a}">${t.name}</a><small>${a}</small></td>
+    <td class="rec">${t.rec}${playing.has(a)?'':'<i>Bye</i>'}</td><td class="rk">${rb(t.off)}</td><td class="rk">${rb(t.defn)}</td></tr>`).join('')).join('')+`</table></div>`).join('');
+</script>
+</body>
+</html>

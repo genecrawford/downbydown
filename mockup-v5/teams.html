@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Play explorer | Down by Down</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tourney:wght@800&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="dbd.css">
+<link rel="stylesheet" href="transitions.css">
+<script>try{const t=localStorage.getItem('dbd-theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<script src="data/teams.js"></script>
+<script src="data/marks.js"></script>
+<script src="data/schedule.js"></script>
+</head>
+<body>
+<div class="shell">
+  <aside class="side">
+    <a class="logo" href="index.html"><img class="k" src="assets/dxd-logo-knockout.svg" alt="Down by Down" width="153" height="40"><img class="c" src="assets/dxd-logo.svg" alt="Down by Down" width="153" height="40"></a>
+    <nav class="grp"><div class="gl">This week</div>
+      <a href="index.html#slate"><i></i>Slate<span class="ct">14</span></a>
+      <a href="index.html#teams"><i></i>Teams<span class="ct">32</span></a>
+    </nav>
+    <nav class="grp"><div class="gl">Explore</div>
+      <a href="matchups.html"><i></i>Matchups</a>
+      <a href="teams.html" aria-current="page"><i></i>Play explorer</a>
+      <a href="index.html#about"><i></i>About</a>
+    </nav>
+    <div class="foot"><b>2026 season</b>Through Week 7. Data from nflverse, refreshed nightly. Not affiliated with the NFL or any team.</div>
+  </aside>
+  <div>
+    <div class="top">
+      <div class="crumb"><a href="index.html" style="text-decoration:none">downbydown</a> <span>›</span> <b>play explorer</b></div>
+      <div class="r"><span class="upd">Updated Oct 30, 5:12 AM ET</span><button class="tog" id="tog" type="button"><span class="t-text-swap" id="toglbl">Light</span></button></div>
+    </div>
+    <main class="content">
+      <div class="ttitle">
+        <div class="t-stagger">
+          <p class="kicker t-stagger-line t-stagger-line--1">2026 season · 32 offenses</p>
+          <h1 class="t-stagger-line t-stagger-line--2">Pick a team</h1>
+          <p class="sub t-stagger-line t-stagger-line--3">Every offensive snap a team has run this season, drawn on the field, with filters for down, play type, field zone, formation, quarter and player.</p>
+        </div>
+        <div id="last"></div>
+      </div>
+      <div class="two">
+        <section class="panel" id="afc"><div class="ph"><span class="lab"><b>AFC</b> · EPA per play, ranked 1 to 32</span><span class="badge">Off · Def</span></div><div class="tw"><table class="stand"></table></div></section>
+        <section class="panel" id="nfc"><div class="ph"><span class="lab"><b>NFC</b> · EPA per play, ranked 1 to 32</span><span class="badge">Off · Def</span></div><div class="tw"><table class="stand"></table></div></section>
+      </div>
+      <p class="note" style="padding:0">Offense #1 moves the ball best; defense #1 allows the least. Green is top 10, red is bottom 10. Ranks update every night.</p>
+    </main>
+  </div>
+</div>
+
+<script>
+function swapText(el,next){if(!el||el.textContent===next)return;const dur=parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--text-swap-dur"))||200;
+  el.classList.add("is-exit");setTimeout(()=>{el.textContent=next;el.classList.remove("is-exit");el.classList.add("is-enter-start");void el.offsetHeight;el.classList.remove("is-enter-start");},dur);}
+const tog=document.getElementById('tog');const paint=()=>{const l=document.getElementById('toglbl'),n=document.documentElement.dataset.theme==='light'?'Dark':'Light';if(l.textContent===n)return;swapText(l,n);};
+tog.onclick=()=>{const l=document.documentElement.dataset.theme==='light';if(l)delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme='light';try{localStorage.setItem('dbd-theme',l?'':'light');}catch(e){}paint();};paint();
+
+const TEAMS=window.DBD_TEAMS,S=window.DBD_SCHEDULE;
+/* last team viewed (the explorer writes this) */
+let lastTeam=null;try{lastTeam=localStorage.getItem('dbd-last-team');}catch(e){}
+if(lastTeam&&TEAMS[lastTeam]){const t=TEAMS[lastTeam];document.getElementById('last').innerHTML=`<a class="panel lastbox" href="team.html?team=${lastTeam}"><span class="lab">Pick up where you left off</span><span class="lb">${dbdPennant(lastTeam,40)}<b>${t.name}</b></span><span class="go">Open the explorer</span></a>`;}
+
+const playing=new Set(S.weeks[S.current_week].flatMap(g=>[g.away,g.home]));
+const wpct=r=>{const [w,l,t=0]=r.split('-').map(Number);return (w+t/2)/Math.max(1,w+l+t);};
+const tier=r=>r<=10?'var(--good)':r>=23?'var(--bad)':'var(--ink-2)';
+const rb=r=>`<div class="rb"><b>${r}</b><i style="--w:${Math.round((33-r)/32*100)}%;--c:${tier(r)}"></i></div>`;
+for(const conf of ['AFC','NFC']){
+  document.querySelector(`#${conf.toLowerCase()} table`).innerHTML=['East','North','South','West'].map(d=>`<tr class="dv"><td colspan="2">${conf} ${d}</td><td class="rh">Off</td><td class="rh">Def</td></tr>`+
+    Object.entries(TEAMS).filter(([,t])=>t.div===`${conf} ${d}`).sort((a,b)=>wpct(b[1].rec)-wpct(a[1].rec)||a[1].off-b[1].off).map(([a,t])=>`
+    <tr class="t"><td class="nm">${dbdMark(a,24)}<a href="team.html?team=${a}">${t.name}</a><small>${a}</small></td>
+    <td class="rec">${t.rec}${playing.has(a)?'':'<i>Bye</i>'}</td><td class="rk">${rb(t.off)}</td><td class="rk">${rb(t.defn)}</td></tr>`).join('')).join('');
+  document.querySelector(`#${conf.toLowerCase()} table`).addEventListener('click',e=>{if(e.target.closest('a'))return;const r=e.target.closest('tr.t');if(r)location.href=r.querySelector('a').href;});
+}
+</script>
+<script>requestAnimationFrame(()=>document.querySelectorAll(".t-stagger").forEach(b=>b.classList.add("is-shown")));setTimeout(()=>document.documentElement.classList.add("t-settled"),1400);</script>
+</body>
+</html>

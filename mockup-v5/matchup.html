@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Matchup | Down by Down</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tourney:wght@800&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="dbd.css">
+<link rel="stylesheet" href="transitions.css">
+<script>try{const t=localStorage.getItem('dbd-theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<script src="data/teams.js"></script>
+<script src="data/marks.js"></script>
+</head>
+<body>
+<div class="shell">
+  <aside class="side">
+    <a class="logo" href="index.html"><img class="k" src="assets/dxd-logo-knockout.svg" alt="Down by Down" width="153" height="40"><img class="c" src="assets/dxd-logo.svg" alt="Down by Down" width="153" height="40"></a>
+    <nav class="grp"><div class="gl">This week</div>
+      <a href="index.html#slate"><i></i>Slate<span class="ct">14</span></a>
+      <a href="index.html#teams"><i></i>Teams<span class="ct">32</span></a>
+    </nav>
+    <nav class="grp"><div class="gl">Explore</div>
+      <a href="matchups.html" aria-current="page"><i></i>Matchups</a>
+      <a href="teams.html"><i></i>Play explorer</a>
+      <a href="index.html#about"><i></i>About</a>
+    </nav>
+    <div class="foot"><b>2026 season</b>Through Week 7. Data from nflverse, refreshed nightly. Not affiliated with the NFL or any team.</div>
+  </aside>
+  <div>
+    <div class="top">
+      <div class="crumb"><a href="index.html" style="text-decoration:none">downbydown</a> <span>›</span> <a href="matchups.html?week=8" style="text-decoration:none">week 8</a> <span>›</span> <b id="crumb"></b></div>
+      <div class="r"><span class="mockctl"><label><input type="checkbox" id="earlypick"> early-season state</label></span><span class="upd">Updated Oct 30, 5:12 AM ET</span><button class="tog" id="tog" type="button"><span class="t-text-swap" id="toglbl">Light</span></button></div>
+    </div>
+    <main class="content" id="app"></main>
+  </div>
+</div>
+
+<script>
+/* transitions.dev orchestration (04 text swap, 11 group hover) */
+function swapText(el,next){if(!el||el.textContent===next)return;const dur=parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--text-swap-dur"))||200;
+  el.classList.add("is-exit");setTimeout(()=>{el.textContent=next;el.classList.remove("is-exit");el.classList.add("is-enter-start");void el.offsetHeight;el.classList.remove("is-enter-start");},dur);}
+function groupHover(root){if(!root)return;const cs=getComputedStyle(document.documentElement);const num=(n,fb)=>{const v=parseFloat(cs.getPropertyValue(n));return Number.isFinite(v)?v:fb;};const ease=(n,fb)=>cs.getPropertyValue(n).trim()||fb;
+  function setShifts(activeIdx,phase){const items=Array.from(root.querySelectorAll(".t-avatar"));const lift=num("--avatar-lift",-4),falloff=num("--avatar-falloff",0.45),scale=num("--avatar-scale",1.05);
+    const tf=phase==="out"?ease("--avatar-ease-out","cubic-bezier(0.34, 3.85, 0.64, 1)"):ease("--avatar-ease-in","cubic-bezier(0.22, 1, 0.36, 1)");
+    items.forEach((el,i)=>{el.style.transitionTimingFunction=tf;if(activeIdx==null){el.style.setProperty("--shift","0px");el.style.setProperty("--scale-active","1");return;}
+      const d=Math.abs(i-activeIdx);el.style.setProperty("--shift",(lift*Math.pow(falloff,d)).toFixed(3)+"px");el.style.setProperty("--scale-active",i===activeIdx?String(scale):"1");});}
+  root.addEventListener("mouseover",e=>{const el=e.target.closest(".t-avatar");if(!el||!root.contains(el))return;const items=Array.from(root.querySelectorAll(".t-avatar"));setShifts(items.indexOf(el),"in");});
+  root.addEventListener("mouseleave",()=>setShifts(null,"out"));}
+
+/* theme */
+const tog=document.getElementById('tog');const paint=()=>{const l=document.getElementById('toglbl'),n=document.documentElement.dataset.theme==='light'?'Dark':'Light';if(l.textContent===n)return;swapText(l,n);};
+tog.onclick=()=>{const l=document.documentElement.dataset.theme==='light';if(l)delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme='light';try{localStorage.setItem('dbd-theme',l?'':'light');}catch(e){}paint();};paint();
+
+/* query */
+const Q=new URLSearchParams(location.search);
+const GAME=Q.get('game')||'2026_08_MIN_DET';
+const SIDE=Q.get('side')==='home'?'home':'away';
+const EARLY=Q.get('state')==='early';
+const [,WK,AWAY,HOME]=GAME.split('_');
+const TEAMS=window.DBD_TEAMS;
+const OFF=SIDE==='away'?AWAY:HOME, DEF=SIDE==='away'?HOME:AWAY;
+const O=TEAMS[OFF], D=TEAMS[DEF];
+document.getElementById('earlypick').checked=EARLY;
+document.getElementById('earlypick').onchange=e=>{Q.set('state',e.target.checked?'early':'');location.search=Q.toString();};
+document.title=`${O.nick} offense vs ${D.nick} defense | Down by Down`;
+document.getElementById('crumb').textContent=`${TEAMS[AWAY].nick} at ${TEAMS[HOME].nick}`;
+
+/* contrast guard against the current panel surface */
+function lum(hex){const [r,g,b]=[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16)/255).map(c=>c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4));return .2126*r+.7152*g+.0722*b;}
+function contrast(a,b){const [h,l]=[lum(a),lum(b)].sort((x,y)=>y-x);return (h+.05)/(l+.05);}
+function accent(t){const bg=document.documentElement.dataset.theme==='light'?'#fffdf8':'#171f38';const ok=c=>c&&contrast(c,bg)>=2.5;return ok(t.c1)?t.c1:ok(t.c2)?t.c2:(bg==='#fffdf8'?'#121417':'#eef0f6');}
+
+/* metrics: real for MIN offense vs DET defense, placeholders elsewhere */
+const LEAGUE={epa:0.01,sr:0.43,ypp:5.4,expl:0.09,pass_epa:0.04,sack:0.06,run_epa:-0.08,ypc:4.1,third:0.41,rz_td:0.61,WR_yds_pg:149,TE_yds_pg:54,TE_tgt_pg:7.6,RB_yds_pg:32};
+const REAL={ off:{epa:[-0.10,29],sr:[0.36,32],ypp:[4.9,24],expl:[0.09,16],pass_epa:[-0.08,24],sack:[0.10,30],run_epa:[-0.20,28],ypc:[3.8,20],third:[0.40,16],rz_td:[0.53,23],WR_yds_pg:[104,32],TE_yds_pg:[58,13],TE_tgt_pg:[7.7,15],RB_yds_pg:[19,28],games:6,
+  zones:{deep_left:[0.65,.10,12],deep_middle:[0.33,.03,4],deep_right:[-0.20,.07,9],short_left:[0.05,.25,31],short_middle:[0.21,.22,27],short_right:[-0.12,.33,41]}},
+  def:{epa:[0.14,31],sr:[0.46,25],ypp:[5.6,20],expl:[0.11,32],pass_epa:[0.21,28],sack:[0.08,7],run_epa:[-0.07,19],ypc:[4.0,14],third:[0.48,28],rz_td:[0.72,27],WR_yds_pg:[188,30],TE_yds_pg:[100,32],TE_tgt_pg:[12.2,32],RB_yds_pg:[24,9],games:6,
+  zones:{deep_left:[0.35,null,14],deep_middle:[1.18,null,17],deep_right:[0.90,null,15],short_left:[-0.05,null,60],short_middle:[0.25,null,48],short_right:[0.02,null,55]}} };
+const PLACEHOLDER={ off:{epa:[0.15,4],sr:[0.48,5],ypp:[6.1,3],expl:[0.12,2],pass_epa:[0.24,3],sack:[0.05,8],run_epa:[0.02,6],ypc:[4.6,7],third:[0.46,6],rz_td:[0.66,9],WR_yds_pg:[172,8],TE_yds_pg:[49,17],TE_tgt_pg:[6.1,22],RB_yds_pg:[41,5],games:6,
+  zones:{deep_left:[0.40,.08,10],deep_middle:[0.95,.06,8],deep_right:[0.55,.09,11],short_left:[0.12,.24,30],short_middle:[0.30,.26,33],short_right:[0.08,.27,34]}},
+  def:{epa:[-0.12,1],sr:[0.38,2],ypp:[4.7,3],expl:[0.07,6],pass_epa:[-0.10,1],sack:[0.09,3],run_epa:[-0.14,4],ypc:[3.7,5],third:[0.33,2],rz_td:[0.50,6],WR_yds_pg:[121,4],TE_yds_pg:[62,19],TE_tgt_pg:[8.4,20],RB_yds_pg:[36,24],games:6,
+  zones:{deep_left:[-0.20,null,12],deep_middle:[0.10,null,9],deep_right:[0.42,null,13],short_left:[-0.15,null,52],short_middle:[0.05,null,44],short_right:[-0.08,null,49]}} };
+const isReal=GAME==='2026_08_MIN_DET'&&SIDE==='away';
+const M=isReal?REAL:PLACEHOLDER; if(EARLY){M.off.games=2;M.def.games=2;}
+
+const pct=v=>Math.round(v*100)+'%', sgn=v=>(v>0?'+':'')+v.toFixed(2), one=v=>v.toFixed(1), int=v=>Math.round(v);
+const FMT={epa:sgn,sr:pct,ypp:one,expl:pct,pass_epa:sgn,sack:pct,run_epa:sgn,ypc:one,third:pct,rz_td:pct,WR_yds_pg:int,TE_yds_pg:int,TE_tgt_pg:one,RB_yds_pg:int};
+const ordn=n=>n+(n%100>=11&&n%100<=13?'th':['th','st','nd','rd'][n%10]||'th');
+const rk=n=>`<span class="rk ${n<=10?'g':n>=23?'b':''}">#${n}</span>`;
+const score=(or,dr)=>((33-or)/32+dr/32)/2;
+
+const ROWS=[['Overall',[['epa','EPA per play'],['sr','Success rate'],['ypp','Yards per play'],['expl','Explosive play rate']]],
+  ['Passing',[['pass_epa','Pass EPA per dropback'],['sack','Sack rate']]],['Running',[['run_epa','Run EPA per carry'],['ypc','Yards per carry']]],
+  ['Money downs',[['third','3rd down conversion'],['rz_td','Red zone TD rate']]],
+  ['Targets by position',[['WR_yds_pg','WR yards per game'],['TE_yds_pg','TE yards per game'],['TE_tgt_pg','TE targets per game'],['RB_yds_pg','RB receiving yards per game']]]];
+const GROUP={epa:'overall',sr:'overall',ypp:'overall',expl:'overall',pass_epa:'passing',sack:'passing',run_epa:'running',ypc:'running',third:'money',rz_td:'money',WR_yds_pg:'position',TE_yds_pg:'position',TE_tgt_pg:'position',RB_yds_pg:'position'};
+const POS={WR_yds_pg:'wide receiver',TE_yds_pg:'tight end',TE_tgt_pg:'tight end',RB_yds_pg:'running back'};
+const T=k=>{const [ov,or]=M.off[k],[dv,dr]=M.def[k],f=FMT[k],lg=f(LEAGUE[k]),ovs=f(ov),dvs=f(dv),ors=ordn(or),drs=ordn(dr);
+  switch(k){
+    case 'epa': return `${O.nick} average ${ovs} EPA per play (${ors}). ${D.nick} allow ${dvs} (${drs}). League average is ${lg}.`;
+    case 'sr': return `${O.nick} succeed on ${ovs} of plays (${ors}) against a defense that allows ${dvs} (${drs}).`;
+    case 'ypp': return `${O.nick} gain ${ovs} yards per play (${ors}). ${D.nick} give up ${dvs} (${drs}), with the league at ${lg}.`;
+    case 'expl': return `${O.nick} create explosive plays on ${ovs} of snaps (${ors}). ${D.nick} give them up at ${dvs} (${drs}).`;
+    case 'pass_epa': return `${O.nick} gain ${ovs} EPA per dropback (${ors}). ${D.nick} allow ${dvs} (${drs}).`;
+    case 'sack': return `${O.nick} take a sack on ${ovs} of dropbacks (${ors}). ${D.nick} get home on ${dvs} (${drs}). League average is ${lg}.`;
+    case 'run_epa': return `${O.nick}' run game is ${ors} in EPA per carry (${ovs}). ${D.nick} allow ${dvs} (${drs}).`;
+    case 'ypc': return `${O.nick} average ${ovs} yards per carry (${ors}). ${D.nick} allow ${dvs} (${drs}).`;
+    case 'third': return `${O.nick} convert ${ovs} of third downs (${ors}). ${D.nick} allow ${dvs} (${drs}).`;
+    case 'rz_td': return `${O.nick} score a touchdown on ${ovs} of red zone trips (${ors}). ${D.nick} allow ${dvs} (${drs}).`;
+    default:{const k2=k.includes('tgt')?'targets':'yards';return `${D.nick} give up ${dvs} ${k2} a game to ${POS[k]}s (${drs}), against a league average of ${lg}. ${O.nick}' ${POS[k]}s produce ${ovs} (${ors}).`;}}};
+const HEAD={epa:[`Efficiency gap favors ${O.nick}`,`${D.nick} win the efficiency battle`],sr:['Down-to-down consistency','Stalled drives ahead'],ypp:['Chunk yardage','Yards come hard'],expl:['Big plays are there','Big plays will be scarce'],
+  pass_epa:['Throw it','Passing lanes are closed'],sack:['Clean pockets','Pressure problem'],run_epa:['Run it at them','Nowhere to run'],ypc:['Ground game edge','Ground game stalls'],
+  third:[`Third downs favor ${O.nick}`,`Third downs favor ${D.nick}`],rz_td:['Red zone touchdowns','Field goals, not touchdowns'],
+  WR_yds_pg:['Wideouts feast','Wideouts get blanketed'],TE_yds_pg:['Tight ends feast','Tight ends go quiet'],TE_tgt_pg:['Tight ends feast','Tight ends go quiet'],RB_yds_pg:['Backs catch passes','Checkdowns go nowhere']};
+const ZL={deep_left:'deep left',deep_middle:'deep middle',deep_right:'deep right',short_left:'short left',short_middle:'short middle',short_right:'short right'};
+
+function takeaways(){
+  const cand=Object.keys(GROUP).filter(k=>GROUP[k]!=='overall').map(k=>({k,s:score(M.off[k][1],M.def[k][1]),gap:Math.abs(M.off[k][1]-M.def[k][1])})).sort((a,b)=>b.s-a.s||b.gap-a.gap);
+  const best=cand[0],worst=cand[cand.length-1],used=new Set([best.k,worst.k]);
+  const [zk,zv]=Object.entries(M.def.zones).filter(([,v])=>v[2]>=10).sort((a,b)=>b[1][0]-a[1][0])[0];const share=M.off.zones[zk][1];
+  let opp=`${D.nick} are worst against ${ZL[zk]} throws, allowing ${sgn(zv[0])} EPA per attempt. ${O.nick} send ${pct(share)} of their throws there.`;if(share<.10)opp+=' That is a small part of their offense so far.';
+  const wash=Object.keys(GROUP).filter(k=>GROUP[k]==='overall'&&!used.has(k)).map(k=>({k,d:Math.abs(score(M.off[k][1],M.def[k][1])-.5)})).sort((a,b)=>a.d-b.d)[0];
+  const sm=EARLY?'<span class="small">Early season: small samples</span>':'';
+  const card=(n,cls,tag,h,p)=>`<div class="take t-stagger-line t-stagger-line--${+n} ${cls}"><span class="n">${n}</span><div class="tag">${tag}</div><h3>${h}</h3><p>${p}</p>${sm}</div>`;
+  return card('01','edge','Biggest edge',HEAD[best.k][0],T(best.k))+card('02','opp','Opportunity',ZL[zk].replace(/^\w/,c=>c.toUpperCase())+' is open',opp)+
+    card('03','warn','Watch out',HEAD[worst.k][1],T(worst.k))+card('04','even','Wash',ROWS.flatMap(g=>g[1]).find(r=>r[0]===wash.k)[1],'Call this one even. '+T(wash.k));
+}
+function table(to,td){
+  return ROWS.map(([g,rows])=>`<tr class="grp"><td colspan="5">${g}</td></tr>`+rows.map(([k,l])=>{const [ov,or]=M.off[k],[dv,dr]=M.def[k],f=FMT[k],s=score(or,dr),w=Math.round(Math.abs(s-.5)*200);
+    return `<tr><td>${l}</td><td class="v">${f(ov)}${rk(or)}</td><td class="divcell"><div class="dv" style="--to:${to};--td:${td}"><i class="${s>=.5?'o':'d'}" style="width:${w/2}%"></i></div></td><td class="v">${f(dv)}${rk(dr)}</td><td class="lg">${f(LEAGUE[k])}</td></tr>`;}).join('')).join('');
+}
+function zoneGrid(side,title){const z=M[side].zones;const cell=k=>{const [epa,share,n]=z[k];if(n<5)return `<div class="z thin"><b>${n}</b><span>too few</span></div>`;
+  const c=epa>=0?'var(--good)':'var(--bad)',mix=Math.min(85,Math.round(Math.abs(epa)/0.8*85));
+  return `<div class="z" style="background:color-mix(in srgb,${c} ${mix}%,var(--panel))"><b>${sgn(epa)}</b><span>${side==='off'?pct(share)+' of throws':n+' throws'}</span></div>`;};
+  return `<div class="zone"><h4>${title}</h4><div class="zgrid"><div></div><div class="zh">Left</div><div class="zh">Middle</div><div class="zh">Right</div>
+  <div class="zl">Deep</div>${cell('deep_left')}${cell('deep_middle')}${cell('deep_right')}<div class="zl">Short</div>${cell('short_left')}${cell('short_middle')}${cell('short_right')}</div></div>`;}
+
+const to=accent(O),td=accent(D);
+const href=side=>`matchup.html?game=${GAME}&side=${side}${EARLY?'&state=early':''}`;
+document.getElementById('app').innerHTML=`
+<div class="mtitle">
+  <div class="t-stagger">
+    <p class="kicker t-stagger-line t-stagger-line--1">Week ${+WK} · Sunday 1:00 PM ET · ${TEAMS[HOME].nick==='Lions'?'Ford Field':TEAMS[HOME].nick+' home field'}</p>
+    <div class="markpair t-stagger-line t-stagger-line--2">${dbdPennant(OFF,40)}<span class="vs">vs</span>${dbdPennant(DEF,40)}</div>
+    <h1 class="t-stagger-line t-stagger-line--3"><span class="o" style="--u:${to}">${O.nick} offense</span><span class="vs">vs</span><span class="d" style="--u:${td}">${D.nick} defense</span></h1>
+    <p class="sub t-stagger-line t-stagger-line--4">Season numbers through Week ${+WK-1}: ${M.off.games} games for ${O.nick}, ${M.def.games} for ${D.nick}. Ranks are out of 32; #1 is the best offense or the stingiest defense.</p>
+    <div class="flipseg"><a href="${href('away')}" ${SIDE==='away'?'aria-current="page"':''}>${TEAMS[AWAY].abbr||AWAY} offense</a><a href="${href('home')}" ${SIDE==='home'?'aria-current="page"':''}>${HOME} offense</a></div>
+  </div>
+  <aside class="panel gamebox"><div class="ph"><span class="lab"><b>The game</b></span><span class="badge">Upcoming</span></div><div class="pb">
+    <div class="teams">
+      <div class="t">${dbdMark(AWAY,34)}<b>${AWAY}</b><span>${TEAMS[AWAY].nick} · ${TEAMS[AWAY].rec}</span></div><div class="rk">OFF #${TEAMS[AWAY].off} · DEF #${TEAMS[AWAY].defn}</div>
+      <div class="t">${dbdMark(HOME,34)}<b>${HOME}</b><span>${TEAMS[HOME].nick} · ${TEAMS[HOME].rec}</span></div><div class="rk">OFF #${TEAMS[HOME].off} · DEF #${TEAMS[HOME].defn}</div>
+    </div>
+    <div class="line"><span>${HOME} -3</span><span>O/U 46.5</span><span>Sun 1:00 PM</span></div>
+  </div></aside>
+</div>
+${isReal?'':`<div class="panel" style="border-left:3px solid var(--red)"><div class="pb" style="font-size:13px;color:var(--ink-2)"><b style="color:var(--ink)">Mock placeholder.</b> The numbers on this side are made up to show the layout and the generated copy. Real numbers for every game and both sides come from metrics.json.</div></div>`}
+${EARLY?`<div class="panel"><div class="pb" style="font-size:13px;color:var(--ink-2)">Fewer than three games for one or both teams. Ranks are shown, but treat every number as a small sample.</div></div>`:''}
+<section class="panel"><div class="ph"><span class="lab"><b>Takeaways</b> · generated from the numbers</span><span class="badge">4 reads</span></div><div class="takes t-stagger">${takeaways()}</div></section>
+<div class="mgrid">
+  <section class="panel"><div class="ph"><span class="lab"><b>Head to head</b> · ${OFF} offense against ${DEF} defense</span></div><div class="tw" style="padding:4px 14px 12px"><table class="h2h">
+    <thead><tr><th>Stat</th><th style="color:${to}">${dbdMark(OFF,18)} ${OFF} off</th><th class="c">Favors <span style="color:${to}">${OFF}</span> · Favors <span style="color:${td}">${DEF}</span></th><th style="color:${td}">${dbdMark(DEF,18)} ${DEF} def allows</th><th class="lg">NFL avg</th></tr></thead>
+    <tbody>${table(to,td)}</tbody></table></div></section>
+  <section class="panel"><div class="ph"><span class="lab"><b>Where the ball goes</b> · EPA per throw</span><span class="badge">Deep is 15+ air yds</span></div><div class="pb">
+    <div class="zones">${zoneGrid('off',`${O.nick}: EPA per throw`)}${zoneGrid('def',`${D.nick}: EPA allowed per throw`)}</div>
+    <p class="note" style="padding:10px 0 0">Green gains more than expected, red loses value. Cells with fewer than 5 throws are grayed out.</p>
+  </div></section>
+</div>`;
+</script>
+<script>requestAnimationFrame(()=>document.querySelectorAll(".t-stagger").forEach(b=>b.classList.add("is-shown")));setTimeout(()=>document.documentElement.classList.add("t-settled"),1400);</script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+# OS and editor
+.DS_Store
+Thumbs.db
+.claude/
+
+# packaged plugin zips are built locally and attached to releases, not committed
+*.zip
+
+# local scratch
+scratch/

@@ -1,0 +1,89 @@
+name: Build data
+
+# Nightly during the season (10:15 UTC is 6:15 AM Eastern in autumn, 5:15 after the clocks change),
+# plus a manual trigger. Downloads the nflverse files, rebuilds /data, commits it if anything changed,
+# then tells the WordPress site to sync. The site also pulls daily on its own as a fallback.
+on:
+  schedule:
+    - cron: "15 10 * 9-12 *"
+    - cron: "15 10 * 1-2 *"
+  workflow_dispatch:
+    inputs:
+      week:
+        description: "Force a week number (leave blank to derive from the schedule)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-data
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install pandas
+        run: pip install --quiet pandas
+
+      - name: Work out the season
+        id: season
+        run: |
+          # The NFL season is named for the year it starts; before March we are still in last year's season.
+          Y=$(date -u +%Y); M=$(date -u +%-m)
+          if [ "$M" -lt 3 ]; then Y=$((Y-1)); fi
+          echo "season=$Y" >> "$GITHUB_OUTPUT"
+
+      - name: Download nflverse files
+        env:
+          S: ${{ steps.season.outputs.season }}
+        run: |
+          mkdir -p in
+          curl -sSL -o in/roster.csv "https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_${S}.csv"
+          curl -sSL -o in/teams.csv  "https://github.com/nflverse/nflverse-data/releases/download/teams/teams_colors_logos.csv"
+          curl -sSL -o in/games.csv  "https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv"
+          # Play-by-play does not exist until the season starts; a 404 here is normal in August.
+          if curl -sSL -f -o in/pbp.csv.gz "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_${S}.csv.gz"; then
+            echo "pbp=in/pbp.csv.gz" >> "$GITHUB_ENV"
+          else
+            echo "No play-by-play for ${S} yet; building schedule-only data."
+            echo "pbp=-" >> "$GITHUB_ENV"
+          fi
+          ls -la in
+
+      - name: Build data
+        run: |
+          mkdir -p data
+          python3 tools/build_data.py "$pbp" in/roster.csv in/games.csv in/teams.csv data ${{ github.event.inputs.week }}
+
+      - name: Commit data if it changed
+        id: commit
+        run: |
+          git config user.name "downbydown-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No data changes."
+          else
+            git commit -m "data: nightly build $(date -u +%Y-%m-%d)"
+            git push
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Tell the site to sync
+        if: steps.commit.outputs.changed == 'true' && vars.DBD_SITE_URL != ''
+        env:
+          SITE: ${{ vars.DBD_SITE_URL }}
+          TOKEN: ${{ secrets.DBD_SYNC_TOKEN }}
+        run: |
+          # The plugin's endpoint fetches the new manifest from this repo and downloads what changed.
+          curl -sS -X POST "${SITE%/}/wp-json/dbd/v1/sync" -H "X-DBD-Token: ${TOKEN}" -w "\nHTTP %{http_code}\n" || echo "Sync call failed; the site will pull on its own schedule."

@@ -1,0 +1,234 @@
+/* transitions.dev patterns used by Down by Down (mock v5).
+   Snippets are pasted from the transitions-dev skill references; only the color tokens are themed.
+   Used: 16 tabs sliding, 02 number pop-in, 04 text states swap, 18 texts reveal, 11 avatar group hover,
+   07 panel reveal, 17 tooltip (timing tokens only; our tooltip is positioned by JS). */
+:root {
+  /* Number pop-in */
+  --digit-dur: 500ms; --digit-distance: 8px; --digit-stagger: 70ms; --digit-blur: 2px;
+  --digit-ease: cubic-bezier(0.34, 1.45, 0.64, 1); --digit-dir-x: 0; --digit-dir-y: 1;
+  /* Text states swap */
+  --text-swap-dur: 150ms; --text-swap-translate-y: 4px; --text-swap-blur: 2px; --text-swap-ease: ease-in-out;
+  /* Panel reveal */
+  --panel-open-dur: 400ms; --panel-close-dur: 350ms; --panel-translate-y: 100px; --panel-blur: 2px;
+  --panel-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Avatar group hover */
+  --avatar-lift: -2px; --avatar-dur: 260ms; --avatar-scale: 1.015; --avatar-falloff: 0.3;   /* softened: a nudge on the hub strip, not a bounce */
+  --avatar-ease-in: cubic-bezier(0.22, 1, 0.36, 1); --avatar-ease-out: cubic-bezier(0.34, 1.6, 0.64, 1);
+  /* Tabs sliding */
+  --tabs-dur: 200ms; --tabs-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --tabs-text-muted: rgba(15, 15, 15, 0.6); --tabs-text-active: #0f0f0f; --tabs-bar-bg: #eeeeee; --tabs-pill-bg: #ffffff;
+  /* Tooltip open/close */
+  --tt-in-dur: 150ms; --tt-out-dur: 50ms; --tt-scale: 0.98; --tt-delay: 80ms; --tt-in-ease: ease-out; --tt-out-ease: ease-out;
+  --tt-bg: #ffffff; --tt-fg: #2f2f2f;
+  /* Texts reveal */
+  --stagger-dur: 600ms; --stagger-distance: 12px; --stagger-stagger: 40ms; --stagger-blur: 3px;
+  --stagger-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+/* Theme overrides for the color tokens (dark is the default theme on this site) */
+:root { --tabs-text-muted: var(--muted); --tabs-text-active: var(--ink); --tabs-bar-bg: var(--panel-2); --tabs-pill-bg: var(--bg); --tt-bg: #fffdf8; --tt-fg: #121417; }
+html[data-theme="light"] { --tabs-pill-bg: #ffffff; --tt-bg: #121417; --tt-fg: #f4f1ea; }
+
+/* ---- 16 Tabs sliding ---- */
+.t-tabs {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 48px;
+  background: var(--tabs-bar-bg);
+}
+.t-tab {
+  position: relative;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  height: 30px;
+  padding: 4px 12px;
+  color: var(--tabs-text-muted);
+  cursor: pointer;
+  border-radius: 48px;
+  z-index: 1;
+  transition: color var(--tabs-dur) var(--tabs-ease);
+}
+.t-tab:not([aria-selected="true"]):hover,
+.t-tab[aria-selected="true"] {
+  color: var(--tabs-text-active);
+}
+.t-tabs-pill {
+  position: absolute;
+  top: 3px;
+  left: 0;
+  height: 30px;
+  width: 0;
+  background: var(--tabs-pill-bg);
+  border-radius: 48px;
+  transform: translateX(0);
+  transition:
+    transform var(--tabs-dur) var(--tabs-ease),
+    width     var(--tabs-dur) var(--tabs-ease);
+  will-change: transform, width;
+  z-index: 0;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .t-tabs-pill, .t-tab { transition: none !important; }
+}
+
+/* ---- 02 Number pop-in ---- */
+@keyframes t-digit-pop-in {
+  0%   {
+    transform: translate(
+      calc(var(--digit-distance) * var(--digit-dir-x)),
+      calc(var(--digit-distance) * var(--digit-dir-y))
+    );
+    opacity: 0;
+    filter: blur(var(--digit-blur));
+  }
+  100% { transform: translate(0, 0); opacity: 1; filter: blur(0); }
+}
+.t-digit-group {
+  display: inline-flex;
+  align-items: baseline;
+}
+.t-digit {
+  display: inline-block;
+  will-change: transform, opacity, filter;
+}
+.t-digit-group.is-animating .t-digit {
+  animation: t-digit-pop-in var(--digit-dur) var(--digit-ease) both;
+}
+.t-digit-group.is-animating .t-digit[data-stagger="1"] {
+  animation-delay: var(--digit-stagger);
+}
+.t-digit-group.is-animating .t-digit[data-stagger="2"] {
+  animation-delay: calc(var(--digit-stagger) * 2);
+}
+@media (prefers-reduced-motion: reduce) {
+  .t-digit-group .t-digit { animation: none !important; }
+}
+
+/* ---- 04 Text states swap ---- */
+.t-text-swap {
+  display: inline-block;
+  transform: translateY(0);
+  filter: blur(0);
+  opacity: 1;
+  transition:
+    transform var(--text-swap-dur) var(--text-swap-ease),
+    filter    var(--text-swap-dur) var(--text-swap-ease),
+    opacity   var(--text-swap-dur) var(--text-swap-ease);
+  will-change: transform, filter, opacity;
+}
+.t-text-swap.is-exit {
+  transform: translateY(calc(var(--text-swap-translate-y) * -1));
+  filter: blur(var(--text-swap-blur));
+  opacity: 0;
+}
+.t-text-swap.is-enter-start {
+  transform: translateY(var(--text-swap-translate-y));
+  filter: blur(var(--text-swap-blur));
+  opacity: 0;
+  transition: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .t-text-swap { transition: none !important; }
+}
+
+/* ---- 18 Texts reveal ---- */
+.t-stagger-line {
+  display: block;
+  opacity: 0;
+  transform: translateY(var(--stagger-distance));
+  filter: blur(var(--stagger-blur));
+  transition:
+    opacity   var(--stagger-dur) var(--stagger-ease),
+    transform var(--stagger-dur) var(--stagger-ease),
+    filter    var(--stagger-dur) var(--stagger-ease);
+  will-change: transform, opacity, filter;
+}
+.t-stagger-line--2 { transition-delay: var(--stagger-stagger); }
+.t-stagger-line--3 { transition-delay: calc(var(--stagger-stagger) * 2); }
+.t-stagger-line--4 { transition-delay: calc(var(--stagger-stagger) * 3); }
+.t-stagger.is-shown .t-stagger-line {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
+}
+.t-stagger.is-hiding .t-stagger-line {
+  opacity: 0;
+  transform: translateY(0);
+  filter: blur(0);
+  transition:
+    opacity 200ms ease,
+    transform 0s linear,
+    filter 0s linear;
+  transition-delay: 0s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .t-stagger-line { transition: none !important; }
+}
+/* safety: if the reveal never gets its class (throttled tab), show everything after a beat */
+html.t-settled .t-stagger-line { opacity: 1; transform: none; filter: none; transition: none !important; }
+
+/* ---- 11 Avatar group hover ---- */
+.t-avatar {
+  transform-origin: center;
+  transform:
+    translateY(var(--shift, 0px))
+    scale(var(--scale-active, 1));
+  transition: transform var(--avatar-dur) var(--avatar-ease-in);
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .t-avatar { transition: none !important; transform: none !important; }
+}
+
+/* ---- 07 Panel reveal ---- */
+.t-panel-slide {
+  transform: translateY(var(--panel-translate-y));
+  opacity: 0;
+  filter: blur(var(--panel-blur));
+  pointer-events: none;
+  transition:
+    transform var(--panel-close-dur) var(--panel-ease),
+    opacity   var(--panel-close-dur) var(--panel-ease),
+    filter    var(--panel-close-dur) var(--panel-ease);
+  will-change: transform, opacity, filter;
+}
+.t-panel-slide[data-open="true"] {
+  transform: translateY(0);
+  opacity: 1;
+  filter: blur(0);
+  pointer-events: auto;
+  transition:
+    transform var(--panel-open-dur) var(--panel-ease),
+    opacity   var(--panel-open-dur) var(--panel-ease),
+    filter    var(--panel-open-dur) var(--panel-ease);
+}
+@media (prefers-reduced-motion: reduce) {
+  .t-panel-slide { transition: none !important; }
+}
+
+/* ---- 17 Tooltip: timing adapted to our JS-positioned tooltip (.tt is fixed, placed on mousemove) ---- */
+.tt {
+  display: block;
+  opacity: 0;
+  transform: scale(var(--tt-scale));
+  transform-origin: 0 0;
+  background: var(--tt-bg);
+  color: var(--tt-fg);
+  transition:
+    opacity   var(--tt-out-dur) var(--tt-out-ease),
+    transform var(--tt-out-dur) var(--tt-out-ease);
+}
+.tt.is-shown {
+  opacity: 1;
+  transform: scale(1);
+  transition-duration: var(--tt-in-dur);
+  transition-timing-function: var(--tt-in-ease);
+  transition-delay: var(--tt-delay);
+}
+@media (prefers-reduced-motion: reduce) {
+  .tt { transition: none !important; }
+}
