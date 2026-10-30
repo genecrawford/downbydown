@@ -206,27 +206,29 @@
     var at = function (g) { return 'Week ' + g.week + (g.home ? ' vs ' : ' at ') + g.opp; };
     function charts(F) { chartsDirty = F; if (st.tab !== 'charts') return; chartsDirty = null; if (!window.Chartist) { $('#dbd-charts').innerHTML = '<p class="dbd-note">The chart library did not load. Reload the page to try again.</p>'; return; } drawCharts(F); }
     function drawCharts(F) {
-      var nick = T.nick, pr = function (v) { return r0(v) + '%'; };
+      var nick = T.nick, pr = function (v) { return r0(v) + '%'; }, ax = function (v) { return v + '%'; };
       Object.keys(CH).forEach(function (k) { CH[k].detach(); delete CH[k]; });
       if (!F.length) { [1, 2, 3, 4, 5].forEach(function (i) { setRead(i, 'No plays match these filters.'); $('#dbd-c' + i).innerHTML = ''; }); return; }
 
       /* 1. pass rate by down and distance, horizontal bars, a red tick per bar at the league rate for that spot */
       var d1 = BK.slice(0, 8).map(function (b) { return { n: b[0], a: F.filter(b[1]), lg: lgRate('dd', b[0]) }; }).reverse();
       var h1 = $('#dbd-c1'), o1 = overlays(h1);
-      CH.c1 = new Chartist.BarChart(h1, { labels: d1.map(function (d) { return d.n; }), series: [d1.map(function (d) { return r0(pct(d.a)); })] }, { horizontalBars: true, axisX: { low: 0, high: 100, onlyInteger: true, labelInterpolationFnc: pr }, axisY: { offset: 84 }, chartPadding: { right: 28, left: 0 } })
-        .on('draw', function (d) { if (d.type !== 'bar') return; var v = d.series[d.index], b = d1[d.index]; o1.add('dbd-ch-lbl' + (v > 72 ? ' in' : ''), esc(v + '% · ' + b.a.length + ' plays'), d.x2, d.y2); o1.add('dbd-ch-tick', '', d.chartRect.x1 + d.axisX.projectValue(b.lg * 100), d.y2); })
+      CH.c1 = new Chartist.BarChart(h1, { labels: d1.map(function (d) { return d.n; }), series: [d1.map(function (d) { return r0(pct(d.a)); })] }, { horizontalBars: true, axisX: { low: 0, high: 100, onlyInteger: true, labelInterpolationFnc: ax }, axisY: { offset: 84 }, chartPadding: { right: 28, left: 0 } })
+        .on('draw', function (d) { if (d.type !== 'bar') return; var v = d.series[d.index], b = d1[d.index]; o1.add('dbd-ch-lbl' + (v > 72 ? ' in' : ''), esc(v + '% · ' + b.a.length + (h1.offsetWidth < 420 ? '' : ' plays')), d.x2, d.y2); o1.add('dbd-ch-tick', '', d.chartRect.x1 + d.axisX.projectValue(b.lg * 100), d.y2); })
         .on('created', function () { o1.flush(); });
       var solid = d1.filter(function (d) { return d.a.length >= 10; });
-      if (solid.length) { var hi = solid.reduce(function (m, d) { return pct(d.a) > pct(m.a) ? d : m; }), lo = solid.reduce(function (m, d) { return pct(d.a) < pct(m.a) ? d : m; }); setRead(1, 'Most pass-happy on ' + hi.n + ': ' + pr(pct(hi.a)) + ' against a league ' + pr(hi.lg) + '. Most run-heavy on ' + lo.n + ': ' + pr(pct(lo.a)) + ' against ' + pr(lo.lg) + '. Red ticks mark the league rate for each spot.'); }
-      else setRead(1, 'Too few plays in this slice to read much into it. Red ticks mark the league rate for each spot.');
+      var tick = ' Red ticks mark the league rate for each spot.';
+      if (st.type) setRead(1, 'The play type filter pins every bar at ' + (st.type === 'pass' ? '100%' : '0%') + '. Clear it to compare pass and run.' + tick);
+      else if (solid.length) { var hi = solid.reduce(function (m, d) { return pct(d.a) > pct(m.a) ? d : m; }), lo = solid.reduce(function (m, d) { return pct(d.a) < pct(m.a) ? d : m; }); setRead(1, hi === lo ? 'Only ' + hi.n + ' has 10 or more plays here: ' + pr(pct(hi.a)) + ' against a league ' + pr(hi.lg) + '.' + tick : 'Most pass-happy on ' + hi.n + ': ' + pr(pct(hi.a)) + ' against a league ' + pr(hi.lg) + '. Most run-heavy on ' + lo.n + ': ' + pr(pct(lo.a)) + ' against ' + pr(lo.lg) + '.' + tick); }
+      else setRead(1, 'Too few plays in this slice to read much into it.' + tick);
 
       /* 2. shotgun vs under center, grouped by down */
       var downs = [1, 2, 3, 4], byF = function (dn, sg) { return F.filter(function (p) { return p.dn == dn && p.sg == sg; }); };
       var sgv = downs.map(function (dn) { return r0(pct(byF(dn, 1))); }), ucv = downs.map(function (dn) { return r0(pct(byF(dn, 0))); });
-      CH.c2 = new Chartist.BarChart($('#dbd-c2'), { labels: ['1st down', '2nd down', '3rd down', '4th down'], series: [sgv, ucv] }, { seriesBarDistance: 16, axisY: { low: 0, high: 100, onlyInteger: true, labelInterpolationFnc: pr }, chartPadding: { right: 10 } });
+      CH.c2 = new Chartist.BarChart($('#dbd-c2'), { labels: ['1st down', '2nd down', '3rd down', '4th down'], series: [sgv, ucv] }, { seriesBarDistance: 16, axisY: { low: 0, high: 100, onlyInteger: true, labelInterpolationFnc: ax }, chartPadding: { right: 10 } });
       var sgShare = r0(F.filter(function (p) { return p.sg == 1; }).length / F.length), uc1 = byF(1, 0).length, uc2 = byF(2, 0).length;
       var r2 = sgShare + '% of these snaps are from shotgun. ';
-      r2 += uc1 >= 5 ? 'Under center is where the run game lives: ' + (100 - ucv[0]) + '% runs on first down' + (uc2 >= 5 ? ', ' + (100 - ucv[1]) + '% on second. ' : '. ') : 'Under center snaps are rare in this slice. ';
+      r2 += st.type ? 'Pass rates are pinned by the play type filter. ' : uc1 >= 5 ? 'Under center is where the run game lives: ' + (100 - ucv[0]) + '% runs on first down' + (uc2 >= 5 ? ', ' + (100 - ucv[1]) + '% on second. ' : '. ') : 'Under center snaps are rare in this slice. ';
       if (TEND && TEND.sg) r2 += 'League on first down: ' + pr(lgRate('sg', '1', '1')) + ' pass from shotgun, ' + pr(lgRate('sg', '1', '0')) + ' under center.';
       setRead(2, r2);
 
