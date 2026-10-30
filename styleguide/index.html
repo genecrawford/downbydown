@@ -28,7 +28,7 @@ body.dbd-app{background:#f4f1ea}
    edge to edge with no padding, and the sidebar column keeps the width set in Divi. Override in the Theme Builder
    or your own CSS if you want something else. */
 body.dbd-app .et_pb_section:has(.dbd){padding:0}
-body.dbd-app .et_pb_row:has(.dbd){display:flex;flex-wrap:nowrap;align-items:stretch;gap:0;width:100%;max-width:none;padding:0}
+body.dbd-app .et_pb_row:has(.dbd){display:flex;flex-wrap:nowrap;align-items:stretch;gap:0;width:100%;max-width:none;padding:0!important}  /* Divi 5 sets phone row padding (10px left, 55px right) in a media rule; !important keeps the row edge to edge */
 body.dbd-app{--dbd-sidebar:232px}   /* the sidebar column's width on the app page; override this one variable in Divi's custom CSS to change it */
 body.dbd-app .et_pb_row:has(.dbd)>.et_pb_column:not(:has(.dbd)){flex:0 0 var(--dbd-sidebar);width:var(--dbd-sidebar)!important;max-width:var(--dbd-sidebar);min-width:0}
 body.dbd-app .et_pb_column:has(.dbd){flex:1 1 0%;width:auto!important;max-width:none;min-width:0;padding:0;margin:0}
@@ -196,7 +196,7 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 .dbd-rb i{display:block;height:6px;background:var(--dbd-line-2);border-radius:2px;position:relative;overflow:hidden}
 .dbd-rb i::after{content:"";position:absolute;left:0;top:0;bottom:0;width:var(--w);background:var(--dbd-ink-2)}
 .dbd-rb i.g::after{background:var(--dbd-good)} .dbd-rb i.b::after{background:var(--dbd-bad)}
-@media (max-width:520px){.dbd-stand .dbd-nm small{display:none}.dbd-stand col.c-rec{width:60px}.dbd-stand col.c-rk{width:44px}.dbd-rb{grid-template-columns:1fr}.dbd-rb i{display:none}.dbd-rb b{text-align:right}.dbd-stand .dbd-nmi .full{display:none}.dbd-stand .dbd-nmi .short{display:inline}.dbd-stand td{padding-left:5px;padding-right:5px}.dbd-stand td:first-child{padding-left:0}}
+@media (max-width:520px){.dbd-stand .dbd-nm small{display:none}.dbd-stand col.c-rec{width:60px}.dbd-stand col.c-rk{width:44px}.dbd-rb{grid-template-columns:1fr}.dbd-rb i{display:none}.dbd-rb b{text-align:right}.dbd-stand .dbd-nmi .full{display:none}.dbd-stand .dbd-nmi .short{display:inline}.dbd-stand td{padding-left:4px;padding-right:4px}.dbd-stand td:first-child{padding-left:0}.dbd-stand col.c-rec{width:52px}.dbd-stand col.c-rk{width:40px}.dbd-stand .dbd-nmi{gap:8px}.dbd-stand .dbd-nmi .dbd-mk{width:20px;height:20px}}
 .dbd-lastbox{display:flex;flex-direction:column;gap:6px;padding:14px 16px;min-width:240px}
 .dbd-lastbox .dbd-lab{font:700 10px var(--dbd-display);text-transform:uppercase;letter-spacing:.18em;color:var(--dbd-muted)}
 .dbd-lastbox .lb{display:flex;align-items:center;gap:10px}
@@ -345,7 +345,7 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 }
 @container dbd (max-width: 600px){
   .dbd-stand .dbd-nmi small{display:none}.dbd-stand col.c-rec{width:60px}.dbd-stand col.c-rk{width:44px}.dbd-rb{grid-template-columns:1fr}.dbd-rb i{display:none}.dbd-rb b{text-align:right}
-  .dbd-stand .dbd-nmi .full{display:none}.dbd-stand .dbd-nmi .short{display:inline}.dbd-stand td{padding-left:5px;padding-right:5px}.dbd-stand td:first-child{padding-left:0}
+  .dbd-stand .dbd-nmi .full{display:none}.dbd-stand .dbd-nmi .short{display:inline}.dbd-stand td{padding-left:4px;padding-right:4px}.dbd-stand td:first-child{padding-left:0}.dbd-stand col.c-rec{width:52px}.dbd-stand col.c-rk{width:40px}.dbd-stand .dbd-nmi{gap:8px}.dbd-stand .dbd-nmi .dbd-mk{width:20px;height:20px}
   .dbd-takes,.dbd-zones,.dbd-about,.dbd-sprays{grid-template-columns:minmax(0,1fr)}
   .dbd-take{border-left:0}.dbd-take+.dbd-take{border-top:1px solid var(--dbd-line)}
   .dbd-slate .dbd-ln,.dbd-slate td:last-child{display:none}
