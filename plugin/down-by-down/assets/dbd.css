@@ -15,12 +15,16 @@
   -webkit-font-smoothing:antialiased;
 }
 body.dbd-app{background:#f4f1ea}
-/* Divi defaults that would otherwise box the app into a fixed-width row: on the app page the section and row
-   go edge to edge and the column may shrink. Override in the Theme Builder if you want something else. */
+/* Divi 5 lays the Theme Builder row out as a flex row and gives each column a fixed width that does not shrink.
+   On the app page the column that holds the app grows to fill whatever the sidebar column leaves, the row runs
+   edge to edge with no padding, and the sidebar column keeps the width set in Divi. Override in the Theme Builder
+   or your own CSS if you want something else. */
 body.dbd-app .et_pb_section:has(.dbd){padding:0}
-body.dbd-app .et_pb_row:has(.dbd){width:100%;max-width:none;padding:0}
-body.dbd-app .et_pb_column:has(.dbd),body.dbd-app .et_pb_column{min-width:0}
-body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:has(.dbd) .et_pb_text_inner{margin:0;padding:0}
+body.dbd-app .et_pb_row:has(.dbd){display:flex;flex-wrap:nowrap;align-items:stretch;gap:0;width:100%;max-width:none;padding:0}
+body.dbd-app .et_pb_row:has(.dbd)>.et_pb_column:not(:has(.dbd)){flex:0 0 auto;max-width:40%}
+body.dbd-app .et_pb_column:has(.dbd){flex:1 1 0%;width:auto!important;max-width:none;min-width:0;padding:0;margin:0}
+body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:has(.dbd) .et_pb_code_inner,body.dbd-app .et_pb_column:has(.dbd) .et_pb_text_inner{margin:0;padding:0}
+@media (max-width:900px){body.dbd-app .et_pb_row:has(.dbd){flex-wrap:wrap}body.dbd-app .et_pb_row:has(.dbd)>.et_pb_column{flex:1 1 100%;max-width:none;width:100%!important}}
 .dbd{max-width:100%;overflow-x:clip}
 
 /* ---- reset against theme globals ---- */
