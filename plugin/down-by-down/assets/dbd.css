@@ -15,6 +15,13 @@
   -webkit-font-smoothing:antialiased;
 }
 body.dbd-app{background:#f4f1ea}
+/* Divi defaults that would otherwise box the app into a fixed-width row: on the app page the section and row
+   go edge to edge and the column may shrink. Override in the Theme Builder if you want something else. */
+body.dbd-app .et_pb_section:has(.dbd){padding:0}
+body.dbd-app .et_pb_row:has(.dbd){width:100%;max-width:none;padding:0}
+body.dbd-app .et_pb_column:has(.dbd),body.dbd-app .et_pb_column{min-width:0}
+body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:has(.dbd) .et_pb_text_inner{margin:0;padding:0}
+.dbd{max-width:100%;overflow-x:clip}
 
 /* ---- reset against theme globals ---- */
 .dbd *,.dbd *::before,.dbd *::after{box-sizing:border-box}
