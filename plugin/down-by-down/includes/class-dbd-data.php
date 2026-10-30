@@ -1,0 +1,172 @@
+<?php
+/**
+ * Reads the JSON data files from wp-content/uploads/down-by-down/.
+ * Everything is decoded once per request and cached in memory.
+ */
+if ( ! defined( 'ABSPATH' ) ) { exit; }
+
+class DBD_Data {
+
+	private static $cache = array();
+
+	/** Absolute path of the data folder (created on demand). */
+	public static function dir() {
+		$u   = wp_upload_dir();
+		$dir = trailingslashit( $u['basedir'] ) . 'down-by-down';
+		if ( ! is_dir( $dir ) ) {
+			wp_mkdir_p( $dir );
+			wp_mkdir_p( $dir . '/plays' );
+		}
+		return $dir;
+	}
+
+	/** Public URL of the data folder (the explorer fetches play files from here). */
+	public static function url() {
+		$u = wp_upload_dir();
+		return trailingslashit( $u['baseurl'] ) . 'down-by-down';
+	}
+
+	/** Decode one file, e.g. 'teams.json' or 'plays/MIN.json'. Returns an array or null. */
+	public static function get( $file ) {
+		if ( array_key_exists( $file, self::$cache ) ) {
+			return self::$cache[ $file ];
+		}
+		$path = self::dir() . '/' . ltrim( $file, '/' );
+		$data = null;
+		if ( is_readable( $path ) ) {
+			$json = file_get_contents( $path );
+			$data = json_decode( $json, true );
+			if ( ! is_array( $data ) ) { $data = null; }
+		}
+		self::$cache[ $file ] = $data;
+		return $data;
+	}
+
+	public static function has_data() {
+		return (bool) self::get( 'schedule.json' ) && (bool) self::get( 'teams.json' );
+	}
+
+	public static function teams()    { return self::get( 'teams.json' ) ?: array(); }
+	public static function metrics()  { return self::get( 'metrics.json' ) ?: array(); }
+	public static function schedule() { return self::get( 'schedule.json' ) ?: array(); }
+	public static function manifest() { return self::get( 'manifest.json' ) ?: array(); }
+
+	public static function season() {
+		$s = self::schedule();
+		return isset( $s['season'] ) ? (int) $s['season'] : (int) gmdate( 'Y' );
+	}
+
+	public static function current_week() {
+		$s = self::schedule();
+		return isset( $s['current_week'] ) ? (int) $s['current_week'] : 1;
+	}
+
+	public static function through_week() {
+		$m = self::metrics();
+		return isset( $m['through_week'] ) ? (int) $m['through_week'] : 0;
+	}
+
+	/** Weeks that exist in the schedule, as ints, ascending. */
+	public static function weeks() {
+		$s = self::schedule();
+		$w = array_map( 'intval', array_keys( $s['weeks'] ?? array() ) );
+		sort( $w );
+		return $w;
+	}
+
+	public static function week_games( $week ) {
+		$s = self::schedule();
+		return $s['weeks'][ (string) (int) $week ] ?? array();
+	}
+
+	public static function team( $abbr ) {
+		$t = self::teams();
+		return $t[ $abbr ] ?? null;
+	}
+
+	/** Find a game anywhere in the schedule by id. */
+	public static function game( $id ) {
+		foreach ( ( self::schedule()['weeks'] ?? array() ) as $games ) {
+			foreach ( $games as $g ) {
+				if ( $g['id'] === $id ) { return $g; }
+			}
+		}
+		return null;
+	}
+
+	/** Win-loss-tie records for every team, from the schedule's final scores. */
+	public static function records() {
+		if ( isset( self::$cache['__records'] ) ) { return self::$cache['__records']; }
+		$rec = array();
+		foreach ( array_keys( self::teams() ) as $a ) { $rec[ $a ] = array( 0, 0, 0 ); }
+		foreach ( ( self::schedule()['weeks'] ?? array() ) as $games ) {
+			foreach ( $games as $g ) {
+				if ( ! isset( $g['home_score'], $g['away_score'] ) || $g['home_score'] === null ) { continue; }
+				if ( ( $g['game_type'] ?? 'REG' ) !== 'REG' ) { continue; }
+				$h = $g['home']; $a = $g['away'];
+				if ( ! isset( $rec[ $h ], $rec[ $a ] ) ) { continue; }
+				if ( $g['home_score'] > $g['away_score'] )      { $rec[ $h ][0]++; $rec[ $a ][1]++; }
+				elseif ( $g['home_score'] < $g['away_score'] )  { $rec[ $a ][0]++; $rec[ $h ][1]++; }
+				else                                            { $rec[ $h ][2]++; $rec[ $a ][2]++; }
+			}
+		}
+		self::$cache['__records'] = $rec;
+		return $rec;
+	}
+
+	public static function record_text( $abbr ) {
+		$r = self::records()[ $abbr ] ?? array( 0, 0, 0 );
+		return $r[0] . '-' . $r[1] . ( $r[2] ? '-' . $r[2] : '' );
+	}
+
+	public static function win_pct( $abbr ) {
+		$r = self::records()[ $abbr ] ?? array( 0, 0, 0 );
+		$n = $r[0] + $r[1] + $r[2];
+		return $n ? ( $r[0] + $r[2] / 2 ) / $n : 0;
+	}
+
+	/** Rank of a team's metric: side 'off' or 'def'. Null before Week 1. */
+	public static function rank( $side, $abbr, $metric = 'epa' ) {
+		$m = self::metrics();
+		return $m['rank'][ $side ][ $abbr ][ $metric ] ?? null;
+	}
+
+	/** Teams on bye in a given week: everyone not in that week's games. */
+	public static function byes( $week ) {
+		$playing = array();
+		foreach ( self::week_games( $week ) as $g ) { $playing[ $g['home'] ] = 1; $playing[ $g['away'] ] = 1; }
+		return array_values( array_filter( array_keys( self::teams() ), function ( $a ) use ( $playing ) { return empty( $playing[ $a ] ); } ) );
+	}
+
+	/** Version string for cache-busting the play files: the file's hash from the manifest. */
+	public static function file_version( $rel ) {
+		$m = self::manifest();
+		return isset( $m['files'][ $rel ] ) ? substr( $m['files'][ $rel ], 0, 10 ) : DBD_VERSION;
+	}
+
+	/** "Updated Oct 30, 5:12 AM ET" from the manifest's built_at. */
+	public static function updated_text() {
+		$m = self::manifest();
+		if ( empty( $m['built_at'] ) ) { return ''; }
+		try {
+			$d = new DateTime( $m['built_at'], new DateTimeZone( 'UTC' ) );
+			$d->setTimezone( new DateTimeZone( 'America/New_York' ) );
+			return 'Updated ' . $d->format( 'M j, g:i A' ) . ' ET';
+		} catch ( Exception $e ) { return ''; }
+	}
+
+	/** Kickoff as a UTC ISO string plus an Eastern-time label for a game row. */
+	public static function kickoff( $g ) {
+		try {
+			$d = new DateTime( $g['date'] . ' ' . ( $g['time'] ?: '13:00' ), new DateTimeZone( 'America/New_York' ) );
+			$et = $d->format( 'g:i A' );
+			$d->setTimezone( new DateTimeZone( 'UTC' ) );
+			return array( 'utc' => $d->format( 'c' ), 'et' => $et . ' ET' );
+		} catch ( Exception $e ) { return array( 'utc' => '', 'et' => '' ); }
+	}
+
+	/** Site-wide totals computed at sync time (snaps charted, etc.). */
+	public static function stats() {
+		return get_option( 'dbd_stats', array() );
+	}
+}

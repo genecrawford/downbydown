@@ -1,0 +1,66 @@
+<?php
+/**
+ * Team marks: the jersey tile and the pennant, generated from a team's two colors and abbreviation.
+ * Inline SVG, no image files, no league artwork. The same rules live in assets/marks.js for the explorer.
+ */
+if ( ! defined( 'ABSPATH' ) ) { exit; }
+
+class DBD_Marks {
+
+	private static function lum( $hex ) {
+		$hex = ltrim( (string) $hex, '#' );
+		if ( strlen( $hex ) !== 6 ) { return 0; }
+		$c = array();
+		foreach ( array( 0, 2, 4 ) as $i ) {
+			$v = hexdec( substr( $hex, $i, 2 ) ) / 255;
+			$c[] = $v <= 0.03928 ? $v / 12.92 : pow( ( $v + 0.055 ) / 1.055, 2.4 );
+		}
+		return 0.2126 * $c[0] + 0.7152 * $c[1] + 0.0722 * $c[2];
+	}
+
+	public static function contrast( $a, $b ) {
+		$x = self::lum( $a ); $y = self::lum( $b );
+		return ( max( $x, $y ) + 0.05 ) / ( min( $x, $y ) + 0.05 );
+	}
+
+	/** Text color inside a mark: the second color if it reads on the first, else white, else near-black. */
+	public static function ink( $c1, $c2 ) {
+		if ( self::contrast( $c2, $c1 ) >= 3 ) { return $c2; }
+		if ( self::contrast( '#ffffff', $c1 ) >= 3 ) { return '#ffffff'; }
+		return '#121417';
+	}
+
+	/** The team's primary color if it reads on a light surface, else its secondary, else ink. */
+	public static function accent( $team, $surface = '#fffdf8' ) {
+		if ( ! $team ) { return '#121417'; }
+		if ( self::contrast( $team['c1'], $surface ) >= 2.5 ) { return $team['c1']; }
+		if ( ! empty( $team['c2'] ) && self::contrast( $team['c2'], $surface ) >= 2.5 ) { return $team['c2']; }
+		return '#121417';
+	}
+
+	private static function color( $c, $fallback ) {
+		return preg_match( '/^#[0-9a-fA-F]{6}$/', (string) $c ) ? $c : $fallback;
+	}
+
+	public static function tile( $abbr, $size = 24 ) {
+		$t = DBD_Data::team( $abbr );
+		if ( ! $t ) { return ''; }
+		$c1 = self::color( $t['c1'], '#161e36' ); $c2 = self::color( $t['c2'], '#cb2026' );
+		$fs = strlen( $abbr ) > 2 ? 13 : 16;
+		return sprintf(
+			'<svg class="dbd-mk" width="%1$d" height="%1$d" viewBox="0 0 40 40" role="img" aria-label="%2$s"><rect width="40" height="40" rx="4" fill="%3$s"/><rect y="33" width="40" height="7" fill="%4$s"/><text x="20" y="25" text-anchor="middle" font-size="%5$d" font-family="Tourney,Arial Black,sans-serif" font-weight="800" fill="%6$s">%7$s</text></svg>',
+			(int) $size, esc_attr( $t['name'] ), esc_attr( $c1 ), esc_attr( $c2 ), $fs, esc_attr( self::ink( $c1, $c2 ) ), esc_html( $abbr )
+		);
+	}
+
+	public static function pennant( $abbr, $height = 40 ) {
+		$t = DBD_Data::team( $abbr );
+		if ( ! $t ) { return ''; }
+		$c1 = self::color( $t['c1'], '#161e36' ); $c2 = self::color( $t['c2'], '#cb2026' );
+		$fs = strlen( $abbr ) > 2 ? 13 : 15;
+		return sprintf(
+			'<svg class="dbd-mk dbd-pn" width="%1$d" height="%2$d" viewBox="0 0 64 40" role="img" aria-label="%3$s"><polygon points="0,0 64,20 0,40" fill="%4$s"/><polygon points="0,0 9,2.8 9,37.2 0,40" fill="%5$s"/><text x="14" y="25.5" font-size="%6$d" font-family="Tourney,Arial Black,sans-serif" font-weight="800" fill="%7$s">%8$s</text></svg>',
+			(int) round( $height * 1.6 ), (int) $height, esc_attr( $t['name'] ), esc_attr( $c1 ), esc_attr( $c2 ), $fs, esc_attr( self::ink( $c1, $c2 ) ), esc_html( $abbr )
+		);
+	}
+}

@@ -86,7 +86,8 @@ for t in T:
                                         r.pass_location if r.play_type == 'pass' else r.run_location, r.pass_length, r.run_gap, int(r.shotgun),
                                         r.touchdown, r.first_down, r.drive, r.score_differential, pl, r.desc]])
     played_weeks = {x['week'] for x in gl}
-    byes = sorted(set(range(1, max(through_week, 0) + 1)) - played_weeks)
+    # weeks before the current one with no game: a team that has not played yet this week is not on bye
+    byes = sorted(set(range(1, week)) - played_weeks)
     json.dump(dict(season=season, team=t, byes=byes, games=sorted(gl, key=lambda x: x['week']), keys=keys, plays=rows),
               open(f'{out}/plays/{t}.json', 'w'), separators=(',', ':'))
 
