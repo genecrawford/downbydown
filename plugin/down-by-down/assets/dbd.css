@@ -51,6 +51,7 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 .dbd-top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px clamp(16px,3vw,32px);border-bottom:1px solid var(--dbd-line);background:var(--dbd-bg)}
 .dbd-crumb{font:500 13px var(--dbd-body);color:var(--dbd-muted);display:flex;gap:8px;align-items:center;white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .dbd-crumb b{color:var(--dbd-ink);font-weight:600}
+.dbd-crumb .dbd-brand{font:700 12px var(--dbd-display);letter-spacing:.14em;color:var(--dbd-ink)}
 .dbd-crumb a:hover{text-decoration:underline;text-underline-offset:3px}
 .dbd-r{display:flex;gap:10px;align-items:center}
 .dbd-upd{font:500 11px var(--dbd-mono);color:var(--dbd-muted);white-space:nowrap}

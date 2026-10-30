@@ -33,6 +33,7 @@ Not affiliated with the NFL or any team. No team logos are used; team marks are 
 
 = 1.0.8 =
 * Fix: the play description, kickers and subtitles lost their padding and margins to an over-specific reset; resets now use :where() so component styles win.
+* The breadcrumb's first item reads DOWN X DOWN.
 * Search: an XML sitemap provider lists every app URL (hub, each week's matchups, the team picker, all 32 team pages, every game both ways) at /wp-sitemap.xml. Matchup pages carry SportsEvent JSON-LD.
 
 = 1.0.7 =

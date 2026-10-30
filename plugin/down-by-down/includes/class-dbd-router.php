@@ -188,7 +188,7 @@ class DBD_Router {
 
 	/** The top bar: breadcrumb trail plus the Updated stamp. $crumbs = array( 'label' => url|null ) */
 	public static function topbar( $crumbs ) {
-		$out = '<div class="dbd-top"><div class="dbd-crumb"><a href="' . esc_url( self::url() ) . '">downbydown</a>';
+		$out = '<div class="dbd-top"><div class="dbd-crumb"><a href="' . esc_url( self::url() ) . '" class="dbd-brand">DOWN X DOWN</a>';
 		foreach ( $crumbs as $label => $href ) {
 			$out .= ' <span>›</span> ' . ( $href ? '<a href="' . esc_url( $href ) . '">' . esc_html( $label ) . '</a>' : '<b>' . esc_html( $label ) . '</b>' );
 		}
