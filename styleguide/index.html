@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Down by Down style guide</title>
+<link href="https://fonts.googleapis.com/css2?family=Tourney:wght@800&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../plugin/down-by-down/assets/dbd.css">
+<link rel="stylesheet" href="../plugin/down-by-down/assets/transitions.css">
+<style>
+/* guide chrome only */
+.sg{max-width:1100px;margin:0 auto;padding:32px clamp(16px,3vw,40px) 80px}
+.sg section{margin:0 0 48px;padding-top:24px;border-top:1px solid var(--dbd-line)}
+.sg h2{font:700 26px/1 var(--dbd-display);text-transform:uppercase;letter-spacing:.04em;margin:0 0 6px}
+.sg h3{font:700 11px var(--dbd-display);text-transform:uppercase;letter-spacing:.18em;color:var(--dbd-muted);margin:22px 0 10px}
+.sg p{max-width:70ch;color:var(--dbd-ink-2);margin:0 0 10px;font-size:14px}
+.sg p b{color:var(--dbd-ink)}
+.sw{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.sw div{border:1px solid var(--dbd-line);border-radius:6px;overflow:hidden;background:var(--dbd-panel)}
+.sw i{display:block;height:56px}
+.sw small{display:block;padding:8px 10px;font:500 11px var(--dbd-mono);color:var(--dbd-ink-2)}
+.sw small b{display:block;font:600 12px var(--dbd-body);color:var(--dbd-ink)}
+.type{display:grid;grid-template-columns:200px 1fr;gap:8px 18px;align-items:baseline}
+.type small{font:500 11px var(--dbd-mono);color:var(--dbd-muted)}
+.rule{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.rule div{border-left:3px solid var(--dbd-good);padding:2px 0 2px 12px}
+.rule div.no{border-left-color:var(--dbd-bad)}
+.rule div b{display:block;font:700 10px var(--dbd-display);text-transform:uppercase;letter-spacing:.16em;color:var(--dbd-muted);margin-bottom:4px}
+.demo{display:flex;flex-wrap:wrap;gap:14px;align-items:center;padding:16px;border:1px dashed var(--dbd-line-2);border-radius:6px;background:var(--dbd-panel)}
+.marks{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:10px}
+.marks div{text-align:center;font:500 10px var(--dbd-mono);color:var(--dbd-muted)}
+table.spec{width:100%;border-collapse:collapse;font-size:13px;max-width:760px}
+table.spec td{padding:7px 10px;border-top:1px solid var(--dbd-line);vertical-align:top}
+table.spec td:first-child{color:var(--dbd-muted);width:34%}
+table.spec code{font:500 12px var(--dbd-mono);background:var(--dbd-panel-2);padding:1px 5px;border-radius:3px}
+.fake-side{width:232px;background:#f4f1ea;border-right:1px solid rgba(22,30,54,.12);padding:18px 14px 24px;display:flex;flex-direction:column;gap:22px;border-radius:6px 0 0 6px}
+.fake-side .gl{font:600 10px var(--dbd-display);text-transform:uppercase;letter-spacing:.18em;color:#6b6f78;padding:0 10px 6px}
+.fake-side a{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:6px;color:#3b4255;font:500 14px var(--dbd-body)}
+.fake-side a.cur{background:#f6f3ec;color:#121417}
+.fake-side a i{width:6px;height:6px;border-radius:50%;background:#6b6f78}
+.fake-side a.cur i{background:#cb2026}
+.fake-side a .ct{margin-left:auto;font:600 11px var(--dbd-mono);color:#6b6f78}
+.fake-side .foot{font:11px/1.5 var(--dbd-body);color:#6b6f78;padding:0 10px}
+.fake-side .foot b{display:block;font:700 12px var(--dbd-display);text-transform:uppercase;letter-spacing:.12em;color:#3b4255}
+</style>
+</head>
+<body class="dbd-app">
+<div class="dbd"><div class="sg">
+
+<div class="dbd-title" style="overflow:visible"><div>
+  <p class="dbd-kicker">Down by Down · design system · v1, 2026-10-30</p>
+  <h1>Style <em>guide.</em></h1>
+  <p class="dbd-sub">Everything the site is made of: colors, type, marks, spacing, components, and the rules for the Divi parts you build yourself. The plugin's own stylesheet renders this page, so what you see here is what the site does.</p>
+</div></div>
+
+<section id="principles">
+  <h2>Principles</h2>
+  <p><b>The box score.</b> Flat and ruled. Hairline lines and whitespace carry structure. No shadows, no gradients, corners at 6px or less. Dense where the data is, airy where the words are.</p>
+  <p><b>Brand palette, light only.</b> Chalk paper, navy, red. The logo's colors are the site's colors. Field green exists only inside the charts. There is no dark theme.</p>
+  <p><b>Team identity comes from marks, not logos.</b> Every team is drawn as a jersey tile or a pennant generated from its two colors and its abbreviation. Never a league or team logo, never a helmet, never a wordmark.</p>
+  <p><b>Type does the talking.</b> Tourney for page titles only. Barlow Condensed for everything uppercase and small. IBM Plex Sans for sentences. IBM Plex Mono for numbers in tables and labels that read like data.</p>
+  <p><b>Copy is casual and direct.</b> Short sentences. Team nicknames as plural nouns ("Lions allow", "Vikings take a sack"). No em dashes, no en dashes.</p>
+</section>
+
+<section id="color">
+  <h2>Color</h2>
+  <h3>Surfaces and ink</h3>
+  <div class="sw">
+    <div><i style="background:#f4f1ea"></i><small><b>Paper</b>#f4f1ea · page and sidebar background · <code>--dbd-bg</code></small></div>
+    <div><i style="background:#efebe2"></i><small><b>Paper 2</b>#efebe2 · rarely, a quieter band · <code>--dbd-bg-2</code></small></div>
+    <div><i style="background:#fffdf8;border-bottom:1px solid #eee"></i><small><b>Panel</b>#fffdf8 · every card and panel · <code>--dbd-panel</code></small></div>
+    <div><i style="background:#f6f3ec"></i><small><b>Panel 2</b>#f6f3ec · hover rows, pill tracks, current nav item · <code>--dbd-panel-2</code></small></div>
+    <div><i style="background:#121417"></i><small><b>Ink</b>#121417 · headings, primary text · <code>--dbd-ink</code></small></div>
+    <div><i style="background:#3b4255"></i><small><b>Ink 2</b>#3b4255 · body copy, secondary text · <code>--dbd-ink-2</code></small></div>
+    <div><i style="background:#6b6f78"></i><small><b>Muted</b>#6b6f78 · labels, captions, mono annotations · <code>--dbd-muted</code></small></div>
+    <div><i style="background:rgba(22,30,54,.12);"></i><small><b>Line</b>rgba(22,30,54,.12) · hairlines · <code>--dbd-line</code></small></div>
+    <div><i style="background:rgba(22,30,54,.22);"></i><small><b>Line 2</b>rgba(22,30,54,.22) · borders that must read: badges, segments · <code>--dbd-line-2</code></small></div>
+  </div>
+  <h3>Brand and signal</h3>
+  <div class="sw">
+    <div><i style="background:#cb2026"></i><small><b>Red</b>#cb2026 · the one accent: kicker bar, pills, underlines, FINAL badge, selected states · <code>--dbd-red</code></small></div>
+    <div><i style="background:#b4261f"></i><small><b>Red ink</b>#b4261f · red as text (kickers, section labels) · <code>--dbd-red-ink</code></small></div>
+    <div><i style="background:#161e36"></i><small><b>Navy</b>#161e36 · logo navy; used for fallback tile color, never as a surface on the light site</small></div>
+    <div><i style="background:#1e7f4a"></i><small><b>Good</b>#1e7f4a · top-10 rank, positive EPA, wins · <code>--dbd-good</code></small></div>
+    <div><i style="background:#b4261f"></i><small><b>Bad</b>#b4261f · bottom-10 rank, negative EPA, losses · <code>--dbd-bad</code></small></div>
+    <div><i style="background:#2c4a35"></i><small><b>Field</b>#2c4a35 · chart backgrounds only · <code>--dbd-field</code></small></div>
+  </div>
+  <h3>Chart marks (fixed, same on every team page)</h3>
+  <div class="sw">
+    <div><i style="background:#f0b429"></i><small><b>Run</b>#f0b429</small></div>
+    <div><i style="background:#5b9cf6"></i><small><b>Completion</b>#5b9cf6</small></div>
+    <div><i style="background:#9a96a6"></i><small><b>Incompletion</b>#9a96a6 · dashed, air yards</small></div>
+    <div><i style="background:#e0564b"></i><small><b>Sack / INT</b>#e0564b</small></div>
+    <div><i style="background:#4fd18b"></i><small><b>Touchdown</b>#4fd18b</small></div>
+  </div>
+  <div class="rule" style="margin-top:16px">
+    <div><b>Do</b>Use red once per view as the thing that matters: the kicker, the selected week, the FINAL badge.</div>
+    <div class="no"><b>Don't</b>Use team colors as UI colors. A team's colors live inside its mark, on the stripe under its name, and as the drive chart's end zone tint. Nowhere else.</div>
+    <div><b>Do</b>Use green and red only to mean good and bad. Top 10 is green, bottom 10 is red, the middle is gray.</div>
+    <div class="no"><b>Don't</b>Add gradients, drop shadows, or a dark background. The dark mock was a stepping stone; the site is light.</div>
+  </div>
+</section>
+
+<section id="type">
+  <h2>Type</h2>
+  <p>Four families, each with one job. Google Fonts serves all four from one request. Weights listed are the only weights loaded.</p>
+  <div class="type">
+    <small>Tourney 800</small><div><span style="font:800 40px/1 var(--dbd-hero);text-transform:uppercase">Every snap, drawn on the field.</span><br><small>Page titles only. Uppercase. 34 to 60px on the hub, 26 to 46px on the matchup, 30 to 54px on the team page. Also the big scores on slate rows and strip cards, tile numbers, zone numbers. Never body text, never section heads.</small></div>
+    <small>Barlow Condensed 700</small><div><span style="font:700 22px/1 var(--dbd-display);text-transform:uppercase;letter-spacing:.02em">Takeaways · The slate · Head to head</span><br><small>Section heads at 20 to 26px. Team abbreviations in rows at 22 to 24px.</small></div>
+    <small>Barlow Condensed 600/700, small caps</small><div><span style="font:700 11px var(--dbd-display);text-transform:uppercase;letter-spacing:.18em;color:var(--dbd-muted)">Panel label · 11px · tracking .18em</span> &nbsp; <span style="font:700 11px var(--dbd-display);text-transform:uppercase;letter-spacing:.2em;color:var(--dbd-red-ink)">Kicker · 11px · .2em · red ink</span> &nbsp; <span style="font:600 10px var(--dbd-display);text-transform:uppercase;letter-spacing:.12em">Badge 10px</span><br><small>Every small uppercase label: kickers, panel labels, badges, table group rows, nav group labels, button text. Tracking .12 to .2em. Muted or red ink.</small></div>
+    <small>IBM Plex Sans 400/500/600</small><div><span style="font:400 15px/1.5 var(--dbd-body);color:var(--dbd-ink-2)">Lions give up 100 yards a game to tight ends (32nd), against a league average of 54. Vikings' tight ends produce 58 (13th).</span><br><small>All sentences. 13px in cards and tables, 14px base, 15px subtitles. Links underlined 2px in red with the text in ink.</small></div>
+    <small>IBM Plex Mono 500/600</small><div><span style="font:600 13px var(--dbd-mono)">-0.10 &nbsp; 36% &nbsp; 4.9 &nbsp; 5-1 &nbsp; 1:00 PM &nbsp; GB -3.5 · O/U 47.5</span><br><small>Numbers in tables and labels that read like data: values, ranks, records, kickoff times, lines, the Updated stamp, captions under charts. Always tabular.</small></div>
+  </div>
+</section>
+
+<section id="marks">
+  <h2>Team marks</h2>
+  <p>Generated from a team's primary and secondary colors plus its abbreviation. The text inside is the secondary color if it reads at 3:1 on the primary, else white, else near-black. No files to manage; the plugin draws them in PHP and JavaScript from the same rules.</p>
+  <h3>Jersey tile, the working mark</h3>
+  <div class="demo"><span id="tiles16"></span><span id="tiles24"></span><span id="tiles34"></span></div>
+  <p style="margin-top:8px">Sizes: 18px in table column heads, 22px in the game picker, 24px in standings and strip cards, 28px in slate rows, 34px in the Game of the Week and The game boxes. Always with the abbreviation or name beside it; the tile never stands alone.</p>
+  <h3>Pennant, the hero mark</h3>
+  <div class="demo"><span id="pen40"></span><span id="pen48"></span></div>
+  <p style="margin-top:8px">Only three places: next to the team name on the explorer title (48px tall), as a facing pair above the matchup title (40px), and in the team picker's "pick up where you left off" box (40px). Nowhere smaller than 40px.</p>
+  <h3>All 32 tiles</h3>
+  <div class="marks" id="all32"></div>
+  <div class="rule" style="margin-top:16px">
+    <div><b>Do</b>Treat the mark as the team's identity in the UI. Where a mark is present, no other team color appears in that row or card.</div>
+    <div class="no"><b>Don't</b>Use real logos, helmets or wordmarks anywhere, including social images and the sidebar.</div>
+  </div>
+</section>
+
+<section id="layout">
+  <h2>Layout and spacing</h2>
+  <table class="spec">
+    <tr><td>Sidebar column</td><td>232px wide, sticky, paper background, 1px line on the right. Built in Divi (see below).</td></tr>
+    <tr><td>Content column</td><td>Fills the rest. Max width 1240px. Padding 22px top, 16 to 32px sides, 56px bottom.</td></tr>
+    <tr><td>Top bar</td><td>12px vertical padding, hairline below. Breadcrumb left in Plex 13px, "Updated" stamp right in Mono 11px.</td></tr>
+    <tr><td>Vertical rhythm</td><td>18px between panels. 10px between title and first panel. 8px padding inside the strip.</td></tr>
+    <tr><td>Panel</td><td>Panel background, 1px line, 6px radius. Header row 10px 14px with a hairline below. Body 12px 14px. Tables sit 14px in from the panel edge.</td></tr>
+    <tr><td>Rows</td><td>Hairline between rows. 7 to 9px vertical padding. Hover: Panel 2 background. Whole row is a link.</td></tr>
+    <tr><td>Radius</td><td>6px panels and buttons, 4px tiles, badges and chart corners, 2px bars. Nothing rounder.</td></tr>
+    <tr><td>Breakpoints</td><td>The app sizes itself by its own column width (container queries): two columns above 1000px, single column below; titles stack below 820px; tables shed columns below 600px.</td></tr>
+  </table>
+</section>
+
+<section id="components">
+  <h2>Components</h2>
+  <h3>Badges and ranks</h3>
+  <div class="demo"><span class="dbd-badge">Upcoming</span><span class="dbd-badge fin">Final</span><span class="dbd-badge">4 reads</span><span>-0.10 <span class="dbd-rk b">#29</span></span><span>+0.21 <span class="dbd-rk g">#7</span></span><span>5.6 <span class="dbd-rk">#20</span></span><span class="dbd-pill">Completion</span><span class="dbd-pill good">Touchdown</span><span class="dbd-pill bad">Unsuccessful</span></div>
+  <h3>Rank bars</h3>
+  <div class="demo" style="gap:28px"><div class="dbd-rb"><b>1</b><i class="g" style="--w:100%"></i></div><div class="dbd-rb"><b>15</b><i class="m" style="--w:56%"></i></div><div class="dbd-rb"><b>29</b><i class="b" style="--w:12%"></i></div></div>
+  <p style="margin-top:8px">Length is 33 minus rank out of 32. Green top 10, red bottom 10, Ink 2 in between.</p>
+  <h3>Diverging bar (head to head)</h3>
+  <div class="demo" style="display:block"><table class="dbd-h2h"><tr><td>TE yards per game</td><td class="v">58 <span class="dbd-rk">#13</span></td><td class="divcell"><div class="dbd-diverge" style="--to:#4F2683;--td:#0076B6"><i class="o" style="width:40%"></i></div></td><td class="v">100 <span class="dbd-rk b">#32</span></td><td class="lg">54</td></tr><tr><td>Sack rate</td><td class="v">10% <span class="dbd-rk b">#30</span></td><td class="divcell"><div class="dbd-diverge" style="--to:#4F2683;--td:#0076B6"><i class="d" style="width:34%"></i></div></td><td class="v">8% <span class="dbd-rk g">#7</span></td><td class="lg">6%</td></tr></table></div>
+  <p style="margin-top:8px">Center is even. The fill grows toward the side the edge favors, in that team's accent color, its length the edge score's distance from 0.50. This replaced the Even / Lean / Edge pills.</p>
+  <h3>Segmented controls and tabs</h3>
+  <div class="demo"><div class="dbd-seg t-tabs" role="tablist"><span class="t-tabs-pill" style="transform:translateX(2px);width:40px"></span><button class="t-tab" aria-selected="true">All</button><button class="t-tab">1st</button><button class="t-tab">2nd</button><button class="t-tab">3rd</button><button class="t-tab">4th</button></div><div class="dbd-tabs t-tabs" role="tablist" style="margin:0"><span class="t-tabs-pill" style="transform:translateX(3px);width:104px"></span><button class="t-tab" aria-selected="true">Drive chart</button><button class="t-tab">Pass &amp; run map</button><button class="t-tab">Tendencies</button></div></div>
+  <p style="margin-top:8px">Filters use a red pill with white text. View tabs use a paper pill with a hairline. The pill slides between options (transitions.dev tabs sliding). Weeks on the Matchups page use the same shape as links.</p>
+  <h3>Takeaway card</h3>
+  <div class="dbd-panel" style="max-width:520px"><div class="dbd-takes" style="grid-template-columns:1fr 1fr"><div class="dbd-take edge"><span class="n">01</span><div class="tag">Biggest edge</div><h3 style="margin:6px 0 8px;color:var(--dbd-ink)">Tight ends feast</h3><p>Lions give up 100 yards a game to tight ends (32nd), against a league average of 54. Vikings' tight ends produce 58 (13th).</p></div><div class="dbd-take warn"><span class="n">03</span><div class="tag">Watch out</div><h3 style="margin:6px 0 8px;color:var(--dbd-ink)">Pressure problem</h3><p>Vikings take a sack on 10% of dropbacks (30th). Lions get home on 8% (7th). League average is 6%.</p></div></div></div>
+  <p style="margin-top:8px">Numbered 01 to 04 in Tourney at low contrast, tag in small caps (red for edge, green for opportunity, red for watch out, gray for wash), heading in Barlow Condensed 22px, one or two sentences generated from the numbers.</p>
+  <h3>Motion</h3>
+  <p>From transitions.dev, pasted not reinvented: titles rise in with a 40ms stagger; the filter pill and view tabs slide; stat tile digits pop in when a value changes; the detail badge swaps text; tab views slide in with a cross-blur; the play tooltip fades and scales in after 80ms and vanishes instantly; the score strip lifts 2px on hover with a soft return. Everything respects reduced motion. Nothing bounces.</p>
+</section>
+
+<section id="divi">
+  <h2>The Divi parts</h2>
+  <p>The plugin renders only the content column. The frame around it is a Divi Theme Builder layout you build. Here is the sidebar to match, and the settings that make the row behave.</p>
+  <div class="demo" style="align-items:flex-start;gap:28px">
+    <nav class="fake-side">
+      <img src="../Logo/dxd-logo.svg" alt="Down by Down" style="height:40px;width:auto;display:block;padding:4px 6px">
+      <div><div class="gl">This week</div><a class="cur"><i></i>Slate<span class="ct">14</span></a><a><i></i>Teams<span class="ct">32</span></a></div>
+      <div><div class="gl">Explore</div><a><i></i>Matchups</a><a><i></i>Play explorer</a><a><i></i>About</a></div>
+      <div class="foot"><b>2026 season</b>Through Week 8. Data from nflverse, refreshed nightly. Not affiliated with the NFL or any team.</div>
+    </nav>
+    <table class="spec" style="flex:1;min-width:300px">
+      <tr><td>Column</td><td>232px wide, sticky to the top, background #f4f1ea, right border 1px rgba(22,30,54,.12), padding 18px 14px 24px.</td></tr>
+      <tr><td>Logo</td><td>Image module, the color SVG, 40px tall, 4px 6px padding, links to the home page.</td></tr>
+      <tr><td>Group label</td><td>Barlow Condensed 600 10px, uppercase, tracking .18em, #6b6f78, padding 0 10px 6px.</td></tr>
+      <tr><td>Menu item</td><td>IBM Plex Sans 500 14px, #3b4255, padding 7px 10px, radius 6px. A 6px gray dot before the label. Hover: background #fffdf8.</td></tr>
+      <tr><td>Current item</td><td>Background #f6f3ec, text #121417, dot turns red #cb2026. Target it with the body class the plugin adds: <code>body.dbd-view-matchups .menu-item-matchups</code> and so on for hub, team, game, teams.</td></tr>
+      <tr><td>Counts</td><td>Optional. IBM Plex Mono 600 11px, #6b6f78, pushed right. <code>[dbd_count games]</code> and <code>[dbd_count teams]</code> print them.</td></tr>
+      <tr><td>Foot note</td><td>Plex 11px #6b6f78 with a Barlow Condensed 700 12px uppercase label in #3b4255. Pinned to the bottom.</td></tr>
+      <tr><td>Menu links</td><td>Slate <code>/#dbd-slate</code> · Teams <code>/#dbd-teams</code> · Matchups <code>/?view=matchups</code> · Play explorer <code>/?view=teams</code> · About <code>/about/</code></td></tr>
+      <tr><td>Section</td><td>Full width, no padding, background #f4f1ea.</td></tr>
+      <tr><td>Row</td><td>Width 100%, max width none, no padding, no gutter. Two columns: the sidebar and the app. Version 1.0.2 of the plugin enforces this on the app page in case a setting is missed.</td></tr>
+      <tr><td>Phones</td><td>Below 900px the row wraps and the sidebar becomes a strip above the content. Keep the Divi menu horizontal in that state.</td></tr>
+    </table>
+  </div>
+  <h3>Other pages (About, Privacy, anything else)</h3>
+  <p>Use the same layout. Keep the body in IBM Plex Sans 15 to 16px on paper, headings in Barlow Condensed uppercase, one Tourney page title at the top with a red kicker above it. Max text width 70ch. Links underlined in red. The site has exactly one tone; an About page written in the app's voice is the goal.</p>
+</section>
+
+<section id="voice">
+  <h2>Voice</h2>
+  <div class="rule">
+    <div><b>Do</b>"Lions give up 100 yards a game to tight ends, most in the league." Plural nicknames, plain numbers, the rank in parentheses.</div>
+    <div class="no"><b>Don't</b>"The Detroit Lions' defensive unit has struggled to contain opposing tight ends this season." No hedging, no filler, no full city names in copy.</div>
+    <div><b>Do</b>Headings that sound like a sideline: "Tight ends feast", "Pressure problem", "Run it at them".</div>
+    <div class="no"><b>Don't</b>Em dashes, en dashes, exclamation points, betting language ("lock", "fade", "smash").</div>
+  </div>
+</section>
+
+</div></div>
+<script src="../data/teams.js"></script>
+<script>
+// teams.js is a mock artifact; fall back to the plugin's live data file when it isn't there
+(function(){
+  function go(){ if(!window.DBD_TEAMS) return;
+    var m=window.dbdMark,p=window.dbdPennant;
+    document.getElementById('tiles16').innerHTML=['MIN','KC','PIT','SEA'].map(function(a){return m(a,18)}).join(' ');
+    document.getElementById('tiles24').innerHTML=['MIN','KC','PIT','SEA'].map(function(a){return m(a,24)}).join(' ');
+    document.getElementById('tiles34').innerHTML=['MIN','KC','PIT','SEA'].map(function(a){return m(a,34)}).join(' ');
+    document.getElementById('pen40').innerHTML=p('MIN',40)+' '+p('DET',40);
+    document.getElementById('pen48').innerHTML=p('KC',48);
+    document.getElementById('all32').innerHTML=Object.keys(window.DBD_TEAMS).sort().map(function(a){return '<div>'+m(a,40)+'<br>'+a+'</div>'}).join('');
+  }
+  var s=document.createElement('script'); s.src='../plugin/down-by-down/assets/marks.js'; s.onload=function(){
+    if(window.DBD_TEAMS){go();return;}
+    fetch('../data/teams.json').then(function(r){return r.json()}).then(function(t){window.DBD_TEAMS=t;go();}).catch(function(){});
+  }; document.head.appendChild(s);
+})();
+</script>
+</body>
+</html>

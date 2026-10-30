@@ -21,7 +21,8 @@ body.dbd-app{background:#f4f1ea}
    or your own CSS if you want something else. */
 body.dbd-app .et_pb_section:has(.dbd){padding:0}
 body.dbd-app .et_pb_row:has(.dbd){display:flex;flex-wrap:nowrap;align-items:stretch;gap:0;width:100%;max-width:none;padding:0}
-body.dbd-app .et_pb_row:has(.dbd)>.et_pb_column:not(:has(.dbd)){flex:0 0 auto;max-width:40%}
+body.dbd-app{--dbd-sidebar:232px}   /* the sidebar column's width on the app page; override this one variable in Divi's custom CSS to change it */
+body.dbd-app .et_pb_row:has(.dbd)>.et_pb_column:not(:has(.dbd)){flex:0 0 var(--dbd-sidebar);width:var(--dbd-sidebar)!important;max-width:var(--dbd-sidebar);min-width:0}
 body.dbd-app .et_pb_column:has(.dbd){flex:1 1 0%;width:auto!important;max-width:none;min-width:0;padding:0;margin:0}
 body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:has(.dbd) .et_pb_code_inner,body.dbd-app .et_pb_column:has(.dbd) .et_pb_text_inner{margin:0;padding:0}
 @media (max-width:900px){body.dbd-app .et_pb_row:has(.dbd){flex-wrap:wrap}body.dbd-app .et_pb_row:has(.dbd)>.et_pb_column{flex:1 1 100%;max-width:none;width:100%!important}}
