@@ -1,4 +1,4 @@
-/* Down by Down 1.2.0. Light theme only. Everything is scoped under .dbd so the theme (Divi) cannot reach in,
+/* Down by Down 1.2.2. Light theme only. Everything is scoped under .dbd so the theme (Divi) cannot reach in,
    and a reset block pins the elements we use back to our values. Team identity comes from the generated marks;
    field green appears only inside the charts. */
 .dbd{
@@ -367,7 +367,7 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 .dbd-srch{font:500 13px var(--dbd-body);padding:6px 10px;border:1px solid var(--dbd-line-2);border-radius:var(--dbd-r);background:var(--dbd-panel);color:var(--dbd-ink);min-width:220px}
 .dbd-plist{width:100%;border-collapse:collapse}
 .dbd-plist th{font:700 10px var(--dbd-display);text-transform:uppercase;letter-spacing:.12em;color:var(--dbd-muted);text-align:right;padding:6px 6px;border-bottom:1px solid var(--dbd-line);white-space:nowrap}
-.dbd-plist td{padding:6px 6px;border-top:1px solid var(--dbd-line);text-align:right;font:500 12px var(--dbd-mono);vertical-align:middle;white-space:nowrap}
+.dbd-plist td{padding:4px 6px;border-top:1px solid var(--dbd-line);text-align:right;font:500 12px var(--dbd-mono);vertical-align:middle;white-space:nowrap}
 .dbd-plist th:first-child,.dbd-plist td:first-child,.dbd-plist th:nth-child(2),.dbd-plist td:nth-child(2),.dbd-plist th:nth-child(3),.dbd-plist td:nth-child(3),.dbd-plist th:last-child,.dbd-plist td:last-child{text-align:left}
 .dbd-plist td.dbd-nm{font:500 13px var(--dbd-body)}
 .dbd-plist .dbd-nmi{display:flex;align-items:center;gap:10px}
