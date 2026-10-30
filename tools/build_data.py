@@ -80,7 +80,7 @@ def c(x):
 
 
 # ---------------------------------------------------------------- per-team plays
-keys = ['g', 'q', 't', 'dn', 'togo', 'yl', 'pt', 'k', 'yds', 'epa', 'succ', 'air', 'yac', 'loc', 'len', 'gap', 'sg', 'td', 'fd', 'drv', 'sd', 'pl', 'desc', 'pos', 'pid', 'pa', 'scr', 'rpo', 'mot', 'blz', 'cont', 'drop']
+keys = ['g', 'q', 't', 'dn', 'togo', 'yl', 'pt', 'k', 'yds', 'epa', 'succ', 'air', 'yac', 'loc', 'len', 'gap', 'sg', 'td', 'fd', 'drv', 'sd', 'pl', 'desc', 'pos', 'pid', 'qb', 'pa', 'scr', 'rpo', 'mot', 'blz', 'cont', 'drop']
 for t in T:
     gl, rows = [], []
     if have_pbp:
@@ -103,7 +103,8 @@ for t in T:
             rows.append([c(x) for x in [r.game_id, int(r.qtr), r.time, r.down, r.ydstogo, r.yardline_100, r.play_type, kind, r.yards_gained,
                                         round(r.epa, 3) if not math.isnan(r.epa) else None, r.success, r.air_yards, r.yards_after_catch,
                                         r.pass_location if r.play_type == 'pass' else r.run_location, r.pass_length, r.run_gap, int(r.shotgun),
-                                        r.touchdown, r.first_down, r.drive, r.score_differential, pl, r.desc, ppos, pid if isinstance(pid, str) else None] + fl])
+                                        r.touchdown, r.first_down, r.drive, r.score_differential, pl, r.desc, ppos, pid if isinstance(pid, str) else None,
+                                        r.passer_player_id if isinstance(r.passer_player_id, str) else None] + fl])
     played_weeks = {x['week'] for x in gl}
     # weeks before the current one with no game: a team that has not played yet this week is not on bye
     byes = sorted(set(range(1, week)) - played_weeks)
@@ -186,13 +187,14 @@ def _ht(h):
         return None
 
 def _draft(r):
+    # nflverse rosters carry the overall pick, not the round; rounds vary in length so we do not guess one
     try:
-        n = int(float(r.draft_number)); return f"Round {(n - 1) // 32 + 1}, pick {n} ({c(r.entry_year)})"
+        n = int(float(r.draft_number)); return f"Pick {n} overall ({c(r.entry_year)})"
     except Exception:
         return f"Undrafted ({c(r.entry_year)})" if c(r.entry_year) else 'Undrafted'
 
 SKILL = ('QB', 'RB', 'FB', 'WR', 'TE')
-WEEK_FIELDS = ['week', 'opponent_team', 'targets', 'receptions', 'receiving_yards', 'receiving_tds', 'receiving_air_yards', 'receiving_yards_after_catch', 'receiving_epa', 'receiving_first_downs', 'target_share', 'air_yards_share', 'wopr',
+WEEK_FIELDS = ['week', 'team', 'opponent_team', 'targets', 'receptions', 'receiving_yards', 'receiving_tds', 'receiving_air_yards', 'receiving_yards_after_catch', 'receiving_epa', 'receiving_first_downs', 'target_share', 'air_yards_share', 'wopr',
                'carries', 'rushing_yards', 'rushing_tds', 'rushing_epa', 'rushing_first_downs', 'attempts', 'completions', 'passing_yards', 'passing_tds', 'passing_interceptions', 'passing_epa', 'passing_cpoe', 'sacks_suffered', 'passing_air_yards', 'receiving_20', 'rushing_10']
 _rw = _r[_r.position.isin(SKILL)].copy()
 if 'week' in _rw.columns:
@@ -207,9 +209,6 @@ if len(depth): depth = depth[depth.pos_abb.isin(SKILL)]
 index_rows = []
 for t in T:
     roster = _rw[_rw.team == t]
-    st_t = stats[stats.team == t] if len(stats) else stats
-    sn_t = snaps[snaps.team == t] if len(snaps) else snaps
-    pf_t = pfr[pfr.team == t] if len(pfr) else pfr
     in_t = inj[inj.team == t] if len(inj) else inj
     if len(in_t): in_t = in_t[in_t.week == in_t.week.max()]
     dp_t = depth[depth.team == t] if len(depth) else depth
@@ -218,15 +217,23 @@ for t in T:
     for r in roster.itertuples():
         fn = r.football_name if isinstance(getattr(r, 'football_name', None), str) and r.football_name else r.first_name
         p = dict(id=r.gsis_id, name=r.full_name, short=f"{str(fn)[:1]}.{r.last_name}", pos=r.position, num=c(r.jersey_number), age=_age(r.birth_date), ht=_ht(r.height), wt=c(r.weight),
-                 col=c(r.college), exp=int(_num(r.years_exp)), draft=_draft(r), status=c(r.status), weeks=[], snaps={}, pfr={}, inj=None, depth=None)
-        if len(st_t):
-            for w in st_t[st_t.player_id == r.gsis_id].sort_values('week').itertuples():
-                p['weeks'].append({k: (getattr(w, k) if k == 'opponent_team' else round(_num(getattr(w, k, 0)), 4)) for k in WEEK_FIELDS if k in st_t.columns})
-        if len(sn_t):
-            for w in sn_t[sn_t.player == r.full_name].itertuples():
+                 col=c(r.college), exp=int(_num(r.years_exp)), draft=_draft(r), status=c(r.status),
+                 photo=(r.headshot_url if isinstance(getattr(r, 'headshot_url', None), str) and r.headshot_url.startswith('https://') else None), weeks=[], snaps={}, snapteam={}, pfr={}, inj=None, depth=None)
+        if len(stats):  # every week this season, whichever team he was on
+            for w in stats[stats.player_id == r.gsis_id].sort_values('week').itertuples():
+                p['weeks'].append({k: (getattr(w, k) if k in ('team', 'opponent_team') else round(_num(getattr(w, k, 0)), 4)) for k in WEEK_FIELDS if k in stats.columns})
+        # snap counts and PFR extras key by PFR id; names collide (two Justin Jeffersons), so the name fallback
+        # is limited to teams this player actually has stat lines for
+        pfid = r.pfr_id if isinstance(getattr(r, 'pfr_id', None), str) and r.pfr_id else None
+        teams_of = {t} | {w['team'] for w in p['weeks'] if w.get('team')}
+        if len(snaps):
+            sn_p = snaps[snaps.pfr_player_id == pfid] if pfid and 'pfr_player_id' in snaps.columns else snaps[(snaps.player == r.full_name) & snaps.team.isin(teams_of)]
+            for w in sn_p.itertuples():
                 p['snaps'][str(int(w.week))] = int(round(_num(w.offense_pct) * 100))
-        if len(pf_t):
-            for w in pf_t[pf_t.pfr_player_name == r.full_name].itertuples():
+                if isinstance(w.team, str) and w.team != t: p['snapteam'][str(int(w.week))] = w.team  # a week played for another team (trade)
+        if len(pfr):
+            pf_p = pfr[pfr.pfr_player_id == pfid] if pfid and 'pfr_player_id' in pfr.columns else pfr[(pfr.pfr_player_name == r.full_name) & pfr.team.isin(teams_of)]
+            for w in pf_p.itertuples():
                 p['pfr'][str(int(w.week))] = dict(drop=int(_num(w.receiving_drop)), bt=int(_num(w.receiving_broken_tackles)), rbt=int(_num(w.rushing_broken_tackles)), rat=c(w.receiving_rat) if _num(w.receiving_rat, None) is not None else None)
         if len(in_t):
             m = in_t[in_t.gsis_id == r.gsis_id]
@@ -241,7 +248,7 @@ for t in T:
         out_players.append(p)
         ws = p['weeks']; S = lambda k: sum(_num(x.get(k)) for x in ws)
         sv = list(p['snaps'].values())
-        index_rows.append(dict(id=p['id'], name=p['name'], team=t, pos=p['pos'], num=p['num'], snap=int(round(sum(sv) / len(sv))) if sv else 0,
+        index_rows.append(dict(id=p['id'], name=p['name'], team=t, pos=p['pos'], num=p['num'], col=p['col'], photo=p['photo'], snap=int(round(sum(sv) / len(sv))) if sv else 0,
                                tgt=int(S('targets')), rec=int(S('receptions')), car=int(S('carries')), att=int(S('attempts')),
                                yds=int(round(S('receiving_yards') + S('rushing_yards') + S('passing_yards'))), td=int(S('receiving_tds') + S('rushing_tds') + S('passing_tds')),
                                epa=round(S('receiving_epa') + S('rushing_epa') + S('passing_epa'), 1), g=len(ws),

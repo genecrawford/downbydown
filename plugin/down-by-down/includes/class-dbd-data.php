@@ -87,6 +87,11 @@ class DBD_Data {
 
 	/* ---- player layer (1.2.0): players/index.json and players/{TEAM}.json */
 
+	/** Admin toggle: show NFL headshots (hotlinked from the URLs nflverse publishes). Off by default. */
+	public static function headshots() {
+		return (bool) get_option( 'dbd_headshots', false );
+	}
+
 	public static function has_players() {
 		return (bool) self::get( 'players/index.json' );
 	}

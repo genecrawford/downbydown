@@ -207,7 +207,7 @@ class DBD_Router {
 		if ( $r['view'] === 'players' ) {
 			wp_enqueue_script( 'dbd-marks', DBD_URL . 'assets/marks.js', array(), DBD_VERSION, true );
 			wp_enqueue_script( 'dbd-players', DBD_URL . 'assets/players.js', array( 'dbd-marks' ), DBD_VERSION, true );
-			wp_localize_script( 'dbd-players', 'DBD_PLIST', array( 'base' => self::url(), 'team' => $r['pteam'], 'pos' => $r['pos'], 'q' => $r['q'], 'teams' => DBD_Data::teams() ) );
+			wp_localize_script( 'dbd-players', 'DBD_PLIST', array( 'base' => self::url(), 'team' => $r['pteam'], 'pos' => $r['pos'], 'q' => $r['q'], 'teams' => DBD_Data::teams(), 'heads' => DBD_Data::headshots() ) );
 		}
 	}
 

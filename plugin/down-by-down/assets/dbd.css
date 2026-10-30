@@ -356,6 +356,9 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 
 /* ---- player layer (1.2.0): index and player page ---- */
 .dbd-mk.dbd-jersey{border-radius:5px}
+.dbd-head{position:relative;display:inline-block;flex:0 0 auto;border-radius:5px;overflow:hidden;vertical-align:middle;line-height:0}
+.dbd-head .dbd-jersey{display:block}
+.dbd-head img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 15%;display:block}
 .dbd-ptools{align-items:end}
 .dbd-teampick{display:flex;flex-wrap:wrap;gap:4px;max-width:560px}
 .dbd-mkbtn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:4px;opacity:.45;text-decoration:none;font:800 10px var(--dbd-display);letter-spacing:.06em;color:var(--dbd-ink);border:1px solid transparent;transition:opacity .12s}

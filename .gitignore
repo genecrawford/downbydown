@@ -8,3 +8,5 @@ Thumbs.db
 
 # local scratch
 scratch/
+__pycache__/
+*.pyc

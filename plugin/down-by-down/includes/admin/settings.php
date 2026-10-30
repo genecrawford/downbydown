@@ -9,6 +9,7 @@ add_action( 'admin_menu', function () {
 
 add_action( 'admin_init', function () {
 	register_setting( 'dbd', DBD_Sync::OPT_SOURCE, array( 'type' => 'string', 'sanitize_callback' => 'esc_url_raw', 'default' => DBD_DEFAULT_SOURCE ) );
+	register_setting( 'dbd', 'dbd_headshots', array( 'type' => 'boolean', 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => false ) );
 } );
 
 add_action( 'admin_post_dbd_sync_now', function () {
@@ -68,6 +69,9 @@ function dbd_settings_page() {
 				<tr><th scope="row"><label for="dbd_source_url">Folder URL</label></th>
 					<td><input name="<?php echo esc_attr( DBD_Sync::OPT_SOURCE ); ?>" id="dbd_source_url" type="url" class="regular-text code" value="<?php echo esc_attr( get_option( DBD_Sync::OPT_SOURCE, DBD_DEFAULT_SOURCE ) ); ?>">
 					<p class="description">The <code>data/</code> folder of the GitHub repo, as a raw URL. Must contain <code>manifest.json</code>.</p></td></tr>
+				<tr><th scope="row">Player photos</th>
+					<td><label><input type="checkbox" name="dbd_headshots" value="1" <?php checked( DBD_Data::headshots() ); ?>> Show NFL headshots on player pages and the Players index</label>
+					<p class="description">Off by default. The photos are hotlinked from the NFL's image CDN using the URLs nflverse publishes; they are league property and not licensed to this site. When on, each photo loads lazily over the player's jersey tile and falls back to the tile if the image fails. Turn this off to remove every photo at once.</p></td></tr>
 			</table>
 			<?php submit_button( 'Save' ); ?>
 		</form>
@@ -84,9 +88,9 @@ function dbd_settings_page() {
 
 		<h2>Using it in the theme</h2>
 		<ul style="list-style:disc;padding-left:20px;max-width:720px">
-			<li>Put <code>[down_by_down]</code> on one page. That page becomes the app: the hub at its URL, <code>?team=MIN</code> for a team, <code>?game=…</code> for a matchup, <code>?view=matchups</code> and <code>?view=teams</code> for the index views.</li>
+			<li>Put <code>[down_by_down]</code> on one page. That page becomes the app: the hub at its URL, <code>?team=MIN</code> for a team, <code>?game=…</code> for a matchup, <code>?view=matchups</code>, <code>?view=teams</code> and <code>?view=players</code> for the index views, <code>?player=…</code> for a player.</li>
 			<li>The app renders only the content column. Build the sidebar in your theme (Divi Theme Builder) and link its menu to the URLs above.</li>
-			<li>Body classes tell your CSS which view is showing: <code>dbd-view-hub</code>, <code>dbd-view-team</code>, <code>dbd-view-game</code>, <code>dbd-view-matchups</code>, <code>dbd-view-teams</code>.</li>
+			<li>Body classes tell your CSS which view is showing: <code>dbd-view-hub</code>, <code>dbd-view-team</code>, <code>dbd-view-game</code>, <code>dbd-view-matchups</code>, <code>dbd-view-teams</code>, <code>dbd-view-players</code>, <code>dbd-view-player</code>.</li>
 			<li><code>[dbd_count games]</code> and <code>[dbd_count teams]</code> print the small numbers for menu items.</li>
 			<li>Without a page-builder theme, assign the page template "Down by Down: app page (no theme header)".</li>
 		</ul>

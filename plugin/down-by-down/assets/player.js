@@ -17,11 +17,12 @@
   function boot(RAW) {
     var K = RAW.keys, P = RAW.plays.map(function (r, i) { var o = { i: i }; K.forEach(function (k, j) { o[k] = r[j]; }); return o; }), G = RAW.games || [], gIdx = {};
     G.forEach(function (g) { gIdx[g.id] = g; });
-    var byId = K.indexOf('pid') >= 0, hasFtn = K.indexOf('pa') >= 0;
+    var byId = K.indexOf('pid') >= 0, byQb = K.indexOf('qb') >= 0, charted = function (p) { return p.pa != null; }, hasFtn = P.some(charted);
     var mine = P.filter(function (p) { return byId && p.pid ? p.pid === C.id : p.pl === C.short; });
     var isT = function (p) { return p.k === 'comp' || p.k === 'inc' || p.k === 'int'; };
     var tgts = mine.filter(isT), runs = mine.filter(function (p) { return p.k === 'run'; });
-    var qbPass = P.filter(function (p) { return p.pt === 'pass' && p.k !== 'sack' && p.k !== 'scramble'; });
+    var teamPass = P.filter(function (p) { return p.pt === 'pass' && p.k !== 'sack' && p.k !== 'scramble'; });
+    var qbPass = byQb ? teamPass.filter(function (p) { return p.qb === C.id; }) : teamPass;  /* his throws, not the whole team's */
     var mapSet = grp === 'qb' ? qbPass : tgts;
 
     /* ---- field map */
@@ -67,7 +68,7 @@
 
     /* ---- situations */
     var touches = grp === 'qb' ? qbPass : mine.filter(function (p) { return isT(p) || p.k === 'run'; });
-    var teamTouch = grp === 'qb' ? qbPass : P.filter(function (p) { return isT(p) || p.k === 'run'; });
+    var teamTouch = grp === 'qb' ? teamPass : P.filter(function (p) { return isT(p) || p.k === 'run'; });
     var sitRow = function (n, f) { var a = touches.filter(f), t = teamTouch.filter(f), y = a.reduce(function (s, p) { return s + (p.yds || 0); }, 0), e = a.reduce(function (s, p) { return s + (p.epa || 0); }, 0); return '<tr><td>' + n + '</td><td>' + a.length + '</td><td>' + (t.length ? Math.round(a.length / t.length * 100) + '%' : '-') + '</td><td>' + (a.length ? f1(y / a.length) : '-') + '</td><td class="' + (e >= 0 ? 'pos' : 'neg') + '">' + (a.length ? sgn(e / a.length) : '-') + '</td></tr>'; };
     var hdr = '<tr><th></th><th>Touches</th><th>Of team</th><th>Yds/touch</th><th>EPA</th></tr>';
     $('#dbd-sit').innerHTML = '<div><h4>By down</h4><table>' + hdr + [1, 2, 3, 4].map(function (d) { return sitRow(['', '1st', '2nd', '3rd', '4th'][d], function (p) { return p.dn == d; }); }).join('') + '</table></div>' +
@@ -82,12 +83,12 @@
     fill('third', third.length + ' touches · ' + (third.length ? Math.round(conv / third.length * 100) : 0) + '% converted');
     fill('expl', expl + ' · 20+ catch, 10+ run');
     if (hasFtn) {
-      var pa = mapSet.filter(function (p) { return p.pa; }), paC = pa.filter(function (p) { return p.k === 'comp'; }).length;
-      fill('pa', pa.length + ' of ' + mapSet.length + ' ' + (grp === 'qb' ? 'throws' : 'targets') + (pa.length ? ' · ' + pc(paC, pa.length) + ' caught' : ''));
-      var cont = tgts.filter(function (p) { return p.cont; }), contC = cont.filter(function (p) { return p.k === 'comp'; }).length;
-      fill('cont', cont.length ? cont.length + ' contested · ' + contC + ' caught' : 'none charted');
-      var blz = qbPass.filter(function (p) { return p.blz; });
-      fill('blz', blz.length + ' dropbacks · ' + (blz.length ? sgn(blz.reduce(function (s, p) { return s + (p.epa || 0); }, 0) / blz.length) + ' EPA' : ''));
+      var chM = mapSet.filter(charted), pa = chM.filter(function (p) { return p.pa; }), paC = pa.filter(function (p) { return p.k === 'comp'; }).length;
+      fill('pa', chM.length ? pa.length + ' of ' + chM.length + ' charted ' + (grp === 'qb' ? 'throws' : 'targets') + (pa.length ? ' · ' + pc(paC, pa.length) + ' caught' : '') : 'no charted plays yet');
+      var chT = tgts.filter(charted), cont = chT.filter(function (p) { return p.cont; }), contC = cont.filter(function (p) { return p.k === 'comp'; }).length;
+      fill('cont', chT.length ? (cont.length ? cont.length + ' contested · ' + contC + ' caught' : 'none charted contested') : 'no charted plays yet');
+      var chQ = qbPass.filter(charted), blz = chQ.filter(function (p) { return p.blz; });
+      fill('blz', chQ.length ? blz.length + ' of ' + chQ.length + ' charted dropbacks' + (blz.length ? ' · ' + sgn(blz.reduce(function (s, p) { return s + (p.epa || 0); }, 0) / blz.length) + ' EPA' : '') : 'no charted plays yet');
     } else { ['pa', 'cont', 'blz'].forEach(function (k) { fill(k, 'charting arrives with the next data build'); }); }
 
     /* ---- best plays */
