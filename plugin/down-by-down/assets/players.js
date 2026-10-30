@@ -17,11 +17,11 @@
   window.addEventListener('resize', function () { slidePill(pos, pos.querySelector('[aria-selected="true"]'), false); });
 
   function status(p) { var s = p.st || ''; if (!s) return ''; var cls = /out|did not/i.test(s) ? ' o' : /questionable|limited|doubtful/i.test(s) ? ' q' : ''; var lbl = /did not/i.test(s) ? 'DNP' : /limited/i.test(s) ? 'Limited' : /full/i.test(s) ? 'Full' : s; return '<span class="dbd-st' + cls + '">' + esc(lbl + (p.what ? ' · ' + p.what : '')) + '</span>'; }
-  function row(p) { var h = purl(p.id); return '<tr class="dbd-trow" data-href="' + esc(h) + '"><td class="dbd-nm"><span class="dbd-nmi">' + window.dbdJersey(p.team, p.num, 26) + '<a href="' + esc(h) + '">' + esc(p.name) + '</a>' + (p.slot ? '<small>' + esc(p.slot) + '</small>' : '') + '</span></td><td class="dbd-ptm">' + window.dbdMark(p.team, 20) + '</td><td class="dbd-ppos">' + esc(p.pos) + '</td><td class="dbd-psnap"><span class="dbd-sb"><i style="--w:' + (p.snap | 0) + '%"></i></span>' + (p.snap | 0) + '%</td><td>' + (p.tgt || '') + '</td><td>' + (p.rec || '') + '</td><td>' + (p.car || '') + '</td><td>' + (p.yds | 0) + '</td><td>' + (p.td || '') + '</td><td class="' + (p.epa >= 0 ? 'pos' : 'neg') + '">' + (p.epa > 0 ? '+' : '') + (+p.epa).toFixed(1) + '</td><td>' + status(p) + '</td></tr>'; }
+  function row(p) { var h = purl(p.id); return '<tr class="dbd-trow" data-href="' + esc(h) + '"><td class="dbd-nm"><span class="dbd-nmi">' + window.dbdJersey(p.team, p.num, 26) + '<a href="' + esc(h) + '">' + esc(p.name) + '</a>' + (p.slot ? '<small>' + esc(p.slot) + '</small>' : '') + '</span></td><td class="dbd-ptm">' + window.dbdMark(p.team, 20) + '</td><td class="dbd-ppos">' + esc(p.pos) + '</td><td class="dbd-psnap"><span class="dbd-sb"><i style="--w:' + (p.snap | 0) + '%"></i></span>' + (p.snap | 0) + '%</td><td>' + ((p.pos === 'QB' ? p.att : p.tgt) || '') + '</td><td>' + (p.rec || '') + '</td><td>' + (p.car || '') + '</td><td>' + (p.yds | 0) + '</td><td>' + (p.td || '') + '</td><td class="' + (p.epa >= 0 ? 'pos' : 'neg') + '">' + (p.epa > 0 ? '+' : '') + (+p.epa).toFixed(1) + '</td><td>' + status(p) + '</td></tr>'; }
 
   function draw() {
     var needle = st.q.trim().toLowerCase();
-    var rows = ALL.filter(function (p) { return (!st.team || p.team === st.team) && (!st.pos || p.pos === st.pos || (st.pos === 'RB' && p.pos === 'FB')) && (!needle || p.name.toLowerCase().indexOf(needle) >= 0 || String(p.num) === needle || (p.team || '').toLowerCase() === needle); });
+    var rows = ALL.filter(function (p) { return (!st.team || p.team === st.team) && (!st.pos || p.pos === st.pos || (st.pos === 'RB' && p.pos === 'FB')) && (!needle || p.name.toLowerCase().indexOf(needle) >= 0 || String(p.num) === needle || (p.team || '').toLowerCase() === needle || (p.col || '').toLowerCase().indexOf(needle) >= 0); });
     var cap = st.team || needle ? 0 : 60; if (cap && rows.length > cap) rows = rows.slice(0, cap);
     $('#dbd-plist tbody').innerHTML = rows.length ? rows.map(row).join('') : '<tr><td colspan="11" class="dbd-note">No players match.</td></tr>';
     var t = st.team && C.teams[st.team];
@@ -33,6 +33,6 @@
   }
   pick.addEventListener('click', function (e) { var b = e.target.closest('.dbd-mkbtn'); if (!b) return; e.preventDefault(); st.team = b.dataset.team || ''; draw(); });
   pos.addEventListener('click', function (e) { var b = e.target.closest('.t-tab'); if (!b) return; e.preventDefault(); st.pos = b.dataset.v || ''; draw(); });
-  if (!$('#dbd-plist tbody').children.length) draw();
+  draw();
   var tm; q.addEventListener('input', function () { clearTimeout(tm); tm = setTimeout(function () { st.q = q.value; draw(); }, 120); });
 })();

@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.2.0
+Stable tag: 1.2.1
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,9 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.2.1 =
+* Review fixes on the player layer. Quarterback pages show that passer's own throws (play rows now carry the passer id), not the whole team's. Traded players keep every week of the season, with the other team marked in the game log. Charting lines say so when a play file has no FTN data instead of showing zeros. Games played come from snap weeks as well as stat weeks. Search matches name, number, team abbreviation or college on the server and in the browser alike, and quarterbacks show pass attempts in the index. Draft shows the overall pick, since nflverse does not record the round.
 
 = 1.2.0 =
 * Player layer. New Players index at ?view=players (team tiles, position switch, search; league leaders by default, &team= for a roster) and player pages at ?player=<id>: jersey-tile hero with bio, depth-chart slot and injury line, position-aware stat tiles, field map of every target (or carries by gap for backs), depth bands, game log with snap share, touches by down, quarter and score, an Intel rail (drops, broken tackles, rating when targeted, play action, contested catches, blitz for QBs), best plays by EPA, and teammates.
