@@ -20,7 +20,7 @@ foreach ( array( 'East', 'North', 'South', 'West' ) as $d ) {
 	echo '<tr class="dbd-dv"><td colspan="2">' . esc_html( $div ) . '</td><td class="rh">Off</td><td class="rh">Def</td></tr>';
 	foreach ( $rows as $a => $t ) {
 		$href = DBD_Router::url( array( 'team' => $a ) );
-		echo '<tr class="dbd-t" data-href="' . esc_url( $href ) . '"><td class="dbd-nm">' . DBD_Marks::tile( $a, 24 ) . '<a href="' . esc_url( $href ) . '">' . esc_html( $t['name'] ) . '</a><small>' . esc_html( $a ) . '</small></td>';
+		echo '<tr class="dbd-trow" data-href="' . esc_url( $href ) . '"><td class="dbd-nm"><span class="dbd-nmi">' . DBD_Marks::tile( $a, 24 ) . '<a href="' . esc_url( $href ) . '">' . esc_html( $t['name'] ) . '</a><small>' . esc_html( $a ) . '</small></span></td>';
 		echo '<td class="dbd-rec">' . esc_html( DBD_Data::record_text( $a ) ) . ( isset( $byes[ $a ] ) ? '<i>Bye</i>' : '' ) . '</td>';
 		echo '<td class="dbd-rk-cell">' . ( $ranked ? $rb( DBD_Data::rank( 'off', $a ) ) : '' ) . '</td><td class="dbd-rk-cell">' . ( $ranked ? $rb( DBD_Data::rank( 'def', $a ) ) : '' ) . '</td></tr>';
 	}
