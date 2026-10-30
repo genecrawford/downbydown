@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.1.1
+Stable tag: 1.2.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,12 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.2.0 =
+* Player layer. New Players index at ?view=players (team tiles, position switch, search; league leaders by default, &team= for a roster) and player pages at ?player=<id>: jersey-tile hero with bio, depth-chart slot and injury line, position-aware stat tiles, field map of every target (or carries by gap for backs), depth bands, game log with snap share, touches by down, quarter and score, an Intel rail (drops, broken tackles, rating when targeted, play action, contested catches, blitz for QBs), best plays by EPA, and teammates.
+* Explorer: names in Who gets the ball link to player pages. Team pages link to their roster.
+* Data build: play rows carry the ball handler's nflverse id and, when FTN charting is available, play action, screen, RPO, motion, blitz, contested and drop flags. New players/{TEAM}.json (roster, weekly lines, snap share, PFR extras, injury, depth) and players/index.json. The Action downloads stats_player_week, snap_counts, pfr_advstats, injuries, depth_charts and ftn_charting, each optional.
+* Sitemap lists the index, each team's roster view and every player page. Player pages carry Person JSON-LD. Sync allows the new files.
 
 = 1.1.1 =
 * Team explorer: no more tabs. Drive chart, Pass & run map, Situations and Tendencies are all on the page as stacked panels. On desktop the Play detail and Who gets the ball rail pins alongside while you scroll; on narrow screens it sits right under the drive chart.

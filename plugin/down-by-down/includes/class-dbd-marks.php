@@ -53,6 +53,19 @@ class DBD_Marks {
 		);
 	}
 
+	/** The player mark: a jersey tile with the number in the team's colors. No headshots, same rule as logos. */
+	public static function jersey( $abbr, $num, $size = 40 ) {
+		$t = DBD_Data::team( $abbr );
+		if ( ! $t ) { return ''; }
+		$c1 = self::color( $t['c1'], '#161e36' ); $c2 = self::color( $t['c2'], '#cb2026' ); $ink = self::ink( $c1, $c2 );
+		$n  = $num === null || $num === '' ? '' : (string) (int) $num;
+		$fs = strlen( $n ) > 1 ? 19 : 21;
+		return sprintf(
+			'<svg class="dbd-mk dbd-jersey" width="%1$d" height="%1$d" viewBox="0 0 40 40" role="img" aria-label="%2$s"><rect width="40" height="40" rx="5" fill="%3$s"/><rect x="2.5" y="2.5" width="35" height="35" rx="3.5" fill="none" stroke="%4$s" stroke-opacity=".5" stroke-width="1.5"/><text x="20" y="27" text-anchor="middle" font-size="%5$d" font-family="Tourney,Arial Black,sans-serif" font-weight="800" fill="%4$s">%6$s</text></svg>',
+			(int) $size, esc_attr( $t['nick'] . ' #' . $n ), esc_attr( $c1 ), esc_attr( $ink ), $fs, esc_html( $n )
+		);
+	}
+
 	public static function pennant( $abbr, $height = 40 ) {
 		$t = DBD_Data::team( $abbr );
 		if ( ! $t ) { return ''; }

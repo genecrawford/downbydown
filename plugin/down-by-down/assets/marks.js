@@ -13,6 +13,11 @@
     var c1 = ok(t.c1) ? t.c1 : '#161e36', c2 = ok(t.c2) ? t.c2 : '#cb2026', s = size || 24, fs = abbr.length > 2 ? 13 : 16;
     return '<svg class="dbd-mk" width="' + s + '" height="' + s + '" viewBox="0 0 40 40" role="img" aria-label="' + esc(t.name) + '"><rect width="40" height="40" rx="4" fill="' + c1 + '"/><rect y="33" width="40" height="7" fill="' + c2 + '"/><text x="20" y="25" text-anchor="middle" font-size="' + fs + '" ' + F + ' fill="' + ink(c1, c2) + '">' + esc(abbr) + '</text></svg>';
   };
+  window.dbdJersey = function (abbr, num, size) {
+    var t = teams()[abbr]; if (!t) return '';
+    var c1 = ok(t.c1) ? t.c1 : '#161e36', c2 = ok(t.c2) ? t.c2 : '#cb2026', s = size || 40, n = num == null ? '' : String(num), fs = n.length > 1 ? 19 : 21, k = ink(c1, c2);
+    return '<svg class="dbd-mk dbd-jersey" width="' + s + '" height="' + s + '" viewBox="0 0 40 40" role="img" aria-label="' + esc(t.nick + ' #' + n) + '"><rect width="40" height="40" rx="5" fill="' + c1 + '"/><rect x="2.5" y="2.5" width="35" height="35" rx="3.5" fill="none" stroke="' + k + '" stroke-opacity=".5" stroke-width="1.5"/><text x="20" y="27" text-anchor="middle" font-size="' + fs + '" ' + F + ' fill="' + k + '">' + esc(n) + '</text></svg>';
+  };
   window.dbdPennant = function (abbr, height) {
     var t = teams()[abbr]; if (!t) return '';
     var c1 = ok(t.c1) ? t.c1 : '#161e36', c2 = ok(t.c2) ? t.c2 : '#cb2026', h = height || 40, w = Math.round(h * 1.6), fs = abbr.length > 2 ? 13 : 15;

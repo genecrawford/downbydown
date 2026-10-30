@@ -33,6 +33,11 @@ class DBD_Seo {
 		$list = array( array( 'loc' => $u(), 'changefreq' => 'daily', 'priority' => 1.0 ), array( 'loc' => $u( array( 'view' => 'teams' ) ), 'changefreq' => 'daily' ), array( 'loc' => $u( array( 'view' => 'matchups' ) ), 'changefreq' => 'daily' ) );
 		foreach ( DBD_Data::weeks() as $w ) { $list[] = array( 'loc' => $u( array( 'view' => 'matchups', 'week' => $w ) ), 'changefreq' => 'weekly' ); }
 		foreach ( array_keys( DBD_Data::teams() ) as $a ) { $list[] = array( 'loc' => $u( array( 'team' => $a ) ), 'changefreq' => 'daily', 'priority' => 0.8 ); }
+		if ( DBD_Data::has_players() ) {
+			$list[] = array( 'loc' => $u( array( 'view' => 'players' ) ), 'changefreq' => 'daily', 'priority' => 0.8 );
+			foreach ( array_keys( DBD_Data::teams() ) as $a ) { $list[] = array( 'loc' => $u( array( 'view' => 'players', 'team' => $a ) ), 'changefreq' => 'weekly' ); }
+			foreach ( DBD_Data::player_index() as $p ) { $list[] = array( 'loc' => $u( array( 'player' => $p['id'] ) ), 'changefreq' => 'weekly', 'priority' => 0.6 ); }
+		}
 		foreach ( ( DBD_Data::schedule()['weeks'] ?? array() ) as $games ) {
 			foreach ( $games as $g ) {
 				$list[] = array( 'loc' => $u( array( 'game' => $g['id'] ) ), 'changefreq' => 'weekly', 'priority' => 0.7 );
@@ -40,6 +45,20 @@ class DBD_Seo {
 			}
 		}
 		return $list;
+	}
+
+	/** JSON-LD for a player page: the player as a Person on a SportsTeam. */
+	public static function player_jsonld( $p ) {
+		$t  = DBD_Data::team( $p['team'] );
+		$ld = array(
+			'@context'    => 'https://schema.org',
+			'@type'       => 'Person',
+			'name'        => $p['name'],
+			'jobTitle'    => 'American football player',
+			'affiliation' => array( '@type' => 'SportsTeam', 'name' => $t['name'] ?? $p['team'] ),
+			'url'         => DBD_Router::url( array( 'player' => $p['id'] ) ),
+		);
+		return '<script type="application/ld+json">' . wp_json_encode( $ld, JSON_UNESCAPED_SLASHES ) . '</script>' . "\n";
 	}
 
 	/** JSON-LD for a matchup page: the game as a SportsEvent. */

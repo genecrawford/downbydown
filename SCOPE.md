@@ -439,6 +439,8 @@ Production notes: Chartist bundled locally in the plugin (no CDN); charts comput
 
 ## 14. Player layer (scoped and mocked 2026-10-30, `mockup-v5/players.html` + `player.html`)
 
+**Status: built as 1.2.0 (2026-10-30), PR against main.** Everything in this section except the matchup "players to watch" strip, which stays queued as 1.2.x. FTN flags shipped in the build already (they were cheap), so the Intel rail shows play action, contested catches and blitz lines as soon as the first build with the FTN file runs.
+
 Gene: "I'd like to move towards getting to individual player level stats and intel too." Players first, nfelo model layer after it as its own version. The mock runs on the real Vikings roster, weekly stats, snap counts, injury report, depth chart and play file through Week 8.
 
 ### What it is
