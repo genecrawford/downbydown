@@ -33,6 +33,7 @@ Not affiliated with the NFL or any team. No team logos are used; team marks are 
 
 = 1.2.2 =
 * Larger player marks: 34px in the Players index, 30px in Teammates, 72px in the player hero.
+* Data build: teams on bye kept their players. The roster filter took the league's latest week, so a bye week emptied that team's roster (Saints, Giants, Texans and 49ers in Week 8); it now takes each team's own latest week.
 
 = 1.2.1 =
 * Optional player photos: a Player photos switch on the Down by Down admin page (off by default) shows the NFL headshots nflverse publishes, lazily, on top of the jersey tile, falling back to the tile if an image fails. The site hotlinks the league's CDN; the switch removes every photo at once.

@@ -198,7 +198,8 @@ WEEK_FIELDS = ['week', 'team', 'opponent_team', 'targets', 'receptions', 'receiv
                'carries', 'rushing_yards', 'rushing_tds', 'rushing_epa', 'rushing_first_downs', 'attempts', 'completions', 'passing_yards', 'passing_tds', 'passing_interceptions', 'passing_epa', 'passing_cpoe', 'sacks_suffered', 'passing_air_yards', 'receiving_20', 'rushing_10']
 _rw = _r[_r.position.isin(SKILL)].copy()
 if 'week' in _rw.columns:
-    _rw = _rw[_rw.week == _rw.week.max()]
+    # each team's own latest roster week: teams on bye have no rows for the current week and would vanish otherwise
+    _rw = _rw[_rw.week == _rw.groupby('team').week.transform('max')]
 stats = pd.read_csv(env('DBD_STATS'), low_memory=False) if env('DBD_STATS') else pd.DataFrame()
 if len(stats) and 'season_type' in stats.columns: stats = stats[stats.season_type == 'REG']
 snaps = pd.read_csv(env('DBD_SNAPS'), low_memory=False) if env('DBD_SNAPS') else pd.DataFrame()
