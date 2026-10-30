@@ -170,7 +170,7 @@ class DBD_Router {
 		$file = DBD_PATH . 'includes/views/' . $r['view'] . '.php';
 		if ( ! file_exists( $file ) ) { $file = DBD_PATH . 'includes/views/notfound.php'; }
 		ob_start();
-		echo '<div class="dbd dbd-' . esc_attr( $r['view'] ) . '">';
+		echo '<div class="dbd dbd-view-' . esc_attr( $r['view'] ) . '">';  // dbd-view-* so it can never collide with component classes like .dbd-teams or .dbd-game
 		include $file;
 		echo '</div>';
 		return ob_get_clean();

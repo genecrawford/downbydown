@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.0.3
+Stable tag: 1.0.4
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,10 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.0.4 =
+* Fix: the team picker and matchup views inherited component styles because the view wrapper shared their class names. Wrappers are now dbd-view-*.
+* Hub accepts /#slate and /#teams as well as /#dbd-slate and /#dbd-teams.
 
 = 1.0.3 =
 * Explorer: game picker, filters, tiles and charts are spaced like the rest of the app again.

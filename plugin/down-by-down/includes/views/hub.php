@@ -60,12 +60,12 @@ if ( $games ) {
 }
 
 /* ---- slate */
-echo '<section class="dbd-panel" id="dbd-slate"><div class="dbd-ph"><span class="dbd-lab"><b>The slate</b> · ' . esc_html( $label ) . ' · ' . count( $games ) . ' games</span><span>Lines and totals from nflverse. Kickoffs in your local time. <a href="' . esc_url( DBD_Router::url( array( 'view' => 'matchups' ) ) ) . '">Every week</a></span></div>';
+echo '<span id="slate" class="dbd-anchor"></span><section class="dbd-panel" id="dbd-slate"><div class="dbd-ph"><span class="dbd-lab"><b>The slate</b> · ' . esc_html( $label ) . ' · ' . count( $games ) . ' games</span><span>Lines and totals from nflverse. Kickoffs in your local time. <a href="' . esc_url( DBD_Router::url( array( 'view' => 'matchups' ) ) ) . '">Every week</a></span></div>';
 include DBD_PATH . 'includes/views/partials/slate-table.php';
 echo '</section>';
 
 /* ---- standings */
-echo '<div class="dbd-two" id="dbd-teams">';
+echo '<span id="teams" class="dbd-anchor"></span><div class="dbd-two" id="dbd-teams">';
 foreach ( array( 'AFC', 'NFC' ) as $conf ) { include DBD_PATH . 'includes/views/partials/standings.php'; }
 echo '</div>';
 if ( ! $ranked ) { echo '<p class="dbd-note">Ranks appear after Week 1.</p>'; }
