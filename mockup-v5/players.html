@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Players | Down by Down</title>
+<link href="https://fonts.googleapis.com/css2?family=Tourney:wght@800&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="dbd.css">
+<link rel="stylesheet" href="transitions.css">
+<script src="data/teams.js"></script>
+<script src="data/marks.js"></script>
+<script src="data/players-MIN.js"></script>
+<style>
+.pmark{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:4px;background:var(--team);color:var(--team2);font:800 12px var(--hero);flex:0 0 auto}
+.plist td.nm{display:flex;align-items:center;gap:10px;font:500 13px var(--body)}
+.plist td.nm a{text-decoration:none;color:var(--ink)} .plist td.nm a:hover{text-decoration:underline;text-underline-offset:3px}
+.plist td.nm small{font:500 10px var(--mono);color:var(--muted)}
+.plist .pos{font:700 10px var(--display);letter-spacing:.12em;color:var(--ink-2)}
+.plist .st{font:700 9px var(--display);letter-spacing:.1em;text-transform:uppercase;padding:1px 6px;border-radius:3px;border:1px solid var(--line-2);color:var(--ink-2);white-space:nowrap}
+.plist .st.q{border-color:var(--red);color:var(--red-ink)} .plist .st.o{border-color:var(--bad);color:var(--bad);background:color-mix(in srgb,var(--bad) 8%,transparent)}
+.plist .sb{display:inline-block;height:5px;width:46px;background:var(--line);border-radius:2px;vertical-align:middle;margin-right:6px;position:relative;overflow:hidden}
+.plist .sb i{position:absolute;left:0;top:0;bottom:0;background:var(--team);width:var(--w)}
+.srch{font:500 13px var(--body);padding:6px 10px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--panel);color:var(--ink);min-width:220px}
+.teampick{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.teampick .mkbtn{all:unset;cursor:pointer;border-radius:4px;opacity:.45}.teampick .mkbtn.on,.teampick .mkbtn:hover{opacity:1}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="side">
+    <a class="logo" href="index.html"><img class="c" src="assets/dxd-logo.svg" alt="Down by Down" width="153" height="40"></a>
+    <nav class="grp"><div class="gl">This week</div><a href="index.html#slate"><i></i>Slate<span class="ct">14</span></a><a href="index.html#teams"><i></i>Teams<span class="ct">32</span></a></nav>
+    <nav class="grp"><div class="gl">Explore</div><a href="matchups.html"><i></i>Matchups</a><a href="teams.html"><i></i>Play explorer</a><a href="players.html" aria-current="page"><i></i>Players</a><a href="index.html#about"><i></i>About</a></nav>
+    <div class="foot"><b>2026 season</b>Through Week 8. Data from nflverse, refreshed nightly. Not affiliated with the NFL or any team.</div>
+  </aside>
+  <div>
+    <div class="top"><div class="crumb"><a href="index.html" style="text-decoration:none">DOWN X DOWN</a> <span>›</span> <b>players</b></div><div class="r"><span class="upd">Mock · real Vikings roster, stats and snaps through Week 8</span></div></div>
+    <main class="content" style="--team:#4F2683;--team2:#FFC62F">
+      <div class="ttitle"><div>
+        <p class="kicker">2026 season · offense · through week 8</p>
+        <h1 class="withmark" id="h1"><span><em>Vikings</em> players</span></h1>
+        <p class="sub">Every skill player who has taken an offensive snap, with usage from the play file and this week's injury report. Pick a player to see where the ball finds him. The build covers all 32 teams; the mock is the Vikings.</p>
+      </div><div class="badge" id="count"></div></div>
+
+      <section class="panel"><div class="toolbar">
+        <div class="fg"><span>Team</span><div class="teampick" id="teams"></div></div>
+        <div class="fg"><span>Position</span><div class="seg" id="f-pos"></div></div>
+        <div class="fg"><label for="q">Search</label><input class="srch" id="q" type="search" placeholder="Name, number or college"></div>
+      </div></section>
+
+      <section class="panel"><div class="ph"><span class="lab"><b>Roster usage</b> · sorted by snap share</span><span class="badge">Click a row</span></div><div class="tw" style="padding:0 14px 8px"><table class="usage plist" id="list"></table></div><p class="note">Snap share is the season average of offensive snaps played. Touches are targets plus carries. Status is the latest practice or game report; blank means no listing.</p></section>
+    </main>
+  </div>
+</div>
+<script>
+const D=window.DBD_PLAYERS, P=D.players, T=window.DBD_TEAMS;
+const sum=(ws,k)=>ws.reduce((a,w)=>a+(+w[k]||0),0), avg=o=>{const v=Object.values(o);return v.length?v.reduce((a,b)=>a+b,0)/v.length:0};
+const sgn=v=>(v>0?'+':'')+v.toFixed(1);
+document.getElementById('count').textContent=P.length+' players';
+/* team picker: tiles, Vikings on */
+document.getElementById('teams').innerHTML=['MIN','GB','CHI','DET','KC','PHI'].map(a=>`<button class="mkbtn${a==='MIN'?' on':''}" title="${T[a].name}">${window.dbdMark(a,24)}</button>`).join('')+'<span class="note" style="padding:0 0 0 6px">+ 26 more in the build</span>';
+/* position seg (sliding pill) */
+let pos='';const seg=document.getElementById('f-pos');seg.classList.add('t-tabs');
+seg.innerHTML='<span class="t-tabs-pill" aria-hidden="true"></span>'+[['','All'],['QB','QB'],['RB','RB'],['WR','WR'],['TE','TE']].map(o=>`<button class="t-tab" type="button" role="tab" data-v="${o[0]}" aria-selected="${pos===o[0]}">${o[1]}</button>`).join('');
+function pill(b){const p=seg.querySelector('.t-tabs-pill');p.style.transform=`translateX(${b.offsetLeft}px)`;p.style.width=b.offsetWidth+'px';}
+seg.onclick=e=>{const b=e.target.closest('button');if(!b)return;pos=b.dataset.v;seg.querySelectorAll('button').forEach(x=>x.setAttribute('aria-selected',x===b));pill(b);draw();};
+requestAnimationFrame(()=>{const p=seg.querySelector('.t-tabs-pill');p.style.transition='none';pill(seg.querySelector('[aria-selected="true"]'));void p.offsetWidth;p.style.transition='';});
+document.getElementById('q').oninput=draw;
+function stat(p){if(!p.inj)return'';const s=p.inj.status||'';const cls=/out|did not/i.test(s)?'o':/questionable|limited|doubtful/i.test(s)?'q':'';const short=/did not/i.test(s)?'DNP':/limited/i.test(s)?'Limited':/full/i.test(s)?'Full':s;return`<span class="st ${cls}">${short}${p.inj.what?' · '+p.inj.what:''}</span>`;}
+function draw(){
+  const q=document.getElementById('q').value.trim().toLowerCase();
+  const rows=P.filter(p=>(!pos||p.pos===pos||(pos==='RB'&&p.pos==='FB'))&&(!q||p.name.toLowerCase().includes(q)||String(p.num)===q||(p.col||'').toLowerCase().includes(q)));
+  document.getElementById('list').innerHTML='<tr><th>Player</th><th>Pos</th><th>Snap %</th><th>Tgt</th><th>Rec</th><th>Car</th><th>Yds</th><th>TD</th><th>EPA</th><th>Status</th></tr>'+rows.map(p=>{
+    const w=p.weeks,sn=avg(p.snaps),tg=sum(w,'targets'),rc=sum(w,'receptions'),ca=sum(w,'carries'),y=sum(w,'receiving_yards')+sum(w,'rushing_yards')+sum(w,'passing_yards'),td=sum(w,'receiving_tds')+sum(w,'rushing_tds')+sum(w,'passing_tds'),e=sum(w,'receiving_epa')+sum(w,'rushing_epa')+sum(w,'passing_epa');
+    const depth=p.depth?` <small>${p.depth.slot}${p.depth.rank}</small>`:'';
+    return`<tr class="clk" onclick="location.href='player.html?id=${p.id}'"><td class="nm"><span class="pmark">${p.num??''}</span><a href="player.html?id=${p.id}">${p.name}</a>${depth}</td><td class="pos">${p.pos}</td><td><span class="sb"><i style="--w:${Math.round(sn)}%"></i></span>${Math.round(sn)}%</td><td>${tg||''}</td><td>${rc||''}</td><td>${ca||''}</td><td>${Math.round(y)}</td><td>${td||''}</td><td class="${e>=0?'pos':'neg'}">${sgn(e)}</td><td>${stat(p)}</td></tr>`;}).join('');
+}
+draw();
+</script>
+</body>
+</html>

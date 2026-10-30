@@ -436,3 +436,59 @@ Gene asked what the data could do with charts (Chartist) and offense tendency ma
 5. **Pass rate by quarter and game state.** A heat grid, blue above league pass rate, amber below, small samples grayed.
 
 Production notes: Chartist bundled locally in the plugin (no CDN); charts computed client side from the play file the explorer already loads; the per-bucket league pass rates and receiver positions should come from the nightly build (`league_tendencies` in metrics.json, `pos` column in plays). Matchup overlays (offense tendency vs what the defense allows) need defense tendencies in the build and are a second step.
+
+## 14. Player layer (scoped and mocked 2026-10-30, `mockup-v5/players.html` + `player.html`)
+
+Gene: "I'd like to move towards getting to individual player level stats and intel too." Players first, nfelo model layer after it as its own version. The mock runs on the real Vikings roster, weekly stats, snap counts, injury report, depth chart and play file through Week 8.
+
+### What it is
+
+- **Players index** at `?view=players` (optionally `&team=MIN`, `&pos=WR`, `&q=jeff`). Team picker (the generated tiles), position segmented control, search. One row per skill player who has taken an offensive snap: jersey tile with number, name, depth-chart slot, position, snap share bar, targets, receptions, carries, yards, TD, EPA, latest injury status. Click a row to open the player.
+- **Player page** at `?player=<gsis_id>`. Hero: jersey tile (number in team colors, no headshots, same rule as logos), name with the team underline, kicker with position, number and season count, one line of bio (age, height, weight, college, draft slot), depth-chart slot, snap share, and the injury pill. Pennant link back to the team's offense.
+- **Tiles** that change with position group. Receivers: targets, receptions, yards, TD, target share, aDOT, EPA per target, YAC per catch. Backs: carries, rush yards, rush TD, targets, touches per game, EPA per touch, explosive plays, snap share. Quarterbacks: attempts, completion with CPOE, yards, TD/INT, EPA per dropback, sacks, rushing, snap share.
+- **Where the ball finds him.** Receivers and quarterbacks get the target map (air yards by side of field) plus depth bands with the caught share. Backs whose carries outnumber targets get the run-gap chart instead. Dots carry the play text on hover.
+- **Game log.** Week by week with the result, snap share and the position's stat line, season totals in the footer. Drops and broken tackles from PFR ride along.
+- **When he gets it.** Touches by down, quarter and game score, each with his share of the team's touches in that spot, yards per touch and EPA. Red zone row included.
+- **Intel rail.** Depth chart slot and package, injury report line, red zone touches and TDs, third-down touches and conversion rate, explosive plays, drops, broken tackles, passer rating when targeted (or CPOE and sack rate for a QB). Best plays by EPA. Teammates by share of the ball, each a link.
+- **Links in.** Every name in the explorer's Who gets the ball table and in the game-page takeaways becomes a link. Matchup pages get a "players to watch" strip (top three by touches each side) in a later slice.
+
+### Data (all nflverse, all free, all weekly)
+
+| Need | File | Notes |
+|---|---|---|
+| Bio, number, position, draft | `rosters/roster_2026.csv` (weekly rows, take the latest week) | `gsis_id` is the key everywhere |
+| Weekly stat lines | `stats_player/stats_player_week_2026.csv` | receiving, rushing, passing, target share, air yards share, EPA, CPOE |
+| Snap share | `snap_counts/snap_counts_2026.csv` | keyed by PFR name; join on name + team |
+| Drops, broken tackles, rating when targeted | `pfr_advstats/advstats_week_rec_2026.csv` | PFR name key |
+| Injury report | `injuries/injuries_2026.csv` | latest week per team; `report_status` or `practice_status` |
+| Depth chart | `depth_charts/depth_charts_2026.csv` | 68 MB; latest `dt` per team, offensive packages only |
+| Play-level intel | `ftn_charting/ftn_charting_2026.csv` | play action, screen, RPO, motion, pressure, contested and created catches, drops; joins on `nflverse_play_id` |
+
+Not available: Next Gen Stats (separation, cushion, RYOE) have no 2026 files on nflverse. Leave the slot in the design, add them if they appear.
+
+### Build changes (`tools/build_data.py`)
+
+1. Play rows gain `pid` (the ball handler's `gsis_id`) next to `pl`. Pages key on id; names stay for display. Fixes two players sharing a short name.
+2. New `players/{TEAM}.json` per team: roster rows for QB, RB, FB, WR, TE with any snap or stat, each with weekly lines, snap share by week, PFR extras by week, injury line, depth slot. About 20 to 40 KB per team.
+3. New `players/index.json`: one row per player league-wide (id, name, team, pos, number, snap share, touches, yards, TD, EPA, status) for the index page and search. About 300 KB; served once, cached.
+4. FTN join adds per-play flags to the play rows (`pa`, `scr`, `rpo`, `mot`, `prs`, `cont`, `drop`) when the FTN row exists. Also unlocks team tendencies by play action and screen rate later.
+5. Manifest and sync pick the new files up unchanged.
+
+### Plugin (`1.2.0`)
+
+- Router: `view=players` and `player=<id>` routes, body classes `dbd-view-players` / `dbd-view-player`, breadcrumb `DOWN X DOWN › players › Name`.
+- Views: `players.php` (server-rendered table from `players/index.json`, filters in JS), `player.php` (server-rendered hero, tiles and game log for crawlers; the map, situations and intel fill in from the play file and the team player file in JS, reusing the explorer's field drawing).
+- Sitemap: every player page, `changefreq weekly`. JSON-LD `Person` with `athlete` role and the team.
+- Sidebar: Gene adds a Players item under Explore; the plugin exposes `dbd-view-players` for the current state.
+- Marks: `DBD_Marks::jersey($abbr, $number, $size)` and `dbdJersey()` in JS, the player version of the tile.
+
+### Versions
+
+- **1.2.0** player layer as above (index, page, links in, build changes 1 to 3 and 5).
+- **1.2.x** FTN intel flags on plays and the "players to watch" strip on matchups.
+- **1.3.0** nfelo model layer (§15, to be scoped): model line and win probability on matchups, unit-strength grid, power rank on team pages. Needs greerreNFL's OK to republish.
+
+### Open calls for Gene
+
+- Positions covered: offense skill only (QB, RB, FB, WR, TE), or add defenders from the tackle and coverage columns later? Mock is offense only.
+- Index default: the visitor's last team (as the explorer remembers) or a league-wide top-touches list?
