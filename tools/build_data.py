@@ -64,7 +64,7 @@ def c(x):
 
 
 # ---------------------------------------------------------------- per-team plays
-keys = ['g', 'q', 't', 'dn', 'togo', 'yl', 'pt', 'k', 'yds', 'epa', 'succ', 'air', 'yac', 'loc', 'len', 'gap', 'sg', 'td', 'fd', 'drv', 'sd', 'pl', 'desc']
+keys = ['g', 'q', 't', 'dn', 'togo', 'yl', 'pt', 'k', 'yds', 'epa', 'succ', 'air', 'yac', 'loc', 'len', 'gap', 'sg', 'td', 'fd', 'drv', 'sd', 'pl', 'desc', 'pos']
 for t in T:
     gl, rows = [], []
     if have_pbp:
@@ -81,10 +81,12 @@ for t in T:
             elif r.qb_scramble == 1:
                 kind = 'scramble'
             pl = r.receiver_player_name if r.play_type == 'pass' and kind not in ('sack', 'scramble') else (r.rusher_player_name if isinstance(r.rusher_player_name, str) else r.passer_player_name)
+            pid = r.receiver_player_id if r.play_type == 'pass' and kind not in ('sack', 'scramble') else (r.rusher_player_id if isinstance(r.rusher_player_id, str) else r.passer_player_id)
+            ppos = pos.get(pid) if isinstance(pid, str) else None
             rows.append([c(x) for x in [r.game_id, int(r.qtr), r.time, r.down, r.ydstogo, r.yardline_100, r.play_type, kind, r.yards_gained,
                                         round(r.epa, 3) if not math.isnan(r.epa) else None, r.success, r.air_yards, r.yards_after_catch,
                                         r.pass_location if r.play_type == 'pass' else r.run_location, r.pass_length, r.run_gap, int(r.shotgun),
-                                        r.touchdown, r.first_down, r.drive, r.score_differential, pl, r.desc]])
+                                        r.touchdown, r.first_down, r.drive, r.score_differential, pl, r.desc, ppos]])
     played_weeks = {x['week'] for x in gl}
     # weeks before the current one with no game: a team that has not played yet this week is not on bye
     byes = sorted(set(range(1, week)) - played_weeks)
@@ -120,7 +122,22 @@ if have_pbp:
         return m
 
     off = {t: metrics(g) for t, g in d.groupby('posteam')}; dfn = {t: metrics(g) for t, g in d.groupby('defteam')}; lg = metrics(d, 2)
-    flat = [k for k, v in lg.items() if isinstance(v, (int, float)) and k != 'games']
+
+    # league pass rates by situation: the reference lines on the explorer's Tendencies tab
+    def prate(x):
+        return float((x.play_type == 'pass').mean()) if len(x) else None
+    buckets = {
+        '1st & 10+': (d.down == 1) & (d.ydstogo >= 10), '1st & short': (d.down == 1) & (d.ydstogo < 10),
+        '2nd & 7+': (d.down == 2) & (d.ydstogo >= 7), '2nd & 3-6': (d.down == 2) & (d.ydstogo >= 3) & (d.ydstogo < 7), '2nd & 1-2': (d.down == 2) & (d.ydstogo < 3),
+        '3rd & 7+': (d.down == 3) & (d.ydstogo >= 7), '3rd & 3-6': (d.down == 3) & (d.ydstogo >= 3) & (d.ydstogo < 7), '3rd & 1-2': (d.down == 3) & (d.ydstogo < 3), '4th down': d.down == 4,
+    }
+    lg['tend'] = {
+        'passrate': prate(d),
+        'dd': {k: prate(d[m]) for k, m in buckets.items()},
+        'sg': {str(dn): {'1': prate(d[(d.down == dn) & (d.shotgun == 1)]), '0': prate(d[(d.down == dn) & (d.shotgun == 0)])} for dn in (1, 2, 3, 4)},
+        'state': {st: {str(q): prate(d[m & (d.qtr == q)]) for q in (1, 2, 3, 4)} for st, m in (('lead', d.score_differential > 0), ('tied', d.score_differential == 0), ('trail', d.score_differential < 0))},
+    }
+    flat = [k for k, v in lg.items() if isinstance(v, (int, float)) and k not in ('games',)]
     ranks = {'off': {}, 'def': {}}
     for k in flat:
         hb = k != 'sack'

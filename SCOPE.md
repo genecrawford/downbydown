@@ -420,3 +420,19 @@ Also open: playmapped.com, drivemapped.com, fieldcharted.com, yardsdrawn.com, sn
 - Skeleton reveal (transitions.dev 14) while a team's play file loads.
 - Pretty URLs (`/team/min/`, `/game/…/`), Open Graph images per matchup.
 - Knockout logo and a dark footer are no longer needed (light only).
+
+---
+
+## 13. Tendencies charts (mocked 2026-10-30, `mockup-v5/charts.html`)
+
+**Status: built into the plugin as 1.1.0 (2026-10-30).** All five charts live on a fourth explorer tab named Tendencies; the old tables tab is now Situations. Chartist 1.3 is bundled in `assets/vendor/` (no CDN). Every chart follows the explorer filters and is drawn only while its tab is open. Build-side additions: each play row carries `pos` (ball handler's roster position, from nflverse rosters) and `metrics.json` carries `league.tend` (pass rate per down-and-distance bucket, per down for shotgun and under center, per quarter for leading, tied and trailing). Chart 1 shows a red tick per bar at the league rate for that exact spot instead of one dashed line; chart 5 tints each cell against the league rate for that same quarter and state. Until the next nightly build the charts fall back to the overall league pass rate and infer backs from carries.
+
+Gene asked what the data could do with charts (Chartist) and offense tendency mapping. The mock is a proposed fourth explorer tab, drawn from the real Vikings play file with Chartist 1.3 (SVG, CSS-styled, matches the site). Five views:
+
+1. **Pass rate by down and distance.** Horizontal bars per bucket with the league's overall pass rate as a dashed reference and the play count on each bar. Readout names the most pass-happy and most run-heavy buckets among those with 10+ plays.
+2. **Shotgun vs under center by down.** Paired bars of pass rate per formation.
+3. **Cumulative EPA across the season.** One stepped area line over every snap, vertical rules at game starts, readout with best and worst game.
+4. **Who gets the ball, and how deep.** Scatter of targets (x) against average depth of target (y) per receiver, dot size by targets, colored by position. Needs receiver position in the play file; the mock hard-codes a map.
+5. **Pass rate by quarter and game state.** A heat grid, blue above league pass rate, amber below, small samples grayed.
+
+Production notes: Chartist bundled locally in the plugin (no CDN); charts computed client side from the play file the explorer already loads; the per-bucket league pass rates and receiver positions should come from the nightly build (`league_tendencies` in metrics.json, `pos` column in plays). Matchup overlays (offense tendency vs what the defense allows) need defense tendencies in the build and are a second step.

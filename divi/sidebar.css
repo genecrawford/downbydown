@@ -107,15 +107,36 @@ body.dbd-view-team .dbd-side a[href="/?view=teams"]::before,
 /* ---- page background behind everything ---- */
 body.et_divi_theme{background:#f4f1ea}
 
-/* ---- phones: the plugin wraps the row below 900px; the sidebar becomes a strip ---- */
+/* ---- phones: the plugin wraps the row below 900px. The sidebar becomes a compact header:
+   logo on top, then one horizontally scrollable row of pill links. Labels, dots, counts and the foot note hide. ---- */
 @media (max-width:900px){
   .dbd-side{
-    position:static;height:auto;border-right:0;border-bottom:1px solid rgba(22,30,54,.12);
-    flex-direction:row;flex-wrap:wrap;align-items:center;gap:10px 18px;padding:10px 16px 8px !important;
+    position:static;height:auto;min-height:0;overflow:visible;
+    border-right:0;border-bottom:1px solid rgba(22,30,54,.12);
+    flex-direction:column;gap:8px;padding:10px 16px 10px !important;
   }
-  .dbd-side .et_pb_image img{height:34px}
-  .dbd-side .et_pb_text_inner{flex-direction:row;flex-wrap:wrap;align-items:center;gap:4px}
-  .dbd-side .et_pb_text_inner h2,.dbd-side .dbd-foot,.dbd-side .et_pb_text_inner li a::before,.dbd-side .ct{display:none}
-  .dbd-side .et_pb_text_inner ul{display:flex;gap:4px}
-  .dbd-side .et_pb_text_inner ul+h2{margin:0}
+  .dbd-side .et_pb_image{padding:0}
+  .dbd-side .et_pb_image img{height:32px}
+  .dbd-side .et_pb_text{flex:0 0 auto;display:block;min-width:0;max-width:100%}
+  .dbd-side .et_pb_text_inner{
+    display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;gap:6px;
+    overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;
+    margin:0 -16px;padding:2px 16px;max-width:calc(100% + 32px);box-sizing:border-box;
+  }
+  .dbd-side .et_pb_text_inner::-webkit-scrollbar{display:none}
+  .dbd-side .et_pb_text_inner h2,.dbd-side .dbd-foot,.dbd-side .et_pb_text_inner li a::before,.dbd-side .ct{display:none !important}
+  .dbd-side .et_pb_text_inner ul{display:flex;gap:6px;flex:0 0 auto}
+  .dbd-side .et_pb_text_inner ul+h2{margin:0 !important}
+  .dbd-side .et_pb_text_inner li{margin:0}
+  .dbd-side .et_pb_text_inner li a{
+    padding:6px 12px;border:1px solid rgba(22,30,54,.22);border-radius:999px;
+    background:#fffdf8;color:#3b4255;font-size:13px !important;white-space:nowrap;gap:0;
+  }
+  body.dbd-view-hub .dbd-side a[href="/#slate"],
+  body.dbd-view-hub .dbd-side a[href="/#dbd-slate"],
+  body.dbd-view-matchups .dbd-side a[href="/?view=matchups"],
+  body.dbd-view-game .dbd-side a[href="/?view=matchups"],
+  body.dbd-view-teams .dbd-side a[href="/?view=teams"],
+  body.dbd-view-team .dbd-side a[href="/?view=teams"],
+  .dbd-side a[aria-current="page"]{background:#121417;color:#fff;border-color:#121417}
 }

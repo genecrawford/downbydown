@@ -133,6 +133,7 @@ class DBD_Router {
 		echo '<meta property="og:url" content="' . esc_url( $url ) . '">' . "\n";
 		echo '<meta property="og:type" content="website">' . "\n";
 		if ( $r['view'] === 'notfound' ) { echo '<meta name="robots" content="noindex">' . "\n"; }
+		if ( $r['view'] === 'game' && class_exists( 'DBD_Seo' ) ) { echo DBD_Seo::game_jsonld( $r['game'] ); }
 	}
 
 	/* ------------------------------------------------------------------ assets */
@@ -146,7 +147,9 @@ class DBD_Router {
 		if ( $r['view'] === 'team' ) {
 			$t = DBD_Data::team( $r['team'] ); $rel = 'plays/' . $r['team'] . '.json';
 			wp_enqueue_script( 'dbd-marks', DBD_URL . 'assets/marks.js', array(), DBD_VERSION, true );
-			wp_enqueue_script( 'dbd-explorer', DBD_URL . 'assets/team-explorer.js', array( 'dbd-marks' ), DBD_VERSION, true );
+			wp_enqueue_style( 'dbd-chartist', DBD_URL . 'assets/vendor/chartist.css', array( 'dbd' ), '1.3.0' );
+			wp_enqueue_script( 'dbd-chartist', DBD_URL . 'assets/vendor/chartist.umd.js', array(), '1.3.0', true );
+			wp_enqueue_script( 'dbd-explorer', DBD_URL . 'assets/team-explorer.js', array( 'dbd-marks', 'dbd-chartist' ), DBD_VERSION, true );
 			wp_localize_script( 'dbd-explorer', 'DBD_TEAM', array(
 				'abbr'      => $r['team'],
 				'team'      => $t,
@@ -154,6 +157,7 @@ class DBD_Router {
 				'season'    => DBD_Data::season(),
 				'dataUrl'   => DBD_Data::url() . '/' . $rel . '?v=' . DBD_Data::file_version( $rel ),
 				'passrate'  => DBD_Metrics::league( 'passrate' ),
+				'tend'      => DBD_Metrics::league( 'tend' ),
 				'through'   => DBD_Data::through_week(),
 				'accent'    => DBD_Marks::accent( $t ),
 			) );
@@ -187,7 +191,7 @@ class DBD_Router {
 
 	/** The top bar: breadcrumb trail plus the Updated stamp. $crumbs = array( 'label' => url|null ) */
 	public static function topbar( $crumbs ) {
-		$out = '<div class="dbd-top"><div class="dbd-crumb"><a href="' . esc_url( self::url() ) . '">downbydown</a>';
+		$out = '<div class="dbd-top"><div class="dbd-crumb"><a href="' . esc_url( self::url() ) . '" class="dbd-brand">DOWN X DOWN</a>';
 		foreach ( $crumbs as $label => $href ) {
 			$out .= ' <span>›</span> ' . ( $href ? '<a href="' . esc_url( $href ) . '">' . esc_html( $label ) . '</a>' : '<b>' . esc_html( $label ) . '</b>' );
 		}
