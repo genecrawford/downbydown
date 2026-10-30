@@ -133,6 +133,7 @@ class DBD_Router {
 		echo '<meta property="og:url" content="' . esc_url( $url ) . '">' . "\n";
 		echo '<meta property="og:type" content="website">' . "\n";
 		if ( $r['view'] === 'notfound' ) { echo '<meta name="robots" content="noindex">' . "\n"; }
+		if ( $r['view'] === 'game' && class_exists( 'DBD_Seo' ) ) { echo DBD_Seo::game_jsonld( $r['game'] ); }
 	}
 
 	/* ------------------------------------------------------------------ assets */
