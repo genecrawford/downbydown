@@ -16,6 +16,7 @@ class DBD_Data {
 		if ( ! is_dir( $dir ) ) {
 			wp_mkdir_p( $dir );
 			wp_mkdir_p( $dir . '/plays' );
+			wp_mkdir_p( $dir . '/players' );
 		}
 		return $dir;
 	}
@@ -82,6 +83,43 @@ class DBD_Data {
 	public static function team( $abbr ) {
 		$t = self::teams();
 		return $t[ $abbr ] ?? null;
+	}
+
+	/* ---- player layer (1.2.0): players/index.json and players/{TEAM}.json */
+
+	public static function has_players() {
+		return (bool) self::get( 'players/index.json' );
+	}
+
+	/** League-wide index rows: id, name, team, pos, num, snap, tgt, rec, car, att, yds, td, epa, g, st, what, slot. */
+	public static function player_index() {
+		$i = self::get( 'players/index.json' );
+		return $i['players'] ?? array();
+	}
+
+	public static function player( $id ) {
+		if ( isset( self::$cache['__pidx'] ) ) { return self::$cache['__pidx'][ $id ] ?? null; }
+		$m = array();
+		foreach ( self::player_index() as $p ) { $m[ $p['id'] ] = $p; }
+		self::$cache['__pidx'] = $m;
+		return $m[ $id ] ?? null;
+	}
+
+	/** Full records for one team: weeks, snaps, pfr, inj, depth. */
+	public static function team_players( $abbr ) {
+		$f = self::get( 'players/' . $abbr . '.json' );
+		return $f['players'] ?? array();
+	}
+
+	public static function player_record( $abbr, $id ) {
+		foreach ( self::team_players( $abbr ) as $p ) { if ( $p['id'] === $id ) { return $p; } }
+		return null;
+	}
+
+	/** The game a team played in a week, or null (bye). */
+	public static function team_game( $abbr, $week ) {
+		foreach ( self::week_games( $week ) as $g ) { if ( $g['home'] === $abbr || $g['away'] === $abbr ) { return $g; } }
+		return null;
 	}
 
 	/** Find a game anywhere in the schedule by id. */

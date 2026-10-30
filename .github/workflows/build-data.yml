@@ -57,6 +57,14 @@ jobs:
             echo "No play-by-play for ${S} yet; building schedule-only data."
             echo "pbp=-" >> "$GITHUB_ENV"
           fi
+          # Player layer inputs. Each is optional: a 404 just leaves that part of the player pages empty.
+          dl() { if curl -sSL -f -o "in/$2" "https://github.com/nflverse/nflverse-data/releases/download/$1"; then echo "$3=in/$2" >> "$GITHUB_ENV"; else echo "No $2 for ${S}; skipping."; fi; }
+          dl "stats_player/stats_player_week_${S}.csv"  stats.csv   DBD_STATS
+          dl "snap_counts/snap_counts_${S}.csv"         snaps.csv   DBD_SNAPS
+          dl "pfr_advstats/advstats_week_rec_${S}.csv"  pfr.csv     DBD_PFR
+          dl "injuries/injuries_${S}.csv"               inj.csv     DBD_INJ
+          dl "depth_charts/depth_charts_${S}.csv"       depth.csv   DBD_DEPTH
+          dl "ftn_charting/ftn_charting_${S}.csv"       ftn.csv     DBD_FTN
           ls -la in
 
       - name: Build data

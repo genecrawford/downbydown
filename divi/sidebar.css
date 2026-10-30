@@ -78,6 +78,8 @@ body.dbd-view-matchups .dbd-side a[href="/?view=matchups"],
 body.dbd-view-game .dbd-side a[href="/?view=matchups"],
 body.dbd-view-teams .dbd-side a[href="/?view=teams"],
 body.dbd-view-team .dbd-side a[href="/?view=teams"],
+body.dbd-view-players .dbd-side a[href="/?view=players"],
+body.dbd-view-player .dbd-side a[href="/?view=players"],
 .dbd-side a[aria-current="page"]{
   background:#f6f3ec;color:#121417;
 }

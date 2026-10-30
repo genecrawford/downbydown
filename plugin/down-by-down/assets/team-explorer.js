@@ -248,11 +248,12 @@
 
     function usage(F) {
       var m = {};
-      F.forEach(function (p) { if (!p.pl) return; var u = m[p.pl] || (m[p.pl] = { n: p.pl, tg: 0, rec: 0, car: 0, yds: 0, epa: 0, td: 0, rz: 0 }); if (['comp', 'inc', 'int'].indexOf(p.k) >= 0) { u.tg++; if (p.k === 'comp') u.rec++; } else if (p.k === 'run' || p.k === 'scramble') u.car++; else return; u.yds += p.yds || 0; u.epa += p.epa || 0; u.td += p.td || 0; if (p.yl <= 20) u.rz++; });
+      F.forEach(function (p) { if (!p.pl) return; var u = m[p.pl] || (m[p.pl] = { n: p.pl, id: p.pid || null, tg: 0, rec: 0, car: 0, yds: 0, epa: 0, td: 0, rz: 0 }); if (['comp', 'inc', 'int'].indexOf(p.k) >= 0) { u.tg++; if (p.k === 'comp') u.rec++; } else if (p.k === 'run' || p.k === 'scramble') u.car++; else return; u.yds += p.yds || 0; u.epa += p.epa || 0; u.td += p.td || 0; if (p.yl <= 20) u.rz++; });
       var a = Object.keys(m).map(function (k) { return m[k]; }).sort(function (x, y) { return (y.tg + y.car) - (x.tg + x.car); }).slice(0, 12);
-      $('#dbd-usage').innerHTML = '<tr><th>Player</th><th>Tgt</th><th>Rec</th><th>Car</th><th>Yds</th><th>RZ</th><th>EPA</th></tr>' + a.map(function (u) { return '<tr class="clk' + (st.pl === u.n ? ' on' : '') + '" data-pl="' + esc(u.n) + '"><td>' + esc(u.n) + '</td><td>' + (u.tg || '') + '</td><td>' + (u.rec || '') + '</td><td>' + (u.car || '') + '</td><td>' + u.yds + '</td><td>' + (u.rz || '') + '</td><td class="' + (u.epa >= 0 ? 'pos' : 'neg') + '">' + fmt(u.epa, 1) + '</td></tr>'; }).join('') + (a.length ? '' : '<tr><td colspan="7">No plays match.</td></tr>');
+      $('#dbd-usage').innerHTML = '<tr><th>Player</th><th>Tgt</th><th>Rec</th><th>Car</th><th>Yds</th><th>RZ</th><th>EPA</th></tr>' + a.map(function (u) { return '<tr class="clk' + (st.pl === u.n ? ' on' : '') + '" data-pl="' + esc(u.n) + '"><td>' + (u.id && C.base ? '<a class="dbd-plink" href="' + esc(playerUrl(u.id)) + '" title="Open the player page">' + esc(u.n) + '</a>' : esc(u.n)) + '</td><td>' + (u.tg || '') + '</td><td>' + (u.rec || '') + '</td><td>' + (u.car || '') + '</td><td>' + u.yds + '</td><td>' + (u.rz || '') + '</td><td class="' + (u.epa >= 0 ? 'pos' : 'neg') + '">' + fmt(u.epa, 1) + '</td></tr>'; }).join('') + (a.length ? '' : '<tr><td colspan="7">No plays match.</td></tr>');
     }
-    $('#dbd-usage').onclick = function (e) { var r = e.target.closest('tr[data-pl]'); if (!r) return; st.pl = st.pl === r.dataset.pl ? '' : r.dataset.pl; $('#f-pl').value = st.pl; render(); };
+    function playerUrl(id) { return C.base + (C.base.indexOf('?') >= 0 ? '&' : '?') + 'player=' + encodeURIComponent(id); }
+    $('#dbd-usage').onclick = function (e) { if (e.target.closest('a')) return; var r = e.target.closest('tr[data-pl]'); if (!r) return; st.pl = st.pl === r.dataset.pl ? '' : r.dataset.pl; $('#f-pl').value = st.pl; render(); };
 
     function detail(F) {
       var p = st.sel == null ? null : P[st.sel];
