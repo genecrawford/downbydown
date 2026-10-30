@@ -44,24 +44,23 @@
       '<div class="dbd-fg"><label for="f-pl">Player</label><select id="f-pl"></select></div>' +
       '<button class="dbd-reset" id="dbd-reset" type="button">Reset</button></div></section>' +
       '<div class="dbd-tiles" id="dbd-tiles"></div>' +
-      '<div class="dbd-work"><section class="dbd-panel">' +
-      '<div class="dbd-ph tabsrow"><div class="t-tabs dbd-tabs" role="tablist" id="dbd-viewtabs"><span class="t-tabs-pill" aria-hidden="true"></span><button class="t-tab" role="tab" id="tab-drive" aria-selected="true" type="button">Drive chart</button><button class="t-tab" role="tab" id="tab-spray" aria-selected="false" type="button">Pass &amp; run map</button><button class="t-tab" role="tab" id="tab-down" aria-selected="false" type="button">Situations</button><button class="t-tab" role="tab" id="tab-charts" aria-selected="false" type="button">Tendencies</button></div></div>' +
-      '<div id="view-drive" class="dbd-view t-panel-slide" data-open="true"><div class="dbd-legend"><span><i style="background:' + COL.run + '"></i>Run</span><span><i style="background:' + COL.pass + '"></i>Completion</span><span><i style="background:' + COL.inc + '"></i>Incompletion (air yards)</span><span><i style="background:' + COL.bad + '"></i>Sack / INT</span><span><i style="background:' + COL.td + '"></i>Touchdown</span></div><div class="dbd-scroll" id="dbd-drive"></div><p class="dbd-note">Each row is one snap. ' + esc(T.nick) + ' always move left to right. Rows are grouped by game and drive; a dot marks the line of scrimmage.</p></div>' +
-      '<div id="view-spray" class="dbd-view t-panel-slide" data-open="false" hidden><div class="dbd-sprays"><div><h4>Pass targets by depth</h4><div id="dbd-passmap"></div></div><div><h4>Runs by gap</h4><div id="dbd-runmap"></div></div></div><p class="dbd-note">Pass map plots where the ball was thrown (air yards beyond the line of scrimmage, the thick 0 line) and to which side. Sacks and scrambles are left out. Run map shows designed runs by gap.</p></div>' +
-      '<div id="view-down" class="dbd-view t-panel-slide" data-open="false" hidden><div id="dbd-tend" class="dbd-tend"></div></div>' +
-      '<div id="view-charts" class="dbd-view dbd-chview t-panel-slide" data-open="false" hidden><div class="dbd-chgrid" id="dbd-charts">' +
+      '<div class="dbd-work">' +
+      '<section class="dbd-panel dbd-sec-drive"><div class="dbd-ph"><span class="dbd-lab"><b>Drive chart</b> · every snap, left to right</span><span class="dbd-badge">Hover or click a play</span></div><div class="dbd-legend"><span><i style="background:' + COL.run + '"></i>Run</span><span><i style="background:' + COL.pass + '"></i>Completion</span><span><i style="background:' + COL.inc + '"></i>Incompletion (air yards)</span><span><i style="background:' + COL.bad + '"></i>Sack / INT</span><span><i style="background:' + COL.td + '"></i>Touchdown</span></div><div class="dbd-scroll" id="dbd-drive"></div><p class="dbd-note">Each row is one snap. ' + esc(T.nick) + ' always move left to right. Rows are grouped by game and drive; a dot marks the line of scrimmage.</p></section>' +
+      '<section class="dbd-panel dbd-sec-spray"><div class="dbd-ph"><span class="dbd-lab"><b>Pass &amp; run map</b> · where the ball went</span></div><div class="dbd-sprays"><div><h4>Pass targets by depth</h4><div id="dbd-passmap"></div></div><div><h4>Runs by gap</h4><div id="dbd-runmap"></div></div></div><p class="dbd-note">Pass map plots where the ball was thrown (air yards beyond the line of scrimmage, the thick 0 line) and to which side. Sacks and scrambles are left out. Run map shows designed runs by gap.</p></section>' +
+      '<section class="dbd-panel dbd-sec-situ"><div class="dbd-ph"><span class="dbd-lab"><b>Situations</b> · by down, quarter and score</span></div><div id="dbd-tend" class="dbd-tend"></div></section>' +
+      '<section class="dbd-panel dbd-sec-charts dbd-chview"><div class="dbd-ph"><span class="dbd-lab"><b>Tendencies</b> · how this offense behaves</span><span class="dbd-badge">League in red</span></div><div class="dbd-chgrid" id="dbd-charts">' +
       '<section class="dbd-chart"><h4>Pass rate by down and distance</h4><p class="dbd-read" id="dbd-read1"></p><div class="dbd-ch dbd-ch-hbar" id="dbd-c1"></div><div class="dbd-legend"><span><i style="background:#5b9cf6"></i>Pass rate</span><span><i style="background:#cb2026"></i>League rate for that spot</span></div></section>' +
       '<section class="dbd-chart"><h4>Shotgun vs under center, by down</h4><p class="dbd-read" id="dbd-read2"></p><div class="dbd-ch" id="dbd-c2"></div><div class="dbd-legend"><span><i style="background:#5b9cf6"></i>Shotgun pass rate</span><span><i style="background:#f0b429"></i>Under center pass rate</span></div></section>' +
       '<section class="dbd-chart"><h4>Cumulative EPA, game by game</h4><p class="dbd-read" id="dbd-read3"></p><div class="dbd-ch" id="dbd-c3"></div><div class="dbd-legend"><span><i style="background:#121417"></i>Cumulative EPA</span><span>Rules mark the start of each game</span></div></section>' +
       '<section class="dbd-chart"><h4>Who gets the ball, and how deep</h4><p class="dbd-read" id="dbd-read4"></p><div class="dbd-ch" id="dbd-c4"></div><div class="dbd-legend"><span><i style="background:#5b9cf6"></i>Wide receiver</span><span><i style="background:#121417"></i>Tight end</span><span><i style="background:#f0b429"></i>Running back</span><span>Dot size is targets</span></div></section>' +
       '<section class="dbd-chart wide"><h4>Pass rate by quarter and game state</h4><p class="dbd-read" id="dbd-read5"></p><div class="dbd-heat" id="dbd-c5"></div></section>' +
-      '</div></div>' +
-      '</section><div class="dbd-rail">' +
+      '</div></section>' +
+      '<div class="dbd-rail">' +
       '<section class="dbd-panel dbd-detail"><div class="dbd-ph"><span class="dbd-lab"><b>Play detail</b></span><span class="dbd-badge"><span class="t-text-swap" id="dbd-detailmode">Best by EPA</span></span></div><div class="dbd-pb" id="dbd-detail"></div></section>' +
       '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Who gets the ball</b></span><span class="dbd-badge">Click to filter</span></div><div class="dbd-tw"><table class="dbd-usage" id="dbd-usage"></table></div></section>' +
       '</div></div><div class="dbd-tt" id="dbd-tt" role="tooltip"></div>';
 
-    var st = { games: new Set(), down: '', type: '', zone: '', sg: '', q: '', pl: '', sel: null, selAuto: true, tab: 'drive' };
+    var st = { games: new Set(), down: '', type: '', zone: '', sg: '', q: '', pl: '', sel: null, selAuto: true };
     var $ = function (s) { return host.querySelector(s); };
     var color = function (p) { return p.td ? COL.td : (p.k === 'sack' || p.k === 'int') ? COL.bad : p.k === 'inc' ? COL.inc : p.pt === 'run' ? COL.run : COL.pass; };
     var label = function (p) { return { run: 'Run', comp: 'Completion', inc: 'Incomplete', int: 'Interception', sack: 'Sack', scramble: 'Scramble' }[p.k] || p.k; };
@@ -92,22 +91,6 @@
     var counts = {}; P.forEach(function (p) { if (p.pl) counts[p.pl] = (counts[p.pl] || 0) + 1; });
     var players = Object.keys(counts).map(function (n) { return [n, counts[n]]; }).sort(function (a, b) { return b[1] - a[1]; });
     $('#f-pl').innerHTML = '<option value="">All players</option>' + players.map(function (pc) { return '<option value="' + esc(pc[0]) + '">' + esc(pc[0]) + ' (' + pc[1] + ')</option>'; }).join('');
-
-    /* view tabs: sliding pill + panel reveal */
-    var VIEWS = ['drive', 'spray', 'down', 'charts'], vt = $('#dbd-viewtabs');
-    VIEWS.forEach(function (t) {
-      $('#tab-' + t).onclick = function () {
-        if (st.tab === t) return; var prev = st.tab; st.tab = t;
-        VIEWS.forEach(function (x) { $('#tab-' + x).setAttribute('aria-selected', x === t); });
-        slidePill(vt, $('#tab-' + t), true);
-        var closeDur = parseFloat(getComputedStyle(host).getPropertyValue('--panel-close-dur')) || 350;
-        var o = $('#view-' + prev), n = $('#view-' + t);
-        o.dataset.open = 'false'; setTimeout(function () { o.hidden = true; }, closeDur);
-        n.hidden = false; requestAnimationFrame(function () { n.dataset.open = 'true'; });
-        if (t === 'charts' && chartsDirty) charts(chartsDirty);
-      };
-    });
-    requestAnimationFrame(function () { slidePill(vt, $('#tab-drive'), false); });
 
     function filtered() {
       return P.filter(function (p) {
@@ -195,16 +178,15 @@
       $('#dbd-tend').innerHTML = '<h4>Down and distance</h4><div class="dbd-tw" style="padding:0 14px"><table><tr><th>Situation</th><th>Plays</th><th>Pass rate</th><th>Success</th><th>EPA/play</th><th>Converted</th></tr>' + dd + '</table></div><div class="dbd-sprays"><div><h4>By quarter</h4><table><tr><th>Qtr</th><th>Plays</th><th>Pass</th><th>Success</th><th>EPA</th></tr>' + qs + '</table></div><div><h4>By game score</h4><table><tr><th>When</th><th>Plays</th><th>Pass</th><th>Success</th><th>EPA</th></tr>' + sit + '</table></div></div>';
     }
 
-    /* ---- tendencies charts (Chartist, bundled). Drawn only while the tab is open; the view is display:none
-       otherwise and Chartist would measure a zero-width box. Overlays (labels, ticks, rules) are HTML on top of
-       the SVG, queued during 'draw' and flushed on 'created' so a resize redraw never doubles them. */
-    var CH = {}, chartsDirty = null, TEND = C.tend || null;
+    /* ---- tendencies charts (Chartist, bundled). Overlays (labels, ticks, rules) are HTML on top of the SVG,
+       queued during 'draw' and flushed on 'created' so a resize redraw never doubles them. */
+    var CH = {}, TEND = C.tend || null;
     var lgRate = function (kind, a, b) { var v = TEND && TEND[kind] ? (b == null ? TEND[kind][a] : (TEND[kind][a] || {})[b]) : null; return v == null ? PASSRATE : v; };
     var pct = function (a) { return a.length ? a.filter(function (p) { return p.pt === 'pass'; }).length / a.length : 0; }, r0 = function (v) { return Math.round(v * 100); };
     function overlays(el) { var q = []; return { add: function (cls, html, x, y, h) { q.push([cls, html, x, y, h]); }, flush: function () { Array.prototype.slice.call(el.querySelectorAll('.dbd-ch-ov')).forEach(function (x) { x.remove(); }); q.forEach(function (a) { var d = document.createElement('div'); d.className = 'dbd-ch-ov ' + a[0]; d.innerHTML = a[1]; d.style.left = a[2] + 'px'; d.style.top = a[3] + 'px'; if (a[4] != null) d.style.height = a[4] + 'px'; el.appendChild(d); }); q = []; } }; }
     var setRead = function (n, txt) { $('#dbd-read' + n).textContent = txt; };
     var at = function (g) { return 'Week ' + g.week + (g.home ? ' vs ' : ' at ') + g.opp; };
-    function charts(F) { chartsDirty = F; if (st.tab !== 'charts') return; chartsDirty = null; if (!window.Chartist) { $('#dbd-charts').innerHTML = '<p class="dbd-note">The chart library did not load. Reload the page to try again.</p>'; return; } drawCharts(F); }
+    function charts(F) { if (!window.Chartist) { $('#dbd-charts').innerHTML = '<p class="dbd-note">The chart library did not load. Reload the page to try again.</p>'; return; } drawCharts(F); }
     function drawCharts(F) {
       var nick = T.nick, pr = function (v) { return r0(v) + '%'; }, ax = function (v) { return v + '%'; };
       Object.keys(CH).forEach(function (k) { CH[k].detach(); delete CH[k]; });
