@@ -80,7 +80,7 @@ $drops = 0; $bt = 0; $rats = array();
 foreach ( $p['pfr'] ?? array() as $x ) { $drops += (int) ( $x['drop'] ?? 0 ); $bt += (int) ( $x['bt'] ?? 0 ) + (int) ( $x['rbt'] ?? 0 ); if ( isset( $x['rat'] ) && $x['rat'] !== null ) { $rats[] = (float) $x['rat']; } }
 $cell = function ( $v, $cls = '' ) { return '<td' . ( $cls ? ' class="' . $cls . '"' : '' ) . '>' . $v . '</td>'; };
 $e = function ( $v ) { return '<td class="' . ( $v >= 0 ? 'pos' : 'neg' ) . '">' . ( $v > 0 ? '+' : '' ) . number_format( $v, 1 ) . '</td>'; };
-echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Game log</b> · week by week</span><span class="dbd-badge">Season totals in the last row</span></div><div class="dbd-tw"><table class="dbd-glog">';
+echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Game log</b> · week by week</span><span class="dbd-badge">Season totals in the last row</span></div><div class="dbd-tw"><table class="dbd-glog dbd-sortable">';
 if ( $grp === 'rec' ) {
 	echo '<thead><tr><th>Wk</th><th>Opponent</th><th>Snap</th><th>Tgt</th><th>Rec</th><th>Yds</th><th>TD</th><th>aDOT</th><th>YAC</th><th>Share</th><th>EPA</th><th>Drops</th></tr></thead><tbody>';
 	foreach ( $L as $w ) { $wk = (int) $w['week']; echo '<tr>' . $cell( $wk ) . $cell( $res( $wk, $w['team'] ?? null ), 'res' ) . $cell( $snap( $wk ) ) . $cell( (int) $w['targets'] ) . $cell( (int) $w['receptions'] ) . $cell( (int) $w['receiving_yards'] ) . $cell( (int) $w['receiving_tds'] ?: '' ) . $cell( $f1( $div( $w['receiving_air_yards'], $w['targets'] ) ) ) . $cell( (int) $w['receiving_yards_after_catch'] ) . $cell( $pct( (float) $w['target_share'] ) ) . $e( (float) $w['receiving_epa'] ) . $cell( $pf( $wk, 'drop' ) ?: '' ) . '</tr>'; }
@@ -126,7 +126,7 @@ foreach ( DBD_Data::team_players( $a ) as $m ) {
 	$mates[] = array( $m, $tc, $s( 'receiving_yards' ) + $s( 'rushing_yards' ), $s( 'receiving_tds' ) + $s( 'rushing_tds' ), $s( 'receiving_epa' ) + $s( 'rushing_epa' ) );
 }
 usort( $mates, function ( $x, $y ) { return $y[1] <=> $x[1]; } ); $mates = array_slice( $mates, 0, 8 );
-echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Teammates</b> · share of the ball</span></div><div class="dbd-tw"><table class="dbd-mates"><thead><tr><th>Player</th><th>Touches</th><th>Yds</th><th>TD</th><th>EPA</th></tr></thead><tbody>';
+echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Teammates</b> · share of the ball</span></div><div class="dbd-tw"><table class="dbd-mates dbd-sortable"><thead><tr><th>Player</th><th>Touches</th><th>Yds</th><th>TD</th><th>EPA</th></tr></thead><tbody>';
 foreach ( $mates as $x ) { list( $m, $tc, $y, $td, $ep ) = $x; $href = DBD_Router::url( array( 'player' => $m['id'] ) );
 	echo '<tr class="dbd-trow" data-href="' . esc_url( $href ) . '"><td class="dbd-nm"><span class="dbd-nmi">' . DBD_Marks::player( $a, $m['num'], 30, $m['photo'] ?? null ) . '<a href="' . esc_url( $href ) . '">' . esc_html( $m['name'] ) . '</a><small>' . esc_html( $m['pos'] ) . '</small></span></td><td>' . (int) $tc . '</td><td>' . (int) round( $y ) . '</td><td>' . ( (int) $td ?: '' ) . '</td>' . $e( $ep ) . '</tr>'; }
 echo '</tbody></table></div></section>';

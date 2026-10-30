@@ -5,7 +5,9 @@
   if (!C || !root || !src) return;
   window.DBD_TEAMS = C.teams;
   var ALL; try { ALL = JSON.parse(src.textContent || '[]'); } catch (e) { return; }
-  var st = { team: C.team || '', pos: C.pos || '', q: C.q || '' };
+  var st = { team: C.team || '', pos: C.pos || '', q: C.q || '' }, sort = { key: '', dir: -1 };
+  var LABEL = { snap: 'snap share', use: 'targets and attempts', rec: 'receptions', car: 'carries', yds: 'yards', td: 'touchdowns', epa: 'EPA', name: 'name', team: 'team', pos: 'position', st: 'status' };
+  var val = function (p, k) { switch (k) { case 'name': return p.name.toLowerCase(); case 'team': return p.team || ''; case 'pos': return p.pos || ''; case 'st': return p.st || ''; case 'use': return (p.pos === 'QB' ? p.att : p.tgt) | 0; case 'epa': return +p.epa || 0; default: return p[k] | 0; } };
   var $ = function (s) { return root.querySelector(s); };
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   var url = function (args) { var u = C.base + (C.base.indexOf('?') >= 0 ? '&' : '?') + 'view=players'; Object.keys(args).forEach(function (k) { if (args[k]) u += '&' + k + '=' + encodeURIComponent(args[k]); }); return u; };
@@ -21,16 +23,20 @@
 
   function draw() {
     var needle = st.q.trim().toLowerCase();
-    var rows = ALL.filter(function (p) { return (!st.team || p.team === st.team) && (!st.pos || p.pos === st.pos || (st.pos === 'RB' && p.pos === 'FB')) && (!needle || p.name.toLowerCase().indexOf(needle) >= 0 || String(p.num) === needle || (p.team || '').toLowerCase() === needle || (p.col || '').toLowerCase().indexOf(needle) >= 0); });
+    var rows = ALL.filter(function (p) { return (!st.team || needle || p.team === st.team) && (!st.pos || p.pos === st.pos || (st.pos === 'RB' && p.pos === 'FB')) && (!needle || p.name.toLowerCase().indexOf(needle) >= 0 || String(p.num) === needle || (p.team || '').toLowerCase() === needle || (p.col || '').toLowerCase().indexOf(needle) >= 0); });
+    if (sort.key) rows.sort(function (a, b) { var x = val(a, sort.key), y = val(b, sort.key); return (x < y ? -1 : x > y ? 1 : 0) * sort.dir; });
     var cap = st.team || needle ? 0 : 60; if (cap && rows.length > cap) rows = rows.slice(0, cap);
+    var by = sort.key ? LABEL[sort.key] : 'snap share';
     $('#dbd-plist tbody').innerHTML = rows.length ? rows.map(row).join('') : '<tr><td colspan="11" class="dbd-note">No players match.</td></tr>';
     var t = st.team && C.teams[st.team];
-    $('#dbd-plab').innerHTML = t ? '<b>' + esc(t.nick) + '</b> · sorted by snap share' : needle ? '<b>Search</b> · ' + esc(st.q) : '<b>League leaders</b> · top ' + rows.length + ' by snap share';
+    $('#dbd-plab').innerHTML = needle ? '<b>Search</b> · ' + esc(st.q) + ' · all teams' : t ? '<b>' + esc(t.nick) + '</b> · sorted by ' + by : '<b>League leaders</b> · top ' + rows.length + ' by ' + by;
+    root.querySelectorAll('#dbd-plist th[data-sort]').forEach(function (h) { if (h.dataset.sort === sort.key) h.setAttribute('aria-sort', sort.dir === 1 ? 'ascending' : 'descending'); else h.removeAttribute('aria-sort'); });
     pick.querySelectorAll('.dbd-mkbtn').forEach(function (b) { b.classList.toggle('on', (b.dataset.team || '') === st.team); });
     pos.querySelectorAll('.t-tab').forEach(function (b) { b.setAttribute('aria-selected', (b.dataset.v || '') === st.pos ? 'true' : 'false'); });
     slidePill(pos, pos.querySelector('[aria-selected="true"]'), true);
     try { history.replaceState(null, '', url({ team: st.team, pos: st.pos, q: st.q })); } catch (e) {}
   }
+  var thead = $('#dbd-plist thead'); if (thead) thead.addEventListener('click', function (e) { var h = e.target.closest('th[data-sort]'); if (!h) return; var k = h.dataset.sort; if (sort.key === k) sort.dir *= -1; else { sort.key = k; sort.dir = (k === 'name' || k === 'team' || k === 'pos' || k === 'st') ? 1 : -1; } draw(); });
   pick.addEventListener('click', function (e) { var b = e.target.closest('.dbd-mkbtn'); if (!b) return; e.preventDefault(); st.team = b.dataset.team || ''; draw(); });
   pos.addEventListener('click', function (e) { var b = e.target.closest('.t-tab'); if (!b) return; e.preventDefault(); st.pos = b.dataset.v || ''; draw(); });
   draw();

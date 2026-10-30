@@ -17,6 +17,23 @@
     if (!isNaN(d)) { try { el.textContent = d.toLocaleString([], fmt.day); } catch (e) {} }
   });
 
+  /* sortable stat tables: click a heading. Numeric columns start descending, text ascending; blanks sink.
+     The Players index sorts its own data in players.js; everything else sorts the rows in place. */
+  root.addEventListener('click', function (e) {
+    var th = e.target.closest('th'); if (!th) return;
+    var table = th.closest('table.dbd-sortable'); if (!table || table.id === 'dbd-plist') return;
+    var hdr = th.parentNode, idx = Array.prototype.indexOf.call(hdr.children, th);
+    var rows = Array.prototype.filter.call(table.rows, function (r) { return r !== hdr && !r.querySelector('th') && !(r.parentNode && r.parentNode.tagName === 'TFOOT'); });
+    var num = function (t) { t = t.replace(/[%,+]/g, '').replace(/\u2212/g, '-').trim(); if (t === '' || t === '-' || t === '\u2013') return null; var v = parseFloat(t); return isNaN(v) ? null : v; };
+    var cell = function (r) { var c = r.children[idx]; return c ? c.textContent.trim() : ''; };
+    var numeric = rows.some(function (r) { return num(cell(r)) !== null; });
+    var cur = th.getAttribute('aria-sort'), dir = cur === 'descending' ? 1 : cur === 'ascending' ? -1 : (numeric ? -1 : 1);
+    rows.sort(function (a, b) { var x = cell(a), y = cell(b); if (numeric) { var nx = num(x), ny = num(y); if (nx === null && ny === null) return 0; if (nx === null) return 1; if (ny === null) return -1; return (nx - ny) * dir; } return x.localeCompare(y) * dir; });
+    Array.prototype.forEach.call(hdr.children, function (h) { h.removeAttribute('aria-sort'); });
+    th.setAttribute('aria-sort', dir === 1 ? 'ascending' : 'descending');
+    rows.forEach(function (r) { r.parentNode.appendChild(r); });
+  });
+
   /* whole rows are links */
   root.addEventListener('click', function (e) {
     if (e.target.closest('a,button,select,input')) return;
