@@ -70,6 +70,5 @@ foreach ( array( 'AFC', 'NFC' ) as $conf ) { include DBD_PATH . 'includes/views/
 echo '</div>';
 if ( ! $ranked ) { echo '<p class="dbd-note">Ranks appear after Week 1.</p>'; }
 
-/* ---- about */
-echo '<div class="dbd-about" id="dbd-about"><h2>What this is</h2><p>Down by Down is a free site built on public play-by-play data from <a href="https://github.com/nflverse/nflverse-data" rel="noopener">nflverse</a>. It updates every night during the season. EPA is expected points added. A play counts as a success when it gains 40% of the needed yards on 1st down, 60% on 2nd, and 100% on 3rd and 4th. Offense #1 moves the ball best; defense #1 allows the least.' . ( ! empty( $stats['snaps'] ) ? ' ' . number_format( (int) $stats['snaps'] ) . ' snaps charted so far this season.' : '' ) . ' Not affiliated with the NFL or any team.</p></div>';
+/* The About copy lives on the site's own About page, not here. */
 echo '</main>';

@@ -33,6 +33,7 @@ Not affiliated with the NFL or any team. No team logos are used; team marks are 
 
 = 1.0.6 =
 * Standings tables use a fixed column plan: the team name takes the remaining width and truncates, record and rank columns are set widths, rank bars fill their cells. No more clipped Def column or short tables.
+* The hub no longer prints a "What this is" block; that copy belongs to the site's About page.
 
 = 1.0.5 =
 * Fix: standings rows shared a class with a flex component and lost their table layout. Rows are dbd-trow and table parts are pinned to table display.
