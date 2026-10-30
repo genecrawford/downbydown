@@ -213,7 +213,7 @@ for t in T:
     in_t = inj[inj.team == t] if len(inj) else inj
     if len(in_t): in_t = in_t[in_t.week == in_t.week.max()]
     dp_t = depth[depth.team == t] if len(depth) else depth
-    if len(dp_t): dp_t = dp_t[dp_t.dt == dp_t.dt.max()]
+    if len(dp_t): dp_t = dp_t[dp_t['dt'] == dp_t['dt'].max()]  # ['dt'], not .dt: pandas would read the datetime accessor
     out_players = []
     for r in roster.itertuples():
         fn = r.football_name if isinstance(getattr(r, 'football_name', None), str) and r.football_name else r.first_name
@@ -235,7 +235,7 @@ for t in T:
         if len(dp_t):
             m = dp_t[dp_t.gsis_id == r.gsis_id]
             if len(m):
-                w = m.sort_values('pos_rank').iloc[0]; p['depth'] = dict(slot=w.pos_abb, rank=int(_num(w.pos_rank, 9)), grp=c(w.pos_grp), date=str(w.dt)[:10])
+                w = m.sort_values('pos_rank').iloc[0]; p['depth'] = dict(slot=w['pos_abb'], rank=int(_num(w['pos_rank'], 9)), grp=c(w['pos_grp']), date=str(w['dt'])[:10])
         if not p['weeks'] and not p['snaps']:
             continue
         out_players.append(p)
