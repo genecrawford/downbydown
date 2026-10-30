@@ -222,12 +222,18 @@ for t in T:
         if len(stats):  # every week this season, whichever team he was on
             for w in stats[stats.player_id == r.gsis_id].sort_values('week').itertuples():
                 p['weeks'].append({k: (getattr(w, k) if k in ('team', 'opponent_team') else round(_num(getattr(w, k, 0)), 4)) for k in WEEK_FIELDS if k in stats.columns})
+        # snap counts and PFR extras key by PFR id; names collide (two Justin Jeffersons), so the name fallback
+        # is limited to teams this player actually has stat lines for
+        pfid = r.pfr_id if isinstance(getattr(r, 'pfr_id', None), str) and r.pfr_id else None
+        teams_of = {t} | {w['team'] for w in p['weeks'] if w.get('team')}
         if len(snaps):
-            for w in snaps[snaps.player == r.full_name].itertuples():
+            sn_p = snaps[snaps.pfr_player_id == pfid] if pfid and 'pfr_player_id' in snaps.columns else snaps[(snaps.player == r.full_name) & snaps.team.isin(teams_of)]
+            for w in sn_p.itertuples():
                 p['snaps'][str(int(w.week))] = int(round(_num(w.offense_pct) * 100))
                 if isinstance(w.team, str) and w.team != t: p['snapteam'][str(int(w.week))] = w.team  # a week played for another team (trade)
         if len(pfr):
-            for w in pfr[pfr.pfr_player_name == r.full_name].itertuples():
+            pf_p = pfr[pfr.pfr_player_id == pfid] if pfid and 'pfr_player_id' in pfr.columns else pfr[(pfr.pfr_player_name == r.full_name) & pfr.team.isin(teams_of)]
+            for w in pf_p.itertuples():
                 p['pfr'][str(int(w.week))] = dict(drop=int(_num(w.receiving_drop)), bt=int(_num(w.receiving_broken_tackles)), rbt=int(_num(w.rushing_broken_tackles)), rat=c(w.receiving_rat) if _num(w.receiving_rat, None) is not None else None)
         if len(in_t):
             m = in_t[in_t.gsis_id == r.gsis_id]
