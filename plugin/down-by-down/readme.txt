@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.0.8
+Stable tag: 1.1.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,11 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.1.0 =
+* Team explorer: new Tendencies tab with five charts drawn by Chartist (bundled, no CDN): pass rate by down and distance with the league rate for each spot, shotgun vs under center by down, cumulative EPA across the season with game rules, receivers by targets and depth colored by position, and a quarter-by-game-state pass-rate grid. Every chart follows the filters.
+* The old Tendencies tables are now the Situations tab.
+* Data build: each play carries the ball handler's position; metrics carry league pass rates by down and distance, by formation per down, and by quarter per game state. Both arrive with the next nightly build; until then the charts fall back to the overall league pass rate.
 
 = 1.0.8 =
 * Fix: the play description, kickers and subtitles lost their padding and margins to an over-specific reset; resets now use :where() so component styles win.

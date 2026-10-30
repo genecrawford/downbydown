@@ -1,4 +1,4 @@
-/* Down by Down 1.0.0. Light theme only. Everything is scoped under .dbd so the theme (Divi) cannot reach in,
+/* Down by Down 1.1.0. Light theme only. Everything is scoped under .dbd so the theme (Divi) cannot reach in,
    and a reset block pins the elements we use back to our values. Team identity comes from the generated marks;
    field green appears only inside the charts. */
 .dbd{
@@ -317,6 +317,41 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 .dbd-bar{display:inline-block;height:5px;border-radius:2px;background:var(--dbd-red);vertical-align:middle;margin-right:6px;opacity:.8}
 .dbd-tt{position:fixed;pointer-events:none;background:#121417;color:#f4f1ea;border-radius:4px;padding:8px 10px;font:400 12px/1.45 var(--dbd-body);max-width:320px;z-index:9999;box-shadow:0 2px 6px rgba(0,0,0,.15),0 4px 42px rgba(0,0,0,.12)}
 .dbd-tt .pos{color:#3ccf7a}.dbd-tt .neg{color:#ff6b70}
+
+/* ---- tendencies charts (Chartist draws the SVG, these style it; overlays are HTML on top) ---- */
+.dbd-chview{container-type:inline-size;container-name:dbdch}
+.dbd-chgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 18px;padding:4px 14px 10px}
+.dbd-chart{padding:12px 0 10px;border-top:1px solid var(--dbd-line);min-width:0}
+.dbd-chart.wide{grid-column:1/-1}
+.dbd-chart h4{margin:0 0 4px;font:700 11px var(--dbd-display);text-transform:uppercase;letter-spacing:.16em;color:var(--dbd-ink-2)}
+.dbd-read{margin:0 0 10px;font:400 13px/1.5 var(--dbd-body);color:var(--dbd-ink-2);max-width:60ch}
+.dbd-chart .dbd-legend{padding:8px 0 0}
+.dbd-ch{--dbd-ch-pass:#5b9cf6;--dbd-ch-run:#f0b429;position:relative;height:280px}
+.dbd-heat{--dbd-ch-pass:#5b9cf6;--dbd-ch-run:#f0b429}
+.dbd-ch .ct-grid{stroke:var(--dbd-line);stroke-dasharray:0;stroke-width:1}
+.dbd-ch .ct-label{font:500 10px var(--dbd-mono);fill:var(--dbd-muted);color:var(--dbd-muted)}
+.dbd-ch .ct-label.ct-horizontal{text-anchor:middle;justify-content:center}
+.dbd-ch .ct-series-a .ct-bar{stroke:var(--dbd-ch-pass);stroke-width:14px}
+.dbd-ch .ct-series-b .ct-bar{stroke:var(--dbd-ch-run);stroke-width:14px}
+.dbd-ch .ct-line{fill:none;stroke:var(--dbd-ink);stroke-width:2px}
+.dbd-ch .ct-area{fill:var(--dbd-ch-pass);fill-opacity:.12}
+.dbd-ch .ct-point{stroke:var(--dbd-ch-pass);stroke-opacity:.8;stroke-width:8px;stroke-linecap:round}
+.dbd-ch .ct-point.dbd-pt-rb{stroke:var(--dbd-ch-run)} .dbd-ch .ct-point.dbd-pt-te{stroke:var(--dbd-ink)}
+.dbd-ch-hbar .ct-label.ct-vertical{font:600 12px var(--dbd-body);fill:var(--dbd-ink);color:var(--dbd-ink);text-anchor:end;justify-content:flex-end;align-items:center}
+.dbd-ch-ov{position:absolute;pointer-events:none}
+.dbd-ch-lbl{font:500 10px var(--dbd-mono);color:var(--dbd-ink-2);transform:translate(6px,-50%);white-space:nowrap}
+.dbd-ch-lbl.in{transform:translate(calc(-100% - 8px),-50%);color:#fff;font-weight:600}
+.dbd-ch-tick{width:2px;height:20px;border-radius:1px;background:var(--dbd-red);transform:translate(-1px,-50%)}
+.dbd-ch-rule{width:0;border-left:1px solid var(--dbd-line-2)}
+.dbd-ch-rule span{position:absolute;top:-14px;left:4px;font:700 9px var(--dbd-display);letter-spacing:.12em;text-transform:uppercase;color:var(--dbd-muted);white-space:nowrap}
+.dbd-heat{display:grid;grid-template-columns:70px repeat(4,minmax(0,1fr));gap:4px;margin:6px 0 4px}
+.dbd-heat .h{font:700 10px var(--dbd-display);text-transform:uppercase;letter-spacing:.12em;color:var(--dbd-muted);text-align:center;align-self:center}
+.dbd-heat .h.l{text-align:left}
+.dbd-heat .c{border:1px solid var(--dbd-line);border-radius:4px;padding:8px 4px;text-align:center;background:var(--dbd-panel)}
+.dbd-heat .c b{font:800 18px/1 var(--dbd-hero);color:var(--dbd-ink)}
+.dbd-heat .c span{display:block;font:500 10px var(--dbd-mono);color:var(--dbd-ink-2);margin-top:3px}
+.dbd-heat .c.few{background:var(--dbd-panel-2)} .dbd-heat .c.few b{color:var(--dbd-muted);font-size:14px}
+@container dbdch (max-width: 760px){.dbd-chgrid{grid-template-columns:minmax(0,1fr)}}
 
 @media (max-width:600px){
   .dbd-top{padding:10px 16px}

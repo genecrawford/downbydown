@@ -147,7 +147,9 @@ class DBD_Router {
 		if ( $r['view'] === 'team' ) {
 			$t = DBD_Data::team( $r['team'] ); $rel = 'plays/' . $r['team'] . '.json';
 			wp_enqueue_script( 'dbd-marks', DBD_URL . 'assets/marks.js', array(), DBD_VERSION, true );
-			wp_enqueue_script( 'dbd-explorer', DBD_URL . 'assets/team-explorer.js', array( 'dbd-marks' ), DBD_VERSION, true );
+			wp_enqueue_style( 'dbd-chartist', DBD_URL . 'assets/vendor/chartist.css', array( 'dbd' ), '1.3.0' );
+			wp_enqueue_script( 'dbd-chartist', DBD_URL . 'assets/vendor/chartist.umd.js', array(), '1.3.0', true );
+			wp_enqueue_script( 'dbd-explorer', DBD_URL . 'assets/team-explorer.js', array( 'dbd-marks', 'dbd-chartist' ), DBD_VERSION, true );
 			wp_localize_script( 'dbd-explorer', 'DBD_TEAM', array(
 				'abbr'      => $r['team'],
 				'team'      => $t,
@@ -155,6 +157,7 @@ class DBD_Router {
 				'season'    => DBD_Data::season(),
 				'dataUrl'   => DBD_Data::url() . '/' . $rel . '?v=' . DBD_Data::file_version( $rel ),
 				'passrate'  => DBD_Metrics::league( 'passrate' ),
+				'tend'      => DBD_Metrics::league( 'tend' ),
 				'through'   => DBD_Data::through_week(),
 				'accent'    => DBD_Marks::accent( $t ),
 			) );

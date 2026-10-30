@@ -1,5 +1,6 @@
 /* Down by Down: the team play explorer. Fetches the team's play file and draws everything inside #dbd-explorer.
-   Config arrives in DBD_TEAM (localized by PHP): abbr, team, teams, season, dataUrl, passrate, through, accent. */
+   Config arrives in DBD_TEAM (localized by PHP): abbr, team, teams, season, dataUrl, passrate, tend, through, accent.
+   The Tendencies tab draws with Chartist (bundled in assets/vendor). */
 (function () {
   var host = document.getElementById('dbd-explorer');
   if (!host || !window.DBD_TEAM) return;
@@ -44,10 +45,17 @@
       '<button class="dbd-reset" id="dbd-reset" type="button">Reset</button></div></section>' +
       '<div class="dbd-tiles" id="dbd-tiles"></div>' +
       '<div class="dbd-work"><section class="dbd-panel">' +
-      '<div class="dbd-ph tabsrow"><div class="t-tabs dbd-tabs" role="tablist" id="dbd-viewtabs"><span class="t-tabs-pill" aria-hidden="true"></span><button class="t-tab" role="tab" id="tab-drive" aria-selected="true" type="button">Drive chart</button><button class="t-tab" role="tab" id="tab-spray" aria-selected="false" type="button">Pass &amp; run map</button><button class="t-tab" role="tab" id="tab-down" aria-selected="false" type="button">Tendencies</button></div></div>' +
+      '<div class="dbd-ph tabsrow"><div class="t-tabs dbd-tabs" role="tablist" id="dbd-viewtabs"><span class="t-tabs-pill" aria-hidden="true"></span><button class="t-tab" role="tab" id="tab-drive" aria-selected="true" type="button">Drive chart</button><button class="t-tab" role="tab" id="tab-spray" aria-selected="false" type="button">Pass &amp; run map</button><button class="t-tab" role="tab" id="tab-down" aria-selected="false" type="button">Situations</button><button class="t-tab" role="tab" id="tab-charts" aria-selected="false" type="button">Tendencies</button></div></div>' +
       '<div id="view-drive" class="dbd-view t-panel-slide" data-open="true"><div class="dbd-legend"><span><i style="background:' + COL.run + '"></i>Run</span><span><i style="background:' + COL.pass + '"></i>Completion</span><span><i style="background:' + COL.inc + '"></i>Incompletion (air yards)</span><span><i style="background:' + COL.bad + '"></i>Sack / INT</span><span><i style="background:' + COL.td + '"></i>Touchdown</span></div><div class="dbd-scroll" id="dbd-drive"></div><p class="dbd-note">Each row is one snap. ' + esc(T.nick) + ' always move left to right. Rows are grouped by game and drive; a dot marks the line of scrimmage.</p></div>' +
       '<div id="view-spray" class="dbd-view t-panel-slide" data-open="false" hidden><div class="dbd-sprays"><div><h4>Pass targets by depth</h4><div id="dbd-passmap"></div></div><div><h4>Runs by gap</h4><div id="dbd-runmap"></div></div></div><p class="dbd-note">Pass map plots where the ball was thrown (air yards beyond the line of scrimmage, the thick 0 line) and to which side. Sacks and scrambles are left out. Run map shows designed runs by gap.</p></div>' +
       '<div id="view-down" class="dbd-view t-panel-slide" data-open="false" hidden><div id="dbd-tend" class="dbd-tend"></div></div>' +
+      '<div id="view-charts" class="dbd-view dbd-chview t-panel-slide" data-open="false" hidden><div class="dbd-chgrid" id="dbd-charts">' +
+      '<section class="dbd-chart"><h4>Pass rate by down and distance</h4><p class="dbd-read" id="dbd-read1"></p><div class="dbd-ch dbd-ch-hbar" id="dbd-c1"></div><div class="dbd-legend"><span><i style="background:#5b9cf6"></i>Pass rate</span><span><i style="background:#cb2026"></i>League rate for that spot</span></div></section>' +
+      '<section class="dbd-chart"><h4>Shotgun vs under center, by down</h4><p class="dbd-read" id="dbd-read2"></p><div class="dbd-ch" id="dbd-c2"></div><div class="dbd-legend"><span><i style="background:#5b9cf6"></i>Shotgun pass rate</span><span><i style="background:#f0b429"></i>Under center pass rate</span></div></section>' +
+      '<section class="dbd-chart"><h4>Cumulative EPA, game by game</h4><p class="dbd-read" id="dbd-read3"></p><div class="dbd-ch" id="dbd-c3"></div><div class="dbd-legend"><span><i style="background:#121417"></i>Cumulative EPA</span><span>Rules mark the start of each game</span></div></section>' +
+      '<section class="dbd-chart"><h4>Who gets the ball, and how deep</h4><p class="dbd-read" id="dbd-read4"></p><div class="dbd-ch" id="dbd-c4"></div><div class="dbd-legend"><span><i style="background:#5b9cf6"></i>Wide receiver</span><span><i style="background:#121417"></i>Tight end</span><span><i style="background:#f0b429"></i>Running back</span><span>Dot size is targets</span></div></section>' +
+      '<section class="dbd-chart wide"><h4>Pass rate by quarter and game state</h4><p class="dbd-read" id="dbd-read5"></p><div class="dbd-heat" id="dbd-c5"></div></section>' +
+      '</div></div>' +
       '</section><div class="dbd-rail">' +
       '<section class="dbd-panel dbd-detail"><div class="dbd-ph"><span class="dbd-lab"><b>Play detail</b></span><span class="dbd-badge"><span class="t-text-swap" id="dbd-detailmode">Best by EPA</span></span></div><div class="dbd-pb" id="dbd-detail"></div></section>' +
       '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Who gets the ball</b></span><span class="dbd-badge">Click to filter</span></div><div class="dbd-tw"><table class="dbd-usage" id="dbd-usage"></table></div></section>' +
@@ -86,7 +94,7 @@
     $('#f-pl').innerHTML = '<option value="">All players</option>' + players.map(function (pc) { return '<option value="' + esc(pc[0]) + '">' + esc(pc[0]) + ' (' + pc[1] + ')</option>'; }).join('');
 
     /* view tabs: sliding pill + panel reveal */
-    var VIEWS = ['drive', 'spray', 'down'], vt = $('#dbd-viewtabs');
+    var VIEWS = ['drive', 'spray', 'down', 'charts'], vt = $('#dbd-viewtabs');
     VIEWS.forEach(function (t) {
       $('#tab-' + t).onclick = function () {
         if (st.tab === t) return; var prev = st.tab; st.tab = t;
@@ -96,6 +104,7 @@
         var o = $('#view-' + prev), n = $('#view-' + t);
         o.dataset.open = 'false'; setTimeout(function () { o.hidden = true; }, closeDur);
         n.hidden = false; requestAnimationFrame(function () { n.dataset.open = 'true'; });
+        if (t === 'charts' && chartsDirty) charts(chartsDirty);
       };
     });
     requestAnimationFrame(function () { slidePill(vt, $('#tab-drive'), false); });
@@ -176,13 +185,81 @@
       $('#dbd-runmap').innerHTML = g + '<div class="dbd-legend" style="padding:8px 0 0"><span><i style="background:' + COL.td + '"></i>Positive EPA</span><span><i style="background:' + COL.run + '"></i>Negative EPA, 40%+ success</span><span><i style="background:' + COL.bad + '"></i>Under 40% success</span></div>';
     }
 
+    var BK = [['1st & 10+', function (p) { return p.dn == 1 && p.togo >= 10; }], ['1st & short', function (p) { return p.dn == 1 && p.togo < 10; }], ['2nd & 7+', function (p) { return p.dn == 2 && p.togo >= 7; }], ['2nd & 3-6', function (p) { return p.dn == 2 && p.togo >= 3 && p.togo < 7; }], ['2nd & 1-2', function (p) { return p.dn == 2 && p.togo < 3; }], ['3rd & 7+', function (p) { return p.dn == 3 && p.togo >= 7; }], ['3rd & 3-6', function (p) { return p.dn == 3 && p.togo >= 3 && p.togo < 7; }], ['3rd & 1-2', function (p) { return p.dn == 3 && p.togo < 3; }], ['4th down', function (p) { return p.dn == 4; }]];
     function tend(F) {
-      var B = [['1st & 10+', function (p) { return p.dn == 1 && p.togo >= 10; }], ['1st & short', function (p) { return p.dn == 1 && p.togo < 10; }], ['2nd & 7+', function (p) { return p.dn == 2 && p.togo >= 7; }], ['2nd & 3-6', function (p) { return p.dn == 2 && p.togo >= 3 && p.togo < 7; }], ['2nd & 1-2', function (p) { return p.dn == 2 && p.togo < 3; }], ['3rd & 7+', function (p) { return p.dn == 3 && p.togo >= 7; }], ['3rd & 3-6', function (p) { return p.dn == 3 && p.togo >= 3 && p.togo < 7; }], ['3rd & 1-2', function (p) { return p.dn == 3 && p.togo < 3; }], ['4th down', function (p) { return p.dn == 4; }]];
+      var B = BK;
       var row = function (n, a, conv) { var ps = a.filter(function (p) { return p.pt === 'pass'; }).length, e = a.reduce(function (s, p) { return s + (p.epa || 0); }, 0); return '<tr><td>' + n + '</td><td>' + a.length + '</td><td><span class="dbd-bar" style="width:' + (a.length ? ps / a.length * 50 : 0) + 'px"></span>' + (a.length ? Math.round(ps / a.length * 100) + '%' : '-') + '</td><td>' + (a.length ? Math.round(a.filter(function (p) { return p.succ; }).length / a.length * 100) + '%' : '-') + '</td><td class="' + (e >= 0 ? 'pos' : 'neg') + '">' + (a.length ? sign(e / a.length) : '-') + '</td>' + (conv !== undefined ? '<td>' + conv + '</td>' : '') + '</tr>'; };
       var dd = B.map(function (b) { var a = F.filter(b[1]); return row(b[0], a, (b[0].indexOf('3rd') === 0 || b[0].indexOf('4th') === 0) && a.length ? Math.round(a.filter(function (p) { return p.fd || p.td; }).length / a.length * 100) + '%' : ''); }).join('');
       var qs = [1, 2, 3, 4].map(function (q) { return row('Q' + q, F.filter(function (p) { return p.q == q; })); }).join('');
       var sit = [['Leading', function (p) { return p.sd > 0; }], ['Tied', function (p) { return p.sd == 0; }], ['Trailing', function (p) { return p.sd < 0; }]].map(function (s) { return row(s[0], F.filter(s[1])); }).join('');
       $('#dbd-tend').innerHTML = '<h4>Down and distance</h4><div class="dbd-tw" style="padding:0 14px"><table><tr><th>Situation</th><th>Plays</th><th>Pass rate</th><th>Success</th><th>EPA/play</th><th>Converted</th></tr>' + dd + '</table></div><div class="dbd-sprays"><div><h4>By quarter</h4><table><tr><th>Qtr</th><th>Plays</th><th>Pass</th><th>Success</th><th>EPA</th></tr>' + qs + '</table></div><div><h4>By game score</h4><table><tr><th>When</th><th>Plays</th><th>Pass</th><th>Success</th><th>EPA</th></tr>' + sit + '</table></div></div>';
+    }
+
+    /* ---- tendencies charts (Chartist, bundled). Drawn only while the tab is open; the view is display:none
+       otherwise and Chartist would measure a zero-width box. Overlays (labels, ticks, rules) are HTML on top of
+       the SVG, queued during 'draw' and flushed on 'created' so a resize redraw never doubles them. */
+    var CH = {}, chartsDirty = null, TEND = C.tend || null;
+    var lgRate = function (kind, a, b) { var v = TEND && TEND[kind] ? (b == null ? TEND[kind][a] : (TEND[kind][a] || {})[b]) : null; return v == null ? PASSRATE : v; };
+    var pct = function (a) { return a.length ? a.filter(function (p) { return p.pt === 'pass'; }).length / a.length : 0; }, r0 = function (v) { return Math.round(v * 100); };
+    function overlays(el) { var q = []; return { add: function (cls, html, x, y, h) { q.push([cls, html, x, y, h]); }, flush: function () { Array.prototype.slice.call(el.querySelectorAll('.dbd-ch-ov')).forEach(function (x) { x.remove(); }); q.forEach(function (a) { var d = document.createElement('div'); d.className = 'dbd-ch-ov ' + a[0]; d.innerHTML = a[1]; d.style.left = a[2] + 'px'; d.style.top = a[3] + 'px'; if (a[4] != null) d.style.height = a[4] + 'px'; el.appendChild(d); }); q = []; } }; }
+    var setRead = function (n, txt) { $('#dbd-read' + n).textContent = txt; };
+    var at = function (g) { return 'Week ' + g.week + (g.home ? ' vs ' : ' at ') + g.opp; };
+    function charts(F) { chartsDirty = F; if (st.tab !== 'charts') return; chartsDirty = null; if (!window.Chartist) { $('#dbd-charts').innerHTML = '<p class="dbd-note">The chart library did not load. Reload the page to try again.</p>'; return; } drawCharts(F); }
+    function drawCharts(F) {
+      var nick = T.nick, pr = function (v) { return r0(v) + '%'; };
+      Object.keys(CH).forEach(function (k) { CH[k].detach(); delete CH[k]; });
+      if (!F.length) { [1, 2, 3, 4, 5].forEach(function (i) { setRead(i, 'No plays match these filters.'); $('#dbd-c' + i).innerHTML = ''; }); return; }
+
+      /* 1. pass rate by down and distance, horizontal bars, a red tick per bar at the league rate for that spot */
+      var d1 = BK.slice(0, 8).map(function (b) { return { n: b[0], a: F.filter(b[1]), lg: lgRate('dd', b[0]) }; }).reverse();
+      var h1 = $('#dbd-c1'), o1 = overlays(h1);
+      CH.c1 = new Chartist.BarChart(h1, { labels: d1.map(function (d) { return d.n; }), series: [d1.map(function (d) { return r0(pct(d.a)); })] }, { horizontalBars: true, axisX: { low: 0, high: 100, onlyInteger: true, labelInterpolationFnc: pr }, axisY: { offset: 84 }, chartPadding: { right: 28, left: 0 } })
+        .on('draw', function (d) { if (d.type !== 'bar') return; var v = d.series[d.index], b = d1[d.index]; o1.add('dbd-ch-lbl' + (v > 72 ? ' in' : ''), esc(v + '% · ' + b.a.length + ' plays'), d.x2, d.y2); o1.add('dbd-ch-tick', '', d.chartRect.x1 + d.axisX.projectValue(b.lg * 100), d.y2); })
+        .on('created', function () { o1.flush(); });
+      var solid = d1.filter(function (d) { return d.a.length >= 10; });
+      if (solid.length) { var hi = solid.reduce(function (m, d) { return pct(d.a) > pct(m.a) ? d : m; }), lo = solid.reduce(function (m, d) { return pct(d.a) < pct(m.a) ? d : m; }); setRead(1, 'Most pass-happy on ' + hi.n + ': ' + pr(pct(hi.a)) + ' against a league ' + pr(hi.lg) + '. Most run-heavy on ' + lo.n + ': ' + pr(pct(lo.a)) + ' against ' + pr(lo.lg) + '. Red ticks mark the league rate for each spot.'); }
+      else setRead(1, 'Too few plays in this slice to read much into it. Red ticks mark the league rate for each spot.');
+
+      /* 2. shotgun vs under center, grouped by down */
+      var downs = [1, 2, 3, 4], byF = function (dn, sg) { return F.filter(function (p) { return p.dn == dn && p.sg == sg; }); };
+      var sgv = downs.map(function (dn) { return r0(pct(byF(dn, 1))); }), ucv = downs.map(function (dn) { return r0(pct(byF(dn, 0))); });
+      CH.c2 = new Chartist.BarChart($('#dbd-c2'), { labels: ['1st down', '2nd down', '3rd down', '4th down'], series: [sgv, ucv] }, { seriesBarDistance: 16, axisY: { low: 0, high: 100, onlyInteger: true, labelInterpolationFnc: pr }, chartPadding: { right: 10 } });
+      var sgShare = r0(F.filter(function (p) { return p.sg == 1; }).length / F.length), uc1 = byF(1, 0).length, uc2 = byF(2, 0).length;
+      var r2 = sgShare + '% of these snaps are from shotgun. ';
+      r2 += uc1 >= 5 ? 'Under center is where the run game lives: ' + (100 - ucv[0]) + '% runs on first down' + (uc2 >= 5 ? ', ' + (100 - ucv[1]) + '% on second. ' : '. ') : 'Under center snaps are rare in this slice. ';
+      if (TEND && TEND.sg) r2 += 'League on first down: ' + pr(lgRate('sg', '1', '1')) + ' pass from shotgun, ' + pr(lgRate('sg', '1', '0')) + ' under center.';
+      setRead(2, r2);
+
+      /* 3. cumulative EPA, one season line, a rule at the start of each game */
+      var cum = 0, idx = 0, bounds = [], pts = [], perGame = [];
+      G.forEach(function (g) { var gp = F.filter(function (p) { return p.g === g.id; }); if (!gp.length) return; bounds.push({ x: idx + 1, g: g }); var v = 0; gp.forEach(function (p) { cum += p.epa || 0; v += p.epa || 0; idx++; pts.push({ x: idx, y: +cum.toFixed(2) }); }); perGame.push({ g: g, v: v }); });
+      var h3 = $('#dbd-c3'), o3 = overlays(h3);
+      CH.c3 = new Chartist.LineChart(h3, { series: [{ name: 'season', data: pts }] }, { showPoint: false, showArea: true, lineSmooth: Chartist.Interpolation.step(), axisX: { type: Chartist.AutoScaleAxis, onlyInteger: true, low: 0, labelInterpolationFnc: function (v) { return v % 50 === 0 ? v : null; } }, axisY: { labelInterpolationFnc: function (v) { return (v > 0 ? '+' : '') + v; } }, chartPadding: { right: 16, top: 16 } })
+        .on('created', function (ctx) { var r = ctx.chartRect; bounds.forEach(function (b) { o3.add('dbd-ch-rule', '<span>Wk ' + b.g.week + ' ' + esc(b.g.opp) + '</span>', r.x1 + ctx.axisX.projectValue(b.x), r.y2, r.height()); }); o3.flush(); });
+      var sg3 = function (v) { return (v > 0 ? '+' : '') + v.toFixed(1); }, bestG = perGame.reduce(function (m, e) { return e.v > m.v ? e : m; }), worstG = perGame.reduce(function (m, e) { return e.v < m.v ? e : m; });
+      setRead(3, 'EPA runs to ' + sg3(cum) + ' over ' + idx + ' snaps. Best game: ' + at(bestG.g) + ' (' + sg3(bestG.v) + ').' + (perGame.length > 1 ? ' Worst: ' + at(worstG.g) + ' (' + sg3(worstG.v) + ').' : '') + ' Climbs are drives that worked. Flat or falling stretches went nowhere.');
+
+      /* 4. receivers: targets vs average depth of target, dot size = targets, color = position */
+      var tg = {}, carries = {};
+      F.forEach(function (p) { if (!p.pl) return; if (p.k === 'run') carries[p.pl] = (carries[p.pl] || 0) + 1; if (['comp', 'inc', 'int'].indexOf(p.k) < 0 || p.air == null) return; var t = tg[p.pl] || (tg[p.pl] = { n: p.pl, t: 0, air: 0, pos: null }); t.t++; t.air += p.air; if (p.pos) t.pos = p.pos; });
+      var minT = F.length >= 200 ? 5 : 3;
+      var recs = Object.keys(tg).map(function (k) { return tg[k]; }).filter(function (t) { return t.t >= minT; }).map(function (t) { var pos = String(t.pos || '').toUpperCase(), cls = pos === 'RB' || pos === 'FB' || pos === 'HB' || (!pos && (carries[t.n] || 0) > t.t) ? 'rb' : pos === 'TE' ? 'te' : 'wr'; return { n: t.n, t: t.t, adot: +(t.air / t.t).toFixed(1), pos: cls }; }).sort(function (a, b) { return b.t - a.t; });
+      var h4 = $('#dbd-c4'), o4 = overlays(h4);
+      if (recs.length) {
+        CH.c4 = new Chartist.LineChart(h4, { series: [{ name: 'recs', data: recs.map(function (r) { return { x: r.t, y: r.adot, meta: r }; }) }] }, { showLine: false, axisX: { type: Chartist.AutoScaleAxis, onlyInteger: true, low: 0 }, axisY: { type: Chartist.AutoScaleAxis, labelInterpolationFnc: function (v) { return v + ' yd'; } }, chartPadding: { right: 84, top: 10 } })
+          .on('draw', function (d) { if (d.type !== 'point') return; var r = d.meta; d.element.attr({ style: 'stroke-width:' + Math.max(8, Math.sqrt(r.t) * 4) + 'px' }); d.element.addClass('dbd-pt-' + r.pos); o4.add('dbd-ch-lbl', esc(r.n), d.x, d.y); })
+          .on('created', function () { o4.flush(); });
+        var deepest = recs.reduce(function (m, r) { return r.adot > m.adot ? r : m; }), busiest = recs[0];
+        setRead(4, busiest.n + ' leads with ' + busiest.t + ' targets at ' + busiest.adot + ' air yards each. ' + (deepest.n !== busiest.n ? deepest.n + ' is the deep threat at ' + deepest.adot + '. ' : '') + 'Across is targets, up is average depth of target. Receivers with fewer than ' + minT + ' targets are left off.');
+      } else { h4.innerHTML = ''; setRead(4, 'Not enough targets in this slice to plot receivers.'); }
+
+      /* 5. heat grid: quarter by game state, tinted by distance from the league rate in that same spot */
+      var states = [['Leading', 'lead', function (p) { return p.sd > 0; }], ['Tied', 'tied', function (p) { return p.sd == 0; }], ['Trailing', 'trail', function (p) { return p.sd < 0; }]];
+      var h = '<div class="h l">State</div>' + downs.map(function (q) { return '<div class="h">Q' + q + '</div>'; }).join('');
+      states.forEach(function (s) { h += '<div class="h l">' + s[0] + '</div>' + downs.map(function (q) { var a = F.filter(function (p) { return s[2](p) && p.q == q; }); if (a.length < 6) return '<div class="c few"><b>' + a.length + '</b><span>too few</span></div>'; var v = pct(a), lg = lgRate('state', s[1], String(q)), col = v >= lg ? 'var(--dbd-ch-pass)' : 'var(--dbd-ch-run)', mix = Math.min(70, Math.round(Math.abs(v - lg) / 0.3 * 70)); return '<div class="c" style="background:color-mix(in srgb,' + col + ' ' + mix + '%,var(--dbd-panel))"><b>' + pr(v) + '</b><span>' + a.length + ' plays</span></div>'; }).join(''); });
+      $('#dbd-c5').innerHTML = h;
+      var lead = F.filter(states[0][2]), trail = F.filter(states[2][2]);
+      setRead(5, 'Blue means more passing than the league in that spot, amber means more running. Leading, the ' + nick + ' pass ' + (lead.length ? pr(pct(lead)) : '-') + ' of the time. Trailing, ' + (trail.length ? pr(pct(trail)) : '-') + '. Cells with fewer than 6 plays are grayed out.');
     }
 
     function usage(F) {
@@ -210,7 +287,7 @@
     host.addEventListener('mousemove', function (e) { if (tt.classList.contains('is-shown')) { tt.style.left = Math.min(e.clientX + 14, innerWidth - 330) + 'px'; tt.style.top = (e.clientY + 14) + 'px'; } });
     host.addEventListener('click', function (e) { var g = e.target.closest('.dbd-play'); if (!g) return; st.sel = +g.dataset.i; st.selAuto = false; render(); });
 
-    function render() { var F = filtered(); drawGames(); tiles(F); drive(F); passmap(F); runmap(F); tend(F); usage(F); detail(F); }
+    function render() { var F = filtered(); drawGames(); tiles(F); drive(F); passmap(F); runmap(F); tend(F); charts(F); usage(F); detail(F); }
     render();
   }
 })();
