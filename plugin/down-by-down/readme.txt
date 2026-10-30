@@ -35,6 +35,8 @@ Not affiliated with the NFL or any team. No team logos are used; team marks are 
 * Phones: the Divi sidebar column now actually goes full width above the content; the plugin's own 232px rule was overriding its phone override.
 * Phones: standings show rank numbers without bars so team names keep their room.
 * Head-to-head stat labels stay on one line; the snaps badge no longer stretches when the team title stacks.
+* The pass-zone grids stack when their panel is narrower than 620px instead of squeezing captions onto three lines.
+* Standings show nicknames instead of full names when the column is narrow, so nothing truncates on phones.
 
 = 1.0.6 =
 * Standings tables use a fixed column plan: the team name takes the remaining width and truncates, record and rank columns are set widths, rank bars fill their cells. No more clipped Def column or short tables.

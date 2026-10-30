@@ -237,14 +237,17 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 .dbd-diverge i{position:absolute;top:0;bottom:0;border-radius:2px}
 .dbd-diverge i.o{right:50%;background:var(--to)} .dbd-diverge i.d{left:50%;background:var(--td)}
 @media (max-width:760px){.dbd-h2h td.lg,.dbd-h2h thead th.lg{display:none}.dbd-h2h td.divcell{min-width:90px}}
-.dbd-zones{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-@media (max-width:760px){.dbd-zones{grid-template-columns:1fr}}
+.dbd-zones{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+/* the zones panel measures itself: side by side only when each grid gets 290px or more */
+.dbd-mgrid>.dbd-panel{container-type:inline-size}
+@container (max-width:620px){.dbd-zones{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:760px){.dbd-zones{grid-template-columns:minmax(0,1fr)}}
 .dbd-zone h4{margin:0 0 8px;font:700 11px var(--dbd-display);text-transform:uppercase;letter-spacing:.16em;color:var(--dbd-ink-2)}
 .dbd-zgrid{display:grid;grid-template-columns:40px repeat(3,1fr);gap:4px}
 .dbd-zgrid .zh,.dbd-zgrid .zl{font:700 10px var(--dbd-display);text-transform:uppercase;letter-spacing:.12em;color:var(--dbd-muted);text-align:center;align-self:center}
-.dbd-z{border-radius:4px;padding:10px 6px;text-align:center;display:flex;flex-direction:column;border:1px solid var(--dbd-line)}
+.dbd-z{border-radius:4px;padding:10px 4px;text-align:center;display:flex;flex-direction:column;border:1px solid var(--dbd-line);min-width:0}
 .dbd-z b{font:800 20px/1 var(--dbd-hero);font-variant-numeric:tabular-nums;color:var(--dbd-ink)}
-.dbd-z span{font:500 10px var(--dbd-mono);color:var(--dbd-ink-2);margin-top:4px}
+.dbd-z span{font:500 10px var(--dbd-mono);color:var(--dbd-ink-2);margin-top:4px;white-space:nowrap}
 .dbd-z.thin{background:var(--dbd-panel-2)} .dbd-z.thin b{color:var(--dbd-muted);font-size:14px}
 .dbd-zones+.dbd-note{padding-top:10px}
 
