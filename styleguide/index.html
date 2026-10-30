@@ -38,15 +38,16 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 
 /* ---- reset against theme globals ---- */
 .dbd *,.dbd *::before,.dbd *::after{box-sizing:border-box}
-.dbd h1,.dbd h2,.dbd h3,.dbd h4,.dbd p,.dbd dl,.dbd dd,.dbd dt{margin:0;padding:0;color:inherit;line-height:inherit;text-transform:none;letter-spacing:normal}
+/* zero-specificity resets (:where) so single-class component rules always win */
+.dbd :where(h1,h2,h3,h4,p,dl,dd,dt){margin:0;padding:0;color:inherit;line-height:inherit;text-transform:none;letter-spacing:normal}
 .dbd :where(p,h1,h2,h3,h4,a,td,th,span,b,i,small,em,dl,dt,dd,label,button,select,time,div){font-family:inherit;font-size:inherit;font-weight:inherit;line-height:inherit;color:inherit}
 .dbd :where(p,dd,dt){margin:0;padding:0}
-.dbd a{color:inherit;text-decoration:none;box-shadow:none}
-.dbd a:hover{color:inherit}
+.dbd :where(a){color:inherit;text-decoration:none;box-shadow:none}
+.dbd :where(a:hover){color:inherit}
 .dbd table{border-collapse:collapse;border-spacing:0;width:100%;border:0;background:none;margin:0}
-.dbd td,.dbd th{border:0;background:none;vertical-align:middle;font-weight:inherit;text-align:inherit;display:table-cell}
-.dbd tr{display:table-row}.dbd thead{display:table-header-group}.dbd tbody{display:table-row-group}
-.dbd button,.dbd select{font:inherit;color:inherit;margin:0;line-height:1.2;text-transform:none;letter-spacing:normal;box-shadow:none;border-radius:0}
+.dbd :where(td,th){border:0;background:none;vertical-align:middle;font-weight:inherit;text-align:inherit;display:table-cell}
+.dbd :where(tr){display:table-row}.dbd :where(thead){display:table-header-group}.dbd :where(tbody){display:table-row-group}
+.dbd :where(button,select){font:inherit;color:inherit;margin:0;line-height:1.2;text-transform:none;letter-spacing:normal;box-shadow:none;border-radius:0}
 .dbd select{appearance:auto;-webkit-appearance:menulist}
 .dbd ul,.dbd ol{list-style:none;margin:0;padding:0}
 .dbd svg{display:inline-block;vertical-align:middle;max-width:none}
@@ -58,6 +59,7 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 .dbd-top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px clamp(16px,3vw,32px);border-bottom:1px solid var(--dbd-line);background:var(--dbd-bg)}
 .dbd-crumb{font:500 13px var(--dbd-body);color:var(--dbd-muted);display:flex;gap:8px;align-items:center;white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .dbd-crumb b{color:var(--dbd-ink);font-weight:600}
+.dbd-crumb .dbd-brand{font:700 12px var(--dbd-display);letter-spacing:.14em;color:var(--dbd-ink)}
 .dbd-crumb a:hover{text-decoration:underline;text-underline-offset:3px}
 .dbd-r{display:flex;gap:10px;align-items:center}
 .dbd-upd{font:500 11px var(--dbd-mono);color:var(--dbd-muted);white-space:nowrap}
@@ -69,7 +71,7 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 .dbd-ghost{position:absolute;right:-10px;bottom:-.26em;font:800 clamp(120px,18vw,240px)/1 var(--dbd-hero);color:var(--dbd-ink);opacity:.028;letter-spacing:.06em;pointer-events:none;user-select:none;white-space:nowrap}
 .dbd-kicker{font:700 11px var(--dbd-display);text-transform:uppercase;letter-spacing:.2em;color:var(--dbd-red-ink);margin:0 0 10px;display:flex;align-items:center;gap:10px}
 .dbd-kicker::before{content:"";width:22px;height:2px;background:var(--dbd-red)}
-.dbd h1{font:800 clamp(34px,4.6vw,60px)/.95 var(--dbd-hero);text-transform:uppercase;letter-spacing:.005em;color:var(--dbd-ink)}
+.dbd :where(h1){font:800 clamp(34px,4.6vw,60px)/.95 var(--dbd-hero);text-transform:uppercase;letter-spacing:.005em;color:var(--dbd-ink)}
 .dbd h1 em{font-style:normal;color:var(--dbd-red-ink)}
 .dbd-sub{margin:14px 0 0;font-size:15px;max-width:52ch;color:var(--dbd-ink-2)}
 .dbd-sub a{color:var(--dbd-ink);font-weight:600;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px;text-decoration-color:var(--dbd-red)}
