@@ -1,8 +1,8 @@
-# Down by Down (downbydown.com): Revised Scope (v3.2)
+# Down by Down (downbydown.com): Revised Scope (v3.3)
 
 Date: 2026-10-30, updated same day with the name, the v2 mock and the v3 design pass. Owner: Gene Crawford, Period Three.
 Working title was "Play Explorer". Site name is now **Down by Down**, domain **downbydown.com** (purchased 2026-10-30).
-Status: **Build approved 2026-10-30** ("Let's build it"). Mock v5 in `mockup-v5/` is the reference.
+Status: **Built 2026-10-30.** Plugin 1.0.0 is in `plugin/down-by-down/` and packaged as `down-by-down-1.0.0.zip`; repo `github.com/genecrawford/downbydown` is public with the nightly Action running and real data committed under `data/`. Not yet installed on a WordPress site. Mock v5 in `mockup-v5/` is the design reference.
 
 This document supersedes the architecture parts of `BRIEF.md`. The brief's page descriptions, metric definitions and gotchas still stand and are not repeated here.
 
