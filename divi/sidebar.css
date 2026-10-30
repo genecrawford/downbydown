@@ -2,7 +2,8 @@
    Paste into Divi › Theme Options › Custom CSS.
    Give the sidebar column the CSS class "dbd-side" (column settings › Advanced › CSS ID & Classes).
    Markup expected inside the column: an Image module with the logo, then a Text module with
-   <h2>Group</h2><ul><li><a href="…">Item</a></li></ul> blocks, optionally a <p class="dbd-foot"> at the end. */
+   <h2>Group</h2><ul><li><a href="…">Item</a></li></ul> blocks, optionally a <p class="dbd-foot"> at the end.
+   Hub anchors are /#dbd-slate and /#dbd-teams (every id the plugin prints starts with dbd-). */
 
 /* ---- the column ---- */
 .dbd-side{
@@ -29,19 +30,19 @@
 .dbd-side .et_pb_image .et_pb_image_wrap{display:block}
 .dbd-side .et_pb_image img{height:40px;width:auto;display:block}
 
-/* ---- group labels: the h2s ---- */
+/* ---- group labels: the h2s (!important because Divi's Text module sets heading type with higher specificity) ---- */
 .dbd-side .et_pb_text_inner h2{
-  font-family:"Barlow Condensed","Arial Narrow",sans-serif;
-  font-size:10px;
-  font-weight:600;
-  line-height:1;
-  text-transform:uppercase;
-  letter-spacing:.18em;
-  color:#6b6f78;
-  margin:0;
-  padding:0 10px 6px;
+  font-family:"Barlow Condensed","Arial Narrow",sans-serif !important;
+  font-size:10px !important;
+  font-weight:600 !important;
+  line-height:1 !important;
+  text-transform:uppercase !important;
+  letter-spacing:.18em !important;
+  color:#6b6f78 !important;
+  margin:0 !important;
+  padding:0 10px 6px !important;
 }
-.dbd-side .et_pb_text_inner ul+h2{margin-top:22px}
+.dbd-side .et_pb_text_inner ul+h2{margin-top:22px !important}
 
 /* ---- items ---- */
 .dbd-side .et_pb_text_inner ul{list-style:none;margin:0;padding:0;line-height:1.3}
@@ -53,9 +54,9 @@
   padding:7px 10px;
   border-radius:6px;
   color:#3b4255;
-  font-size:14px;
+  font-size:14px !important;
   font-weight:500;
-  text-decoration:none;
+  text-decoration:none !important;
   transition:background .12s,color .12s;
 }
 .dbd-side .et_pb_text_inner li a::before{
@@ -72,6 +73,7 @@
 
 /* ---- current item, from the body class the plugin adds per view ---- */
 body.dbd-view-hub .dbd-side a[href="/#slate"],
+body.dbd-view-hub .dbd-side a[href="/#dbd-slate"],
 body.dbd-view-matchups .dbd-side a[href="/?view=matchups"],
 body.dbd-view-game .dbd-side a[href="/?view=matchups"],
 body.dbd-view-teams .dbd-side a[href="/?view=teams"],
@@ -80,6 +82,7 @@ body.dbd-view-team .dbd-side a[href="/?view=teams"],
   background:#f6f3ec;color:#121417;
 }
 body.dbd-view-hub .dbd-side a[href="/#slate"]::before,
+body.dbd-view-hub .dbd-side a[href="/#dbd-slate"]::before,
 body.dbd-view-matchups .dbd-side a[href="/?view=matchups"]::before,
 body.dbd-view-game .dbd-side a[href="/?view=matchups"]::before,
 body.dbd-view-teams .dbd-side a[href="/?view=teams"]::before,

@@ -417,6 +417,7 @@ Also open: playmapped.com, drivemapped.com, fieldcharted.com, yardsdrawn.com, sn
 ## 12. Backlog (post-launch)
 
 - **Top-level admin menu** (Gene, 2026-10-30): move Settings › Down by Down to its own entry in the WordPress admin sidebar, with the pennant or tile as its icon. Queued for the next plugin build.
+- Hub anchors: also accept `#slate` and `#teams` (hidden alias anchors) so short menu links work. Until then menus use `/#dbd-slate` and `/#dbd-teams`.
 - Skeleton reveal (transitions.dev 14) while a team's play file loads.
 - Pretty URLs (`/team/min/`, `/game/…/`), Open Graph images per matchup.
 - Knockout logo and a dark footer are no longer needed (light only).
