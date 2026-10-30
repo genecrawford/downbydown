@@ -75,6 +75,14 @@ class DBD_Marks {
 		return '<span class="dbd-head" style="width:' . (int) $size . 'px;height:' . (int) $size . 'px">' . $tile . '<img src="' . esc_url( self::sized( $photo, $size ) ) . '" alt="" width="' . (int) $size . '" height="' . (int) $size . '" loading="lazy" decoding="async" referrerpolicy="no-referrer" style="background:' . esc_attr( $c1 ) . '" onerror="this.remove()"></span>';
 	}
 
+	/** The hero cutout on a player page: the headshot at display height, fitted (not cropped) so the transparent
+	 *  background stays, over a soft team-color glow. Nothing is printed when photos are off or the URL is missing. */
+	public static function hero_photo( $abbr, $photo, $height = 190 ) {
+		if ( ! $photo || ! DBD_Data::headshots() || ! preg_match( '#^https://[^"\'<>\s]+$#', $photo ) ) { return ''; }
+		$src = preg_replace( '#^(https://static\.www\.nfl\.com/image/upload/)f_auto,q_auto/#', '${1}f_auto,q_auto,h_' . ( (int) $height * 2 ) . ',c_fit/', $photo, 1 );
+		return '<figure class="dbd-herophoto" aria-hidden="true"><img src="' . esc_url( $src ) . '" alt="" height="' . (int) $height . '" decoding="async" referrerpolicy="no-referrer" onerror="this.parentNode.remove()"></figure>';
+	}
+
 	/** The NFL image CDN takes Cloudinary transforms: ask for a face-cropped square at 2x the display size
 	 *  (about 6 KB) instead of the 3,400 px original (about 4 MB). Other hosts are left alone. */
 	public static function sized( $photo, $size ) {

@@ -32,7 +32,7 @@ Not affiliated with the NFL or any team. No team logos are used; team marks are 
 == Changelog ==
 
 = 1.2.2 =
-* Larger player marks: 34px in the Players index, 30px in Teammates, 72px in the player hero.
+* Player hero: with Player photos on, the headshot sits large in the open space right of the title, cut out over a soft team-color glow; the jersey tile stays by the name. Larger marks in the Players index (34px) and Teammates (30px).
 * Data build: teams on bye kept their players. The roster filter took the league's latest week, so a bye week emptied that team's roster (Saints, Giants, Texans and 49ers in Week 8); it now takes each team's own latest week.
 
 = 1.2.1 =
