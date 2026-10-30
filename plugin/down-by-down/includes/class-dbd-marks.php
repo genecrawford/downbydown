@@ -66,6 +66,22 @@ class DBD_Marks {
 		);
 	}
 
+	/** The player mark: the jersey tile, and when headshots are on and a URL exists, the photo lazily on top.
+	 *  The image removes itself if it fails to load, leaving the tile. */
+	public static function player( $abbr, $num, $size = 40, $photo = null ) {
+		$tile = self::jersey( $abbr, $num, $size );
+		if ( ! $tile || ! $photo || ! DBD_Data::headshots() || ! preg_match( '#^https://[^"\'<>\s]+$#', $photo ) ) { return $tile; }
+		$t = DBD_Data::team( $abbr ); $c1 = self::color( $t['c1'], '#161e36' );
+		return '<span class="dbd-head" style="width:' . (int) $size . 'px;height:' . (int) $size . 'px">' . $tile . '<img src="' . esc_url( self::sized( $photo, $size ) ) . '" alt="" width="' . (int) $size . '" height="' . (int) $size . '" loading="lazy" decoding="async" referrerpolicy="no-referrer" style="background:' . esc_attr( $c1 ) . '" onerror="this.remove()"></span>';
+	}
+
+	/** The NFL image CDN takes Cloudinary transforms: ask for a face-cropped square at 2x the display size
+	 *  (about 6 KB) instead of the 3,400 px original (about 4 MB). Other hosts are left alone. */
+	public static function sized( $photo, $size ) {
+		$n = (int) $size * 2;
+		return preg_replace( '#^(https://static\.www\.nfl\.com/image/upload/)f_auto,q_auto/#', '${1}f_auto,q_auto,w_' . $n . ',h_' . $n . ',c_fill,g_face/', $photo, 1 );
+	}
+
 	public static function pennant( $abbr, $height = 40 ) {
 		$t = DBD_Data::team( $abbr );
 		if ( ! $t ) { return ''; }

@@ -217,7 +217,8 @@ for t in T:
     for r in roster.itertuples():
         fn = r.football_name if isinstance(getattr(r, 'football_name', None), str) and r.football_name else r.first_name
         p = dict(id=r.gsis_id, name=r.full_name, short=f"{str(fn)[:1]}.{r.last_name}", pos=r.position, num=c(r.jersey_number), age=_age(r.birth_date), ht=_ht(r.height), wt=c(r.weight),
-                 col=c(r.college), exp=int(_num(r.years_exp)), draft=_draft(r), status=c(r.status), weeks=[], snaps={}, pfr={}, inj=None, depth=None)
+                 col=c(r.college), exp=int(_num(r.years_exp)), draft=_draft(r), status=c(r.status),
+                 photo=(r.headshot_url if isinstance(getattr(r, 'headshot_url', None), str) and r.headshot_url.startswith('https://') else None), weeks=[], snaps={}, pfr={}, inj=None, depth=None)
         if len(stats):  # every week this season, whichever team he was on
             for w in stats[stats.player_id == r.gsis_id].sort_values('week').itertuples():
                 p['weeks'].append({k: (getattr(w, k) if k in ('team', 'opponent_team') else round(_num(getattr(w, k, 0)), 4)) for k in WEEK_FIELDS if k in stats.columns})
@@ -240,7 +241,7 @@ for t in T:
         out_players.append(p)
         ws = p['weeks']; S = lambda k: sum(_num(x.get(k)) for x in ws)
         sv = list(p['snaps'].values())
-        index_rows.append(dict(id=p['id'], name=p['name'], team=t, pos=p['pos'], num=p['num'], col=p['col'], snap=int(round(sum(sv) / len(sv))) if sv else 0,
+        index_rows.append(dict(id=p['id'], name=p['name'], team=t, pos=p['pos'], num=p['num'], col=p['col'], photo=p['photo'], snap=int(round(sum(sv) / len(sv))) if sv else 0,
                                tgt=int(S('targets')), rec=int(S('receptions')), car=int(S('carries')), att=int(S('attempts')),
                                yds=int(round(S('receiving_yards') + S('rushing_yards') + S('passing_yards'))), td=int(S('receiving_tds') + S('rushing_tds') + S('passing_tds')),
                                epa=round(S('receiving_epa') + S('rushing_epa') + S('passing_epa'), 1), g=len(ws),

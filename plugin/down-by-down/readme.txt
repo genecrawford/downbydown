@@ -32,6 +32,7 @@ Not affiliated with the NFL or any team. No team logos are used; team marks are 
 == Changelog ==
 
 = 1.2.1 =
+* Optional player photos: a Player photos switch on the Down by Down admin page (off by default) shows the NFL headshots nflverse publishes, lazily, on top of the jersey tile, falling back to the tile if an image fails. The site hotlinks the league's CDN; the switch removes every photo at once.
 * Review fixes on the player layer. Quarterback pages show that passer's own throws (play rows now carry the passer id), not the whole team's. Traded players keep every week of the season, with the other team marked in the game log. Charting lines say so when a play file has no FTN data instead of showing zeros. Games played come from snap weeks as well as stat weeks. Search matches name, number, team abbreviation or college on the server and in the browser alike, and quarterbacks show pass attempts in the index. Draft shows the overall pick, since nflverse does not record the round.
 
 = 1.2.0 =

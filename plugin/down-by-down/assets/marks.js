@@ -18,6 +18,13 @@
     var c1 = ok(t.c1) ? t.c1 : '#161e36', c2 = ok(t.c2) ? t.c2 : '#cb2026', s = size || 40, n = num == null ? '' : String(num), fs = n.length > 1 ? 19 : 21, k = ink(c1, c2);
     return '<svg class="dbd-mk dbd-jersey" width="' + s + '" height="' + s + '" viewBox="0 0 40 40" role="img" aria-label="' + esc(t.nick + ' #' + n) + '"><rect width="40" height="40" rx="5" fill="' + c1 + '"/><rect x="2.5" y="2.5" width="35" height="35" rx="3.5" fill="none" stroke="' + k + '" stroke-opacity=".5" stroke-width="1.5"/><text x="20" y="27" text-anchor="middle" font-size="' + fs + '" ' + F + ' fill="' + k + '">' + esc(n) + '</text></svg>';
   };
+  window.dbdPlayer = function (abbr, num, size, photo, allow) {
+    var tile = window.dbdJersey(abbr, num, size), t = teams()[abbr];
+    if (!tile || !allow || !photo || !/^https:\/\/[^"'<>\s]+$/.test(photo)) return tile;
+    var s = size || 40, c1 = ok(t.c1) ? t.c1 : '#161e36', n = s * 2;
+    var src = photo.replace(/^(https:\/\/static\.www\.nfl\.com\/image\/upload\/)f_auto,q_auto\//, '$1f_auto,q_auto,w_' + n + ',h_' + n + ',c_fill,g_face/');  /* face-cropped square at 2x, about 6 KB instead of 4 MB */
+    return '<span class="dbd-head" style="width:' + s + 'px;height:' + s + 'px">' + tile + '<img src="' + esc(src) + '" alt="" width="' + s + '" height="' + s + '" loading="lazy" decoding="async" referrerpolicy="no-referrer" style="background:' + c1 + '" onerror="this.remove()"></span>';
+  };
   window.dbdPennant = function (abbr, height) {
     var t = teams()[abbr]; if (!t) return '';
     var c1 = ok(t.c1) ? t.c1 : '#161e36', c2 = ok(t.c2) ? t.c2 : '#cb2026', h = height || 40, w = Math.round(h * 1.6), fs = abbr.length > 2 ? 13 : 15;
