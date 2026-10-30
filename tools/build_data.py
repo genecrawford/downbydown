@@ -218,13 +218,14 @@ for t in T:
         fn = r.football_name if isinstance(getattr(r, 'football_name', None), str) and r.football_name else r.first_name
         p = dict(id=r.gsis_id, name=r.full_name, short=f"{str(fn)[:1]}.{r.last_name}", pos=r.position, num=c(r.jersey_number), age=_age(r.birth_date), ht=_ht(r.height), wt=c(r.weight),
                  col=c(r.college), exp=int(_num(r.years_exp)), draft=_draft(r), status=c(r.status),
-                 photo=(r.headshot_url if isinstance(getattr(r, 'headshot_url', None), str) and r.headshot_url.startswith('https://') else None), weeks=[], snaps={}, pfr={}, inj=None, depth=None)
+                 photo=(r.headshot_url if isinstance(getattr(r, 'headshot_url', None), str) and r.headshot_url.startswith('https://') else None), weeks=[], snaps={}, snapteam={}, pfr={}, inj=None, depth=None)
         if len(stats):  # every week this season, whichever team he was on
             for w in stats[stats.player_id == r.gsis_id].sort_values('week').itertuples():
                 p['weeks'].append({k: (getattr(w, k) if k in ('team', 'opponent_team') else round(_num(getattr(w, k, 0)), 4)) for k in WEEK_FIELDS if k in stats.columns})
         if len(snaps):
             for w in snaps[snaps.player == r.full_name].itertuples():
                 p['snaps'][str(int(w.week))] = int(round(_num(w.offense_pct) * 100))
+                if isinstance(w.team, str) and w.team != t: p['snapteam'][str(int(w.week))] = w.team  # a week played for another team (trade)
         if len(pfr):
             for w in pfr[pfr.pfr_player_name == r.full_name].itertuples():
                 p['pfr'][str(int(w.week))] = dict(drop=int(_num(w.receiving_drop)), bt=int(_num(w.receiving_broken_tackles)), rbt=int(_num(w.rushing_broken_tackles)), rat=c(w.receiving_rat) if _num(w.receiving_rat, None) is not None else None)

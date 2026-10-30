@@ -11,12 +11,12 @@ if ( ! $p ) { include DBD_PATH . 'includes/views/notfound.php'; return; }
 $season = DBD_Data::season(); $through = DBD_Data::through_week();
 $W = $p['weeks'] ?? array();
 $played = array_unique( array_merge( array_map( function ( $w ) { return (int) $w['week']; }, $W ), array_map( 'intval', array_keys( $p['snaps'] ?? array() ) ) ) ); $ng = count( $played ); $gp = max( 1, $ng );
-$traded = (bool) array_filter( $W, function ( $w ) use ( $a ) { return ! empty( $w['team'] ) && $w['team'] !== $a; } );
+$traded = ! empty( $p['snapteam'] ) || (bool) array_filter( $W, function ( $w ) use ( $a ) { return ! empty( $w['team'] ) && $w['team'] !== $a; } );
 /* game-log rows: every played week, a zero line where he took snaps but never touched the ball */
 sort( $played );
 $zero = array_fill_keys( array( 'targets', 'receptions', 'receiving_yards', 'receiving_tds', 'receiving_air_yards', 'receiving_yards_after_catch', 'receiving_epa', 'receiving_first_downs', 'target_share', 'air_yards_share', 'carries', 'rushing_yards', 'rushing_tds', 'rushing_epa', 'rushing_first_downs', 'attempts', 'completions', 'passing_yards', 'passing_tds', 'passing_interceptions', 'passing_epa', 'passing_cpoe', 'sacks_suffered' ), 0 );
 $byWk = array(); foreach ( $W as $w ) { $byWk[ (int) $w['week'] ] = $w; }
-$L = array_map( function ( $wk ) use ( $byWk, $zero, $a ) { return $byWk[ $wk ] ?? array_merge( $zero, array( 'week' => $wk, 'team' => $a ) ); }, $played );
+$L = array_map( function ( $wk ) use ( $byWk, $zero, $a, $p ) { return $byWk[ $wk ] ?? array_merge( $zero, array( 'week' => $wk, 'team' => $p['snapteam'][ (string) $wk ] ?? $a ) ); }, $played );
 $sum = function ( $k ) use ( $W ) { $s = 0; foreach ( $W as $w ) { $s += (float) ( $w[ $k ] ?? 0 ); } return $s; };
 $avg = function ( $k ) use ( $W, $gp ) { $s = 0; foreach ( $W as $w ) { $s += (float) ( $w[ $k ] ?? 0 ); } return $s / $gp; };
 $pct = function ( $v ) { return is_finite( $v ) && ! is_nan( $v ) ? round( $v * 100 ) . '%' : '-'; };
