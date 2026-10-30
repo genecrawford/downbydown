@@ -76,7 +76,7 @@ function dbd_settings_page() {
 		<table class="widefat striped" style="max-width:720px"><tbody>
 			<tr><td><code>DBD_SITE_URL</code> (variable)</td><td><code><?php echo esc_html( home_url( '/' ) ); ?></code></td></tr>
 			<tr><td><code>DBD_SYNC_TOKEN</code> (secret)</td><td><code><?php echo esc_html( $token ); ?></code></td></tr>
-			<tr><td>Endpoint</td><td><code>POST <?php echo esc_html( rest_url( 'dbd/v1/sync' ) ); ?></code> with header <code>X-DBD-Token</code></td></tr>
+			<tr><td>Endpoint</td><td><code>POST <?php echo esc_html( home_url( '/?rest_route=/dbd/v1/sync' ) ); ?></code> with header <code>X-DBD-Token</code></td></tr>
 		</tbody></table>
 		<p><form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" onsubmit="return confirm('Generate a new token? The old one stops working immediately.');">
 			<?php wp_nonce_field( 'dbd_new_token' ); ?><input type="hidden" name="action" value="dbd_new_token"><button class="button">Generate a new token</button></form></p>

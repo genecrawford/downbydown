@@ -25,9 +25,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -86,4 +86,6 @@ jobs:
           TOKEN: ${{ secrets.DBD_SYNC_TOKEN }}
         run: |
           # The plugin's endpoint fetches the new manifest from this repo and downloads what changed.
-          curl -sS -X POST "${SITE%/}/wp-json/dbd/v1/sync" -H "X-DBD-Token: ${TOKEN}" -w "\nHTTP %{http_code}\n" || echo "Sync call failed; the site will pull on its own schedule."
+          # ?rest_route= works whether or not the site uses pretty permalinks. Print only the JSON line and the status.
+          curl -sS -X POST "${SITE%/}/?rest_route=/dbd/v1/sync" -H "X-DBD-Token: ${TOKEN}" -H "Accept: application/json" -o /tmp/sync.json -w "HTTP %{http_code}\n" || echo "Sync call failed; the site will pull on its own schedule."
+          head -c 600 /tmp/sync.json; echo
