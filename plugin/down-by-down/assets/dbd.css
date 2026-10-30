@@ -240,6 +240,7 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 .dbd-zones+.dbd-note{padding-top:10px}
 
 /* ---- team explorer ---- */
+.dbd #dbd-explorer{display:flex;flex-direction:column;gap:18px;min-width:0}
 .dbd-skel{padding:40px;text-align:center}
 .dbd-gstrip{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;scrollbar-width:thin}
 .dbd-game{all:unset;cursor:pointer;flex:0 0 auto;display:flex;flex-direction:column;gap:3px;padding:8px 12px;min-width:104px;background:var(--dbd-panel);border:1px solid var(--dbd-line);border-radius:var(--dbd-r);font-family:var(--dbd-body);color:var(--dbd-ink);transition:border-color .12s,background .12s}

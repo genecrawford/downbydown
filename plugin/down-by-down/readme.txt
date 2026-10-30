@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,10 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.0.3 =
+* Explorer: game picker, filters, tiles and charts are spaced like the rest of the app again.
+* The admin page moves from Settings to its own Down by Down entry in the admin sidebar.
 
 = 1.0.2 =
 * Divi 5 flex rows: the app's column now grows to fill the space beside the sidebar instead of keeping a fixed width that overflowed the viewport.

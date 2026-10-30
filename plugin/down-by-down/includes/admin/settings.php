@@ -3,7 +3,8 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 add_action( 'admin_menu', function () {
-	add_options_page( 'Down by Down', 'Down by Down', 'manage_options', 'down-by-down', 'dbd_settings_page' );
+	// Its own entry in the admin sidebar, just below Comments, with a pennant icon.
+	add_menu_page( 'Down by Down', 'Down by Down', 'manage_options', 'down-by-down', 'dbd_settings_page', 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMCAyMCI+PHBvbHlnb24gcG9pbnRzPSIyLDIgMTgsMTAgMiwxOCIgZmlsbD0iYmxhY2siLz48cmVjdCB4PSIyIiB5PSIyIiB3aWR0aD0iMyIgaGVpZ2h0PSIxNiIgZmlsbD0iYmxhY2siIG9wYWNpdHk9Ii41NSIvPjwvc3ZnPg==', 26 );
 } );
 
 add_action( 'admin_init', function () {
@@ -14,7 +15,7 @@ add_action( 'admin_post_dbd_sync_now', function () {
 	check_admin_referer( 'dbd_sync_now' );
 	if ( ! current_user_can( 'manage_options' ) ) { wp_die( 'No.' ); }
 	$r = DBD_Sync::sync( 'manual' );
-	wp_safe_redirect( add_query_arg( array( 'page' => 'down-by-down', 'synced' => $r['ok'] ? 1 : 0 ), admin_url( 'options-general.php' ) ) );
+	wp_safe_redirect( add_query_arg( array( 'page' => 'down-by-down', 'synced' => $r['ok'] ? 1 : 0 ), admin_url( 'admin.php' ) ) );
 	exit;
 } );
 
@@ -22,7 +23,7 @@ add_action( 'admin_post_dbd_new_token', function () {
 	check_admin_referer( 'dbd_new_token' );
 	if ( ! current_user_can( 'manage_options' ) ) { wp_die( 'No.' ); }
 	update_option( DBD_Sync::OPT_TOKEN, wp_generate_password( 40, false, false ), false );
-	wp_safe_redirect( add_query_arg( array( 'page' => 'down-by-down', 'token' => 1 ), admin_url( 'options-general.php' ) ) );
+	wp_safe_redirect( add_query_arg( array( 'page' => 'down-by-down', 'token' => 1 ), admin_url( 'admin.php' ) ) );
 	exit;
 } );
 
