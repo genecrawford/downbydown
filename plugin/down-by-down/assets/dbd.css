@@ -509,6 +509,7 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 .dbd-cbtn{all:unset;cursor:pointer;font:700 10px var(--dbd-display);text-transform:uppercase;letter-spacing:.12em;padding:4px 9px;border-radius:4px;border:1px solid var(--dbd-line-2);color:var(--dbd-ink-2);background:var(--dbd-panel);line-height:1}
 .dbd-cbtn:hover{border-color:var(--dbd-ink-2);color:var(--dbd-ink)}.dbd-cbtn.ok{border-color:var(--dbd-good);color:var(--dbd-good)}.dbd-cbtn.dbd-creset:hover{border-color:var(--dbd-red);color:var(--dbd-red-ink)}
 .dbd-crecent{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:0 14px 8px}
+.dbd-crecent[hidden]{display:none}
 .dbd-crecent .k{font:700 10px var(--dbd-display);text-transform:uppercase;letter-spacing:.18em;color:var(--dbd-muted);margin-right:4px}
 .dbd-crecent a{font:500 11px var(--dbd-mono);color:var(--dbd-ink);text-decoration:none;border:1px solid var(--dbd-line-2);border-radius:999px;padding:3px 10px}.dbd-crecent a:hover{border-color:var(--dbd-red)}
 .dbd-crecent .x{all:unset;cursor:pointer;font:500 10px var(--dbd-mono);color:var(--dbd-muted);text-decoration:underline;text-underline-offset:3px;margin-left:4px}
