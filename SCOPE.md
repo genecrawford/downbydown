@@ -557,7 +557,7 @@ Gene: "make the 10 things the next roadmap and build this first slice." Benchmar
 | 6 | **Weekly movers** (§22) | 1.3.8 | Players index: who moved in the last full week, three boards (snap share, target share, EPA) of climbers and fallers against each player's own season, plus new faces | `players/movers.json` from the build, computed from the weekly lines already shipped |
 | 7 | **Playstyle fingerprint** (§23) | 1.3.9 | Top of How he's used: eight usage traits per position as league-percentile bars, trait tags, and a generated read of how he is used (depth, screens, middle of the field, YAC, third down, red zone, motion, play action, formation) | `fp` per player and per-group `fp` pools from the build, computed from the play rows |
 | 8 | **Career** (§24) | 1.3.10 | A Career band on the player page: season-by-season table back to his rookie year with a totals row, a yards-per-season chart with this season's pace, career highs and a read; play-level views stay current season | `data/career/{year}.json` season aggregates cached once per past year from `stats_player_week_{year}`, assembled into `players/career/{TEAM}.json` |
-| 9 | **Share card** | later | A server-rendered image of the hero and percentile bars for social | PHP GD or an SVG-to-PNG step in the build |
+| 9 | **Share card** (§26) | 1.3.12 | A 1200×630 PNG per player (hero, season line, grade bars, team accent) rendered by PHP GD on first request and cached; the player page's og:image, plus a Share button that downloads or shares it | Nothing new from the build; bundled fonts; GD with FreeType on the host |
 | 10 | **This week** (§25) | 1.3.11 | A strip under the hero tiles: his next game (kickoff, line, total), the defense's rank at his position and what it allows, his line against that tier this season and the last meeting, his status, and a one-line read | Schedule and team defense metrics (shipped); nothing new |
 
 The nfelo model layer (§13 backlog, greerreNFL's OK needed) is 1.4.0 and runs independent of this list.
@@ -899,3 +899,34 @@ Under the cells, **the read**, one or two sentences in the takeaways voice from 
 A team-level this-week card on the team page and the hub (the hub's slate already names the game), weather, and the opponent's injury report.
 
 Status: built as 1.3.11 (2026-10-31).
+
+## 26. Share card: the player page as an image (scoped and mocked 2026-10-31, `mockup-v5/card.html`)
+
+Roadmap slice 9 (§16), the last on the list. Two things that are one image: the picture a link to a player page unfurls into on X, Slack, iMessage and Facebook, and the same picture a reader can save or share from the page. Social crawlers do not run JavaScript, so the image has to exist at a URL as a PNG; that rules out drawing it in the browser and points at the server. The mock is the visual spec, three real cards at 1200×630: Jefferson (`card.html?id=00-0036322`), Jones (`?id=00-0033293`), Murray (`?id=00-0035228`).
+
+### What it is
+
+**The card**, 1200×630, light, in the site's type:
+
+- **Brand bar** across the top: the Down by Down wordmark left, "2026 season · through Week 8" right, a rule under it in the team's color.
+- **Left half, the hero:** headshot in a circle on the team-color disc (the jersey tile with his number when the headshot is missing), the name in the hero face with the surname in red, the kicker line "WR · #18 · Vikings · 6th season", then the season line as four tiles from the hero (targets, receptions, yards, touchdowns for receivers; carries, yards, touchdowns, receptions for backs; attempts, yards, touchdowns, interceptions for quarterbacks), each with its per-game or rate sub-line.
+- **Right half, where he ranks:** the eight grade bars from §15 in the card's own proportions, label left, bar with the median tick and his marker, percentile right in the hero face, green for 75th and up, red for 25th and down. A player under the qualifier gets the four season tiles across the full width and the line "Graded at 15 targets" where the bars would be.
+- **Footer:** "downbydown.com" left, "Data: nflverse · grades among 136 receivers and tight ends" right.
+
+**On the page:** a **Share** button in the hero header beside the team link. On a phone it opens the system share sheet with the image attached (the Web Share API with files, where supported); elsewhere it opens the PNG in a new tab, which the browser saves or copies. The button carries a tooltip with the card's size.
+
+**In the head:** `og:image`, `og:image:width`, `og:image:height`, `twitter:card` (summary_large_image) and `twitter:image` on player pages, pointing at the card URL, alongside the title and description the router already writes.
+
+### Data and rendering
+
+- **No build change.** Everything on the card is on the player page already: the player record (name, number, position, photo, weekly line), the grades and the league pool, the team's colors.
+- **Rendering: PHP GD at request time, cached.** A route `?card=<gsis id>` renders the PNG with GD and FreeType, writes it to `wp-content/uploads/down-by-down/cards/<id>-<through week>-<plugin version>.png`, and serves it with long cache headers; later requests serve the file. The cache key carries the data week, so the card refreshes with each week's build, and the plugin version, so a design change does not serve stale cards. The plugin bundles the four typefaces as TTF under `assets/fonts/` (Tourney, Barlow Condensed, IBM Plex Sans, IBM Plex Mono; all Open Font License). The headshot is fetched once with `wp_remote_get`, drawn through a circular mask, and skipped for the jersey tile on any failure. Text is drawn with `imagettftext`; bars and discs with GD's filled shapes at 2× and downsampled for smooth edges.
+- **Host precondition:** GD with FreeType, which WordPress's Site Health lists under the GD module. Without it the route returns a 404, the Share button is not rendered, and the head carries no image tags; nothing else on the site changes. The first request for a given card does the work (about a quarter of a second); crawlers hitting a page before anyone has asked for its card wait that long once.
+- **Plugin (`1.3.12`).** `class-dbd-card.php` (the renderer and the route), the fonts, the Share button in `player.php`, the head tags in `DBD_Router::head()`, and a small script for the Web Share API in `dbd-site.js` that falls back to a plain link. The Cloudflare layer in front of the site caches the PNG like any upload.
+- **Versioning the design:** the card's layout constants (sizes, margins, the eight bars' geometry) live at the top of the renderer; the mock is the reference.
+
+### Not in this slice
+
+Team cards, game cards and compare cards (the renderer is written so a second layout can be added), a dark card, and a card for the hub.
+
+Status: built as 1.3.12 (2026-10-31). The repo gained a Plugin check workflow (PHP syntax plus three rendered cards as an artifact) since no machine here runs PHP.

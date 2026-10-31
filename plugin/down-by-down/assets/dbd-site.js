@@ -110,3 +110,21 @@
     }
   }
 })();
+
+/* share card (SCOPE §26): on devices that can share files, fetch the PNG ahead of time so the click can hand it to the share sheet
+   while the browser still counts the click as a user gesture; anywhere else, or before it is ready, the link opens the image. */
+(function () {
+  var a = document.querySelector('a.dbd-share'); if (!a || !navigator.share || !navigator.canShare) return;
+  var file = null, probe = new File([new Blob(['x'])], 'x.png', { type: 'image/png' });
+  if (!navigator.canShare({ files: [probe] })) return;
+  var load = function () { fetch(a.href).then(function (r) { return r.ok ? r.blob() : null; }).then(function (b) { if (b) file = new File([b], 'down-by-down-card.png', { type: 'image/png' }); }).catch(function () {}); };
+  if ('requestIdleCallback' in window) requestIdleCallback(load, { timeout: 4000 }); else setTimeout(load, 1500);
+  a.addEventListener('click', function (e) {
+    if (!file) return;  /* not ready yet: the link opens the image in a new tab */
+    e.preventDefault();
+    navigator.share({ files: [file], title: a.getAttribute('data-share-title') || document.title, url: location.href }).catch(function (err) {
+      if (err && err.name === 'AbortError') return;  /* the share sheet was dismissed; nothing to do */
+      window.open(a.href, '_blank', 'noopener');
+    });
+  });
+})();

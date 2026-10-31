@@ -20,6 +20,7 @@
 .pmark.sm{width:26px;height:26px;font-size:11px;border-radius:4px;box-shadow:none}
 .ttitle .sub b{font-weight:600;color:var(--ink)}
 .hdr{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.hdr .share{display:inline-flex;align-items:center;gap:6px;font:700 11px var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--ink);text-decoration:none;border:1px solid var(--line-2);border-radius:999px;padding:4px 10px} .hdr .share:hover{border-color:var(--red);color:var(--red)}
 .hdr .pn{display:flex;align-items:center;gap:8px;font:700 12px var(--display);text-transform:uppercase;letter-spacing:.14em;color:var(--ink-2);text-decoration:none}
 .glog th{font:700 10px var(--display);text-transform:uppercase;letter-spacing:.12em;color:var(--muted);text-align:right;padding:6px;border-bottom:1px solid var(--line);white-space:nowrap}
 .glog td{padding:6px;border-top:1px solid var(--line);text-align:right;font:500 12px var(--mono);white-space:nowrap}
@@ -211,7 +212,7 @@
         <h1 class="withmark" id="h1"></h1>
         <p class="sub" id="sub"></p>
         <div class="pills" id="pills"></div>
-      </div><div class="hdr"><a class="pn" href="team.html?team=MIN" id="teamlink"></a><span class="badge" id="snaps"></span></div></div>
+      </div><div class="hdr"><a class="pn" href="team.html?team=MIN" id="teamlink"></a><span class="badge" id="snaps"></span><a class="share" id="sharebtn" href="card.html" title="1200 × 630 PNG for social"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v13"/></svg>Share card</a></div></div>
 
       <div class="tiles" id="tiles"></div>
       <section class="panel tw" id="twsec" hidden><div class="ph"><span class="lab"><b id="twlab">This week</b> · <span id="twsub"></span></span><span class="badge" id="twbadge"></span></div>
@@ -298,7 +299,7 @@ document.getElementById('h1').innerHTML=`<span class="pmark">${p.num}</span><spa
 document.getElementById('sub').innerHTML=`Age ${p.age} · ${p.ht} · ${p.wt} lb · ${p.col} · ${p.draft}. ${depth?`Listed <b>${depth}</b> on the ${p.depth.grp} depth chart.`:''} Snap share <b>${Math.round(snapAvg)}%</b> across ${gp} games.`;
 const st=p.inj?p.inj.status:'';const cls=/out|did not/i.test(st)?'bad':/limited|questionable|doubtful/i.test(st)?'':'good';
 document.getElementById('pills').innerHTML=(p.inj?`<span class="pill ${cls}">Week ${p.inj.week} report · ${p.inj.what} · ${st.replace(' in Practice','').replace(' In Practice','')}</span>`:`<span class="pill good">No injury listing</span>`)+(depth?`<span class="pill">${depth}</span>`:'')+`<span class="pill">${T[TEAM].nick}</span>`;
-document.getElementById('teamlink').innerHTML=window.dbdPennant(TEAM,40)+'Vikings offense';
+document.getElementById('sharebtn').href='card.html?id='+p.id;document.getElementById('teamlink').innerHTML=window.dbdPennant(TEAM,40)+'Vikings offense';
 document.getElementById('snaps').textContent=`${Object.values(p.snaps).reduce((a,b)=>a+b,0)?Math.round(snapAvg)+'% of snaps':'no snap data'}`;
 
 /* the player's plays: targets for receivers, carries + targets for backs, every team pass for a QB */
