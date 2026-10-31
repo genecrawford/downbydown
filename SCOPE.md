@@ -497,6 +497,8 @@ Not available: Next Gen Stats (separation, cushion, RYOE) have no 2026 files on 
 
 ## 15. Player grades (scoped and mocked 2026-10-30, `mockup-v5/player.html`)
 
+**Status: built as 1.3.0 (2026-10-30), PR stacked on 1.2.2.** Server-rendered bars, ranks and all three game log tables; the view switch is the only JS.
+
 Gene asked what else the player data could do, with nfelo's QB page as the bar. Ten ideas were tabled; this is the first slice: the three pieces that make every player page feel complete and that share one calculation. The mock runs on the real league: every qualifying player's 2026 weekly stats and PFR extras through Week 8.
 
 ### 15.1 Where he ranks (percentile bars)
@@ -539,3 +541,22 @@ Every view keeps the week and opponent columns, the totals footer, and the sorta
 ### Not in this slice (from the ten)
 
 Compare, playstyle text, trend lines, QB to receiver connection, opponent context, weekly movers, career tab, share card, this-week panel. Compare is next, since it reuses everything on this page.
+
+## 16. Player roadmap (agreed 2026-10-30)
+
+Gene: "make the 10 things the next roadmap and build this first slice." Benchmark is nfelo's QB page; our edge is every position, every play on the field, and the charting. Order is the build order unless Gene reshuffles.
+
+| # | Slice | Version | What it is | Data it needs |
+|---|---|---|---|---|
+| 1 | **Player grades** (§15) | 1.3.0 | League percentile bars, season stats with rank, game log views | `players/league.json` from the build, metrics per player record |
+| 2 | **Compare** | 1.3.x | Two or three players of one position side by side: percentile bars overlaid, field maps stacked, game logs aligned by week. Route `?compare=id,id` | Nothing new; reuses the player page pieces |
+| 3 | **QB to receiver connection** | 1.3.x | QB page: targets by receiver with catch rate, aDOT, EPA per throw, the field map colored by receiver. Receiver page: his line by passer | `pid` and `qb` on play rows (shipped) |
+| 4 | **Opponent context** | 1.3.x | Each game log row names the defense faced and its rank against his position; a strength-of-schedule line | Team defense metrics (shipped) joined by week |
+| 5 | **Trend lines** | 1.3.x | Rolling three-game line of the position's core metric against the league median, game rules, Chartist | League weekly medians from the build |
+| 6 | **Weekly movers** | 1.3.x | Index strip: biggest climbers and fallers in snap share, target share and EPA week over week; new starters and injury changes | Previous week's index kept by the build |
+| 7 | **Playstyle fingerprint** | 1.3.x | Generated read in the takeaways voice from his splits: depth profile, third-down and red-zone share, formation lean | Play file (shipped), rules per position |
+| 8 | **Career tab** | 1.3.x | Season-by-season summary back to 1999 from nflverse weekly stats; play-level views stay current season | `stats_player_week_{year}` per season, a one-time backfill |
+| 9 | **Share card** | later | A server-rendered image of the hero and percentile bars for social | PHP GD or an SVG-to-PNG step in the build |
+| 10 | **This week panel** | later | His next matchup from the schedule with the opposing defense's rank at his position | Schedule and team defense metrics (shipped) |
+
+The nfelo model layer (§13 backlog, greerreNFL's OK needed) is 1.4.0 and runs independent of this list.
