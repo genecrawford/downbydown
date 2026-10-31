@@ -200,6 +200,8 @@ _rw = _r[_r.position.isin(SKILL)].copy()
 if 'week' in _rw.columns:
     # each team's own latest roster week: teams on bye have no rows for the current week and would vanish otherwise
     _rw = _rw[_rw.week == _rw.groupby('team').week.transform('max')]
+    # a player traded from a bye team to one with a newer roster week would appear on both: keep his newest row only
+    _rw = _rw.sort_values('week').drop_duplicates('gsis_id', keep='last')
 stats = pd.read_csv(env('DBD_STATS'), low_memory=False) if env('DBD_STATS') else pd.DataFrame()
 if len(stats) and 'season_type' in stats.columns: stats = stats[stats.season_type == 'REG']
 snaps = pd.read_csv(env('DBD_SNAPS'), low_memory=False) if env('DBD_SNAPS') else pd.DataFrame()
