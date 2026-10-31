@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Compare | Down by Down</title>
+<link href="https://fonts.googleapis.com/css2?family=Tourney:wght@800&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="dbd.css">
+<link rel="stylesheet" href="transitions.css">
+<script src="data/teams.js"></script>
+<script src="data/marks.js"></script>
+<script src="data/MIN.js"></script>
+<script src="data/players-MIN.js"></script>
+<script src="data/league-pct.js"></script>
+<style>
+:root{--slotA:#161e36;--slotB:#cb2026;--slotC:#d99a06}
+.slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:12px 14px}
+@media (max-width:900px){.slots{grid-template-columns:minmax(0,1fr)}}
+.slot{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r);background:var(--bg);border-left:4px solid var(--c)}
+.slot.empty{border-style:dashed;color:var(--muted);font-size:13px}
+.slot .who{flex:1;min-width:0}.slot .who b{display:block;font:700 15px var(--display);text-transform:uppercase;letter-spacing:.04em;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.slot .who small{font:500 10px var(--mono);color:var(--muted)}
+.slot select{max-width:150px}
+.slot .x{all:unset;cursor:pointer;font:700 12px var(--display);color:var(--muted);padding:2px 6px}.slot .x:hover{color:var(--red-ink)}
+.pmark{display:grid;place-items:center;width:40px;height:40px;border-radius:6px;background:var(--team);color:var(--team2);font:800 17px var(--hero);flex:0 0 auto}
+.legend3{display:flex;flex-wrap:wrap;gap:6px 16px;font:600 12px var(--body);padding:10px 14px 0}
+.legend3 i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-2px}
+.cpct{padding:8px 14px 14px}
+.cpct .row{display:grid;grid-template-columns:150px minmax(0,1fr) repeat(var(--n),76px);gap:10px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}
+.cpct .row:first-child{border-top:0}
+.cpct .l{font:500 12px var(--body)} .cpct .l small{display:block;font:500 10px var(--mono);color:var(--muted)}
+.cpct .bar{height:12px;border-radius:6px;background:linear-gradient(90deg,rgba(180,38,31,.18),rgba(107,111,120,.12) 50%,rgba(30,127,74,.22));position:relative}
+.cpct .bar::after{content:"";position:absolute;left:50%;top:-2px;height:16px;border-left:1px dashed var(--line-2)}
+.cpct .bar i{position:absolute;top:-3px;width:5px;height:18px;border-radius:2px;background:var(--c);left:calc(var(--p) * 1%);transform:translateX(-50%);box-shadow:0 0 0 2px var(--panel)}
+.cpct .cv{font:600 12px var(--mono);text-align:right;white-space:nowrap} .cpct .cv small{display:block;font:700 10px var(--hero);color:var(--muted)} .cpct .cv.best{color:var(--ink)} .cpct .cv.best small{color:var(--good)}
+.maps{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:14px;padding:12px 14px}
+@media (max-width:900px){.maps{grid-template-columns:minmax(0,1fr)}}
+.maps h4{margin:0 0 8px;font:700 11px var(--display);text-transform:uppercase;letter-spacing:.16em;color:var(--ink-2);display:flex;align-items:center;gap:8px}.maps h4 i{width:10px;height:10px;border-radius:2px;display:inline-block}
+.alog th{font:700 10px var(--display);text-transform:uppercase;letter-spacing:.12em;color:var(--muted);padding:6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.alog th.p{color:var(--c);border-bottom:2px solid var(--c);text-align:center}
+.alog td{padding:6px;border-top:1px solid var(--line);text-align:right;font:500 12px var(--mono);white-space:nowrap}
+.alog td:first-child,.alog th:first-child{text-align:left} .alog td.b{font-weight:600;color:var(--ink);background:color-mix(in srgb,var(--good) 10%,transparent)}
+.alog td.sep,.alog th.sep{border-left:1px solid var(--line-2)}
+.alog tfoot td{font-weight:600;border-top:2px solid var(--line-2)}
+.sbs td{padding:6px 8px;border-top:1px solid var(--line);font:500 12px var(--mono);text-align:right;white-space:nowrap}
+.sbs td:first-child{text-align:left;font:500 13px var(--body)} .sbs th{font:700 10px var(--display);text-transform:uppercase;letter-spacing:.12em;padding:6px 8px;border-bottom:2px solid var(--c);color:var(--c);text-align:right}
+.sbs th:first-child{border-bottom:1px solid var(--line);color:var(--muted);text-align:left}
+.sbs td.b{font-weight:600;color:var(--ink);background:color-mix(in srgb,var(--good) 10%,transparent)} .sbs td small{color:var(--muted);margin-left:6px}
+.tog{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="side">
+    <a class="logo" href="index.html"><img class="c" src="assets/dxd-logo.svg" alt="Down by Down" width="153" height="40"></a>
+    <nav class="grp"><div class="gl">This week</div><a href="index.html#slate"><i></i>Slate<span class="ct">14</span></a><a href="index.html#teams"><i></i>Teams<span class="ct">32</span></a></nav>
+    <nav class="grp"><div class="gl">Explore</div><a href="matchups.html"><i></i>Matchups</a><a href="teams.html"><i></i>Play explorer</a><a href="players.html" aria-current="page"><i></i>Players</a><a href="index.html#about"><i></i>About</a></nav>
+    <div class="foot"><b>2026 season</b>Through Week 8. Data from nflverse, refreshed nightly. Not affiliated with the NFL or any team.</div>
+  </aside>
+  <div>
+    <div class="top"><div class="crumb"><a href="index.html" style="text-decoration:none">DOWN X DOWN</a> <span>›</span> <a href="players.html" style="text-decoration:none">players</a> <span>›</span> <b>compare</b></div><div class="r"><span class="upd">Mock · real plays, stats and league pool through Week 8</span></div></div>
+    <main class="content" style="--team:#4F2683;--team2:#FFC62F">
+      <div class="ttitle"><div>
+        <p class="kicker" id="kick">2026 season · compare · receivers</p>
+        <h1><em>Compare</em> players</h1>
+        <p class="sub">Two or three players of the same position, side by side: where each one grades against the league, where the ball finds each of them, and how their weeks line up. Pick from the slots below. The mock offers Vikings; the build searches every team.</p>
+      </div><div class="badge" id="pool"></div></div>
+
+      <section class="panel"><div class="ph"><span class="lab"><b>Who</b> · up to three, same position group</span><span class="badge" id="share">Shareable link updates as you pick</span></div><div class="slots" id="slots"></div></section>
+
+      <section class="panel"><div class="ph"><span class="lab"><b>Where they rank</b> · <span id="pctn"></span></span><span class="badge">League percentiles</span></div><div class="legend3" id="leg"></div><div class="cpct" id="cpct"></div><p class="note">Each bar is the league pool; the markers are the players. Right is better, the dashed line is the median. The best value in each row is marked green.</p></section>
+
+      <section class="panel"><div class="ph"><span class="lab"><b>Where the ball finds them</b> · same scale, same field</span><span class="badge" id="mapn"></span></div><div class="maps" id="maps"></div><div class="legend"><span><i style="background:#5b9cf6"></i>Catch</span><span><i style="background:#9a96a6"></i>Incomplete</span><span><i style="background:#e0564b"></i>Interception</span><span><i style="background:#4fd18b"></i>Touchdown</span></div><p class="note">Targets placed by air yards and side of the field. Backs get carries by gap instead; quarterbacks get every throw.</p></section>
+
+      <section class="panel"><div class="ph" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span class="lab"><b>Week by week</b> · aligned</span><div class="seg tog" id="metric"></div></div><div class="tw" style="padding:0 14px 8px"><table class="alog" id="alog"></table></div><p class="note">Rows are league weeks, so byes and missed games show as gaps. The best value each week is marked green.</p></section>
+
+      <section class="panel"><div class="ph"><span class="lab"><b>Season stats</b> · side by side, with league rank</span></div><div class="tw" style="padding:0 14px 8px"><table class="sbs" id="sbs"></table></div></section>
+    </main>
+  </div>
+</div>
+<script>
+const D=window.DBD_PLAYERS, PL=D.players, RAW=window.DBD_DATA, K=RAW.keys, LG=window.DBD_LEAGUE;
+const P=RAW.plays.map((r,i)=>{const o={i};K.forEach((k,j)=>o[k]=r[j]);return o;}), G=RAW.games;
+const COLS=['var(--slotA)','var(--slotB)','var(--slotC)'];
+const grpOf=p=>p.pos==='QB'?'qb':(p.pos==='RB'||p.pos==='FB')?'rb':'rec';
+const pct=v=>isFinite(v)?Math.round(v*100)+'%':'-', f1=v=>isFinite(v)?(+v).toFixed(1):'-', sgn=(v,d=2)=>(v>0?'+':'')+(+v).toFixed(d);
+const ordn=n=>n+(['th','st','nd','rd'][(n%100-20)%10]||['th','st','nd','rd'][n%100]||'th');
+const sum=(ws,k)=>ws.reduce((a,w)=>a+(+w[k]||0),0);
+/* state from the URL: ?ids=a,b,c */
+const byId={};PL.forEach(p=>byId[p.id]=p);
+const want=(new URLSearchParams(location.search).get('ids')||'').split(',').filter(x=>byId[x]);
+let ids=want.length?want:['J.Jefferson','J.Addison','J.Jennings'].map(s=>PL.find(p=>p.short===s).id);
+const grp=()=>grpOf(byId[ids[0]]);
+/* metrics per group (same definitions as the player page) */
+const DEFS={rec:[['tshare','Target share','of team targets',v=>pct(v)],['adot','Depth of target','air yards per target',v=>f1(v)],['yacpc','After the catch','yards per reception',v=>f1(v)],['catch','Catch rate','receptions per target',v=>pct(v)],['epat','EPA per target','',v=>sgn(v)],['fdpt','First downs','per target',v=>pct(v)],['drop','Drop rate','lower is better',v=>pct(v)],['ypg','Yards per game','',v=>f1(v)]],
+ rb:[['ypc','Yards per carry','',v=>f1(v)],['repc','Rush EPA per carry','',v=>sgn(v)],['epat','EPA per target','receiving',v=>v==null?'-':sgn(v)],['btpt','Broken tackles','per touch',v=>pct(v)],['expl','Explosive rate','per touch',v=>pct(v)],['tpg','Touches per game','',v=>f1(v)],['tgtshare','Receiving share','targets per touch',v=>pct(v)],['ypt','Yards per touch','',v=>f1(v)]],
+ qb:[['epadb','EPA per dropback','',v=>sgn(v)],['cpoe','CPOE','',v=>sgn(v,1)],['sack','Sack rate','lower is better',v=>pct(v)],['ypa','Yards per attempt','',v=>f1(v)],['tdr','TD rate','',v=>pct(v)],['intr','INT rate','lower is better',v=>pct(v)],['adot','Depth of target','',v=>f1(v)],['rushepa','Rush EPA per game','',v=>sgn(v)]]};
+const low={rec:['drop'],rb:[],qb:['sack','intr']};
+const lgRow=p=>(LG.players[grpOf(p)]||[]).find(x=>x.id===p.id)||{};
+const pctile=(g,k,v)=>{const a=LG.dist[g][k]||[];if(v==null||!a.length)return null;let b=0,e=0;for(const x of a){if(x<v)b++;else if(x===v)e++;}let pc=(b+e/2)/a.length;if(low[g].includes(k))pc=1-pc;return Math.round(pc*100);};
+const rank=(g,k,v)=>{const a=LG.dist[g][k]||[];if(v==null||!a.length)return null;return 1+(low[g].includes(k)?a.filter(x=>x<v).length:a.filter(x=>x>v).length);};
+const better=(g,k,a,b)=>a==null?false:b==null?true:(low[g].includes(k)?a<b:a>b);
+
+function draw(){
+  const g=grp(), players=ids.map(id=>byId[id]), n=players.length;
+  document.documentElement.style.setProperty('--n',n);
+  document.getElementById('kick').textContent=`2026 season · compare · ${g==='rec'?'receivers':g==='rb'?'backs':'quarterbacks'}`;
+  document.getElementById('pool').textContent=`${LG.n[g]} in the league pool`;
+  try{history.replaceState(null,'',`?ids=${ids.join(',')}`);}catch(e){}
+  /* slots */
+  const options=PL.filter(p=>grpOf(p)===g&&p.weeks.length&&!ids.includes(p.id));
+  let sh='';
+  for(let i=0;i<3;i++){const p=players[i];
+    if(p){sh+=`<div class="slot" style="--c:${COLS[i]}"><span class="pmark">${p.num}</span><div class="who"><b>${p.name}</b><small>${p.pos} · ${window.DBD_TEAMS.MIN.nick} · ${lgRow(p).id?'graded':'not yet qualified'}</small></div>${n>2?`<button class="x" title="Remove" data-rm="${i}">✕</button>`:''}</div>`;}
+    else sh+=`<div class="slot empty" style="--c:var(--line-2)"><select data-add="1"><option value="">Add a ${g==='rec'?'receiver':g==='rb'?'back':'quarterback'}…</option>${options.map(o=>`<option value="${o.id}">${o.name}</option>`).join('')}</select><span>same position, any team</span></div>`;}
+  document.getElementById('slots').innerHTML=sh;
+  /* legend */
+  document.getElementById('leg').innerHTML=players.map((p,i)=>`<span><i style="background:${COLS[i]}"></i>${p.name}</span>`).join('');
+  document.getElementById('pctn').textContent=`among ${LG.n[g]} ${g==='rec'?'receivers and tight ends':g==='rb'?'backs':'quarterbacks'} with ${LG.min[g]}+`;
+  /* overlaid percentiles */
+  document.getElementById('cpct').innerHTML=DEFS[g].map(([k,name,sub,fmt])=>{const vals=players.map(p=>lgRow(p)[k]);let bi=-1;vals.forEach((v,i)=>{if(bi<0?v!=null:better(g,k,v,vals[bi]))bi=i;});
+    return`<div class="row"><div class="l">${name}${sub?`<small>${sub}</small>`:''}</div><div class="bar">${players.map((p,i)=>{const pc=pctile(g,k,vals[i]);return pc==null?'':`<i style="--p:${pc};--c:${COLS[i]}" title="${p.name}: ${ordn(pc)}"></i>`;}).join('')}</div>${vals.map((v,i)=>{const pc=pctile(g,k,v);return`<div class="cv ${i===bi?'best':''}" style="--c:${COLS[i]}">${v==null?'-':fmt(v)}<small>${pc==null?'-':ordn(pc)}</small></div>`;}).join('')}</div>`;}).join('');
+  /* maps */
+  const mine=p=>P.filter(q=>q.pl===p.short), isT=q=>['comp','inc','int'].includes(q.k);
+  const sets=players.map(p=>g==='qb'?P.filter(q=>q.pt==='pass'&&!['sack','scramble'].includes(q.k)&&q.pl!==p.short?false:q.pt==='pass'&&!['sack','scramble'].includes(q.k)):g==='rb'?mine(p).filter(q=>q.k==='run'):mine(p).filter(isT));
+  const allAir=[].concat(...sets.map(s=>s.filter(q=>q.air!=null).map(q=>q.air)));
+  const minA=Math.min(-10,Math.floor(Math.min(...allAir,0)/5)*5),maxA=Math.max(40,...allAir);
+  document.getElementById('mapn').textContent=sets.map((s,i)=>`${players[i].short} ${s.length}`).join(' · ');
+  document.getElementById('maps').innerHTML=players.map((p,i)=>`<div><h4><i style="background:${COLS[i]}"></i>${p.name} <span style="color:var(--muted)">· ${sets[i].length} ${g==='rb'?'carries':'targets'}</span></h4>${g==='rb'?runmap(sets[i]):passmap(sets[i].filter(q=>q.air!=null),minA,maxA)}</div>`).join('');
+  /* aligned log */
+  const M={rec:[['Yds','receiving_yards'],['Tgt','targets'],['Rec','receptions'],['EPA','receiving_epa'],['Snap','snap']],rb:[['Yds','rushing_yards'],['Car','carries'],['Tgt','targets'],['EPA','rushing_epa'],['Snap','snap']],qb:[['Yds','passing_yards'],['Att','attempts'],['TD','passing_tds'],['EPA','passing_epa'],['Snap','snap']]}[g];
+  const seg=document.getElementById('metric');if(!seg.dataset.ready){seg.classList.add('t-tabs');seg.innerHTML='<span class="t-tabs-pill" aria-hidden="true"></span>'+M.map((m,i)=>`<button class="t-tab" type="button" role="tab" data-v="${m[1]}" aria-selected="${i===0}">${m[0]}</button>`).join('');seg.dataset.ready='1';seg.onclick=e=>{const b=e.target.closest('button');if(!b)return;seg.querySelectorAll('button').forEach(x=>x.setAttribute('aria-selected',x===b));pill(b);alog();};requestAnimationFrame(()=>{const pl=seg.querySelector('.t-tabs-pill');pl.style.transition='none';pill(seg.querySelector('[aria-selected="true"]'));void pl.offsetWidth;pl.style.transition='';});}
+  function pill(b){const pl=seg.querySelector('.t-tabs-pill');pl.style.transform=`translateX(${b.offsetLeft}px)`;pl.style.width=b.offsetWidth+'px';}
+  function alog(){const key=seg.querySelector('[aria-selected="true"]').dataset.v, weeks=[...new Set([].concat(...players.map(p=>p.weeks.map(w=>+w.week))).concat(players.flatMap(p=>Object.keys(p.snaps).map(Number))))].sort((a,b)=>a-b);
+    const val=(p,wk)=>{if(key==='snap')return p.snaps[wk]??null;const w=p.weeks.find(x=>+x.week===wk);return w?+w[key]:null;};
+    const fmtv=v=>v==null?'<span style="color:var(--muted)">·</span>':key==='snap'?v+'%':/epa/.test(key)?sgn(v,1):Math.round(v);
+    let h='<thead><tr><th>Week</th>'+players.map((p,i)=>`<th class="p" style="--c:${COLS[i]}">${p.short}</th>`).join('')+'</tr></thead><tbody>';
+    weeks.forEach(wk=>{const vs=players.map(p=>val(p,wk));const mx=Math.max(...vs.filter(v=>v!=null));h+=`<tr><td>Wk ${wk}</td>${vs.map(v=>`<td class="${v!=null&&v===mx&&vs.filter(x=>x===mx).length===1?'b':''}">${fmtv(v)}</td>`).join('')}</tr>`;});
+    const tot=players.map(p=>key==='snap'?(Object.values(p.snaps).reduce((a,b)=>a+b,0)/Math.max(1,Object.keys(p.snaps).length)):sum(p.weeks,key));
+    h+=`</tbody><tfoot><tr><td>${key==='snap'?'Average':'Season'}</td>${tot.map(v=>`<td>${key==='snap'?Math.round(v)+'%':/epa/.test(key)?sgn(v,1):Math.round(v)}</td>`).join('')}</tr></tfoot>`;
+    document.getElementById('alog').innerHTML=h;}
+  alog();
+  /* side-by-side season stats */
+  const SS=(p)=>{const w=p.weeks,S=k=>sum(w,k),gp=Math.max(1,w.length),me=lgRow(p);
+    const base=g==='rec'?[['Targets',S('targets')],['Receptions',S('receptions')],['Yards',S('receiving_yards')],['Touchdowns',S('receiving_tds')]]:g==='rb'?[['Carries',S('carries')],['Rush yards',S('rushing_yards')],['Rush TD',S('rushing_tds')],['Targets',S('targets')]]:[['Attempts',S('attempts')],['Completions',S('completions')],['Pass yards',S('passing_yards')],['TD / INT',S('passing_tds')+' / '+S('passing_interceptions')]];
+    return base.map(([n,v])=>({n,v,txt:String(v),rk:null,raw:typeof v==='number'?v:null,k:null})).concat(DEFS[g].map(([k,n,sub,fmt])=>({n,txt:me[k]==null?'-':fmt(me[k]),rk:rank(g,k,me[k]),raw:me[k]==null?null:me[k],k})));};
+  const cols=players.map(SS);
+  let t='<thead><tr><th>Season</th>'+players.map((p,i)=>`<th style="--c:${COLS[i]}">${p.short}</th>`).join('')+'</tr></thead><tbody>';
+  cols[0].forEach((r,ri)=>{const vals=cols.map(c=>c[ri].raw);let bi=-1;vals.forEach((v,i)=>{if(typeof v!=='number')return;if(bi<0)bi=i;else if(r.k?better(g,r.k,v,vals[bi]):v>vals[bi])bi=i;});
+    t+=`<tr><td>${r.n}</td>${cols.map((c,i)=>`<td class="${i===bi&&vals.filter(v=>v===vals[bi]).length===1?'b':''}">${c[ri].txt}${c[ri].rk?`<small>${ordn(c[ri].rk)}</small>`:''}</td>`).join('')}</tr>`;});
+  document.getElementById('sbs').innerHTML=t+'</tbody>';
+}
+/* field drawings, shared scale */
+function hash(i){return(i*2654435761%4294967296)/4294967296}
+function passmap(Dp,minA,maxA){const Wd=360,H=420,Tp=40,B=30,Lf=34,R=10;const y=a=>Tp+(maxA-a)/(maxA-minA)*(H-Tp-B),lw=(Wd-Lf-R)/3,lanes={left:0,middle:1,right:2};const FL='rgba(255,255,255,.22)',FI='rgba(255,255,255,.75)';
+  let s=`<svg viewBox="0 0 ${Wd} ${H}" width="100%" style="display:block;background:#2c4a35;border-radius:4px">`;for(let a=-10;a<=maxA;a+=10)s+=`<line x1="${Lf}" x2="${Wd-R}" y1="${y(a)}" y2="${y(a)}" stroke="${FL}" stroke-width="${a===0?2:1}"/><text x="${Lf-6}" y="${y(a)+4}" fill="${FI}" font-size="10" text-anchor="end">${a}</text>`;
+  ['Left','Middle','Right'].forEach((n,i)=>{s+=`<text x="${Lf+lw*i+lw/2}" y="${H-10}" fill="${FI}" font-size="11" text-anchor="middle">${n}</text>`;if(i)s+=`<line x1="${Lf+lw*i}" x2="${Lf+lw*i}" y1="${Tp}" y2="${H-B}" stroke="${FL}" stroke-dasharray="2 4"/>`;});
+  const byLane={left:[],middle:[],right:[]};Dp.forEach(q=>{const li=lanes[q.loc]??1;(byLane[q.loc]||byLane.middle).push(q);const c=q.td?'#4fd18b':q.k==='int'?'#e0564b':q.k==='inc'?'#9a96a6':'#5b9cf6';s+=`<circle cx="${Lf+lw*li+lw*(.12+.76*hash(q.i+1))}" cy="${y(q.air)}" r="${q.td?7:5.5}" fill="${c}" fill-opacity=".9" stroke="rgba(0,0,0,.35)"><title>${q.desc}</title></circle>`;});
+  Object.keys(byLane).forEach(k=>{const arr=byLane[k];if(!arr.length)return;const c=arr.filter(q=>q.k==='comp').length;s+=`<text x="${Lf+lw*lanes[k]+lw/2}" y="${Tp-24}" fill="#fff" font-size="11" font-weight="600" text-anchor="middle">${c}/${arr.length} · ${Math.round(c/arr.length*100)}%</text>`;});return s+'</svg>';}
+function runmap(R){const cols=[['left','end','L End'],['left','tackle','L Tackle'],['left','guard','L Guard'],['middle',null,'Middle'],['right','guard','R Guard'],['right','tackle','R Tackle'],['right','end','R End']];const data=cols.map(c=>{const arr=R.filter(q=>q.loc===c[0]&&(c[0]==='middle'||q.gap===c[1]));const n=arr.length;return{n:c[2],c:n,ypc:n?arr.reduce((s,q)=>s+(q.yds||0),0)/n:0,sr:n?arr.filter(q=>q.succ).length/n:0,epa:n?arr.reduce((s,q)=>s+(q.epa||0),0)/n:0};});
+  const Wd=360,H=420,Tp=50,B=70,Lf=10,Rr=10,maxC=Math.max(1,...data.map(d=>d.c)),cw=(Wd-Lf-Rr)/7,FI='rgba(255,255,255,.75)';let s=`<svg viewBox="0 0 ${Wd} ${H}" width="100%" style="display:block;background:#2c4a35;border-radius:4px">`;
+  data.forEach((d,i)=>{const bh=(H-Tp-B)*d.c/maxC,bx=Lf+cw*i+5,by=H-B-bh,fill=d.c?(d.epa>=0?'#4fd18b':d.sr>=.4?'#f0b429':'#e0564b'):'transparent';s+=`<rect x="${bx}" y="${by}" width="${cw-10}" height="${bh}" rx="2" fill="${fill}" fill-opacity=".85"/>`;if(d.c)s+=`<text x="${bx+(cw-10)/2}" y="${by-6}" fill="#fff" font-size="12" font-weight="600" text-anchor="middle">${f1(d.ypc)}</text>`;const parts=d.n.split(' ');s+=`<text x="${bx+(cw-10)/2}" y="${H-B+16}" fill="${FI}" font-size="10" text-anchor="middle">${parts[0]}</text><text x="${bx+(cw-10)/2}" y="${H-B+28}" fill="${FI}" font-size="10" text-anchor="middle">${parts[1]||''}</text><text x="${bx+(cw-10)/2}" y="${H-B+46}" fill="#fff" font-size="11" text-anchor="middle">${d.c}</text>`;});return s+'</svg>';}
+document.getElementById('slots').addEventListener('change',e=>{const s=e.target.closest('select[data-add]');if(!s||!s.value)return;ids=ids.concat([s.value]);draw();});
+document.getElementById('slots').addEventListener('click',e=>{const b=e.target.closest('[data-rm]');if(!b)return;ids=ids.filter((_,i)=>i!==+b.dataset.rm);draw();});
+draw();
+</script>
+</body>
+</html>

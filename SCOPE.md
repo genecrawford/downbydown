@@ -560,3 +560,33 @@ Gene: "make the 10 things the next roadmap and build this first slice." Benchmar
 | 10 | **This week panel** | later | His next matchup from the schedule with the opposing defense's rank at his position | Schedule and team defense metrics (shipped) |
 
 The nfelo model layer (§13 backlog, greerreNFL's OK needed) is 1.4.0 and runs independent of this list.
+
+## 17. Compare (scoped and mocked 2026-10-31, `mockup-v5/compare.html`)
+
+Roadmap slice 2 (§16). Two or three players of one position group side by side. The mock runs on the real Vikings play file, player file and the league pool; the build searches every team.
+
+### What it is
+
+- **Route** `?compare=id,id[,id]`. Same position group only (receivers and tight ends, backs, quarterbacks); the page refuses a mixed set with a one-line note and keeps the first player. Up to three. The URL is the share link and updates as slots change.
+- **Who.** Three slots with a color each (navy, red, amber; never team colors, since teammates would collide). A filled slot shows the jersey tile or photo, name, position, team and whether he is graded. An empty slot is a search box over the league index, filtered to the group. Remove is a small ✕. A **Compare** button on every player page opens the compare with that player in slot one; a second click from another player page fills slot two (the tray lives in `localStorage`).
+- **Where they rank.** The same eight metrics as the player page (§15), one league bar per metric with two or three markers in slot colors, then a value column per player with his percentile underneath. The best value in each row is marked green, honoring lower-is-better.
+- **Where the ball finds them.** The field maps side by side on one shared air-yard scale so depth reads across. Backs get carries by gap, quarterbacks every throw.
+- **Week by week.** One table aligned on league weeks, so byes and missed games show as gaps. A metric switch (receivers: yards, targets, receptions, EPA, snap share; backs and quarterbacks: their equivalents). The best value each week is marked green; a totals row at the foot.
+- **Season stats side by side**, each number with its league rank, best in each row green.
+
+### Data and rendering
+
+- Player files per team (`players/{TEAM}.json`) already carry everything the rank rows, the aligned log and the season table need, and the league pool is `players/league.json`. PHP renders those three sections from up to three team files, so the page is crawlable.
+- The field maps need each player's team play file; `compare.js` fetches the distinct files (one request per team, two or three at most) and draws on a shared scale. The maps are the only JS-dependent section.
+- The index page gains nothing new; the search in the empty slot reuses `players/index.json` inline.
+- SEO: canonical on the sorted ids, `noindex,follow` (combinatorial pages are not worth indexing), a `Person` list in JSON-LD is skipped.
+
+### Plugin (`1.3.1`)
+
+- Router: `compare` param, validated ids, group check, body class `dbd-view-compare`. `compare.php` view, `compare.js`, styles under `dbd-cmp*`.
+- Player page: a Compare button in the hero's right column under the pennant link.
+- Marks: slot colors as CSS variables on the page, not per team.
+
+### Not in this slice
+
+Comparing across seasons, comparing a player to a league average line in the log, and comparing defenses. Three players is the ceiling for the layout to hold at 1000 px.
