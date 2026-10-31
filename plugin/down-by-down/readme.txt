@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.3.3
+Stable tag: 1.3.4
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,10 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.3.4 =
+* The connection. A new player-page panel between the field map and the game log. On a quarterback's page: every receiver he has targeted in a sortable table (share of his throws, catch rate, aDOT, YAC, third-down and red-zone targets, EPA per target), a takeaway line (first read, deep threat, most efficient pairing, third-down favorite), the target map with dots colored by receiver and click-to-isolate chips, weekly stacked columns of how he spreads the ball, and a receivers-by-depth grid. On everyone else's page: his line by passer with a "to everyone else" row under each quarterback, passer rating when targeting him, and the same map, weekly columns and depth grid split by passer. All of it comes from the play rows already shipped; no data build needed.
+* Sortable tables can carry a data-v value per cell, so a cell like "5 · 2 conv" sorts by 5.
 
 = 1.3.3 =
 * Percentile markers get a real tooltip on hover or focus: player, value, percentile, rank of the pool and the league median; on the compare page the row dims the other players while you look.

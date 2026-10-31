@@ -205,6 +205,11 @@ class DBD_Router {
 		}
 		if ( $r['view'] === 'player' ) {
 			$p = $r['player']; $t = DBD_Data::team( $p['team'] ); $rel = 'plays/' . $p['team'] . '.json'; $rec = DBD_Data::player_record( $p['team'], $p['id'] );
+			$roster = array();
+			foreach ( DBD_Data::team_players( $p['team'] ) as $x ) {
+				if ( empty( $x['id'] ) ) { continue; }
+				$roster[ $x['id'] ] = array( 'name' => $x['name'] ?? '', 'short' => $x['short'] ?? '', 'pos' => $x['pos'] ?? '', 'num' => $x['num'] ?? null, 'photo' => $x['photo'] ?? null );
+			}
 			wp_enqueue_script( 'dbd-marks', DBD_URL . 'assets/marks.js', array(), DBD_VERSION, true );
 			wp_enqueue_script( 'dbd-player', DBD_URL . 'assets/player.js', array( 'dbd-marks' ), DBD_VERSION, true );
 			wp_localize_script( 'dbd-player', 'DBD_PLAYER', array(
@@ -219,6 +224,9 @@ class DBD_Router {
 				'dataUrl' => DBD_Data::url() . '/' . $rel . '?v=' . DBD_Data::file_version( $rel ),
 				'accent'  => DBD_Marks::accent( $t ),
 				'base'    => self::url(),
+				'heads'   => DBD_Data::headshots(),
+				'through' => DBD_Data::through_week(),
+				'roster'  => $roster,  /* id => name, short, pos, num, photo: names and tiles for the connection panel */
 			) );
 		}
 		if ( $r['view'] === 'compare' ) {
