@@ -20,6 +20,7 @@ Writes:
   plays/{ABBR}.json  {season, team, byes, games:[...], keys:[...], plays:[[...]]}  (pid = ball handler's gsis_id; FTN flags when available)
   players/{ABBR}.json  roster rows for QB/RB/FB/WR/TE with weekly stat lines, snap share, PFR extras, injury line, depth slot
   players/index.json   one row per player league-wide for the Players index and search
+  players/league.json  per position group: qualifier, n, sorted metric lists (the pool behind the percentile grades)
   metrics.json    offense/defense metrics per team, league averages, ranks, through_week
   schedule.json   {season, current_week, weeks: {"1": [games], ...}} with status per game
   manifest.json   {season, week, through_week, built_at, files: {path: sha1}}
@@ -210,6 +211,7 @@ inj = pd.read_csv(env('DBD_INJ'), low_memory=False) if env('DBD_INJ') else pd.Da
 depth = pd.read_csv(env('DBD_DEPTH'), low_memory=False, usecols=['dt', 'team', 'gsis_id', 'pos_grp', 'pos_abb', 'pos_rank']) if env('DBD_DEPTH') else pd.DataFrame()
 if len(depth): depth = depth[depth.pos_abb.isin(SKILL)]
 index_rows = []
+team_players = {}
 for t in T:
     roster = _rw[_rw.team == t]
     in_t = inj[inj.team == t] if len(inj) else inj
@@ -257,7 +259,47 @@ for t in T:
                                epa=round(S('receiving_epa') + S('rushing_epa') + S('passing_epa'), 1), g=len(ws),
                                st=(p['inj']['status'] if p['inj'] else None), what=(p['inj']['what'] if p['inj'] else None), slot=(f"{p['depth']['slot']}{p['depth']['rank']}" if p['depth'] else None)))
     out_players.sort(key=lambda p: -(sum(p['snaps'].values()) / len(p['snaps'])) if p['snaps'] else 0)
-    json.dump(clean(dict(season=season, team=t, through=through_week, players=out_players)), open(f'{out}/players/{t}.json', 'w'), separators=(',', ':'))
+    team_players[t] = out_players
+# ---- grades: season metrics per player, and the league pool per position group (SCOPE §15)
+GROUPS = {'QB': 'qb', 'RB': 'rb', 'FB': 'rb', 'WR': 'rec', 'TE': 'rec'}
+MINQ = {'rec': 15, 'rb': 30, 'qb': 50}; MINLABEL = {'rec': '15 targets', 'rb': '30 touches', 'qb': '50 attempts'}
+LOW = {'rec': ['drop'], 'rb': [], 'qb': ['sack', 'intr']}
+
+def grade(p):
+    grp = GROUPS.get(p['pos'])
+    if not grp: return None
+    ws = p['weeks']; S = lambda k: sum(_num(x.get(k)) for x in ws)
+    played = {int(x['week']) for x in ws} | {int(k) for k in p['snaps']}; g = max(1, len(played))
+    tg, rc, ca, att, sk = S('targets'), S('receptions'), S('carries'), S('attempts'), S('sacks_suffered')
+    drops = sum(int(x.get('drop') or 0) for x in p['pfr'].values()); bt = sum(int(x.get('bt') or 0) + int(x.get('rbt') or 0) for x in p['pfr'].values())
+    d = lambda a, b: (a / b) if b else None
+    if grp == 'rec':
+        m = dict(tshare=d(S('target_share'), len(ws)), adot=d(S('receiving_air_yards'), tg), yacpc=d(S('receiving_yards_after_catch'), rc), catch=d(rc, tg), epat=d(S('receiving_epa'), tg),
+                 fdpt=d(S('receiving_first_downs'), tg), drop=d(drops, tg), ypg=S('receiving_yards') / g); q = tg >= MINQ['rec']
+    elif grp == 'rb':
+        tch = ca + tg
+        m = dict(ypc=d(S('rushing_yards'), ca), repc=d(S('rushing_epa'), ca), epat=d(S('receiving_epa'), tg) if tg >= 5 else None, btpt=d(bt, tch), expl=d(S('rushing_10') + S('receiving_20'), tch),
+                 tpg=tch / g, tgtshare=d(tg, tch), ypt=d(S('rushing_yards') + S('receiving_yards'), tch)); q = tch >= MINQ['rb']
+    else:
+        qbw = [x for x in ws if _num(x.get('attempts')) > 0]; db = att + sk
+        m = dict(epadb=d(S('passing_epa'), db), cpoe=d(sum(_num(x.get('passing_cpoe')) for x in qbw), len(qbw)), sack=d(sk, db), ypa=d(S('passing_yards'), att), tdr=d(S('passing_tds'), att),
+                 intr=d(S('passing_interceptions'), att), adot=d(S('passing_air_yards'), att), rushepa=S('rushing_epa') / g); q = att >= MINQ['qb']
+    return dict(grp=grp, q=bool(q), m={k: (round(v, 4) if v is not None else None) for k, v in m.items()})
+
+dist = {g: {} for g in MINQ}; npool = {g: 0 for g in MINQ}
+for t, pl in team_players.items():
+    for p in pl:
+        gr = grade(p); p['grades'] = gr
+        if gr and gr['q']:
+            npool[gr['grp']] += 1
+            for k, v in gr['m'].items():
+                if v is not None: dist[gr['grp']].setdefault(k, []).append(v)
+for g in dist:
+    for k in dist[g]: dist[g][k].sort()
+json.dump(clean(dict(season=season, through=through_week, groups={g: dict(n=npool[g], min=MINLABEL[g], low=LOW[g], dist=dist[g]) for g in MINQ})), open(f'{out}/players/league.json', 'w'), separators=(',', ':'))
+for t, pl in team_players.items():
+    json.dump(clean(dict(season=season, team=t, through=through_week, players=pl)), open(f'{out}/players/{t}.json', 'w'), separators=(',', ':'))
+
 index_rows.sort(key=lambda x: (-x['snap'], -x['tgt'] - x['car'] - x['att']))
 json.dump(clean(dict(season=season, through=through_week, players=index_rows)), open(f'{out}/players/index.json', 'w'), separators=(',', ':'))
 

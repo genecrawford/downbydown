@@ -11,6 +11,15 @@
   var COL = { run: '#f0b429', pass: '#5b9cf6', inc: '#9a96a6', bad: '#e0564b', td: '#4fd18b' }, FL = 'rgba(255,255,255,.22)', FI = 'rgba(255,255,255,.75)';
   var grp = C.pos === 'QB' ? 'qb' : (C.pos === 'RB' || C.pos === 'FB') ? 'rb' : 'rec';
 
+  /* game log views: PHP rendered all three tables; this shows one and slides the pill */
+  var gv = root.querySelector('.dbd-gview');
+  if (gv) {
+    var gpill = function (b, anim) { var pl = gv.querySelector('.t-tabs-pill'); if (!pl || !b) return; var go = function () { pl.style.transform = 'translateX(' + b.offsetLeft + 'px)'; pl.style.width = b.offsetWidth + 'px'; }; if (anim) { go(); return; } var prev = pl.style.transition; pl.style.transition = 'none'; go(); void pl.offsetWidth; pl.style.transition = prev; };
+    gv.addEventListener('click', function (e) { var b = e.target.closest('.t-tab'); if (!b) return; gv.querySelectorAll('.t-tab').forEach(function (x) { x.setAttribute('aria-selected', x === b ? 'true' : 'false'); }); root.querySelectorAll('[data-view]').forEach(function (t) { t.hidden = t.dataset.view !== b.dataset.v; }); gpill(b, true); });
+    requestAnimationFrame(function () { gpill(gv.querySelector('[aria-selected="true"]'), false); });
+    window.addEventListener('resize', function () { gpill(gv.querySelector('[aria-selected="true"]'), false); });
+  }
+
   fetch(C.dataUrl, { credentials: 'omit' }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(boot)
     .catch(function (err) { $('#dbd-pmap').innerHTML = '<p class="dbd-note">Could not load the plays (' + esc(err.message || err) + ').</p>'; $('#dbd-mapn').textContent = ''; });
 
