@@ -494,3 +494,48 @@ Not available: Next Gen Stats (separation, cushion, RYOE) have no 2026 files on 
 
 - Positions covered: offense skill only (QB, RB, FB, WR, TE), or add defenders from the tackle and coverage columns later? Mock is offense only.
 - Index default: the visitor's last team (as the explorer remembers) or a league-wide top-touches list?
+
+## 15. Player grades (scoped and mocked 2026-10-30, `mockup-v5/player.html`)
+
+Gene asked what else the player data could do, with nfelo's QB page as the bar. Ten ideas were tabled; this is the first slice: the three pieces that make every player page feel complete and that share one calculation. The mock runs on the real league: every qualifying player's 2026 weekly stats and PFR extras through Week 8.
+
+### 15.1 Where he ranks (percentile bars)
+
+A panel under the stat tiles. One row per metric: label with a sub-label, a league bar with his marker on it (right is better, dashed median), his value, and the percentile as an ordinal in green above the 75th, red below the 25th. Eight metrics per position group, each against every qualifying player at that group league-wide:
+
+| Group | Qualifier | Metrics (lower is better where marked) |
+|---|---|---|
+| Receivers (WR, TE) | 15+ targets | target share, depth of target, YAC per reception, catch rate, EPA per target, first downs per target, drop rate (low), yards per game |
+| Backs (RB, FB) | 30+ touches | yards per carry, rush EPA per carry, EPA per target (5+ targets), broken tackles per touch, explosive rate (10+ run, 20+ catch per touch), touches per game, receiving share of touches, yards per touch |
+| Quarterbacks | 50+ attempts | EPA per dropback, CPOE, sack rate (low), yards per attempt, TD rate, INT rate (low), depth of target, rush EPA per game |
+
+Percentile = (players below + half of ties) / n, flipped for lower-is-better. Rank = 1 + players strictly better. Header names the pool: "among 136 receivers and tight ends with 15+ targets". Grades move every week as the pool changes, by design.
+
+### 15.2 Season stats with league rank
+
+Rail panel, above Intel. Totals first (targets, receptions, yards, TD, or the back and QB equivalents), then every graded rate with "7th of 136" beside it; top 10 percent of the pool in green. Same numbers as the bars, so nothing disagrees with itself.
+
+### 15.3 Game log views
+
+A Default / Advanced / Traditional segmented control in the game log header (the sliding pill). Columns per group:
+
+- Receivers: Default = Snap, Tgt, Rec, Yds, TD, EPA. Advanced = target share, air yards share, aDOT, YAC, EPA per target, first downs, drops. Traditional = Rec, Yds, Y/R, TD, 20+.
+- Backs: Default = Snap, Car, Yds, TD, Tgt, Rec, EPA. Advanced = YPC, EPA per carry, EPA per target, 10+ runs, broken tackles, snap. Traditional = Car, Yds, YPC, TD, Rec, Rec yds.
+- Quarterbacks: Default = Snap, Cmp/Att, Yds, TD, INT, EPA. Advanced = EPA per dropback, CPOE, aDOT, sacks, sack rate, rush EPA. Traditional = Cmp, Att, Pct, Yds, Y/A, TD, INT, passer rating (computed from the four components).
+
+Every view keeps the week and opponent columns, the totals footer, and the sortable headings.
+
+### Build
+
+- New `players/league.json`: for each group, the sorted value list per metric plus the qualifier and n. About 20 KB. Built from the same season totals the index uses; the per-player metric values are added to each player's record in `players/{TEAM}.json` so PHP never recomputes them.
+- Percentile and rank are computed in PHP at render time from the sorted lists (binary search), so the bars and the table are server-rendered and crawlable. The game log views are a JS column switch over data already in the page.
+
+### Plugin (`1.3.0`)
+
+- `player.php`: the Where he ranks panel after the tiles, Season stats at the top of the rail, the view switch on the game log. `DBD_Grades` helper: `pctile($group, $metric, $value)`, `rank(...)`, `defs($group)`.
+- Players index gets one more sortable column later (the group's headline grade) once the pool math is in the index build; not in this slice.
+- The nfelo model layer moves to `1.4.0`.
+
+### Not in this slice (from the ten)
+
+Compare, playstyle text, trend lines, QB to receiver connection, opponent context, weekly movers, career tab, share card, this-week panel. Compare is next, since it reuses everything on this page.
