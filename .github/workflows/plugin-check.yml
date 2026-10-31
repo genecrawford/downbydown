@@ -52,10 +52,14 @@ jobs:
           for k, v in t.items():
               if k in r and not v.get('logo'): v['logo'] = r[k]['team_logo_espn']
               if v.get('logo') and not v.get('logo_s'):
-                  im = Image.open(io.BytesIO(urllib.request.urlopen(v['logo'], timeout=20).read())).convert('RGBA')
-                  bb = im.getchannel('A').point(lambda a: 255 if a > 20 else 0).getbbox()
-                  fw = (bb[2] - bb[0]) / im.width; fh = (bb[3] - bb[1]) / im.height
-                  v['logo_s'] = round(max(0.7, min(1.5, min((0.6 / max(fw * fh, 0.05)) ** 0.5, 1.35 / max(fw, fh)))), 2)
+                  try:  # optional: a slow or unreadable logo keeps the default scale rather than stopping the review pages
+                      im = Image.open(io.BytesIO(urllib.request.urlopen(v['logo'], timeout=20).read())).convert('RGBA')
+                      bb = im.getchannel('A').point(lambda a: 255 if a > 20 else 0).getbbox()
+                      if not bb: continue
+                      fw = (bb[2] - bb[0]) / im.width; fh = (bb[3] - bb[1]) / im.height
+                      v['logo_s'] = round(max(0.7, min(1.5, min((0.6 / max(fw * fh, 0.05)) ** 0.5, 1.35 / max(fw, fh)))), 2)
+                  except Exception as e:
+                      print('logo scale: skipped', k, repr(e)[:80])
           json.dump(t, open('data/teams.json', 'w'))
           print(' '.join(k + '=' + str(v.get('logo_s')) for k, v in sorted(t.items())))
           PY
