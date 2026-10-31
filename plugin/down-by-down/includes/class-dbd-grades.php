@@ -31,6 +31,37 @@ class DBD_Grades {
 	}
 	public static function defense_tier( $rk ) { return $rk === null ? '' : ( $rk <= self::DEF_TOUGH ? 'tough' : ( $rk >= self::DEF_SOFT ? 'soft' : 'mid' ) ); }
 
+	/** Trend lines (SCOPE §21): the four per-game metrics per group (usage, yards, efficiency, role), the rolling window, the streak length,
+	 *  the direction threshold (fraction of the league's per-game interquartile range) and the near-median band for the header chip. */
+	const TREND_WIN = 3; const TREND_STREAK = 3; const TREND_DIR = 0.5; const TREND_NEAR = 0.25;
+	/** key, label, format kind (n = count, f1, sgn, sgn1), numerator fields, denominator fields (null = a count per game), weight field (cpoe is per attempt). */
+	public static function trend_defs( $grp ) {
+		static $d = array(
+			'rec' => array( array( 'tgt', 'Targets', 'n', array( 'targets' ), null, null ), array( 'yds', 'Rec yards', 'n', array( 'receiving_yards' ), null, null ), array( 'epat', 'EPA / target', 'sgn', array( 'receiving_epa' ), array( 'targets' ), null ), array( 'adot', 'aDOT', 'f1', array( 'receiving_air_yards' ), array( 'targets' ), null ) ),
+			'rb'  => array( array( 'tch', 'Touches', 'n', array( 'carries', 'targets' ), null, null ), array( 'yds', 'Scrimmage yds', 'n', array( 'rushing_yards', 'receiving_yards' ), null, null ), array( 'epatch', 'EPA / touch', 'sgn', array( 'rushing_epa', 'receiving_epa' ), array( 'carries', 'targets' ), null ), array( 'tgt', 'Targets', 'n', array( 'targets' ), null, null ) ),
+			'qb'  => array( array( 'db', 'Dropbacks', 'n', array( 'attempts', 'sacks_suffered' ), null, null ), array( 'yds', 'Pass yards', 'n', array( 'passing_yards' ), null, null ), array( 'epadb', 'EPA / dropback', 'sgn', array( 'passing_epa' ), array( 'attempts', 'sacks_suffered' ), null ), array( 'cpoe', 'CPOE', 'sgn1', array( 'passing_cpoe' ), array( 'attempts' ), 'attempts' ) ),
+		);
+		return $d[ $grp ] ?? array();
+	}
+	/** One game's numerator and denominator for a trend metric, from a weekly stat row. A count metric has a denominator of 1. */
+	public static function trend_parts( $def, $w ) {
+		$n = 0; foreach ( $def[3] as $k ) { $n += (float) ( $w[ $k ] ?? 0 ); }
+		if ( $def[5] ) { $n *= (float) ( $w[ $def[5] ] ?? 0 ); }
+		if ( $def[4] === null ) { return array( $n, 1.0 ); }
+		$dn = 0; foreach ( $def[4] as $k ) { $dn += (float) ( $w[ $k ] ?? 0 ); }
+		return array( $n, $dn );
+	}
+	/** Format a trend value: counts print whole when whole, else one decimal; the rest use fmt(). */
+	public static function trend_fmt( $kind, $v ) {
+		if ( $v === null ) { return '–'; }
+		if ( $kind === 'n' ) { return abs( $v - round( $v ) ) < 1e-9 ? (string) (int) round( $v ) : number_format( (float) $v, 1 ); }
+		return self::fmt( $kind, $v );
+	}
+	/** The league's per-game quartiles for a trend metric: {p25, p50, p75, n} or null when the data file predates them. */
+	public static function trend_league( $grp, $key ) {
+		return self::group_info( $grp )['game'][ $key ] ?? null;
+	}
+
 	public static function group_of( $pos ) {
 		return array( 'QB' => 'qb', 'RB' => 'rb', 'FB' => 'rb', 'WR' => 'rec', 'TE' => 'rec' )[ $pos ] ?? null;
 	}

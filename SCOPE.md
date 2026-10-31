@@ -553,7 +553,7 @@ Gene: "make the 10 things the next roadmap and build this first slice." Benchmar
 | 3 | **QB to receiver connection** | 1.3.x | QB page: targets by receiver with catch rate, aDOT, EPA per throw, the field map colored by receiver. Receiver page: his line by passer | `pid` and `qb` on play rows (shipped) |
 | 4 | **Opponent context** | 1.3.x | Each game log row names the defense faced and its rank against his position; a strength-of-schedule line | Team defense metrics (shipped) joined by week |
 | 4b | **Design cleanup** (added 2026-10-31) | 1.3.x | Gene: "There are A LOT of tables and things on these pages and a lot of them have scroll bars and horizontal bars; look at the layouts and lose any horizontal bars where we can by rearranging things." A layout pass over the team, player and compare pages: audit every `dbd-tw` wrapper at desktop, tablet and phone widths, then widen the main column, drop or fold columns, stack panels, or move tables out of the rail so nothing scrolls sideways except where a wide table has no other honest form. Scope and mock first | Nothing new |
-| 5 | **Trend lines** | 1.3.x | Rolling three-game line of the position's core metric against the league median, game rules, Chartist | League weekly medians from the build |
+| 5 | **Trend lines** (§21) | 1.3.7 | Four small charts at the top of Week by week: usage, yards, efficiency and a role metric, week by week with a three-game rolling line over the league's middle half, plus a generated read | Per-game league quartiles for those metrics from the build |
 | 6 | **Weekly movers** | 1.3.x | Index strip: biggest climbers and fallers in snap share, target share and EPA week over week; new starters and injury changes | Previous week's index kept by the build |
 | 7 | **Playstyle fingerprint** | 1.3.x | Generated read in the takeaways voice from his splits: depth profile, third-down and red-zone share, formation lean | Play file (shipped), rules per position |
 | 8 | **Career tab** | 1.3.x | Season-by-season summary back to 1999 from nflverse weekly stats; play-level views stay current season | `stats_player_week_{year}` per season, a one-time backfill |
@@ -722,3 +722,47 @@ Mock result (player page, players index): zero sideways bars at 1440, 1024 and 7
 - No data changes. PHP views emit the priority classes and the new band order; `dbd.css` carries the compact table rule, the tiers and the grid strips; `players.js` and `team-explorer.js` emit the same classes on the rows they render.
 - One shared class, `dbd-stat`, for compact tables so the typography lives in one place; the existing per-table classes stay for their own quirks.
 - The Divi 540px overflow at phone is investigated and fixed in the same release.
+
+## 21. Trend lines: the shape of his season (scoped and mocked 2026-10-31, `mockup-v5/player.html`)
+
+Roadmap slice 5 (§16). One new panel at the top of the **Week by week** band, above the game log, so the band reads chart first, table second, defenses third. The game log already holds every number; this is the picture of where they are heading. Mocked on Hockenson (`?id=00-0035229`, six games), Aaron Jones (`?id=00-0033293`) and Murray (`?id=00-0035228`), with Jefferson (`?id=00-0036322`) as the short-season case.
+
+### What it is
+
+**"The shape of his season" · week by week against the league.** Four small charts in a row, one per metric, chosen by position:
+
+| Group | Usage | Production | Efficiency | Role |
+|---|---|---|---|---|
+| Receivers and tight ends | Targets | Receiving yards | EPA per target | aDOT |
+| Backs | Touches (carries + targets) | Scrimmage yards | EPA per touch | Targets |
+| Quarterbacks | Dropbacks (attempts + sacks) | Passing yards | EPA per dropback | CPOE |
+
+Each chart:
+
+- **x is the league week, 1 to 18.** Weeks already played carry a slim bar for his number that week (negative efficiency drops below the zero line). A bye is a gap with a dotted tick. A week his team played without him is an × on the baseline marked DNP. Weeks still to play are blank; the current week has the red tick the slate uses. Week numbers label every third week.
+- **The league's middle half** is a shaded band from the 25th to the 75th percentile of every qualifying player-game at his position this season, with the median as a dashed line. Qualifying is the same pool as the grades (15 targets, 30 touches, 50 attempts), so the yardstick is "a starter's ordinary week". For the counting metrics a week he dressed but recorded nothing counts as zero, as it already does for the boom-or-dud yardstick; the rate metrics only count games with a target, touch or dropback.
+- **The three-game line** is the trailing average over his last three games played, drawn from his third game on; rate metrics roll as the ratio of sums over the window (EPA over targets), not an average of three ratios. A dot marks the latest point, with the value beside it.
+- **Header:** the metric, his current three-game figure in mono, and a chip for the gap to the league median ("+3.4 vs lg" in green, "−12 vs lg" in red, grey inside half a quartile of it).
+- Hover any bar for that week: opponent, result, the number, and the league median; hover the line for the three games behind the point. Shared `[data-tip]` tooltip.
+
+**The read**, one or two sentences under the charts in the takeaways voice, from fixed rules over the usage and production charts first and the efficiency chart second:
+
+1. **Direction.** Compare the current three-game figure with his season per-game average. It is "climbing" or "slipping" when the gap exceeds half the league's interquartile range for that metric (one threshold for every metric, scaled to how noisy the metric is), otherwise "steady". Example: "Targets are climbing: 9.3 a game over his last three against 7.2 for the season."
+2. **Shape.** Both up: "the role and the production are both growing." Usage up with yards above his average but short of the threshold: "the yards are edging up with it." Usage up with yards at or under his average: "the volume is up; the yards haven't followed yet." Usage steady or down with production up: "doing more with less." Both down: "the role is shrinking."
+3. **Streak.** Three or more straight games above (or below) the league median in usage or yards, counted back from his latest game: "four straight games above a starter's median in yards." With no streak, the count instead: "at or above a starter's median in yards in 4 of 6 games."
+4. **High or low.** His latest game is a season high or low in yards: "Week 7 was his season high."
+5. **Fewer than three games** played says "Too few games for a trend yet" and shows the bars alone; a player with no games does not get the panel.
+
+### Data and rendering
+
+- **Build change, small.** `league.json` gains `game` under each group: `{metric: {p25, p50, p75, n}}` for the four metrics above, computed over the same qualifying player-games that already feed `week`. The keys are fixed: rec `tgt, yds, epat, adot`; rb `tch, yds, epatch, tgt`; qb `db, yds, epadb, cpoe`. `week` stays as it is for the game log. The nightly Action publishes it with the next run.
+- **Plugin (`1.3.7`).** PHP renders the whole panel in `player.php`: his weekly line from the player file, DNP and bye from the schedule the opponent-context panel already reads, the league band from `DBD_Data::league()`. Inline SVG like the opponent scatter; no Chartist, no new script. If the data file has not picked up `game` yet (an older nightly), the charts draw without the band and the median, the chips are omitted, and the direction rule still runs against his own average.
+- The four metric definitions and the rule thresholds (half an interquartile range, three-game window, three-game streak) live in one place in `DBD_Grades` beside the grade groups and the defense keys, so the game log, the grades and the trend agree on what a target, touch and dropback are.
+- Layout: four across in the main column, two across below the `dbd-t2` breakpoint (860px container), which holds at phone width. Nothing scrolls sideways; SVGs scale with the column.
+- Reduced motion: no animation anywhere in the panel.
+
+### Not in this slice
+
+Trend lines on the compare page (overlaying two players' rolling lines), week-over-week movers on the index (slice 6), and any rolling line on team pages.
+
+Status: built as 1.3.7 (2026-10-31).

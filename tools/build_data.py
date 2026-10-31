@@ -20,7 +20,7 @@ Writes:
   plays/{ABBR}.json  {season, team, byes, games:[...], keys:[...], plays:[[...]]}  (pid = ball handler's gsis_id; FTN flags when available)
   players/{ABBR}.json  roster rows for QB/RB/FB/WR/TE with weekly stat lines, snap share, PFR extras, injury line, depth slot
   players/index.json   one row per player league-wide for the Players index and search
-  players/league.json  per position group: qualifier, n, sorted metric lists (the pool behind the percentile grades)
+  players/league.json  per position group: qualifier, n, sorted metric lists (the pool behind the percentile grades), week + game quartiles (trend yardsticks)
   metrics.json    offense/defense metrics per team, league averages, ranks, through_week
   schedule.json   {season, current_week, weeks: {"1": [games], ...}} with status per game
   manifest.json   {season, week, through_week, built_at, files: {path: sha1}}
@@ -286,7 +286,21 @@ def grade(p):
                  intr=d(S('passing_interceptions'), att), adot=d(S('passing_air_yards'), att), rushepa=S('rushing_epa') / g); q = att >= MINQ['qb']
     return dict(grp=grp, q=bool(q), m={k: (round(v, 4) if v is not None else None) for k, v in m.items()})
 
-dist = {g: {} for g in MINQ}; npool = {g: 0 for g in MINQ}; wkyds = {g: [] for g in MINQ}
+dist = {g: {} for g in MINQ}; npool = {g: 0 for g in MINQ}; wkyds = {g: [] for g in MINQ}; wkm = {g: {} for g in MINQ}
+# per-game trend metrics (SCOPE §21): usage, yards, efficiency, role. Counts take a zero for a snaps-only week; rates only count games with a target, touch or dropback.
+def game_metrics(g, w):
+    if g == 'rec':
+        tg = _num(w.get('targets')); r = {'tgt': tg, 'yds': _num(w.get('receiving_yards'))}
+        if tg: r['epat'] = _num(w.get('receiving_epa')) / tg; r['adot'] = _num(w.get('receiving_air_yards')) / tg
+    elif g == 'rb':
+        tch = _num(w.get('carries')) + _num(w.get('targets')); r = {'tch': tch, 'yds': _num(w.get('rushing_yards')) + _num(w.get('receiving_yards')), 'tgt': _num(w.get('targets'))}
+        if tch: r['epatch'] = (_num(w.get('rushing_epa')) + _num(w.get('receiving_epa'))) / tch
+    else:
+        db = _num(w.get('attempts')) + _num(w.get('sacks_suffered')); r = {'db': db, 'yds': _num(w.get('passing_yards'))}
+        if db: r['epadb'] = _num(w.get('passing_epa')) / db
+        if _num(w.get('attempts')): r['cpoe'] = _num(w.get('passing_cpoe'))
+    return r
+GAME_COUNTS = {'rec': ['tgt', 'yds'], 'rb': ['tch', 'yds', 'tgt'], 'qb': ['db', 'yds']}
 YDS = {'rec': ('receiving_yards',), 'rb': ('rushing_yards', 'receiving_yards'), 'qb': ('passing_yards',)}
 for t, pl in team_players.items():
     for p in pl:
@@ -299,15 +313,18 @@ for t, pl in team_players.items():
             statwk = {int(w['week']) for w in p['weeks']}
             for w in p['weeks']:
                 wkyds[gr['grp']].append(sum(_num(w.get(k)) for k in YDS[gr['grp']]))
+                for k, v in game_metrics(gr['grp'], w).items(): wkm[gr['grp']].setdefault(k, []).append(v)
             for wk in p['snaps']:
-                if int(wk) not in statwk: wkyds[gr['grp']].append(0.0)
+                if int(wk) not in statwk:
+                    wkyds[gr['grp']].append(0.0)
+                    for k in GAME_COUNTS[gr['grp']]: wkm[gr['grp']].setdefault(k, []).append(0.0)
 for g in dist:
     for k in dist[g]: dist[g][k].sort()
 def quart(a):
     if not a: return None
     a = sorted(a); q = lambda f: a[min(len(a) - 1, int(len(a) * f))]
     return dict(p25=q(.25), p50=q(.5), p75=q(.75), n=len(a))
-json.dump(clean(dict(season=season, through=through_week, groups={g: dict(n=npool[g], min=MINLABEL[g], low=LOW[g], dist=dist[g], week=quart(wkyds[g])) for g in MINQ})), open(f'{out}/players/league.json', 'w'), separators=(',', ':'))
+json.dump(clean(dict(season=season, through=through_week, groups={g: dict(n=npool[g], min=MINLABEL[g], low=LOW[g], dist=dist[g], week=quart(wkyds[g]), game={k: quart(v) for k, v in wkm[g].items()}) for g in MINQ})), open(f'{out}/players/league.json', 'w'), separators=(',', ':'))
 for t, pl in team_players.items():
     json.dump(clean(dict(season=season, team=t, through=through_week, players=pl)), open(f'{out}/players/{t}.json', 'w'), separators=(',', ':'))
 

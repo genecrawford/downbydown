@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.3.6
+Stable tag: 1.3.7
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,11 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.3.7 =
+* The shape of his season: a new panel at the top of the player page's Week by week band. Four small charts per position (targets, receiving yards, EPA per target and aDOT for receivers; touches, scrimmage yards, EPA per touch and targets for backs; dropbacks, passing yards, EPA per dropback and CPOE for quarterbacks), each with his number every week, the league's middle half at his position as a shaded band with its median, and his trailing three games as a line. Byes, games he missed and the current week are marked.
+* A generated read under the charts: whether his usage is climbing, slipping or steady against his season average, how the yards are following, streaks above or below a starter's median, season highs and lows, and whether efficiency is moving too.
+* Build: league.json carries per-game quartiles for the trend metrics; an older data file still draws the charts without the league band.
 
 = 1.3.6 =
 * Design cleanup: the horizontal scrollbars are gone at desktop and tablet widths. The player page is reorganized into five bands by question under a sticky jump nav (How good is he, How he's used, Who he works with, Week by week, Intel & plays); the rail is retired, so wide tables get the whole width. The team explorer's Who gets the ball and the game page's Head to head take a full row.
