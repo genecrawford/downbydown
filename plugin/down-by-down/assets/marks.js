@@ -12,7 +12,8 @@
   function withLogo(svg, abbr, w, h) {
     var t = teams()[abbr], u = t && t.logo;
     if (!window.DBD_LOGOS_ON || !svg || !u || !/^https:\/\/[^"'<>\s]+$/.test(u)) return svg;
-    return '<span class="dbd-lgw" style="width:' + w + 'px;height:' + h + 'px">' + svg + '<img class="dbd-logo" src="' + esc(u) + '" alt="' + esc(t.name) + '" width="' + h + '" height="' + h + '" loading="lazy" decoding="async" referrerpolicy="no-referrer" onload="this.previousElementSibling.style.visibility=\'hidden\'" onerror="this.remove()"></span>';
+    var sc = Math.max(0.7, Math.min(1.3, +t.logo_s || 1));  /* optical scale from the build (1.4.1) */
+    return '<span class="dbd-lgw" style="width:' + w + 'px;height:' + h + 'px;--lgs:' + sc.toFixed(2) + '">' + svg + '<img class="dbd-logo" src="' + esc(u) + '" alt="' + esc(t.name) + '" width="' + h + '" height="' + h + '" loading="lazy" decoding="async" referrerpolicy="no-referrer" onload="this.previousElementSibling.style.visibility=\'hidden\'" onerror="this.remove()"></span>';
   }
   window.dbdMark = function (abbr, size) { var s = size || 24; return withLogo(markSvg(abbr, s), abbr, s, s); };
   function markSvg(abbr, size) {

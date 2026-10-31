@@ -45,12 +45,13 @@ class DBD_Marks {
 	public static function tile( $abbr, $size = 24 ) {
 		$svg = self::tile_svg( $abbr, $size );
 		$logo = $svg ? DBD_Data::logo( $abbr ) : null;
-		return $logo ? self::with_logo( $svg, $logo, $size, $size, DBD_Data::team( $abbr )['name'] ?? $abbr ) : $svg;
+		return $logo ? self::with_logo( $svg, $logo, $size, $size, DBD_Data::team( $abbr )['name'] ?? $abbr, DBD_Data::team( $abbr )['logo_s'] ?? 1 ) : $svg;
 	}
 
 	/** The real logo over the drawn mark: the mark shows until the image loads, then hides; a failed image removes itself (SCOPE §28). */
-	public static function with_logo( $svg, $logo, $w, $h, $alt ) {
-		return '<span class="dbd-lgw" style="width:' . (int) $w . 'px;height:' . (int) $h . 'px">' . $svg . '<img class="dbd-logo" src="' . esc_url( $logo ) . '" alt="' . esc_attr( $alt ) . '" width="' . (int) $h . '" height="' . (int) $h . '" loading="lazy" decoding="async" referrerpolicy="no-referrer" onload="this.previousElementSibling.style.visibility=\'hidden\'" onerror="this.remove()"></span>';
+	public static function with_logo( $svg, $logo, $w, $h, $alt, $scale = 1 ) {
+		$sc = max( 0.7, min( 1.3, (float) $scale ) );  /* optical scale from the build (1.4.1), clamped */
+		return '<span class="dbd-lgw" style="width:' . (int) $w . 'px;height:' . (int) $h . 'px;--lgs:' . round( $sc, 2 ) . '">' . $svg . '<img class="dbd-logo" src="' . esc_url( $logo ) . '" alt="' . esc_attr( $alt ) . '" width="' . (int) $h . '" height="' . (int) $h . '" loading="lazy" decoding="async" referrerpolicy="no-referrer" onload="this.previousElementSibling.style.visibility=\'hidden\'" onerror="this.remove()"></span>';
 	}
 
 	public static function tile_svg( $abbr, $size = 24 ) {
@@ -104,7 +105,7 @@ class DBD_Marks {
 	public static function pennant( $abbr, $height = 40 ) {
 		$svg = self::pennant_svg( $abbr, $height );
 		$logo = $svg ? DBD_Data::logo( $abbr ) : null;
-		return $logo ? self::with_logo( $svg, $logo, (int) round( $height * 1.6 ), $height, DBD_Data::team( $abbr )['name'] ?? $abbr ) : $svg;
+		return $logo ? self::with_logo( $svg, $logo, (int) round( $height * 1.6 ), $height, DBD_Data::team( $abbr )['name'] ?? $abbr, DBD_Data::team( $abbr )['logo_s'] ?? 1 ) : $svg;
 	}
 
 	public static function pennant_svg( $abbr, $height = 40 ) {

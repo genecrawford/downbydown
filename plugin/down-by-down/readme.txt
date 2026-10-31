@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.4.0
+Stable tag: 1.4.1
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,12 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.4.1 =
+* Edges: every table in a panel now starts on the same 14px line as the panel's label (before: anywhere from 2 to 24px, depending on the table); the defense-tier table no longer touches the panel edge.
+* Rows that carry a headshot, jersey or logo get 7px above and below it, so photos no longer touch row to row.
+* The field maps' legends show dots for dot charts; the defense-tier chips keep a gap before their label.
+* Team logos at a common visual size: the nightly build measures each logo's artwork and stores a scale, so a thin wordmark-shaped logo and a solid shield read alike.
 
 = 1.4.0 =
 * Design pass. The theme's table padding (Divi's inline 24px on every cell) no longer reaches inside the app: every plugin rule now sits one class above the theme, so tables are about half as wide as before at the same type. No text under 11px anywhere; uppercase labels on two letter-spacings instead of eleven; panel headers one height, a long label truncating with its full text on hover; reads and notes on the panel's 14px edge; a spacing scale (4, 8, 14, 22px) for panels and bands.
