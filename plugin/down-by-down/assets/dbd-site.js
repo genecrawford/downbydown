@@ -56,7 +56,7 @@
 
   /* whole rows are links */
   root.addEventListener('click', function (e) {
-    if (e.target.closest('a,button,select,input')) return;
+    if (e.target.closest('a,button,select,input,.dbd-stdot,[data-tip]')) return;  /* a tap on a status dot or a tooltip marker reads it, it does not open the row */
     var r = e.target.closest('tr[data-href]');
     if (r) location.href = r.dataset.href;
   });
