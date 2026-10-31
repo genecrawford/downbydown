@@ -1,0 +1,30 @@
+# Plugin check: PHP syntax across the plugin and tools, and a real render of three share cards with GD.
+# Runs on every pull request and by hand. The cards upload as an artifact so a reviewer can look at them.
+name: Plugin check
+on:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  php:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: gd
+          coverage: none
+      - name: Syntax check every PHP file
+        run: |
+          set -e
+          find plugin tools -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Render share cards
+        run: |
+          set -e
+          php tools/card_harness.php data 00-0036322 card-wr.png
+          php tools/card_harness.php data 00-0033293 card-rb.png
+          php tools/card_harness.php data 00-0035228 card-qb.png
+      - uses: actions/upload-artifact@v4
+        with:
+          name: share-cards
+          path: card-*.png

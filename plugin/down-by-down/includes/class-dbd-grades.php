@@ -194,12 +194,16 @@ class DBD_Grades {
 
 	/** Percentile 0 to 100 among the pool: players below plus half the ties, flipped for lower-is-better. Null when ungradable. */
 	public static function pctile( $grp, $key, $v, $pool = 'dist' ) {
-		$gi = self::group_info( $grp ); $a = $gi[ $pool ][ $key ] ?? array();
+		$gi = self::group_info( $grp );
+		return self::pctile_in( $gi[ $pool ][ $key ] ?? array(), $v, in_array( $key, $gi['low'] ?? array(), true ) );
+	}
+	/** The same percentile over an explicit sorted pool: players below plus half the ties, flipped for lower-is-better. Pure, so the card renderer and its harness can use it. */
+	public static function pctile_in( $a, $v, $low = false ) {
 		if ( $v === null || ! $a ) { return null; }
 		$below = 0; $eq = 0;
 		foreach ( $a as $x ) { if ( $x < $v ) { $below++; } elseif ( $x == $v ) { $eq++; } }
 		$pc = ( $below + $eq / 2 ) / count( $a );
-		if ( in_array( $key, $gi['low'] ?? array(), true ) ) { $pc = 1 - $pc; }
+		if ( $low ) { $pc = 1 - $pc; }
 		return (int) round( $pc * 100 );
 	}
 

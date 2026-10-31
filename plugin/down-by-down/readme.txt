@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.3.11
+Stable tag: 1.3.12
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,10 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.3.12 =
+* Share card: every player page now has a 1200 × 630 image of its hero, season line and grade bars, rendered on the server with GD on first request and cached under uploads. It is the page's og:image and Twitter card, so a shared link unfurls into the card, and a Share card button in the hero opens it or hands it to the phone's share sheet. Needs GD with FreeType on the host; without it the button and tags are simply absent.
+* The plugin bundles Tourney, Barlow Condensed, IBM Plex Sans and IBM Plex Mono as TTF (Open Font License) for the renderer.
 
 = 1.3.11 =
 * This week: a strip at the top of the player page under the season tiles with his next game (kickoff in the site's time zone, stadium, the market line), the opposing defense's rank at his position and what it allows, his line against defenses of that tier this season and the last meeting with this opponent, his injury status and snap share over the last three games, and a one-line read. Once the week's game is final it becomes Next up; a bye week says so.

@@ -37,6 +37,7 @@ class DBD_Router {
 		self::$active   = true;
 		self::$page_url = get_permalink( $post );
 		self::$route    = self::route();
+		if ( self::q( 'card' ) !== '' ) { DBD_Card::serve( self::q( 'card' ) ); }  /* the share card PNG (SCOPE §26); serve() exits */
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'assets' ) );
 		add_filter( 'body_class', array( __CLASS__, 'body_class' ) );
 		add_filter( 'document_title_parts', array( __CLASS__, 'title' ) );
@@ -184,6 +185,11 @@ class DBD_Router {
 		echo '<link rel="canonical" href="' . esc_url( $url ) . '">' . "\n";
 		echo '<meta property="og:title" content="' . esc_attr( $t . ' | Down by Down' ) . '">' . "\n";
 		echo '<meta property="og:description" content="' . esc_attr( $d ) . '">' . "\n";
+		if ( $r['view'] === 'player' && ! empty( $r['player']['id'] ) && DBD_Card::available() ) {  /* the share card (SCOPE §26) */
+			$img = DBD_Card::url( $r['player']['id'] );
+			echo '<meta property="og:image" content="' . esc_url( $img ) . '">' . "\n" . '<meta property="og:image:width" content="1200">' . "\n" . '<meta property="og:image:height" content="630">' . "\n";
+			echo '<meta name="twitter:card" content="summary_large_image">' . "\n" . '<meta name="twitter:image" content="' . esc_url( $img ) . '">' . "\n";
+		}
 		echo '<meta property="og:url" content="' . esc_url( $url ) . '">' . "\n";
 		echo '<meta property="og:type" content="website">' . "\n";
 		if ( $r['view'] === 'notfound' ) { echo '<meta name="robots" content="noindex">' . "\n"; }

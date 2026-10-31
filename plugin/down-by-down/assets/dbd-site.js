@@ -110,3 +110,16 @@
     }
   }
 })();
+
+/* share card (SCOPE §26): on devices that can share files, hand the PNG to the system share sheet; otherwise the link opens the image */
+(function () {
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('a.dbd-share'); if (!a || !navigator.share || !navigator.canShare) return;
+    e.preventDefault();
+    fetch(a.href).then(function (r) { return r.blob(); }).then(function (b) {
+      var f = new File([b], 'down-by-down-card.png', { type: 'image/png' });
+      if (navigator.canShare({ files: [f] })) return navigator.share({ files: [f], title: a.getAttribute('data-share-title') || document.title, url: location.href });
+      window.open(a.href, '_blank', 'noopener');
+    }).catch(function () { window.open(a.href, '_blank', 'noopener'); });
+  });
+})();

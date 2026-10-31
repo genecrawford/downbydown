@@ -754,3 +754,7 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 .dbd-week-say{margin:0;padding:10px 14px 12px;border-top:1px solid var(--dbd-line);font:500 13px/1.55 var(--dbd-body);color:var(--dbd-ink)}.dbd-week-say b{font-weight:600}
 @container dbd (max-width:860px){.dbd-week4{grid-template-columns:repeat(2,minmax(0,1fr))}.dbd-week4>div:nth-child(3){border-left:0}.dbd-week4>div:nth-child(n+3){border-top:1px solid var(--dbd-line)}}
 @container dbd (max-width:480px){.dbd-week4{grid-template-columns:minmax(0,1fr)}.dbd-week4>div{border-left:0;border-top:1px solid var(--dbd-line)}.dbd-week4>div:first-child{border-top:0}}
+
+/* ---- share card button (SCOPE §26) ---- */
+.dbd-share{display:inline-flex;align-items:center;gap:6px;font:700 11px var(--dbd-display);letter-spacing:.14em;text-transform:uppercase;color:var(--dbd-ink);text-decoration:none;border:1px solid var(--dbd-line-2);border-radius:999px;padding:4px 10px;cursor:pointer}
+.dbd-share:hover,.dbd-share:focus-visible{border-color:var(--dbd-red);color:var(--dbd-red)}

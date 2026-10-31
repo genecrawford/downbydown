@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Share card | Down by Down</title>
+<link href="https://fonts.googleapis.com/css2?family=Tourney:wght@800&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="dbd.css">
+<script src="data/teams.js"></script>
+<script src="data/marks.js"></script>
+<script src="data/players-MIN.js?v=6"></script>
+<script src="data/league-pct.js?v=5"></script>
+<style>
+body{background:#e9e5dc;padding:24px;display:flex;flex-direction:column;gap:18px;align-items:center}
+.note{font:500 12px var(--mono);color:#6b6f78;max-width:1200px;width:100%}
+.card{width:1200px;height:630px;background:#f4f1ea;color:#121417;position:relative;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.18);display:grid;grid-template-rows:64px 1fr 44px}
+.card .c-bar{display:flex;align-items:center;justify-content:space-between;padding:0 44px;border-bottom:6px solid var(--team)}
+.card .c-bar img{height:34px}
+.card .c-bar .season{font:700 16px var(--display);letter-spacing:.2em;text-transform:uppercase;color:#3b4255}
+.card .c-body{display:grid;grid-template-columns:560px 1fr;gap:0 44px;padding:36px 44px 0}
+.card .c-hero{display:grid;grid-template-columns:160px 1fr;gap:0 22px;align-items:center}
+.card .c-disc{width:160px;height:160px;border-radius:50%;background:var(--team);display:grid;place-items:center;overflow:hidden;position:relative}
+.card .c-disc img{width:160px;height:160px;object-fit:cover;object-position:top;display:block}
+.card .c-disc b{font:800 56px var(--hero);color:var(--team2)}
+.card .c-kick{font:700 15px var(--display);letter-spacing:.2em;text-transform:uppercase;color:#6b6f78}
+.card h1{margin:6px 0 0;font:800 60px/1 var(--hero);letter-spacing:-.01em;text-transform:uppercase}
+.card h1 em{font-style:normal;color:#cb2026;display:block}
+.card .c-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:40px}
+.card .c-tile{background:#fffdf8;border:1px solid rgba(22,30,54,.14);border-radius:6px;padding:16px 14px 14px}
+.card .c-tile .l{font:700 11px var(--display);letter-spacing:.16em;text-transform:uppercase;color:#6b6f78}
+.card .c-tile .v{font:800 42px/1.05 var(--hero);color:#121417;margin:6px 0 4px}
+.card .c-tile .s{font:500 12px var(--mono);color:#6b6f78}
+.card .c-ranks{display:flex;flex-direction:column;gap:0}
+.card .c-ranks h4{margin:0 0 8px;font:700 13px var(--display);letter-spacing:.2em;text-transform:uppercase;color:#6b6f78}
+.card .c-row{display:grid;grid-template-columns:176px 1fr 74px;gap:14px;align-items:center;height:55px;border-top:1px solid rgba(22,30,54,.12)}
+.card .c-row:first-of-type{border-top:0}
+.card .c-row .l{font:500 16px var(--body);color:#121417}
+.card .c-row .b{height:12px;border-radius:6px;background:linear-gradient(90deg,rgba(180,38,31,.18),rgba(107,111,120,.12) 50%,rgba(30,127,74,.22));position:relative}
+.card .c-row .b::after{content:"";position:absolute;left:50%;top:-3px;height:18px;border-left:2px dashed rgba(22,30,54,.3)}
+.card .c-row .b i{position:absolute;top:-4px;width:6px;height:20px;border-radius:3px;background:var(--team);left:calc(var(--p) * 1%);transform:translateX(-50%);box-shadow:0 0 0 3px #f4f1ea}
+.card .c-row .g{font:800 24px var(--hero);text-align:right;color:#121417} .card .c-row .g.hi{color:#1e7f4a} .card .c-row .g.lo{color:#b4261f}
+.card .c-foot{display:flex;align-items:center;justify-content:space-between;padding:0 44px;border-top:1px solid rgba(22,30,54,.14);font:600 13px var(--mono);color:#6b6f78}
+.card .c-foot b{color:#121417;font-weight:600}
+</style>
+</head>
+<body>
+<p class="note">Share card mock (SCOPE §26): 1200 × 630, the og:image for a player page and the Share button's download. Rendered by PHP GD in the plugin; this page is the visual spec. Try ?id=00-0036322 (Jefferson), 00-0033293 (Jones), 00-0035228 (Murray).</p>
+<div class="card" id="card"></div>
+<script>
+const P=window.DBD_PLAYERS.players, T=window.DBD_TEAMS, LG=window.DBD_LEAGUE, TEAM='MIN';
+const id=new URLSearchParams(location.search).get('id'); const p=P.find(x=>x.id===id)||P.find(x=>x.short==='J.Jefferson')||P[0];
+const grp=p.pos==='QB'?'qb':p.pos==='RB'||p.pos==='FB'?'rb':'rec', W=p.weeks, gp=W.length||1, sum=k=>W.reduce((a,w)=>a+(+w[k]||0),0);
+const f1=v=>isFinite(v)?(+v).toFixed(1):'-', pct=v=>isFinite(v)?Math.round(v*100)+'%':'-', sgn=(v,d=2)=>(v>0?'+':'')+(+v).toFixed(d), ordn=n=>n+(['th','st','nd','rd'][(n%100-20)%10]||['th','st','nd','rd'][n%100]||'th');
+const first=p.name.split(' ')[0], last=p.name.slice(first.length+1), t=T[TEAM];
+const tg=sum('targets'),rc=sum('receptions'),ry=sum('receiving_yards'),rtd=sum('receiving_tds'),ca=sum('carries'),ruy=sum('rushing_yards'),rutd=sum('rushing_tds'),att=sum('attempts'),cmp=sum('completions'),py=sum('passing_yards'),ptd=sum('passing_tds'),pint=sum('passing_interceptions');
+const tiles={rec:[['Targets',tg,f1(tg/gp)+' per game'],['Receptions',rc,pct(rc/tg)+' catch rate'],['Yards',ry,f1(ry/gp)+' per game'],['TD',rtd,'in '+gp+' games']],
+ rb:[['Carries',ca,f1(ca/gp)+' per game'],['Rush yards',ruy,f1(ruy/ca)+' per carry'],['TD',rutd+rtd,'rushing + receiving'],['Receptions',rc,ry+' yards']],
+ qb:[['Attempts',att,pct(cmp/att)+' completed'],['Pass yards',py,f1(py/att)+' per attempt'],['TD',ptd,'in '+gp+' games'],['INT',pint,'']]}[grp];
+const DIST=LG.dist[grp], N=LG.n[grp], me=LG.players[grp].find(x=>x.id===p.id)||{}, low=LG.low[grp], q=p.grades&&p.grades.q;
+const pctile=(k,v)=>{const a=DIST[k]||[];if(v==null||!a.length)return null;let b=0,e=0;for(const x of a){if(x<v)b++;else if(x===v)e++;}let pc=(b+e/2)/a.length;if(low.includes(k))pc=1-pc;return Math.round(pc*100);};
+const DEFS={rec:[['tshare','Target share',v=>pct(v)],['adot','Depth of target',v=>f1(v)],['yacpc','After the catch',v=>f1(v)],['catch','Catch rate',v=>pct(v)],['epat','EPA per target',v=>sgn(v)],['fdpt','First downs',v=>pct(v)],['drop','Drop rate',v=>pct(v)],['ypg','Yards per game',v=>f1(v)]],
+ rb:[['ypc','Yards per carry',v=>f1(v)],['repc','Rush EPA per carry',v=>sgn(v)],['epat','EPA per target',v=>v==null?'-':sgn(v)],['btpt','Broken tackles',v=>pct(v)],['expl','Explosive rate',v=>pct(v)],['tpg','Touches per game',v=>f1(v)],['tgtshare','Receiving share',v=>pct(v)],['ypt','Yards per touch',v=>f1(v)]],
+ qb:[['epadb','EPA per dropback',v=>sgn(v)],['cpoe','CPOE',v=>sgn(v,1)],['sack','Sack rate',v=>pct(v)],['ypa','Yards per attempt',v=>f1(v)],['tdr','TD rate',v=>pct(v)],['intr','INT rate',v=>pct(v)],['adot','Depth of target',v=>f1(v)],['rushepa','Rush EPA per game',v=>sgn(v)]]}[grp];
+const pool=grp==='rec'?'receivers and tight ends':grp==='rb'?'backs':'quarterbacks';
+document.getElementById('card').style.cssText=`--team:${t.c1};--team2:${t.c2}`;
+document.getElementById('card').innerHTML=`<div class="c-bar"><img src="assets/dxd-logo.svg" alt="Down by Down"><span class="c-season">${LG.season} season · through week ${LG.through}</span></div>
+<div class="c-body"><div><div class="c-hero"><div class="c-disc">${p.photo?`<img src="${p.photo}" alt="">`:`<b>${p.num}</b>`}</div><div><div class="c-kick">${p.pos} · #${p.num} · ${t.nick} · ${ordn(p.exp+1)} season</div><h1>${first}<em>${last}</em></h1></div></div>
+<div class="c-tiles">${tiles.map(x=>`<div class="c-tile"><div class="l">${x[0]}</div><div class="v">${(+x[1]).toLocaleString()}</div><div class="s">${x[2]}</div></div>`).join('')}</div></div>
+<div class="c-ranks"><h4>Where he ranks · ${q?`among ${N} ${pool}`:`graded at ${LG.min[grp]}`}</h4>${DEFS.map(([k,n,f])=>{const v=me[k],pc=q?pctile(k,v):null;return`<div class="c-row"><div class="l">${n}</div><div class="b">${pc==null?'':`<i style="--p:${pc}"></i>`}</div><div class="g ${pc>=75?'hi':pc!=null&&pc<=25?'lo':''}">${pc==null?'–':ordn(pc)}</div></div>`;}).join('')}</div></div>
+<div class="c-foot"><b>downbydown.com</b><span>Data: nflverse · grades among ${N} ${pool}</span></div>`;
+</script>
+</body>
+</html>
