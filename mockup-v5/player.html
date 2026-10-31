@@ -516,10 +516,15 @@ const TM={rec:[['tgt','Targets',w=>w.targets,0],['yds','Rec yards',w=>w.receivin
 const WIN=3, STREAK=3, DIR=.5, NEAR=.25;
 /* his team's season, week by week: played with stats, played with nothing recorded, DNP, bye, ahead */
 const tg=[];Object.keys(SCH.weeks).forEach(w=>SCH.weeks[w].forEach(g=>{if(g.home===TEAM||g.away===TEAM)tg.push({wk:+w,opp:g.home===TEAM?g.away:g.home,home:g.home===TEAM,played:g.status==='final'});}));
-const byWk={};tg.forEach(x=>byWk[x.wk]=x);const gres={};G.forEach(g=>gres[g.week]=g);
+const gres={};G.forEach(g=>gres[g.week]=g);
 const wk={};W.forEach(w=>wk[+w.week]=w);
-const rows=[];for(let w=1;w<=18;w++){const x=byWk[w];if(!x){rows.push({wk:w,kind:'bye'});continue;}if(!x.played){rows.push({wk:w,kind:'ahead',opp:x.opp,home:x.home});continue;}
- const s=wk[w];rows.push({wk:w,kind:s?'game':p.snaps[w]!=null?'zero':'dnp',opp:x.opp,home:x.home,s});}
+/* the team he belonged to each week: his own line where he played, else the nearest played week before it (or after, before his first game) */
+const allG={};Object.keys(SCH.weeks).forEach(w=>SCH.weeks[w].forEach(g=>{[['home','away'],['away','home']].forEach(([a,b])=>{(allG[g[a]]=allG[g[a]]||{})[+w]={wk:+w,opp:g[b],home:a==='home',played:g.status==='final'};});}));
+const firstTm=(W[0]&&W[0].team)||TEAM;let carry=firstTm;const teamAt={};for(let w=1;w<=18;w++){if(wk[w])carry=wk[w].team||TEAM;teamAt[w]=carry;}
+const rows=[];for(let w=1;w<=18;w++){const tm=teamAt[w],s=wk[w],x=(allG[tm]||{})[w];
+ if(s){rows.push({wk:w,kind:'game',tm,opp:s.opponent_team||(x&&x.opp),home:x?x.home:true,s});continue;}
+ if(!x){rows.push({wk:w,kind:'bye'});continue;}
+ rows.push({wk:w,kind:x.played?(p.snaps[w]!=null?'zero':'dnp'):'ahead',tm,opp:x.opp,home:x.home});}
 const played=rows.filter(r=>r.kind==='game'||r.kind==='zero');
 const fmt=(v,d)=>v==null?'–':d===0?(Number.isInteger(v)?String(v):v.toFixed(1)):d===2?sgn(v,2):(lgrp==='qb'&&d===1?sgn(v,1):(+v).toFixed(1));
 const num=(r,f)=>r.kind==='zero'?0:(+f(r.s)||0);
@@ -529,7 +534,8 @@ const series=([key,lab,f,d])=>{const rate=Array.isArray(f);
  const N=pts.reduce((s,x)=>s+x.n,0),DN=pts.reduce((s,x)=>s+x.dn,0),avg=DN?N/DN:null,lg=LGM[key]||null,cur=roll.length?roll[roll.length-1]:null;
  const iqr=lg?lg.p75-lg.p25:(avg?Math.abs(avg)*.4:1);
  const dir=cur==null||avg==null?'flat':cur-avg>DIR*iqr?'up':avg-cur>DIR*iqr?'down':'flat';
- return{key,lab,d,rate,pts,roll,avg,lg,cur,iqr,dir};};
+ const li=roll.map((v,i)=>v==null?null:i).filter(v=>v!=null).pop();
+ return{key,lab,d,rate,pts,roll,avg,lg,cur,li,iqr,dir};};
 const S=TM.map(series);
 document.getElementById('trn').textContent=`${played.length} games · through week ${LG.through}`;
 /* the charts */
@@ -539,18 +545,17 @@ document.getElementById('tr4').innerHTML=S.map(m=>{const vals=m.pts.map(q=>q.v).
  if(m.lg)g+=`<rect x="${L}" y="${y(m.lg.p75)}" width="${Wd-L-R}" height="${Math.max(1,y(m.lg.p25)-y(m.lg.p75))}" fill="var(--line)"/><line x1="${L}" x2="${Wd-R}" y1="${y(m.lg.p50)}" y2="${y(m.lg.p50)}" stroke="var(--muted)" stroke-dasharray="3 3"/><text x="${Wd-R+3}" y="${y(m.lg.p50)+3}" font-size="8" fill="var(--muted)" font-family="IBM Plex Mono">lg ${fmt(m.lg.p50,m.d)}</text>`;
  g+=`<line x1="${L}" x2="${Wd-R}" y1="${y(0)}" y2="${y(0)}" stroke="var(--line-2)"/>`;
  rows.forEach(r=>{const cx=x(r.wk);if(r.kind==='bye')g+=`<line x1="${cx}" x2="${cx}" y1="${y(0)-3}" y2="${y(0)+3}" stroke="var(--muted)" stroke-dasharray="1 1"/>`;
-  else if(r.kind==='dnp')g+=`<text x="${cx}" y="${y(0)+3}" font-size="9" fill="var(--bad)" text-anchor="middle" font-family="IBM Plex Mono"><title>Week ${r.wk} ${r.home?'vs':'at'} ${r.opp}: did not play</title>×</text>`;
+  else if(r.kind==='dnp')g+=`<text x="${cx}" y="${y(0)+3}" font-size="9" fill="var(--bad)" text-anchor="middle" font-family="IBM Plex Mono"><title>Week ${r.wk} ${r.tm!==TEAM?r.tm+' ':''}${r.home?'vs':'at'} ${r.opp}: did not play</title>×</text>`;
   if(r.wk===SCH.current_week)g+=`<line x1="${cx}" x2="${cx}" y1="${H-B+2}" y2="${H-B+6}" stroke="var(--red)" stroke-width="2"/>`;
   if((r.wk-1)%3===0)g+=`<text x="${cx}" y="${H-3}" font-size="8" fill="var(--muted)" text-anchor="middle" font-family="IBM Plex Mono">${r.wk}</text>`;});
  m.pts.forEach(q=>{if(q.v==null)return;const r=rows[q.wk-1],gr=gres[q.wk],res=gr?` ${gr.pf>gr.pa?'W':'L'} ${gr.pf}-${gr.pa}`:'';const top=Math.min(y(0),y(q.v)),h=Math.max(1,Math.abs(y(q.v)-y(0)));
   g+=`<rect x="${x(q.wk)-bw/2}" y="${top}" width="${bw}" height="${h}" fill="${q.v<0?'var(--bad)':'var(--ink-2)'}" fill-opacity=".5"><title>Week ${q.wk} ${r.home?'vs':'at'} ${r.opp}${res}: ${m.lab} ${fmt(q.v,m.d)}${m.lg?` · league median ${fmt(m.lg.p50,m.d)}`:''}</title></rect>`;});
  const line=m.pts.map((q,i)=>m.roll[i]==null?null:`${x(q.wk)},${y(m.roll[i])}`).filter(Boolean);
  if(line.length)g+=`<polyline points="${line.join(' ')}" fill="none" stroke="var(--red)" stroke-width="2" stroke-linejoin="round"/>`;
- const li=m.roll.map((v,i)=>v==null?null:i).filter(v=>v!=null).pop();
- if(li!=null){const q=m.pts[li],w3=m.pts.slice(li-WIN+1,li+1).map(z=>'Wk '+z.wk).join(', ');g+=`<circle cx="${x(q.wk)}" cy="${y(m.roll[li])}" r="3.5" fill="var(--red)" stroke="var(--panel)" stroke-width="1.5"><title>Last three (${w3}): ${fmt(m.cur,m.d)}</title></circle>`;}
+ m.pts.forEach((q,i)=>{if(m.roll[i]==null)return;const last=i===m.li,w3=m.pts.slice(i-WIN+1,i+1).map(z=>'Wk '+z.wk).join(', ');g+=`<circle cx="${x(q.wk)}" cy="${y(m.roll[i])}" r="${last?3.5:2.5}" fill="var(--red)" stroke="var(--panel)" stroke-width="1.5"><title>${last?'Last three':'Three games'} (${w3}): ${fmt(m.roll[i],m.d)}</title></circle>`;});
  g+='</svg>';
  const near=m.lg&&m.cur!=null?m.cur-m.lg.p50:null,dcls=near==null?'':Math.abs(near)<NEAR*m.iqr?'':near>0?'up':'dn';
- return`<div class="trc"><div class="th"><b>${m.lab}</b><span class="v">${m.cur!=null?fmt(m.cur,m.d):m.avg!=null?fmt(m.avg,m.d):'–'}</span>${near!=null?`<span class="d ${dcls}" title="His last three against the league median">${(near>0?'+':'')+(m.d===0?(+near).toFixed(1):m.d===2?(+near).toFixed(2):(+near).toFixed(1))}<i> vs lg</i></span>`:''}</div>${g}</div>`;}).join('');
+ return`<div class="trc"><div class="th"><b>${m.lab}</b><span class="v">${m.cur!=null?fmt(m.cur,m.d):played.length<WIN&&m.avg!=null?fmt(m.avg,m.d):'–'}</span>${near!=null?`<span class="d ${dcls}" title="His last three against the league median">${(near>0?'+':'')+(m.d===0?(+near).toFixed(1):m.d===2?(+near).toFixed(2):(+near).toFixed(1))}<i> vs lg</i></span>`:''}</div>${g}</div>`;}).join('');
 /* the read */
 const [U,Y,E]=S, say=[];
 const word=m=>m.dir==='up'?'climbing':m.dir==='down'?'slipping':'steady';
@@ -564,12 +569,12 @@ else{
  else if(U.dir!=='up'&&Y.dir==='up')say.push(`He is doing more with less: <b>${fmt(Y.cur,0)}</b> yards a game over the last three against ${fmt(Y.avg,0)}.`);
  else if(U.dir==='down'&&Y.dir==='down')say.push(`The role is shrinking, and the yards with it (${fmt(Y.cur,0)} against ${fmt(Y.avg,0)}).`);
  else if(Y.dir!=='flat')say.push(`Yards are ${word(Y)}: ${fmt(Y.cur,0)} a game lately against ${fmt(Y.avg,0)}.`);
- let best=null;[U,Y].forEach(m=>{if(!m.lg)return;let n=0,above=null;for(let i=m.pts.length-1;i>=0;i--){const v=m.pts[i].v;if(v==null)break;const a=v>m.lg.p50;if(above==null)above=a;if(a!==above)break;n++;}if(n>=STREAK&&(!best||n>best.n))best={n,above,m};});
- if(best)say.push(`<b>${best.n} straight</b> games ${best.above?'above':'below'} a starter's median in ${best.m.lab.toLowerCase()}.`);
+ let best=null;[U,Y].forEach(m=>{if(!m.lg)return;let n=0,above=null;for(let i=m.pts.length-1;i>=0;i--){const v=m.pts[i].v;if(v==null)break;const a=v>m.lg.p50?1:v<m.lg.p50?-1:0;if(a===0)break;if(above==null)above=a;if(a!==above)break;n++;}if(n>=STREAK&&(!best||n>best.n))best={n,above,m};});
+ if(best)say.push(`<b>${best.n} straight</b> games ${best.above>0?'above':'below'} a starter's median in ${best.m.lab.toLowerCase()}.`);
  else if(Y.lg){const ab=Y.pts.filter(q=>q.v!=null&&q.v>=Y.lg.p50).length;say.push(`At or above a starter's median in yards in <b>${ab} of ${Y.pts.length}</b> games.`);}
  const ys=Y.pts.map(q=>q.v),last=ys[ys.length-1],lw=Y.pts[Y.pts.length-1].wk;
  if(ys.length>=4&&last===Math.max(...ys))say.push(`Week ${lw} was his season high in yards.`);else if(ys.length>=4&&last===Math.min(...ys))say.push(`Week ${lw} was his season low in yards.`);
- if(E.dir!=='flat')say.push(`${E.lab} is ${E.dir==='up'?'rising':'falling'} too: ${fmt(E.cur,E.d)} over the last three.`);
+ if(E.dir!=='flat'&&E.cur!=null)say.push(`${E.lab} is ${E.dir==='up'?'rising':'falling'} too: ${fmt(E.cur,E.d)} over the last three.`);
 }
 document.getElementById('trsay').innerHTML=say.join(' ');
 })();
