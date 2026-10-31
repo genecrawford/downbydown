@@ -166,7 +166,7 @@ if ( $L ) {
 	}
 	$tf = function ( $m, $v ) { return DBD_Grades::trend_fmt( $m['kind'], $v ); };
 	/* the charts */
-	$Wd = 220; $Hh = 108; $Lm = 6; $Rm = 38; $Tp = 12; $Bm = 16; $step = ( $Wd - $Lm - $Rm ) / 18; $bw = max( 3, $step * 0.55 );
+	$Wd = 220; $Hh = 108; $Lm = 6; $Rm = 38; $Tp = 12; $Bm = 16; $step = ( $Wd - $Lm - $Rm ) / $lastWk; $bw = max( 3, $step * 0.55 );
 	$xw = function ( $wk ) use ( $Lm, $step ) { return round( $Lm + ( $wk - 0.5 ) * $step, 2 ); };
 	$fo = 'font-family="IBM Plex Mono,monospace"';
 	$charts = '';
