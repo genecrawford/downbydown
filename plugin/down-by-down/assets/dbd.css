@@ -696,3 +696,23 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 .dbd-trc svg [tabindex]:focus-visible{outline:none;stroke:var(--dbd-red);stroke-width:2}
 @container dbd (max-width:860px){.dbd-tr4{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @container dbd (max-width:480px){.dbd-trc .th b{flex-basis:100%;margin-right:0}.dbd-trc .th .v{font-size:14px;margin-right:auto}}
+
+/* ---- movers: who moved in the last full week (SCOPE §22) ---- */
+.dbd-mv-say{margin:0;padding:8px 14px 4px;font:500 13px/1.55 var(--dbd-body);color:var(--dbd-ink)}.dbd-mv-say b{font-weight:600}
+.dbd-mv3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;padding:8px 14px 4px}
+.dbd-mvb{min-width:0;border:1px solid var(--dbd-line);border-radius:var(--dbd-r);background:var(--dbd-panel-2)}
+.dbd-mvb h4{margin:0;padding:8px 10px;font:700 11px var(--dbd-display);text-transform:uppercase;letter-spacing:.16em;color:var(--dbd-ink-2);border-bottom:1px solid var(--dbd-line);display:flex;justify-content:space-between;gap:8px}
+.dbd-mvb h4 small{font:500 10px var(--dbd-mono);letter-spacing:0;text-transform:none;color:var(--dbd-muted);text-align:right}
+.dbd-mvg{padding:6px 10px 2px;font:700 9px var(--dbd-display);letter-spacing:.14em;text-transform:uppercase;color:var(--dbd-muted)}.dbd-mvg.up{color:var(--dbd-good)}.dbd-mvg.dn{color:var(--dbd-bad)}
+.dbd-mvr{display:grid;grid-template-columns:24px minmax(0,1fr) 72px auto;gap:8px;align-items:center;padding:4px 10px;text-decoration:none;color:var(--dbd-ink);border-top:1px solid var(--dbd-line);position:relative}
+.dbd-mvr:hover{background:var(--dbd-panel)}.dbd-mvr.dim{opacity:.35}.dbd-mvr.hi::before{content:"";position:absolute;left:0;top:4px;bottom:4px;width:3px;background:var(--dbd-team,var(--dbd-red));border-radius:0 2px 2px 0}
+.dbd-mvr .nm{min-width:0;font:500 12px var(--dbd-body);line-height:1.2}.dbd-mvr .nm b{display:block;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dbd-mvr .nm small{font:500 10px var(--dbd-mono);color:var(--dbd-muted)}
+.dbd-mvr svg{display:block;width:72px;height:22px;max-width:none}
+.dbd-mvr .ch{text-align:right;font:600 11px var(--dbd-mono);line-height:1.2;white-space:nowrap}.dbd-mvr .ch b{display:block;font-weight:700}.dbd-mvr .ch small{font:500 9px var(--dbd-mono);color:var(--dbd-muted)}
+.dbd-mvr.up .ch b{color:var(--dbd-good)}.dbd-mvr.dn .ch b{color:var(--dbd-bad)}
+.dbd-mvb .none{padding:8px 10px 10px;margin:0;font:500 11px var(--dbd-mono);color:var(--dbd-muted)}
+.dbd-mvf{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 14px 10px}
+.dbd-mvf .l{font:700 10px var(--dbd-display);letter-spacing:.16em;text-transform:uppercase;color:var(--dbd-muted);margin-right:4px}
+.dbd-mvf a{display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:var(--dbd-ink);font:500 12px var(--dbd-body);padding:3px 8px 3px 4px;border:1px solid var(--dbd-line-2);border-radius:999px;position:relative}
+.dbd-mvf a small{font:500 10px var(--dbd-mono);color:var(--dbd-muted)}.dbd-mvf a.dim{opacity:.35}.dbd-mvf a.hi{border-color:var(--dbd-team,var(--dbd-red))}
+@container dbd (max-width:860px){.dbd-mv3{grid-template-columns:minmax(0,1fr)}}

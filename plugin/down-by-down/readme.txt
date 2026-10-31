@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.3.7
+Stable tag: 1.3.8
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,11 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.3.8 =
+* Movers: a new panel at the top of the Players index for the last full week. Three boards (snap share, target share, EPA) list the five biggest climbers and fallers against each player's own season to that point, with a sparkline of his season, the change, and before-and-after figures; a New faces strip names debuts and first start-level weeks; a one-line read calls the biggest swing in snaps.
+* Movers are league-wide; the team tile marks that team's rows, the position switch and search dim the rest.
+* Build: players/movers.json, computed from the weekly lines (no previous-week snapshot needed); an older data file skips the panel.
 
 = 1.3.7 =
 * The shape of his season: a new panel at the top of the player page's Week by week band. Four small charts per position (targets, receiving yards, EPA per target and aDOT for receivers; touches, scrimmage yards, EPA per touch and targets for backs; dropbacks, passing yards, EPA per dropback and CPOE for quarterbacks), each with his number every week, the league's middle half at his position as a shaded band with its median, and his trailing three games as a line. Byes, games he missed and the current week are marked.

@@ -20,6 +20,7 @@ Writes:
   plays/{ABBR}.json  {season, team, byes, games:[...], keys:[...], plays:[[...]]}  (pid = ball handler's gsis_id; FTN flags when available)
   players/{ABBR}.json  roster rows for QB/RB/FB/WR/TE with weekly stat lines, snap share, PFR extras, injury line, depth slot
   players/index.json   one row per player league-wide for the Players index and search
+  players/movers.json  who moved in the last full week: snap share, target share and EPA against his own season, new faces
   players/league.json  per position group: qualifier, n, sorted metric lists (the pool behind the percentile grades), week + game quartiles (trend yardsticks)
   metrics.json    offense/defense metrics per team, league averages, ranks, through_week
   schedule.json   {season, current_week, weeks: {"1": [games], ...}} with status per game
@@ -339,6 +340,53 @@ for r in sched.sort_values(['week', 'gameday', 'gametime']).itertuples():
              stadium=c(r.stadium), game_type=r.game_type, status='final' if not (isinstance(r.home_score, float) and math.isnan(r.home_score)) else 'upcoming')
     weeks.setdefault(str(int(r.week)), []).append(g)
 json.dump(dict(season=season, current_week=week, through_week=through_week, weeks=weeks), open(f'{out}/schedule.json', 'w'), separators=(',', ':'))
+
+# ---------------------------------------------------------------- movers (SCOPE §22): who moved in the last full week, against his own season
+MV_FLOOR = {'snaps': 12.0, 'targets': 6.0, 'epa': 4.0}; MV_MING = 2; MV_PER = 5; MV_DEBUT = 25; MV_START = 50; MV_PRIOR = 30
+done = [int(w) for w, gl in weeks.items() if gl and all(g['status'] == 'final' for g in gl)]
+mv_week = max(done) if done else None
+def mover_rows():
+    rows = []; played_n = 0
+    for t, pl in team_players.items():
+        for p in pl:
+            wk = {int(w['week']): w for w in p['weeks']}; sn = {int(k): v for k, v in p['snaps'].items()}
+            played = sorted(set(wk) | set(sn))
+            if mv_week not in played: continue
+            played_n += 1
+            prior = [w for w in played if w < mv_week]
+            wrow = wk.get(mv_week); tm_wk = (wrow or {}).get('team') or p['snapteam'].get(str(mv_week)) or t
+            opp = (wrow or {}).get('opponent_team') or next((g['away'] if g['home'] == tm_wk else g['home'] for g in weeks.get(str(mv_week), []) if tm_wk in (g['home'], g['away'])), None)
+            base = dict(id=p['id'], name=p['name'], team=t, pos=p['pos'], num=p['num'], photo=p['photo'], g=len(prior), opp=opp)
+            def val(kind, w):
+                r = wk.get(w)
+                if kind == 'snaps': return sn.get(w)
+                if r is None: return 0.0
+                if kind == 'targets': return 100 * _num(r.get('target_share'))
+                if p['pos'] == 'QB': return _num(r.get('passing_epa'))
+                if p['pos'] in ('RB', 'FB'): return _num(r.get('rushing_epa')) + _num(r.get('receiving_epa'))
+                return _num(r.get('receiving_epa'))
+            now_sn = sn.get(mv_week)
+            if played[0] == mv_week and now_sn is not None and now_sn >= MV_DEBUT: rows.append(('face', dict(base, kind='debut', now=now_sn)))
+            elif prior and now_sn is not None and now_sn >= MV_START and max([sn.get(w) or 0 for w in prior]) <= MV_PRIOR: rows.append(('face', dict(base, kind='first start', now=now_sn, before=max(sn.get(w) or 0 for w in prior))))
+            if len(prior) < MV_MING: continue
+            for k in MV_FLOOR:
+                if k == 'targets' and p['pos'] == 'QB': continue
+                now = val(k, mv_week)
+                if now is None: continue
+                pv = [v for v in (val(k, w) for w in prior) if v is not None]
+                if not pv: continue
+                before = sum(pv) / len(pv); delta = now - before
+                if abs(delta) < MV_FLOOR[k]: continue
+                series = [(None if w not in played else val(k, w)) for w in range(1, mv_week + 1)]
+                rows.append((k, dict(base, before=round(before, 1), now=round(now, 1), delta=round(delta, 1), s=[None if v is None else round(v, 1) for v in series])))
+    return rows, played_n
+if mv_week:
+    mrows, mv_n = mover_rows()
+    movers = dict(season=season, week=mv_week, n=mv_n, faces=[r for k, r in mrows if k == 'face'])
+    for k in MV_FLOOR:
+        rs = [r for kk, r in mrows if kk == k]
+        movers[k] = dict(up=sorted([r for r in rs if r['delta'] > 0], key=lambda r: -r['delta'])[:MV_PER], down=sorted([r for r in rs if r['delta'] < 0], key=lambda r: r['delta'])[:MV_PER])
+    json.dump(clean(movers), open(f'{out}/players/movers.json', 'w'), separators=(',', ':'))
 
 # ---------------------------------------------------------------- manifest
 files = {}

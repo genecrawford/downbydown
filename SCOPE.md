@@ -554,7 +554,7 @@ Gene: "make the 10 things the next roadmap and build this first slice." Benchmar
 | 4 | **Opponent context** | 1.3.x | Each game log row names the defense faced and its rank against his position; a strength-of-schedule line | Team defense metrics (shipped) joined by week |
 | 4b | **Design cleanup** (added 2026-10-31) | 1.3.x | Gene: "There are A LOT of tables and things on these pages and a lot of them have scroll bars and horizontal bars; look at the layouts and lose any horizontal bars where we can by rearranging things." A layout pass over the team, player and compare pages: audit every `dbd-tw` wrapper at desktop, tablet and phone widths, then widen the main column, drop or fold columns, stack panels, or move tables out of the rail so nothing scrolls sideways except where a wide table has no other honest form. Scope and mock first | Nothing new |
 | 5 | **Trend lines** (§21) | 1.3.7 | Four small charts at the top of Week by week: usage, yards, efficiency and a role metric, week by week with a three-game rolling line over the league's middle half, plus a generated read | Per-game league quartiles for those metrics from the build |
-| 6 | **Weekly movers** | 1.3.x | Index strip: biggest climbers and fallers in snap share, target share and EPA week over week; new starters and injury changes | Previous week's index kept by the build |
+| 6 | **Weekly movers** (§22) | 1.3.8 | Players index: who moved in the last full week, three boards (snap share, target share, EPA) of climbers and fallers against each player's own season, plus new faces | `players/movers.json` from the build, computed from the weekly lines already shipped |
 | 7 | **Playstyle fingerprint** | 1.3.x | Generated read in the takeaways voice from his splits: depth profile, third-down and red-zone share, formation lean | Play file (shipped), rules per position |
 | 8 | **Career tab** | 1.3.x | Season-by-season summary back to 1999 from nflverse weekly stats; play-level views stay current season | `stats_player_week_{year}` per season, a one-time backfill |
 | 9 | **Share card** | later | A server-rendered image of the hero and percentile bars for social | PHP GD or an SVG-to-PNG step in the build |
@@ -766,3 +766,32 @@ Each chart:
 Trend lines on the compare page (overlaying two players' rolling lines), week-over-week movers on the index (slice 6), and any rolling line on team pages.
 
 Status: built as 1.3.7 (2026-10-31).
+
+## 22. Weekly movers: who moved this week (scoped and mocked 2026-10-31, `mockup-v5/players.html`)
+
+Roadmap slice 6 (§16). A panel at the top of the Players index, above the filters, that answers the question the index table cannot: whose role just changed. The mock runs on the real league through Week 7 (`mockup-v5/data/movers.js`, generated from every team's player file by the same rule the build will use).
+
+### What it is
+
+**"Movers · Week 7" · against his own season.** Every number compares a player's last full week with his average over the games he had played before it, so a mover is someone whose week broke from his own pattern, not someone who had a big week because he always does.
+
+- **The week** is the latest league week in which every scheduled game is final. Mid-week, that is last week; Week 8 with one game played is not a week yet. The badge says which week and how many players played in it.
+- **Three boards side by side:** Snap share (points), Target share (points, quarterbacks excluded), EPA (the week's total EPA against his per-game average; receiving for receivers, rushing plus receiving for backs, passing for quarterbacks). Each board lists the five biggest climbers then the five biggest fallers, each row a jersey tile, the name linking to his page, team and position, a sparkline of his season in that metric with the last week's point marked, and a chip for the change ("+31 pts", "−6.4 EPA") beside "before → now".
+- **Who qualifies:** two or more games played before that week and a snap that week (the trend's "played" rule: a stats line, or snaps with nothing recorded). A board only lists moves past a floor so a quiet week does not fill with noise: 12 points of snap share, 6 points of target share, 4.0 EPA. Fewer than five past the floor shows fewer rows; none shows "Nobody moved far on this board."
+- **New faces**, a chip strip under the boards: players whose first snap of the season came that week with 25% of the snaps or more ("debut"), and players who crossed 50% of the snaps for the first time after never passing 30% ("first start-level week"). Each chip links to the player.
+- **The read**, one sentence over the boards in the takeaways voice: the biggest climber and faller on the snap board and what it means ("Week 7 was a changing of the guard in Carolina: Rico Dowdle took 78% of the snaps, up 41 points, while Chuba Hubbard fell to 19%"), from fixed phrasing over the top rows.
+- Movers are league-wide whatever the filters say. The team filter marks that team's rows with its color bar; the position switch and the search dim the rows that do not match, so the panel still reads on a team page.
+
+### Data and rendering
+
+- **Build change.** `tools/build_data.py` writes `players/movers.json`: `{season, week, n, snaps: {up: [...], down: [...]}, targets: {...}, epa: {...}, faces: [...]}`. Every row carries `id, name, team, pos, num, photo, before, now, delta, g` (games before) and `s`, his weekly values of that metric for weeks 1 through the movers week (null for a bye or a miss), for the sparkline. The comparison is computed from the player files' weekly lines, so no previous-week snapshot is kept and a missed nightly loses nothing; the §16 row said "previous week's index kept by the build", and this is the sturdier version of the same idea.
+- The floors (12, 6, 4.0), the qualifying games (2), the rows per side (5) and the new-face thresholds (25%, 50%, 30%) are constants at the top of the build step and are repeated once in `DBD_Grades` for the plugin's notes.
+- **Plugin (`1.3.8`).** `players.php` renders the whole panel from `movers.json` through `DBD_Data::get()`: PHP markup, inline SVG sparklines, the shared `[data-tip]` tooltip (the week's opponent and the exact numbers). `players.js` applies the dim-and-highlight when a filter is active; nothing else moves. A data file without `movers.json` (an older nightly) skips the panel.
+- Layout: three boards across in the main column, one board after another below the `dbd-t2` breakpoint (860px container); rows never scroll sideways, since the sparkline is fixed at 72px and the name cell truncates.
+- Reduced motion: no animation in the panel.
+
+### Not in this slice
+
+Injury-report changes week over week (the index already carries this week's status beside each name; a "newly listed" mark needs last week's report kept by the build and can ride on a later slice), a movers card on the hub, per-team movers on the team page, and a `?week=` picker for past weeks (the data shape allows it later).
+
+Status: built as 1.3.8 (2026-10-31).

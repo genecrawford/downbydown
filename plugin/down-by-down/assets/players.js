@@ -6,6 +6,7 @@
   window.DBD_TEAMS = C.teams;
   var ALL; try { ALL = JSON.parse(src.textContent || '[]'); } catch (e) { return; }
   var st = { team: C.team || '', pos: C.pos || '', q: C.q || '' }, sort = { key: '', dir: -1 };
+  var byId = {}; ALL.forEach(function (p) { byId[p.id] = p; });
   var LABEL = { snap: 'snap share', use: 'targets and attempts', rec: 'receptions', car: 'carries', yds: 'yards', td: 'touchdowns', epa: 'EPA', name: 'name', team: 'team', pos: 'position', st: 'status' };
   var val = function (p, k) { switch (k) { case 'name': return p.name.toLowerCase(); case 'team': return p.team || ''; case 'pos': return p.pos || ''; case 'st': return p.st || ''; case 'use': return (p.pos === 'QB' ? p.att : p.tgt) | 0; case 'epa': return +p.epa || 0; default: return p[k] | 0; } };
   var $ = function (s) { return root.querySelector(s); };
@@ -28,7 +29,9 @@
   }
   function draw() {
     var needle = st.q.trim().toLowerCase();
-    var rows = ALL.filter(function (p) { return (!st.team || needle || p.team === st.team) && (!st.pos || p.pos === st.pos || (st.pos === 'RB' && p.pos === 'FB')) && (!needle || p.name.toLowerCase().indexOf(needle) >= 0 || String(p.num) === needle || (p.team || '').toLowerCase() === needle || (p.col || '').toLowerCase().indexOf(needle) >= 0); });
+    var posOk = function (p) { return !st.pos || p.pos === st.pos || (st.pos === 'RB' && p.pos === 'FB'); };
+    var qOk = function (p) { return !needle || p.name.toLowerCase().indexOf(needle) >= 0 || String(p.num) === needle || (p.team || '').toLowerCase() === needle || (p.col || '').toLowerCase().indexOf(needle) >= 0; };
+    var rows = ALL.filter(function (p) { return (!st.team || needle || p.team === st.team) && posOk(p) && qOk(p); });
     if (sort.key) rows.sort(function (a, b) { var x = val(a, sort.key), y = val(b, sort.key); return (x < y ? -1 : x > y ? 1 : 0) * sort.dir; });
     var cap = st.team || needle ? 0 : 60; if (cap && rows.length > cap) rows = rows.slice(0, cap);
     var by = sort.key ? LABEL[sort.key] : 'snap share';
@@ -40,6 +43,12 @@
     pos.querySelectorAll('.t-tab').forEach(function (b) { b.setAttribute('aria-selected', (b.dataset.v || '') === st.pos ? 'true' : 'false'); });
     slidePill(pos, pos.querySelector('[aria-selected="true"]'), true);
     try { history.replaceState(null, '', url({ team: st.team, pos: st.pos, q: st.q })); } catch (e) {}
+    /* movers (SCOPE §22): the team tile marks its rows, position and search dim the rest */
+    root.querySelectorAll('#dbd-mv [data-id]').forEach(function (el) {
+      el.classList.toggle('hi', !!st.team && el.dataset.team === st.team);
+      var p = byId[el.dataset.id] || { name: '', num: '', team: el.dataset.team, pos: el.dataset.pos, col: '' };
+      el.classList.toggle('dim', !(posOk(p) && qOk(p)));
+    });
   }
   var thead = $('#dbd-plist thead'); if (thead) thead.addEventListener('click', function (e) { var h = e.target.closest('th[data-sort]'); if (!h) return; var k = h.dataset.sort; if (sort.key === k) sort.dir *= -1; else { sort.key = k; sort.dir = (k === 'name' || k === 'team' || k === 'pos' || k === 'st') ? 1 : -1; } draw(); });
   pick.addEventListener('click', function (e) { var b = e.target.closest('.dbd-mkbtn'); if (!b) return; e.preventDefault(); st.team = b.dataset.team || ''; draw(); });

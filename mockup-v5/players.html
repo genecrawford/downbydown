@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="transitions.css">
 <script src="data/teams.js"></script>
 <script src="data/marks.js"></script>
+<script src="data/movers.js?v=2"></script>
 <script src="data/players-MIN.js"></script>
 <style>
 .pmark{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:4px;background:var(--team);color:var(--team2);font:800 12px var(--hero);flex:0 0 auto}
@@ -24,6 +25,25 @@
 .teampick{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .teampick .mkbtn{all:unset;cursor:pointer;border-radius:4px;opacity:.45}.teampick .mkbtn.on,.teampick .mkbtn:hover{opacity:1}
 .tw{container-type:inline-size}.stat th{font:700 10px var(--display);text-transform:uppercase;letter-spacing:.08em;padding:5px 4px}.stat td{padding:4px 4px;font:500 11px var(--mono)}.stat td:first-child{font:500 12px var(--body);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}@container (max-width:860px){.t2{display:none}}@container (max-width:560px){.t3{display:none}}
+/* movers (SCOPE §22) */
+.mv .say{margin:0;padding:8px 14px 4px;font:500 13px/1.55 var(--body);color:var(--ink)} .mv .say b{font-weight:600}
+.mv3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;padding:8px 14px 4px}
+@media (max-width:1130px){.mv3{grid-template-columns:minmax(0,1fr)}}
+.mvb{min-width:0;border:1px solid var(--line);border-radius:var(--r);background:var(--panel-2)}
+.mvb h4{margin:0;padding:8px 10px;font:700 11px var(--display);text-transform:uppercase;letter-spacing:.16em;color:var(--ink-2);border-bottom:1px solid var(--line);display:flex;justify-content:space-between}
+.mvb h4 small{font:500 10px var(--mono);letter-spacing:0;text-transform:none;color:var(--muted)}
+.mvg{padding:6px 10px 2px;font:700 9px var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)} .mvg.up{color:var(--good)} .mvg.dn{color:var(--bad)}
+.mvr{display:grid;grid-template-columns:24px minmax(0,1fr) 72px auto;gap:8px;align-items:center;padding:4px 10px;text-decoration:none;color:var(--ink);border-top:1px solid var(--line);position:relative}
+.mvr:hover{background:var(--panel)} .mvr.dim{opacity:.35} .mvr.hi::before{content:"";position:absolute;left:0;top:4px;bottom:4px;width:3px;background:var(--team);border-radius:0 2px 2px 0}
+.mvr .nm{min-width:0;font:500 12px var(--body);line-height:1.2} .mvr .nm b{display:block;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .mvr .nm small{font:500 10px var(--mono);color:var(--muted)}
+.mvr svg{display:block;width:72px;height:22px}
+.mvr .ch{text-align:right;font:600 11px var(--mono);line-height:1.2;white-space:nowrap} .mvr .ch b{display:block;font-weight:700} .mvr .ch small{font:500 9px var(--mono);color:var(--muted)}
+.mvr.up .ch b{color:var(--good)} .mvr.dn .ch b{color:var(--bad)}
+.mvb .none{padding:8px 10px 10px;font:500 11px var(--mono);color:var(--muted)}
+.mvf{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 14px 10px}
+.mvf .l{font:700 10px var(--display);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-right:4px}
+.mvf a{display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:var(--ink);font:500 12px var(--body);padding:3px 8px 3px 4px;border:1px solid var(--line-2);border-radius:999px}
+.mvf a small{font:500 10px var(--mono);color:var(--muted)}
 </style>
 </head>
 <body>
@@ -43,6 +63,12 @@
         <p class="sub">Every skill player who has taken an offensive snap, with usage from the play file and this week's injury report. Pick a player to see where the ball finds him. The build covers all 32 teams; the mock is the Vikings.</p>
       </div><div class="badge" id="count"></div></div>
 
+      <section class="panel mv" id="mv"><div class="ph"><span class="lab"><b>Movers</b> · <span id="mvwk"></span> · against his own season</span><span class="badge" id="mvn"></span></div>
+        <p class="say" id="mvsay"></p>
+        <div class="mv3" id="mv3"></div>
+        <div class="mvf" id="mvf"></div>
+        <p class="note">Each row compares his last full week with his average over the games he had played before it, so a mover broke from his own pattern. Boards list the five biggest climbers, then the five biggest fallers, past a floor (12 points of snap share, 6 of target share, 4.0 EPA). The sparkline is his season; the dot is that week.</p>
+      </section>
       <section class="panel"><div class="toolbar">
         <div class="fg"><span>Team</span><div class="teampick" id="teams"></div></div>
         <div class="fg"><span>Position</span><div class="seg" id="f-pos"></div></div>
@@ -70,6 +96,7 @@ document.getElementById('q').oninput=draw;
 function stat(p){if(!p.inj)return'';const s=p.inj.status||'';const cls=/out|did not/i.test(s)?'o':/questionable|limited|doubtful/i.test(s)?'q':'';const short=/did not/i.test(s)?'DNP':/limited/i.test(s)?'Limited':/full/i.test(s)?'Full':s;return`<span class="st ${cls}">${short}${p.inj.what?' · '+p.inj.what:''}</span>`;}
 function draw(){
   const q=document.getElementById('q').value.trim().toLowerCase();
+  if(window.mvFilter)mvFilter('MIN',pos,q);
   const rows=P.filter(p=>(!pos||p.pos===pos||(pos==='RB'&&p.pos==='FB'))&&(!q||p.name.toLowerCase().includes(q)||String(p.num)===q||(p.col||'').toLowerCase().includes(q)));
   document.getElementById('list').classList.add('stat');
   document.getElementById('list').innerHTML='<tr><th>Player</th><th>Pos</th><th class="t2">Snap %</th><th>Tgt</th><th class="t2">Rec</th><th class="t2">Car</th><th>Yds</th><th>TD</th><th>EPA</th><th class="t3">Status</th></tr>'+rows.map(p=>{
@@ -78,6 +105,31 @@ function draw(){
     return`<tr class="clk" onclick="location.href='player.html?id=${p.id}'"><td class="nm"><span class="pmark">${p.num??''}</span><a href="player.html?id=${p.id}">${p.name}</a>${depth}</td><td class="pos">${p.pos}</td><td class="t2"><span class="sb"><i style="--w:${Math.round(sn)}%"></i></span>${Math.round(sn)}%</td><td>${tg||''}</td><td class="t2">${rc||''}</td><td class="t2">${ca||''}</td><td>${Math.round(y)}</td><td>${td||''}</td><td class="${e>=0?'pos':'neg'}">${sgn(e)}</td><td class="t3">${stat(p)}</td></tr>`;}).join('');
 }
 draw();
+
+/* ---- movers (SCOPE §22): who moved in the last full week, against his own season */
+(function(){
+const MV=window.DBD_MOVERS;if(!MV)return;
+document.getElementById('mvwk').textContent='Week '+MV.week;document.getElementById('mvn').textContent=MV.n+' played';
+const BOARDS=[['snaps','Snap share','points of the snaps','pts',v=>Math.round(v)+'%'],['targets','Target share','points of team targets, QBs excluded','pts',v=>Math.round(v)+'%'],['epa','EPA','the week against his per-game average','EPA',v=>(v>0?'+':'')+v.toFixed(1)]];
+const spark=(s,up)=>{const v=s.filter(x=>x!=null);if(!v.length)return'';const hi=Math.max(...v),lo=Math.min(...v),sp=(hi-lo)||1,W=72,H=22,n=s.length,x=i=>n>1?2+i*(W-4)/(n-1):W/2,y=val=>2+(hi-val)/sp*(H-4);
+ let d='',pts=[];s.forEach((val,i)=>{if(val==null){d+=' ';return;}pts.push(x(i).toFixed(1)+','+y(val).toFixed(1));});
+ const li=s.length-1;return`<svg viewBox="0 0 ${W} ${H}" aria-hidden="true"><polyline points="${pts.join(' ')}" fill="none" stroke="var(--muted)" stroke-width="1.5"/><circle cx="${x(li)}" cy="${y(s[li])}" r="2.5" fill="${up?'var(--good)':'var(--bad)'}"/></svg>`;};
+const row=(r,up,b)=>`<a class="mvr ${up?'up':'dn'}" href="player.html?id=${r.id}" data-team="${r.team}" data-pos="${r.pos}" title="Week ${MV.week}${r.opp?' vs '+r.opp:''}: ${b[1]} ${b[3]==='pts'?r.now.toFixed(1)+'%':b[4](r.now)}, before ${b[3]==='pts'?r.before.toFixed(1)+'%':b[4](r.before)} over ${r.g} games"><span class="pmark" style="--team:${T[r.team].c1};--team2:${T[r.team].c2}">${r.num??''}</span><span class="nm"><b>${r.name}</b><small>${r.team} · ${r.pos}</small></span>${spark(r.s,up)}<span class="ch"><b>${(r.delta>0?'+':'−')+Math.abs(r.delta).toFixed(b[3]==='pts'?0:1)} ${b[3]}</b><small>${b[4](r.before)} → ${b[4](r.now)}</small></span></a>`;
+document.getElementById('mv3').innerHTML=BOARDS.map(b=>{const d=MV[b[0]];const up=d.up.map(r=>row(r,true,b)).join(''),dn=d.down.map(r=>row(r,false,b)).join('');
+ return`<div class="mvb"><h4>${b[1]}<small>${b[2]}</small></h4>${up||dn?`${up?'<div class="mvg up">▲ Climbers</div>'+up:''}${dn?'<div class="mvg dn">▼ Fallers</div>'+dn:''}`:'<p class="none">Nobody moved far on this board.</p>'}</div>`;}).join('');
+document.getElementById('mvf').innerHTML=MV.faces.length?'<span class="l">New faces</span>'+MV.faces.map(r=>`<a href="player.html?id=${r.id}" data-team="${r.team}" data-pos="${r.pos}"><span class="pmark" style="--team:${T[r.team].c1};--team2:${T[r.team].c2};width:22px;height:22px;font-size:10px">${r.num??''}</span>${r.name}<small>${r.team} · ${r.pos} · ${r.kind==='debut'?'debut':'first start-level week'}, ${Math.round(r.now)}% of the snaps</small></a>`).join(''):'';
+/* the read: the snap board's top climber and faller */
+const u=MV.snaps.up[0],d=MV.snaps.down[0];let say='';
+if(u&&d&&u.team===d.team)say=`Week ${MV.week} was a changing of the guard in ${T[u.team].nick} ${u.pos==='QB'?'quarterbacking':'snaps'}: <b>${u.name}</b> took ${Math.round(u.now)}% of the snaps, up ${Math.round(u.delta)} points on his season, while <b>${d.name}</b> fell to ${Math.round(d.now)}%.`;
+else if(u&&d)say=`The biggest swing in snaps in Week ${MV.week}: <b>${u.name}</b> (${T[u.team].nick}) took ${Math.round(u.now)}% of the snaps, up ${Math.round(u.delta)} points on his season; <b>${d.name}</b> (${T[d.team].nick}) fell to ${Math.round(d.now)}% from ${Math.round(d.before)}.`;
+else if(u)say=`The biggest climb in snaps in Week ${MV.week}: <b>${u.name}</b> (${T[u.team].nick}) took ${Math.round(u.now)}% of the snaps, up ${Math.round(u.delta)} points on his season; nobody fell past the floor.`;
+else if(d)say=`The biggest drop in snaps in Week ${MV.week}: <b>${d.name}</b> (${T[d.team].nick}) fell to ${Math.round(d.now)}% of the snaps from ${Math.round(d.before)}; nobody climbed past the floor.`;
+else say=`Week ${MV.week}: ${MV.n} players took a snap; no snap share moved past the floor.`;
+document.getElementById('mvsay').innerHTML=say;
+/* filters: the team tile highlights its rows, the position switch and search dim the rest */
+window.mvFilter=function(team,posv,q){document.querySelectorAll('#mv [data-team]').forEach(el=>{el.classList.toggle('hi',!!team&&el.dataset.team===team);const m=(!posv||el.dataset.pos===posv||(posv==='RB'&&el.dataset.pos==='FB'))&&(!q||el.querySelector('.nm b, small')?.textContent.toLowerCase().includes(q)||el.textContent.toLowerCase().includes(q));el.classList.toggle('dim',!m);});};
+mvFilter('MIN',typeof pos==='string'?pos:'',document.getElementById('q').value.trim().toLowerCase());
+})();
 </script>
 </body>
 </html>
