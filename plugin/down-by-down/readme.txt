@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.3.4
+Stable tag: 1.3.5
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,10 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.3.5 =
+* Opponent context. The game log gains a Defense column: a chip for the defense faced that week, ranked against his position (EPA allowed per target to wide receivers or tight ends, per designed carry for backs, per dropback for quarterbacks; 1 is the toughest), tiered navy for the top 10 and green for the bottom 10, sortable, with the number and the league average in the tooltip.
+* "Who he's faced" panel under the game log: where his slate ranks among all 32 teams and what is ahead; the eighteen-week ribbon (played solid, ahead dashed, this week outlined, DNP marked); his line against top-10, middle and bottom-10 defenses; and yards against the rank of the defense with a one-line read from the correlation. Rendered server-side from the metrics and schedule files already shipped; no data build needed.
 
 = 1.3.4 =
 * The connection. A new player-page panel between the field map and the game log. On a quarterback's page: every receiver he has targeted in a sortable table (share of his throws, catch rate, aDOT, YAC, third-down and red-zone targets, EPA per target), a takeaway line (first read, deep threat, most efficient pairing, third-down favorite), the target map with dots colored by receiver and click-to-isolate chips, weekly stacked columns of how he spreads the ball, and a receivers-by-depth grid. On everyone else's page: his line by passer with a "to everyone else" row under each quarterback, passer rating when targeting him, and the same map, weekly columns and depth grid split by passer. All of it comes from the play rows already shipped; no data build needed.

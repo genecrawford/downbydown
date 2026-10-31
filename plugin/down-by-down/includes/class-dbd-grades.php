@@ -21,6 +21,16 @@ class DBD_Grades {
 	}
 
 	/** Position group for a roster position: qb, rb, rec, or null. */
+	/** Opponent context (SCOPE §19): which defensive metric a position is measured against, with tier cutoffs. Rank 1 is the toughest. */
+	const DEF_TOUGH = 10; const DEF_SOFT = 23; const DEF_CORR = 0.4;
+	public static function defense_key( $pos ) {
+		if ( $pos === 'QB' ) { return array( 'key' => 'pass_epa', 'lab' => 'vs the pass', 'unit' => 'per dropback' ); }
+		if ( $pos === 'RB' || $pos === 'FB' ) { return array( 'key' => 'run_epa', 'lab' => 'vs the run', 'unit' => 'per designed carry' ); }
+		if ( $pos === 'TE' ) { return array( 'key' => 'TE_epa', 'lab' => 'vs TE', 'unit' => 'per target to tight ends' ); }
+		return array( 'key' => 'WR_epa', 'lab' => 'vs WR', 'unit' => 'per target to wide receivers' );
+	}
+	public static function defense_tier( $rk ) { return $rk === null ? '' : ( $rk <= self::DEF_TOUGH ? 'tough' : ( $rk >= self::DEF_SOFT ? 'soft' : 'mid' ) ); }
+
 	public static function group_of( $pos ) {
 		return array( 'QB' => 'qb', 'RB' => 'rb', 'FB' => 'rb', 'WR' => 'rec', 'TE' => 'rec' )[ $pos ] ?? null;
 	}
