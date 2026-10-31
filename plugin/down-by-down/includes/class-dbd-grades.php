@@ -62,6 +62,9 @@ class DBD_Grades {
 		return self::group_info( $grp )['game'][ $key ] ?? null;
 	}
 
+	/** Weekly movers (SCOPE §22): the build's floors and thresholds, repeated here for the panel's notes. */
+	const MV_FLOOR_SNAPS = 12; const MV_FLOOR_TARGETS = 6; const MV_FLOOR_EPA = 4.0; const MV_PER = 5; const MV_DEBUT = 25; const MV_START = 50;
+
 	public static function group_of( $pos ) {
 		return array( 'QB' => 'qb', 'RB' => 'rb', 'FB' => 'rb', 'WR' => 'rec', 'TE' => 'rec' )[ $pos ] ?? null;
 	}

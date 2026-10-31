@@ -26,6 +26,50 @@ if ( ! $idx ) {
 	return;
 }
 
+/* ---- movers (SCOPE §22): who moved in the last full week, against his own season. From players/movers.json; an older data file skips the panel. */
+$MV = DBD_Data::get( 'players/movers.json' );
+if ( $MV && ! empty( $MV['week'] ) ) {
+	$teams = DBD_Data::teams(); $nick = function ( $a ) use ( $teams ) { return $teams[ $a ]['nick'] ?? $a; };
+	$boards = array(
+		array( 'snaps', 'Snap share', 'points of the snaps', 'pts', function ( $v ) { return round( $v ) . '%'; } ),
+		array( 'targets', 'Target share', 'points of team targets, QBs excluded', 'pts', function ( $v ) { return round( $v ) . '%'; } ),
+		array( 'epa', 'EPA', 'the week against his per-game average', 'EPA', function ( $v ) { return ( $v > 0 ? '+' : '' ) . number_format( (float) $v, 1 ); } ),
+	);
+	$spark = function ( $s, $up ) {
+		$v = array_values( array_filter( (array) $s, function ( $x ) { return $x !== null; } ) ); if ( ! $v ) { return ''; }
+		$hi = max( $v ); $lo = min( $v ); $sp = ( $hi - $lo ) ?: 1; $Wd = 72; $Hh = 22; $n = count( $s );
+		$x = function ( $i ) use ( $n, $Wd ) { return $n > 1 ? round( 2 + $i * ( $Wd - 4 ) / ( $n - 1 ), 1 ) : $Wd / 2; }; $y = function ( $val ) use ( $hi, $sp, $Hh ) { return round( 2 + ( $hi - $val ) / $sp * ( $Hh - 4 ), 1 ); };
+		$pts = array(); foreach ( $s as $i => $val ) { if ( $val !== null ) { $pts[] = $x( $i ) . ',' . $y( $val ); } }
+		$li = $n - 1; $last = $s[ $li ];
+		return '<svg viewBox="0 0 ' . $Wd . ' ' . $Hh . '" aria-hidden="true"><polyline points="' . implode( ' ', $pts ) . '" fill="none" stroke="var(--dbd-muted)" stroke-width="1.5"/>' . ( $last === null ? '' : '<circle cx="' . $x( $li ) . '" cy="' . $y( $last ) . '" r="2.5" fill="' . ( $up ? 'var(--dbd-good)' : 'var(--dbd-bad)' ) . '"/>' ) . '</svg>';
+	};
+	$mrow = function ( $r, $up, $b ) use ( $MV, $spark, $nick ) {
+		$fmt = $b[4]; $href = DBD_Router::url( array( 'player' => $r['id'] ) );
+		$tip = '<b>' . esc_html( $r['name'] ) . '</b> · ' . esc_html( $nick( $r['team'] ) ) . '<br>Week ' . (int) $MV['week'] . ': ' . esc_html( $b[1] ) . ' <b>' . esc_html( $fmt( $r['now'] ) ) . '</b>, before ' . esc_html( $fmt( $r['before'] ) ) . ' over ' . (int) $r['g'] . ' game' . ( (int) $r['g'] === 1 ? '' : 's' );
+		$d = (float) $r['delta']; $dtxt = ( $d > 0 ? '+' : '−' ) . ( $b[3] === 'pts' ? round( abs( $d ) ) : number_format( abs( $d ), 1 ) ) . ' ' . $b[3];
+		return '<a class="dbd-mvr ' . ( $up ? 'up' : 'dn' ) . '" href="' . esc_url( $href ) . '" data-team="' . esc_attr( $r['team'] ) . '" data-pos="' . esc_attr( $r['pos'] ) . '" data-name="' . esc_attr( strtolower( $r['name'] ) ) . '" data-tip="' . esc_attr( $tip ) . '">' . DBD_Marks::player( $r['team'], $r['num'], 24, $r['photo'] ?? null ) . '<span class="nm"><b>' . esc_html( $r['name'] ) . '</b><small>' . esc_html( $r['team'] . ' · ' . $r['pos'] ) . '</small></span>' . $spark( $r['s'] ?? array(), $up ) . '<span class="ch"><b>' . esc_html( $dtxt ) . '</b><small>' . esc_html( $fmt( $r['before'] ) . ' → ' . $fmt( $r['now'] ) ) . '</small></span></a>';
+	};
+	/* the read: the snap board's top climber and faller */
+	$u = $MV['snaps']['up'][0] ?? null; $dn = $MV['snaps']['down'][0] ?? null; $wkn = (int) $MV['week'];
+	if ( $u && $dn && $u['team'] === $dn['team'] ) { $say = 'Week ' . $wkn . ' was a changing of the guard in ' . esc_html( $nick( $u['team'] ) ) . ' ' . ( $u['pos'] === 'QB' ? 'quarterbacking' : 'snaps' ) . ': <b>' . esc_html( $u['name'] ) . '</b> took ' . round( $u['now'] ) . '% of the snaps, up ' . round( $u['delta'] ) . ' points on his season, while <b>' . esc_html( $dn['name'] ) . '</b> fell to ' . round( $dn['now'] ) . '%.'; }
+	elseif ( $u && $dn ) { $say = 'The biggest swing in snaps in Week ' . $wkn . ': <b>' . esc_html( $u['name'] ) . '</b> (' . esc_html( $nick( $u['team'] ) ) . ') took ' . round( $u['now'] ) . '% of the snaps, up ' . round( $u['delta'] ) . ' points on his season; <b>' . esc_html( $dn['name'] ) . '</b> (' . esc_html( $nick( $dn['team'] ) ) . ') fell to ' . round( $dn['now'] ) . '% from ' . round( $dn['before'] ) . '.'; }
+	else { $say = 'Week ' . $wkn . ': ' . (int) $MV['n'] . ' players took a snap; no snap share moved past the floor.'; }
+	echo '<section class="dbd-panel dbd-mv" id="dbd-mv"><div class="dbd-ph"><span class="dbd-lab"><b>Movers</b> · Week ' . $wkn . ' · against his own season</span><span class="dbd-badge">' . (int) $MV['n'] . ' played</span></div>';
+	echo '<p class="dbd-mv-say">' . $say . '</p><div class="dbd-mv3">';
+	foreach ( $boards as $b ) {
+		$up = ''; foreach ( $MV[ $b[0] ]['up'] ?? array() as $r ) { $up .= $mrow( $r, true, $b ); }
+		$down = ''; foreach ( $MV[ $b[0] ]['down'] ?? array() as $r ) { $down .= $mrow( $r, false, $b ); }
+		echo '<div class="dbd-mvb"><h4>' . esc_html( $b[1] ) . '<small>' . esc_html( $b[2] ) . '</small></h4>' . ( $up || $down ? ( $up ? '<div class="dbd-mvg up">▲ Climbers</div>' . $up : '' ) . ( $down ? '<div class="dbd-mvg dn">▼ Fallers</div>' . $down : '' ) : '<p class="none">Nobody moved far on this board.</p>' ) . '</div>';
+	}
+	echo '</div>';
+	if ( ! empty( $MV['faces'] ) ) {
+		echo '<div class="dbd-mvf"><span class="l">New faces</span>';
+		foreach ( $MV['faces'] as $r ) { echo '<a href="' . esc_url( DBD_Router::url( array( 'player' => $r['id'] ) ) ) . '" data-team="' . esc_attr( $r['team'] ) . '" data-pos="' . esc_attr( $r['pos'] ) . '" data-name="' . esc_attr( strtolower( $r['name'] ) ) . '">' . DBD_Marks::player( $r['team'], $r['num'], 22, $r['photo'] ?? null ) . esc_html( $r['name'] ) . '<small>' . esc_html( $r['team'] . ' · ' . $r['pos'] . ' · ' . ( ( $r['kind'] ?? '' ) === 'debut' ? 'debut' : 'first start-level week' ) . ', ' . round( $r['now'] ) . '% of the snaps' ) . '</small></a>'; }
+		echo '</div>';
+	}
+	echo '<p class="dbd-note">Each row compares his last full week with his average over the games he had played before it, so a mover broke from his own pattern. Boards list the ' . DBD_Grades::MV_PER . ' biggest climbers, then the ' . DBD_Grades::MV_PER . ' biggest fallers, past a floor (' . DBD_Grades::MV_FLOOR_SNAPS . ' points of snap share, ' . DBD_Grades::MV_FLOOR_TARGETS . ' of target share, ' . number_format( DBD_Grades::MV_FLOOR_EPA, 1 ) . ' EPA). The sparkline is his season; the dot is that week. New faces took their first snap that week with ' . DBD_Grades::MV_DEBUT . '% or more, or passed ' . DBD_Grades::MV_START . '% for the first time.</p></section>';
+}
+
 /* ---- filters: team tiles, position switch, search. All real links; JS takes over once loaded. */
 echo '<section class="dbd-panel"><div class="dbd-toolbar dbd-ptools">';
 echo '<div class="dbd-fg"><span>Team</span><div class="dbd-teampick" id="dbd-teampick"><a class="dbd-mkbtn' . ( $team ? '' : ' on' ) . '" href="' . esc_url( $purl( $pos ? array( 'pos' => $pos ) : array() ) ) . '" data-team="" title="All teams">ALL</a>';

@@ -40,6 +40,12 @@
     pos.querySelectorAll('.t-tab').forEach(function (b) { b.setAttribute('aria-selected', (b.dataset.v || '') === st.pos ? 'true' : 'false'); });
     slidePill(pos, pos.querySelector('[aria-selected="true"]'), true);
     try { history.replaceState(null, '', url({ team: st.team, pos: st.pos, q: st.q })); } catch (e) {}
+    /* movers (SCOPE §22): the team tile marks its rows, position and search dim the rest */
+    root.querySelectorAll('#dbd-mv [data-team]').forEach(function (el) {
+      el.classList.toggle('hi', !!st.team && el.dataset.team === st.team);
+      var m = (!st.pos || el.dataset.pos === st.pos || (st.pos === 'RB' && el.dataset.pos === 'FB')) && (!needle || (el.dataset.name || '').indexOf(needle) >= 0 || (el.dataset.team || '').toLowerCase() === needle);
+      el.classList.toggle('dim', !m);
+    });
   }
   var thead = $('#dbd-plist thead'); if (thead) thead.addEventListener('click', function (e) { var h = e.target.closest('th[data-sort]'); if (!h) return; var k = h.dataset.sort; if (sort.key === k) sort.dir *= -1; else { sort.key = k; sort.dir = (k === 'name' || k === 'team' || k === 'pos' || k === 'st') ? 1 : -1; } draw(); });
   pick.addEventListener('click', function (e) { var b = e.target.closest('.dbd-mkbtn'); if (!b) return; e.preventDefault(); st.team = b.dataset.team || ''; draw(); });
