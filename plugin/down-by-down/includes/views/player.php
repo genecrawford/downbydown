@@ -155,20 +155,20 @@ if ( $FP && $fpool ) {
 	foreach ( $fdefs as $d ) { $v = $FP[ $d[0] ] ?? null; $pc = $fq ? DBD_Grades::pctile( $grp, $d[0], $v, 'fp' ) : null; $lg = DBD_Grades::median( $grp, $d[0], 'fp' ); $TR[] = array( 'd' => $d, 'v' => $v, 'pc' => $pc, 'lg' => $lg, 'dev' => $pc === null ? -1 : abs( $pc - 50 ) ); }
 	/* bars */
 	$fbars = '';
-	foreach ( $TR as $t ) { $d = $t['d']; $vs = DBD_Grades::fp_fmt( $d[3], $t['v'] );
-		$tip = '<b>' . esc_html( $d[1] ) . '</b> ' . esc_html( $vs ) . ( $t['lg'] === null ? '' : ' <span class="m">league median ' . esc_html( DBD_Grades::fp_fmt( $d[3], $t['lg'] ) ) . '</span>' ) . ( $t['pc'] === null ? '' : '<br>' . esc_html( DBD_Grades::ordinal( $t['pc'] ) ) . ' percentile of ' . count( $fpool[ $d[0] ] ?? array() ) . ' ' . esc_html( $fpl ) );
-		$fbars .= '<div class="row"><div class="l">' . esc_html( $d[1] ) . '<small>' . esc_html( $d[2] ) . '</small></div><div class="bar">' . ( $t['pc'] === null ? '' : '<i style="--p:' . (int) $t['pc'] . '" data-tip="' . esc_attr( $tip ) . '" tabindex="0" aria-label="' . esc_attr( $d[1] . ' ' . $vs ) . '"></i>' ) . '</div><div class="v">' . esc_html( $vs ) . '</div><div class="g ' . ( $t['pc'] !== null && $t['pc'] >= DBD_Grades::FP_HI ? 'hi' : ( $t['pc'] !== null && $t['pc'] <= DBD_Grades::FP_LO ? 'lo' : '' ) ) . '">' . ( $t['pc'] === null ? '–' : esc_html( DBD_Grades::ordinal( $t['pc'] ) ) ) . '</div></div>';
+	foreach ( $TR as $ft ) { $d = $ft['d']; $vs = DBD_Grades::fp_fmt( $d[3], $ft['v'] );
+		$tip = '<b>' . esc_html( $d[1] ) . '</b> ' . esc_html( $vs ) . ( $ft['lg'] === null ? '' : ' <span class="m">league median ' . esc_html( DBD_Grades::fp_fmt( $d[3], $ft['lg'] ) ) . '</span>' ) . ( $ft['pc'] === null ? '' : '<br>' . esc_html( DBD_Grades::ordinal( $ft['pc'] ) ) . ' percentile of ' . count( $fpool[ $d[0] ] ?? array() ) . ' ' . esc_html( $fpl ) );
+		$fbars .= '<div class="row"><div class="l">' . esc_html( $d[1] ) . '<small>' . esc_html( $d[2] ) . '</small></div><div class="bar">' . ( $ft['pc'] === null ? '' : '<i style="--p:' . (int) $ft['pc'] . '" data-tip="' . esc_attr( $tip ) . '" tabindex="0" aria-label="' . esc_attr( $d[1] . ' ' . $vs ) . '"></i>' ) . '</div><div class="v">' . esc_html( $vs ) . '</div><div class="g ' . ( $ft['pc'] !== null && $ft['pc'] >= DBD_Grades::FP_HI ? 'hi' : ( $ft['pc'] !== null && $ft['pc'] <= DBD_Grades::FP_LO ? 'lo' : '' ) ) . '">' . ( $ft['pc'] === null ? '–' : esc_html( DBD_Grades::ordinal( $ft['pc'] ) ) ) . '</div></div>';
 	}
 	/* the read and the tags */
 	$fsay = array(); $ftags = array();
-	$sentence = function ( $t, $hi ) use ( $first, $fshare, $pcs ) { $d = $t['d']; return esc_html( strtr( $hi ? $d[6] : $d[7], array( '{F}' => $first, '{v}' => DBD_Grades::fp_fmt( $d[3], $t['v'] ), '{l}' => DBD_Grades::fp_fmt( $d[3], $t['lg'] ), '{sh}' => $pcs( $fshare ) ) ) ); };
-	$tagOf = function ( $t, $hi ) { $d = $t['d']; $w = $hi ? $d[4] : $d[5]; return $w === '' ? null : array( 'w' => $w, 'hi' => $hi, 'tip' => $d[1] . ' ' . DBD_Grades::fp_fmt( $d[3], $t['v'] ) . ', ' . DBD_Grades::ordinal( $t['pc'] ) . ' percentile' ); };
+	$sentence = function ( $ft, $hi ) use ( $first, $fshare, $pcs ) { $d = $ft['d']; return esc_html( strtr( $hi ? $d[6] : $d[7], array( '{F}' => $first, '{v}' => DBD_Grades::fp_fmt( $d[3], $ft['v'] ), '{l}' => DBD_Grades::fp_fmt( $d[3], $ft['lg'] ), '{sh}' => $pcs( $fshare ) ) ) ); };
+	$tagOf = function ( $ft, $hi ) { $d = $ft['d']; $w = $hi ? $d[4] : $d[5]; return $w === '' ? null : array( 'w' => $w, 'hi' => $hi, 'tip' => $d[1] . ' ' . DBD_Grades::fp_fmt( $d[3], $ft['v'] ) . ', ' . DBD_Grades::ordinal( $ft['pc'] ) . ' percentile' ); };
 	if ( ! $fq ) { $fsay[] = esc_html( $first . ' gets a fingerprint once he reaches ' . ( $fgi['min'] ?? 'the qualifier' ) . '; the bars show his shares so far without a league percentile.' ); }
 	else {
-		$stand = array_values( array_filter( $TR, function ( $t ) { return $t['d'][6] !== null && $t['pc'] !== null && ( $t['pc'] >= DBD_Grades::FP_HI || $t['pc'] <= DBD_Grades::FP_LO ); } ) );
+		$stand = array_values( array_filter( $TR, function ( $ft ) { return $ft['d'][6] !== null && $ft['pc'] !== null && ( $ft['pc'] >= DBD_Grades::FP_HI || $ft['pc'] <= DBD_Grades::FP_LO ); } ) );
 		usort( $stand, function ( $x, $y ) { return $y['dev'] <=> $x['dev']; } );
 		$used = array();
-		foreach ( array_slice( $stand, 0, 2 ) as $t ) { $hi = $t['pc'] >= DBD_Grades::FP_HI; $fsay[] = $sentence( $t, $hi ); $used[] = $t['d'][0]; if ( $tg = $tagOf( $t, $hi ) ) { $ftags[] = $tg; } }
+		foreach ( array_slice( $stand, 0, 2 ) as $ft ) { $hi = $ft['pc'] >= DBD_Grades::FP_HI; $fsay[] = $sentence( $ft, $hi ); $used[] = $ft['d'][0]; if ( $ftg = $tagOf( $ft, $hi ) ) { $ftags[] = $ftg; } }
 		if ( $grp !== 'qb' && $fshare !== null ) {
 			$mv = function ( $v ) use ( $fshare ) { return $v === null ? null : ( $v - $fshare >= DBD_Grades::FP_MOVE ? 'climbs' : ( $fshare - $v >= DBD_Grades::FP_MOVE ? 'falls' : 'holds' ) ); };
 			$part = function ( $lab, $v ) use ( $mv, $pcs ) { $m = $mv( $v ); return $m === null ? '' : ( $m === 'holds' ? $lab . ' it holds at ' . $pcs( $v ) : $lab . ' it ' . $m . ' to ' . $pcs( $v ) ); };
@@ -178,12 +178,12 @@ if ( $FP && $fpool ) {
 				if ( $dd && $m === 'climbs' ) { $ftags[] = array( 'w' => $dd[4], 'hi' => true, 'tip' => $pcs( $FP[ $sk[0] ] ) . ' of the team\'s ' . $funit . ' ' . $sk[1] ); }
 				elseif ( $dd && $m === 'falls' ) { $ftags[] = array( 'w' => $dd[5], 'hi' => false, 'tip' => $pcs( $FP[ $sk[0] ] ) . ' ' . $sk[1] . ' against ' . $pcs( $fshare ) . ' overall' ); } }
 		}
-		$third = null; foreach ( array_slice( $stand, 2 ) as $t ) { if ( ! in_array( $t['d'][0], $used, true ) ) { $third = $t; break; } }
-		if ( $third ) { $hi = $third['pc'] >= DBD_Grades::FP_HI; $fsay[] = $sentence( $third, $hi ); if ( $tg = $tagOf( $third, $hi ) ) { $ftags[] = $tg; } }
-		$anyExt = (bool) array_filter( $TR, function ( $t ) { return $t['pc'] !== null && ( $t['pc'] >= DBD_Grades::FP_HI || $t['pc'] <= DBD_Grades::FP_LO ); } );  /* all eight, the situational pair included */
+		$third = null; foreach ( array_slice( $stand, 2 ) as $ft ) { if ( ! in_array( $ft['d'][0], $used, true ) ) { $third = $ft; break; } }
+		if ( $third ) { $hi = $third['pc'] >= DBD_Grades::FP_HI; $fsay[] = $sentence( $third, $hi ); if ( $ftg = $tagOf( $third, $hi ) ) { $ftags[] = $ftg; } }
+		$anyExt = (bool) array_filter( $TR, function ( $ft ) { return $ft['pc'] !== null && ( $ft['pc'] >= DBD_Grades::FP_HI || $ft['pc'] <= DBD_Grades::FP_LO ); } );  /* all eight, the situational pair included */
 		if ( ! $anyExt ) { array_unshift( $fsay, esc_html( $first . ' profiles as a typical ' . ( $grp === 'rec' ? 'receiver' : ( $grp === 'rb' ? 'back' : 'quarterback' ) ) . ' in how he is used: nothing in his fingerprint sits outside the league\'s middle half.' ) ); }
 	}
-	$ftagh = ''; foreach ( array_slice( $ftags, 0, 4 ) as $tg ) { $ftagh .= '<span class="dbd-fp-tag' . ( $tg['hi'] ? ' hi' : '' ) . '" data-tip="' . esc_attr( $tg['tip'] ) . '" tabindex="0">' . esc_html( $tg['w'] ) . '</span>'; }
+	$ftagh = ''; foreach ( array_slice( $ftags, 0, 4 ) as $ftg ) { $ftagh .= '<span class="dbd-fp-tag' . ( $ftg['hi'] ? ' hi' : '' ) . '" data-tip="' . esc_attr( $ftg['tip'] ) . '" tabindex="0">' . esc_html( $ftg['w'] ) . '</span>'; }
 	echo '<section class="dbd-panel dbd-fp"><div class="dbd-ph"><span class="dbd-lab"><b>Playstyle</b> · how he is used, against the league at his position</span><span class="dbd-badge">' . ( $fq ? 'among ' . $Nf . ' ' . esc_html( $fpl ) : 'graded at ' . esc_html( $fgi['min'] ?? '' ) ) . '</span></div>';
 	echo '<div class="dbd-fp2"><div><p class="dbd-fp-say">' . implode( ' ', $fsay ) . '</p>' . ( $ftagh ? '<div class="dbd-fp-tags">' . $ftagh . '</div>' : '' ) . '</div><div class="dbd-pct dbd-fpbars">' . $fbars . '</div></div>';
 	echo '<p class="dbd-note">Every trait is a share of his own ' . esc_html( $funit ) . ', so volume does not move it. The marker is him among the league\'s qualifying ' . esc_html( $fpl ) . '; the dashed line is the median. Styles are not grades: a high or low percentile is a description, not a verdict. Play action, screen, RPO, motion and blitz flags come from FTN charting and read low in a week it has not published.</p></section>';
