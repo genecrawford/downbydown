@@ -307,11 +307,11 @@ GAME_COUNTS = {'rec': ['tgt', 'yds'], 'rb': ['tch', 'yds', 'tgt'], 'qb': ['db', 
 YDS = {'rec': ('receiving_yards',), 'rb': ('rushing_yards', 'receiving_yards'), 'qb': ('passing_yards',)}
 # ---- playstyle fingerprint (SCOPE §23): eight usage traits per group as shares of a player's own plays, plus the league pool per trait
 FP_BLITZ_MIN = 10
-def fp_for(plays):
-    """{player id: (group, traits)} for every player with a target, carry or dropback in a team's play rows."""
+def fp_for(plays, posmap):
+    """{player id: (group, traits)} for every rostered player with a target, carry or dropback in a team's play rows. The group is his roster position, so a receiver's trick-play pass does not make him a quarterback."""
     T = [q for q in plays if q['k'] in ('comp', 'inc', 'int') and q['pid']]
     R = [q for q in plays if q['k'] == 'run' and q['pid']]
-    qbids = {q['qb'] for q in plays if q['qb']}
+    qbids = {q['qb'] for q in plays if q['qb'] and posmap.get(q['qb']) == 'QB'}
     D = [dict(q, _qb=(q['pid'] if q['k'] == 'scramble' else q['qb'])) for q in plays if (q['qb'] and q['k'] in ('comp', 'inc', 'int', 'sack')) or (q['k'] == 'scramble' and q['pid'] in qbids)]
     U = T + R
     share = lambda mine, team: (len(mine) / len(team)) if team else None
@@ -320,8 +320,7 @@ def fp_for(plays):
         return (sum(1 for q in d if f(q)) / len(d)) if d else None
     out = {}
     for pid in {q['pid'] for q in U} | qbids:
-        pos = 'QB' if pid in qbids else next((q['pos'] for q in U if q['pid'] == pid), None)
-        g = GROUPS.get(pos)
+        g = GROUPS.get(posmap.get(pid))
         if not g: continue
         if g == 'rec':
             m = [q for q in T if q['pid'] == pid]; comps = [q for q in m if q['k'] == 'comp']
@@ -331,7 +330,7 @@ def fp_for(plays):
                       mot=rate(m, lambda q: q['mot'] == 1), pa=rate(m, lambda q: q['pa'] == 1))
         elif g == 'rb':
             m = [q for q in U if q['pid'] == pid]; r = [q for q in m if q['k'] == 'run']; tg = [q for q in m if q['k'] != 'run']
-            fp = dict(n=len(m), share=share(m, U), ins=rate(r, lambda q: q['gap'] in ('guard', 'tackle'), lambda q: q['gap']), sg=rate(r, lambda q: q['sg'] == 1), recs=(len(tg) / len(m)) if m else None,
+            fp = dict(n=len(m), share=share(m, U), ins=rate(r, lambda q: q['gap'] in ('guard', 'tackle')), sg=rate(r, lambda q: q['sg'] == 1), recs=(len(tg) / len(m)) if m else None,
                       d3=share([q for q in m if q['dn'] == 3], [q for q in U if q['dn'] == 3]), rzs=share([q for q in m if q['yl'] is not None and q['yl'] <= 20], [q for q in U if q['yl'] is not None and q['yl'] <= 20]),
                       shorty=share([q for q in m if q['togo'] is not None and q['togo'] <= 2], [q for q in U if q['togo'] is not None and q['togo'] <= 2]), rpo=rate(r, lambda q: q['rpo'] == 1), mot=rate(m, lambda q: q['mot'] == 1))
         else:
@@ -344,7 +343,7 @@ def fp_for(plays):
     return out
 fpdist = {g: {} for g in MINQ}; fp_cache = {}
 for t, pl in team_players.items():
-    fpt = fp_cache.setdefault(t, fp_for(team_plays.get(t, [])))
+    fpt = fp_cache.setdefault(t, fp_for(team_plays.get(t, []), {x['id']: x['pos'] for x in pl}))
     for p in pl:
         gr = grade(p); p['grades'] = gr
         fpe = fpt.get(p['id']); p['fp'] = fpe[1] if fpe else None

@@ -10,8 +10,8 @@
 <script src="data/teams.js"></script>
 <script src="data/marks.js"></script>
 <script src="data/MIN.js?v=3"></script>
-<script src="data/players-MIN.js?v=5"></script>
-<script src="data/league-pct.js?v=4"></script>
+<script src="data/players-MIN.js?v=6"></script>
+<script src="data/league-pct.js?v=5"></script>
 <script src="data/metrics.js?v=1"></script>
 <script src="data/schedule.js?v=2"></script>
 <style>
@@ -631,7 +631,7 @@ const T=DEFS.map(d=>{const v=FP[d[0]],a=POOL[d[0]]||[],pcv=pctOf(a,v),l=med(a);r
 const q=(p.grades&&p.grades.q);
 document.getElementById('fpn').textContent=q?`among ${NP} ${pool}`:`graded at ${LG.min[lgrp]}`;
 /* bars */
-document.getElementById('fpbars').innerHTML=T.map(t=>`<div class="row" title="${t.d[1]}: ${t.v==null?'–':t.d[3](t.v)}${t.lg!=null?` · league median ${t.d[3](t.lg)}`:''}${t.pc!=null&&q?` · ${ordn(t.pc)} percentile of ${NP}`:''}"><div class="l">${t.d[1]}<small>${t.d[2]}</small></div><div class="bar">${t.pc==null||!q?'':`<i style="--p:${t.pc}"></i>`}</div><div class="v">${t.v==null?'–':t.d[3](t.v)}</div><div class="g ${t.pc>=HI?'hi':t.pc!=null&&t.pc<=LO?'lo':''}">${t.pc==null||!q?'–':ordn(t.pc)}</div></div>`).join('');
+document.getElementById('fpbars').innerHTML=T.map(t=>`<div class="row" title="${t.d[1]}: ${t.v==null?'–':t.d[3](t.v)}${t.lg!=null?` · league median ${t.d[3](t.lg)}`:''}${t.pc!=null&&q?` · ${ordn(t.pc)} percentile of ${(POOL[t.d[0]]||[]).length}`:''}"><div class="l">${t.d[1]}<small>${t.d[2]}</small></div><div class="bar">${t.pc==null||!q?'':`<i style="--p:${t.pc}"></i>`}</div><div class="v">${t.v==null?'–':t.d[3](t.v)}</div><div class="g ${t.pc>=HI?'hi':t.pc!=null&&t.pc<=LO?'lo':''}">${t.pc==null||!q?'–':ordn(t.pc)}</div></div>`).join('');
 /* the read */
 const say=[],tags=[];
 if(!q){say.push(`${F} gets a fingerprint once he reaches ${LG.min[lgrp]}; the bars show his shares so far without a league percentile.`);}
@@ -647,7 +647,7 @@ else{
   if(mv(rz)==='climbs')tags.push({w:DEFS.find(x=>x[0]==='rzs')[4],hi:true,tip:`${pc(rz)} of the team's ${unit} inside the 20`});else if(mv(rz)==='falls')tags.push({w:DEFS.find(x=>x[0]==='rzs')[5],hi:false,tip:`${pc(rz)} inside the 20 against ${pc(sh)} overall`});}
  const third=stand.slice(2).find(t=>!used.has(t.d[0]));
  if(third){const hi=third.pc>=HI;say.push((hi?third.d[6]:third.d[7])(third.d[3](third.v),third.d[3](third.lg)));if(hi?third.d[4]:third.d[5])tags.push({w:hi?third.d[4]:third.d[5],hi,tip:`${third.d[1]} ${third.d[3](third.v)}, ${ordn(third.pc)} percentile`});}
- if(!stand.length)say.unshift(`${F} profiles as a typical ${lgrp==='rec'?'receiver':lgrp==='rb'?'back':'quarterback'} in how he is used: nothing in his fingerprint sits outside the league's middle half.`);
+ if(!T.some(t=>t.pc!=null&&(t.pc>=HI||t.pc<=LO)))say.unshift(`${F} profiles as a typical ${lgrp==='rec'?'receiver':lgrp==='rb'?'back':'quarterback'} in how he is used: nothing in his fingerprint sits outside the league's middle half.`);
 }
 document.getElementById('fpsay').innerHTML=say.join(' ');
 document.getElementById('fptags').innerHTML=tags.slice(0,4).map(t=>`<span class="tag ${t.hi?'hi':''}" title="${t.tip}">${t.w}</span>`).join('');

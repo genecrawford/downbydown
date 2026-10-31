@@ -107,7 +107,7 @@ if ( $FP && $fpool ) {
 	/* bars */
 	$fbars = '';
 	foreach ( $TR as $t ) { $d = $t['d']; $vs = DBD_Grades::fp_fmt( $d[3], $t['v'] );
-		$tip = '<b>' . esc_html( $d[1] ) . '</b> ' . esc_html( $vs ) . ( $t['lg'] === null ? '' : ' <span class="m">league median ' . esc_html( DBD_Grades::fp_fmt( $d[3], $t['lg'] ) ) . '</span>' ) . ( $t['pc'] === null ? '' : '<br>' . esc_html( DBD_Grades::ordinal( $t['pc'] ) ) . ' percentile of ' . $Nf . ' ' . esc_html( $fpl ) );
+		$tip = '<b>' . esc_html( $d[1] ) . '</b> ' . esc_html( $vs ) . ( $t['lg'] === null ? '' : ' <span class="m">league median ' . esc_html( DBD_Grades::fp_fmt( $d[3], $t['lg'] ) ) . '</span>' ) . ( $t['pc'] === null ? '' : '<br>' . esc_html( DBD_Grades::ordinal( $t['pc'] ) ) . ' percentile of ' . count( $fpool[ $d[0] ] ?? array() ) . ' ' . esc_html( $fpl ) );
 		$fbars .= '<div class="row"><div class="l">' . esc_html( $d[1] ) . '<small>' . esc_html( $d[2] ) . '</small></div><div class="bar">' . ( $t['pc'] === null ? '' : '<i style="--p:' . (int) $t['pc'] . '" data-tip="' . esc_attr( $tip ) . '" tabindex="0" aria-label="' . esc_attr( $d[1] . ' ' . $vs ) . '"></i>' ) . '</div><div class="v">' . esc_html( $vs ) . '</div><div class="g ' . ( $t['pc'] !== null && $t['pc'] >= DBD_Grades::FP_HI ? 'hi' : ( $t['pc'] !== null && $t['pc'] <= DBD_Grades::FP_LO ? 'lo' : '' ) ) . '">' . ( $t['pc'] === null ? '–' : esc_html( DBD_Grades::ordinal( $t['pc'] ) ) ) . '</div></div>';
 	}
 	/* the read and the tags */
@@ -131,7 +131,8 @@ if ( $FP && $fpool ) {
 		}
 		$third = null; foreach ( array_slice( $stand, 2 ) as $t ) { if ( ! in_array( $t['d'][0], $used, true ) ) { $third = $t; break; } }
 		if ( $third ) { $hi = $third['pc'] >= DBD_Grades::FP_HI; $fsay[] = $sentence( $third, $hi ); if ( $tg = $tagOf( $third, $hi ) ) { $ftags[] = $tg; } }
-		if ( ! $stand ) { array_unshift( $fsay, esc_html( $first . ' profiles as a typical ' . ( $grp === 'rec' ? 'receiver' : ( $grp === 'rb' ? 'back' : 'quarterback' ) ) . ' in how he is used: nothing in his fingerprint sits outside the league\'s middle half.' ) ); }
+		$anyExt = (bool) array_filter( $TR, function ( $t ) { return $t['pc'] !== null && ( $t['pc'] >= DBD_Grades::FP_HI || $t['pc'] <= DBD_Grades::FP_LO ); } );  /* all eight, the situational pair included */
+		if ( ! $anyExt ) { array_unshift( $fsay, esc_html( $first . ' profiles as a typical ' . ( $grp === 'rec' ? 'receiver' : ( $grp === 'rb' ? 'back' : 'quarterback' ) ) . ' in how he is used: nothing in his fingerprint sits outside the league\'s middle half.' ) ); }
 	}
 	$ftagh = ''; foreach ( array_slice( $ftags, 0, 4 ) as $tg ) { $ftagh .= '<span class="dbd-fp-tag' . ( $tg['hi'] ? ' hi' : '' ) . '" data-tip="' . esc_attr( $tg['tip'] ) . '" tabindex="0">' . esc_html( $tg['w'] ) . '</span>'; }
 	echo '<section class="dbd-panel dbd-fp"><div class="dbd-ph"><span class="dbd-lab"><b>Playstyle</b> · how he is used, against the league at his position</span><span class="dbd-badge">' . ( $fq ? 'among ' . $Nf . ' ' . esc_html( $fpl ) : 'graded at ' . esc_html( $fgi['min'] ?? '' ) ) . '</span></div>';
