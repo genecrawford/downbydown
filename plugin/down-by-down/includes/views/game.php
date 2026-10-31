@@ -58,7 +58,7 @@ echo '</div></section>';
 
 /* ---- head to head + zones */
 echo '<div class="dbd-mgrid">';
-echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Head to head</b> · ' . esc_html( $O ) . ' offense against ' . esc_html( $D ) . ' defense</span></div><div class="dbd-tw dbd-h2hwrap"><table class="dbd-h2h">';
+echo '<section class="dbd-panel dbd-span"><div class="dbd-ph"><span class="dbd-lab"><b>Head to head</b> · ' . esc_html( $O ) . ' offense against ' . esc_html( $D ) . ' defense</span></div><div class="dbd-tw dbd-h2hwrap"><table class="dbd-h2h">';
 echo '<thead><tr><th>Stat</th><th style="color:' . esc_attr( $to ) . '">' . DBD_Marks::tile( $O, 18 ) . ' ' . esc_html( $O ) . ' off</th><th class="c">Favors <span style="color:' . esc_attr( $to ) . '">' . esc_html( $O ) . '</span> · Favors <span style="color:' . esc_attr( $td ) . '">' . esc_html( $D ) . '</span></th><th style="color:' . esc_attr( $td ) . '">' . DBD_Marks::tile( $D, 18 ) . ' ' . esc_html( $D ) . ' def allows</th><th class="lg">NFL avg</th></tr></thead><tbody>';
 foreach ( DBD_Metrics::rows() as $group => $keys ) {
 	echo '<tr class="grp"><td colspan="5">' . esc_html( $group ) . '</td></tr>';

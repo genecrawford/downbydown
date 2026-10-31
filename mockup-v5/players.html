@@ -23,6 +23,7 @@
 .srch{font:500 13px var(--body);padding:6px 10px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--panel);color:var(--ink);min-width:220px}
 .teampick{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .teampick .mkbtn{all:unset;cursor:pointer;border-radius:4px;opacity:.45}.teampick .mkbtn.on,.teampick .mkbtn:hover{opacity:1}
+.tw{container-type:inline-size}.stat th{font:700 10px var(--display);text-transform:uppercase;letter-spacing:.08em;padding:5px 4px}.stat td{padding:4px 4px;font:500 11px var(--mono)}.stat td:first-child{font:500 12px var(--body);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}@container (max-width:860px){.t2{display:none}}@container (max-width:560px){.t3{display:none}}
 </style>
 </head>
 <body>
@@ -70,10 +71,11 @@ function stat(p){if(!p.inj)return'';const s=p.inj.status||'';const cls=/out|did 
 function draw(){
   const q=document.getElementById('q').value.trim().toLowerCase();
   const rows=P.filter(p=>(!pos||p.pos===pos||(pos==='RB'&&p.pos==='FB'))&&(!q||p.name.toLowerCase().includes(q)||String(p.num)===q||(p.col||'').toLowerCase().includes(q)));
-  document.getElementById('list').innerHTML='<tr><th>Player</th><th>Pos</th><th>Snap %</th><th>Tgt</th><th>Rec</th><th>Car</th><th>Yds</th><th>TD</th><th>EPA</th><th>Status</th></tr>'+rows.map(p=>{
+  document.getElementById('list').classList.add('stat');
+  document.getElementById('list').innerHTML='<tr><th>Player</th><th>Pos</th><th class="t2">Snap %</th><th>Tgt</th><th class="t2">Rec</th><th class="t2">Car</th><th>Yds</th><th>TD</th><th>EPA</th><th class="t3">Status</th></tr>'+rows.map(p=>{
     const w=p.weeks,sn=avg(p.snaps),tg=sum(w,'targets'),rc=sum(w,'receptions'),ca=sum(w,'carries'),y=sum(w,'receiving_yards')+sum(w,'rushing_yards')+sum(w,'passing_yards'),td=sum(w,'receiving_tds')+sum(w,'rushing_tds')+sum(w,'passing_tds'),e=sum(w,'receiving_epa')+sum(w,'rushing_epa')+sum(w,'passing_epa');
     const depth=p.depth?` <small>${p.depth.slot}${p.depth.rank}</small>`:'';
-    return`<tr class="clk" onclick="location.href='player.html?id=${p.id}'"><td class="nm"><span class="pmark">${p.num??''}</span><a href="player.html?id=${p.id}">${p.name}</a>${depth}</td><td class="pos">${p.pos}</td><td><span class="sb"><i style="--w:${Math.round(sn)}%"></i></span>${Math.round(sn)}%</td><td>${tg||''}</td><td>${rc||''}</td><td>${ca||''}</td><td>${Math.round(y)}</td><td>${td||''}</td><td class="${e>=0?'pos':'neg'}">${sgn(e)}</td><td>${stat(p)}</td></tr>`;}).join('');
+    return`<tr class="clk" onclick="location.href='player.html?id=${p.id}'"><td class="nm"><span class="pmark">${p.num??''}</span><a href="player.html?id=${p.id}">${p.name}</a>${depth}</td><td class="pos">${p.pos}</td><td class="t2"><span class="sb"><i style="--w:${Math.round(sn)}%"></i></span>${Math.round(sn)}%</td><td>${tg||''}</td><td class="t2">${rc||''}</td><td class="t2">${ca||''}</td><td>${Math.round(y)}</td><td>${td||''}</td><td class="${e>=0?'pos':'neg'}">${sgn(e)}</td><td class="t3">${stat(p)}</td></tr>`;}).join('');
 }
 draw();
 </script>

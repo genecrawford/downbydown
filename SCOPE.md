@@ -648,3 +648,77 @@ Roadmap slice 4 (§16). Two additions to the player page, both from data already
 - PHP renders the Defense column and the whole panel: `DBD_Data::rank('def', $opp, $key)` and `DBD_Data::metrics()` are already loaded for the page; the schedule is one more cached read. The scatter is inline SVG from PHP; no JS beyond the shared tooltip.
 - The position key is one function of position (WR, TE, RB and FB, QB) kept with the grade group logic so the game log, the panel and future slices (this-week panel) agree.
 - Tier thresholds (10 and 22) and the correlation thresholds (0.4) are constants in one place.
+
+## 20. Design cleanup: losing the horizontal scrollbars (audited and scoped 2026-10-31, mock in `mockup-v5/player.html`, `players.html`)
+
+**Status: built as 1.3.6 (2026-10-31).**
+
+Roadmap row 4b. Gene: "There are A LOT of tables and things on these pages and a lot of them have scroll bars and horizontal bars; look at the layouts and try to lose any horizontal bars where we can by rearranging things."
+
+### The frame we actually have
+
+Measured on the live site (1.3.5) inside Gene's Divi layout. The sidebar column eats 231px until Divi stacks it, so the app's width is smaller than the viewport suggests:
+
+| Viewport | App width | Player page main column | Rail |
+|---|---|---|---|
+| 1440 | 1193 | 751 | 360 |
+| 1024 | 777 | 716 (rail stacks under) | 716 |
+| 768 | 753 | 705 | 705 |
+| 375 | 375 | 341 | 341 |
+
+### Inventory: every wrapper that scrolls sideways
+
+Width needed is the table's natural width; available is the wrapper's. Bars appear wherever needed exceeds available.
+
+| Page | What scrolls | Needs | Available by viewport (1440 / 1024 / 768 / 375) | Why |
+|---|---|---|---|---|
+| Player | **The connection** table (12 cols QB, 11 cols others) | 1175 / 1010 | 749 / 714 / 705 / 341 | Sits in the 751px main column next to the rail; even full width (1129) is 46px short at 1440 |
+| Player | **Game log** (9 to 10 cols) | 839 / 873 | 749 / 714 / 705 / 341 | Same column; Defense chip added 90px in 1.3.5 |
+| Player | **Teammates** (5 cols) in the rail | 494 | 347 / fits / fits / 341 | Rail is 360px; five mono columns plus tiles |
+| Player | **His line by defense faced**, situations tables | 461, 442 | fits / fits / fits / 341 | Phone only |
+| Players index | The roster table (11 cols) | 1092 | fits / 714 / 705 / 341 | Status, Team and Pos columns are text-wide |
+| Team explorer | **Who gets the ball** (7 cols) | 564 | 358 / fits / fits / 341 | Lives in one half of a two-column grid at 1440 |
+| Team explorer | Game picker strip (`.dbd-gstrip`) | 962 | fits / 716 / 707 / 343 | A single row of game buttons |
+| Team explorer | Drive chart SVG | 560 | fits / fits / fits / 321 | Fixed minimum width |
+| Game page | Head to head (5 cols) | 678 | 626 / fits / fits / 341 | Two-column grid |
+| Hub | This week's games strip (`.dbd-strip`) | 2486 | 1129 / 716 / 707 / 343 | Fourteen game cards in one row, by design |
+| Hub | The slate table | 764 | fits / 714 / 705 / ? | 50px over at tablet |
+| Compare | Season stats side by side (3 cols) | 417 | fits / fits / fits / 341 | Phone only |
+| All pages | Divi's text module reports 540px of content at 375 | 540 | 374 | Something absolutely positioned in the hero; to find in the build |
+
+Not in the inventory: the compare graphics (clean at every width), matchups, and the player rank bars.
+
+### The plan
+
+Four moves, applied in this order, each one removing a class of bars rather than one table.
+
+**1. Reorganize the player page into bands by question, and give wide tables the whole width.** (Revised after Gene's note that the block organization could be better.) The rail goes away. Under the hero and tiles sits a sticky jump nav, then five bands, each with a red kicker heading that names the question it answers:
+- **How good is he** · Where he ranks beside Season stats, two columns. They are the same story, league grades and the season line.
+- **How he's used** · Where the ball finds him beside When he gets it, two columns. Where and when.
+- **Who he works with** · The connection at full width.
+- **Week by week** · Game log at full width, then Who he's faced. The schedule story in one place.
+- **Intel & plays** · Intel, Best plays and Teammates as a three-up strip at the foot.
+Two-column pairs collapse to one column under 900px, the three-up strip under 1100px. The percentile bars run single-column inside their half. On the team explorer, Who gets the ball leaves the half-width grid cell and takes a full row; on the game page, Head to head does the same. Full width is 1129 at 1440, 716 at 1024, 705 at 768.
+
+**2. Compact table typography, one rule for every stat table.** Numbers at 11px mono with 4px cell padding instead of 12px and 6px, headers at 10px with tighter letter-spacing, the name column capped with an ellipsis, tiles at 22px. On the connection table alone this takes 1175 down to about 980; the game log from 839 to about 680. This is the move that makes full width enough at 1440 and 1024 for everything but the players index.
+
+**3. Column tiers with container queries.** `.dbd-content` is already a named container. Every stat table marks its columns with a priority: core (always), `dbd-t2` (hidden under 860px of container), `dbd-t3` (hidden under 560px). The hidden columns are the ones a reader can live without at a glance and can still find on the player's own page:
+- Connection, QB side: core Receiver, Tgt, Share, Rec, Catch, Yds, EPA/tgt; t2 aDOT, YAC/rec, TD; t3 3rd dn, RZ.
+- Connection, passer side: core Passer, Tgt, Of his throws, Rec, Catch, Yds, EPA/tgt; t2 aDOT, YAC/rec, TD, Rating.
+- Game log: core Wk, Opponent, Yds, EPA and the position's usage pair (Tgt and Rec, Car and Yds, Cmp/Att); t2 Snap, TD; t3 Defense, which on phones folds into the opponent cell as a small chip under the name so the rank is never lost.
+- Players index: core Player, Pos, Yds, TD, EPA and the usage column; t2 Team, Snap %, Rec, Car; t3 Status (its text moves into the player cell as a dot and a tooltip).
+- Teammates in the rail: four columns (Player, Touches, Yds, EPA); TD goes into the yards cell as a mark.
+- Head to head, Who gets the ball, defense split, situations: t2 on the least-read column of each.
+A sort header that is hidden is simply not offered; the sorter already reads the visible cells. On phones the folded Defense chip is terse ("6th D", the full label in its tooltip) and the Who he's faced ribbon drops to six cells a row and hides its label line.
+
+Mock result (player page, players index): zero sideways bars at 1440, 1024 and 768 with the live app widths; at 375 the connection table and the players index keep their in-panel scroll as planned.
+
+**4. Strips become grids.** The hub's games strip wraps into rows of cards (four across at 1129, two at 716, one at phone) instead of one 2486px row; the team game picker wraps into two rows below 1024. The drive chart loses its minimum width and scales with its viewBox. The slate table at tablet gets the compact typography and fits.
+
+**What still scrolls, on purpose.** At 375px the connection table (about 480px after tiers) and the players index (about 420px) keep an in-panel scroll: six and five columns of numbers cannot honestly fit 341px without becoming a card list, which is a different design. Everything else is bar-free at every width, and nothing scrolls at the page level.
+
+### Data and rendering
+
+- No data changes. PHP views emit the priority classes and the new band order; `dbd.css` carries the compact table rule, the tiers and the grid strips; `players.js` and `team-explorer.js` emit the same classes on the rows they render.
+- One shared class, `dbd-stat`, for compact tables so the typography lives in one place; the existing per-table classes stay for their own quirks.
+- The Divi 540px overflow at phone is investigated and fixed in the same release.

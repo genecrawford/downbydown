@@ -97,6 +97,23 @@ class DBD_Router {
 	}
 
 	/** URL of an app view: self::url( array( 'team' => 'MIN' ) ). No args = the hub. */
+	/**
+	 * Column tiers (SCOPE §20): add a class to the Nth cell of every row so narrow containers can hide it.
+	 * $tiers is a list indexed by cell position: null, 'dbd-t2' or 'dbd-t3'. Header and body rows alike.
+	 */
+	public static function tierize( $html, array $tiers ) {
+		if ( ! array_filter( $tiers ) ) { return $html; }
+		return preg_replace_callback( '/<tr\b[^>]*>.*?<\/tr>/s', function ( $row ) use ( $tiers ) {
+			$i = -1;
+			return preg_replace_callback( '/<t([dh])\b([^>]*)>/', function ( $c ) use ( &$i, $tiers ) {
+				$i++; $t = $tiers[ $i ] ?? null; if ( ! $t ) { return $c[0]; }
+				$attrs = $c[2];
+				if ( preg_match( '/\bclass="([^"]*)"/', $attrs, $m ) ) { $attrs = str_replace( $m[0], 'class="' . $t . ' ' . $m[1] . '"', $attrs ); } else { $attrs .= ' class="' . $t . '"'; }
+				return '<t' . $c[1] . $attrs . '>';
+			}, $row[0] );
+		}, $html );
+	}
+
 	public static function url( $args = array() ) {
 		$base = self::$page_url ?: home_url( '/' );
 		return $args ? add_query_arg( array_map( 'rawurlencode', $args ), $base ) : $base;

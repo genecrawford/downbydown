@@ -104,9 +104,9 @@
     var teamTouch = grp === 'qb' ? teamPass : P.filter(function (p) { return isT(p) || p.k === 'run'; });
     var sitRow = function (n, f) { var a = touches.filter(f), t = teamTouch.filter(f), y = a.reduce(function (s, p) { return s + (p.yds || 0); }, 0), e = a.reduce(function (s, p) { return s + (p.epa || 0); }, 0); return '<tr><td>' + n + '</td><td>' + a.length + '</td><td>' + (t.length ? Math.round(a.length / t.length * 100) + '%' : '-') + '</td><td>' + (a.length ? f1(y / a.length) : '-') + '</td><td class="' + (e >= 0 ? 'pos' : 'neg') + '">' + (a.length ? sgn(e / a.length) : '-') + '</td></tr>'; };
     var hdr = '<tr><th></th><th>Touches</th><th>Of team</th><th>Yds/touch</th><th>EPA</th></tr>';
-    $('#dbd-sit').innerHTML = '<div><h4>By down</h4><table class="dbd-sortable">' + hdr + [1, 2, 3, 4].map(function (d) { return sitRow(['', '1st', '2nd', '3rd', '4th'][d], function (p) { return p.dn == d; }); }).join('') + '</table></div>' +
-      '<div><h4>By quarter</h4><table class="dbd-sortable">' + hdr + [1, 2, 3, 4].map(function (q) { return sitRow('Q' + q, function (p) { return p.q == q; }); }).join('') + '</table></div>' +
-      '<div><h4>By game score</h4><table class="dbd-sortable">' + hdr + [['Leading', function (p) { return p.sd > 0; }], ['Tied', function (p) { return p.sd == 0; }], ['Trailing', function (p) { return p.sd < 0; }], ['Red zone', function (p) { return p.yl <= 20; }]].map(function (s) { return sitRow(s[0], s[1]); }).join('') + '</table></div>';
+    $('#dbd-sit').innerHTML = '<div><h4>By down</h4><table class="dbd-stat dbd-sortable">' + hdr + [1, 2, 3, 4].map(function (d) { return sitRow(['', '1st', '2nd', '3rd', '4th'][d], function (p) { return p.dn == d; }); }).join('') + '</table></div>' +
+      '<div><h4>By quarter</h4><table class="dbd-stat dbd-sortable">' + hdr + [1, 2, 3, 4].map(function (q) { return sitRow('Q' + q, function (p) { return p.q == q; }); }).join('') + '</table></div>' +
+      '<div><h4>By game score</h4><table class="dbd-stat dbd-sortable">' + hdr + [['Leading', function (p) { return p.sd > 0; }], ['Tied', function (p) { return p.sd == 0; }], ['Trailing', function (p) { return p.sd < 0; }], ['Red zone', function (p) { return p.yl <= 20; }]].map(function (s) { return sitRow(s[0], s[1]); }).join('') + '</table></div>';
 
     /* ---- intel fills */
     var fill = function (k, txt, cls) { var el = root.querySelector('[data-fill="' + k + '"]'); if (!el) return; el.textContent = txt; if (cls) el.className = cls; };
@@ -151,7 +151,7 @@
       var parts = Object.keys(groups).filter(function (k) { return k !== '_none'; }).map(function (k) { var r = R[k] || {}, fb = isQB ? (groups[k][0].pl || k) : 'Passer ' + k.slice(-4);
         return { id: k, known: !!R[k], nm: r.name || fb, short: r.short || fb, pos: r.pos || '', num: r.num, photo: r.photo, l: line(groups[k]), q: groups[k] }; }).sort(function (a, b) { return b.l.n - a.l.n; });
       if (!parts.length) return;  /* only throwaways or batted balls so far: nothing to connect */
-      sec.hidden = false;
+      sec.hidden = false; ['dbd-with', 'dbd-jump-with'].forEach(function (id) { var el = document.getElementById(id); if (el) el.hidden = false; });
       parts.forEach(function (r, i) { r.col = i < RC.length ? RC[i] : OTH; var all = isQB ? mineT : throws.filter(function (p) { return p.qb === r.id; }); r.oth = isQB ? null : line(all.filter(function (p) { return p.pid !== C.id; })); r.share = all.length ? r.l.n / all.length : 0; });
       var none = (groups._none || []).length, colOf = {}, nameOf = {}; parts.forEach(function (r) { colOf[r.id] = r.col; nameOf[r.id] = r.short; });
       $('#dbd-cx-n').textContent = mineT.length + (isQB ? ' throws' : ' targets') + ' · ' + parts.length + ' ' + (parts.length === 1 ? who : whos);
@@ -164,6 +164,11 @@
       var epaCell = function (l) { var v = l.n ? l.e / l.n : 0; return '<td class="' + (v >= 0 ? 'pos' : 'neg') + '">' + (l.n ? sgn(v) : '-') + '</td>'; };
       var stat = function (l) { return '<td>' + l.c + '</td><td>' + pc(l.c, l.n) + '</td><td>' + l.y + '</td><td>' + (l.ad == null ? '-' : f1(l.ad)) + '</td><td>' + (l.c ? f1(l.yac / l.c) : '-') + '</td><td>' + (l.td || '') + '</td>'; };
       var shareCell = function (r) { return '<td class="dbd-cx-sh" data-v="' + Math.round(r.share * 1000) / 10 + '">' + pc(r.share * 100, 100) + '<span class="dbd-cx-shb" style="--c:' + r.col + '"><i style="--w:' + Math.round(r.share * 100) + '%"></i></span></td>'; };
+      /* column tiers (SCOPE §20): QB side aDOT, YAC, TD at t2 and 3rd dn, RZ at t3; passer side aDOT, YAC, TD, Rating at t2 */
+      var TIERS = isQB ? [null, null, null, null, null, null, 'dbd-t2', 'dbd-t2', 'dbd-t2', 'dbd-t3', 'dbd-t3', null] : [null, null, null, null, null, null, 'dbd-t2', 'dbd-t2', 'dbd-t2', null, 'dbd-t2'];
+      function tierize(html, tiers) {
+        return html.replace(/<tr\b[^>]*>[\s\S]*?<\/tr>/g, function (row) { var i = -1; return row.replace(/<t([dh])\b([^>]*)>/g, function (m, tag, attrs) { i++; var t = tiers[i]; if (!t) return m; var cm = attrs.match(/\bclass="([^"]*)"/); attrs = cm ? attrs.replace(cm[0], 'class="' + t + ' ' + cm[1] + '"') : attrs + ' class="' + t + '"'; return '<t' + tag + attrs + '>'; }); });
+      }
       function drawTab() {
         var h;
         if (isQB) {
@@ -178,7 +183,8 @@
             if (o && o.n) h += '<tr class="dbd-cx-oth"><td class="dbd-cx-nm">to everyone else</td><td>' + o.n + '</td><td></td>' + stat(o) + epaCell(o) + '<td>' + prate(o) + '</td></tr>'; });
           h += '</tbody>';
         }
-        $('#dbd-cx-tab').innerHTML = h;
+        $('#dbd-cx-tab').className = 'dbd-cx-tab dbd-stat' + (isQB ? ' dbd-sortable' : '');
+        $('#dbd-cx-tab').innerHTML = tierize(h, TIERS);
       }
       $('#dbd-cx-tab').addEventListener('click', function (e) { if (e.target.closest('a, th')) return; var tr = e.target.closest('tr[data-id]'); if (tr) setIso(iso === tr.dataset.id ? null : tr.dataset.id); });
 
