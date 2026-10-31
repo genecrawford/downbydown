@@ -75,7 +75,7 @@ function draw(){
   document.getElementById('list').innerHTML='<tr><th>Player</th><th>Pos</th><th class="t2">Snap %</th><th>Tgt</th><th class="t2">Rec</th><th class="t2">Car</th><th>Yds</th><th>TD</th><th>EPA</th><th class="t3">Status</th></tr>'+rows.map(p=>{
     const w=p.weeks,sn=avg(p.snaps),tg=sum(w,'targets'),rc=sum(w,'receptions'),ca=sum(w,'carries'),y=sum(w,'receiving_yards')+sum(w,'rushing_yards')+sum(w,'passing_yards'),td=sum(w,'receiving_tds')+sum(w,'rushing_tds')+sum(w,'passing_tds'),e=sum(w,'receiving_epa')+sum(w,'rushing_epa')+sum(w,'passing_epa');
     const depth=p.depth?` <small>${p.depth.slot}${p.depth.rank}</small>`:'';
-    return`<tr class="clk" onclick="location.href='player.html?id=${p.id}'"><td class="nm"><span class="pmark">${p.num??''}</span><a href="player.html?id=${p.id}">${p.name}</a>${depth}</td><td class="pos">${p.pos}</td><td class="t2"><span class="sb"><i style="--w:${Math.round(sn)}%"></i></span>${Math.round(sn)}%</td><td>${tg||''}</td><td class="t2">${rc||''}</td><td class="t2">${ca||''}</td><td>${Math.round(y)}</td><td>${td||''}</td><td class="${e>=0?'pos':'neg'}">${sgn(e)}</td><td>${stat(p)}</td></tr>`;}).join('');
+    return`<tr class="clk" onclick="location.href='player.html?id=${p.id}'"><td class="nm"><span class="pmark">${p.num??''}</span><a href="player.html?id=${p.id}">${p.name}</a>${depth}</td><td class="pos">${p.pos}</td><td class="t2"><span class="sb"><i style="--w:${Math.round(sn)}%"></i></span>${Math.round(sn)}%</td><td>${tg||''}</td><td class="t2">${rc||''}</td><td class="t2">${ca||''}</td><td>${Math.round(y)}</td><td>${td||''}</td><td class="${e>=0?'pos':'neg'}">${sgn(e)}</td><td class="t3">${stat(p)}</td></tr>`;}).join('');
 }
 draw();
 </script>

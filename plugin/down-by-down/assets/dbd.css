@@ -658,12 +658,14 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 .dbd-stat td small{font-size:9px}
 .dbd-stat tfoot td{font-weight:600}
 @container (max-width:860px){.dbd-t2{display:none}}
-@container (max-width:560px){.dbd-t3{display:none}.dbd-dfold{display:block}}
 .dbd-dfold{display:none;margin-top:2px}.dbd-dfold .dbd-dchip{font-size:9px;padding:0 4px}
+.dbd-stdot{display:none;width:8px;height:8px;border-radius:50%;background:var(--dbd-line-2);margin-left:6px;vertical-align:middle;flex:0 0 auto}.dbd-stdot.q{background:var(--dbd-red)}.dbd-stdot.o{background:var(--dbd-bad)}
+@container (max-width:560px){.dbd-t3{display:none}.dbd-dfold{display:block}.dbd-stdot{display:inline-block}}
 .dbd-jump{position:sticky;top:0;z-index:5;display:flex;gap:6px;flex-wrap:wrap;padding:10px 0 8px;margin:-4px 0 -8px;background:var(--dbd-bg)}
 .dbd-jump a{font:700 11px var(--dbd-display);text-transform:uppercase;letter-spacing:.12em;color:var(--dbd-ink-2);text-decoration:none;border:1px solid var(--dbd-line-2);border-radius:999px;padding:5px 11px;background:var(--dbd-panel)}
 .dbd-jump a:hover{border-color:var(--dbd-red);color:var(--dbd-red-ink)}
 .dbd-band{display:flex;flex-direction:column;gap:14px;scroll-margin-top:60px;min-width:0}
+.dbd-band[hidden]{display:none}
 .dbd-bandh{display:flex;align-items:baseline;gap:12px;margin:8px 0 0;font:800 13px var(--dbd-display);letter-spacing:.2em;text-transform:uppercase;color:var(--dbd-red)}
 .dbd-bandh::before{content:"";width:22px;height:3px;background:var(--dbd-red);align-self:center;flex:0 0 auto}
 .dbd-bandh span{font:500 12px var(--dbd-body);color:var(--dbd-muted);letter-spacing:0;text-transform:none}
@@ -676,6 +678,6 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 .dbd-strip{flex-wrap:wrap;overflow:visible;scroll-snap-type:none}.dbd-sc{flex:1 1 168px;max-width:240px}
 .dbd-gstrip{flex-wrap:wrap;overflow:visible}
 .dbd-mgrid>.dbd-span{grid-column:1/-1}
-#dbd-drive svg{width:100%!important;height:auto;max-width:100%}
+#dbd-drive svg{width:100%!important;min-width:0!important;height:auto;max-width:100%}
 .dbd-usagep{margin-top:0}
 @media (max-width:640px){.dbd-crumb{white-space:normal}.dbd-ox-rib .c i{display:none}.dbd-ox-rib .c{min-height:40px}}
