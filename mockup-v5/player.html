@@ -747,7 +747,7 @@ const dk=p.pos==='QB'?'pass_epa':(p.pos==='RB'||p.pos==='FB')?'run_epa':p.pos===
 const rk=M.rank.def[opp]?.[dk], val=M.defense[opp]?.[dk], lg=M.league?.[dk], tier=rk==null?'':rk<=10?'tough':rk>=23?'soft':'mid', tierWord={tough:'a tough matchup',mid:'a middle-of-the-pack matchup',soft:'a soft matchup'}[tier]||'';
 const sg2=v=>v==null?'–':(v>0?'+':'')+(+v).toFixed(2);
 /* kickoff + line */
-const dt=new Date(g.date+'T'+(g.time||'13:00')+':00-05:00'), kick=`${g.day?g.day.slice(0,3):''} ${dt.toLocaleDateString('en-US',{month:'short',day:'numeric'})} · ${dt.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/New_York'})} ET`;
+const [hh,mm]=(g.time||'13:00').split(':').map(Number), dd=new Date(g.date+'T12:00:00Z'), kick=`${g.day?g.day.slice(0,3):''} ${dd.toLocaleDateString('en-US',{month:'short',day:'numeric',timeZone:'UTC'})} · ${((hh+11)%12)+1}:${String(mm).padStart(2,'0')} ${hh>=12?'PM':'AM'} ET`;  /* the schedule's clock is already Eastern */
 if(!bye)document.getElementById('twbadge').textContent=kick.split(' · ')[0]+' · '+kick.split(' · ')[1];
 const fav=g.spread==null?'':g.spread>0?`${g.home} −${g.spread}`:g.spread<0?`${g.away} −${Math.abs(g.spread)}`:'pick';
 /* his history vs the tier, from his weekly line and the defense ranks */
