@@ -11,8 +11,33 @@
   var url = function (list) { return C.base + (C.base.indexOf('?') >= 0 ? '&' : '?') + 'compare=' + encodeURIComponent(list.join(',')); };
   var f1 = function (v) { return isFinite(v) ? (+v).toFixed(1) : '-'; };
 
-  /* the tray: whoever is on this page is what Compare buttons elsewhere build on */
-  try { localStorage.setItem('dbd-cmp', JSON.stringify(ids)); } catch (e) {}
+  /* the tray: whoever is on this page is what Compare buttons elsewhere build on, keyed by position group so a
+     receiver compare never leaks into a backs compare. Recent comparisons are kept too, newest first, eight deep. */
+  try {
+    localStorage.setItem('dbd-cmp', JSON.stringify({ grp: C.group, ids: ids }));
+    if (ids.length >= 2) {
+      var rec = []; try { rec = JSON.parse(localStorage.getItem('dbd-cmp-recent') || '[]'); } catch (e2) {}
+      var key = ids.slice().sort().join(','); rec = rec.filter(function (r) { return r.key !== key; });
+      rec.unshift({ key: key, ids: ids, grp: C.group, names: C.players.map(function (p) { return p.short; }), t: Date.now() });
+      localStorage.setItem('dbd-cmp-recent', JSON.stringify(rec.slice(0, 8)));
+    }
+  } catch (e) {}
+  var recentBox = $('#dbd-crecent');
+  if (recentBox) {
+    var rec2 = []; try { rec2 = JSON.parse(localStorage.getItem('dbd-cmp-recent') || '[]'); } catch (e3) {}
+    var cur = ids.slice().sort().join(',');
+    rec2 = rec2.filter(function (r) { return r.key !== cur; });
+    if (rec2.length) { recentBox.hidden = false; recentBox.innerHTML = '<span class="k">Recent</span>' + rec2.map(function (r) { return '<a href="' + esc(url(r.ids)) + '">' + esc(r.names.join(' · ')) + '</a>'; }).join('') + '<button type="button" class="x" id="dbd-cforget">Forget these</button>'; }
+    recentBox.addEventListener('click', function (e) { if (e.target.closest('#dbd-cforget')) { try { localStorage.removeItem('dbd-cmp-recent'); } catch (e4) {} recentBox.hidden = true; } });
+  }
+  /* start over: wipe the tray before leaving for the empty compare */
+  root.querySelectorAll('.dbd-creset').forEach(function (b) { b.addEventListener('click', function () { try { localStorage.removeItem('dbd-cmp'); } catch (e5) {} }); });
+  /* copy the share link (the canonical, sorted ids) */
+  root.querySelectorAll('.dbd-ccopy').forEach(function (b) { b.addEventListener('click', function () {
+    var link = url(ids.slice().sort()); var done = function () { var t0 = b.textContent; b.textContent = 'Copied'; b.classList.add('ok'); setTimeout(function () { b.textContent = t0; b.classList.remove('ok'); }, 1600); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(link).then(done, function () { prompt('Copy this link', link); });
+    else prompt('Copy this link', link);
+  }); });
 
   /* slot search over the same-group index */
   var src = document.getElementById('dbd-cindex'), IDX = [];
@@ -43,7 +68,12 @@
   if (window.Chartist && C.series && C.series.length) {
     var race = C.series.map(function (sv) { var c = 0; return sv.map(function (v) { c += v || 0; return c; }); });
     var CH1 = $('#dbd-crace'), CH2 = $('#dbd-cweek');
-    if (CH1) new Chartist.LineChart(CH1, { labels: C.labels, series: race }, { lineSmooth: Chartist.Interpolation.step(), showPoint: true, axisY: { onlyInteger: true, low: 0 }, chartPadding: { right: 20, top: 10 } });
+    if (CH1) {
+      var SLOTC = ['#161e36', '#cb2026', '#d99a06'], q = [];
+      new Chartist.LineChart(CH1, { labels: C.labels, series: race.map(function (sv, i) { return { name: C.players[i].short, data: sv }; }) }, { lineSmooth: Chartist.Interpolation.step(), showPoint: true, axisY: { onlyInteger: true, low: 0 }, chartPadding: { right: 70, top: 10 } })
+        .on('draw', function (d) { if (d.type === 'point' && d.index === d.series.data.length - 1) q.push([d.seriesIndex, d.x, d.y]); })
+        .on('created', function () { Array.prototype.slice.call(CH1.querySelectorAll('.dbd-cend')).forEach(function (e) { e.remove(); }); q.forEach(function (a) { var el = document.createElement('div'); el.className = 'dbd-cend'; el.style.left = a[1] + 'px'; el.style.top = a[2] + 'px'; el.style.setProperty('--c', SLOTC[a[0]]); el.textContent = C.players[a[0]].short; CH1.appendChild(el); }); q = []; });
+    }
     if (CH2) new Chartist.BarChart(CH2, { labels: C.labels, series: C.series.map(function (sv) { return sv.map(function (v) { return v || 0; }); }) }, { seriesBarDistance: C.series.length > 2 ? 9 : 12, axisY: { onlyInteger: true, low: 0 }, chartPadding: { right: 10, top: 10 } });
   }
 
@@ -65,7 +95,8 @@
     var minA = Math.min(-10, Math.floor(Math.min.apply(null, airs.concat([0])) / 5) * 5), maxA = Math.max.apply(null, [40].concat(airs));
     $('#dbd-cmapn').textContent = sets.map(function (s, i) { return C.players[i].short + ' ' + s.length; }).join(' · ');
     $('#dbd-cmapleg').innerHTML = C.group === 'rb' ? '<span><i style="background:' + COL.td + '"></i>Positive EPA</span><span><i style="background:' + COL.run + '"></i>Negative EPA, 40%+ success</span><span><i style="background:' + COL.bad + '"></i>Under 40% success</span>' : '<span><i style="background:' + COL.pass + '"></i>Catch</span><span><i style="background:' + COL.inc + '"></i>Incomplete</span><span><i style="background:' + COL.bad + '"></i>Interception</span><span><i style="background:' + COL.td + '"></i>Touchdown</span>';
-    sets.forEach(function (s, i) { $('#dbd-cmapc-' + i).textContent = '· ' + s.length + (C.group === 'rb' ? ' carries' : C.group === 'qb' ? ' throws' : ' targets'); $('#dbd-cmap-' + i).innerHTML = C.group === 'rb' ? runmap(s) : passmap(s.filter(function (q) { return q.air != null; }), minA, maxA); });
+    var SLOTS = ['#161e36', '#cb2026', '#d99a06'], gapMax = C.group === 'rb' ? Math.max.apply(null, [1].concat(sets.map(function (s) { return Math.max.apply(null, gaps(s).map(function (d) { return d.c; })); }))) : 0;
+    sets.forEach(function (s, i) { $('#dbd-cmapc-' + i).textContent = '· ' + s.length + (C.group === 'rb' ? ' carries' : C.group === 'qb' ? ' throws' : ' targets'); $('#dbd-cmap-' + i).innerHTML = C.group === 'rb' ? runmap(s, C.players[i].num, gapMax, SLOTS[i]) : passmap(s.filter(function (q) { return q.air != null; }), minA, maxA); });
 
     /* targets (or throws) per player for the one-field, butterfly and heat graphics */
     var tsets = C.players.map(function (p) { return (C.group === 'qb' ? sets[C.players.indexOf(p)] : byId(p).filter(isT)).filter(function (q) { return q.air != null; }); });
@@ -123,12 +154,26 @@
     Object.keys(byLane).forEach(function (k) { var arr = byLane[k]; if (!arr.length) return; var c = arr.filter(function (q) { return q.k === 'comp'; }).length; g += '<text x="' + (Lf + lw * lanes[k] + lw / 2) + '" y="' + (Tp - 24) + '" fill="#fff" font-size="11" font-weight="600" text-anchor="middle">' + c + '/' + arr.length + ' · ' + Math.round(c / arr.length * 100) + '%</text>'; });
     return g + '</svg>';
   }
-  function runmap(R) {
-    var cols = [['left', 'end', 'L End'], ['left', 'tackle', 'L Tackle'], ['left', 'guard', 'L Guard'], ['middle', null, 'Middle'], ['right', 'guard', 'R Guard'], ['right', 'tackle', 'R Tackle'], ['right', 'end', 'R End']];
-    var data = cols.map(function (c) { var arr = R.filter(function (q) { return q.loc === c[0] && (c[0] === 'middle' || q.gap === c[1]); }); var n = arr.length; return { n: c[2], c: n, ypc: n ? arr.reduce(function (s, q) { return s + (q.yds || 0); }, 0) / n : 0, sr: n ? arr.filter(function (q) { return q.succ; }).length / n : 0, epa: n ? arr.reduce(function (s, q) { return s + (q.epa || 0); }, 0) / n : 0 }; });
-    var Wd = 360, H = 420, Tp = 50, B = 70, Lf = 10, Rr = 10, maxC = Math.max.apply(null, [1].concat(data.map(function (d) { return d.c; }))), cw = (Wd - Lf - Rr) / 7;
-    var g = '<svg viewBox="0 0 ' + Wd + ' ' + H + '" width="100%" style="display:block;background:#2c4a35;border-radius:4px" role="img" aria-label="Run gap chart"><text x="' + (Wd / 2) + '" y="18" fill="' + FI + '" font-size="10" text-anchor="middle">bar height = carries · label = yards per carry</text>';
-    data.forEach(function (d, i) { var bh = (H - Tp - B) * d.c / maxC, bx = Lf + cw * i + 5, by = H - B - bh, fill = d.c ? (d.epa >= 0 ? COL.td : d.sr >= .4 ? COL.run : COL.bad) : 'transparent'; g += '<rect x="' + bx + '" y="' + by + '" width="' + (cw - 10) + '" height="' + bh + '" rx="2" fill="' + fill + '" fill-opacity=".85"/>'; if (d.c) g += '<text x="' + (bx + (cw - 10) / 2) + '" y="' + (by - 6) + '" fill="#fff" font-size="12" font-weight="600" text-anchor="middle">' + f1(d.ypc) + '</text>'; var parts = d.n.split(' '); g += '<text x="' + (bx + (cw - 10) / 2) + '" y="' + (H - B + 16) + '" fill="' + FI + '" font-size="10" text-anchor="middle">' + parts[0] + '</text><text x="' + (bx + (cw - 10) / 2) + '" y="' + (H - B + 28) + '" fill="' + FI + '" font-size="10" text-anchor="middle">' + (parts[1] || '') + '</text><text x="' + (bx + (cw - 10) / 2) + '" y="' + (H - B + 46) + '" fill="#fff" font-size="11" text-anchor="middle">' + d.c + '</text>'; });
-    return g + '</svg>';
+  function gaps(R) {
+    var cols = [['left', 'end', 'L End', 40], ['left', 'tackle', 'L Tackle', 112], ['left', 'guard', 'L Guard', 170], ['middle', null, 'Middle', 200], ['right', 'guard', 'R Guard', 230], ['right', 'tackle', 'R Tackle', 288], ['right', 'end', 'R End', 360]];
+    return cols.map(function (c) { var arr = R.filter(function (q) { return q.loc === c[0] && (c[0] === 'middle' || q.gap === c[1]); }); var n = arr.length; return { n: c[2], x: c[3], c: n, ypc: n ? arr.reduce(function (s, q) { return s + (q.yds || 0); }, 0) / n : 0, sr: n ? arr.filter(function (q) { return q.succ; }).length / n : 0, epa: n ? arr.reduce(function (s, q) { return s + (q.epa || 0); }, 0) / n : 0 }; });
+  }
+  /* carries drawn as lanes off the line of scrimmage, between the five linemen; bar height = carries, label = yards per carry */
+  function runmap(R, num, scaleMax, color) {
+    var data = gaps(R), Wd = 400, H = 420, LOS = 292, TOP = 48, maxC = Math.max.apply(null, [1, scaleMax || 0].concat(data.map(function (d) { return d.c; })));
+    var g = '<svg viewBox="0 0 ' + Wd + ' ' + H + '" width="100%" style="display:block;background:#2c4a35;border-radius:4px" role="img" aria-label="Carries by gap, drawn off the offensive line">';
+    for (var yd = 1; yd <= 4; yd++) { var yy = LOS - (LOS - TOP) * yd / 4; g += '<line x1="12" x2="' + (Wd - 12) + '" y1="' + yy + '" y2="' + yy + '" stroke="' + FL + '" stroke-dasharray="2 6"/>'; }
+    g += '<line x1="12" x2="' + (Wd - 12) + '" y1="' + LOS + '" y2="' + LOS + '" stroke="rgba(255,255,255,.8)" stroke-width="2"/>';
+    g += '<text x="' + (Wd - 14) + '" y="' + (TOP - 8) + '" fill="' + FI + '" font-size="10" text-anchor="end">bar height = carries (' + maxC + ' at the top) · label = yards per carry</text>';
+    data.forEach(function (d, di) { var bh = (LOS - TOP - 6) * d.c / maxC, bx = d.x - 11, by = LOS - bh, fill = d.c ? (d.epa >= 0 ? COL.td : d.sr >= .4 ? COL.run : COL.bad) : 'rgba(255,255,255,.08)';
+      g += '<rect x="' + bx + '" y="' + (d.c ? by : LOS - 3) + '" width="22" height="' + (d.c ? bh : 3) + '" rx="3" fill="' + fill + '" fill-opacity=".9"/>';
+      if (d.c) g += '<text x="' + d.x + '" y="' + (by - 6) + '" fill="#fff" font-size="12" font-weight="600" text-anchor="middle">' + f1(d.ypc) + '</text>';
+      g += '<text x="' + d.x + '" y="' + (LOS + 56) + '" fill="#fff" font-size="11" font-weight="600" text-anchor="middle">' + (d.c || '') + '</text>';
+      g += '<text x="' + d.x + '" y="' + (LOS + (di % 2 ? 82 : 70)) + '" fill="' + FI + '" font-size="9" text-anchor="middle">' + d.n + '</text>';  /* alternate rows so the three inside gaps do not collide */
+    });
+    [['LT', 84], ['LG', 141], ['C', 200], ['RG', 259], ['RT', 316]].forEach(function (l) { g += '<rect x="' + (l[1] - 17) + '" y="' + (LOS + 8) + '" width="34" height="30" rx="5" fill="#f4f1ea" stroke="rgba(0,0,0,.25)"/><text x="' + l[1] + '" y="' + (LOS + 28) + '" fill="#161e36" font-size="12" font-weight="800" font-family="Tourney,Arial Black,sans-serif" text-anchor="middle">' + l[0] + '</text>'; });
+    g += '<circle cx="200" cy="' + (LOS + 104) + '" r="15" fill="' + (color || '#161e36') + '" stroke="#fff" stroke-width="2"/><text x="200" y="' + (LOS + 109) + '" fill="#fff" font-size="12" font-weight="800" font-family="Tourney,Arial Black,sans-serif" text-anchor="middle">' + esc(num == null ? 'RB' : num) + '</text>';
+    g += '</svg>';  /* the counts under the line are carries; the caption at the top says so */
+    return g;
   }
 })();

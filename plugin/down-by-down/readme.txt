@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.3.2
+Stable tag: 1.3.3
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,12 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.3.3 =
+* Percentile markers get a real tooltip on hover or focus: player, value, percentile, rank of the pool and the league median; on the compare page the row dims the other players while you look.
+* Backs' run maps are drawn off the line of scrimmage: the five linemen on the line, carries rising from each gap, the back behind center with his number. Player page and compare page alike, on one scale across compared players.
+* Compare: Copy link and Start over buttons in the Who panel and the sticky key. The tray is kept per position group, so a receiver set never follows you into a backs compare, and the browser remembers your eight most recent comparisons as one-click links.
+* Compare: a player key in slot colors sticks to the top of the screen as you scroll, every graphic carries its own key, the week and season tables show player names as colored chips, and the race lines are labeled at their ends. No more guessing which color is who halfway down the page.
 
 = 1.3.2 =
 * Compare graphics. Seven visuals join the compare page: a percentile radar, a where-he-wins heat grid (EPA per target by lane and depth), every target on one field in slot colors, a depth butterfly for the first two slots, the cumulative yards race, grouped weekly bars, and a floor-and-ceiling strip that marks each week boom, solid or dud against the quartiles of every qualified player's game weeks. Radar and the strip render server-side; the rest draw from the play files and Chartist.

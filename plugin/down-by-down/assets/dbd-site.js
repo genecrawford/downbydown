@@ -36,6 +36,24 @@
     rows.forEach(function (r) { r.parentNode.appendChild(r); });
   });
 
+  /* rich tooltips: any element with data-tip (percentile markers) gets the site tooltip on hover or focus,
+     and a percentile row highlights that player's marker and value column while you look */
+  var tip = document.getElementById('dbd-tt');
+  if (!tip) { tip = document.createElement('div'); tip.className = 'dbd-tt'; tip.id = 'dbd-tt'; tip.setAttribute('role', 'tooltip'); document.body.appendChild(tip); }
+  var hot = null;
+  var showTip = function (el, x, y) {
+    tip.innerHTML = el.getAttribute('data-tip'); tip.classList.add('is-shown');
+    var w = tip.offsetWidth || 260, h = tip.offsetHeight || 60, left = Math.min(x + 14, innerWidth - w - 8), top = y - h - 14; if (top < 8) top = y + 18;
+    tip.style.left = left + 'px'; tip.style.top = top + 'px';
+    var row = el.closest('.row'); if (row && el.dataset.slot != null) { row.classList.add('is-hot'); row.querySelectorAll('[data-slot]').forEach(function (n) { n.classList.toggle('is-on', n.dataset.slot === el.dataset.slot); }); hot = row; }
+  };
+  var hideTip = function () { tip.classList.remove('is-shown'); if (hot) { hot.classList.remove('is-hot'); hot.querySelectorAll('.is-on').forEach(function (n) { n.classList.remove('is-on'); }); hot = null; } };
+  root.addEventListener('mouseover', function (e) { var el = e.target.closest('[data-tip]'); if (!el) { if (tip.classList.contains('is-shown') && !e.target.closest('.dbd-play')) hideTip(); return; } showTip(el, e.clientX, e.clientY); });
+  root.addEventListener('mousemove', function (e) { var el = e.target.closest('[data-tip]'); if (el && tip.classList.contains('is-shown')) { var w = tip.offsetWidth, h = tip.offsetHeight, top = e.clientY - h - 14; tip.style.left = Math.min(e.clientX + 14, innerWidth - w - 8) + 'px'; tip.style.top = (top < 8 ? e.clientY + 18 : top) + 'px'; } });
+  root.addEventListener('mouseleave', hideTip);
+  root.addEventListener('focusin', function (e) { var el = e.target.closest('[data-tip]'); if (!el) return; var r = el.getBoundingClientRect(); showTip(el, r.left + r.width / 2, r.top); el.setAttribute('aria-describedby', 'dbd-tt'); });
+  root.addEventListener('focusout', function (e) { var el = e.target.closest('[data-tip]'); if (el) { el.removeAttribute('aria-describedby'); hideTip(); } });
+
   /* whole rows are links */
   root.addEventListener('click', function (e) {
     if (e.target.closest('a,button,select,input')) return;

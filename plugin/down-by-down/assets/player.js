@@ -14,10 +14,11 @@
   /* Compare button: build on whoever is already in the tray (the last compare page's players) */
   var cb = root.querySelector('#dbd-cmp-btn');
   if (cb) {
-    var tray = []; try { tray = JSON.parse(localStorage.getItem('dbd-cmp') || '[]'); } catch (e) {}
+    var grp = C.pos === 'QB' ? 'qb' : (C.pos === 'RB' || C.pos === 'FB') ? 'rb' : 'rec', tray = [];
+    try { var t = JSON.parse(localStorage.getItem('dbd-cmp') || 'null'); if (t && t.ids && t.grp === grp) tray = t.ids; } catch (e) {}  /* another group's tray is ignored: this page starts fresh */
     tray = tray.filter(function (x) { return x && x !== cb.dataset.id; }).slice(-2);
     if (tray.length) { cb.href = cb.dataset.base + (cb.dataset.base.indexOf('?') >= 0 ? '&' : '?') + 'compare=' + encodeURIComponent(tray.concat([cb.dataset.id]).join(',')); cb.textContent = 'Compare with ' + tray.length + ' picked'; }
-    cb.addEventListener('click', function () { try { localStorage.setItem('dbd-cmp', JSON.stringify(tray.concat([cb.dataset.id]))); } catch (e) {} });
+    cb.addEventListener('click', function () { try { localStorage.setItem('dbd-cmp', JSON.stringify({ grp: grp, ids: tray.concat([cb.dataset.id]) })); } catch (e) {} });
   }
 
   /* game log views: PHP rendered all three tables; this shows one and slides the pill */
@@ -58,17 +59,31 @@
       Object.keys(byLane).forEach(function (k) { var arr = byLane[k]; if (!arr.length) return; var c = arr.filter(function (p) { return p.k === 'comp'; }).length; g += '<text x="' + (Lf + lw * lanes[k] + lw / 2) + '" y="' + (Tp - 24) + '" fill="#fff" font-size="11" font-weight="600" text-anchor="middle">' + c + '/' + arr.length + ' · ' + Math.round(c / arr.length * 100) + '%</text>'; });
       return g + '</svg>';
     }
-    function runmap(R) {
-      var cols = [['left', 'end', 'L End'], ['left', 'tackle', 'L Tackle'], ['left', 'guard', 'L Guard'], ['middle', null, 'Middle'], ['right', 'guard', 'R Guard'], ['right', 'tackle', 'R Tackle'], ['right', 'end', 'R End']];
-      var data = cols.map(function (c) { var arr = R.filter(function (p) { return p.loc === c[0] && (c[0] === 'middle' || p.gap === c[1]); }); var n = arr.length; return { n: c[2], c: n, ypc: n ? arr.reduce(function (s, p) { return s + (p.yds || 0); }, 0) / n : 0, sr: n ? arr.filter(function (p) { return p.succ; }).length / n : 0, epa: n ? arr.reduce(function (s, p) { return s + (p.epa || 0); }, 0) / n : 0 }; });
-      var Wd = 360, H = 420, Tp = 50, B = 70, Lf = 10, Rr = 10, maxC = Math.max.apply(null, [1].concat(data.map(function (d) { return d.c; }))), cw = (Wd - Lf - Rr) / 7;
-      var g = '<svg viewBox="0 0 ' + Wd + ' ' + H + '" width="100%" style="display:block;background:#2c4a35;border-radius:4px" role="img" aria-label="Run gap chart"><text x="' + (Wd / 2) + '" y="18" fill="' + FI + '" font-size="10" text-anchor="middle">bar height = carries · label = yards per carry</text>';
-      data.forEach(function (d, i) { var bh = (H - Tp - B) * d.c / maxC, bx = Lf + cw * i + 5, by = H - B - bh, fill = d.c ? (d.epa >= 0 ? COL.td : d.sr >= .4 ? COL.run : COL.bad) : 'transparent'; g += '<rect x="' + bx + '" y="' + by + '" width="' + (cw - 10) + '" height="' + bh + '" rx="2" fill="' + fill + '" fill-opacity=".85"/>'; if (d.c) g += '<text x="' + (bx + (cw - 10) / 2) + '" y="' + (by - 6) + '" fill="#fff" font-size="12" font-weight="600" text-anchor="middle">' + f1(d.ypc) + '</text>'; var parts = d.n.split(' '); g += '<text x="' + (bx + (cw - 10) / 2) + '" y="' + (H - B + 16) + '" fill="' + FI + '" font-size="10" text-anchor="middle">' + parts[0] + '</text><text x="' + (bx + (cw - 10) / 2) + '" y="' + (H - B + 28) + '" fill="' + FI + '" font-size="10" text-anchor="middle">' + (parts[1] || '') + '</text><text x="' + (bx + (cw - 10) / 2) + '" y="' + (H - B + 46) + '" fill="#fff" font-size="11" text-anchor="middle">' + d.c + '</text><text x="' + (bx + (cw - 10) / 2) + '" y="' + (H - B + 60) + '" fill="' + FI + '" font-size="10" text-anchor="middle">' + (d.c ? Math.round(d.sr * 100) + '%' : '') + '</text>'; });
-      return g + '<text x="4" y="' + (H - B + 46) + '" fill="' + FI + '" font-size="9">n</text><text x="4" y="' + (H - B + 60) + '" fill="' + FI + '" font-size="9">SR</text></svg>';
+    function gaps(R) {
+      var cols = [['left', 'end', 'L End', 40], ['left', 'tackle', 'L Tackle', 112], ['left', 'guard', 'L Guard', 170], ['middle', null, 'Middle', 200], ['right', 'guard', 'R Guard', 230], ['right', 'tackle', 'R Tackle', 288], ['right', 'end', 'R End', 360]];
+      return cols.map(function (c) { var arr = R.filter(function (q) { return q.loc === c[0] && (c[0] === 'middle' || q.gap === c[1]); }); var n = arr.length; return { n: c[2], x: c[3], c: n, ypc: n ? arr.reduce(function (s, q) { return s + (q.yds || 0); }, 0) / n : 0, sr: n ? arr.filter(function (q) { return q.succ; }).length / n : 0, epa: n ? arr.reduce(function (s, q) { return s + (q.epa || 0); }, 0) / n : 0 }; });
+    }
+    /* carries drawn as lanes off the line of scrimmage, between the five linemen; bar height = carries, label = yards per carry */
+    function runmap(R, num, scaleMax, color) {
+      var data = gaps(R), Wd = 400, H = 420, LOS = 292, TOP = 48, maxC = Math.max.apply(null, [1, scaleMax || 0].concat(data.map(function (d) { return d.c; })));
+      var g = '<svg viewBox="0 0 ' + Wd + ' ' + H + '" width="100%" style="display:block;background:#2c4a35;border-radius:4px" role="img" aria-label="Carries by gap, drawn off the offensive line">';
+      for (var yd = 1; yd <= 4; yd++) { var yy = LOS - (LOS - TOP) * yd / 4; g += '<line x1="12" x2="' + (Wd - 12) + '" y1="' + yy + '" y2="' + yy + '" stroke="' + FL + '" stroke-dasharray="2 6"/>'; }
+      g += '<line x1="12" x2="' + (Wd - 12) + '" y1="' + LOS + '" y2="' + LOS + '" stroke="rgba(255,255,255,.8)" stroke-width="2"/>';
+      g += '<text x="' + (Wd - 14) + '" y="' + (TOP - 8) + '" fill="' + FI + '" font-size="10" text-anchor="end">bar height = carries (' + maxC + ' at the top) · label = yards per carry</text>';
+      data.forEach(function (d, di) { var bh = (LOS - TOP - 6) * d.c / maxC, bx = d.x - 11, by = LOS - bh, fill = d.c ? (d.epa >= 0 ? COL.td : d.sr >= .4 ? COL.run : COL.bad) : 'rgba(255,255,255,.08)';
+        g += '<rect x="' + bx + '" y="' + (d.c ? by : LOS - 3) + '" width="22" height="' + (d.c ? bh : 3) + '" rx="3" fill="' + fill + '" fill-opacity=".9"/>';
+        if (d.c) g += '<text x="' + d.x + '" y="' + (by - 6) + '" fill="#fff" font-size="12" font-weight="600" text-anchor="middle">' + f1(d.ypc) + '</text>';
+        g += '<text x="' + d.x + '" y="' + (LOS + 56) + '" fill="#fff" font-size="11" font-weight="600" text-anchor="middle">' + (d.c || '') + '</text>';
+        g += '<text x="' + d.x + '" y="' + (LOS + (di % 2 ? 82 : 70)) + '" fill="' + FI + '" font-size="9" text-anchor="middle">' + d.n + '</text>';  /* alternate rows so the three inside gaps do not collide */
+      });
+      [['LT', 84], ['LG', 141], ['C', 200], ['RG', 259], ['RT', 316]].forEach(function (l) { g += '<rect x="' + (l[1] - 17) + '" y="' + (LOS + 8) + '" width="34" height="30" rx="5" fill="#f4f1ea" stroke="rgba(0,0,0,.25)"/><text x="' + l[1] + '" y="' + (LOS + 28) + '" fill="#161e36" font-size="12" font-weight="800" font-family="Tourney,Arial Black,sans-serif" text-anchor="middle">' + l[0] + '</text>'; });
+      g += '<circle cx="200" cy="' + (LOS + 104) + '" r="15" fill="' + (color || '#161e36') + '" stroke="#fff" stroke-width="2"/><text x="200" y="' + (LOS + 109) + '" fill="#fff" font-size="12" font-weight="800" font-family="Tourney,Arial Black,sans-serif" text-anchor="middle">' + esc(num == null ? 'RB' : num) + '</text>';
+      g += '</svg>';  /* the counts under the line are carries; the caption at the top says so */
+      return g;
     }
     var runFirst = grp === 'rb' && runs.length >= tgts.length;
     if (runFirst) {
-      $('#dbd-map1h').textContent = 'Carries by gap'; $('#dbd-pmap').innerHTML = runmap(runs); $('#dbd-mapn').textContent = runs.length + ' carries · ' + tgts.length + ' targets';
+      $('#dbd-map1h').textContent = 'Carries by gap'; $('#dbd-pmap').innerHTML = runmap(runs, C.num, 0, C.accent); $('#dbd-mapn').textContent = runs.length + ' carries · ' + tgts.length + ' targets';
       $('#dbd-pleg').innerHTML = '<span><i style="background:' + COL.td + '"></i>Positive EPA</span><span><i style="background:' + COL.run + '"></i>Negative EPA, 40%+ success</span><span><i style="background:' + COL.bad + '"></i>Under 40% success</span>';
       $('#dbd-mapnote').textContent = 'Designed runs only, grouped by the gap nflverse records. Scrambles and kneels are left out. Depth bands on the right are his targets.';
     } else {

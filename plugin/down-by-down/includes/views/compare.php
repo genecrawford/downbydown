@@ -24,7 +24,9 @@ echo '<p class="dbd-sub t-stagger-line t-stagger-line--3">Two or three players o
 echo '<div class="dbd-badge">' . ( $N ? $N . ' in the league pool' : 'pick a player to start' ) . '</div></div>';
 
 /* ---- who */
-echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Who</b> · up to three, same position group</span><span class="dbd-badge">The link in the address bar is the share link</span></div><div class="dbd-cslots">';
+$reset = DBD_Router::url( array( 'compare' => 'none' ) );
+$actions = '<span class="dbd-cactions"><button type="button" class="dbd-cbtn dbd-ccopy" title="Copy the link to this comparison">Copy link</button><a class="dbd-cbtn dbd-creset" href="' . esc_url( $reset ) . '" title="Clear these players and start a new comparison">Start over</a></span>';
+echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Who</b> · up to three, same position group</span>' . ( $n ? $actions : '' ) . '</div><div class="dbd-cslots">';
 for ( $i = 0; $i < 3; $i++ ) {
 	if ( isset( $P[ $i ] ) ) {
 		$x = $P[ $i ]; $rowx = $x['row']; $rm = array_values( array_diff( $ids, array( $rowx['id'] ) ) );
@@ -33,9 +35,14 @@ for ( $i = 0; $i < 3; $i++ ) {
 		echo '<div class="dbd-cslot empty"><input type="search" class="dbd-srch" placeholder="' . esc_attr( 'Add a ' . $one . ' by name or team' ) . '" autocomplete="off" data-slot="' . $i . '"><ul class="dbd-csug" hidden></ul></div>';
 	}
 }
-echo '</div></section>';
+echo '</div><div class="dbd-crecent" id="dbd-crecent" hidden></div><p class="dbd-note">The address bar is the share link. Copy it, text it, post it: whoever opens it sees the same players. The Compare button on player pages builds on this set until you start over or switch positions.</p></section>';
 
-if ( ! $n ) { echo '<div class="dbd-empty"><h2>Nobody picked yet</h2><p>Add a player above, or open any player page and hit Compare.</p></div></main>'; return; }
+/* sticky player key: who is which color, visible all the way down */
+$chip = function ( $x ) { return '<a class="chip" style="--c:' . $x['c'] . '" href="' . esc_url( DBD_Router::url( array( 'player' => $x['row']['id'] ) ) ) . '">' . DBD_Marks::player( $x['row']['team'], $x['row']['num'], 22, $x['row']['photo'] ?? null ) . '<b>' . esc_html( $x['rec']['short'] ?? $x['row']['name'] ) . '</b><small>' . esc_html( $x['row']['team'] ) . '</small></a>'; };
+$legend = function () use ( $P, $chip ) { return '<div class="dbd-cleg2">' . implode( '', array_map( $chip, $P ) ) . '</div>'; };
+if ( $n ) { echo '<div class="dbd-ckey" aria-label="Who is which color"><span class="k">Key</span>' . implode( '', array_map( $chip, $P ) ) . $actions . '</div>'; }
+
+if ( ! $n ) { echo '<div class="dbd-empty"><h2>Nobody picked yet</h2><p>Add a player above, or open any player page and hit Compare. Your recent comparisons, if any, are listed above.</p></div></main>'; return; }
 
 /* ---- where they rank */
 if ( $gi ) {
@@ -45,9 +52,12 @@ if ( $gi ) {
 		list( $k, $lab, $sub, $kind ) = $d; $vals = array(); $bi = -1;
 		foreach ( $P as $i => $x ) { $g = $x['rec']['grades'] ?? null; $vals[ $i ] = ( $g && ! empty( $g['q'] ) ) ? ( $g['m'][ $k ] ?? null ) : null; if ( $bi < 0 ? $vals[ $i ] !== null : $better( $k, $vals[ $i ], $vals[ $bi ] ) ) { $bi = $i; } }
 		echo '<div class="row"><div class="l">' . esc_html( $lab ) . ( $sub ? '<small>' . esc_html( $sub ) . '</small>' : '' ) . '</div><div class="bar">';
-		foreach ( $P as $i => $x ) { $pc = DBD_Grades::pctile( $grp, $k, $vals[ $i ] ); if ( $pc !== null ) { echo '<i style="--p:' . (int) $pc . ';--c:' . $x['c'] . '" title="' . esc_attr( $x['row']['name'] . ': ' . DBD_Grades::ordinal( $pc ) ) . '"></i>'; } }
+		$med = DBD_Grades::median( $grp, $k ); $Nk = count( $gi['dist'][ $k ] ?? array() );  /* a metric's own pool: backs under five targets have no receiving EPA, so that pool is smaller */
+		foreach ( $P as $i => $x ) { $pc = DBD_Grades::pctile( $grp, $k, $vals[ $i ] ); if ( $pc === null ) { continue; } $rk = DBD_Grades::rank( $grp, $k, $vals[ $i ] );
+			$tip = '<b>' . esc_html( $x['row']['name'] ) . '</b><br>' . esc_html( $lab ) . ': <b>' . esc_html( DBD_Grades::fmt( $kind, $vals[ $i ] ) ) . '</b> · ' . esc_html( DBD_Grades::ordinal( $pc ) ) . ' percentile · ' . esc_html( DBD_Grades::ordinal( $rk ) ) . ' of ' . $Nk . '<br><span class="m">League median ' . esc_html( DBD_Grades::fmt( $kind, $med ) ) . ( $sub ? ' · ' . esc_html( $sub ) : '' ) . '</span>';
+			echo '<i style="--p:' . (int) $pc . ';--c:' . $x['c'] . '" data-slot="' . $i . '" data-tip="' . esc_attr( $tip ) . '" tabindex="0" role="img" aria-label="' . esc_attr( $x['row']['name'] . ', ' . $lab . ' ' . DBD_Grades::fmt( $kind, $vals[ $i ] ) . ', ' . DBD_Grades::ordinal( $pc ) . ' percentile' ) . '"></i>'; }
 		echo '</div>';
-		foreach ( $P as $i => $x ) { $pc = DBD_Grades::pctile( $grp, $k, $vals[ $i ] ); echo '<div class="cv' . ( $i === $bi ? ' best' : '' ) . '" style="--c:' . $x['c'] . '">' . esc_html( DBD_Grades::fmt( $kind, $vals[ $i ] ) ) . '<small>' . ( $pc === null ? '-' : esc_html( DBD_Grades::ordinal( $pc ) ) ) . '</small></div>'; }
+		foreach ( $P as $i => $x ) { $pc = DBD_Grades::pctile( $grp, $k, $vals[ $i ] ); echo '<div class="cv' . ( $i === $bi ? ' best' : '' ) . '" style="--c:' . $x['c'] . '" data-slot="' . $i . '">' . esc_html( DBD_Grades::fmt( $kind, $vals[ $i ] ) ) . '<small>' . ( $pc === null ? '-' : esc_html( DBD_Grades::ordinal( $pc ) ) ) . '</small></div>'; }
 		echo '</div>';
 	}
 	echo '</div><p class="dbd-note">Each bar is the league pool; the markers are the players. Right is better, the dashed line is the median. The best value in each row is marked green.</p></section>';
@@ -77,7 +87,7 @@ if ( $gi ) {
 	echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>The shape</b> · percentile radar</span><span class="dbd-badge">Bigger and rounder is more complete</span></div><div class="dbd-pb">' . $svg . '</svg>' . ( $ungraded ? '<p class="dbd-note">' . esc_html( implode( ', ', $ungraded ) ) . ( count( $ungraded ) > 1 ? ' are' : ' is' ) . ' not graded yet, so no shape.</p>' : '' ) . ( $skipped ? '<p class="dbd-note">Not graded, so skipped on the shape: ' . esc_html( implode( '; ', $skipped ) ) . '.</p>' : '' ) . '</div></section>';
 }
 /* where he wins (JS) */
-echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Where he wins</b> · EPA per ' . ( $grp === 'qb' ? 'throw' : 'target' ) . ' by lane and depth</span><span class="dbd-badge">Same scale across</span></div><div class="dbd-cheat" id="dbd-cheat">' . implode( '', array_map( function ( $x, $i ) { return '<div><h5><i style="background:' . $x['c'] . '"></i>' . esc_html( $x['row']['name'] ) . '</h5><div class="grid" id="dbd-cheat-' . $i . '"><div class="dbd-skel"><span class="dbd-note">Loading…</span></div></div></div>'; }, $P, array_keys( $P ) ) ) . '</div><p class="dbd-note">Green cells turn targets into points, red cells lose them. Cells with one target are left grey.</p></section>';
+echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Where he wins</b> · EPA per ' . ( $grp === 'qb' ? 'throw' : 'target' ) . ' by lane and depth</span><span class="dbd-badge">Same scale across</span></div>' . $legend() . '<div class="dbd-cheat" id="dbd-cheat">' . implode( '', array_map( function ( $x, $i ) { return '<div><h5><i style="background:' . $x['c'] . '"></i>' . esc_html( $x['row']['name'] ) . '</h5><div class="grid" id="dbd-cheat-' . $i . '"><div class="dbd-skel"><span class="dbd-note">Loading…</span></div></div></div>'; }, $P, array_keys( $P ) ) ) . '</div><p class="dbd-note">Green cells turn targets into points, red cells lose them. Cells with one target are left grey.</p></section>';
 echo '</div>';
 
 /* ---- field maps (JS) */
@@ -88,11 +98,11 @@ echo '</div><div class="dbd-legend" id="dbd-cmapleg"></div><p class="dbd-note">'
 /* ---- one field + depth butterfly (JS), the race + grouped weeks (JS, Chartist) */
 $two = array_slice( $P, 0, 2 );
 echo '<div class="dbd-cgrid">';
-echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>On one field</b> · ' . ( $grp === 'qb' ? 'every throw' : 'every target' ) . ', same field</span><span class="dbd-badge">Filled is caught, a ring is not</span></div><div class="dbd-pb" id="dbd-cfield"><div class="dbd-skel"><span class="dbd-note">Loading…</span></div></div></section>';
+echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>On one field</b> · ' . ( $grp === 'qb' ? 'every throw' : 'every target' ) . ', same field</span><span class="dbd-badge">Filled is caught, a ring is not</span></div>' . $legend() . '<div class="dbd-pb" id="dbd-cfield"><div class="dbd-skel"><span class="dbd-note">Loading…</span></div></div></section>';
 echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Depth butterfly</b> · ' . esc_html( implode( ' and ', array_map( function ( $x ) { return $x['rec']['short'] ?? $x['row']['name']; }, $two ) ) ) . '</span><span class="dbd-badge">Solid is caught</span></div><div class="dbd-pb" id="dbd-cbfly"><div class="dbd-skel"><span class="dbd-note">Loading…</span></div></div><p class="dbd-note">' . ( $n > 2 ? 'The first two slots, back to back.' : 'Back to back by depth band.' ) . ' The widest band is where the offense goes to him; the gap between solid and faded is where it misses.</p></section>';
 echo '</div><div class="dbd-cgrid">';
-echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>The race</b> · cumulative yards</span><span class="dbd-badge">Flat steps are byes</span></div><div class="dbd-pb"><div class="dbd-cch ct-chart" id="dbd-crace"></div></div></section>';
-echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Week by week</b> · grouped</span><span class="dbd-badge">Same Sunday, side by side</span></div><div class="dbd-pb"><div class="dbd-cch ct-chart" id="dbd-cweek"></div></div></section>';
+echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>The race</b> · cumulative yards</span><span class="dbd-badge">Flat steps are byes</span></div>' . $legend() . '<div class="dbd-pb"><div class="dbd-cch ct-chart" id="dbd-crace"></div></div></section>';
+echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Week by week</b> · grouped</span><span class="dbd-badge">Same Sunday, side by side</span></div>' . $legend() . '<div class="dbd-pb"><div class="dbd-cch ct-chart" id="dbd-cweek"></div></div></section>';
 echo '</div>';
 
 /* ---- floor and ceiling (PHP): boom, solid or dud against the pool's game weeks */
@@ -123,7 +133,7 @@ echo '</div></div>';
 foreach ( $M as $mi => $m ) {
 	$key = $m[1];
 	echo '<div class="dbd-tw" data-metric="' . esc_attr( $key ) . '"' . ( $mi ? ' hidden' : '' ) . '><table class="dbd-alog"><thead><tr><th>Week</th>';
-	foreach ( $P as $x ) { echo '<th class="p" style="--c:' . $x['c'] . '">' . esc_html( $x['rec']['short'] ?? $x['row']['name'] ) . '</th>'; }
+	foreach ( $P as $x ) { echo '<th class="p" style="--c:' . $x['c'] . '"><span class="chip">' . esc_html( $x['rec']['short'] ?? $x['row']['name'] ) . '</span></th>'; }
 	echo '</tr></thead><tbody>';
 	foreach ( $weeks as $wk ) {
 		$vs = array(); foreach ( $P as $i => $x ) { $vs[ $i ] = $val( $x, $key, $wk ); }
@@ -147,7 +157,7 @@ foreach ( $P as $x ) {
 	else                     { $base[] = array( array( 'Attempts', $S( $x, 'attempts' ) ), array( 'Completions', $S( $x, 'completions' ) ), array( 'Pass yards', $S( $x, 'passing_yards' ) ), array( 'Touchdowns', $S( $x, 'passing_tds' ) ) ); }
 }
 echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Season stats</b> · side by side, with league rank</span></div><div class="dbd-tw"><table class="dbd-sbs"><thead><tr><th>Season</th>';
-foreach ( $P as $x ) { echo '<th style="--c:' . $x['c'] . '">' . esc_html( $x['rec']['short'] ?? $x['row']['name'] ) . '</th>'; }
+foreach ( $P as $x ) { echo '<th style="--c:' . $x['c'] . '"><span class="chip">' . esc_html( $x['rec']['short'] ?? $x['row']['name'] ) . '</span></th>'; }
 echo '</tr></thead><tbody>';
 foreach ( $base[0] as $ri => $b ) {
 	$vs = array(); foreach ( $P as $i => $x ) { $vs[ $i ] = $base[ $i ][ $ri ][1]; } $mx = max( $vs ); $ties = count( array_keys( $vs, $mx, true ) );

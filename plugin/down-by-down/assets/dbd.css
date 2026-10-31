@@ -1,4 +1,4 @@
-/* Down by Down 1.3.2. Light theme only. Everything is scoped under .dbd so the theme (Divi) cannot reach in,
+/* Down by Down 1.3.3. Light theme only. Everything is scoped under .dbd so the theme (Divi) cannot reach in,
    and a reset block pins the elements we use back to our values. Team identity comes from the generated marks;
    field green appears only inside the charts. */
 .dbd{
@@ -491,6 +491,29 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 .dbd-sbs td{padding:6px 8px;border-top:1px solid var(--dbd-line);font:500 12px var(--dbd-mono);text-align:right;white-space:nowrap}
 .dbd-sbs td:first-child{text-align:left;font:500 13px var(--dbd-body)}.dbd-sbs td small{color:var(--dbd-muted);margin-left:6px;font-weight:500}
 .dbd-cmetric{margin-left:auto}
+.dbd-ckey{position:sticky;top:var(--wp-admin--admin-bar--height,0px);z-index:30;display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 0;margin:-6px 0 0;background:var(--dbd-bg);border-bottom:1px solid var(--dbd-line);box-shadow:0 8px 16px -12px rgba(22,30,54,.25)}
+.dbd-ckey .k{font:700 10px var(--dbd-display);text-transform:uppercase;letter-spacing:.18em;color:var(--dbd-muted);margin-right:4px}
+.dbd-ckey .chip,.dbd-cleg2 .chip{display:inline-flex;align-items:center;gap:7px;padding:3px 10px 3px 3px;border-radius:999px;background:var(--c);color:#fff;text-decoration:none;font:700 12px var(--dbd-display);text-transform:uppercase;letter-spacing:.06em;line-height:1}
+.dbd-ckey .chip small,.dbd-cleg2 .chip small{font:500 9px var(--dbd-mono);opacity:.75;letter-spacing:.04em}
+.dbd-ckey .chip .dbd-mk,.dbd-ckey .chip .dbd-head,.dbd-cleg2 .chip .dbd-mk,.dbd-cleg2 .chip .dbd-head{border-radius:999px;overflow:hidden}
+.dbd-ckey .chip:hover,.dbd-cleg2 .chip:hover{filter:brightness(1.1)}
+.dbd-cleg2{display:flex;flex-wrap:wrap;gap:6px;padding:10px 14px 0}
+.dbd-alog th.p .chip,.dbd-sbs th .chip{display:inline-block;padding:3px 9px;border-radius:999px;background:var(--c);color:#fff;font:700 10px var(--dbd-display);text-transform:uppercase;letter-spacing:.1em}
+.dbd-alog th.p{border-bottom:2px solid var(--c);text-align:center}
+.dbd-tt .m{color:#b9bcc6;font:500 11px var(--dbd-mono)}.dbd-tt b{font-weight:600}
+.dbd-pct .bar i,.dbd-cpct .bar i{cursor:help;outline:none;transition:transform .12s,opacity .12s}
+.dbd-pct .bar i:hover,.dbd-pct .bar i:focus,.dbd-cpct .bar i.is-on{transform:translateX(-50%) scaleY(1.35);z-index:2}
+.dbd-cpct .row.is-hot .bar i:not(.is-on){opacity:.3}
+.dbd-cpct .row.is-hot .cv:not(.is-on){opacity:.4}.dbd-cpct .row.is-hot .cv.is-on{color:var(--dbd-ink)}.dbd-cpct .row.is-hot .cv.is-on small{color:var(--c)}
+.dbd-cactions{display:inline-flex;gap:6px;margin-left:auto}
+.dbd-cbtn{all:unset;cursor:pointer;font:700 10px var(--dbd-display);text-transform:uppercase;letter-spacing:.12em;padding:4px 9px;border-radius:4px;border:1px solid var(--dbd-line-2);color:var(--dbd-ink-2);background:var(--dbd-panel);line-height:1}
+.dbd-cbtn:hover{border-color:var(--dbd-ink-2);color:var(--dbd-ink)}.dbd-cbtn.ok{border-color:var(--dbd-good);color:var(--dbd-good)}.dbd-cbtn.dbd-creset:hover{border-color:var(--dbd-red);color:var(--dbd-red-ink)}
+.dbd-crecent{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:0 14px 8px}
+.dbd-crecent[hidden]{display:none}
+.dbd-crecent .k{font:700 10px var(--dbd-display);text-transform:uppercase;letter-spacing:.18em;color:var(--dbd-muted);margin-right:4px}
+.dbd-crecent a{font:500 11px var(--dbd-mono);color:var(--dbd-ink);text-decoration:none;border:1px solid var(--dbd-line-2);border-radius:999px;padding:3px 10px}.dbd-crecent a:hover{border-color:var(--dbd-red)}
+.dbd-crecent .x{all:unset;cursor:pointer;font:500 10px var(--dbd-mono);color:var(--dbd-muted);text-decoration:underline;text-underline-offset:3px;margin-left:4px}
+.dbd-cend{position:absolute;transform:translate(10px,-50%);font:700 10px var(--dbd-display);text-transform:uppercase;letter-spacing:.08em;color:#fff;background:var(--c);padding:2px 6px;border-radius:3px;pointer-events:none;white-space:nowrap}
 .dbd-cgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
 .dbd-cradar{display:block;max-width:360px;margin:0 auto}.dbd-cradar text{font:500 9px var(--dbd-mono);fill:var(--dbd-muted)}
 .dbd-cheat{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:14px;padding:12px 14px 4px}
@@ -559,5 +582,6 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
   .dbd-pct .row{grid-template-columns:118px minmax(0,1fr) 54px 40px;gap:8px}
   .dbd-cpct .row{grid-template-columns:minmax(0,1fr) repeat(var(--n),62px);gap:6px}.dbd-cpct .row .bar{grid-column:1/-1;order:2;margin-top:4px}
   .dbd-cstrip .r{grid-template-columns:minmax(0,1fr)}.dbd-cstrip .r>small{text-align:left}.dbd-cbf{grid-template-columns:minmax(0,1fr) 70px minmax(0,1fr)}
+  .dbd-ckey{gap:6px;padding:6px 0}.dbd-ckey .chip{padding:2px 8px 2px 2px;font-size:11px}.dbd-ckey .chip small{display:none}.dbd-ckey .dbd-cactions{margin-left:0}
   .dbd-mtitle h1 .vs{display:block;margin:6px 0 2px;vertical-align:baseline}
 }

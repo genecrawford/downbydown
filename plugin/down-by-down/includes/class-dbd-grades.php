@@ -100,6 +100,12 @@ class DBD_Grades {
 		return $better + 1;
 	}
 
+	/** The pool's median for a metric, or null. */
+	public static function median( $grp, $key ) {
+		$a = self::group_info( $grp )['dist'][ $key ] ?? array();
+		return $a ? $a[ (int) floor( ( count( $a ) - 1 ) / 2 ) ] : null;
+	}
+
 	public static function fmt( $kind, $v ) {
 		if ( $v === null ) { return '-'; }
 		switch ( $kind ) {
