@@ -113,7 +113,7 @@ document.getElementById('gotw').innerHTML=`
     <div class="t">${dbdMark(gw.away,34)}<b>${gw.away}</b><span>${TEAMS[gw.away].nick} · ${TEAMS[gw.away].rec}</span></div><div class="rk">OFF #${TEAMS[gw.away].off} · DEF #${TEAMS[gw.away].defn}</div>
     <div class="t">${dbdMark(gw.home,34)}<b>${gw.home}</b><span>${TEAMS[gw.home].nick} · ${TEAMS[gw.home].rec}</span></div><div class="rk">OFF #${TEAMS[gw.home].off} · DEF #${TEAMS[gw.home].defn}</div>
   </div>
-  <div class="line"><span>${line(gw)}</span><span>O/U ${gw.total}</span><span>Ford Field</span></div>
+  <div class="line"><span>${line(gw)}</span><span>O/U ${gw.total==null?'–':gw.total}</span><span>Ford Field</span></div>
   <p>Lions give up 100 yards a game to tight ends, most in the league. Vikings take a sack on 10% of dropbacks, 30th. Something has to give.</p>
   <a class="cta" href="matchup.html?game=${gw.id}">Open the matchup</a></div>`;
 
@@ -134,7 +134,7 @@ for(const g of GAMES){
   rows+=`<tr class="g"><td class="when">${f?'<span class="badge fin">Final</span>':kick(g)}</td>
     ${tm(g.away)}<td class="num ${f&&!aw?'l':''}">${f?g.away_score:''}</td><td class="at">at</td>
     ${tm(g.home)}<td class="num ${f&&!hw?'l':''}">${f?g.home_score:''}</td>
-    <td class="ln"><b>${line(g)}</b> · O/U ${g.total}</td><td><a class="go" href="matchup.html?game=${g.id}">${f?'Recap':'Matchup'}</a></td></tr>`;
+    <td class="ln"><b>${line(g)}</b> · O/U ${g.total==null?'–':g.total}</td><td><a class="go" href="matchup.html?game=${g.id}">${f?'Recap':'Matchup'}</a></td></tr>`;
 }
 const st=document.getElementById('slatetable'); st.innerHTML=rows;
 st.addEventListener('click',e=>{if(e.target.closest('a'))return;const r=e.target.closest('tr.g');if(r)location.href=r.querySelector('a.go').href;});

@@ -552,6 +552,7 @@ Gene: "make the 10 things the next roadmap and build this first slice." Benchmar
 | 2 | **Compare** | 1.3.x | Two or three players of one position side by side: percentile bars overlaid, field maps stacked, game logs aligned by week. Route `?compare=id,id` | Nothing new; reuses the player page pieces |
 | 3 | **QB to receiver connection** | 1.3.x | QB page: targets by receiver with catch rate, aDOT, EPA per throw, the field map colored by receiver. Receiver page: his line by passer | `pid` and `qb` on play rows (shipped) |
 | 4 | **Opponent context** | 1.3.x | Each game log row names the defense faced and its rank against his position; a strength-of-schedule line | Team defense metrics (shipped) joined by week |
+| 4b | **Design cleanup** (added 2026-10-31) | 1.3.x | Gene: "There are A LOT of tables and things on these pages and a lot of them have scroll bars and horizontal bars; look at the layouts and lose any horizontal bars where we can by rearranging things." A layout pass over the team, player and compare pages: audit every `dbd-tw` wrapper at desktop, tablet and phone widths, then widen the main column, drop or fold columns, stack panels, or move tables out of the rail so nothing scrolls sideways except where a wide table has no other honest form. Scope and mock first | Nothing new |
 | 5 | **Trend lines** | 1.3.x | Rolling three-game line of the position's core metric against the league median, game rules, Chartist | League weekly medians from the build |
 | 6 | **Weekly movers** | 1.3.x | Index strip: biggest climbers and fallers in snap share, target share and EPA week over week; new starters and injury changes | Previous week's index kept by the build |
 | 7 | **Playstyle fingerprint** | 1.3.x | Generated read in the takeaways voice from his splits: depth profile, third-down and red-zone share, formation lean | Play file (shipped), rules per position |
@@ -625,3 +626,25 @@ Colors are a fixed palette of six (blue, gold, red, green, violet, orange) plus 
 - Passer rating when targeted is the standard formula over the targets in question (completions, yards, touchdowns, interceptions per target). Catch rate is receptions over targets. aDOT averages only plays with an air-yards value.
 - Tooltips use the shared `[data-tip]` rich tooltip; the table uses the generic `dbd-sortable` sorter with a numeric read of each cell.
 - Reduced motion: the isolate toggle swaps opacity with no transition.
+
+## 19. Opponent context (scoped and mocked 2026-10-31, `mockup-v5/player.html`)
+
+Roadmap slice 4 (§16). Two additions to the player page, both from data already shipped: the metrics file carries every defense's EPA allowed per target to wide receivers, tight ends and backs, per designed carry and per dropback, with league ranks (`rank.def[TEAM].WR_epa` and friends), and the schedule file carries the full eighteen weeks with results. Mocked on Jefferson (`?id=00-0036322`), Aaron Jones (`?id=00-0033293`) and Murray (`?id=00-0035228`).
+
+### What it is
+
+**The defense's rank in the game log.** A **Defense** column after Opponent in all three game-log views: a chip reading "4th vs WR" for the defense faced that week, ranked against his position. Wide receivers use EPA allowed per target to WRs, tight ends the TE figure, backs EPA allowed per designed carry ("vs the run"), quarterbacks EPA allowed per dropback ("vs the pass"). Rank 1 is the toughest. Chips are tiered: 1 to 10 navy (tough), 11 to 22 plain, 23 to 32 green (soft). The tooltip gives the defense's number, the league average and the ordinal. The column sorts by rank. Ranks are season to date, the same number the team pages show, not the rank as of that week.
+
+**"Who he's faced" panel**, under the game log:
+
+- **Takeaway line.** Where his slate ranks: the average rank of the defenses he has played against his position, placed among all 32 teams' played slates ("the 1st-toughest slate vs WR: his opponents rank 8.4 of 32 on average, league middle 16.0"), then what is ahead: how many of the remaining opponents are top-10 and bottom-10 against his position, and who is next.
+- **The slate.** Eighteen league weeks in two rows of nine. Each cell is the opponent, the defense's rank against his position, and the tier color; played weeks are solid, weeks still to play are dashed, the current week has a red outline, a bye is dotted, and a game his team played without him carries a small DNP mark.
+- **His line by defense faced.** Three rows (top-10, middle, bottom-10 defenses) with games, usage per game (targets, touches or attempts), yards per game and EPA per target, touch or dropback, plus an all-games row. Yards are receiving for receivers, scrimmage for backs, passing for quarterbacks.
+- **Yards against the rank of the defense.** A scatter of his games, x from 1 (toughest) to 32 (softest), y his yards that week, dots in tier colors labeled with the opponent, a dashed line at his average. Under it a one-line read from the correlation: climbs with softer defenses (r above 0.4), better against the good ones (below minus 0.4), or "barely moves with the opponent; it has traveled". Fewer than four games says so instead.
+
+### Data and rendering
+
+- No build changes. Defense numbers and ranks come from `metrics.json`; opponents and what is ahead from `schedule.json`; his weekly line from the player file. The league comparison of slates uses every team's played games from the schedule, so it exists for all 32 teams at once.
+- PHP renders the Defense column and the whole panel: `DBD_Data::rank('def', $opp, $key)` and `DBD_Data::metrics()` are already loaded for the page; the schedule is one more cached read. The scatter is inline SVG from PHP; no JS beyond the shared tooltip.
+- The position key is one function of position (WR, TE, RB and FB, QB) kept with the grade group logic so the game log, the panel and future slices (this-week panel) agree.
+- Tier thresholds (10 and 22) and the correlation thresholds (0.4) are constants in one place.

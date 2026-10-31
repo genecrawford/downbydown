@@ -85,7 +85,7 @@ function render(){
     rows+=`<tr class="g"><td class="when">${f?'<span class="badge fin">Final</span>':kick(g)}</td>
       ${tm(g.away)}<td class="num ${f&&!aw?'l':''}">${f?g.away_score:''}</td><td class="at">at</td>
       ${tm(g.home)}<td class="num ${f&&!hw?'l':''}">${f?g.home_score:''}</td>
-      <td class="ln"><b>${line(g)}</b> · O/U ${g.total}</td><td><a class="go" href="matchup.html?game=${g.id}">${f?'Recap':'Matchup'}</a></td></tr>`;
+      <td class="ln"><b>${line(g)}</b> · O/U ${g.total==null?'–':g.total}</td><td><a class="go" href="matchup.html?game=${g.id}">${f?'Recap':'Matchup'}</a></td></tr>`;
   }
   const st=document.getElementById('slatetable');st.innerHTML=rows;
 }

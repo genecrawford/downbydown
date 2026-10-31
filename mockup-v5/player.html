@@ -12,6 +12,8 @@
 <script src="data/MIN.js?v=3"></script>
 <script src="data/players-MIN.js?v=3"></script>
 <script src="data/league-pct.js"></script>
+<script src="data/metrics.js?v=1"></script>
+<script src="data/schedule.js?v=2"></script>
 <style>
 .pmark{display:grid;place-items:center;width:58px;height:58px;border-radius:6px;background:var(--team);color:var(--team2);font:800 24px var(--hero);flex:0 0 auto;box-shadow:inset 0 0 0 2px rgba(255,255,255,.55),0 0 0 1px var(--line-2)}
 .pmark.sm{width:26px;height:26px;font-size:11px;border-radius:4px;box-shadow:none}
@@ -57,6 +59,30 @@
 .sstat td.rk b{color:var(--ink);font-weight:600} .sstat tr.top td.rk b{color:var(--good)}
 .glog .seg{margin-left:auto}
 .glog-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+
+/* opponent context */
+.dchip{display:inline-flex;align-items:center;gap:4px;padding:1px 6px;border-radius:3px;font:600 10px var(--mono);white-space:nowrap;vertical-align:middle;border:1px solid var(--line-2);color:var(--ink-2);background:var(--bg)}
+.dchip.tough{background:#161e36;color:#fff;border-color:#161e36} .dchip.soft{background:rgba(30,127,74,.14);color:var(--good);border-color:rgba(30,127,74,.35)}
+.glog td.dcell{text-align:left}
+.oppx .say{margin:0;padding:8px 14px 12px;font:500 13px/1.55 var(--body);color:var(--ink)} .oppx .say b{font-weight:600}
+.oppx h4{margin:12px 14px 8px;font:700 11px var(--display);text-transform:uppercase;letter-spacing:.16em;color:var(--ink-2)}
+.ribbon{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:5px;padding:0 14px}
+.ribbon .c{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:50px;border-radius:4px;border:1px solid var(--line-2);font:600 11px var(--mono);color:var(--ink);background:var(--panel);position:relative}
+.ribbon .c small{font:500 9px var(--mono);color:var(--muted);letter-spacing:.06em} .ribbon .c b{font:800 15px var(--hero);line-height:1.1} .ribbon .c i{font:500 9px var(--mono);color:var(--muted);font-style:normal}
+.ribbon .c.tough{background:#161e36;color:#fff;border-color:#161e36} .ribbon .c.tough small,.ribbon .c.tough i{color:rgba(255,255,255,.7)}
+.ribbon .c.soft{background:rgba(30,127,74,.14);border-color:rgba(30,127,74,.35)} .ribbon .c.soft i{color:var(--good)}
+.ribbon .c.ahead{opacity:.9;border-style:dashed} .ribbon .c.ahead.tough{background:transparent;color:var(--ink);border:2px dashed #161e36} .ribbon .c.ahead.tough small,.ribbon .c.ahead.tough i{color:var(--muted)}
+.ribbon .c.bye{border-style:dotted;color:var(--muted);background:transparent} .ribbon .c.dnp::after{content:"DNP";position:absolute;right:3px;top:2px;font:700 7px var(--display);color:var(--bad)}
+.ribbon .c.now{box-shadow:0 0 0 2px var(--red)}
+.oppx .legend{padding:8px 14px 4px}
+.ox2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;padding:4px 0 14px}
+@media (max-width:1100px){.ox2{grid-template-columns:minmax(0,1fr)}}
+.split{width:calc(100% - 28px);margin:0 14px;border-collapse:collapse}
+.split th{font:700 10px var(--display);text-transform:uppercase;letter-spacing:.12em;color:var(--muted);text-align:right;padding:6px 5px;border-bottom:1px solid var(--line);white-space:nowrap}
+.split td{padding:7px 5px;border-top:1px solid var(--line);text-align:right;font:500 12px var(--mono)}
+.split th:first-child,.split td:first-child{text-align:left;padding-left:0} .split td:first-child{font:500 13px var(--body)} .split td:first-child small{display:block;font:500 10px var(--mono);color:var(--muted)}
+.split td .dchip{margin-right:6px}
+.oxsc{padding:0 14px}
 
 /* the connection */
 .conn .tw{padding:0 14px 6px}
@@ -131,6 +157,12 @@
           </section>
 
           <section class="panel"><div class="ph glog-h"><span class="lab"><b>Game log</b> · week by week</span><div class="seg" id="gview"></div></div><div class="tw" style="padding:0 14px 8px"><table class="glog" id="glog"></table></div></section>
+
+          <section class="panel oppx" id="oppsec"><div class="ph"><span class="lab"><b>Who he's faced</b> · <span id="oxsub"></span></span><span class="badge" id="oxn"></span></div>
+            <p class="say" id="oxsay"></p>
+            <h4>The slate · played, <i style="font-style:normal;opacity:.7">ahead dashed</i></h4><div class="ribbon" id="oxrib"></div><div class="legend" id="oxleg"></div>
+            <div class="ox2"><div><h4>His line by defense faced</h4><table class="split" id="oxsplit"></table></div><div><h4 id="oxsch"></h4><div class="oxsc" id="oxsc"></div><p class="note" id="oxscn" style="padding:6px 14px 0"></p></div></div>
+          </section>
 
           <section class="panel"><div class="ph"><span class="lab"><b>When he gets it</b> · touches by situation</span></div><div class="wk3 tend" id="sit"></div></section>
         </div>
@@ -232,6 +264,55 @@ const SS={rec:[['Targets',tg,null],['Receptions',rc,null],['Yards',ry,null],['To
 document.getElementById('ssn').textContent=`of ${N}`;
 document.getElementById('sstat').innerHTML=SS[lgrp].map(([n,v,k])=>{const r=k?rank(k,me[k]):null;return`<tr class="${r&&r<=Math.ceil(N*0.1)?'top':''}"><td>${n}</td><td>${v}</td><td class="rk">${r?`<b>${ordn(r)}</b> of ${N}`:''}</td></tr>`;}).join('');
 
+
+/* ---- opponent context: the defense faced each week, ranked against his position (SCOPE §19) */
+const OXM=window.DBD_METRICS,OXS=window.DBD_SCHEDULE;
+const oxKey=p.pos==='WR'?'WR_epa':p.pos==='TE'?'TE_epa':(p.pos==='RB'||p.pos==='FB')?'run_epa':'pass_epa';
+const oxLab={WR_epa:'vs WR',TE_epa:'vs TE',run_epa:'vs the run',pass_epa:'vs the pass'}[oxKey], oxUnit={WR_epa:'per target to wide receivers',TE_epa:'per target to tight ends',run_epa:'per designed carry',pass_epa:'per dropback'}[oxKey];
+const drank=t=>OXM.rank.def[t]?.[oxKey], dval=t=>OXM.defense[t]?.[oxKey], oxTier=r=>r==null?'':r<=10?'tough':r>=23?'soft':'mid';
+const dtip=t=>`${T[t]?.nick||t} allow ${sgn(dval(t))} EPA ${oxUnit} (league ${sgn(OXM.league[oxKey])}), ${ordn(drank(t))}-toughest of 32`;
+const dchip=t=>{const r=drank(t);return r?`<span class="dchip ${oxTier(r)}" title="${dtip(t)}">${ordn(r)} ${oxLab}</span>`:'';};
+(function(){
+if(!OXM||!OXS)return;
+const games={};Object.keys(OXS.weeks).map(Number).sort((a,b)=>a-b).forEach(w=>OXS.weeks[String(w)].forEach(g=>{[['home','away'],['away','home']].forEach(([a,b])=>{(games[g[a]]=games[g[a]]||[]).push({wk:w,opp:g[b],home:a==='home',played:g.status==='final'});});}));
+const slate=t=>{const pl=(games[t]||[]).filter(x=>x.played&&drank(x.opp));return pl.length?pl.reduce((s,x)=>s+drank(x.opp),0)/pl.length:null;};
+const slates=Object.keys(T).map(t=>slate(t)).filter(v=>v!=null).sort((a,b)=>a-b);
+const myW=W.filter(w=>drank(w.opponent_team)), myAvg=myW.length?myW.reduce((s,w)=>s+drank(w.opponent_team),0)/myW.length:null;
+const myRank=myAvg==null?null:slates.filter(v=>v<myAvg).length+1, med=slates.length?slates[Math.floor(slates.length/2)]:null;
+const mineG=games[TEAM]||[], ahead=mineG.filter(x=>!x.played), played=mineG.filter(x=>x.played), playedWks=new Set(W.map(w=>+w.week));
+const aheadTough=ahead.filter(x=>oxTier(drank(x.opp))==='tough'), aheadSoft=ahead.filter(x=>oxTier(drank(x.opp))==='soft'), next=ahead[0];
+document.getElementById('oxsub').textContent=`defenses ranked ${oxLab}`;
+document.getElementById('oxn').textContent=`${played.length} played · ${ahead.length} ahead`;
+let say=myAvg==null?'No ranked defenses yet.':`He has faced the <b>${ordn(myRank)}-toughest</b> slate ${oxLab}: his opponents rank <b>${f1(myAvg)}</b> of 32 on average (league middle ${f1(med)}).`;
+if(next)say+=` Ahead: <b>${aheadTough.length}</b> of his next ${ahead.length} ${aheadTough.length===1?'is':'are'} top-10 ${oxLab}${aheadSoft.length?` and ${aheadSoft.length} ${aheadSoft.length===1?'is':'are'} bottom-10`:''}, starting with the <b>${T[next.opp].nick}</b> (${ordn(drank(next.opp))}${next.home?'':', away'}) in Week ${next.wk}.`;
+document.getElementById('oxsay').innerHTML=say;
+/* ribbon: eighteen league weeks, two rows of nine */
+const byWk={};mineG.forEach(x=>byWk[x.wk]=x);
+let rib='';for(let w=1;w<=18;w++){const x=byWk[w];if(!x){rib+=`<div class="c bye"><small>WK ${w}</small><b>—</b><i>bye</i></div>`;continue;}const r=drank(x.opp);
+ rib+=`<div class="c ${oxTier(r)} ${x.played?'done':'ahead'} ${x.played&&!playedWks.has(w)?'dnp':''} ${w===OXS.current_week?'now':''}" title="Week ${w} ${x.home?'vs':'at'} ${T[x.opp].nick}: ${dtip(x.opp)}"><small>${x.home?'VS':'AT'} ${x.opp}</small><b>${r||'–'}</b><i>${r?oxLab:''}</i></div>`;}
+document.getElementById('oxrib').innerHTML=rib;
+document.getElementById('oxleg').innerHTML=`<span><i style="background:#161e36;height:10px;width:10px;border-radius:2px"></i>Top 10, tough</span><span><i style="background:var(--line-2);height:10px;width:10px;border-radius:2px"></i>11 to 22</span><span><i style="background:rgba(30,127,74,.35);height:10px;width:10px;border-radius:2px"></i>23 to 32, soft</span><span>Number is the defense's rank ${oxLab}, season to date. Dashed cells are still to play; the red outline is this week.</span>`;
+/* split by defense tier, from his weekly line */
+const tiers=[['tough','Top-10 defenses','ranked 1 to 10'],['mid','Middle','11 to 22'],['soft','Bottom-10','23 to 32']];
+const use=grp==='rec'?['Tgt/g',w=>w.targets,'EPA/tgt',w=>w.receiving_epa,w=>w.targets,w=>w.receiving_yards]:grp==='rb'?['Touches/g',w=>w.carries+w.targets,'EPA/touch',w=>w.rushing_epa+w.receiving_epa,w=>w.carries+w.targets,w=>w.rushing_yards+w.receiving_yards]:['Att/g',w=>w.attempts,'EPA/db',w=>w.passing_epa,w=>w.attempts+w.sacks_suffered,w=>w.passing_yards];
+const S2=(a,f)=>a.reduce((s,w)=>s+(+f(w)||0),0);
+document.getElementById('oxsplit').innerHTML=`<tr><th>Defenses</th><th>G</th><th>${use[0]}</th><th>Yds/g</th><th>${use[2]}</th></tr>`+tiers.map(([k,n,sub])=>{const a=W.filter(w=>oxTier(drank(w.opponent_team))===k);const g=a.length,u=S2(a,use[4]),y=S2(a,use[5]),e=S2(a,use[3]);
+ return`<tr><td><span class="dchip ${k}" style="margin-right:6px">${sub}</span>${n}</td><td>${g||'–'}</td><td>${g?f1(S2(a,use[1])/g):'–'}</td><td>${g?Math.round(y/g):'–'}</td><td class="${e>=0?'pos':'neg'}">${u?sgn(e/u):'–'}</td></tr>`;}).join('')+`<tr style="font-weight:600"><td>All games</td><td>${W.length}</td><td>${f1(S2(W,use[1])/W.length)}</td><td>${Math.round(S2(W,use[5])/W.length)}</td><td class="${S2(W,use[3])>=0?'pos':'neg'}">${sgn(S2(W,use[3])/S2(W,use[4]))}</td></tr>`;
+/* scatter: opponent rank against his yards that week */
+document.getElementById('oxsch').textContent='Yards against the rank of the defense';
+const pts=W.filter(w=>drank(w.opponent_team)).map(w=>({r:drank(w.opponent_team),y:+use[5](w)||0,o:w.opponent_team,wk:+w.week}));
+const Wd=360,H=210,L=34,R=10,Tp=16,B=30,maxY=Math.max(10,...pts.map(q=>q.y))*1.15,X=r=>L+(r-1)/31*(Wd-L-R),Y=v=>Tp+(1-v/maxY)*(H-Tp-B),avgY=pts.length?pts.reduce((s,q)=>s+q.y,0)/pts.length:0;
+const colT={tough:'#161e36',mid:'#9a96a6',soft:'#1e7f4a'};
+let sc=`<svg viewBox="0 0 ${Wd} ${H}" width="100%" style="display:block" role="img" aria-label="Yards by defense rank">`;
+[0,.5,1].forEach(f=>{const v=Math.round(maxY*f/10)*10;sc+=`<line x1="${L}" x2="${Wd-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${L-6}" y="${Y(v)+4}" font-size="9" fill="var(--muted)" text-anchor="end" font-family="IBM Plex Mono">${v}</text>`;});
+sc+=`<line x1="${L}" x2="${Wd-R}" y1="${Y(avgY)}" y2="${Y(avgY)}" stroke="var(--red)" stroke-dasharray="3 4"/><text x="${Wd-R}" y="${Y(avgY)-4}" font-size="9" fill="var(--red)" text-anchor="end" font-family="IBM Plex Mono">avg ${Math.round(avgY)}</text>`;
+sc+=`<text x="${L}" y="${H-8}" font-size="9" fill="var(--muted)" font-family="IBM Plex Mono">1 · toughest</text><text x="${Wd-R}" y="${H-8}" font-size="9" fill="var(--muted)" text-anchor="end" font-family="IBM Plex Mono">32 · softest</text><text x="${(L+Wd-R)/2}" y="${H-8}" font-size="9" fill="var(--muted)" text-anchor="middle" font-family="IBM Plex Mono">defense rank ${oxLab}</text>`;
+pts.forEach(q=>{sc+=`<circle cx="${X(q.r)}" cy="${Y(q.y)}" r="6" fill="${colT[oxTier(q.r)]}" stroke="#fff" stroke-width="1.5"><title>Wk ${q.wk} vs ${q.o} (${ordn(q.r)}): ${q.y} yds</title></circle><text x="${X(q.r)}" y="${Y(q.y)-9}" font-size="9" fill="var(--ink-2)" text-anchor="middle" font-family="IBM Plex Mono">${q.o}</text>`;});
+document.getElementById('oxsc').innerHTML=sc+'</svg>';
+const n=pts.length,mx=pts.reduce((s,q)=>s+q.r,0)/n,my=avgY,cov=pts.reduce((s,q)=>s+(q.r-mx)*(q.y-my),0),vx=pts.reduce((s,q)=>s+(q.r-mx)**2,0),vy=pts.reduce((s,q)=>s+(q.y-my)**2,0),rr=vx&&vy?cov/Math.sqrt(vx*vy):0;
+document.getElementById('oxscn').textContent=n<4?'Too few games to read a pattern yet.':rr>.4?`His yards climb as the defense gets softer (r = ${rr.toFixed(2)}): the schedule has been doing some of the work.`:rr<-.4?`He has done more against the better defenses (r = ${rr.toFixed(2)}).`:`His production barely moves with the opponent (r = ${rr.toFixed(2)}); it has traveled.`;
+})();
+
 /* ---- game log with three views */
 const gByOpp={};G.forEach(g=>gByOpp[g.week]=g);
 const res=w=>{const g=gByOpp[w.week];return g?`${g.home?'vs':'at'} ${g.opp} <b class="${g.pf>g.pa?'':'l'}">${g.pf>g.pa?'W':'L'}</b> ${g.pf}-${g.pa}`:w.opponent_team;};
@@ -252,7 +333,7 @@ gseg.innerHTML='<span class="t-tabs-pill" aria-hidden="true"></span>'+Object.key
 function gpill(b){const pl=gseg.querySelector('.t-tabs-pill');pl.style.transform=`translateX(${b.offsetLeft}px)`;pl.style.width=b.offsetWidth+'px';}
 gseg.onclick=e=>{const b=e.target.closest('button');if(!b)return;gv=b.dataset.v;gseg.querySelectorAll('button').forEach(x=>x.setAttribute('aria-selected',x===b));gpill(b);drawLog();};
 requestAnimationFrame(()=>{const pl=gseg.querySelector('.t-tabs-pill');pl.style.transition='none';gpill(gseg.querySelector('[aria-selected="true"]'));void pl.offsetWidth;pl.style.transition='';});
-function drawLog(){const [cols,fn]=VIEWS[grp][gv];document.getElementById('glog').innerHTML='<tr><th>Wk</th><th>Opponent</th>'+cols.split('|').map(c=>`<th>${c}</th>`).join('')+'</tr>'+W.map(w=>`<tr><td>${w.week}</td><td class="res">${res(w)}</td>${fn(w)}</tr>`).join('');}
+function drawLog(){const [cols,fn]=VIEWS[grp][gv];document.getElementById('glog').innerHTML='<tr><th>Wk</th><th>Opponent</th><th>Defense</th>'+cols.split('|').map(c=>`<th>${c}</th>`).join('')+'</tr>'+W.map(w=>`<tr><td>${w.week}</td><td class="res">${res(w)}</td><td class="dcell">${dchip(w.opponent_team)}</td>${fn(w)}</tr>`).join('');}
 drawLog();
 
 /* situations: touches by down, quarter, score, from the play file */
