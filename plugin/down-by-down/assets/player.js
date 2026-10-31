@@ -149,7 +149,7 @@
       var prate = function (l) { if (!l.n) return '-'; return f1((clamp((l.c / l.n - .3) * 5) + clamp((l.y / l.n - 3) * .25) + clamp(l.td / l.n * 20) + clamp(2.375 - l.ints / l.n * 25)) / 6 * 100); };
       var groups = {}; mineT.forEach(function (p) { var k = p[key] || '_none'; (groups[k] = groups[k] || []).push(p); });
       var parts = Object.keys(groups).filter(function (k) { return k !== '_none'; }).map(function (k) { var r = R[k] || {}, fb = isQB ? (groups[k][0].pl || k) : 'Passer ' + k.slice(-4);
-        return { id: k, nm: r.name || fb, short: r.short || fb, pos: r.pos || '', num: r.num, photo: r.photo, l: line(groups[k]), q: groups[k] }; }).sort(function (a, b) { return b.l.n - a.l.n; });
+        return { id: k, known: !!R[k], nm: r.name || fb, short: r.short || fb, pos: r.pos || '', num: r.num, photo: r.photo, l: line(groups[k]), q: groups[k] }; }).sort(function (a, b) { return b.l.n - a.l.n; });
       parts.forEach(function (r, i) { r.col = i < RC.length ? RC[i] : OTH; var all = isQB ? mineT : throws.filter(function (p) { return p.qb === r.id; }); r.oth = isQB ? null : line(all.filter(function (p) { return p.pid !== C.id; })); r.share = all.length ? r.l.n / all.length : 0; });
       var none = (groups._none || []).length, colOf = {}, nameOf = {}; parts.forEach(function (r) { colOf[r.id] = r.col; nameOf[r.id] = r.short; });
       $('#dbd-cx-n').textContent = mineT.length + (isQB ? ' throws' : ' targets') + ' · ' + parts.length + ' ' + (parts.length === 1 ? who : whos);
@@ -158,7 +158,7 @@
 
       /* table */
       var tile = function (r) { return window.dbdPlayer ? window.dbdPlayer(C.team, r.num, 26, r.photo, C.heads) : ''; };
-      var nmCell = function (r) { return '<td class="dbd-cx-nm" data-v="' + esc(r.nm) + '"><span class="dbd-cx-nmi"><i class="dbd-cx-sw" style="--c:' + r.col + '"></i>' + tile(r) + '<a href="' + esc(purl(r.id)) + '">' + esc(r.nm) + '</a><small>' + esc(r.pos) + '</small></span></td>'; };
+      var nmCell = function (r) { return '<td class="dbd-cx-nm" data-v="' + esc(r.nm) + '"><span class="dbd-cx-nmi"><i class="dbd-cx-sw" style="--c:' + r.col + '"></i>' + tile(r) + (r.known ? '<a href="' + esc(purl(r.id)) + '">' + esc(r.nm) + '</a>' : '<span>' + esc(r.nm) + '</span>') + '<small>' + esc(r.pos) + '</small></span></td>'; };
       var epaCell = function (l) { var v = l.n ? l.e / l.n : 0; return '<td class="' + (v >= 0 ? 'pos' : 'neg') + '">' + (l.n ? sgn(v) : '-') + '</td>'; };
       var stat = function (l) { return '<td>' + l.c + '</td><td>' + pc(l.c, l.n) + '</td><td>' + l.y + '</td><td>' + (l.ad == null ? '-' : f1(l.ad)) + '</td><td>' + (l.c ? f1(l.yac / l.c) : '-') + '</td><td>' + (l.td || '') + '</td>'; };
       var shareCell = function (r) { return '<td class="dbd-cx-sh" data-v="' + Math.round(r.share * 1000) / 10 + '">' + pc(r.share * 100, 100) + '<span class="dbd-cx-shb" style="--c:' + r.col + '"><i style="--w:' + Math.round(r.share * 100) + '%"></i></span></td>'; };
