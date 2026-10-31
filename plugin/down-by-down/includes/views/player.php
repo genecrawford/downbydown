@@ -145,7 +145,7 @@ if ( $L ) {
 	$rows = array(); $lastWk = max( 18, $maxWk );
 	for ( $wk = 1; $wk <= $lastWk; $wk++ ) {
 		if ( isset( $Lby[ $wk ] ) ) { $w = $Lby[ $wk ]; $tm = $w['team'] ?? $a; $gm = DBD_Data::team_game( $tm, $wk ); $opp = $w['opponent_team'] ?? $oppOf( $wk, $tm );
-			$rows[ $wk ] = array( 'kind' => 'game', 'w' => $w, 'tm' => $tm, 'opp' => (string) $opp, 'home' => $gm ? $gm['home'] === $tm : true, 'res' => $gm && $gm['home_score'] !== null ? ( ( $gm['home'] === $tm ? $gm['home_score'] > $gm['away_score'] : $gm['away_score'] > $gm['home_score'] ) ? 'W' : ( $gm['home_score'] === $gm['away_score'] ? 'T' : 'L' ) ) . ' ' . (int) ( $gm['home'] === $tm ? $gm['home_score'] : $gm['away_score'] ) . '-' . (int) ( $gm['home'] === $tm ? $gm['away_score'] : $gm['home_score'] ) : '' ); }
+			$rows[ $wk ] = array( 'kind' => 'game', 'w' => $w, 'tm' => $tm, 'opp' => (string) $opp, 'home' => $gm ? $gm['home'] === $tm : true, 'res' => $gm && isset( $gm['home_score'], $gm['away_score'] ) ? ( ( $gm['home'] === $tm ? $gm['home_score'] > $gm['away_score'] : $gm['away_score'] > $gm['home_score'] ) ? 'W' : ( $gm['home_score'] === $gm['away_score'] ? 'T' : 'L' ) ) . ' ' . (int) ( $gm['home'] === $tm ? $gm['home_score'] : $gm['away_score'] ) . '-' . (int) ( $gm['home'] === $tm ? $gm['away_score'] : $gm['home_score'] ) : '' ); }
 		elseif ( isset( $tmG[ $wk ] ) ) { $x = $tmG[ $wk ]; $rows[ $wk ] = array( 'kind' => $x['played'] ? 'dnp' : 'ahead', 'opp' => $x['opp'], 'home' => $x['home'] ); }
 		else { $rows[ $wk ] = array( 'kind' => 'bye' ); }
 	}
