@@ -565,6 +565,8 @@ The nfelo model layer (§13 backlog, greerreNFL's OK needed) is 1.4.0 and runs i
 
 **Status: built as 1.3.1 (2026-10-31).** All three ways in plus "Players like him" (the three qualified players nearest in usage per game) on every player page.
 
+**Graphics addendum, built as 1.3.2 (2026-10-31, mocked in `mockup-v5/compare-graphics.html`):** Gene took all seven candidates. Percentile radar and floor-and-ceiling strip (boom at or above the pool's 75th percentile game week, dud at or below the 25th; `league.json` now carries those quartiles per group) render in PHP; where-he-wins heat grid, targets on one field, depth butterfly (first two slots), the cumulative race and grouped weekly bars draw in `compare.js` (Chartist for the two charts). Page order: who, ranks, shape and heat, per-player maps, one field and butterfly, race and grouped weeks, floor and ceiling, aligned log, season table.
+
 Roadmap slice 2 (§16). Two or three players of one position group side by side. The mock runs on the real Vikings play file, player file and the league pool; the build searches every team.
 
 ### What it is

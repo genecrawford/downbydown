@@ -286,7 +286,8 @@ def grade(p):
                  intr=d(S('passing_interceptions'), att), adot=d(S('passing_air_yards'), att), rushepa=S('rushing_epa') / g); q = att >= MINQ['qb']
     return dict(grp=grp, q=bool(q), m={k: (round(v, 4) if v is not None else None) for k, v in m.items()})
 
-dist = {g: {} for g in MINQ}; npool = {g: 0 for g in MINQ}
+dist = {g: {} for g in MINQ}; npool = {g: 0 for g in MINQ}; wkyds = {g: [] for g in MINQ}
+YDS = {'rec': ('receiving_yards',), 'rb': ('rushing_yards', 'receiving_yards'), 'qb': ('passing_yards',)}
 for t, pl in team_players.items():
     for p in pl:
         gr = grade(p); p['grades'] = gr
@@ -294,9 +295,19 @@ for t, pl in team_players.items():
             npool[gr['grp']] += 1
             for k, v in gr['m'].items():
                 if v is not None: dist[gr['grp']].setdefault(k, []).append(v)
+            # the pool's game weeks, the yardstick for a boom or a dud: every week he played, a snaps-only week counting as zero
+            statwk = {int(w['week']) for w in p['weeks']}
+            for w in p['weeks']:
+                wkyds[gr['grp']].append(sum(_num(w.get(k)) for k in YDS[gr['grp']]))
+            for wk in p['snaps']:
+                if int(wk) not in statwk: wkyds[gr['grp']].append(0.0)
 for g in dist:
     for k in dist[g]: dist[g][k].sort()
-json.dump(clean(dict(season=season, through=through_week, groups={g: dict(n=npool[g], min=MINLABEL[g], low=LOW[g], dist=dist[g]) for g in MINQ})), open(f'{out}/players/league.json', 'w'), separators=(',', ':'))
+def quart(a):
+    if not a: return None
+    a = sorted(a); q = lambda f: a[min(len(a) - 1, int(len(a) * f))]
+    return dict(p25=q(.25), p50=q(.5), p75=q(.75), n=len(a))
+json.dump(clean(dict(season=season, through=through_week, groups={g: dict(n=npool[g], min=MINLABEL[g], low=LOW[g], dist=dist[g], week=quart(wkyds[g])) for g in MINQ})), open(f'{out}/players/league.json', 'w'), separators=(',', ':'))
 for t, pl in team_players.items():
     json.dump(clean(dict(season=season, team=t, through=through_week, players=pl)), open(f'{out}/players/{t}.json', 'w'), separators=(',', ':'))
 

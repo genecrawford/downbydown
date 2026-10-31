@@ -223,9 +223,14 @@ class DBD_Router {
 		if ( $r['view'] === 'compare' ) {
 			$files = array(); $pl = array();
 			foreach ( $r['compare'] as $row ) { $rel = 'plays/' . $row['team'] . '.json'; $files[ $row['team'] ] = DBD_Data::url() . '/' . $rel . '?v=' . DBD_Data::file_version( $rel ); $rec = DBD_Data::player_record( $row['team'], $row['id'] ); $pl[] = array( 'id' => $row['id'], 'short' => $rec['short'] ?? '', 'name' => $row['name'], 'team' => $row['team'], 'pos' => $row['pos'] ); }
+			$maxW = max( 1, (int) DBD_Data::through_week() ); $series = array(); $labels = array();
+			foreach ( $r['compare'] as $row ) { $series[] = DBD_Grades::week_series( DBD_Data::player_record( $row['team'], $row['id'] ) ?: array(), $r['cgroup'], $maxW ); }
+			for ( $wk = 1; $wk <= $maxW; $wk++ ) { $labels[] = 'Wk ' . $wk; }
 			wp_enqueue_script( 'dbd-marks', DBD_URL . 'assets/marks.js', array(), DBD_VERSION, true );
-			wp_enqueue_script( 'dbd-compare', DBD_URL . 'assets/compare.js', array( 'dbd-marks' ), DBD_VERSION, true );
-			wp_localize_script( 'dbd-compare', 'DBD_CMP', array( 'base' => self::url(), 'group' => $r['cgroup'], 'players' => $pl, 'files' => $files, 'teams' => DBD_Data::teams(), 'heads' => DBD_Data::headshots() ) );
+			wp_enqueue_style( 'dbd-chartist', DBD_URL . 'assets/vendor/chartist.css', array( 'dbd' ), '1.3.0' );
+			wp_enqueue_script( 'dbd-chartist', DBD_URL . 'assets/vendor/chartist.umd.js', array(), '1.3.0', true );
+			wp_enqueue_script( 'dbd-compare', DBD_URL . 'assets/compare.js', array( 'dbd-marks', 'dbd-chartist' ), DBD_VERSION, true );
+			wp_localize_script( 'dbd-compare', 'DBD_CMP', array( 'base' => self::url(), 'group' => $r['cgroup'], 'players' => $pl, 'files' => $files, 'teams' => DBD_Data::teams(), 'heads' => DBD_Data::headshots(), 'series' => $series, 'labels' => $labels, 'yds' => array( 'rec' => 'Receiving yards', 'rb' => 'Scrimmage yards', 'qb' => 'Passing yards' )[ $r['cgroup'] ] ?? 'Yards' ) );
 		}
 		if ( $r['view'] === 'players' ) {
 			wp_enqueue_script( 'dbd-marks', DBD_URL . 'assets/marks.js', array(), DBD_VERSION, true );

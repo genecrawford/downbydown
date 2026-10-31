@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.3.1
+Stable tag: 1.3.2
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,10 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.3.2 =
+* Compare graphics. Seven visuals join the compare page: a percentile radar, a where-he-wins heat grid (EPA per target by lane and depth), every target on one field in slot colors, a depth butterfly for the first two slots, the cumulative yards race, grouped weekly bars, and a floor-and-ceiling strip that marks each week boom, solid or dud against the quartiles of every qualified player's game weeks. Radar and the strip render server-side; the rest draw from the play files and Chartist.
+* Data build: league.json carries weekly yardage quartiles per group.
 
 = 1.3.1 =
 * Compare. ?compare=id,id[,id] puts two or three players of one position group side by side: the league percentile bars with a marker per player, the field maps on one shared scale, a week-aligned log with a metric switch, and season stats with ranks, best value in every row marked. Three ways in: the Compare button on every player page (it builds on whoever you picked last), the empty slot's search across every team, and the link itself. Each player page also offers Players like him, the three qualified players nearest in usage, one click to a head to head.
