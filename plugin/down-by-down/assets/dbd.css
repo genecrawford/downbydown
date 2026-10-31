@@ -834,4 +834,4 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 .dbd .dbd-pn-link .dbd-lgw{width:64px!important;height:64px!important}
 .dbd .dbd-pn-link .dbd-lgw>img.dbd-logo{width:64px;height:64px;transform:translateX(-50%) scale(min(var(--lgs,1),1.3))}
 .dbd .dbd-pn-link .dbd-lgw>svg{margin-top:12px}
-@container dbd (max-width:600px){.dbd .dbd-pn-link .dbd-lgw{width:48px!important;height:48px!important}.dbd .dbd-pn-link .dbd-lgw>img.dbd-logo{width:48px;height:48px}.dbd .dbd-pn-link .dbd-lgw>svg{margin-top:4px}}
+@container dbd (max-width:600px){.dbd .dbd-pn-link .dbd-lgw{width:48px!important;height:48px!important}.dbd .dbd-pn-link .dbd-lgw>img.dbd-logo{width:48px;height:48px}.dbd .dbd-pn-link .dbd-lgw>svg{width:48px;height:30px;margin-top:9px}}
