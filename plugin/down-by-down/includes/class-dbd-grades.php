@@ -65,6 +65,47 @@ class DBD_Grades {
 	/** Weekly movers (SCOPE §22): the build's floors and thresholds, repeated here for the panel's notes. */
 	const MV_FLOOR_SNAPS = 12; const MV_FLOOR_TARGETS = 6; const MV_FLOOR_EPA = 4.0; const MV_PER = 5; const MV_DEBUT = 25; const MV_START = 50;
 
+	/** Playstyle fingerprint (SCOPE §23): a standout sits at or past these percentiles; a situational share has moved past FP_MOVE of the team's plays. */
+	const FP_HI = 75; const FP_LO = 25; const FP_MOVE = 0.04;
+	/** key, label, sub-label, kind (pct|sgn), high tag, low tag, high sentence, low sentence. Sentences take {F} first name, {v} his figure, {l} league median, {sh} his overall share; null = situational, read against his share. */
+	public static function fp_defs( $grp ) {
+		static $d = array(
+			'rec' => array(
+				array( 'deep', 'Deep share', 'targets 20+ yards downfield', 'pct', 'Downfield', 'Rarely deep', '{F} is a downfield target: {v} of his targets travel 20 yards or more, against {l} for the league\'s receivers.', '{F} rarely goes deep: {v} of his targets travel 20 yards or more, against {l} for the league\'s receivers.' ),
+				array( 'scr', 'Screens', 'share of his targets', 'pct', 'Screen game', 'No screens', 'The screen game runs through him: {v} of his targets are screens (league {l}).', 'Screens are not part of his role: {v} of his targets (league {l}).' ),
+				array( 'mid', 'Middle of the field', 'targets between the numbers', 'pct', 'Works the middle', 'Stays outside', 'He works the middle of the field: {v} of his targets come between the numbers (league {l}).', 'He lives outside the numbers: only {v} of his targets come over the middle (league {l}).' ),
+				array( 'yacs', 'After the catch', 'share of his yards after the catch', 'pct', 'Yards after the catch', 'Wins before the catch', 'Much of his damage comes after the catch: {v} of his yards (league {l}).', 'He wins before the catch rather than after it: {v} of his yards come after the catch (league {l}).' ),
+				array( 'd3', 'Third-down share', 'of team targets on 3rd down', 'pct', 'Third-down guy', 'Not the third-down option', null, null ),
+				array( 'rzs', 'Red-zone share', 'of team targets inside the 20', 'pct', 'Red-zone guy', 'Not the red-zone option', null, null ),
+				array( 'mot', 'Motion', 'targets with pre-snap motion', 'pct', 'Motion man', 'Static', 'Motion is part of the plan: {v} of his targets come with pre-snap movement (league {l}).', 'He rarely moves before the snap: {v} of his targets come with motion (league {l}).' ),
+				array( 'pa', 'Play action', 'targets off play action', 'pct', 'Play-action target', 'Dropback target', 'Play action finds him: {v} of his targets come off a fake (league {l}).', 'He is a straight-dropback target: {v} of his targets come off play action (league {l}).' ),
+			),
+			'rb' => array(
+				array( 'ins', 'Inside runs', 'carries at guard or tackle', 'pct', 'Between the tackles', 'Bounces outside', 'He runs between the tackles: {v} of his carries go at guard or tackle (league {l}).', 'He gets to the edge: only {v} of his carries go inside (league {l}).' ),
+				array( 'sg', 'Shotgun runs', 'carries from the gun', 'pct', 'Gun runner', 'Under center', 'His carries come from the gun: {v} of them (league {l}).', 'He runs from under center: {v} of his carries come from shotgun (league {l}).' ),
+				array( 'recs', 'Receiving share', 'targets per touch', 'pct', 'Pass-catching back', 'Ground only', 'He is a pass-catching back: {v} of his touches are targets (league {l}).', 'The passing game barely involves him: {v} of his touches are targets (league {l}).' ),
+				array( 'd3', 'Third-down share', 'of team touches on 3rd down', 'pct', 'Third-down back', 'Not the third-down back', null, null ),
+				array( 'rzs', 'Red-zone share', 'of team touches inside the 20', 'pct', 'Red-zone back', 'Not the red-zone back', null, null ),
+				array( 'shorty', 'Short-yardage share', 'of team touches, 2 or fewer to go', 'pct', 'Short-yardage back', 'Not the short-yardage back', 'In short yardage he is the call: {v} of the team\'s touches with two or fewer to go (his overall share is {sh}).', 'Short yardage goes elsewhere: {v} of those touches against {sh} overall.' ),
+				array( 'rpo', 'RPO', 'carries on run-pass options', 'pct', 'RPO back', '', 'Run-pass options feed him: {v} of his carries (league {l}).', 'RPOs are rare for him: {v} of his carries (league {l}).' ),
+				array( 'mot', 'Motion', 'touches with pre-snap motion', 'pct', 'Motion man', 'Static', 'Motion is part of the plan: {v} of his touches come with pre-snap movement (league {l}).', 'He rarely moves before the snap: {v} of his touches come with motion (league {l}).' ),
+			),
+			'qb' => array(
+				array( 'deep', 'Deep share', 'attempts 20+ yards downfield', 'pct', 'Downfield thrower', 'Keeps it short', 'He pushes the ball downfield: {v} of his attempts travel 20 yards or more (league {l}).', 'He keeps it short: {v} of his attempts travel 20 yards or more (league {l}).' ),
+				array( 'mid', 'Middle of the field', 'attempts between the numbers', 'pct', 'Attacks the middle', 'Sidelines', 'He attacks the middle of the field: {v} of his attempts go between the numbers (league {l}).', 'He works the sidelines: {v} of his attempts go between the numbers (league {l}).' ),
+				array( 'pa', 'Play action', 'share of attempts', 'pct', 'Play-action passer', 'Straight dropback', 'Play action is a staple: {v} of his attempts come off a fake (league {l}).', 'Straight dropbacks: {v} of his attempts come off play action (league {l}).' ),
+				array( 'rpo', 'RPO', 'share of dropbacks', 'pct', 'RPO offense', '', 'The RPO is part of his offense: {v} of his dropbacks (league {l}).', 'Almost no RPOs: {v} of his dropbacks (league {l}).' ),
+				array( 'scram', 'Scrambles', 'share of dropbacks', 'pct', 'Scrambler', 'Pocket passer', 'He runs when it breaks down: {v} of his dropbacks end in a scramble (league {l}).', 'He stays in the pocket: {v} of his dropbacks end in a scramble (league {l}).' ),
+				array( 'sg', 'Shotgun', 'share of dropbacks', 'pct', 'Shotgun offense', 'Under center', 'A shotgun offense: {v} of his dropbacks come from the gun (league {l}).', 'He works under center more than most: {v} of his dropbacks come from the gun (league {l}).' ),
+				array( 'blz', 'Against the blitz', 'EPA per dropback, blitzed minus not', 'sgn', 'Blitz-proof', 'Blitz him', 'He beats the blitz: {v} EPA a dropback better when blitzed than not (league {l}).', 'The blitz gets to him: {v} EPA a dropback when blitzed against not (league {l}).' ),
+				array( 'mot', 'Motion', 'dropbacks with pre-snap motion', 'pct', 'Motion offense', 'Static', 'Motion is part of the plan: {v} of his dropbacks come with pre-snap movement (league {l}).', 'Little motion: {v} of his dropbacks come with pre-snap movement (league {l}).' ),
+			),
+		);
+		return $d[ $grp ] ?? array();
+	}
+	public static function fp_unit( $grp ) { return array( 'rec' => 'targets', 'rb' => 'touches', 'qb' => 'dropbacks' )[ $grp ] ?? 'plays'; }
+	public static function fp_fmt( $kind, $v ) { if ( $v === null ) { return '–'; } return $kind === 'sgn' ? ( $v > 0 ? '+' : '' ) . number_format( (float) $v, 2 ) : round( $v * 100 ) . '%'; }
+
 	public static function group_of( $pos ) {
 		return array( 'QB' => 'qb', 'RB' => 'rb', 'FB' => 'rb', 'WR' => 'rec', 'TE' => 'rec' )[ $pos ] ?? null;
 	}
@@ -125,8 +166,8 @@ class DBD_Grades {
 	}
 
 	/** Percentile 0 to 100 among the pool: players below plus half the ties, flipped for lower-is-better. Null when ungradable. */
-	public static function pctile( $grp, $key, $v ) {
-		$gi = self::group_info( $grp ); $a = $gi['dist'][ $key ] ?? array();
+	public static function pctile( $grp, $key, $v, $pool = 'dist' ) {
+		$gi = self::group_info( $grp ); $a = $gi[ $pool ][ $key ] ?? array();
 		if ( $v === null || ! $a ) { return null; }
 		$below = 0; $eq = 0;
 		foreach ( $a as $x ) { if ( $x < $v ) { $below++; } elseif ( $x == $v ) { $eq++; } }
@@ -145,8 +186,8 @@ class DBD_Grades {
 	}
 
 	/** The pool's median for a metric, or null. */
-	public static function median( $grp, $key ) {
-		$a = self::group_info( $grp )['dist'][ $key ] ?? array();
+	public static function median( $grp, $key, $pool = 'dist' ) {
+		$a = self::group_info( $grp )[ $pool ][ $key ] ?? array();
 		return $a ? $a[ (int) floor( ( count( $a ) - 1 ) / 2 ) ] : null;
 	}
 

@@ -33,11 +33,10 @@
     var qOk = function (p) { return !needle || p.name.toLowerCase().indexOf(needle) >= 0 || String(p.num) === needle || (p.team || '').toLowerCase() === needle || (p.col || '').toLowerCase().indexOf(needle) >= 0; };
     var rows = ALL.filter(function (p) { return (!st.team || needle || p.team === st.team) && posOk(p) && qOk(p); });
     if (sort.key) rows.sort(function (a, b) { var x = val(a, sort.key), y = val(b, sort.key); return (x < y ? -1 : x > y ? 1 : 0) * sort.dir; });
-    var cap = st.team || needle ? 0 : 60; if (cap && rows.length > cap) rows = rows.slice(0, cap);
     var by = sort.key ? LABEL[sort.key] : 'snap share';
     $('#dbd-plist tbody').innerHTML = rows.length ? tierize(rows.map(row).join(''), PT) : '<tr><td colspan="11" class="dbd-note">No players match.</td></tr>';
     var t = st.team && C.teams[st.team];
-    $('#dbd-plab').innerHTML = needle ? '<b>Search</b> · ' + esc(st.q) + ' · all teams' : t ? '<b>' + esc(t.nick) + '</b> · sorted by ' + by : '<b>League leaders</b> · top ' + rows.length + ' by ' + by;
+    $('#dbd-plab').innerHTML = needle ? '<b>Search</b> · ' + esc(st.q) + ' · all teams' : t ? '<b>' + esc(t.nick) + '</b> · sorted by ' + by : '<b>Every player</b> · ' + rows.length + ' by ' + by;
     root.querySelectorAll('#dbd-plist th[data-sort]').forEach(function (h) { if (h.dataset.sort === sort.key) h.setAttribute('aria-sort', sort.dir === 1 ? 'ascending' : 'descending'); else h.removeAttribute('aria-sort'); });
     pick.querySelectorAll('.dbd-mkbtn').forEach(function (b) { b.classList.toggle('on', (b.dataset.team || '') === st.team); });
     pos.querySelectorAll('.t-tab').forEach(function (b) { b.setAttribute('aria-selected', (b.dataset.v || '') === st.pos ? 'true' : 'false'); });
