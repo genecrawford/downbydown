@@ -14,7 +14,7 @@ $played = array_unique( array_merge( array_map( function ( $w ) { return (int) $
 $traded = ! empty( $p['snapteam'] ) || (bool) array_filter( $W, function ( $w ) use ( $a ) { return ! empty( $w['team'] ) && $w['team'] !== $a; } );
 /* game-log rows: every played week, a zero line where he took snaps but never touched the ball */
 sort( $played );
-$zero = array_fill_keys( array( 'targets', 'receptions', 'receiving_yards', 'receiving_tds', 'receiving_air_yards', 'receiving_yards_after_catch', 'receiving_epa', 'receiving_first_downs', 'target_share', 'air_yards_share', 'carries', 'rushing_yards', 'rushing_tds', 'rushing_epa', 'rushing_first_downs', 'attempts', 'completions', 'passing_yards', 'passing_tds', 'passing_interceptions', 'passing_epa', 'passing_cpoe', 'sacks_suffered' ), 0 );
+$zero = array_fill_keys( array( 'targets', 'receptions', 'receiving_yards', 'receiving_tds', 'receiving_air_yards', 'receiving_yards_after_catch', 'receiving_epa', 'receiving_first_downs', 'target_share', 'air_yards_share', 'carries', 'rushing_yards', 'rushing_tds', 'rushing_epa', 'rushing_first_downs', 'attempts', 'completions', 'passing_yards', 'passing_tds', 'passing_interceptions', 'passing_epa', 'passing_cpoe', 'sacks_suffered', 'passing_air_yards', 'receiving_20', 'rushing_10' ), 0 );
 $byWk = array(); foreach ( $W as $w ) { $byWk[ (int) $w['week'] ] = $w; }
 $L = array_map( function ( $wk ) use ( $byWk, $zero, $a, $p ) { return $byWk[ $wk ] ?? array_merge( $zero, array( 'week' => $wk, 'team' => $p['snapteam'][ (string) $wk ] ?? $a ) ); }, $played );
 $sum = function ( $k ) use ( $W ) { $s = 0; foreach ( $W as $w ) { $s += (float) ( $w[ $k ] ?? 0 ); } return $s; };
@@ -63,6 +63,17 @@ echo '<div class="dbd-tiles">';
 foreach ( $tiles as $x ) { echo '<div class="dbd-tile"><div class="l">' . esc_html( $x[0] ) . '</div><div class="v">' . esc_html( $x[1] ) . '</div><div class="s">' . esc_html( $x[2] ) . '</div></div>'; }
 echo '</div>';
 
+/* ---- where he ranks: percentile bars against the league pool at his position (SCOPE §15) */
+$gr = $p['grades'] ?? null; $ggrp = $gr['grp'] ?? $grp; $gi = $gr ? DBD_Grades::group_info( $ggrp ) : null; $N = (int) ( $gi['n'] ?? 0 ); $graded = $gr && ! empty( $gr['q'] ) && $N > 0;
+if ( $gr && $gi ) {
+	echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Where he ranks</b> · among ' . $N . ' ' . esc_html( DBD_Grades::pool_label( $ggrp ) ) . ' with ' . esc_html( $gi['min'] ) . '+</span><span class="dbd-badge">League percentiles</span></div><div class="dbd-pct">';
+	foreach ( DBD_Grades::defs( $ggrp ) as $d ) {
+		list( $k, $lab, $sub, $kind ) = $d; $v = $gr['m'][ $k ] ?? null; $pc = $graded ? DBD_Grades::pctile( $ggrp, $k, $v ) : null;
+		echo '<div class="row"><div class="l">' . esc_html( $lab ) . ( $sub ? '<small>' . esc_html( $sub ) . '</small>' : '' ) . '</div><div class="bar">' . ( $pc === null ? '' : '<i style="--p:' . (int) $pc . '"></i>' ) . '</div><div class="v">' . esc_html( DBD_Grades::fmt( $kind, $v ) ) . '</div><div class="g' . ( $pc !== null && $pc >= 75 ? ' hi' : ( $pc !== null && $pc <= 25 ? ' lo' : '' ) ) . '">' . ( $pc === null ? '-' : esc_html( DBD_Grades::ordinal( $pc ) ) ) . '</div></div>';
+	}
+	echo '</div><p class="dbd-note">' . ( $graded ? 'Each bar is the league at his position; the marker is him. Right is better, the dashed line is the median. Grades move every week as the pool changes.' : 'Graded once he reaches ' . esc_html( $gi['min'] ) . '. ' . $N . ' ' . esc_html( DBD_Grades::pool_label( $ggrp ) ) . ' qualify so far.' ) . '</p></section>';
+}
+
 echo '<div class="dbd-pwork"><div class="dbd-pmain">';
 
 /* ---- field map + depth bands (JS) */
@@ -70,7 +81,7 @@ echo '<section class="dbd-panel" id="dbd-pmap-panel"><div class="dbd-ph"><span c
 echo '<div class="dbd-sprays"><div><h4 id="dbd-map1h">On the field</h4><div id="dbd-pmap"><div class="dbd-skel"><span class="dbd-note">Loading every snap…</span></div></div></div><div><h4>By depth of target</h4><div class="dbd-bands" id="dbd-bands"></div><p class="dbd-note" id="dbd-bandnote" style="padding:8px 0 0"></p></div></div>';
 echo '<div class="dbd-legend" id="dbd-pleg"></div><p class="dbd-note" id="dbd-mapnote"></p></section>';
 
-/* ---- game log (PHP) */
+/* ---- game log (PHP): Default, Advanced and Traditional tables; player.js switches which one shows */
 $res = function ( $wk, $tm = null ) use ( $a ) { $tm = $tm ?: $a; $g = DBD_Data::team_game( $tm, $wk ); if ( ! $g ) { return ''; } $home = $g['home'] === $tm; $opp = $home ? $g['away'] : $g['home']; $pf = $home ? $g['home_score'] : $g['away_score']; $pa = $home ? $g['away_score'] : $g['home_score'];
 	if ( $pf === null ) { return ( $home ? 'vs ' : 'at ' ) . $opp; }
 	return ( $tm !== $a ? esc_html( $tm ) . ' ' : '' ) . ( $home ? 'vs ' : 'at ' ) . esc_html( $opp ) . ' <b class="' . ( $pf > $pa ? '' : 'l' ) . '">' . ( $pf > $pa ? 'W' : ( $pf < $pa ? 'L' : 'T' ) ) . '</b> ' . (int) $pf . '-' . (int) $pa; };
@@ -79,26 +90,58 @@ $pf = function ( $wk, $k ) use ( $p ) { return (int) ( $p['pfr'][ (string) (int)
 $drops = 0; $bt = 0; $rats = array();
 foreach ( $p['pfr'] ?? array() as $x ) { $drops += (int) ( $x['drop'] ?? 0 ); $bt += (int) ( $x['bt'] ?? 0 ) + (int) ( $x['rbt'] ?? 0 ); if ( isset( $x['rat'] ) && $x['rat'] !== null ) { $rats[] = (float) $x['rat']; } }
 $cell = function ( $v, $cls = '' ) { return '<td' . ( $cls ? ' class="' . $cls . '"' : '' ) . '>' . $v . '</td>'; };
-$e = function ( $v ) { return '<td class="' . ( $v >= 0 ? 'pos' : 'neg' ) . '">' . ( $v > 0 ? '+' : '' ) . number_format( $v, 1 ) . '</td>'; };
-echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Game log</b> · week by week</span><span class="dbd-badge">Season totals in the last row</span></div><div class="dbd-tw"><table class="dbd-glog dbd-sortable">';
+$e = function ( $v, $d = 1 ) { return '<td class="' . ( $v >= 0 ? 'pos' : 'neg' ) . '">' . ( $v > 0 ? '+' : '' ) . number_format( (float) $v, $d ) . '</td>'; };
+$f = function ( $n, $d ) use ( $f1 ) { return $d ? $f1( $n / $d ) : '-'; };
+$pc2 = function ( $n, $d ) { return $d ? round( $n / $d * 100 ) . '%' : '-'; };
+$pair = $sum( 'passing_air_yards' );
+$views = array();
 if ( $grp === 'rec' ) {
-	echo '<thead><tr><th>Wk</th><th>Opponent</th><th>Snap</th><th>Tgt</th><th>Rec</th><th>Yds</th><th>TD</th><th>aDOT</th><th>YAC</th><th>Share</th><th>EPA</th><th>Drops</th></tr></thead><tbody>';
-	foreach ( $L as $w ) { $wk = (int) $w['week']; echo '<tr>' . $cell( $wk ) . $cell( $res( $wk, $w['team'] ?? null ), 'res' ) . $cell( $snap( $wk ) ) . $cell( (int) $w['targets'] ) . $cell( (int) $w['receptions'] ) . $cell( (int) $w['receiving_yards'] ) . $cell( (int) $w['receiving_tds'] ?: '' ) . $cell( $f1( $div( $w['receiving_air_yards'], $w['targets'] ) ) ) . $cell( (int) $w['receiving_yards_after_catch'] ) . $cell( $pct( (float) $w['target_share'] ) ) . $e( (float) $w['receiving_epa'] ) . $cell( $pf( $wk, 'drop' ) ?: '' ) . '</tr>'; }
-	echo '</tbody><tfoot><tr><td></td><td>' . $ng . ' games</td><td>' . round( $snapAvg ) . '%</td><td>' . (int) $tg . '</td><td>' . (int) $rc . '</td><td>' . (int) $ry . '</td><td>' . (int) $rtd . '</td><td>' . $f1( $div( $air, $tg ) ) . '</td><td>' . (int) $yac . '</td><td>' . $pct( $tshare ) . '</td>' . $e( $repa ) . '<td>' . ( $drops ?: '' ) . '</td></tr></tfoot>';
+	$views['Default'] = array( 'Snap|Tgt|Rec|Yds|TD|EPA', function ( $w, $wk ) use ( $cell, $e, $snap ) { return $cell( $snap( $wk ) ) . $cell( (int) $w['targets'] ) . $cell( (int) $w['receptions'] ) . $cell( (int) $w['receiving_yards'] ) . $cell( (int) $w['receiving_tds'] ?: '' ) . $e( (float) $w['receiving_epa'] ); },
+		'<td>' . round( $snapAvg ) . '%</td><td>' . (int) $tg . '</td><td>' . (int) $rc . '</td><td>' . (int) $ry . '</td><td>' . (int) $rtd . '</td>' . $e( $repa ) );
+	$views['Advanced'] = array( 'Tgt share|Air share|aDOT|YAC|EPA/tgt|1D|Drops', function ( $w, $wk ) use ( $cell, $e, $pct, $f, $pf ) { return $cell( $pct( (float) $w['target_share'] ) ) . $cell( $pct( (float) $w['air_yards_share'] ) ) . $cell( $f( $w['receiving_air_yards'], $w['targets'] ) ) . $cell( (int) $w['receiving_yards_after_catch'] ) . ( $w['targets'] ? $e( $w['receiving_epa'] / $w['targets'], 2 ) : $cell( '-' ) ) . $cell( (int) $w['receiving_first_downs'] ) . $cell( $pf( $wk, 'drop' ) ?: '' ); },
+		'<td>' . $pct( $tshare ) . '</td><td>' . $pct( $ashare ) . '</td><td>' . $f1( $div( $air, $tg ) ) . '</td><td>' . (int) $yac . '</td>' . ( $tg ? $e( $repa / $tg, 2 ) : '<td>-</td>' ) . '<td>' . (int) $rfd . '</td><td>' . ( $drops ?: '' ) . '</td>' );
+	$views['Traditional'] = array( 'Rec|Yds|Y/R|TD|20+', function ( $w, $wk ) use ( $cell, $f ) { return $cell( (int) $w['receptions'] ) . $cell( (int) $w['receiving_yards'] ) . $cell( $f( $w['receiving_yards'], $w['receptions'] ) ) . $cell( (int) $w['receiving_tds'] ?: '' ) . $cell( (int) ( $w['receiving_20'] ?? 0 ) ?: '' ); },
+		'<td>' . (int) $rc . '</td><td>' . (int) $ry . '</td><td>' . $f1( $div( $ry, $rc ) ) . '</td><td>' . (int) $rtd . '</td><td>' . (int) $sum( 'receiving_20' ) . '</td>' );
 } elseif ( $grp === 'rb' ) {
-	echo '<thead><tr><th>Wk</th><th>Opponent</th><th>Snap</th><th>Car</th><th>Yds</th><th>YPC</th><th>TD</th><th>Tgt</th><th>Rec</th><th>Rec yds</th><th>EPA</th><th>Brk tkl</th></tr></thead><tbody>';
-	foreach ( $L as $w ) { $wk = (int) $w['week']; echo '<tr>' . $cell( $wk ) . $cell( $res( $wk, $w['team'] ?? null ), 'res' ) . $cell( $snap( $wk ) ) . $cell( (int) $w['carries'] ) . $cell( (int) $w['rushing_yards'] ) . $cell( $f1( $div( $w['rushing_yards'], $w['carries'] ) ) ) . $cell( ( (int) $w['rushing_tds'] + (int) $w['receiving_tds'] ) ?: '' ) . $cell( (int) $w['targets'] ) . $cell( (int) $w['receptions'] ) . $cell( (int) $w['receiving_yards'] ) . $e( (float) $w['rushing_epa'] + (float) $w['receiving_epa'] ) . $cell( ( $pf( $wk, 'bt' ) + $pf( $wk, 'rbt' ) ) ?: '' ) . '</tr>'; }
-	echo '</tbody><tfoot><tr><td></td><td>' . $ng . ' games</td><td>' . round( $snapAvg ) . '%</td><td>' . (int) $ca . '</td><td>' . (int) $ruy . '</td><td>' . $f1( $div( $ruy, $ca ) ) . '</td><td>' . (int) ( $rutd + $rtd ) . '</td><td>' . (int) $tg . '</td><td>' . (int) $rc . '</td><td>' . (int) $ry . '</td>' . $e( $ruepa + $repa ) . '<td>' . ( $bt ?: '' ) . '</td></tr></tfoot>';
+	$views['Default'] = array( 'Snap|Car|Yds|TD|Tgt|Rec|EPA', function ( $w, $wk ) use ( $cell, $e, $snap ) { return $cell( $snap( $wk ) ) . $cell( (int) $w['carries'] ) . $cell( (int) $w['rushing_yards'] ) . $cell( ( (int) $w['rushing_tds'] + (int) $w['receiving_tds'] ) ?: '' ) . $cell( (int) $w['targets'] ) . $cell( (int) $w['receptions'] ) . $e( (float) $w['rushing_epa'] + (float) $w['receiving_epa'] ); },
+		'<td>' . round( $snapAvg ) . '%</td><td>' . (int) $ca . '</td><td>' . (int) $ruy . '</td><td>' . (int) ( $rutd + $rtd ) . '</td><td>' . (int) $tg . '</td><td>' . (int) $rc . '</td>' . $e( $ruepa + $repa ) );
+	$views['Advanced'] = array( 'YPC|EPA/car|EPA/tgt|10+|Brk tkl|Snap', function ( $w, $wk ) use ( $cell, $e, $f, $pf, $snap ) { return $cell( $f( $w['rushing_yards'], $w['carries'] ) ) . ( $w['carries'] ? $e( $w['rushing_epa'] / $w['carries'], 2 ) : $cell( '-' ) ) . ( $w['targets'] ? $e( $w['receiving_epa'] / $w['targets'], 2 ) : $cell( '-' ) ) . $cell( (int) ( $w['rushing_10'] ?? 0 ) ?: '' ) . $cell( ( $pf( $wk, 'bt' ) + $pf( $wk, 'rbt' ) ) ?: '' ) . $cell( $snap( $wk ) ); },
+		'<td>' . $f1( $div( $ruy, $ca ) ) . '</td>' . ( $ca ? $e( $ruepa / $ca, 2 ) : '<td>-</td>' ) . ( $tg ? $e( $repa / $tg, 2 ) : '<td>-</td>' ) . '<td>' . (int) $sum( 'rushing_10' ) . '</td><td>' . ( $bt ?: '' ) . '</td><td>' . round( $snapAvg ) . '%</td>' );
+	$views['Traditional'] = array( 'Car|Yds|YPC|TD|Rec|Rec yds', function ( $w, $wk ) use ( $cell, $f ) { return $cell( (int) $w['carries'] ) . $cell( (int) $w['rushing_yards'] ) . $cell( $f( $w['rushing_yards'], $w['carries'] ) ) . $cell( (int) $w['rushing_tds'] ?: '' ) . $cell( (int) $w['receptions'] ) . $cell( (int) $w['receiving_yards'] ); },
+		'<td>' . (int) $ca . '</td><td>' . (int) $ruy . '</td><td>' . $f1( $div( $ruy, $ca ) ) . '</td><td>' . (int) $rutd . '</td><td>' . (int) $rc . '</td><td>' . (int) $ry . '</td>' );
 } else {
-	echo '<thead><tr><th>Wk</th><th>Opponent</th><th>Snap</th><th>Cmp</th><th>Att</th><th>Yds</th><th>TD</th><th>INT</th><th>Sk</th><th>CPOE</th><th>EPA</th></tr></thead><tbody>';
-	foreach ( $L as $w ) { $wk = (int) $w['week']; echo '<tr>' . $cell( $wk ) . $cell( $res( $wk, $w['team'] ?? null ), 'res' ) . $cell( $snap( $wk ) ) . $cell( (int) $w['completions'] ) . $cell( (int) $w['attempts'] ) . $cell( (int) $w['passing_yards'] ) . $cell( (int) $w['passing_tds'] ?: '' ) . $cell( (int) $w['passing_interceptions'] ?: '' ) . $cell( (int) $w['sacks_suffered'] ?: '' ) . $cell( $w['attempts'] ? $sgn( (float) $w['passing_cpoe'], 1 ) : '-' ) . $e( (float) $w['passing_epa'] ) . '</tr>'; }
-	echo '</tbody><tfoot><tr><td></td><td>' . $ng . ' games</td><td>' . round( $snapAvg ) . '%</td><td>' . (int) $cmp . '</td><td>' . (int) $att . '</td><td>' . (int) $py . '</td><td>' . (int) $ptd . '</td><td>' . (int) $pint . '</td><td>' . (int) $sk . '</td><td>' . $sgn( $cpoe, 1 ) . '</td>' . $e( $pepa ) . '</tr></tfoot>';
+	$views['Default'] = array( 'Snap|Cmp/Att|Yds|TD|INT|EPA', function ( $w, $wk ) use ( $cell, $e, $snap ) { return $cell( $snap( $wk ) ) . $cell( (int) $w['completions'] . '/' . (int) $w['attempts'] ) . $cell( (int) $w['passing_yards'] ) . $cell( (int) $w['passing_tds'] ?: '' ) . $cell( (int) $w['passing_interceptions'] ?: '' ) . $e( (float) $w['passing_epa'] ); },
+		'<td>' . round( $snapAvg ) . '%</td><td>' . (int) $cmp . '/' . (int) $att . '</td><td>' . (int) $py . '</td><td>' . (int) $ptd . '</td><td>' . (int) $pint . '</td>' . $e( $pepa ) );
+	$views['Advanced'] = array( 'EPA/DB|CPOE|aDOT|Sk|Sk %|Rush EPA', function ( $w, $wk ) use ( $cell, $e, $f, $pc2, $sgn ) { $db = $w['attempts'] + $w['sacks_suffered']; return ( $db ? $e( $w['passing_epa'] / $db, 2 ) : $cell( '-' ) ) . $cell( $w['attempts'] ? $sgn( (float) $w['passing_cpoe'], 1 ) : '-' ) . $cell( $f( $w['passing_air_yards'] ?? 0, $w['attempts'] ) ) . $cell( (int) $w['sacks_suffered'] ?: '' ) . $cell( $pc2( $w['sacks_suffered'], $db ) ) . $e( (float) $w['rushing_epa'] ); },
+		( ( $att + $sk ) ? $e( $pepa / ( $att + $sk ), 2 ) : '<td>-</td>' ) . '<td>' . $sgn( $cpoe, 1 ) . '</td><td>' . $f1( $div( $pair, $att ) ) . '</td><td>' . (int) $sk . '</td><td>' . $pct( $div( $sk, $att + $sk ) ) . '</td>' . $e( $ruepa ) );
+	$views['Traditional'] = array( 'Cmp|Att|Pct|Yds|Y/A|TD|INT|Rate', function ( $w, $wk ) use ( $cell, $f, $pc2 ) { $r = DBD_Grades::passer_rating( (float) $w['completions'], (float) $w['attempts'], (float) $w['passing_yards'], (float) $w['passing_tds'], (float) $w['passing_interceptions'] ); return $cell( (int) $w['completions'] ) . $cell( (int) $w['attempts'] ) . $cell( $pc2( $w['completions'], $w['attempts'] ) ) . $cell( (int) $w['passing_yards'] ) . $cell( $f( $w['passing_yards'], $w['attempts'] ) ) . $cell( (int) $w['passing_tds'] ?: '' ) . $cell( (int) $w['passing_interceptions'] ?: '' ) . $cell( $r === null ? '-' : number_format( $r, 1 ) ); },
+		'<td>' . (int) $cmp . '</td><td>' . (int) $att . '</td><td>' . $pct( $div( $cmp, $att ) ) . '</td><td>' . (int) $py . '</td><td>' . $f1( $div( $py, $att ) ) . '</td><td>' . (int) $ptd . '</td><td>' . (int) $pint . '</td><td>' . ( ( $r = DBD_Grades::passer_rating( $cmp, $att, $py, $ptd, $pint ) ) === null ? '-' : number_format( $r, 1 ) ) . '</td>' );
 }
-echo '</table></div>' . ( $traded ? '<p class="dbd-note">Weeks marked with another team come from that team\'s stat line. The field map and situations below cover ' . esc_html( $t['nick'] ) . ' snaps only.</p>' : '' ) . '</section>';
+echo '<section class="dbd-panel"><div class="dbd-ph dbd-glogh"><span class="dbd-lab"><b>Game log</b> · week by week</span><div class="dbd-seg t-tabs dbd-gview" role="tablist"><span class="t-tabs-pill" aria-hidden="true"></span>';
+$i = 0; foreach ( array_keys( $views ) as $name ) { echo '<button class="t-tab" type="button" role="tab" data-v="' . esc_attr( $name ) . '" aria-selected="' . ( $i++ ? 'false' : 'true' ) . '">' . esc_html( $name ) . '</button>'; }
+echo '</div></div>';
+foreach ( $views as $name => $vd ) {
+	list( $cols, $row, $foot ) = $vd;
+	echo '<div class="dbd-tw" data-view="' . esc_attr( $name ) . '"' . ( $name === 'Default' ? '' : ' hidden' ) . '><table class="dbd-glog dbd-sortable"><thead><tr><th>Wk</th><th>Opponent</th>';
+	foreach ( explode( '|', $cols ) as $c ) { echo '<th>' . esc_html( $c ) . '</th>'; }
+	echo '</tr></thead><tbody>';
+	foreach ( $L as $w ) { $wk = (int) $w['week']; echo '<tr>' . $cell( $wk ) . $cell( $res( $wk, $w['team'] ?? null ), 'res' ) . $row( $w, $wk ) . '</tr>'; }
+	echo '</tbody><tfoot><tr><td></td><td>' . $ng . ' games</td>' . $foot . '</tr></tfoot></table></div>';
+}
+echo ( $traded ? '<p class="dbd-note">Weeks marked with another team come from that team\'s stat line. The field map and situations below cover ' . esc_html( $t['nick'] ) . ' snaps only.</p>' : '' ) . '</section>';
 
 /* ---- situations (JS) */
 echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>When he gets it</b> · touches by situation</span></div><div class="dbd-wk3 dbd-tend" id="dbd-sit"></div></section>';
 echo '</div><div class="dbd-rail">';
+
+/* ---- season stats with league rank */
+$ss = $grp === 'rec' ? array( array( 'Targets', (int) $tg ), array( 'Receptions', (int) $rc ), array( 'Yards', (int) $ry ), array( 'Touchdowns', (int) $rtd ) )
+	: ( $grp === 'rb' ? array( array( 'Carries', (int) $ca ), array( 'Rush yards', (int) $ruy ), array( 'Rush TD', (int) $rutd ), array( 'Targets', (int) $tg ) )
+	: array( array( 'Attempts', (int) $att ), array( 'Completions', (int) $cmp ), array( 'Pass yards', (int) $py ), array( 'TD / INT', (int) $ptd . ' / ' . (int) $pint ) ) );
+if ( $gr ) { foreach ( DBD_Grades::defs( $ggrp ) as $d ) { $v = $gr['m'][ $d[0] ] ?? null; $ss[] = array( $d[1], DBD_Grades::fmt( $d[3], $v ), $graded ? DBD_Grades::rank( $ggrp, $d[0], $v ) : null ); } }
+echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Season stats</b> · with league rank</span><span class="dbd-badge">' . ( $graded ? 'of ' . $N : 'unranked' ) . '</span></div><div class="dbd-tw"><table class="dbd-sstat">';
+foreach ( $ss as $r ) { $rk = $r[2] ?? null; echo '<tr' . ( $rk && $rk <= ceil( $N * 0.1 ) ? ' class="top"' : '' ) . '><td>' . esc_html( $r[0] ) . '</td><td>' . esc_html( $r[1] ) . '</td><td class="rk">' . ( $rk ? '<b>' . esc_html( DBD_Grades::ordinal( $rk ) ) . '</b> of ' . $N : '' ) . '</td></tr>'; }
+echo '</table></div></section>';
 
 /* ---- intel (PHP basics, JS fills the play-file lines) */
 echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Intel</b></span><span class="dbd-badge">Week ' . (int) $through . '</span></div><div class="dbd-pb"><dl class="dbd-kv dbd-intel">';
