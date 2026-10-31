@@ -716,3 +716,16 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 .dbd-mvf a{display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:var(--dbd-ink);font:500 12px var(--dbd-body);padding:3px 8px 3px 4px;border:1px solid var(--dbd-line-2);border-radius:999px;position:relative}
 .dbd-mvf a small{font:500 10px var(--dbd-mono);color:var(--dbd-muted)}.dbd-mvf a.dim{opacity:.35}.dbd-mvf a.hi{border-color:var(--dbd-team,var(--dbd-red))}
 @container dbd (max-width:860px){.dbd-mv3{grid-template-columns:minmax(0,1fr)}}
+
+/* ---- playstyle fingerprint (SCOPE §23) ---- */
+.dbd-fp-say{margin:0;padding:10px 14px 8px;font:500 13px/1.6 var(--dbd-body);color:var(--dbd-ink)}.dbd-fp-say b{font-weight:600}
+.dbd-fp2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 18px;align-items:start}
+.dbd-fpbars.dbd-pct{grid-template-columns:minmax(0,1fr);gap:0;padding:8px 14px 12px}
+.dbd-fpbars .row{grid-template-columns:148px minmax(0,1fr) 54px 44px;padding:4px 0}
+.dbd-fpbars .row:nth-child(-n+2){border-top:1px solid var(--dbd-line)}.dbd-fpbars .row:first-child{border-top:0}
+.dbd-fpbars .bar{background:var(--dbd-line)}.dbd-fpbars .g{font:600 11px var(--dbd-mono);color:var(--dbd-ink-2)}.dbd-fpbars .g.hi,.dbd-fpbars .g.lo{color:var(--dbd-ink)}
+.dbd-fp-tags{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 12px}
+.dbd-fp-tag{font:700 10px var(--dbd-display);letter-spacing:.12em;text-transform:uppercase;padding:3px 9px;border-radius:999px;border:1px solid var(--dbd-line-2);color:var(--dbd-ink-2);cursor:help}
+.dbd-fp-tag.hi{background:var(--dbd-ink);color:var(--dbd-panel);border-color:var(--dbd-ink)}
+@container dbd (max-width:700px){.dbd-fp2{grid-template-columns:minmax(0,1fr)}}
+@container dbd (max-width:480px){.dbd-fpbars .row{grid-template-columns:112px minmax(0,1fr) 48px 40px}}

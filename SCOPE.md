@@ -555,7 +555,7 @@ Gene: "make the 10 things the next roadmap and build this first slice." Benchmar
 | 4b | **Design cleanup** (added 2026-10-31) | 1.3.x | Gene: "There are A LOT of tables and things on these pages and a lot of them have scroll bars and horizontal bars; look at the layouts and lose any horizontal bars where we can by rearranging things." A layout pass over the team, player and compare pages: audit every `dbd-tw` wrapper at desktop, tablet and phone widths, then widen the main column, drop or fold columns, stack panels, or move tables out of the rail so nothing scrolls sideways except where a wide table has no other honest form. Scope and mock first | Nothing new |
 | 5 | **Trend lines** (§21) | 1.3.7 | Four small charts at the top of Week by week: usage, yards, efficiency and a role metric, week by week with a three-game rolling line over the league's middle half, plus a generated read | Per-game league quartiles for those metrics from the build |
 | 6 | **Weekly movers** (§22) | 1.3.8 | Players index: who moved in the last full week, three boards (snap share, target share, EPA) of climbers and fallers against each player's own season, plus new faces | `players/movers.json` from the build, computed from the weekly lines already shipped |
-| 7 | **Playstyle fingerprint** | 1.3.x | Generated read in the takeaways voice from his splits: depth profile, third-down and red-zone share, formation lean | Play file (shipped), rules per position |
+| 7 | **Playstyle fingerprint** (§23) | 1.3.9 | Top of How he's used: eight usage traits per position as league-percentile bars, trait tags, and a generated read of how he is used (depth, screens, middle of the field, YAC, third down, red zone, motion, play action, formation) | `fp` per player and per-group `fp` pools from the build, computed from the play rows |
 | 8 | **Career tab** | 1.3.x | Season-by-season summary back to 1999 from nflverse weekly stats; play-level views stay current season | `stats_player_week_{year}` per season, a one-time backfill |
 | 9 | **Share card** | later | A server-rendered image of the hero and percentile bars for social | PHP GD or an SVG-to-PNG step in the build |
 | 10 | **This week panel** | later | His next matchup from the schedule with the opposing defense's rank at his position | Schedule and team defense metrics (shipped) |
@@ -795,3 +795,48 @@ Roadmap slice 6 (§16). A panel at the top of the Players index, above the filte
 Injury-report changes week over week (the index already carries this week's status beside each name; a "newly listed" mark needs last week's report kept by the build and can ride on a later slice), a movers card on the hub, per-team movers on the team page, and a `?week=` picker for past weeks (the data shape allows it later).
 
 Status: built as 1.3.8 (2026-10-31).
+
+## 23. Playstyle fingerprint: how he is used (scoped and mocked 2026-10-31, `mockup-v5/player.html`)
+
+Roadmap slice 7 (§16). A panel at the top of the **How he's used** band, before the field map, that says in words what the map and the situation tables show in dots and rows: the shape of his role. The grades (§15) say how good he is; this says what kind of player he is. Mocked on Jefferson (`?id=00-0036322`), Hockenson (`?id=00-0035229`), Aaron Jones (`?id=00-0033293`) and Murray (`?id=00-0035228`) with real league pools.
+
+### What it is
+
+**"Playstyle" · how he is used, against the league at his position.** Two halves:
+
+- **The read**, three or four sentences in the takeaways voice, generated from fixed rules over his traits: the two traits that stand furthest from the league (75th percentile or above, 25th or below) lead, each with his figure and the league median in the same sentence ("Jefferson is a downfield target: 21% of his targets travel 20 yards or more, against 12% for the league's receivers, and he wins before the catch rather than after it"). Then a situational sentence from his third-down and red-zone shares against his overall share ("His share of the team's targets is 26%: on third down it climbs to 33%; inside the 20 it falls to 18%"; a move under four points reads "holds"). Then a formation sentence from motion, play action or shotgun when one of them stands out. A player with nothing extreme gets a sentence that says so and names what sits nearest the middle.
+- **Trait tags** under the read: up to four short tags for the traits that stand out ("Downfield", "Screen game", "Third-down guy", "Motion man", or their opposites, "Rarely deep", "Not the red-zone option"). Each tag carries the number in its tooltip.
+- **Eight bars** on the right, one per trait, in the percentile-bar form of "Where he ranks" but neutral: the gradient is grey, the marker is the team color, the dashed line the median, and the percentile is printed without a good or bad color, because a style is not a grade. Hover a bar for his figure, the league median and the pool size.
+
+**The traits**, eight per group, every one a share of his own plays so a low-usage player is not punished for volume:
+
+| Receivers and tight ends (15+ targets) | Backs (30+ touches) | Quarterbacks (50+ attempts) |
+|---|---|---|
+| Deep share: targets 20+ yards downfield | Inside runs: carries at guard or tackle, of all his carries | Deep share: attempts 20+ yards downfield |
+| Screens: share of his targets | Shotgun runs: carries from the gun | Middle of the field: attempts between the numbers |
+| Middle of the field: targets between the numbers | Receiving share: targets per touch | Play action: share of attempts |
+| After the catch: share of his receiving yards gained after the catch | Third-down share: of team touches on third down | RPO: share of dropbacks |
+| Third-down share: of team targets on third down | Red-zone share: of team touches inside the 20 | Scrambles: share of dropbacks |
+| Red-zone share: of team targets inside the 20 | Short-yardage share: of team touches with two or fewer to go | Shotgun: share of dropbacks |
+| Motion: targets with pre-snap motion | RPO: carries on run-pass options | Against the blitz: EPA per dropback blitzed minus not blitzed (ten blitzed dropbacks or more) |
+| Play action: targets off play action | Motion: touches with pre-snap motion | Motion: dropbacks with pre-snap motion |
+
+The pool is the grades' pool (the same qualifiers), so the percentiles move every week like the grades do. A player under the qualifier gets the bars without markers and a note saying when the fingerprint arrives, as the grades do.
+
+### Data and rendering
+
+- **Build change.** Each player record in `players/{TEAM}.json` gains `fp`: the eight trait values plus `share`, his overall share of the team's targets (or touches, or dropbacks), all from the team's play rows the build already writes (target = `comp`, `inc`, `int` with his `pid`; carry = `run` with his `pid`; dropback = `comp`, `inc`, `int` or `sack` with his `qb`, plus `scramble` rows where he is the `pid`, since a scramble's passer field is empty in the play data; the group is his roster position, so a receiver's trick-play pass never makes him a quarterback; team denominators are the team's own plays of the same kind). `players/league.json` gains `fp` under each group: a sorted list per trait across qualifying players, the same shape as `dist`, so the plugin's percentile code serves both. The FTN flags (play action, screen, RPO, motion, blitz) are already on the rows; where FTN has not published a week they are zero and the shares read low that week, which the note under the bars says.
+- **Plugin (`1.3.9`).** PHP renders the whole panel in `player.php` from `fp` and the pool: `DBD_Grades::pctile()` gains a pool argument (`dist` or `fp`); trait definitions, the tag words and the read templates live in `DBD_Grades` beside the grade definitions. No JS; the shared tooltip handles the bars and tags. A data file without `fp` (an older nightly) skips the panel.
+- Thresholds, in one place: standout at the 75th and 25th percentiles, the situational move at four points, the blitz split at ten blitzed dropbacks.
+- Layout: read and tags on the left, bars on the right, in the band's existing two-column grid; one column under 700px container like the rest of the band. Nothing scrolls sideways.
+- Reduced motion: no animation in the panel.
+
+### Also in this release
+
+- The Players index's League leaders view lists every player (565 and counting) sorted by snap share instead of the top 60. Gene, 2026-10-31: "why don't we just show ALL players?" No reason beyond page weight, which is modest.
+
+### Not in this slice
+
+A fingerprint on the compare page (two players' bars overlaid), team-level tendencies in words (the team page keeps its charts), and a league "most extreme" list on the index.
+
+Status: built as 1.3.9 (2026-10-31).

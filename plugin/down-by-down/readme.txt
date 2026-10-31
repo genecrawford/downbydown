@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.3.8
+Stable tag: 1.3.9
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,11 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.3.9 =
+* Playstyle: a new panel at the top of the player page's How he's used band. Eight usage traits per position (receivers: deep share, screens, middle of the field, yards after the catch, third-down and red-zone shares, motion, play action; backs: inside runs, shotgun runs, receiving share, third-down, red-zone and short-yardage shares, RPO, motion; quarterbacks: deep share, middle of the field, play action, RPO, scrambles, shotgun, performance against the blitz, motion) as neutral league-percentile bars, trait tags, and a generated read of how he is used.
+* Players index: the league view lists every player sorted by snap share instead of the top 60.
+* Build: each player record carries fp (the traits as shares of his own plays); league.json carries the per-trait pools. Scrambles attach to the quarterback who ran them. An older data file skips the panel.
 
 = 1.3.8 =
 * Movers: a new panel at the top of the Players index for the last full week. Three boards (snap share, target share, EPA) list the five biggest climbers and fallers against each player's own season to that point, with a sparkline of his season, the change, and before-and-after figures; a New faces strip names debuts and first start-level weeks; a one-line read calls the biggest swing in snaps.

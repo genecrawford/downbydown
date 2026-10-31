@@ -18,7 +18,7 @@ Usage:
 Writes:
   teams.json      {ABBR: {name, nick, conf, div, c1, c2}}
   plays/{ABBR}.json  {season, team, byes, games:[...], keys:[...], plays:[[...]]}  (pid = ball handler's gsis_id; FTN flags when available)
-  players/{ABBR}.json  roster rows for QB/RB/FB/WR/TE with weekly stat lines, snap share, PFR extras, injury line, depth slot
+  players/{ABBR}.json  roster rows for QB/RB/FB/WR/TE with weekly stat lines, snap share, PFR extras, injury line, depth slot, grades, fp (playstyle traits)
   players/index.json   one row per player league-wide for the Players index and search
   players/movers.json  who moved in the last full week: snap share, target share and EPA against his own season, new faces
   players/league.json  per position group: qualifier, n, sorted metric lists (the pool behind the percentile grades), week + game quartiles (trend yardsticks)
@@ -83,6 +83,7 @@ def c(x):
 
 # ---------------------------------------------------------------- per-team plays
 keys = ['g', 'q', 't', 'dn', 'togo', 'yl', 'pt', 'k', 'yds', 'epa', 'succ', 'air', 'yac', 'loc', 'len', 'gap', 'sg', 'td', 'fd', 'drv', 'sd', 'pl', 'desc', 'pos', 'pid', 'qb', 'pa', 'scr', 'rpo', 'mot', 'blz', 'cont', 'drop']
+team_plays = {}
 for t in T:
     gl, rows = [], []
     if have_pbp:
@@ -110,6 +111,7 @@ for t in T:
     played_weeks = {x['week'] for x in gl}
     # weeks before the current one with no game: a team that has not played yet this week is not on bye
     byes = sorted(set(range(1, week)) - played_weeks)
+    team_plays[t] = [dict(zip(keys, r)) for r in rows]
     json.dump(dict(season=season, team=t, byes=byes, games=sorted(gl, key=lambda x: x['week']), keys=keys, plays=rows),
               open(f'{out}/plays/{t}.json', 'w'), separators=(',', ':'))
 
@@ -303,9 +305,51 @@ def game_metrics(g, w):
     return r
 GAME_COUNTS = {'rec': ['tgt', 'yds'], 'rb': ['tch', 'yds', 'tgt'], 'qb': ['db', 'yds']}
 YDS = {'rec': ('receiving_yards',), 'rb': ('rushing_yards', 'receiving_yards'), 'qb': ('passing_yards',)}
+# ---- playstyle fingerprint (SCOPE §23): eight usage traits per group as shares of a player's own plays, plus the league pool per trait
+FP_BLITZ_MIN = 10
+def fp_for(plays, posmap):
+    """{player id: (group, traits)} for every rostered player with a target, carry or dropback in a team's play rows. The group is his roster position, so a receiver's trick-play pass does not make him a quarterback."""
+    T = [q for q in plays if q['k'] in ('comp', 'inc', 'int') and q['pid']]
+    R = [q for q in plays if q['k'] == 'run' and q['pid']]
+    qbids = {q['qb'] for q in plays if q['qb'] and posmap.get(q['qb']) == 'QB'}
+    D = [dict(q, _qb=(q['pid'] if q['k'] == 'scramble' else q['qb'])) for q in plays if (q['qb'] and q['k'] in ('comp', 'inc', 'int', 'sack')) or (q['k'] == 'scramble' and q['pid'] in qbids)]
+    U = T + R
+    share = lambda mine, team: (len(mine) / len(team)) if team else None
+    def rate(mine, f, den=None):
+        d = [q for q in mine if den is None or den(q)]
+        return (sum(1 for q in d if f(q)) / len(d)) if d else None
+    out = {}
+    for pid in {q['pid'] for q in U} | qbids:
+        g = GROUPS.get(posmap.get(pid))
+        if not g: continue
+        if g == 'rec':
+            m = [q for q in T if q['pid'] == pid]; comps = [q for q in m if q['k'] == 'comp']
+            yds = sum(q['yds'] or 0 for q in comps); yac = sum(q['yac'] or 0 for q in comps)
+            fp = dict(n=len(m), share=share(m, T), deep=rate(m, lambda q: q['air'] >= 20, lambda q: q['air'] is not None), scr=rate(m, lambda q: q['scr'] == 1), mid=rate(m, lambda q: q['loc'] == 'middle', lambda q: q['loc']),
+                      yacs=(yac / yds) if yds > 0 else None, d3=share([q for q in m if q['dn'] == 3], [q for q in T if q['dn'] == 3]), rzs=share([q for q in m if q['yl'] is not None and q['yl'] <= 20], [q for q in T if q['yl'] is not None and q['yl'] <= 20]),
+                      mot=rate(m, lambda q: q['mot'] == 1), pa=rate(m, lambda q: q['pa'] == 1))
+        elif g == 'rb':
+            m = [q for q in U if q['pid'] == pid]; r = [q for q in m if q['k'] == 'run']; tg = [q for q in m if q['k'] != 'run']
+            fp = dict(n=len(m), share=share(m, U), ins=rate(r, lambda q: q['gap'] in ('guard', 'tackle')), sg=rate(r, lambda q: q['sg'] == 1), recs=(len(tg) / len(m)) if m else None,
+                      d3=share([q for q in m if q['dn'] == 3], [q for q in U if q['dn'] == 3]), rzs=share([q for q in m if q['yl'] is not None and q['yl'] <= 20], [q for q in U if q['yl'] is not None and q['yl'] <= 20]),
+                      shorty=share([q for q in m if q['togo'] is not None and q['togo'] <= 2], [q for q in U if q['togo'] is not None and q['togo'] <= 2]), rpo=rate(r, lambda q: q['rpo'] == 1), mot=rate(m, lambda q: q['mot'] == 1))
+        else:
+            m = [q for q in D if q['_qb'] == pid]; a = [q for q in m if q['k'] in ('comp', 'inc', 'int')]
+            bz = [q for q in m if q['blz'] == 1]; nb = [q for q in m if q['blz'] != 1]
+            e = lambda l: (sum(q['epa'] or 0 for q in l) / len(l)) if l else None
+            fp = dict(n=len(a), share=share(m, D), deep=rate(a, lambda q: q['air'] >= 20, lambda q: q['air'] is not None), mid=rate(a, lambda q: q['loc'] == 'middle', lambda q: q['loc']), pa=rate(a, lambda q: q['pa'] == 1), rpo=rate(m, lambda q: q['rpo'] == 1),
+                      scram=rate(m, lambda q: q['k'] == 'scramble'), sg=rate(m, lambda q: q['sg'] == 1), blz=(e(bz) - e(nb)) if len(bz) >= FP_BLITZ_MIN and nb else None, mot=rate(m, lambda q: q['mot'] == 1))
+        out[pid] = (g, {k: (round(v, 4) if isinstance(v, float) else v) for k, v in fp.items()})
+    return out
+fpdist = {g: {} for g in MINQ}; fp_cache = {}
 for t, pl in team_players.items():
+    fpt = fp_cache.setdefault(t, fp_for(team_plays.get(t, []), {x['id']: x['pos'] for x in pl}))
     for p in pl:
         gr = grade(p); p['grades'] = gr
+        fpe = fpt.get(p['id']); p['fp'] = fpe[1] if fpe else None
+        if gr and gr['q'] and fpe and fpe[0] == gr['grp']:
+            for k, v in fpe[1].items():
+                if k not in ('n', 'share') and v is not None: fpdist[gr['grp']].setdefault(k, []).append(v)
         if gr and gr['q']:
             npool[gr['grp']] += 1
             for k, v in gr['m'].items():
@@ -321,11 +365,13 @@ for t, pl in team_players.items():
                     for k in GAME_COUNTS[gr['grp']]: wkm[gr['grp']].setdefault(k, []).append(0.0)
 for g in dist:
     for k in dist[g]: dist[g][k].sort()
+for g in fpdist:
+    for k in fpdist[g]: fpdist[g][k].sort()
 def quart(a):
     if not a: return None
     a = sorted(a); q = lambda f: a[min(len(a) - 1, int(len(a) * f))]
     return dict(p25=q(.25), p50=q(.5), p75=q(.75), n=len(a))
-json.dump(clean(dict(season=season, through=through_week, groups={g: dict(n=npool[g], min=MINLABEL[g], low=LOW[g], dist=dist[g], week=quart(wkyds[g]), game={k: quart(v) for k, v in wkm[g].items()}) for g in MINQ})), open(f'{out}/players/league.json', 'w'), separators=(',', ':'))
+json.dump(clean(dict(season=season, through=through_week, groups={g: dict(n=npool[g], min=MINLABEL[g], low=LOW[g], dist=dist[g], week=quart(wkyds[g]), game={k: quart(v) for k, v in wkm[g].items()}, fp=fpdist[g]) for g in MINQ})), open(f'{out}/players/league.json', 'w'), separators=(',', ':'))
 for t, pl in team_players.items():
     json.dump(clean(dict(season=season, team=t, through=through_week, players=pl)), open(f'{out}/players/{t}.json', 'w'), separators=(',', ':'))
 

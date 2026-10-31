@@ -10,8 +10,8 @@
 <script src="data/teams.js"></script>
 <script src="data/marks.js"></script>
 <script src="data/MIN.js?v=3"></script>
-<script src="data/players-MIN.js?v=3"></script>
-<script src="data/league-pct.js?v=2"></script>
+<script src="data/players-MIN.js?v=6"></script>
+<script src="data/league-pct.js?v=5"></script>
 <script src="data/metrics.js?v=1"></script>
 <script src="data/schedule.js?v=2"></script>
 <style>
@@ -161,6 +161,16 @@
 .trc svg{display:block;width:100%;height:auto}
 .trc .th .d i{font-style:normal}
 @media (max-width:480px){.trc .th b{flex-basis:100%;margin-right:0}.trc .th .v{font-size:14px;margin-right:auto}}
+/* playstyle fingerprint (SCOPE §23) */
+.fp .say{margin:0;padding:10px 14px 8px;font:500 13px/1.6 var(--body);color:var(--ink)} .fp .say b{font-weight:600}
+.fp2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 18px;align-items:start}
+@media (max-width:900px){.fp2{grid-template-columns:minmax(0,1fr)}}
+.fp .pct{grid-template-columns:minmax(0,1fr);gap:0;padding:8px 14px 12px}
+.fp .pct .row{grid-template-columns:148px minmax(0,1fr) 54px 44px;padding:4px 0} .fp .pct .row:nth-child(-n+2){border-top:1px solid var(--line)} .fp .pct .row:first-child{border-top:0}
+.fp .pct .bar{background:var(--line)} .fp .pct .bar i{background:var(--team)} .fp .pct .g{font:600 11px var(--mono);color:var(--ink-2)} .fp .pct .g.hi,.fp .pct .g.lo{color:var(--ink)}
+.fp .tags{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 12px}
+.fp .tag{font:700 10px var(--display);letter-spacing:.12em;text-transform:uppercase;padding:3px 9px;border-radius:999px;border:1px solid var(--line-2);color:var(--ink-2);cursor:default}
+.fp .tag.hi{background:var(--chalk);color:var(--bg);border-color:var(--chalk)}
 </style>
 </head>
 <body>
@@ -189,7 +199,11 @@
 <section class="panel"><div class="ph"><span class="lab"><b>Season stats</b> · with league rank</span><span class="badge" id="ssn"></span></div><div class="tw" style="padding:0 14px 8px"><table class="sstat" id="sstat"></table></div></section>
       </div>
       </section>
-      <section class="band" id="used"><h2 class="bandh">How he's used<span>where the ball finds him and when</span></h2>
+      <section class="band" id="used"><h2 class="bandh">How he's used<span>his fingerprint, where the ball finds him and when</span></h2>
+<section class="panel fp" id="fpsec"><div class="ph"><span class="lab"><b>Playstyle</b> · how he is used, against the league at his position</span><span class="badge" id="fpn"></span></div>
+  <div class="fp2"><div><p class="say" id="fpsay"></p><div class="tags" id="fptags"></div></div><div class="pct" id="fpbars"></div></div>
+  <p class="note" id="fpnote"></p>
+</section>
       <div class="two">
 <section class="panel"><div class="ph"><span class="lab"><b id="maplab">Where the ball finds him</b> · every target, by depth and side</span><span class="badge" id="mapn"></span></div>
             <div class="sprays"><div><h4 id="map1h">Targets on the field</h4><div id="map"></div></div><div><h4>By depth of target</h4><div class="bands" id="bands" style="padding:0"></div><h4 style="margin-top:14px">Catch rate by depth</h4><p class="note" style="padding:0" id="bandnote"></p></div></div>
@@ -577,6 +591,67 @@ else{
  if(E.dir!=='flat'&&E.cur!=null)say.push(`${E.lab} is ${E.dir==='up'?'rising':'falling'} too: ${fmt(E.cur,E.d)} over the last three.`);
 }
 document.getElementById('trsay').innerHTML=say.join(' ');
+})();
+
+/* ---- playstyle fingerprint (SCOPE §23): eight usage traits against the league pool, tags, and a generated read */
+(function(){
+const FP=p.fp, POOL=(LG.fp||{})[lgrp], NP=(LG.fpn||{})[lgrp]; if(!FP||!POOL)return;
+const F=first, pool=lgrp==='rec'?'receivers and tight ends':lgrp==='rb'?'backs':'quarterbacks', unit=lgrp==='rec'?'targets':lgrp==='rb'?'touches':'dropbacks';
+const pc=v=>Math.round(v*100)+'%', sg=v=>(v>0?'+':'')+v.toFixed(2);
+/* key, label, sub, format, hi tag, lo tag, hi sentence, lo sentence (null = situational, handled below) */
+const DEFS={
+ rec:[['deep','Deep share','targets 20+ yards downfield',pc,'Downfield','Rarely deep',(v,l)=>`${F} is a downfield target: ${v} of his targets travel 20 yards or more, against ${l} for the league's receivers.`,(v,l)=>`${F} rarely goes deep: ${v} of his targets travel 20 yards or more, against ${l} for the league's receivers.`],
+  ['scr','Screens','share of his targets',pc,'Screen game','No screens',(v,l)=>`The screen game runs through him: ${v} of his targets are screens (league ${l}).`,(v,l)=>`Screens are not part of his role: ${v} of his targets (league ${l}).`],
+  ['mid','Middle of the field','targets between the numbers',pc,'Works the middle','Stays outside',(v,l)=>`He works the middle of the field: ${v} of his targets come between the numbers (league ${l}).`,(v,l)=>`He lives outside the numbers: only ${v} of his targets come over the middle (league ${l}).`],
+  ['yacs','After the catch','share of his yards after the catch',pc,'Yards after the catch','Wins before the catch',(v,l)=>`Much of his damage comes after the catch: ${v} of his yards (league ${l}).`,(v,l)=>`He wins before the catch rather than after it: ${v} of his yards come after the catch (league ${l}).`],
+  ['d3','Third-down share','of team targets on 3rd down',pc,'Third-down guy','Not the third-down option',null,null],
+  ['rzs','Red-zone share','of team targets inside the 20',pc,'Red-zone guy','Not the red-zone option',null,null],
+  ['mot','Motion','targets with pre-snap motion',pc,'Motion man','Static',(v,l)=>`Motion is part of the plan: ${v} of his targets come with pre-snap movement (league ${l}).`,(v,l)=>`He rarely moves before the snap: ${v} of his targets come with motion (league ${l}).`],
+  ['pa','Play action','targets off play action',pc,'Play-action target','Dropback target',(v,l)=>`Play action finds him: ${v} of his targets come off a fake (league ${l}).`,(v,l)=>`He is a straight-dropback target: ${v} of his targets come off play action (league ${l}).`]],
+ rb:[['ins','Inside runs','carries at guard or tackle',pc,'Between the tackles','Bounces outside',(v,l)=>`He runs between the tackles: ${v} of his carries go at guard or tackle (league ${l}).`,(v,l)=>`He gets to the edge: only ${v} of his carries go inside (league ${l}).`],
+  ['sg','Shotgun runs','carries from the gun',pc,'Gun runner','Under center',(v,l)=>`His carries come from the gun: ${v} of them (league ${l}).`,(v,l)=>`He runs from under center: ${v} of his carries come from shotgun (league ${l}).`],
+  ['recs','Receiving share','targets per touch',pc,'Pass-catching back','Ground only',(v,l)=>`He is a pass-catching back: ${v} of his touches are targets (league ${l}).`,(v,l)=>`The passing game barely involves him: ${v} of his touches are targets (league ${l}).`],
+  ['d3','Third-down share','of team touches on 3rd down',pc,'Third-down back','Not the third-down back',null,null],
+  ['rzs','Red-zone share','of team touches inside the 20',pc,'Red-zone back','Not the red-zone back',null,null],
+  ['shorty','Short-yardage share','of team touches, 2 or fewer to go',pc,'Short-yardage back','Not the short-yardage back',(v,l)=>`In short yardage he is the call: ${v} of the team's touches with two or fewer to go (his overall share is ${pc(FP.share)}).`,(v,l)=>`Short yardage goes elsewhere: ${v} of those touches against ${pc(FP.share)} overall.`],
+  ['rpo','RPO','carries on run-pass options',pc,'RPO back','',(v,l)=>`Run-pass options feed him: ${v} of his carries (league ${l}).`,(v,l)=>`RPOs are rare for him: ${v} of his carries (league ${l}).`],
+  ['mot','Motion','touches with pre-snap motion',pc,'Motion man','Static',(v,l)=>`Motion is part of the plan: ${v} of his touches come with pre-snap movement (league ${l}).`,(v,l)=>`He rarely moves before the snap: ${v} of his touches come with motion (league ${l}).`]],
+ qb:[['deep','Deep share','attempts 20+ yards downfield',pc,'Downfield thrower','Keeps it short',(v,l)=>`He pushes the ball downfield: ${v} of his attempts travel 20 yards or more (league ${l}).`,(v,l)=>`He keeps it short: ${v} of his attempts travel 20 yards or more (league ${l}).`],
+  ['mid','Middle of the field','attempts between the numbers',pc,'Attacks the middle','Sidelines',(v,l)=>`He attacks the middle of the field: ${v} of his attempts go between the numbers (league ${l}).`,(v,l)=>`He works the sidelines: ${v} of his attempts go between the numbers (league ${l}).`],
+  ['pa','Play action','share of attempts',pc,'Play-action passer','Straight dropback',(v,l)=>`Play action is a staple: ${v} of his attempts come off a fake (league ${l}).`,(v,l)=>`Straight dropbacks: ${v} of his attempts come off play action (league ${l}).`],
+  ['rpo','RPO','share of dropbacks',pc,'RPO offense','',(v,l)=>`The RPO is part of his offense: ${v} of his dropbacks (league ${l}).`,(v,l)=>`Almost no RPOs: ${v} of his dropbacks (league ${l}).`],
+  ['scram','Scrambles','share of dropbacks',pc,'Scrambler','Pocket passer',(v,l)=>`He runs when it breaks down: ${v} of his dropbacks end in a scramble (league ${l}).`,(v,l)=>`He stays in the pocket: ${v} of his dropbacks end in a scramble (league ${l}).`],
+  ['sg','Shotgun','share of dropbacks',pc,'Shotgun offense','Under center',(v,l)=>`A shotgun offense: ${v} of his dropbacks come from the gun (league ${l}).`,(v,l)=>`He works under center more than most: ${v} of his dropbacks come from the gun (league ${l}).`],
+  ['blz','Against the blitz','EPA per dropback, blitzed minus not',sg,'Blitz-proof','Blitz him',(v,l)=>`He beats the blitz: ${v} EPA a dropback better when blitzed than not (league ${l}).`,(v,l)=>`The blitz gets to him: ${v} EPA a dropback when blitzed against not (league ${l}).`],
+  ['mot','Motion','dropbacks with pre-snap motion',pc,'Motion offense','Static',(v,l)=>`Motion is part of the plan: ${v} of his dropbacks come with pre-snap movement (league ${l}).`,(v,l)=>`Little motion: ${v} of his dropbacks come with pre-snap movement (league ${l}).`]]}[lgrp];
+const HI=75,LO=25,MOVE=.04;
+const pctOf=(a,v)=>{if(v==null||!a||!a.length)return null;let b=0,e=0;for(const x of a){if(x<v)b++;else if(x===v)e++;}return Math.round((b+e/2)/a.length*100);};
+const med=a=>a&&a.length?a[Math.floor((a.length-1)/2)]:null;
+const T=DEFS.map(d=>{const v=FP[d[0]],a=POOL[d[0]]||[],pcv=pctOf(a,v),l=med(a);return{d,v,pc:pcv,lg:l,dev:pcv==null?-1:Math.abs(pcv-50)};});
+const q=(p.grades&&p.grades.q);
+document.getElementById('fpn').textContent=q?`among ${NP} ${pool}`:`graded at ${LG.min[lgrp]}`;
+/* bars */
+document.getElementById('fpbars').innerHTML=T.map(t=>`<div class="row" title="${t.d[1]}: ${t.v==null?'–':t.d[3](t.v)}${t.lg!=null?` · league median ${t.d[3](t.lg)}`:''}${t.pc!=null&&q?` · ${ordn(t.pc)} percentile of ${(POOL[t.d[0]]||[]).length}`:''}"><div class="l">${t.d[1]}<small>${t.d[2]}</small></div><div class="bar">${t.pc==null||!q?'':`<i style="--p:${t.pc}"></i>`}</div><div class="v">${t.v==null?'–':t.d[3](t.v)}</div><div class="g ${t.pc>=HI?'hi':t.pc!=null&&t.pc<=LO?'lo':''}">${t.pc==null||!q?'–':ordn(t.pc)}</div></div>`).join('');
+/* the read */
+const say=[],tags=[];
+if(!q){say.push(`${F} gets a fingerprint once he reaches ${LG.min[lgrp]}; the bars show his shares so far without a league percentile.`);}
+else{
+ const stand=T.filter(t=>t.d[6]&&t.pc!=null&&(t.pc>=HI||t.pc<=LO)).sort((a,b)=>b.dev-a.dev);
+ const used=new Set();
+ stand.slice(0,2).forEach(t=>{const hi=t.pc>=HI;say.push((hi?t.d[6]:t.d[7])(t.d[3](t.v),t.d[3](t.lg)));used.add(t.d[0]);if(hi?t.d[4]:t.d[5])tags.push({w:hi?t.d[4]:t.d[5],hi,tip:`${t.d[1]} ${t.d[3](t.v)}, ${ordn(t.pc)} percentile`});});
+ if(lgrp!=='qb'){const d3=FP.d3,rz=FP.rzs,sh=FP.share;const mv=(v)=>v==null?null:v-sh>=MOVE?'climbs':sh-v>=MOVE?'falls':'holds';
+  const part=(lab,v)=>{const m=mv(v);return m==null?'':m==='holds'?`${lab} it holds at ${pc(v)}`:`${lab} it ${m} to ${pc(v)}`;};
+  const a=part('on third down',d3),b=part('inside the 20',rz);
+  if(a||b)say.push(`His share of the team's ${unit} is ${pc(sh)}: ${[a,b].filter(Boolean).join('; ')}.`);
+  if(mv(d3)==='climbs')tags.push({w:DEFS.find(x=>x[0]==='d3')[4],hi:true,tip:`${pc(d3)} of the team's ${unit} on third down`});else if(mv(d3)==='falls')tags.push({w:DEFS.find(x=>x[0]==='d3')[5],hi:false,tip:`${pc(d3)} on third down against ${pc(sh)} overall`});
+  if(mv(rz)==='climbs')tags.push({w:DEFS.find(x=>x[0]==='rzs')[4],hi:true,tip:`${pc(rz)} of the team's ${unit} inside the 20`});else if(mv(rz)==='falls')tags.push({w:DEFS.find(x=>x[0]==='rzs')[5],hi:false,tip:`${pc(rz)} inside the 20 against ${pc(sh)} overall`});}
+ const third=stand.slice(2).find(t=>!used.has(t.d[0]));
+ if(third){const hi=third.pc>=HI;say.push((hi?third.d[6]:third.d[7])(third.d[3](third.v),third.d[3](third.lg)));if(hi?third.d[4]:third.d[5])tags.push({w:hi?third.d[4]:third.d[5],hi,tip:`${third.d[1]} ${third.d[3](third.v)}, ${ordn(third.pc)} percentile`});}
+ if(!T.some(t=>t.pc!=null&&(t.pc>=HI||t.pc<=LO)))say.unshift(`${F} profiles as a typical ${lgrp==='rec'?'receiver':lgrp==='rb'?'back':'quarterback'} in how he is used: nothing in his fingerprint sits outside the league's middle half.`);
+}
+document.getElementById('fpsay').innerHTML=say.join(' ');
+document.getElementById('fptags').innerHTML=tags.slice(0,4).map(t=>`<span class="tag ${t.hi?'hi':''}" title="${t.tip}">${t.w}</span>`).join('');
+document.getElementById('fpnote').textContent=`Every trait is a share of his own ${unit}, so volume does not move it. The marker is him among the league's qualifying ${pool}; the dashed line is the median. Styles are not grades: a high or low percentile is a description, not a verdict. Play action, screen, RPO, motion and blitz flags come from FTN charting and read low in a week it has not published.`;
 })();
 </script>
 </body>

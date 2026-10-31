@@ -95,9 +95,8 @@ $rows = array_values( array_filter( $idx, function ( $p ) use ( $team, $pos, $q 
 	if ( $q !== '' && stripos( $p['name'], $q ) === false && (string) $p['num'] !== $q && strcasecmp( $p['team'], $q ) !== 0 && ( empty( $p['col'] ) || stripos( $p['col'], $q ) === false ) ) { return false; }
 	return true;
 } ) );
-$cap = $team || $q !== '' ? 0 : 60;
-if ( $cap && count( $rows ) > $cap ) { $rows = array_slice( $rows, 0, $cap ); }
-$lab = $q !== '' ? '<b>Search</b> · ' . esc_html( $q ) . ' · all teams' : ( $team ? '<b>Roster usage</b> · sorted by snap share' : '<b>League leaders</b> · top ' . count( $rows ) . ' by snap share' );
+/* every player lists (Gene, 2026-10-31: no top-60 cap); the sort is snap share */
+$lab = $q !== '' ? '<b>Search</b> · ' . esc_html( $q ) . ' · all teams' : ( $team ? '<b>Roster usage</b> · sorted by snap share' : '<b>Every player</b> · ' . count( $rows ) . ' by snap share' );
 echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab" id="dbd-plab">' . $lab . '</span><span class="dbd-badge">Click a row</span></div><div class="dbd-tw"><table class="dbd-plist dbd-stat dbd-sortable" id="dbd-plist"><thead><tr><th data-sort="name">Player</th><th data-sort="team" class="dbd-t2">Team</th><th data-sort="pos">Pos</th><th data-sort="snap" class="dbd-t2">Snap %</th><th data-sort="use">Tgt / Att</th><th data-sort="rec" class="dbd-t2">Rec</th><th data-sort="car" class="dbd-t2">Car</th><th data-sort="yds">Yds</th><th data-sort="td">TD</th><th data-sort="epa">EPA</th><th data-sort="st" class="dbd-t3">Status</th></tr></thead><tbody>';
 ob_start();
 foreach ( $rows as $p ) {
