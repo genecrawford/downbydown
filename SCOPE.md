@@ -556,7 +556,7 @@ Gene: "make the 10 things the next roadmap and build this first slice." Benchmar
 | 5 | **Trend lines** (§21) | 1.3.7 | Four small charts at the top of Week by week: usage, yards, efficiency and a role metric, week by week with a three-game rolling line over the league's middle half, plus a generated read | Per-game league quartiles for those metrics from the build |
 | 6 | **Weekly movers** (§22) | 1.3.8 | Players index: who moved in the last full week, three boards (snap share, target share, EPA) of climbers and fallers against each player's own season, plus new faces | `players/movers.json` from the build, computed from the weekly lines already shipped |
 | 7 | **Playstyle fingerprint** (§23) | 1.3.9 | Top of How he's used: eight usage traits per position as league-percentile bars, trait tags, and a generated read of how he is used (depth, screens, middle of the field, YAC, third down, red zone, motion, play action, formation) | `fp` per player and per-group `fp` pools from the build, computed from the play rows |
-| 8 | **Career tab** | 1.3.x | Season-by-season summary back to 1999 from nflverse weekly stats; play-level views stay current season | `stats_player_week_{year}` per season, a one-time backfill |
+| 8 | **Career** (§24) | 1.3.10 | A Career band on the player page: season-by-season table back to his rookie year with a totals row, a yards-per-season chart with this season's pace, career highs and a read; play-level views stay current season | `data/career/{year}.json` season aggregates cached once per past year from `stats_player_week_{year}`, assembled into `players/career/{TEAM}.json` |
 | 9 | **Share card** | later | A server-rendered image of the hero and percentile bars for social | PHP GD or an SVG-to-PNG step in the build |
 | 10 | **This week panel** | later | His next matchup from the schedule with the opposing defense's rank at his position | Schedule and team defense metrics (shipped) |
 
@@ -840,3 +840,32 @@ The pool is the grades' pool (the same qualifiers), so the percentiles move ever
 A fingerprint on the compare page (two players' bars overlaid), team-level tendencies in words (the team page keeps its charts), and a league "most extreme" list on the index.
 
 Status: built as 1.3.9 (2026-10-31).
+
+## 24. Career: season by season (scoped and mocked 2026-10-31, `mockup-v5/player.html`)
+
+Roadmap slice 8 (§16). A new band on the player page, **Career**, between Week by week and Intel & plays, so the page reads this season first and his history after. Everything above it stays current season; this is the only place older years appear. Mocked on the real careers of Jefferson (`?id=00-0036322`), Hockenson (`?id=00-0035229`), Aaron Jones (`?id=00-0033293`) and Murray (`?id=00-0035228`), pulled from nflverse's weekly stat files for 2016 through this season.
+
+### What it is
+
+**"Career" · season by season, back to his rookie year.** One panel, three parts:
+
+- **The career line and the read.** A header strip of career totals (games, and the position's four counting numbers: targets, receptions, yards, touchdowns for receivers; carries, rushing yards, touchdowns, receptions for backs; attempts, yards, touchdowns, interceptions for quarterbacks) with the span ("2020 to 2026 · 7 seasons · 3 teams"). Under it one or two sentences in the takeaways voice: his best season by yards and what this season is on pace for over 17 games from his per-game rate, against that best ("His best year was 2022, 1,809 yards; this season's 60 a game puts him on pace for 1,027"). A rookie reads "First season; N games in."
+- **Yards by season.** A bar per season, regular season only, with the current season drawn hollow and labeled "through wk N" plus a faint pace extension to the 17-game projection, so a partial year never looks like a decline. The best season carries a small mark. Hover a bar for the season's team, games and the yards-per-game figure.
+- **The table.** One row per season, oldest first, with the current season last and a career totals row under a rule. Columns by group, tiered so narrow screens keep the core: receivers Season, Team, G, Tgt, Rec, Yds, TD, Y/R², Yds/g², EPA/tgt³; backs Season, Team, G, Car, Yds, YPC², TD, Tgt², Rec, Rec yds², EPA/touch³; quarterbacks Season, Team, G, Cmp/Att, Pct², Yds, TD, INT², Y/A², Rating, EPA/db³. The current season's row is marked as partial; the career-high cell in each counting column is bold. Rows sort by any column.
+- **Career highs**, a chip strip under the table: the season of his most yards, most touchdowns, most receptions or carries, with the figure; a player with one season gets none.
+
+Seasons are regular season only; a player with no prior seasons in the data (a rookie) still gets the band with this season as his one row and the read saying so. Players whose careers predate 1999 do not exist on current rosters, so the backfill starts there.
+
+### Data and rendering
+
+- **Build change, two steps.** (1) `data/career/{year}.json`, one per past season from 1999 through last season: every player's regular-season totals for that year (id, name, team, position, games and the counting and EPA fields the weekly file carries), aggregated from `stats_player_week_{year}.csv.gz` the first time the build runs without the file and never rebuilt after, since a finished season does not change. A missing year is skipped with a note in the build log rather than failing the build. (2) `players/career/{TEAM}.json`, rebuilt nightly: for each player on the team file, his season rows from the yearly files plus this season from the weekly stats the build already loads, newest season's team from the roster. Passer rating and per-game figures are computed in the plugin, not stored.
+- `DBD_Sync` learns the two new paths (`career/{year}` and `players/career/{TEAM}`), the lesson of 1.3.8.
+- **Plugin (`1.3.10`).** PHP renders the band in `player.php` from the team career file through `DBD_Data::get()`; inline SVG for the chart, the shared `[data-tip]` tooltip, the generic sorter on the table, `DBD_Router::tierize()` for the column tiers. Column definitions and the pace rule (17 games, per-game rate from games played) live in `DBD_Grades` beside the trend definitions. A data file without the career files skips the band and its jump-nav entry.
+- Layout: the band is a single full-width panel; chart above the table; the table uses `dbd-stat` and the tiers so nothing scrolls sideways at tablet widths; on phones the Y/R, Yds/g and EPA columns fold away.
+- Reduced motion: no animation in the panel.
+
+### Not in this slice
+
+Playoff seasons (the weekly files carry them; a toggle can come later), college and draft history beyond the hero's draft line, season-by-season grades (the league pools are current-season only), and a career view on the compare page.
+
+Status: built as 1.3.10 (2026-10-31).

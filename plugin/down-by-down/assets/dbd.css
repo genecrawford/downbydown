@@ -729,3 +729,15 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 .dbd-fp-tag.hi{background:var(--dbd-ink);color:var(--dbd-panel);border-color:var(--dbd-ink)}
 @container dbd (max-width:700px){.dbd-fp2{grid-template-columns:minmax(0,1fr)}}
 @container dbd (max-width:480px){.dbd-fpbars .row{grid-template-columns:112px minmax(0,1fr) 48px 40px}}
+
+/* ---- career (SCOPE §24) ---- */
+.dbd-cr-line{display:flex;flex-wrap:wrap;gap:6px 22px;padding:12px 14px 2px;align-items:flex-end}
+.dbd-cr-line div b{display:block;font:800 22px/1 var(--dbd-hero);color:var(--dbd-ink)}.dbd-cr-line div small{display:block;font:700 10px var(--dbd-display);letter-spacing:.14em;text-transform:uppercase;color:var(--dbd-muted);margin-top:4px}
+.dbd-cr-line .span{margin-left:auto;font:500 12px var(--dbd-mono);color:var(--dbd-muted);align-self:center}
+.dbd-cr-say{margin:0;padding:8px 14px 6px;font:500 13px/1.55 var(--dbd-body);color:var(--dbd-ink)}.dbd-cr-say b{font-weight:600}
+.dbd-cr-chart{padding:4px 14px 6px}.dbd-cr-chart svg{display:block;width:100%;height:auto;max-width:100%}.dbd-cr-chart rect:focus-visible{outline:none;stroke:var(--dbd-red);stroke-width:2}
+.dbd-career .dbd-tw{padding:0 14px 8px}
+.dbd-crtab td.hi{font-weight:700;color:var(--dbd-ink)}.dbd-crtab tr.cur td{font-style:italic}.dbd-crtab tr.tot td{border-top:2px solid var(--dbd-line-2);font-weight:600}
+.dbd-cr-highs{display:flex;flex-wrap:wrap;gap:6px;padding:4px 14px 12px;align-items:center}
+.dbd-cr-highs .l{font:700 10px var(--dbd-display);letter-spacing:.16em;text-transform:uppercase;color:var(--dbd-muted);margin-right:4px}
+.dbd-cr-highs .h{font:500 12px var(--dbd-body);padding:3px 9px;border:1px solid var(--dbd-line-2);border-radius:999px}.dbd-cr-highs .h b{font-family:var(--dbd-mono);font-weight:600}

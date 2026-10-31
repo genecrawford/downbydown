@@ -14,6 +14,7 @@
 <script src="data/league-pct.js?v=5"></script>
 <script src="data/metrics.js?v=1"></script>
 <script src="data/schedule.js?v=2"></script>
+<script src="data/career-MIN.js?v=1"></script>
 <style>
 .pmark{display:grid;place-items:center;width:58px;height:58px;border-radius:6px;background:var(--team);color:var(--team2);font:800 24px var(--hero);flex:0 0 auto;box-shadow:inset 0 0 0 2px rgba(255,255,255,.55),0 0 0 1px var(--line-2)}
 .pmark.sm{width:26px;height:26px;font-size:11px;border-radius:4px;box-shadow:none}
@@ -171,6 +172,16 @@
 .fp .tags{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 12px}
 .fp .tag{font:700 10px var(--display);letter-spacing:.12em;text-transform:uppercase;padding:3px 9px;border-radius:999px;border:1px solid var(--line-2);color:var(--ink-2);cursor:default}
 .fp .tag.hi{background:var(--chalk);color:var(--bg);border-color:var(--chalk)}
+/* career (SCOPE §24) */
+.career .line{display:flex;flex-wrap:wrap;gap:6px 22px;padding:12px 14px 2px;align-items:flex-end}
+.career .line div b{display:block;font:800 22px/1 var(--hero);color:var(--ink)} .career .line div small{display:block;font:700 10px var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+.career .line .span{margin-left:auto;font:500 12px var(--mono);color:var(--muted);align-self:center}
+.career .say{margin:0;padding:8px 14px 6px;font:500 13px/1.55 var(--body);color:var(--ink)} .career .say b{font-weight:600}
+.career .chart{padding:4px 14px 6px} .career .chart svg{display:block;width:100%;height:auto}
+.career .highs{display:flex;flex-wrap:wrap;gap:6px;padding:4px 14px 12px;align-items:center}
+.career .highs .l{font:700 10px var(--display);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-right:4px}
+.career .highs span.h{font:500 12px var(--body);padding:3px 9px;border:1px solid var(--line-2);border-radius:999px} .career .highs span.h b{font-family:var(--mono);font-weight:600}
+.career table td.hi{font-weight:700;color:var(--ink)} .career table tr.cur td{font-style:italic} .career table tr.tot td{border-top:2px solid var(--line-2);font-weight:600}
 </style>
 </head>
 <body>
@@ -192,7 +203,7 @@
       </div><div class="hdr"><a class="pn" href="team.html?team=MIN" id="teamlink"></a><span class="badge" id="snaps"></span></div></div>
 
       <div class="tiles" id="tiles"></div>
-      <nav class="jump" aria-label="On this page"><a href="#good">How good is he</a><a href="#used">How he's used</a><a href="#with">Who he works with</a><a href="#weeks">Week by week</a><a href="#more">Intel &amp; plays</a></nav>
+      <nav class="jump" aria-label="On this page"><a href="#good">How good is he</a><a href="#used">How he's used</a><a href="#with">Who he works with</a><a href="#weeks">Week by week</a><a href="#career" id="jcareer" hidden>Career</a><a href="#more">Intel &amp; plays</a></nav>
       <section class="band" id="good"><h2 class="bandh">How good is he<span>league grades and the season line, side by side</span></h2>
       <div class="two">
 <section class="panel"><div class="ph"><span class="lab"><b>Where he ranks</b> · <span id="pctn"></span></span><span class="badge">League percentiles</span></div><div class="pct" id="pct"></div><p class="note">Each bar is the league at his position; the marker is him. Right is better, the dashed line is the median. Built from every qualifying player's season to date, so grades move every week.</p></section>
@@ -230,6 +241,16 @@
             <h4>The slate · played, <i style="font-style:normal;opacity:.7">ahead dashed</i></h4><div class="ribbon" id="oxrib"></div><div class="legend" id="oxleg"></div>
             <div class="ox2"><div><h4>His line by defense faced</h4><table class="split" id="oxsplit"></table></div><div><h4 id="oxsch"></h4><div class="oxsc" id="oxsc"></div><p class="note" id="oxscn" style="padding:6px 14px 0"></p></div></div>
           </section>
+      </section>
+      <section class="band career" id="career" hidden><h2 class="bandh">Career<span>season by season, back to his rookie year</span></h2>
+<section class="panel"><div class="ph"><span class="lab"><b>Career</b> · regular season</span><span class="badge" id="crn"></span></div>
+  <div class="line" id="crline"></div>
+  <p class="say" id="crsay"></p>
+  <div class="chart" id="crchart"></div>
+  <div class="tw" style="padding:0 14px 8px"><table class="glog stat sortable" id="crtab"></table></div>
+  <div class="highs" id="crhighs"></div>
+  <p class="note">Regular season only, from nflverse weekly stats back to 1999. This season is partial and drawn hollow; the pace is his per-game rate over 17 games. Bold cells are career highs.</p>
+</section>
       </section>
       <section class="band" id="more"><h2 class="bandh">Intel &amp; plays<span>the report, his best snaps, his teammates</span></h2>
       <div class="three">
@@ -652,6 +673,49 @@ else{
 document.getElementById('fpsay').innerHTML=say.join(' ');
 document.getElementById('fptags').innerHTML=tags.slice(0,4).map(t=>`<span class="tag ${t.hi?'hi':''}" title="${t.tip}">${t.w}</span>`).join('');
 document.getElementById('fpnote').textContent=`Every trait is a share of his own ${unit}, so volume does not move it. The marker is him among the league's qualifying ${pool}; the dashed line is the median. Styles are not grades: a high or low percentile is a description, not a verdict. Play action, screen, RPO, motion and blitz flags come from FTN charting and read low in a week it has not published.`;
+})();
+
+/* ---- career (SCOPE §24): season by season from the weekly stat files, regular season only */
+(function(){
+const CR=((window.DBD_CAREER||{}).players||{})[p.id]; if(!CR||!CR.length)return;
+document.getElementById('career').hidden=false;document.getElementById('jcareer').hidden=false;
+const PACE_G=17, cur=CR[CR.length-1], isCur=r=>r.season===LG.season, dv=(a,b)=>b?a/b:null, f0=v=>v==null?'–':Math.round(v).toLocaleString(), f1=v=>v==null?'–':(+v).toFixed(1), pct=v=>v==null?'–':Math.round(v*100)+'%', sgn2=v=>v==null?'–':(v>0?'+':'')+v.toFixed(2);
+const rating=r=>{const a=r.attempts;if(!a)return null;const c=x=>Math.max(0,Math.min(2.375,x));return (c((r.completions/a-.3)*5)+c((r.passing_yards/a-3)*.25)+c(r.passing_tds/a*20)+c(2.375-r.passing_interceptions/a*25))/6*100;};
+const yds=r=>lgrp==='rec'?r.receiving_yards:lgrp==='rb'?r.rushing_yards+r.receiving_yards:r.passing_yards, ydsLab=lgrp==='rec'?'receiving yards':lgrp==='rb'?'scrimmage yards':'passing yards';
+/* columns: label^tier, value, format, counting (career-high eligible) */
+const COLS={rec:[['Season',r=>r.season,String],['Team',r=>r.team,String],['G',r=>r.g,f0],['Tgt',r=>r.targets,f0,1],['Rec',r=>r.receptions,f0,1],['Yds',r=>r.receiving_yards,f0,1],['TD',r=>r.receiving_tds,f0,1],['Y/R^2',r=>dv(r.receiving_yards,r.receptions),f1],['Yds/g^2',r=>dv(r.receiving_yards,r.g),f1],['EPA/tgt^3',r=>dv(r.receiving_epa,r.targets),sgn2]],
+ rb:[['Season',r=>r.season,String],['Team',r=>r.team,String],['G',r=>r.g,f0],['Car',r=>r.carries,f0,1],['Yds',r=>r.rushing_yards,f0,1],['YPC^2',r=>dv(r.rushing_yards,r.carries),f1],['TD',r=>r.rushing_tds+r.receiving_tds,f0,1],['Tgt^2',r=>r.targets,f0],['Rec',r=>r.receptions,f0,1],['Rec yds^2',r=>r.receiving_yards,f0,1],['EPA/touch^3',r=>dv(r.rushing_epa+r.receiving_epa,r.carries+r.targets),sgn2]],
+ qb:[['Season',r=>r.season,String],['Team',r=>r.team,String],['G',r=>r.g,f0],['Cmp/Att',r=>r.attempts,r=>r,String],['Pct^2',r=>dv(r.completions,r.attempts),pct],['Yds',r=>r.passing_yards,f0,1],['TD',r=>r.passing_tds,f0,1],['INT^2',r=>r.passing_interceptions,f0],['Y/A^2',r=>dv(r.passing_yards,r.attempts),f1],['Rating',r=>rating(r),f1],['EPA/db^3',r=>dv(r.passing_epa,r.attempts+r.sacks_suffered),sgn2]]}[lgrp];
+const tot={season:'Career',team:[...new Set(CR.map(r=>r.team))].length+' tm',g:0};['completions','attempts','passing_yards','passing_tds','passing_interceptions','sacks_suffered','passing_epa','carries','rushing_yards','rushing_tds','rushing_epa','receptions','targets','receiving_yards','receiving_tds','receiving_epa'].forEach(k=>tot[k]=CR.reduce((s,r)=>s+(+r[k]||0),0));tot.g=CR.reduce((s,r)=>s+r.g,0);
+const hi={};COLS.forEach((c,i)=>{if(!c[3])return;const vals=CR.map(c[1]);hi[i]=Math.max(...vals);});
+const cell=(c,r,i,isTot)=>{const v=c[1](r);const txt=c[0]==='Cmp/Att'?`${f0(r.completions)}/${f0(r.attempts)}`:c[2](v);const tier=(c[0].match(/\^(\d)$/)||[])[1];return`<td class="${tier?'t'+tier:''} ${!isTot&&c[3]&&v===hi[i]&&CR.length>1?'hi':''}" data-v="${v==null?'':v}">${txt}</td>`;};
+document.getElementById('crtab').innerHTML='<tr>'+COLS.map(c=>{const t=(c[0].match(/\^(\d)$/)||[])[1];return`<th class="${t?'t'+t:''}">${c[0].replace(/\^\d$/,'')}</th>`;}).join('')+'</tr>'+CR.map(r=>`<tr class="${isCur(r)?'cur':''}" title="${isCur(r)?'This season, through week '+LG.through:''}">${COLS.map((c,i)=>cell(c,r,i,false)).join('')}</tr>`).join('')+`<tr class="tot">${COLS.map((c,i)=>cell(c,tot,i,true)).join('')}</tr>`;
+/* career line */
+const LINE={rec:[['Targets','targets'],['Receptions','receptions'],['Yards','receiving_yards'],['TD','receiving_tds']],rb:[['Carries','carries'],['Rush yards','rushing_yards'],['TD',r=>r.rushing_tds+r.receiving_tds],['Receptions','receptions']],qb:[['Attempts','attempts'],['Yards','passing_yards'],['TD','passing_tds'],['INT','passing_interceptions']]}[lgrp];
+const teams=[...new Set(CR.map(r=>r.team))];
+document.getElementById('crline').innerHTML=`<div><b>${f0(tot.g)}</b><small>Games</small></div>`+LINE.map(([l,k])=>`<div><b>${f0(typeof k==='function'?k(tot):tot[k])}</b><small>${l}</small></div>`).join('')+`<span class="span">${CR[0].season} to ${cur.season} · ${CR.length} season${CR.length>1?'s':''} · ${teams.length} team${teams.length>1?'s':''}</span>`;
+document.getElementById('crn').textContent=`${CR.length} season${CR.length>1?'s':''}`;
+/* the read */
+const past=CR.filter(r=>!isCur(r)), best=past.length?past.reduce((a,b)=>yds(b)>yds(a)?b:a):null, pace=isCur(cur)&&cur.g?yds(cur)/cur.g*PACE_G:null;
+let say='';
+if(!past.length)say=`First season: <b>${cur.g}</b> game${cur.g===1?'':'s'} in, ${f0(yds(cur))} ${ydsLab}${pace?`, a ${PACE_G}-game pace of <b>${f0(pace)}</b>`:''}.`;
+else{say=`His best year was <b>${best.season}</b>, ${f0(yds(best))} ${ydsLab} in ${best.g} games${best.team!==cur.team?` with ${best.team}`:''}.`;
+ if(pace!=null)say+=` This season's ${f1(yds(cur)/cur.g)} a game puts him on pace for <b>${f0(pace)}</b> over ${PACE_G}, ${pace>=yds(best)?'a career high':pace>=yds(best)*.85?'close to it':'short of it'}.`;}
+document.getElementById('crsay').innerHTML=say;
+/* chart: yards by season */
+const Wd=640,H=140,L=40,R=12,Tp=18,B=22,n=CR.length,step=(Wd-L-R)/n,bw=Math.min(44,step*.6),mx=Math.max(...CR.map(yds),pace||0,10)*1.08,Y=v=>Tp+(1-v/mx)*(H-Tp-B),X=i=>L+step*(i+.5);
+let g=`<svg viewBox="0 0 ${Wd} ${H}" role="img" aria-label="${ydsLab} by season">`;
+[0,.5,1].forEach(f=>{const v=Math.round(mx*f/100)*100;g+=`<line x1="${L}" x2="${Wd-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${L-6}" y="${Y(v)+3}" font-size="9" fill="var(--muted)" text-anchor="end" font-family="IBM Plex Mono">${v.toLocaleString()}</text>`;});
+CR.forEach((r,i)=>{const v=yds(r),c=isCur(r);
+ if(c&&pace)g+=`<rect x="${X(i)-bw/2}" y="${Y(pace)}" width="${bw}" height="${Y(v)-Y(pace)}" fill="var(--line)" ><title>Pace over ${PACE_G}: ${f0(pace)}</title></rect>`;
+ g+=`<rect x="${X(i)-bw/2}" y="${Y(v)}" width="${bw}" height="${Math.max(1,Y(0)-Y(v))}" fill="${c?'var(--panel)':'var(--team)'}" stroke="var(--team)" stroke-width="${c?2:0}"><title>${r.season} ${r.team}: ${f0(v)} ${ydsLab} in ${r.g} games (${f1(v/r.g)} a game)${c?', through week '+LG.through:''}</title></rect>`;
+ if(best&&r===best)g+=`<text x="${X(i)}" y="${Y(v)-5}" font-size="10" fill="var(--red)" text-anchor="middle" font-family="IBM Plex Mono">★</text>`;
+ g+=`<text x="${X(i)}" y="${H-6}" font-size="9" fill="${c?'var(--ink)':'var(--muted)'}" text-anchor="middle" font-family="IBM Plex Mono">${String(r.season).slice(-2)}${r.team!==cur.team?'·'+r.team:''}</text>`;});
+g+=`<line x1="${L}" x2="${Wd-R}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--line-2)"/></svg>`;
+document.getElementById('crchart').innerHTML=g;
+/* highs */
+const HI={rec:[['Yards','receiving_yards'],['TD','receiving_tds'],['Receptions','receptions']],rb:[['Rush yards','rushing_yards'],['TD',r=>r.rushing_tds+r.receiving_tds],['Carries','carries']],qb:[['Yards','passing_yards'],['TD','passing_tds'],['Rating',r=>rating(r)]]}[lgrp];
+document.getElementById('crhighs').innerHTML=CR.length>1?'<span class="l">Career highs</span>'+HI.map(([l,k])=>{const f=typeof k==='function'?k:r=>r[k];const b=CR.reduce((a,r)=>f(r)>f(a)?r:a);return`<span class="h">${l} <b>${l==='Rating'?f1(f(b)):f0(f(b))}</b> · ${b.season}</span>`;}).join(''):'';
 })();
 </script>
 </body>

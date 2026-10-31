@@ -106,6 +106,33 @@ class DBD_Grades {
 	public static function fp_unit( $grp ) { return array( 'rec' => 'targets', 'rb' => 'touches', 'qb' => 'dropbacks' )[ $grp ] ?? 'plays'; }
 	public static function fp_fmt( $kind, $v ) { if ( $v === null ) { return '–'; } return $kind === 'sgn' ? ( $v > 0 ? '+' : '' ) . number_format( (float) $v, 2 ) : round( $v * 100 ) . '%'; }
 
+	/** Career (SCOPE §24): a pace projects the per-game rate over this many games; columns per group as label, source, format, counting (career-high eligible). Labels carry ^2/^3 column tiers. */
+	const PACE_G = 17;
+	public static function career_cols( $grp ) {
+		static $d = array(
+			'rec' => array( array( 'Season', 'season', 's', false ), array( 'Team', 'team', 's', false ), array( 'G', 'g', 'n', false ), array( 'Tgt', 'targets', 'n', true ), array( 'Rec', 'receptions', 'n', true ), array( 'Yds', 'receiving_yards', 'n', true ), array( 'TD', 'receiving_tds', 'n', true ),
+				array( 'Y/R^2', 'ypr', 'f1', false ), array( 'Yds/g^2', 'ypg', 'f1', false ), array( 'EPA/tgt^3', 'epat', 'sgn', false ) ),
+			'rb'  => array( array( 'Season', 'season', 's', false ), array( 'Team', 'team', 's', false ), array( 'G', 'g', 'n', false ), array( 'Car', 'carries', 'n', true ), array( 'Yds', 'rushing_yards', 'n', true ), array( 'YPC^2', 'ypc', 'f1', false ), array( 'TD', 'td', 'n', true ),
+				array( 'Tgt^2', 'targets', 'n', false ), array( 'Rec', 'receptions', 'n', true ), array( 'Rec yds^2', 'receiving_yards', 'n', true ), array( 'EPA/touch^3', 'epatch', 'sgn', false ) ),
+			'qb'  => array( array( 'Season', 'season', 's', false ), array( 'Team', 'team', 's', false ), array( 'G', 'g', 'n', false ), array( 'Cmp/Att', 'cmpatt', 's', false ), array( 'Pct^2', 'pct', 'pct', false ), array( 'Yds', 'passing_yards', 'n', true ), array( 'TD', 'passing_tds', 'n', true ),
+				array( 'INT^2', 'passing_interceptions', 'n', false ), array( 'Y/A^2', 'ypa', 'f1', false ), array( 'Rating', 'rating', 'f1', false ), array( 'EPA/db^3', 'epadb', 'sgn', false ) ),
+		);
+		return $d[ $grp ] ?? array();
+	}
+	/** A season row's derived figures: the group's primary yards, per-game rates, rating. */
+	public static function career_derive( $grp, $r ) {
+		$d = function ( $a, $b ) { return $b ? $a / $b : null; };
+		$r['td'] = (int) ( $r['rushing_tds'] ?? 0 ) + (int) ( $r['receiving_tds'] ?? 0 );
+		$r['ypr'] = $d( $r['receiving_yards'] ?? 0, $r['receptions'] ?? 0 ); $r['ypg'] = $d( $r['receiving_yards'] ?? 0, $r['g'] ?? 0 ); $r['epat'] = $d( $r['receiving_epa'] ?? 0, $r['targets'] ?? 0 );
+		$r['ypc'] = $d( $r['rushing_yards'] ?? 0, $r['carries'] ?? 0 ); $r['epatch'] = $d( ( $r['rushing_epa'] ?? 0 ) + ( $r['receiving_epa'] ?? 0 ), ( $r['carries'] ?? 0 ) + ( $r['targets'] ?? 0 ) );
+		$r['pct'] = $d( $r['completions'] ?? 0, $r['attempts'] ?? 0 ); $r['ypa'] = $d( $r['passing_yards'] ?? 0, $r['attempts'] ?? 0 ); $r['epadb'] = $d( $r['passing_epa'] ?? 0, ( $r['attempts'] ?? 0 ) + ( $r['sacks_suffered'] ?? 0 ) );
+		$r['rating'] = self::passer_rating( $r['completions'] ?? 0, $r['attempts'] ?? 0, $r['passing_yards'] ?? 0, $r['passing_tds'] ?? 0, $r['passing_interceptions'] ?? 0 );
+		$r['cmpatt'] = number_format( (int) ( $r['completions'] ?? 0 ) ) . '/' . number_format( (int) ( $r['attempts'] ?? 0 ) );
+		$r['yds'] = $grp === 'rec' ? ( $r['receiving_yards'] ?? 0 ) : ( $grp === 'rb' ? ( $r['rushing_yards'] ?? 0 ) + ( $r['receiving_yards'] ?? 0 ) : ( $r['passing_yards'] ?? 0 ) );
+		return $r;
+	}
+	public static function career_yds_label( $grp ) { return array( 'rec' => 'receiving yards', 'rb' => 'scrimmage yards', 'qb' => 'passing yards' )[ $grp ] ?? 'yards'; }
+
 	public static function group_of( $pos ) {
 		return array( 'QB' => 'qb', 'RB' => 'rb', 'FB' => 'rb', 'WR' => 'rec', 'TE' => 'rec' )[ $pos ] ?? null;
 	}

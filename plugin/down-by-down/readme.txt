@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.3.9
+Stable tag: 1.3.10
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,10 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.3.10 =
+* Career: a new band on the player page between Week by week and Intel & plays. Career totals and span, a read on his best season and this season's 17-game pace, a yards-by-season chart with the current season hollow and its pace shown, a season-by-season table with a totals row and career highs in bold, and a career-highs strip. Regular season only, back to 1999.
+* Build: data/career/{year}.json caches every finished season's totals once from nflverse weekly stats; players/career/{TEAM}.json is assembled nightly with this season added. The sync fetches the team career files; an older data file skips the band.
 
 = 1.3.9 =
 * Playstyle: a new panel at the top of the player page's How he's used band. Eight usage traits per position (receivers: deep share, screens, middle of the field, yards after the catch, third-down and red-zone shares, motion, play action; backs: inside runs, shotgun runs, receiving share, third-down, red-zone and short-yardage shares, RPO, motion; quarterbacks: deep share, middle of the field, play action, RPO, scrambles, shotgun, performance against the blitz, motion) as neutral league-percentile bars, trait tags, and a generated read of how he is used.
