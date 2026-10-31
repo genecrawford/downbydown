@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.3.10
+Stable tag: 1.3.11
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,9 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.3.11 =
+* This week: a strip at the top of the player page under the season tiles with his next game (kickoff in the site's time zone, stadium, the market line), the opposing defense's rank at his position and what it allows, his line against defenses of that tier this season and the last meeting with this opponent, his injury status and snap share over the last three games, and a one-line read. Once the week's game is final it becomes Next up; a bye week says so.
 
 = 1.3.10 =
 * Career: a new band on the player page between Week by week and Intel & plays. Career totals and span, a read on his best season and this season's 17-game pace, a yards-by-season chart with the current season hollow and its pace shown, a season-by-season table with a totals row and career highs in bold, and a career-highs strip. Regular season only, back to 1999.

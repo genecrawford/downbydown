@@ -182,6 +182,17 @@
 .career .highs .l{font:700 10px var(--display);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-right:4px}
 .career .highs span.h{font:500 12px var(--body);padding:3px 9px;border:1px solid var(--line-2);border-radius:999px} .career .highs span.h b{font-family:var(--mono);font-weight:600}
 .career table td.hi{font-weight:700;color:var(--ink)} .career table tr.cur td{font-style:italic} .career table tr.tot td{border-top:2px solid var(--line-2);font-weight:600}
+/* this week (SCOPE §25) */
+.panel.tw{container-type:normal}
+.tw4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;padding:0}
+@media (max-width:1130px){.tw4{grid-template-columns:repeat(2,minmax(0,1fr))}} @media (max-width:520px){.tw4{grid-template-columns:minmax(0,1fr)}}
+.tw4>div{padding:12px 14px;border-left:1px solid var(--line);min-width:0} .tw4>div:first-child{border-left:0}
+.tw4 h5{margin:0 0 6px;font:700 10px var(--display);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.tw4 .big{display:flex;align-items:center;gap:10px;font:700 18px var(--display);color:var(--ink);text-transform:uppercase;letter-spacing:.04em}
+.tw4 .big small{font:500 12px var(--mono);color:var(--muted);text-transform:none;letter-spacing:0}
+.tw4 .m{font:500 12px/1.5 var(--mono);color:var(--ink-2)} .tw4 .m b{color:var(--ink);font-weight:600}
+.tw4 .w{font:500 13px/1.5 var(--body);color:var(--ink)}
+.tw .say{margin:0;padding:10px 14px 12px;border-top:1px solid var(--line);font:500 13px/1.55 var(--body);color:var(--ink)} .tw .say b{font-weight:600}
 </style>
 </head>
 <body>
@@ -203,6 +214,10 @@
       </div><div class="hdr"><a class="pn" href="team.html?team=MIN" id="teamlink"></a><span class="badge" id="snaps"></span></div></div>
 
       <div class="tiles" id="tiles"></div>
+      <section class="panel tw" id="twsec" hidden><div class="ph"><span class="lab"><b id="twlab">This week</b> · <span id="twsub"></span></span><span class="badge" id="twbadge"></span></div>
+        <div class="tw4" id="tw4"></div>
+        <p class="say" id="twsay"></p>
+      </section>
       <nav class="jump" aria-label="On this page"><a href="#good">How good is he</a><a href="#used">How he's used</a><a href="#with">Who he works with</a><a href="#weeks">Week by week</a><a href="#career" id="jcareer" hidden>Career</a><a href="#more">Intel &amp; plays</a></nav>
       <section class="band" id="good"><h2 class="bandh">How good is he<span>league grades and the season line, side by side</span></h2>
       <div class="two">
@@ -716,6 +731,43 @@ document.getElementById('crchart').innerHTML=g;
 /* highs */
 const HI={rec:[['Yards','receiving_yards'],['TD','receiving_tds'],['Receptions','receptions']],rb:[['Rush yards','rushing_yards'],['TD',r=>r.rushing_tds+r.receiving_tds],['Carries','carries']],qb:[['Yards','passing_yards'],['TD','passing_tds'],['Rating',r=>rating(r)]]}[lgrp];
 document.getElementById('crhighs').innerHTML=CR.length>1?'<span class="l">Career highs</span>'+HI.map(([l,k])=>{const f=typeof k==='function'?k:r=>r[k];const b=CR.reduce((a,r)=>f(r)>f(a)?r:a);return`<span class="h">${l} <b>${l==='Rating'?f1(f(b)):f0(f(b))}</b> · ${b.season}</span>`;}).join(''):'';
+})();
+
+/* ---- this week (SCOPE §25): his next game, the defense at his position, his history against that tier, his status */
+(function(){
+const S=window.DBD_SCHEDULE,M=window.DBD_METRICS;if(!S||!M)return;
+const mineAll=[];Object.keys(S.weeks).map(Number).sort((a,b)=>a-b).forEach(w=>S.weeks[String(w)].forEach(g=>{if(g.home===TEAM||g.away===TEAM)mineAll.push(Object.assign({wk:w},g));}));
+const curG=mineAll.find(g=>g.wk===S.current_week),nextUp=mineAll.find(g=>g.wk>=S.current_week&&g.status!=='final');
+const sec=document.getElementById('twsec');if(!nextUp){if(mineAll.length){sec.hidden=false;document.getElementById('twsub').textContent='season over';document.getElementById('tw4').innerHTML='';document.getElementById('twsay').textContent='No games left on the schedule.';}return;}
+sec.hidden=false;
+const bye=!curG&&nextUp.wk>S.current_week, g=nextUp, home=g.home===TEAM, opp=home?g.away:g.home, later=g.wk>S.current_week;
+document.getElementById('twlab').textContent=later?'Next up':'This week';document.getElementById('twsub').textContent=`Week ${g.wk} · ${home?'vs':'at'} ${T[opp].nick}`;document.getElementById('twbadge').textContent=bye?`Week ${S.current_week}: bye`:'';
+/* the defense at his position (SCOPE §19 keys) */
+const dk=p.pos==='QB'?'pass_epa':(p.pos==='RB'||p.pos==='FB')?'run_epa':p.pos==='TE'?'TE_epa':'WR_epa', dLab={WR_epa:'vs WR',TE_epa:'vs TE',run_epa:'vs the run',pass_epa:'vs the pass'}[dk], dUnit={WR_epa:'per target to wide receivers',TE_epa:'per target to tight ends',run_epa:'per designed carry',pass_epa:'per dropback'}[dk];
+const rk=M.rank.def[opp]?.[dk], val=M.defense[opp]?.[dk], lg=M.league?.[dk], tier=rk==null?'':rk<=10?'tough':rk>=23?'soft':'mid', tierWord={tough:'a tough matchup',mid:'a middle-of-the-pack matchup',soft:'a soft matchup'}[tier]||'';
+const sg2=v=>v==null?'–':(v>0?'+':'')+(+v).toFixed(2);
+/* kickoff + line */
+const dt=new Date(g.date+'T'+(g.time||'13:00')+':00-05:00'), kick=`${g.day?g.day.slice(0,3):''} ${dt.toLocaleDateString('en-US',{month:'short',day:'numeric'})} · ${dt.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/New_York'})} ET`;
+if(!bye)document.getElementById('twbadge').textContent=kick.split(' · ')[0]+' · '+kick.split(' · ')[1];
+const fav=g.spread==null?'':g.spread>0?`${g.home} −${g.spread}`:g.spread<0?`${g.away} −${Math.abs(g.spread)}`:'pick';
+/* his history vs the tier, from his weekly line and the defense ranks */
+const drank=t=>M.rank.def[t]?.[dk]; const tierOf=r=>r==null?'':r<=10?'tough':r>=23?'soft':'mid';
+const use=grp==='rec'?[w=>w.targets,'targets',w=>w.receiving_yards]:grp==='rb'?[w=>w.carries+w.targets,'touches',w=>w.rushing_yards+w.receiving_yards]:[w=>w.attempts,'attempts',w=>w.passing_yards];
+const sameTier=W.filter(w=>tierOf(drank(w.opponent_team))===tier), tg=sameTier.length, tu=sameTier.reduce((s,w)=>s+(+use[0](w)||0),0), ty=sameTier.reduce((s,w)=>s+(+use[2](w)||0),0);
+const met=W.filter(w=>w.opponent_team===opp).pop();
+const line=w=>grp==='rec'?`${w.receptions} catch${w.receptions===1?'':'es'}, ${w.receiving_yards} yards${w.receiving_tds?`, ${w.receiving_tds} TD`:''}`:grp==='rb'?`${w.carries} carries for ${w.rushing_yards}${w.targets?`, ${w.receptions} catch${w.receptions===1?'':'es'} for ${w.receiving_yards}`:''}${(w.rushing_tds+w.receiving_tds)?`, ${w.rushing_tds+w.receiving_tds} TD`:''}`:`${w.completions} of ${w.attempts} for ${w.passing_yards}${w.passing_tds?`, ${w.passing_tds} TD`:''}${w.passing_interceptions?`, ${w.passing_interceptions} INT`:''}`;
+const tierName={tough:'top-10',mid:'middle',soft:'bottom-10'}[tier];
+/* status: injury line + snaps over the last three games */
+const sn=Object.keys(p.snaps).map(Number).sort((a,b)=>a-b).slice(-3).map(k=>p.snaps[k]), snAvg=sn.length?Math.round(sn.reduce((a,b)=>a+b,0)/sn.length):null;
+const st=p.inj?`${p.inj.status}${p.inj.what?' · '+p.inj.what:''}`:'No listing', stCls=!p.inj?'good':/out|did not/i.test(p.inj.status)?'bad':'';
+document.getElementById('tw4').innerHTML=`<div><h5>The game</h5><div class="big">${window.dbdMark(opp,30)}<span>${home?'vs':'at'} ${T[opp].nick}</span></div><div class="m">${kick}<br>${g.stadium||''}${fav?`<br><b>${fav}</b> · O/U ${g.total??'–'}`:''}</div></div>
+<div><h5>The defense ${dLab}</h5><div class="big"><span class="dchip ${tier}" style="font-size:12px">${rk?ordn(rk):'–'} ${dLab}</span></div><div class="m">${val==null?'Not ranked yet':`allow <b>${sg2(val)}</b> EPA ${dUnit}${lg!=null?`, league ${sg2(lg)}`:''}`}<br>${tierWord}</div></div>
+<div><h5>His history</h5><div class="m">${tg?`vs ${tierName} defenses: <b>${tg}</b> game${tg===1?'':'s'}, ${(tu/tg).toFixed(1)} ${use[1]} a game, <b>${Math.round(ty/tg)}</b> yards a game`:`No games against ${tierName} defenses yet`}<br>${met?`Week ${met.week} ${met.team!==opp&&home?'at':'vs'} ${opp}: ${line(met)}`:'First meeting this season'}</div></div>
+<div><h5>His status</h5><div class="w ${stCls}">${st}</div><div class="m">${snAvg!=null?`Snap share, last ${sn.length}: <b>${snAvg}%</b>`:''}</div></div>`;
+let say=rk?`${tierWord.charAt(0).toUpperCase()+tierWord.slice(1)}: the ${T[opp].nick} rank <b>${ordn(rk)}</b> ${dLab}, allowing ${sg2(val)} EPA ${dUnit}.`:`The ${T[opp].nick} are not ranked ${dLab} yet.`;
+if(tg)say+=` He has averaged <b>${Math.round(ty/tg)}</b> yards a game against ${tierName} defenses this season`+(met?`, and he went ${line(met)} against them in Week ${met.week}.`:'.');else if(met)say+=` He went ${line(met)} against them in Week ${met.week}.`;
+if(bye)say=`Week ${S.current_week} is the bye. `+say;
+document.getElementById('twsay').innerHTML=say;
 })();
 </script>
 </body>
