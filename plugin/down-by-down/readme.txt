@@ -32,7 +32,7 @@ Not affiliated with the NFL or any team. No team logos are used; team marks are 
 == Changelog ==
 
 = 1.4.2 =
-* Phones: tables and their panel labels share one edge. Where the table wrapper narrows to 8px on small screens, panel headers, reads, notes, legends, chart grids and headings move to the same 8px line instead of staying at 14px, so nothing on a phone sits 5px out of line and no table loses width.
+* One panel edge everywhere, and a roomier one: every panel's label, reads, notes, legends, chart grids, headings and tables now sit 20px in from the panel's border on desktop and tablet (they were at 14 to 16px after 1.4.1), and 12px on phones (where tables sat at 10px and labels at 15px).
 * Team logos in the hero positions (the team and players titles, the player hero's team link, the game header) are 30% larger, capped so a wide wordmark stays clear of the text beside it.
 
 = 1.4.1 =
