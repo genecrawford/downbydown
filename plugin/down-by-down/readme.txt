@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.3.5
+Stable tag: 1.3.6
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,11 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.3.6 =
+* Design cleanup: the horizontal scrollbars are gone at desktop and tablet widths. The player page is reorganized into five bands by question under a sticky jump nav (How good is he, How he's used, Who he works with, Week by week, Intel & plays); the rail is retired, so wide tables get the whole width. The team explorer's Who gets the ball and the game page's Head to head take a full row.
+* One compact rule for every stat table (11px numbers, tighter cells) and column tiers: second- and third-priority columns hide as the table's container narrows, and on phones the game log's Defense rank folds under the opponent as a small chip. Only the connection table and the players index keep an in-panel scroll on phones.
+* The hub's games strip and the team game picker wrap into rows instead of scrolling sideways; the drive chart scales to its panel; the breadcrumb wraps on phones.
 
 = 1.3.5 =
 * Opponent context. The game log gains a Defense column: a chip for the defense faced that week, ranked against his position (EPA allowed per target to wide receivers or tight ends, per designed carry for backs, per dropback for quarterbacks; 1 is the toughest), tiered navy for the top 10 and green for the bottom 10, sortable, with the number and the league average in the tooltip.

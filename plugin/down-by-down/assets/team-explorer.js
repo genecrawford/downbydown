@@ -57,8 +57,9 @@
       '</div></section>' +
       '<div class="dbd-rail">' +
       '<section class="dbd-panel dbd-detail"><div class="dbd-ph"><span class="dbd-lab"><b>Play detail</b></span><span class="dbd-badge"><span class="t-text-swap" id="dbd-detailmode">Best by EPA</span></span></div><div class="dbd-pb" id="dbd-detail"></div></section>' +
-      '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Who gets the ball</b></span><span class="dbd-badge">Click to filter</span></div><div class="dbd-tw"><table class="dbd-usage dbd-sortable" id="dbd-usage"></table></div></section>' +
-      '</div></div><div class="dbd-tt" id="dbd-tt" role="tooltip"></div>';
+      '</div></div>' +
+      '<section class="dbd-panel dbd-usagep"><div class="dbd-ph"><span class="dbd-lab"><b>Who gets the ball</b></span><span class="dbd-badge">Click to filter</span></div><div class="dbd-tw"><table class="dbd-usage dbd-stat dbd-sortable" id="dbd-usage"></table></div></section>' +
+      '<div class="dbd-tt" id="dbd-tt" role="tooltip"></div>';
 
     var st = { games: new Set(), down: '', type: '', zone: '', sg: '', q: '', pl: '', sel: null, selAuto: true };
     var $ = function (s) { return host.querySelector(s); };

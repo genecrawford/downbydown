@@ -21,13 +21,17 @@
   function status(p) { var s = p.st || ''; if (!s) return ''; var cls = /out|did not/i.test(s) ? ' o' : /questionable|limited|doubtful/i.test(s) ? ' q' : ''; var lbl = /did not/i.test(s) ? 'DNP' : /limited/i.test(s) ? 'Limited' : /full/i.test(s) ? 'Full' : s; return '<span class="dbd-st' + cls + '">' + esc(lbl + (p.what ? ' · ' + p.what : '')) + '</span>'; }
   function row(p) { var h = purl(p.id); return '<tr class="dbd-trow" data-href="' + esc(h) + '"><td class="dbd-nm"><span class="dbd-nmi">' + window.dbdPlayer(p.team, p.num, 34, p.photo, !!C.heads) + '<a href="' + esc(h) + '">' + esc(p.name) + '</a>' + (p.slot ? '<small>' + esc(p.slot) + '</small>' : '') + '</span></td><td class="dbd-ptm">' + window.dbdMark(p.team, 20) + '</td><td class="dbd-ppos">' + esc(p.pos) + '</td><td class="dbd-psnap"><span class="dbd-sb"><i style="--w:' + (p.snap | 0) + '%"></i></span>' + (p.snap | 0) + '%</td><td>' + ((p.pos === 'QB' ? p.att : p.tgt) || '') + '</td><td>' + (p.rec || '') + '</td><td>' + (p.car || '') + '</td><td>' + (p.yds | 0) + '</td><td>' + (p.td || '') + '</td><td class="' + (p.epa >= 0 ? 'pos' : 'neg') + '">' + (p.epa > 0 ? '+' : '') + (+p.epa).toFixed(1) + '</td><td>' + status(p) + '</td></tr>'; }
 
+  var PT = [null, 'dbd-t2', null, 'dbd-t2', null, 'dbd-t2', 'dbd-t2', null, null, null, 'dbd-t3'];  /* column tiers, same as the PHP header (SCOPE §20) */
+  function tierize(html, tiers) {
+    return html.replace(/<tr\b[^>]*>[\s\S]*?<\/tr>/g, function (r) { var i = -1; return r.replace(/<t([dh])\b([^>]*)>/g, function (m, tag, attrs) { i++; var t = tiers[i]; if (!t) return m; var cm = attrs.match(/\bclass="([^"]*)"/); attrs = cm ? attrs.replace(cm[0], 'class="' + t + ' ' + cm[1] + '"') : attrs + ' class="' + t + '"'; return '<t' + tag + attrs + '>'; }); });
+  }
   function draw() {
     var needle = st.q.trim().toLowerCase();
     var rows = ALL.filter(function (p) { return (!st.team || needle || p.team === st.team) && (!st.pos || p.pos === st.pos || (st.pos === 'RB' && p.pos === 'FB')) && (!needle || p.name.toLowerCase().indexOf(needle) >= 0 || String(p.num) === needle || (p.team || '').toLowerCase() === needle || (p.col || '').toLowerCase().indexOf(needle) >= 0); });
     if (sort.key) rows.sort(function (a, b) { var x = val(a, sort.key), y = val(b, sort.key); return (x < y ? -1 : x > y ? 1 : 0) * sort.dir; });
     var cap = st.team || needle ? 0 : 60; if (cap && rows.length > cap) rows = rows.slice(0, cap);
     var by = sort.key ? LABEL[sort.key] : 'snap share';
-    $('#dbd-plist tbody').innerHTML = rows.length ? rows.map(row).join('') : '<tr><td colspan="11" class="dbd-note">No players match.</td></tr>';
+    $('#dbd-plist tbody').innerHTML = rows.length ? tierize(rows.map(row).join(''), PT) : '<tr><td colspan="11" class="dbd-note">No players match.</td></tr>';
     var t = st.team && C.teams[st.team];
     $('#dbd-plab').innerHTML = needle ? '<b>Search</b> · ' + esc(st.q) + ' · all teams' : t ? '<b>' + esc(t.nick) + '</b> · sorted by ' + by : '<b>League leaders</b> · top ' + rows.length + ' by ' + by;
     root.querySelectorAll('#dbd-plist th[data-sort]').forEach(function (h) { if (h.dataset.sort === sort.key) h.setAttribute('aria-sort', sort.dir === 1 ? 'ascending' : 'descending'); else h.removeAttribute('aria-sort'); });

@@ -60,6 +60,34 @@
 .glog .seg{margin-left:auto}
 .glog-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 
+/* block organization (SCOPE §20 revision): bands by question, a jump nav, side-by-side pairs */
+.jump{position:sticky;top:0;z-index:5;display:flex;gap:6px;flex-wrap:wrap;padding:10px 0 8px;margin:4px 0 -6px;background:var(--bg)}
+.jump a{font:700 11px var(--display);text-transform:uppercase;letter-spacing:.12em;color:var(--ink-2);text-decoration:none;border:1px solid var(--line-2);border-radius:999px;padding:5px 11px;background:var(--panel)}
+.jump a:hover{border-color:var(--red);color:var(--red-ink)}
+.band{display:flex;flex-direction:column;gap:14px;scroll-margin-top:56px}
+.bandh{display:flex;align-items:baseline;gap:12px;margin:10px 0 0;font:800 13px var(--display);letter-spacing:.2em;text-transform:uppercase;color:var(--red)}
+.bandh::before{content:"";width:22px;height:3px;background:var(--red);align-self:center}
+.bandh span{font:500 12px var(--body);color:var(--muted);letter-spacing:0;text-transform:none}
+.three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+@media (max-width:1100px){.three{grid-template-columns:minmax(0,1fr)}}
+.two .pct{grid-template-columns:minmax(0,1fr)}.two .pct .row:nth-child(2){border-top:1px solid var(--line)}
+.two .wk3{grid-template-columns:minmax(0,1fr)}
+.two>.panel{align-self:start}
+@media (max-width:900px){.two{grid-template-columns:minmax(0,1fr)}}
+
+/* design cleanup (SCOPE §20): compact stat tables, column tiers, bands */
+.tw{container-type:inline-size}
+.stat th{font:700 10px var(--display);text-transform:uppercase;letter-spacing:.08em;padding:5px 4px}
+.stat td{padding:4px 4px;font:500 11px var(--mono)}
+.stat td:first-child,.stat td.nm{font:500 12px var(--body);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stat .pmark.sm{width:22px;height:22px;font-size:10px}
+.stat td small{font-size:9px}
+@container (max-width:860px){.t2{display:none}}
+@container (max-width:560px){.t3{display:none}.dfold{display:block!important}}
+.dfold{display:none;margin-top:2px}
+@media (max-width:640px){.ribbon{grid-template-columns:repeat(6,minmax(0,1fr))}.ribbon .c i{display:none}.ribbon .c{min-height:40px}}
+.glog td.res .dfold .dchip{margin:0;font-size:9px;padding:0 4px}
+
 /* opponent context */
 .dchip{display:inline-flex;align-items:center;gap:4px;padding:1px 6px;border-radius:3px;font:600 10px var(--mono);white-space:nowrap;vertical-align:middle;border:1px solid var(--line-2);color:var(--ink-2);background:var(--bg)}
 .dchip.tough{background:#161e36;color:#fff;border-color:#161e36} .dchip.soft{background:rgba(30,127,74,.14);color:var(--good);border-color:rgba(30,127,74,.35)}
@@ -141,38 +169,43 @@
       </div><div class="hdr"><a class="pn" href="team.html?team=MIN" id="teamlink"></a><span class="badge" id="snaps"></span></div></div>
 
       <div class="tiles" id="tiles"></div>
-
-      <section class="panel"><div class="ph"><span class="lab"><b>Where he ranks</b> · <span id="pctn"></span></span><span class="badge">League percentiles</span></div><div class="pct" id="pct"></div><p class="note">Each bar is the league at his position; the marker is him. Right is better, the dashed line is the median. Built from every qualifying player's season to date, so grades move every week.</p></section>
-
-      <div class="work">
-        <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
-          <section class="panel"><div class="ph"><span class="lab"><b id="maplab">Where the ball finds him</b> · every target, by depth and side</span><span class="badge" id="mapn"></span></div>
+      <nav class="jump" aria-label="On this page"><a href="#good">How good is he</a><a href="#used">How he's used</a><a href="#with">Who he works with</a><a href="#weeks">Week by week</a><a href="#more">Intel &amp; plays</a></nav>
+      <section class="band" id="good"><h2 class="bandh">How good is he<span>league grades and the season line, side by side</span></h2>
+      <div class="two">
+<section class="panel"><div class="ph"><span class="lab"><b>Where he ranks</b> · <span id="pctn"></span></span><span class="badge">League percentiles</span></div><div class="pct" id="pct"></div><p class="note">Each bar is the league at his position; the marker is him. Right is better, the dashed line is the median. Built from every qualifying player's season to date, so grades move every week.</p></section>
+<section class="panel"><div class="ph"><span class="lab"><b>Season stats</b> · with league rank</span><span class="badge" id="ssn"></span></div><div class="tw" style="padding:0 14px 8px"><table class="sstat" id="sstat"></table></div></section>
+      </div>
+      </section>
+      <section class="band" id="used"><h2 class="bandh">How he's used<span>where the ball finds him and when</span></h2>
+      <div class="two">
+<section class="panel"><div class="ph"><span class="lab"><b id="maplab">Where the ball finds him</b> · every target, by depth and side</span><span class="badge" id="mapn"></span></div>
             <div class="sprays"><div><h4 id="map1h">Targets on the field</h4><div id="map"></div></div><div><h4>By depth of target</h4><div class="bands" id="bands" style="padding:0"></div><h4 style="margin-top:14px">Catch rate by depth</h4><p class="note" style="padding:0" id="bandnote"></p></div></div>
             <div class="legend" id="leg"></div><p class="note" id="mapnote"></p></section>
-
-          <section class="panel conn" id="connsec"><div class="ph"><span class="lab"><b id="connlab">The connection</b> · <span id="connsub"></span></span><span class="badge" id="connn"></span></div>
-            <div class="tw"><table id="conntab"></table></div><p class="say" id="connsay"></p>
+<section class="panel"><div class="ph"><span class="lab"><b>When he gets it</b> · touches by situation</span></div><div class="wk3 tend" id="sit"></div></section>
+      </div>
+      </section>
+      <section class="band" id="with"><h2 class="bandh">Who he works with<span>the connection, and the rest of the huddle</span></h2>
+<section class="panel conn" id="connsec"><div class="ph"><span class="lab"><b id="connlab">The connection</b> · <span id="connsub"></span></span><span class="badge" id="connn"></span></div>
+            <div class="tw"><table id="conntab" class="stat"></table></div><p class="say" id="connsay"></p>
             <div class="conn2"><div><h4 id="cmaph">Where each receiver gets it</h4><div id="cmap"></div><div class="chips" id="cchips"></div><p class="note" style="padding:8px 0 0" id="cmapnote"></p></div>
               <div><h4 id="cwkh">How he spreads it, week by week</h4><div class="wks" id="cwks"></div><div class="wkl" id="cwkl"></div><h4 id="cdgh">By depth</h4><div class="dgrid" id="cdg"></div></div></div>
           </section>
-
-          <section class="panel"><div class="ph glog-h"><span class="lab"><b>Game log</b> · week by week</span><div class="seg" id="gview"></div></div><div class="tw" style="padding:0 14px 8px"><table class="glog" id="glog"></table></div></section>
-
-          <section class="panel oppx" id="oppsec"><div class="ph"><span class="lab"><b>Who he's faced</b> · <span id="oxsub"></span></span><span class="badge" id="oxn"></span></div>
+      </section>
+      <section class="band" id="weeks"><h2 class="bandh">Week by week<span>the game log and the defenses behind it</span></h2>
+<section class="panel"><div class="ph glog-h"><span class="lab"><b>Game log</b> · week by week</span><div class="seg" id="gview"></div></div><div class="tw" style="padding:0 14px 8px"><table class="glog stat" id="glog"></table></div></section>
+<section class="panel oppx" id="oppsec"><div class="ph"><span class="lab"><b>Who he's faced</b> · <span id="oxsub"></span></span><span class="badge" id="oxn"></span></div>
             <p class="say" id="oxsay"></p>
             <h4>The slate · played, <i style="font-style:normal;opacity:.7">ahead dashed</i></h4><div class="ribbon" id="oxrib"></div><div class="legend" id="oxleg"></div>
             <div class="ox2"><div><h4>His line by defense faced</h4><table class="split" id="oxsplit"></table></div><div><h4 id="oxsch"></h4><div class="oxsc" id="oxsc"></div><p class="note" id="oxscn" style="padding:6px 14px 0"></p></div></div>
           </section>
-
-          <section class="panel"><div class="ph"><span class="lab"><b>When he gets it</b> · touches by situation</span></div><div class="wk3 tend" id="sit"></div></section>
-        </div>
-        <div class="rail">
-          <section class="panel"><div class="ph"><span class="lab"><b>Season stats</b> · with league rank</span><span class="badge" id="ssn"></span></div><div class="tw" style="padding:0 14px 8px"><table class="sstat" id="sstat"></table></div></section>
-          <section class="panel"><div class="ph"><span class="lab"><b>Intel</b></span><span class="badge" id="intelwk"></span></div><div class="pb"><dl class="kv intel" id="intel"></dl></div></section>
-          <section class="panel"><div class="ph"><span class="lab"><b>Best plays</b> · by EPA</span></div><div class="pb"><ol class="best" id="best"></ol></div></section>
-          <section class="panel"><div class="ph"><span class="lab"><b>Teammates</b> · share of the ball</span></div><div class="tw"><table class="usage mates" id="mates"></table></div></section>
-        </div>
+      </section>
+      <section class="band" id="more"><h2 class="bandh">Intel &amp; plays<span>the report, his best snaps, his teammates</span></h2>
+      <div class="three">
+<section class="panel"><div class="ph"><span class="lab"><b>Intel</b></span><span class="badge" id="intelwk"></span></div><div class="pb"><dl class="kv intel" id="intel"></dl></div></section>
+<section class="panel"><div class="ph"><span class="lab"><b>Best plays</b> · by EPA</span></div><div class="pb"><ol class="best" id="best"></ol></div></section>
+<section class="panel"><div class="ph"><span class="lab"><b>Teammates</b> · share of the ball</span></div><div class="tw"><table class="usage mates stat" id="mates"></table></div></section>
       </div>
+      </section>
     </main>
   </div>
 </div>
@@ -272,6 +305,7 @@ const oxLab={WR_epa:'vs WR',TE_epa:'vs TE',run_epa:'vs the run',pass_epa:'vs the
 const drank=t=>OXM.rank.def[t]?.[oxKey], dval=t=>OXM.defense[t]?.[oxKey], oxTier=r=>r==null?'':r<=10?'tough':r>=23?'soft':'mid';
 const dtip=t=>`${T[t]?.nick||t} allow ${sgn(dval(t))} EPA ${oxUnit} (league ${sgn(OXM.league[oxKey])}), ${ordn(drank(t))}-toughest of 32`;
 const dchip=t=>{const r=drank(t);return r?`<span class="dchip ${oxTier(r)}" title="${dtip(t)}">${ordn(r)} ${oxLab}</span>`:'';};
+const dchipShort=t=>{const r=drank(t);return r?`<span class="dchip ${oxTier(r)}" title="${dtip(t)}">${ordn(r)} D</span>`:'';};
 (function(){
 if(!OXM||!OXS)return;
 const games={};Object.keys(OXS.weeks).map(Number).sort((a,b)=>a-b).forEach(w=>OXS.weeks[String(w)].forEach(g=>{[['home','away'],['away','home']].forEach(([a,b])=>{(games[g[a]]=games[g[a]]||[]).push({wk:w,opp:g[b],home:a==='home',played:g.status==='final'});});}));
@@ -333,7 +367,10 @@ gseg.innerHTML='<span class="t-tabs-pill" aria-hidden="true"></span>'+Object.key
 function gpill(b){const pl=gseg.querySelector('.t-tabs-pill');pl.style.transform=`translateX(${b.offsetLeft}px)`;pl.style.width=b.offsetWidth+'px';}
 gseg.onclick=e=>{const b=e.target.closest('button');if(!b)return;gv=b.dataset.v;gseg.querySelectorAll('button').forEach(x=>x.setAttribute('aria-selected',x===b));gpill(b);drawLog();};
 requestAnimationFrame(()=>{const pl=gseg.querySelector('.t-tabs-pill');pl.style.transition='none';gpill(gseg.querySelector('[aria-selected="true"]'));void pl.offsetWidth;pl.style.transition='';});
-function drawLog(){const [cols,fn]=VIEWS[grp][gv];document.getElementById('glog').innerHTML='<tr><th>Wk</th><th>Opponent</th><th>Defense</th>'+cols.split('|').map(c=>`<th>${c}</th>`).join('')+'</tr>'+W.map(w=>`<tr><td>${w.week}</td><td class="res">${res(w)}</td><td class="dcell">${dchip(w.opponent_team)}</td>${fn(w)}</tr>`).join('');}
+function drawLog(){const [cols,fn]=VIEWS[grp][gv];const TIER={Snap:'t2',TD:'t2'},cl=cols.split('|');
+ const tier=(html,t)=>t?html.replace(/^<td(?: class="([^"]*)")?/,(m,c)=>`<td class="${t}${c?' '+c:''}"`):html;
+ const cells=w=>{const parts=fn(w).match(/<td[\s\S]*?<\/td>/g)||[];return parts.map((x,i)=>tier(x,TIER[cl[i]])).join('');};
+ document.getElementById('glog').innerHTML='<tr><th>Wk</th><th>Opponent</th><th class="t3">Defense</th>'+cl.map(c=>`<th class="${TIER[c]||''}">${c}</th>`).join('')+'</tr>'+W.map(w=>`<tr><td>${w.week}</td><td class="res">${res(w)}<span class="dfold">${dchipShort(w.opponent_team)}</span></td><td class="dcell t3">${dchip(w.opponent_team)}</td>${cells(w)}</tr>`).join('');}
 drawLog();
 
 /* situations: touches by down, quarter, score, from the play file */
@@ -360,7 +397,7 @@ document.getElementById('best').innerHTML=bestSet.map(q=>{const g=gIdx[q.g]||{};
 
 /* teammates */
 const mates=PL.filter(x=>x.id!==p.id&&x.weeks.length).map(x=>{const s=k=>x.weeks.reduce((a,w)=>a+(+w[k]||0),0);return{x,tc:s('targets')+s('carries'),y:s('receiving_yards')+s('rushing_yards'),td:s('receiving_tds')+s('rushing_tds'),e:s('receiving_epa')+s('rushing_epa')};}).filter(m=>m.tc>0).sort((a,b)=>b.tc-a.tc).slice(0,8);
-document.getElementById('mates').innerHTML='<tr><th>Player</th><th>Touches</th><th>Yds</th><th>TD</th><th>EPA</th></tr>'+mates.map(m=>`<tr class="clk" onclick="location.href='player.html?id=${m.x.id}'"><td class="nm"><span class="pmark sm">${m.x.num}</span><a href="player.html?id=${m.x.id}">${m.x.name}</a> <small style="font:500 10px var(--mono);color:var(--muted)">${m.x.pos}</small></td><td>${m.tc}</td><td>${Math.round(m.y)}</td><td>${m.td||''}</td><td class="${m.e>=0?'pos':'neg'}">${sgn(m.e,1)}</td></tr>`).join('');
+document.getElementById('mates').innerHTML='<tr><th>Player</th><th>Touches</th><th>Yds</th><th>EPA</th></tr>'+mates.map(m=>`<tr class="clk" onclick="location.href='player.html?id=${m.x.id}'"><td class="nm"><span class="pmark sm">${m.x.num}</span><a href="player.html?id=${m.x.id}">${m.x.name}</a> <small style="font:500 10px var(--mono);color:var(--muted)">${m.x.pos}</small></td><td>${m.tc}</td><td>${Math.round(m.y)}${m.td?` <small style="color:var(--muted)">· ${m.td} TD</small>`:''}</td><td class="${m.e>=0?'pos':'neg'}">${sgn(m.e,1)}</td></tr>`).join('');
 
 /* ---- the connection: QB page = who he throws to; everyone else = his line by passer */
 (function(){
@@ -383,8 +420,9 @@ document.getElementById('connn').textContent=`${mineT.length} ${isQB?'throws':'t
 document.getElementById('cmaph').textContent=isQB?'Where each receiver gets it':'Who threw it where';
 document.getElementById('cwkh').textContent=isQB?'How he spreads it, week by week':'Targets by week, by passer';
 /* table */
-const COLS=isQB?[['nm','Receiver'],['n','Tgt'],['share','Share'],['c','Rec'],['catch','Catch'],['y','Yds'],['ad','aDOT'],['yacr','YAC/rec'],['td','TD'],['third','3rd dn'],['rz','RZ'],['epat','EPA/tgt']]
-                 :[['nm','Passer'],['n','Tgt'],['share','Of his throws'],['c','Rec'],['catch','Catch'],['y','Yds'],['ad','aDOT'],['yacr','YAC/rec'],['td','TD'],['epat','EPA/tgt'],['rate','Rating']];
+const COLS=isQB?[['nm','Receiver'],['n','Tgt'],['share','Share'],['c','Rec'],['catch','Catch'],['y','Yds'],['ad','aDOT','t2'],['yacr','YAC/rec','t2'],['td','TD','t2'],['third','3rd dn','t3'],['rz','RZ','t3'],['epat','EPA/tgt']]
+                 :[['nm','Passer'],['n','Tgt'],['share','Of his throws'],['c','Rec'],['catch','Catch'],['y','Yds'],['ad','aDOT','t2'],['yacr','YAC/rec','t2'],['td','TD','t2'],['epat','EPA/tgt'],['rate','Rating','t2']];
+const tc=(html,t)=>t?html.replace(/^<td(?: class="([^"]*)")?/,(m,c)=>`<td class="${t}${c?' '+c:''}"`):html;
 const val=(r,k)=>{const l=r.l;switch(k){case'nm':return r.nm;case'catch':return l.c/l.n;case'yacr':return l.c?l.yac/l.c:0;case'epat':return l.e/l.n;case'rate':return +prate(l);case'share':return r.share;default:return l[k];}};
 const cell=(r,k)=>{const l=r.l;switch(k){
  case'nm':return`<td class="nm"><i class="sw" style="--c:${r.col}"></i><span class="pmark sm">${r.num}</span><a href="player.html?id=${r.id}">${r.nm}</a><small>${r.pos}</small></td>`;
@@ -394,10 +432,10 @@ const cell=(r,k)=>{const l=r.l;switch(k){
  case'epat':{const v=l.e/l.n;return`<td class="${v>=0?'pos':'neg'}">${sgn(v)}</td>`;}case'rate':return`<td>${prate(l)}</td>`;default:return`<td>${l[k]}</td>`;}};
 let sk='n',sd=-1;
 function drawTab(){const rows=parts.slice().sort((a,b)=>{const x=val(a,sk),y=val(b,sk);return(typeof x==='string'?x.localeCompare(y):(x-y))*sd;});
- let h='<tr>'+COLS.map(c=>`<th data-k="${c[0]}" ${c[0]===sk?`aria-sort="${sd<0?'descending':'ascending'}"`:''}>${c[1]}</th>`).join('')+'</tr>';
- rows.forEach(r=>{h+=`<tr data-id="${r.id}" class="${iso===r.id?'on':''}">${COLS.map(c=>cell(r,c[0])).join('')}</tr>`;
-  if(r.oth&&r.oth.n)h+=`<tr class="oth"><td class="nm">to everyone else</td><td>${r.oth.n}</td><td></td><td>${r.oth.c}</td><td>${pct(r.oth.c/r.oth.n)}</td><td>${r.oth.y}</td><td>${r.oth.ad==null?'-':f1(r.oth.ad)}</td><td>${r.oth.c?f1(r.oth.yac/r.oth.c):'-'}</td><td>${r.oth.td||''}</td><td class="${r.oth.e>=0?'pos':'neg'}">${sgn(r.oth.e/r.oth.n)}</td><td>${prate(r.oth)}</td></tr>`;});
- if(isQB){const all=line(mineT);h+=`<tr style="font-weight:600"><td class="nm" style="padding-left:34px">All throws</td><td>${all.n}</td><td class="sh"></td><td>${all.c}</td><td>${pct(all.c/all.n)}</td><td>${all.y}</td><td>${f1(all.ad)}</td><td>${f1(all.yac/all.c)}</td><td>${all.td}</td><td>${all.third}</td><td>${all.rz}</td><td class="${all.e>=0?'pos':'neg'}">${sgn(all.e/all.n)}</td></tr>`;}
+ let h='<tr>'+COLS.map(c=>`<th data-k="${c[0]}" class="${c[2]||''}" ${c[0]===sk?`aria-sort="${sd<0?'descending':'ascending'}"`:''}>${c[1]}</th>`).join('')+'</tr>';
+ rows.forEach(r=>{h+=`<tr data-id="${r.id}" class="${iso===r.id?'on':''}">${COLS.map(c=>tc(cell(r,c[0]),c[2])).join('')}</tr>`;
+  if(r.oth&&r.oth.n){const o=r.oth,oc=[`<td class="nm">to everyone else</td>`,`<td>${o.n}</td>`,`<td></td>`,`<td>${o.c}</td>`,`<td>${pct(o.c/o.n)}</td>`,`<td>${o.y}</td>`,`<td>${o.ad==null?'-':f1(o.ad)}</td>`,`<td>${o.c?f1(o.yac/o.c):'-'}</td>`,`<td>${o.td||''}</td>`,`<td class="${o.e>=0?'pos':'neg'}">${sgn(o.e/o.n)}</td>`,`<td>${prate(o)}</td>`];h+=`<tr class="oth">${oc.map((x,i)=>tc(x,COLS[i][2])).join('')}</tr>`;}});
+ if(isQB){const all=line(mineT),ac=[`<td class="nm" style="padding-left:34px">All throws</td>`,`<td>${all.n}</td>`,`<td class="sh"></td>`,`<td>${all.c}</td>`,`<td>${pct(all.c/all.n)}</td>`,`<td>${all.y}</td>`,`<td>${f1(all.ad)}</td>`,`<td>${f1(all.yac/all.c)}</td>`,`<td>${all.td}</td>`,`<td>${all.third}</td>`,`<td>${all.rz}</td>`,`<td class="${all.e>=0?'pos':'neg'}">${sgn(all.e/all.n)}</td>`];h+=`<tr style="font-weight:600">${ac.map((x,i)=>tc(x,COLS[i][2])).join('')}</tr>`;}
  document.getElementById('conntab').innerHTML=h;}
 document.getElementById('conntab').addEventListener('click',e=>{const th=e.target.closest('th');if(th){const k=th.dataset.k;if(k===sk)sd=-sd;else{sk=k;sd=k==='nm'?1:-1;}drawTab();return;}const tr=e.target.closest('tr[data-id]');if(tr&&!e.target.closest('a')){setIso(iso===tr.dataset.id?null:tr.dataset.id);}});
 /* the say line */
