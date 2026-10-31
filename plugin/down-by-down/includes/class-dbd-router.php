@@ -212,6 +212,7 @@ class DBD_Router {
 				'short'   => $rec['short'] ?? '',
 				'name'    => $p['name'],
 				'pos'     => $p['pos'],
+				'num'     => $p['num'],
 				'team'    => $p['team'],
 				'teams'   => DBD_Data::teams(),
 				'season'  => DBD_Data::season(),
@@ -222,7 +223,7 @@ class DBD_Router {
 		}
 		if ( $r['view'] === 'compare' ) {
 			$files = array(); $pl = array();
-			foreach ( $r['compare'] as $row ) { $rel = 'plays/' . $row['team'] . '.json'; $files[ $row['team'] ] = DBD_Data::url() . '/' . $rel . '?v=' . DBD_Data::file_version( $rel ); $rec = DBD_Data::player_record( $row['team'], $row['id'] ); $pl[] = array( 'id' => $row['id'], 'short' => $rec['short'] ?? '', 'name' => $row['name'], 'team' => $row['team'], 'pos' => $row['pos'] ); }
+			foreach ( $r['compare'] as $row ) { $rel = 'plays/' . $row['team'] . '.json'; $files[ $row['team'] ] = DBD_Data::url() . '/' . $rel . '?v=' . DBD_Data::file_version( $rel ); $rec = DBD_Data::player_record( $row['team'], $row['id'] ); $pl[] = array( 'id' => $row['id'], 'short' => $rec['short'] ?? '', 'name' => $row['name'], 'team' => $row['team'], 'pos' => $row['pos'], 'num' => $row['num'] ); }
 			$maxW = max( 1, (int) DBD_Data::through_week() ); $series = array(); $labels = array();
 			foreach ( $r['compare'] as $row ) { $series[] = DBD_Grades::week_series( DBD_Data::player_record( $row['team'], $row['id'] ) ?: array(), $r['cgroup'], $maxW ); }
 			for ( $wk = 1; $wk <= $maxW; $wk++ ) { $labels[] = 'Wk ' . $wk; }
