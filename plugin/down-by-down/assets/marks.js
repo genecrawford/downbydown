@@ -13,6 +13,8 @@
     var t = teams()[abbr], u = t && t.logo;
     if (!window.DBD_LOGOS_ON || !svg || !u || !/^https:\/\/[^"'<>\s]+$/.test(u)) return svg;
     var sc = Math.max(0.7, Math.min(1.5, +t.logo_s || 1));  /* optical scale from the build (1.4.1) */
+    var n = Math.min(192, Math.max(48, Math.ceil(h * 3 / 16) * 16)), m = u.match(/^https:\/\/a\.espncdn\.com(\/i\/teamlogos\/[a-z0-9\/_-]+\.png)$/i);
+    if (m) u = 'https://a.espncdn.com/combiner/i?img=' + m[1] + '&w=' + n + '&h=' + n;  /* ESPN's resizer: a small transparent PNG instead of the full file */
     return '<span class="dbd-lgw" style="width:' + w + 'px;height:' + h + 'px;--lgs:' + sc.toFixed(2) + '">' + svg + '<img class="dbd-logo" src="' + esc(u) + '" alt="' + esc(t.name) + '" width="' + h + '" height="' + h + '" loading="lazy" decoding="async" referrerpolicy="no-referrer" onload="this.previousElementSibling.style.visibility=\'hidden\'" onerror="this.remove()"></span>';
   }
   window.dbdMark = function (abbr, size) { var s = size || 24; return withLogo(markSvg(abbr, s), abbr, s, s); };
