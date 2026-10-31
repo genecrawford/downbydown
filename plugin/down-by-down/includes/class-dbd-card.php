@@ -97,15 +97,19 @@ class DBD_Card {
 		$txt( $F['hero'], 60, 226, 206, $ink, strtoupper( $spec['first'] ) );
 		$txt( $F['hero'], 60, 226, 266, $red, strtoupper( $spec['last'] ) );
 
-		/* tiles */
-		$ty = 306; $tw0 = 131; $th0 = 108;
+		/* tiles: four across the left half, or across the whole card when he is not graded yet (SCOPE §26) */
+		$ty = 306; $tw0 = $spec['graded'] ? 131 : 269; $th0 = 108;
 		foreach ( $spec['tiles'] as $i => $t ) { $tx = 44 + $i * ( $tw0 + 12 );
 			$rect( $tx, $ty, $tw0, $th0, $line ); $rect( $tx + 1, $ty + 1, $tw0 - 2, $th0 - 2, $col( self::PANEL ) );
 			$spaced( $F['disp'], 11, $tx + 14, $ty + 27, $muted, strtoupper( $t[0] ), 0.16 );
 			$txt( $F['hero'], 42, $tx + 14, $ty + 75, $ink, number_format( (float) $t[1] ) );
 			if ( $t[2] !== '' ) { $txt( $F['mono'], 12, $tx + 14, $ty + 95, $muted, $t[2] ); } }
 
-		/* where he ranks */
+		/* where he ranks, or the qualifier line for a player who is not graded yet */
+		if ( ! $spec['graded'] ) {
+			$spaced( $F['disp'], 14, 44, 452, $muted, strtoupper( $spec['rank_head'] ), 0.2 );
+			$txt( $F['body'], 16, 44, 482, $ink2, 'League percentile bars appear once he clears the qualifier; the season line above is complete.' );
+		} else {
 		$rx = 648; $spaced( $F['disp'], 13, $rx, 119, $muted, strtoupper( $spec['rank_head'] ), 0.2 );
 		$bx = 838; $bw = 230; $good = $col( self::GOOD ); $bad = $col( self::BAD );
 		/* the bar gradient, red through grey to green, flattened on the background once */
@@ -118,6 +122,7 @@ class DBD_Card {
 			if ( $r['pc'] !== null ) { $mx = $bx + $r['pc'] / 100 * $bw; $rect( $mx - 6, $y + 14, 12, 26, $bg ); $rect( $mx - 3, $y + 17, 6, 20, $team ); }
 			$label = $r['pc'] === null ? '–' : DBD_Grades::ordinal( $r['pc'] ); $pcol = $r['pc'] === null ? $muted : ( $r['pc'] >= 75 ? $good : ( $r['pc'] <= 25 ? $bad : $ink ) );
 			$lw = $tw( $F['hero'], 24, $label ) / $S; $txt( $F['hero'], 24, 1156 - $lw, $y + 36, $pcol, $label ); }
+		}
 
 		/* footer */
 		$rect( 0, 586, self::W, 1, $line );
@@ -135,15 +140,16 @@ class DBD_Card {
 		$row = DBD_Data::player( $id ); if ( ! $row ) { $fail( 404 ); }
 		$rec = DBD_Data::player_record( $row['team'], $id ); if ( ! $rec ) { $fail( 404 ); }
 		$through = (int) DBD_Data::through_week(); $up = wp_upload_dir(); $dir = trailingslashit( $up['basedir'] ) . 'down-by-down/cards'; wp_mkdir_p( $dir );
-		$file = $dir . '/' . $id . '-' . $through . '-' . DBD_VERSION . '.png';
+		$file = $dir . '/' . $id . '-' . (int) DBD_Data::season() . '-' . $through . '-' . DBD_VERSION . '.png';  /* season, data week and plugin version: a new year or a new design never serves an old card */
 		if ( ! file_exists( $file ) ) {
 			$team = DBD_Data::team( $row['team'] ); $grp = DBD_Grades::group_of( $row['pos'] ); $gi = $grp ? ( DBD_Grades::group_info( $grp ) ?: array() ) : array();
 			$spec = self::spec( $rec, $row, $team, $gi, DBD_Data::season(), $through ); if ( ! $spec ) { $fail( 404 ); }
 			$photo = null;
 			if ( ! empty( $rec['photo'] ) ) { $r = wp_remote_get( $rec['photo'], array( 'timeout' => 5 ) ); if ( ! is_wp_error( $r ) && (int) wp_remote_retrieve_response_code( $r ) === 200 ) { $photo = wp_remote_retrieve_body( $r ); } }
 			$im = self::draw( $spec, array( 'fonts' => DBD_PATH . 'assets/fonts/', 'logo' => DBD_PATH . 'assets/card-logo.png', 'photo' => $photo ) ); if ( ! $im ) { $fail( 500 ); }
-			imagepng( $im, $file, 6 ); imagedestroy( $im );
-			if ( ! file_exists( $file ) ) { $fail( 500 ); }
+			/* write beside the final name, then rename into place, so a request arriving mid-write never streams a half-written PNG */
+			$tmp = $dir . '/.' . wp_generate_password( 12, false ) . '.tmp'; $ok = imagepng( $im, $tmp, 6 ); imagedestroy( $im );
+			if ( ! $ok || ! file_exists( $tmp ) || filesize( $tmp ) < 1000 || ! @rename( $tmp, $file ) ) { @unlink( $tmp ); $fail( 500 ); }
 		}
 		header( 'Content-Type: image/png' ); header( 'Content-Length: ' . filesize( $file ) ); header( 'Cache-Control: public, max-age=86400' ); header( 'X-Content-Type-Options: nosniff' );
 		readfile( $file ); exit;
