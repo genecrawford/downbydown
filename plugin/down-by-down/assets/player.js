@@ -133,23 +133,25 @@
     (function () {
       var sec = $('#dbd-cx'); if (!sec || !byQb || !byId) return;
       var isQB = grp === 'qb', key = isQB ? 'pid' : 'qb', RC = ['#5b9cf6', '#f0b429', '#e0564b', '#4fd18b', '#c77dff', '#ff9f43'], OTH = '#9a96a6', MIN_T = 5, MIN_3 = 3;
-      var throws = teamPass.filter(isT), mineT = throws.filter(function (p) { return (isQB ? p.qb : p.pid) === C.id; });
+      var throws = teamPass.filter(function (p) { return isT(p) && p.dn != null; }), mineT = throws.filter(function (p) { return (isQB ? p.qb : p.pid) === C.id; });  /* two-point tries have no down and are not targets */
+      var rtd = function (p) { return p.k === 'comp' && !!p.td && !/FUMBLE/i.test(p.desc || ''); };  /* td is the play's flag; a catch-and-fumble returned for a score is not a receiving touchdown */
       if (!mineT.length) return;
-      sec.hidden = false;
       var R = C.roster || {}, who = isQB ? 'receiver' : 'passer', whos = isQB ? 'receivers' : 'passers', iso = null;
       var purl = function (id) { return C.base + (C.base.indexOf('?') >= 0 ? '&' : '?') + 'player=' + encodeURIComponent(id); };
       var sum = function (a, f) { return a.reduce(function (s, p) { return s + (f(p) || 0); }, 0); };
       var line = function (a) {
         var c = a.filter(function (p) { return p.k === 'comp'; }), air = a.filter(function (p) { return p.air != null; }), third = a.filter(function (p) { return p.dn == 3; }), rz = a.filter(function (p) { return p.yl <= 20; });
         return { n: a.length, c: c.length, y: sum(c, function (p) { return p.yds; }), ad: air.length ? sum(air, function (p) { return p.air; }) / air.length : null, yac: sum(c, function (p) { return p.yac; }),
-          td: a.filter(function (p) { return p.td; }).length, ints: a.filter(function (p) { return p.k === 'int'; }).length, e: sum(a, function (p) { return p.epa; }),
-          third: third.length, thirdc: third.filter(function (p) { return p.fd || p.td; }).length, rz: rz.length, rzt: rz.filter(function (p) { return p.td; }).length };
+          td: a.filter(rtd).length, ints: a.filter(function (p) { return p.k === 'int'; }).length, e: sum(a, function (p) { return p.epa; }),
+          third: third.length, thirdc: third.filter(function (p) { return p.fd || p.td; }).length, rz: rz.length, rzt: rz.filter(rtd).length };
       };
       var clamp = function (v) { return Math.max(0, Math.min(2.375, v)); };
       var prate = function (l) { if (!l.n) return '-'; return f1((clamp((l.c / l.n - .3) * 5) + clamp((l.y / l.n - 3) * .25) + clamp(l.td / l.n * 20) + clamp(2.375 - l.ints / l.n * 25)) / 6 * 100); };
       var groups = {}; mineT.forEach(function (p) { var k = p[key] || '_none'; (groups[k] = groups[k] || []).push(p); });
       var parts = Object.keys(groups).filter(function (k) { return k !== '_none'; }).map(function (k) { var r = R[k] || {}, fb = isQB ? (groups[k][0].pl || k) : 'Passer ' + k.slice(-4);
         return { id: k, known: !!R[k], nm: r.name || fb, short: r.short || fb, pos: r.pos || '', num: r.num, photo: r.photo, l: line(groups[k]), q: groups[k] }; }).sort(function (a, b) { return b.l.n - a.l.n; });
+      if (!parts.length) return;  /* only throwaways or batted balls so far: nothing to connect */
+      sec.hidden = false;
       parts.forEach(function (r, i) { r.col = i < RC.length ? RC[i] : OTH; var all = isQB ? mineT : throws.filter(function (p) { return p.qb === r.id; }); r.oth = isQB ? null : line(all.filter(function (p) { return p.pid !== C.id; })); r.share = all.length ? r.l.n / all.length : 0; });
       var none = (groups._none || []).length, colOf = {}, nameOf = {}; parts.forEach(function (r) { colOf[r.id] = r.col; nameOf[r.id] = r.short; });
       $('#dbd-cx-n').textContent = mineT.length + (isQB ? ' throws' : ' targets') + ' · ' + parts.length + ' ' + (parts.length === 1 ? who : whos);
@@ -210,8 +212,8 @@
         var byLane = { left: [], middle: [], right: [] }, on = function (p) { return !iso || (p[key] || '_none') === iso; };
         D.slice().sort(function (a, b) { return on(a) - on(b); }).forEach(function (p) {  /* the isolated player's dots draw last, on top */
           var li = lanes[p.loc] == null ? 1 : lanes[p.loc]; if (on(p)) (byLane[p.loc] || byLane.middle).push(p);
-          var cx = Lf + lw * li + lw * (.12 + .76 * hash(p.i + 1)), cy = y(p.air), c = colOf[p[key]] || OTH, r = p.td ? 7 : 5.5, o = on(p) ? 1 : .12, tp = ' tabindex="0" data-tip="' + esc(tipFor(p)) + '"';
-          if (p.k === 'comp') g += '<circle class="dbd-pdot" cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="' + c + '" fill-opacity="' + (o * .92) + '" stroke="' + (p.td ? '#fff' : 'rgba(0,0,0,.35)') + '" stroke-width="' + (p.td ? 2 : 1) + '" stroke-opacity="' + o + '"' + tp + '></circle>';
+          var cx = Lf + lw * li + lw * (.12 + .76 * hash(p.i + 1)), cy = y(p.air), c = colOf[p[key]] || OTH, td = rtd(p), r = td ? 7 : 5.5, o = on(p) ? 1 : .12, tp = ' tabindex="0" data-tip="' + esc(tipFor(p)) + '"';
+          if (p.k === 'comp') g += '<circle class="dbd-pdot" cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="' + c + '" fill-opacity="' + (o * .92) + '" stroke="' + (td ? '#fff' : 'rgba(0,0,0,.35)') + '" stroke-width="' + (td ? 2 : 1) + '" stroke-opacity="' + o + '"' + tp + '></circle>';
           else g += '<circle class="dbd-pdot" cx="' + cx + '" cy="' + cy + '" r="' + (r - 1) + '" fill="none" stroke="' + (p.k === 'int' ? COL.bad : c) + '" stroke-width="2" stroke-opacity="' + (o * .95) + '"' + tp + '></circle>';
         });
         Object.keys(byLane).forEach(function (k) { var arr = byLane[k]; if (!arr.length) return; var c = arr.filter(function (p) { return p.k === 'comp'; }).length; g += '<text x="' + (Lf + lw * lanes[k] + lw / 2) + '" y="' + (Tp - 24) + '" fill="#fff" font-size="11" font-weight="600" text-anchor="middle">' + c + '/' + arr.length + ' · ' + Math.round(c / arr.length * 100) + '%</text>'; });
@@ -221,7 +223,7 @@
       var chips = $('#dbd-cx-chips');
       chips.innerHTML = parts.slice(0, RC.length).map(function (r) { return '<button type="button" data-id="' + esc(r.id) + '" aria-pressed="false" style="--c:' + r.col + '"><i></i>' + esc(r.short) + '<small>' + r.l.n + '</small></button>'; }).join('') +
         (parts.length > RC.length ? '<span class="dbd-cx-chip"><i style="background:' + OTH + '"></i>' + (parts.length - RC.length) + ' others<small>' + parts.slice(RC.length).reduce(function (s, r) { return s + r.l.n; }, 0) + '</small></span>' : '');
-      function setIso(id) { iso = id; chips.classList.toggle('dim', !!iso); chips.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.id === iso ? 'true' : 'false'); }); drawMap(); drawWks(); sec.querySelectorAll('#dbd-cx-tab tr[data-id]').forEach(function (tr) { tr.classList.toggle('on', tr.dataset.id === iso); }); }  /* rows toggle in place so a sort survives */
+      function setIso(id) { iso = id; chips.classList.toggle('dim', !!iso); chips.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.id === iso ? 'true' : 'false'); }); drawMap(); drawWks(); var cur = null; sec.querySelectorAll('#dbd-cx-tab tbody tr').forEach(function (tr) { if (tr.dataset.id) cur = tr.dataset.id; tr.classList.toggle('on', !!iso && cur === iso); tr.classList.toggle('dim', !!iso && cur !== iso); }); }  /* rows toggle in place so a sort survives; a "to everyone else" row follows its passer */
       chips.addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; setIso(iso === b.dataset.id ? null : b.dataset.id); });
       $('#dbd-cx-mapnote').textContent = 'Filled dots are catches, hollow are incompletions, a red ring is an interception, a white ring a touchdown. Click a ' + who + ' to isolate his targets; click again to clear.';
 
@@ -230,7 +232,8 @@
       for (var w = 1; w <= thru; w++) weeks.push(w);
       G.forEach(function (g) { gw[g.week] = g; });
       function drawWks() {
-        var tot = weeks.map(function (w) { return mineT.filter(function (p) { return (gIdx[p.g] || {}).week === w; }).length; }), mx = Math.max.apply(null, [1].concat(tot));
+        var withR = mineT.filter(function (p) { return p[key]; });  /* the segments are per receiver, so the totals are too; no-receiver throws are in the takeaway line */
+        var tot = weeks.map(function (w) { return withR.filter(function (p) { return (gIdx[p.g] || {}).week === w; }).length; }), mx = Math.max.apply(null, [1].concat(tot));
         $('#dbd-cx-wks').innerHTML = weeks.map(function (w, i) { var g = gw[w]; if (!g) return '<div class="dbd-cx-col' + (byes.indexOf(w) >= 0 ? ' bye' : '') + '"></div>'; var T = tot[i];
           return '<div class="dbd-cx-col"><b style="--t:' + (T / mx * 100) + '%">' + (T || '') + '</b>' + parts.map(function (r) { var a = r.q.filter(function (p) { return p.g === g.id; }); if (!a.length) return ''; var l = line(a);
             return '<i class="' + (iso && iso !== r.id ? 'dim' : '') + '" style="--c:' + r.col + ';--h:' + (a.length / mx * 100) + '%" tabindex="0" data-tip="<b>' + esc(r.short) + '</b> · Wk ' + w + ' ' + (g.home ? 'vs' : 'at') + ' ' + esc(g.opp) + '<br>' + l.n + ' tgt · ' + l.c + ' rec · ' + l.y + ' yds · ' + sgn(l.e, 1) + ' EPA"></i>'; }).join('') + '</div>'; }).join('');

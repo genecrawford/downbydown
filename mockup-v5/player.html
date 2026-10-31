@@ -78,6 +78,7 @@
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .chips button{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border:1px solid var(--line-2);border-radius:999px;background:var(--panel);font:500 11px var(--mono);color:var(--ink);cursor:pointer}
 .chips button i{width:9px;height:9px;border-radius:50%;background:var(--c)} .chips button small{color:var(--muted)}
+.chips .oth{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border:1px solid var(--line-2);border-radius:999px;font:500 11px var(--mono);color:var(--muted)} .chips .oth i{width:9px;height:9px;border-radius:50%;background:var(--c)}
 .chips button[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)} .chips button[aria-pressed="true"] small{color:rgba(255,255,255,.7)}
 .chips.dim button:not([aria-pressed="true"]){opacity:.5}
 .wks{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px;align-items:end;height:170px;padding:0 2px}
@@ -283,14 +284,16 @@ document.getElementById('mates').innerHTML='<tr><th>Player</th><th>Touches</th><
 /* ---- the connection: QB page = who he throws to; everyone else = his line by passer */
 (function(){
 const RCOL=['#5b9cf6','#f0b429','#e0564b','#4fd18b','#c77dff','#ff9f43'],OTH='#9a96a6',isQB=grp==='qb',byId={};PL.forEach(x=>byId[x.id]=x);
-const throws=P.filter(q=>q.pt==='pass'&&['comp','inc','int'].includes(q.k));
+const throws=P.filter(q=>q.pt==='pass'&&['comp','inc','int'].includes(q.k)&&q.dn!=null);/* two-point tries are not targets */
+const rtd=q=>q.k==='comp'&&!!q.td&&!/FUMBLE/i.test(q.desc||'');/* a catch-and-fumble returned for a score is not a receiving TD */
 const mineT=isQB?throws.filter(q=>q.qb===p.id):throws.filter(q=>q.pid===p.id);
 const sec=document.getElementById('connsec'); if(!mineT.length){sec.remove();return;}
 const key=isQB?'pid':'qb';
-const line=a=>{const n=a.length,c=a.filter(q=>q.k==='comp'),y=c.reduce((s,q)=>s+(q.yds||0),0),air=a.filter(q=>q.air!=null),ad=air.length?air.reduce((s,q)=>s+q.air,0)/air.length:null,yac=c.reduce((s,q)=>s+(q.yac||0),0),td=a.filter(q=>q.td).length,fd=a.filter(q=>q.fd).length,ints=a.filter(q=>q.k==='int').length,e=a.reduce((s,q)=>s+(q.epa||0),0),third=a.filter(q=>q.dn==3),rz=a.filter(q=>q.yl<=20);return{n,c:c.length,y,ad,yac,td,fd,ints,e,third:third.length,thirdc:third.filter(q=>q.fd||q.td).length,rz:rz.length,rzt:rz.filter(q=>q.td).length};};
+const line=a=>{const n=a.length,c=a.filter(q=>q.k==='comp'),y=c.reduce((s,q)=>s+(q.yds||0),0),air=a.filter(q=>q.air!=null),ad=air.length?air.reduce((s,q)=>s+q.air,0)/air.length:null,yac=c.reduce((s,q)=>s+(q.yac||0),0),td=a.filter(rtd).length,fd=a.filter(q=>q.fd).length,ints=a.filter(q=>q.k==='int').length,e=a.reduce((s,q)=>s+(q.epa||0),0),third=a.filter(q=>q.dn==3),rz=a.filter(q=>q.yl<=20);return{n,c:c.length,y,ad,yac,td,fd,ints,e,third:third.length,thirdc:third.filter(q=>q.fd||q.td).length,rz:rz.length,rzt:rz.filter(rtd).length};};
 const prate=l=>{if(!l.n)return'-';const a=Math.max(0,Math.min(2.375,(l.c/l.n-.3)*5)),b=Math.max(0,Math.min(2.375,(l.y/l.n-3)*.25)),c=Math.max(0,Math.min(2.375,l.td/l.n*20)),d=Math.max(0,Math.min(2.375,2.375-l.ints/l.n*25));return f1((a+b+c+d)/6*100);};
 const groups={};mineT.forEach(q=>{const k=q[key]||'_none';(groups[k]=groups[k]||[]).push(q);});
 const parts=Object.keys(groups).filter(k=>k!=='_none').map(k=>({id:k,x:byId[k],nm:(byId[k]||{}).name||groups[k][0].pl,short:(byId[k]||{}).short||groups[k][0].pl,pos:(byId[k]||{}).pos||'',num:(byId[k]||{}).num||'',l:line(groups[k]),q:groups[k]})).sort((a,b)=>b.l.n-a.l.n);
+if(!parts.length){sec.remove();return;}
 parts.forEach((r,i)=>{r.col=i<RCOL.length?RCOL[i]:OTH;r.oth=isQB?null:line(throws.filter(q=>q.qb===r.id&&q.pid!==p.id));r.share=isQB?r.l.n/mineT.length:r.l.n/throws.filter(q=>q.qb===r.id).length;});
 const none=(groups._none||[]).length, colOf={};parts.forEach(r=>colOf[r.id]=r.col);
 const who=isQB?'receiver':'passer', whos=isQB?'receivers':'passers';
@@ -348,14 +351,14 @@ function cmap(Dp){
 const mapSet2=mineT.filter(q=>q.air!=null);
 function drawMap(){document.getElementById('cmap').innerHTML=cmap(mapSet2);}
 const chipsEl=document.getElementById('cchips');
-chipsEl.innerHTML=parts.slice(0,RCOL.length).map(r=>`<button type="button" data-id="${r.id}" aria-pressed="false" style="--c:${r.col}"><i></i>${r.short}<small>${r.l.n}</small></button>`).join('')+(parts.length>RCOL.length?`<button type="button" data-id="_oth" aria-pressed="false" style="--c:${OTH}"><i></i>${parts.length-RCOL.length} others<small>${parts.slice(RCOL.length).reduce((s,r)=>s+r.l.n,0)}</small></button>`:'');
+chipsEl.innerHTML=parts.slice(0,RCOL.length).map(r=>`<button type="button" data-id="${r.id}" aria-pressed="false" style="--c:${r.col}"><i></i>${r.short}<small>${r.l.n}</small></button>`).join('')+(parts.length>RCOL.length?`<span class="oth" style="--c:${OTH}"><i></i>${parts.length-RCOL.length} others<small>${parts.slice(RCOL.length).reduce((s,r)=>s+r.l.n,0)}</small></span>`:'');
 function setIso(id){iso=id;chipsEl.classList.toggle('dim',!!iso);chipsEl.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.id===iso));drawMap();drawTab();drawWks();}
 chipsEl.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;setIso(iso===b.dataset.id?null:b.dataset.id);});
 document.getElementById('cmapnote').textContent=`Filled dots are catches, hollow are incompletions, a red ring is an interception, a white ring a touchdown. Click a ${who} to isolate his targets; click again to clear.`;
 /* weekly stacks */
 const weeks=[];for(let w=1;w<=D.through;w++)weeks.push(w);
 const gw={};G.forEach(g=>gw[g.week]=g);
-function drawWks(){const tot=weeks.map(w=>mineT.filter(q=>gIdx[q.g]?.week===w).length),mx=Math.max(1,...tot);
+function drawWks(){const withR=mineT.filter(q=>q[key]);const tot=weeks.map(w=>withR.filter(q=>gIdx[q.g]?.week===w).length),mx=Math.max(1,...tot);
  document.getElementById('cwks').innerHTML=weeks.map((w,i)=>{const g=gw[w];if(!g)return`<div class="col ${(RAW.byes||[]).includes(w)?'bye':''}" title="Week ${w}${(RAW.byes||[]).includes(w)?': bye':''}"></div>`;const T=tot[i];
   return`<div class="col"><b style="--t:${T/mx*100}%">${T||''}</b>`+parts.map(r=>{const a=r.q.filter(q=>q.g===g.id);if(!a.length)return'';const l=line(a);return`<i class="${iso&&iso!==r.id?'dim':''} ${r.col===OTH?'oth':''}" style="--c:${r.col};--h:${a.length/mx*100}%" title="Wk ${w} ${g.home?'vs':'at'} ${g.opp} · ${r.short}: ${l.n} tgt · ${l.c} rec · ${l.y} yds · ${sgn(l.e,1)} EPA"></i>`;}).join('')+'</div>';}).join('');
  document.getElementById('cwkl').innerHTML=weeks.map(w=>`<span>${gw[w]?`${w}<br><small style="color:var(--line-2)">${gw[w].opp}</small>`:w+'<br><small>'+((RAW.byes||[]).includes(w)?'bye':'')+'</small>'}</span>`).join('');}
