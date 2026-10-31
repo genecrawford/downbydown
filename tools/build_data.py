@@ -38,6 +38,13 @@ os.makedirs(os.path.join(out, 'plays'), exist_ok=True)
 os.makedirs(os.path.join(out, 'players'), exist_ok=True)
 env = lambda k: (os.environ.get(k) or None) if os.environ.get(k) and os.path.exists(os.environ.get(k)) else None
 
+# a pandas cell as plain JSON: NaN to None, numpy scalars to Python, whole floats to int (defined before the teams step uses it)
+def c(x):
+    if isinstance(x, float) and math.isnan(x): return None
+    if hasattr(x, 'item'): x = x.item()
+    if isinstance(x, float) and x.is_integer(): return int(x)
+    return x
+
 # ---------------------------------------------------------------- inputs
 have_pbp = pbp_path != '-' and os.path.exists(pbp_path)
 df = pd.read_csv(pbp_path, low_memory=False) if have_pbp else pd.DataFrame()
@@ -76,11 +83,6 @@ T = {r.team_abbr: dict(name=r.team_name, nick=r.team_nick, conf=r.team_conf, div
 json.dump(T, open(f'{out}/teams.json', 'w'), separators=(',', ':'))
 
 
-def c(x):
-    if isinstance(x, float) and math.isnan(x): return None
-    if hasattr(x, 'item'): x = x.item()
-    if isinstance(x, float) and x.is_integer(): return int(x)
-    return x
 
 
 # ---------------------------------------------------------------- per-team plays

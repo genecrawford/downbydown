@@ -128,3 +128,14 @@
     });
   });
 })();
+
+/* panel labels truncate at desktop (SCOPE §28); a clipped one carries its full text as a title */
+(function () {
+  var label = function () {
+    document.querySelectorAll('.dbd .dbd-panel > .dbd-ph .dbd-lab').forEach(function (l) {
+      if (l.scrollWidth > l.clientWidth + 1) l.setAttribute('title', l.textContent.replace(/\s+/g, ' ').trim()); else l.removeAttribute('title');
+    });
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', label); else label();
+  var t; window.addEventListener('resize', function () { clearTimeout(t); t = setTimeout(label, 150); });
+})();

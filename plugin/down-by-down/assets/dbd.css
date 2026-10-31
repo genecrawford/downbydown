@@ -153,7 +153,7 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 .dbd .dbd-slate .dbd-go{font:700 11px var(--dbd-display);text-transform:uppercase;letter-spacing:.14em;border-bottom:2px solid var(--dbd-red);padding-bottom:1px;white-space:nowrap}
 .dbd .dbd-slate td:last-child{text-align:right}
 @media (max-width:1200px){.dbd .dbd-slate .dbd-at{display:none}.dbd .dbd-slate .dbd-num{padding-right:10px}.dbd .dbd-slate td{padding:9px 7px}}
-@media (max-width:1000px){.dbd .dbd-slate .dbd-tm span{display:none}}
+@media (max-width:1000px){.dbd .dbd-slate .dbd-tm>span:not(.dbd-lgw){display:none}}
 @media (max-width:760px){.dbd .dbd-slate .dbd-ln,.dbd .dbd-slate td:last-child{display:none}.dbd .dbd-panel>.dbd-tw{padding:0 8px 8px}.dbd .dbd-slate td{padding:8px 3px}.dbd .dbd-slate .dbd-when{font-size:11px;padding-left:0}.dbd .dbd-slate .dbd-when .dbd-badge{font-size:11px;padding:1px 4px;letter-spacing:.08em}.dbd .dbd-slate .dbd-tm{gap:6px}.dbd .dbd-slate .dbd-tm .dbd-mk{width:22px;height:22px}.dbd .dbd-slate .dbd-tm b{font-size:18px}.dbd .dbd-slate .dbd-num{font-size:18px;padding:8px 2px}}
 
 /* ---- week switcher ---- */
@@ -572,7 +572,7 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
   .dbd .dbd-title,.dbd .dbd-mtitle,.dbd .dbd-ttitle{grid-template-columns:minmax(0,1fr)}
   .dbd .dbd-takes{grid-template-columns:repeat(2,minmax(0,1fr))}
   .dbd .dbd-take:nth-child(3){border-left:0}.dbd .dbd-take:nth-child(n+3){border-top:1px solid var(--dbd-line)}
-  .dbd .dbd-slate .dbd-tm span{display:none}
+  .dbd .dbd-slate .dbd-tm>span:not(.dbd-lgw){display:none}
 }
 @container dbd (max-width: 600px){
   .dbd .dbd-stand .dbd-nmi small{display:none}.dbd .dbd-stand col.c-rec{width:60px}.dbd .dbd-stand col.c-rk{width:44px}.dbd .dbd-rb{grid-template-columns:1fr}.dbd .dbd-rb i{display:none}.dbd .dbd-rb b{text-align:right}
