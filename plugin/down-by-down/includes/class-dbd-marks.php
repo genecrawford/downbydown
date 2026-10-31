@@ -50,7 +50,7 @@ class DBD_Marks {
 
 	/** The real logo over the drawn mark: the mark shows until the image loads, then hides; a failed image removes itself (SCOPE §28). */
 	public static function with_logo( $svg, $logo, $w, $h, $alt, $scale = 1 ) {
-		$sc = max( 0.7, min( 1.3, (float) $scale ) );  /* optical scale from the build (1.4.1), clamped */
+		$sc = max( 0.7, min( 1.5, (float) $scale ) );  /* optical scale from the build (1.4.1), clamped */
 		return '<span class="dbd-lgw" style="width:' . (int) $w . 'px;height:' . (int) $h . 'px;--lgs:' . round( $sc, 2 ) . '">' . $svg . '<img class="dbd-logo" src="' . esc_url( $logo ) . '" alt="' . esc_attr( $alt ) . '" width="' . (int) $h . '" height="' . (int) $h . '" loading="lazy" decoding="async" referrerpolicy="no-referrer" onload="this.previousElementSibling.style.visibility=\'hidden\'" onerror="this.remove()"></span>';
 	}
 

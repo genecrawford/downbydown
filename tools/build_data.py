@@ -82,7 +82,7 @@ T = {r.team_abbr: dict(name=r.team_name, nick=r.team_nick, conf=r.team_conf, div
                        c1=r.team_color, c2=r.team_color2, logo=c(getattr(r, 'team_logo_espn', None)), logo_sq=c(str(getattr(r, 'team_logo_squared', '') or '').replace('https://github.com/nflverse/nflverse-pbp/raw/master/', 'https://raw.githubusercontent.com/nflverse/nflverse-pbp/master/')) or None) for r in teams.itertuples()}
 # optical logo scale (1.4.1): ESPN's logo files carry uneven margins (the Chargers bolt fills 38% of its image, the
 # Raiders shield 85%), so the same box makes them look different sizes. Measure the artwork's alpha bounding box and
-# scale toward a common area, never letting the longer side pass 1.2x the box. Skipped quietly without Pillow or a network.
+# scale toward a common area, never letting the longer side pass 1.35x the box (wordmarks such as the Jets' need the width). Skipped quietly without Pillow or a network.
 try:
     from PIL import Image
     import io as _io, urllib.request as _ur
@@ -93,8 +93,8 @@ try:
             _bb = _im.getchannel('A').point(lambda v: 255 if v > 20 else 0).getbbox()
             if not _bb: continue
             _fw = (_bb[2] - _bb[0]) / _im.width; _fh = (_bb[3] - _bb[1]) / _im.height
-            _s = min((0.6 / max(_fw * _fh, 0.05)) ** 0.5, 1.2 / max(_fw, _fh))
-            _t['logo_s'] = round(max(0.7, min(1.3, _s)), 2)
+            _s = min((0.6 / max(_fw * _fh, 0.05)) ** 0.5, 1.35 / max(_fw, _fh))
+            _t['logo_s'] = round(max(0.7, min(1.5, _s)), 2)
         except Exception as _e:
             print('logo scale: skipped', _a, repr(_e)[:80])
 except ImportError:

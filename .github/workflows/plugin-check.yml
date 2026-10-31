@@ -55,7 +55,7 @@ jobs:
                   im = Image.open(io.BytesIO(urllib.request.urlopen(v['logo'], timeout=20).read())).convert('RGBA')
                   bb = im.getchannel('A').point(lambda a: 255 if a > 20 else 0).getbbox()
                   fw = (bb[2] - bb[0]) / im.width; fh = (bb[3] - bb[1]) / im.height
-                  v['logo_s'] = round(max(0.7, min(1.3, min((0.6 / max(fw * fh, 0.05)) ** 0.5, 1.2 / max(fw, fh)))), 2)
+                  v['logo_s'] = round(max(0.7, min(1.5, min((0.6 / max(fw * fh, 0.05)) ** 0.5, 1.35 / max(fw, fh)))), 2)
           json.dump(t, open('data/teams.json', 'w'))
           print(' '.join(k + '=' + str(v.get('logo_s')) for k, v in sorted(t.items())))
           PY
