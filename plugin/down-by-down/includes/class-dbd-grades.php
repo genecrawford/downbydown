@@ -20,6 +20,40 @@ class DBD_Grades {
 		return $d[ $grp ] ?? array();
 	}
 
+	/** Position group for a roster position: qb, rb, rec, or null. */
+	public static function group_of( $pos ) {
+		return array( 'QB' => 'qb', 'RB' => 'rb', 'FB' => 'rb', 'WR' => 'rec', 'TE' => 'rec' )[ $pos ] ?? null;
+	}
+
+	/** Whether an index row clears the group's qualifier. */
+	public static function qualifies( $row ) {
+		$g = self::group_of( $row['pos'] ?? '' );
+		if ( $g === 'rec' ) { return ( $row['tgt'] ?? 0 ) >= 15; }
+		if ( $g === 'rb' )  { return ( ( $row['tgt'] ?? 0 ) + ( $row['car'] ?? 0 ) ) >= 30; }
+		if ( $g === 'qb' )  { return ( $row['att'] ?? 0 ) >= 50; }
+		return false;
+	}
+
+	/** Usage per game, the yardstick for "players like him": targets, touches or attempts. */
+	public static function usage( $row ) {
+		$g = self::group_of( $row['pos'] ?? '' ); $games = max( 1, (int) ( $row['g'] ?? 1 ) );
+		if ( $g === 'rec' ) { return ( $row['tgt'] ?? 0 ) / $games; }
+		if ( $g === 'rb' )  { return ( ( $row['tgt'] ?? 0 ) + ( $row['car'] ?? 0 ) ) / $games; }
+		return ( $row['att'] ?? 0 ) / $games;
+	}
+
+	/** Suggested rivals: the n qualified players in the same group whose usage per game is nearest his. */
+	public static function suggest( $row, $n = 3 ) {
+		$g = self::group_of( $row['pos'] ?? '' ); if ( ! $g ) { return array(); }
+		$u = self::usage( $row ); $c = array();
+		foreach ( DBD_Data::player_index() as $o ) {
+			if ( $o['id'] === $row['id'] || self::group_of( $o['pos'] ) !== $g || ! self::qualifies( $o ) || ( $o['g'] ?? 0 ) < 3 ) { continue; }
+			$c[] = array( abs( self::usage( $o ) - $u ), $o );
+		}
+		usort( $c, function ( $x, $y ) { return $x[0] <=> $y[0]; } );
+		return array_map( function ( $x ) { return $x[1]; }, array_slice( $c, 0, $n ) );
+	}
+
 	public static function pool_label( $grp ) {
 		return array( 'rec' => 'receivers and tight ends', 'rb' => 'backs', 'qb' => 'quarterbacks' )[ $grp ] ?? 'players';
 	}

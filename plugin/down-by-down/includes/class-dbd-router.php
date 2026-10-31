@@ -9,6 +9,7 @@
  *   /?view=teams           team picker
  *   /?view=players[&team=MIN&pos=WR&q=jeff]  players index (1.2.0)
  *   /?player=00-0036322    player page (1.2.0)
+ *   /?compare=id,id[,id]   compare two or three players of one position group (1.3.1)
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
@@ -62,6 +63,16 @@ class DBD_Router {
 			$r['view']   = $row ? 'player' : 'notfound';
 			$r['player'] = $row;
 			$r['team']   = $row ? $row['team'] : '';
+		} elseif ( self::q( 'compare' ) !== '' ) {
+			$rows = array(); $grp = ''; $mixed = false;
+			foreach ( array_unique( array_map( 'trim', explode( ',', self::q( 'compare' ) ) ) ) as $id ) {
+				if ( ! preg_match( '/^\d{2}-\d{7}$/', $id ) ) { continue; }
+				$row = DBD_Data::player( $id ); if ( ! $row ) { continue; }
+				$g = DBD_Grades::group_of( $row['pos'] ); if ( ! $g ) { continue; }
+				if ( ! $grp ) { $grp = $g; } elseif ( $g !== $grp ) { $mixed = true; continue; }
+				$rows[] = $row; if ( count( $rows ) >= 3 ) { break; }
+			}
+			$r['view'] = 'compare'; $r['compare'] = $rows; $r['cgroup'] = $grp; $r['cmixed'] = $mixed;
 		} elseif ( $view === 'players' ) {
 			$r['view']  = 'players';
 			$r['pteam'] = isset( $teams[ $team ] ) ? $team : '';
@@ -117,6 +128,9 @@ class DBD_Router {
 			case 'player':
 				$p = $r['player']; $t = DBD_Data::team( $p['team'] );
 				return array( "{$p['name']}, {$t['nick']} {$p['pos']}", "Where the ball finds {$p['name']}: every target and carry of the $season season on the field, the game log, snap share, usage by down, quarter and score, and the latest injury report." );
+			case 'compare':
+				$names = array_map( function ( $p ) { return $p['name']; }, $r['compare'] );
+				return array( $names ? implode( ' vs ', $names ) : 'Compare players', $names ? 'Side by side: where each grades against the league, where the ball finds each of them, and how their weeks line up.' : 'Pick two or three players of one position and see them side by side.' );
 			case 'players':
 				if ( $r['pteam'] ) { $t = DBD_Data::team( $r['pteam'] ); return array( "{$t['nick']} players", "Every {$t['name']} skill player who has taken an offensive snap in $season, with snap share, targets, carries, yards, EPA and this week's injury status." ); }
 				return array( 'Pick a player', "Every NFL skill player who has taken an offensive snap in $season: snap share, targets, carries, yards, touchdowns, EPA and injury status, by team and position." );
@@ -147,6 +161,7 @@ class DBD_Router {
 		if ( $r['view'] === 'teams' ) { $args = array( 'view' => 'teams' ); }
 		if ( $r['view'] === 'player' ) { $args = array( 'player' => $r['player']['id'] ); }
 		if ( $r['view'] === 'players' ) { $args = array( 'view' => 'players' ); if ( $r['pteam'] ) { $args['team'] = $r['pteam']; } if ( $r['pos'] ) { $args['pos'] = $r['pos']; } }
+		if ( $r['view'] === 'compare' ) { $ids = array_map( function ( $p ) { return $p['id']; }, $r['compare'] ); sort( $ids ); $args = $ids ? array( 'compare' => implode( ',', $ids ) ) : array( 'view' => 'players' ); }
 		$url = self::url( $args );
 		echo "\n" . '<meta name="description" content="' . esc_attr( $d ) . '">' . "\n";
 		echo '<link rel="canonical" href="' . esc_url( $url ) . '">' . "\n";
@@ -158,6 +173,7 @@ class DBD_Router {
 		if ( $r['view'] === 'game' && class_exists( 'DBD_Seo' ) ) { echo DBD_Seo::game_jsonld( $r['game'] ); }
 		if ( $r['view'] === 'player' && class_exists( 'DBD_Seo' ) ) { echo DBD_Seo::player_jsonld( $r['player'] ); }
 		if ( $r['view'] === 'players' && $r['q'] !== '' ) { echo '<meta name="robots" content="noindex,follow">' . "\n"; }
+		if ( $r['view'] === 'compare' ) { echo '<meta name="robots" content="noindex,follow">' . "\n"; }
 	}
 
 	/* ------------------------------------------------------------------ assets */
@@ -203,6 +219,13 @@ class DBD_Router {
 				'accent'  => DBD_Marks::accent( $t ),
 				'base'    => self::url(),
 			) );
+		}
+		if ( $r['view'] === 'compare' ) {
+			$files = array(); $pl = array();
+			foreach ( $r['compare'] as $row ) { $rel = 'plays/' . $row['team'] . '.json'; $files[ $row['team'] ] = DBD_Data::url() . '/' . $rel . '?v=' . DBD_Data::file_version( $rel ); $rec = DBD_Data::player_record( $row['team'], $row['id'] ); $pl[] = array( 'id' => $row['id'], 'short' => $rec['short'] ?? '', 'name' => $row['name'], 'team' => $row['team'], 'pos' => $row['pos'] ); }
+			wp_enqueue_script( 'dbd-marks', DBD_URL . 'assets/marks.js', array(), DBD_VERSION, true );
+			wp_enqueue_script( 'dbd-compare', DBD_URL . 'assets/compare.js', array( 'dbd-marks' ), DBD_VERSION, true );
+			wp_localize_script( 'dbd-compare', 'DBD_CMP', array( 'base' => self::url(), 'group' => $r['cgroup'], 'players' => $pl, 'files' => $files, 'teams' => DBD_Data::teams(), 'heads' => DBD_Data::headshots() ) );
 		}
 		if ( $r['view'] === 'players' ) {
 			wp_enqueue_script( 'dbd-marks', DBD_URL . 'assets/marks.js', array(), DBD_VERSION, true );

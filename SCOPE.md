@@ -563,6 +563,8 @@ The nfelo model layer (§13 backlog, greerreNFL's OK needed) is 1.4.0 and runs i
 
 ## 17. Compare (scoped and mocked 2026-10-31, `mockup-v5/compare.html`)
 
+**Status: built as 1.3.1 (2026-10-31).** All three ways in plus "Players like him" (the three qualified players nearest in usage per game) on every player page.
+
 Roadmap slice 2 (§16). Two or three players of one position group side by side. The mock runs on the real Vikings play file, player file and the league pool; the build searches every team.
 
 ### What it is

@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.3.0
+Stable tag: 1.3.1
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,9 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.3.1 =
+* Compare. ?compare=id,id[,id] puts two or three players of one position group side by side: the league percentile bars with a marker per player, the field maps on one shared scale, a week-aligned log with a metric switch, and season stats with ranks, best value in every row marked. Three ways in: the Compare button on every player page (it builds on whoever you picked last), the empty slot's search across every team, and the link itself. Each player page also offers Players like him, the three qualified players nearest in usage, one click to a head to head.
 
 = 1.3.0 =
 * Player grades. Every player page gets a Where he ranks panel: eight metrics for his position group placed against every qualifying player in the league (receivers and tight ends with 15+ targets, backs with 30+ touches, quarterbacks with 50+ attempts), each with his value and a percentile. Season stats in the rail carry a league rank beside every graded number. The game log has Default, Advanced and Traditional views (passer rating included for quarterbacks).
