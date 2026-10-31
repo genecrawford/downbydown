@@ -11,6 +11,7 @@
 <script src="data/marks.js"></script>
 <script src="data/MIN.js"></script>
 <script src="data/players-MIN.js"></script>
+<script src="data/league-pct.js"></script>
 <style>
 .pmark{display:grid;place-items:center;width:58px;height:58px;border-radius:6px;background:var(--team);color:var(--team2);font:800 24px var(--hero);flex:0 0 auto;box-shadow:inset 0 0 0 2px rgba(255,255,255,.55),0 0 0 1px var(--line-2)}
 .pmark.sm{width:26px;height:26px;font-size:11px;border-radius:4px;box-shadow:none}
@@ -41,6 +42,21 @@
 @media (max-width:1100px){.wk3{grid-template-columns:minmax(0,1fr)}}
 .wk3 h4{margin:0 0 8px;font:700 11px var(--display);text-transform:uppercase;letter-spacing:.16em;color:var(--ink-2)}
 .ttitle .pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.pct{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 28px;padding:12px 14px 14px}
+@media (max-width:900px){.pct{grid-template-columns:minmax(0,1fr)}}
+.pct .row{display:grid;grid-template-columns:150px minmax(0,1fr) 64px 46px;gap:10px;align-items:center;padding:5px 0;border-top:1px solid var(--line)}
+.pct .row:nth-child(-n+2){border-top:0}
+.pct .l{font:500 12px var(--body);color:var(--ink)} .pct .l small{display:block;font:500 10px var(--mono);color:var(--muted)}
+.pct .bar{height:10px;border-radius:5px;background:linear-gradient(90deg,rgba(180,38,31,.18),rgba(107,111,120,.12) 50%,rgba(30,127,74,.22));position:relative}
+.pct .bar i{position:absolute;top:-3px;width:4px;height:16px;border-radius:2px;background:var(--team);left:calc(var(--p) * 1%);transform:translateX(-50%);box-shadow:0 0 0 2px var(--panel)}
+.pct .bar::after{content:"";position:absolute;left:50%;top:-2px;height:14px;border-left:1px dashed var(--line-2)}
+.pct .v{font:600 12px var(--mono);text-align:right}
+.pct .g{font:800 13px var(--hero);text-align:right;color:var(--ink)} .pct .g.hi{color:var(--good)} .pct .g.lo{color:var(--bad)}
+.sstat td{padding:5px 4px;border-top:1px solid var(--line);font:500 12px var(--mono);text-align:right}
+.sstat td:first-child{text-align:left;font:500 13px var(--body)} .sstat td.rk{color:var(--muted);width:1%;white-space:nowrap}
+.sstat td.rk b{color:var(--ink);font-weight:600} .sstat tr.top td.rk b{color:var(--good)}
+.glog .seg{margin-left:auto}
+.glog-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 </style>
 </head>
 <body>
@@ -63,17 +79,20 @@
 
       <div class="tiles" id="tiles"></div>
 
+      <section class="panel"><div class="ph"><span class="lab"><b>Where he ranks</b> · <span id="pctn"></span></span><span class="badge">League percentiles</span></div><div class="pct" id="pct"></div><p class="note">Each bar is the league at his position; the marker is him. Right is better, the dashed line is the median. Built from every qualifying player's season to date, so grades move every week.</p></section>
+
       <div class="work">
         <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
           <section class="panel"><div class="ph"><span class="lab"><b id="maplab">Where the ball finds him</b> · every target, by depth and side</span><span class="badge" id="mapn"></span></div>
             <div class="sprays"><div><h4 id="map1h">Targets on the field</h4><div id="map"></div></div><div><h4>By depth of target</h4><div class="bands" id="bands" style="padding:0"></div><h4 style="margin-top:14px">Catch rate by depth</h4><p class="note" style="padding:0" id="bandnote"></p></div></div>
             <div class="legend" id="leg"></div><p class="note" id="mapnote"></p></section>
 
-          <section class="panel"><div class="ph"><span class="lab"><b>Game log</b> · week by week</span><span class="badge">Season totals in the last row</span></div><div class="tw" style="padding:0 14px 8px"><table class="glog" id="glog"></table></div></section>
+          <section class="panel"><div class="ph glog-h"><span class="lab"><b>Game log</b> · week by week</span><div class="seg" id="gview"></div></div><div class="tw" style="padding:0 14px 8px"><table class="glog" id="glog"></table></div></section>
 
           <section class="panel"><div class="ph"><span class="lab"><b>When he gets it</b> · touches by situation</span></div><div class="wk3 tend" id="sit"></div></section>
         </div>
         <div class="rail">
+          <section class="panel"><div class="ph"><span class="lab"><b>Season stats</b> · with league rank</span><span class="badge" id="ssn"></span></div><div class="tw" style="padding:0 14px 8px"><table class="sstat" id="sstat"></table></div></section>
           <section class="panel"><div class="ph"><span class="lab"><b>Intel</b></span><span class="badge" id="intelwk"></span></div><div class="pb"><dl class="kv intel" id="intel"></dl></div></section>
           <section class="panel"><div class="ph"><span class="lab"><b>Best plays</b> · by EPA</span></div><div class="pb"><ol class="best" id="best"></ol></div></section>
           <section class="panel"><div class="ph"><span class="lab"><b>Teammates</b> · share of the ball</span></div><div class="tw"><table class="usage mates" id="mates"></table></div></section>
@@ -154,19 +173,44 @@ const bSet=mapSet.filter(q=>q.air!=null), bmax=Math.max(1,...bandDef.map(b=>bSet
 document.getElementById('bands').innerHTML=bandDef.map(b=>{const a=bSet.filter(b[1]),c=a.filter(q=>q.k==='comp').length,y=a.reduce((s,q)=>s+(q.yds||0),0);return`<div class="n">${b[0]}</div><div class="bar"><i style="--w:${a.length/bmax*100}%"></i><i class="c" style="--w:${c/bmax*100}%"></i></div><div class="t">${a.length} tgt · ${c} rec · ${y} yds</div>`;}).join('');
 document.getElementById('bandnote').textContent=(()=>{const d=bSet.filter(bandDef[3][1]),s=bSet.filter(bandDef[1][1]);return`Green is the caught share of each bar. Deep: ${d.length?Math.round(d.filter(q=>q.k==='comp').length/d.length*100)+'%':'no'} caught${s.length?`, short: ${Math.round(s.filter(q=>q.k==='comp').length/s.length*100)}%`:''}.`;})();
 
-/* game log */
+/* ---- league percentiles + season stats */
+const LG=window.DBD_LEAGUE, lgrp=grp==='rec'?'rec':grp, DIST=LG.dist[lgrp], N=LG.n[lgrp], me=LG.players[lgrp].find(x=>x.id===p.id)||{};
+const low=LG.low[lgrp];
+const pctile=(k,v)=>{const a=DIST[k]||[];if(v==null||!a.length)return null;let below=0,eq=0;for(const x of a){if(x<v)below++;else if(x===v)eq++;}let pc=(below+eq/2)/a.length;if(low.includes(k))pc=1-pc;return Math.round(pc*100);};
+const rank=(k,v)=>{const a=DIST[k]||[];if(v==null||!a.length)return null;const better=low.includes(k)?a.filter(x=>x<v).length:a.filter(x=>x>v).length;return better+1;};
+const DEFS={rec:[['tshare','Target share','of team targets',v=>pct(v)],['adot','Depth of target','air yards per target',v=>f1(v)],['yacpc','After the catch','yards per reception',v=>f1(v)],['catch','Catch rate','receptions per target',v=>pct(v)],['epat','EPA per target','',v=>sgn(v)],['fdpt','First downs','per target',v=>pct(v)],['drop','Drop rate','drops per target, lower is better',v=>pct(v)],['ypg','Yards per game','',v=>f1(v)]],
+ rb:[['ypc','Yards per carry','',v=>f1(v)],['repc','Rush EPA per carry','',v=>sgn(v)],['epat','EPA per target','receiving',v=>v==null?'-':sgn(v)],['btpt','Broken tackles','per touch',v=>pct(v)],['expl','Explosive rate','10+ run, 20+ catch per touch',v=>pct(v)],['tpg','Touches per game','',v=>f1(v)],['tgtshare','Receiving share','targets per touch',v=>pct(v)],['ypt','Yards per touch','',v=>f1(v)]],
+ qb:[['epadb','EPA per dropback','',v=>sgn(v)],['cpoe','CPOE','completion over expected',v=>sgn(v,1)],['sack','Sack rate','per dropback, lower is better',v=>pct(v)],['ypa','Yards per attempt','',v=>f1(v)],['tdr','TD rate','per attempt',v=>pct(v)],['intr','INT rate','per attempt, lower is better',v=>pct(v)],['adot','Depth of target','air yards per attempt',v=>f1(v)],['rushepa','Rush EPA per game','',v=>sgn(v)]]};
+document.getElementById('pctn').textContent=`among ${N} ${lgrp==='rec'?'receivers and tight ends':lgrp==='rb'?'backs':'quarterbacks'} with ${LG.min[lgrp]}+`;
+document.getElementById('pct').innerHTML=DEFS[lgrp].map(([k,n,sub,fmt])=>{const v=me[k],pc=pctile(k,v);return`<div class="row"><div class="l">${n}${sub?`<small>${sub}</small>`:''}</div><div class="bar">${pc==null?'':`<i style="--p:${pc}"></i>`}</div><div class="v">${fmt(v)}</div><div class="g ${pc>=75?'hi':pc!=null&&pc<=25?'lo':''}">${pc==null?'-':ordn(pc)}</div></div>`;}).join('');
+const SS={rec:[['Targets',tg,null],['Receptions',rc,null],['Yards',ry,null],['Touchdowns',rtd,null],['Target share',pct(tshare),'tshare'],['aDOT',f1(air/tg),'adot'],['YAC / catch',f1(yac/rc),'yacpc'],['Catch rate',pct(rc/tg),'catch'],['EPA / target',sgn(repa/tg),'epat'],['First downs / tgt',pct(rfd/tg),'fdpt'],['Drop rate',pct(me.drop),'drop'],['Yards / game',f1(ry/gp),'ypg']],
+ rb:[['Carries',ca,null],['Rush yards',ruy,null],['Rush TD',rutd,null],['Targets',tg,null],['Yards / carry',f1(ruy/ca),'ypc'],['Rush EPA / carry',sgn(ruepa/ca),'repc'],['EPA / target',me.epat==null?'-':sgn(me.epat),'epat'],['Broken tackles / touch',pct(me.btpt),'btpt'],['Explosive rate',pct(me.expl),'expl'],['Touches / game',f1((ca+tg)/gp),'tpg'],['Yards / touch',f1(me.ypt),'ypt']],
+ qb:[['Attempts',att,null],['Completions',cmp,null],['Pass yards',py,null],['TD / INT',ptd+' / '+pint,null],['EPA / dropback',sgn(pepa/(att+sk)),'epadb'],['CPOE',sgn(cpoe,1),'cpoe'],['Sack rate',pct(sk/(att+sk)),'sack'],['Yards / attempt',f1(py/att),'ypa'],['TD rate',pct(ptd/att),'tdr'],['INT rate',pct(pint/att),'intr'],['aDOT',f1(me.adot),'adot'],['Rush EPA / game',sgn(me.rushepa),'rushepa']]};
+document.getElementById('ssn').textContent=`of ${N}`;
+document.getElementById('sstat').innerHTML=SS[lgrp].map(([n,v,k])=>{const r=k?rank(k,me[k]):null;return`<tr class="${r&&r<=Math.ceil(N*0.1)?'top':''}"><td>${n}</td><td>${v}</td><td class="rk">${r?`<b>${ordn(r)}</b> of ${N}`:''}</td></tr>`;}).join('');
+
+/* ---- game log with three views */
 const gByOpp={};G.forEach(g=>gByOpp[g.week]=g);
-let head,row,foot;
-if(grp==='rec'){head='<tr><th>Wk</th><th>Opponent</th><th>Snap</th><th>Tgt</th><th>Rec</th><th>Yds</th><th>TD</th><th>aDOT</th><th>YAC</th><th>Share</th><th>EPA</th><th>Drops</th></tr>';
- row=w=>{const g=gByOpp[w.week];const pf=p.pfr[w.week]||{};return`<td>${w.week}</td><td class="res">${g?`${g.home?'vs':'at'} ${g.opp} <b class="${g.pf>g.pa?'':'l'}">${g.pf>g.pa?'W':'L'}</b> ${g.pf}-${g.pa}`:w.opponent_team}</td><td>${p.snaps[w.week]??'-'}%</td><td>${w.targets}</td><td>${w.receptions}</td><td>${w.receiving_yards}</td><td>${w.receiving_tds||''}</td><td>${w.targets?f1(w.receiving_air_yards/w.targets):'-'}</td><td>${w.receiving_yards_after_catch}</td><td>${pct(w.target_share)}</td><td class="${w.receiving_epa>=0?'pos':'neg'}">${sgn(w.receiving_epa,1)}</td><td>${pf.drop||''}</td>`;};
- foot=`<td></td><td>${gp} games</td><td>${Math.round(snapAvg)}%</td><td>${tg}</td><td>${rc}</td><td>${ry}</td><td>${rtd}</td><td>${f1(air/tg)}</td><td>${yac}</td><td>${pct(tshare)}</td><td class="${repa>=0?'pos':'neg'}">${sgn(repa,1)}</td><td>${Object.values(p.pfr).reduce((a,x)=>a+(x.drop||0),0)||''}</td>`;}
-else if(grp==='rb'){head='<tr><th>Wk</th><th>Opponent</th><th>Snap</th><th>Car</th><th>Yds</th><th>YPC</th><th>TD</th><th>Tgt</th><th>Rec</th><th>Rec yds</th><th>EPA</th><th>Brk tkl</th></tr>';
- row=w=>{const g=gByOpp[w.week];const pf=p.pfr[w.week]||{};return`<td>${w.week}</td><td class="res">${g?`${g.home?'vs':'at'} ${g.opp} <b class="${g.pf>g.pa?'':'l'}">${g.pf>g.pa?'W':'L'}</b> ${g.pf}-${g.pa}`:w.opponent_team}</td><td>${p.snaps[w.week]??'-'}%</td><td>${w.carries}</td><td>${w.rushing_yards}</td><td>${w.carries?f1(w.rushing_yards/w.carries):'-'}</td><td>${(w.rushing_tds+w.receiving_tds)||''}</td><td>${w.targets}</td><td>${w.receptions}</td><td>${w.receiving_yards}</td><td class="${(w.rushing_epa+w.receiving_epa)>=0?'pos':'neg'}">${sgn(w.rushing_epa+w.receiving_epa,1)}</td><td>${(pf.rbt||0)+(pf.bt||0)||''}</td>`;};
- foot=`<td></td><td>${gp} games</td><td>${Math.round(snapAvg)}%</td><td>${ca}</td><td>${ruy}</td><td>${f1(ruy/ca)}</td><td>${rutd+rtd}</td><td>${tg}</td><td>${rc}</td><td>${ry}</td><td class="${(ruepa+repa)>=0?'pos':'neg'}">${sgn(ruepa+repa,1)}</td><td>${Object.values(p.pfr).reduce((a,x)=>a+(x.rbt||0)+(x.bt||0),0)||''}</td>`;}
-else{head='<tr><th>Wk</th><th>Opponent</th><th>Snap</th><th>Cmp</th><th>Att</th><th>Yds</th><th>TD</th><th>INT</th><th>Sk</th><th>CPOE</th><th>EPA</th></tr>';
- row=w=>{const g=gByOpp[w.week];return`<td>${w.week}</td><td class="res">${g?`${g.home?'vs':'at'} ${g.opp} <b class="${g.pf>g.pa?'':'l'}">${g.pf>g.pa?'W':'L'}</b> ${g.pf}-${g.pa}`:w.opponent_team}</td><td>${p.snaps[w.week]??'-'}%</td><td>${w.completions}</td><td>${w.attempts}</td><td>${w.passing_yards}</td><td>${w.passing_tds||''}</td><td>${w.passing_interceptions||''}</td><td>${w.sacks_suffered||''}</td><td>${w.attempts?sgn(w.passing_cpoe,1):'-'}</td><td class="${w.passing_epa>=0?'pos':'neg'}">${sgn(w.passing_epa,1)}</td>`;};
- foot=`<td></td><td>${gp} games</td><td>${Math.round(snapAvg)}%</td><td>${cmp}</td><td>${att}</td><td>${py}</td><td>${ptd}</td><td>${pint}</td><td>${sk}</td><td>${sgn(cpoe,1)}</td><td class="${pepa>=0?'pos':'neg'}">${sgn(pepa,1)}</td>`;}
-document.getElementById('glog').innerHTML=head+W.map(w=>`<tr>${row(w)}</tr>`).join('')+`<tfoot><tr>${foot}</tr></tfoot>`;
+const res=w=>{const g=gByOpp[w.week];return g?`${g.home?'vs':'at'} ${g.opp} <b class="${g.pf>g.pa?'':'l'}">${g.pf>g.pa?'W':'L'}</b> ${g.pf}-${g.pa}`:w.opponent_team;};
+const rate=w=>{const a=w.attempts;if(!a)return'-';const x=Math.max(0,Math.min(2.375,(w.completions/a-.3)*5)),y=Math.max(0,Math.min(2.375,(w.passing_yards/a-3)*.25)),z=Math.max(0,Math.min(2.375,w.passing_tds/a*20)),q=Math.max(0,Math.min(2.375,2.375-w.passing_interceptions/a*25));return f1((x+y+z+q)/6*100);};
+const E=(v,d=1)=>`<td class="${v>=0?'pos':'neg'}">${sgn(v,d)}</td>`, TDc=v=>`<td>${v}</td>`, pf=(w,k)=>(p.pfr[w.week]||{})[k]||'';
+const VIEWS={
+ rec:{Default:['Snap|Tgt|Rec|Yds|TD|EPA',w=>TDc(p.snaps[w.week]!=null?p.snaps[w.week]+'%':'-')+TDc(w.targets)+TDc(w.receptions)+TDc(w.receiving_yards)+TDc(w.receiving_tds||'')+E(w.receiving_epa)],
+      Advanced:['Tgt share|Air share|aDOT|YAC|EPA/tgt|1D|Drops',w=>TDc(pct(w.target_share))+TDc(pct(w.air_yards_share))+TDc(w.targets?f1(w.receiving_air_yards/w.targets):'-')+TDc(w.receiving_yards_after_catch)+E(w.targets?w.receiving_epa/w.targets:0,2)+TDc(w.receiving_first_downs)+TDc(pf(w,'drop'))],
+      Traditional:['Rec|Yds|Y/R|TD|20+',w=>TDc(w.receptions)+TDc(w.receiving_yards)+TDc(w.receptions?f1(w.receiving_yards/w.receptions):'-')+TDc(w.receiving_tds||'')+TDc(w.receiving_20||'')]},
+ rb:{Default:['Snap|Car|Yds|TD|Tgt|Rec|EPA',w=>TDc(p.snaps[w.week]!=null?p.snaps[w.week]+'%':'-')+TDc(w.carries)+TDc(w.rushing_yards)+TDc((w.rushing_tds+w.receiving_tds)||'')+TDc(w.targets)+TDc(w.receptions)+E(w.rushing_epa+w.receiving_epa)],
+     Advanced:['YPC|EPA/car|EPA/tgt|10+|Brk tkl|Snap',w=>TDc(w.carries?f1(w.rushing_yards/w.carries):'-')+E(w.carries?w.rushing_epa/w.carries:0,2)+E(w.targets?w.receiving_epa/w.targets:0,2)+TDc(w.rushing_10||'')+TDc(pf(w,'bt')+pf(w,'rbt')||'')+TDc(p.snaps[w.week]!=null?p.snaps[w.week]+'%':'-')],
+     Traditional:['Car|Yds|YPC|TD|Rec|Rec yds',w=>TDc(w.carries)+TDc(w.rushing_yards)+TDc(w.carries?f1(w.rushing_yards/w.carries):'-')+TDc(w.rushing_tds||'')+TDc(w.receptions)+TDc(w.receiving_yards)]},
+ qb:{Default:['Snap|Cmp/Att|Yds|TD|INT|EPA',w=>TDc(p.snaps[w.week]!=null?p.snaps[w.week]+'%':'-')+TDc(w.completions+'/'+w.attempts)+TDc(w.passing_yards)+TDc(w.passing_tds||'')+TDc(w.passing_interceptions||'')+E(w.passing_epa)],
+     Advanced:['EPA/DB|CPOE|aDOT|Sk|Sk %|Rush EPA',w=>E(w.attempts?w.passing_epa/(w.attempts+w.sacks_suffered):0,2)+TDc(w.attempts?sgn(w.passing_cpoe,1):'-')+TDc(w.attempts?f1(w.passing_air_yards/w.attempts):'-')+TDc(w.sacks_suffered||'')+TDc(w.attempts?pct(w.sacks_suffered/(w.attempts+w.sacks_suffered)):'-')+E(w.rushing_epa)],
+     Traditional:['Cmp|Att|Pct|Yds|Y/A|TD|INT|Rate',w=>TDc(w.completions)+TDc(w.attempts)+TDc(pct(w.completions/w.attempts))+TDc(w.passing_yards)+TDc(w.attempts?f1(w.passing_yards/w.attempts):'-')+TDc(w.passing_tds||'')+TDc(w.passing_interceptions||'')+TDc(rate(w))]}};
+let gv='Default';const gseg=document.getElementById('gview');gseg.classList.add('t-tabs');
+gseg.innerHTML='<span class="t-tabs-pill" aria-hidden="true"></span>'+Object.keys(VIEWS[grp]).map(k=>`<button class="t-tab" type="button" role="tab" data-v="${k}" aria-selected="${k===gv}">${k}</button>`).join('');
+function gpill(b){const pl=gseg.querySelector('.t-tabs-pill');pl.style.transform=`translateX(${b.offsetLeft}px)`;pl.style.width=b.offsetWidth+'px';}
+gseg.onclick=e=>{const b=e.target.closest('button');if(!b)return;gv=b.dataset.v;gseg.querySelectorAll('button').forEach(x=>x.setAttribute('aria-selected',x===b));gpill(b);drawLog();};
+requestAnimationFrame(()=>{const pl=gseg.querySelector('.t-tabs-pill');pl.style.transition='none';gpill(gseg.querySelector('[aria-selected="true"]'));void pl.offsetWidth;pl.style.transition='';});
+function drawLog(){const [cols,fn]=VIEWS[grp][gv];document.getElementById('glog').innerHTML='<tr><th>Wk</th><th>Opponent</th>'+cols.split('|').map(c=>`<th>${c}</th>`).join('')+'</tr>'+W.map(w=>`<tr><td>${w.week}</td><td class="res">${res(w)}</td>${fn(w)}</tr>`).join('');}
+drawLog();
 
 /* situations: touches by down, quarter, score, from the play file */
 const touches=grp==='qb'?qbPass:mine.filter(q=>['comp','inc','int','run'].includes(q.k));
