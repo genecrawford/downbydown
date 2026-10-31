@@ -53,10 +53,52 @@ if ( $gi ) {
 	echo '</div><p class="dbd-note">Each bar is the league pool; the markers are the players. Right is better, the dashed line is the median. The best value in each row is marked green.</p></section>';
 }
 
+/* ---- graphics (SCOPE §17 addendum): radar and floor-and-ceiling from the player files; the rest from compare.js */
+$DEFS = $grp ? DBD_Grades::defs( $grp ) : array();
+$pcs = array(); foreach ( $P as $i => $x ) { $g = $x['rec']['grades'] ?? null; $pcs[ $i ] = array(); foreach ( $DEFS as $d ) { $v = ( $g && ! empty( $g['q'] ) ) ? ( $g['m'][ $d[0] ] ?? null ) : null; $pcs[ $i ][ $d[0] ] = $gi ? DBD_Grades::pctile( $grp, $d[0], $v ) : null; } }
+$short = function ( $lab ) { return array( 'Target share' => 'Target share', 'Depth of target' => 'Depth', 'After the catch' => 'YAC', 'Catch rate' => 'Catch rate', 'EPA per target' => 'EPA / tgt', 'First downs' => 'First downs', 'Drop rate' => 'Drops', 'Yards per game' => 'Yds / game', 'Yards per carry' => 'YPC', 'Rush EPA per carry' => 'Rush EPA', 'Broken tackles' => 'Brk tackles', 'Explosive rate' => 'Explosive', 'Touches per game' => 'Touches', 'Receiving share' => 'Rec share', 'Yards per touch' => 'Yds / touch', 'EPA per dropback' => 'EPA / DB', 'CPOE' => 'CPOE', 'Sack rate' => 'Sacks', 'Yards per attempt' => 'Y/A', 'TD rate' => 'TD rate', 'INT rate' => 'INT rate', 'Rush EPA per game' => 'Rush EPA' )[ $lab ] ?? $lab; };
+echo '<div class="dbd-cgrid">';
+/* radar */
+if ( $gi ) {
+	$S = 320; $cx = 160; $cy = 160; $R = 112; $nn = count( $DEFS ); $ang = function ( $i ) use ( $nn ) { return -M_PI / 2 + $i * 2 * M_PI / $nn; }; $pt = function ( $i, $r ) use ( $cx, $cy, $ang ) { return array( round( $cx + cos( $ang( $i ) ) * $r, 1 ), round( $cy + sin( $ang( $i ) ) * $r, 1 ) ); };
+	$svg = '<svg viewBox="0 0 ' . $S . ' ' . $S . '" class="dbd-cradar" role="img" aria-label="Percentile radar">';
+	foreach ( array( .25, .5, .75, 1 ) as $f ) { $pts = array(); foreach ( $DEFS as $i => $d ) { $pts[] = implode( ',', $pt( $i, $R * $f ) ); } $svg .= '<polygon points="' . implode( ' ', $pts ) . '" fill="none" stroke="' . ( $f == .5 ? 'rgba(22,30,54,.3)' : 'rgba(22,30,54,.12)' ) . '"' . ( $f == .5 ? ' stroke-dasharray="3 3"' : '' ) . '/>'; }
+	foreach ( $DEFS as $i => $d ) { list( $x1, $y1 ) = $pt( $i, $R ); list( $lx, $ly ) = $pt( $i, $R + 24 ); $svg .= '<line x1="' . $cx . '" y1="' . $cy . '" x2="' . $x1 . '" y2="' . $y1 . '" stroke="rgba(22,30,54,.12)"/><text x="' . $lx . '" y="' . $ly . '" font-size="9" text-anchor="middle" dominant-baseline="middle">' . esc_html( $short( $d[1] ) ) . '</text>'; }
+	$ungraded = array();
+	foreach ( $P as $i => $x ) { $g = $x['rec']['grades'] ?? null; if ( ! $g || empty( $g['q'] ) ) { $ungraded[] = $x['row']['name']; continue; } $pts = array(); foreach ( $DEFS as $j => $d ) { $pts[] = $pt( $j, $R * ( ( $pcs[ $i ][ $d[0] ] ?? 0 ) / 100 ) ); } $svg .= '<polygon points="' . implode( ' ', array_map( function ( $q ) { return implode( ',', $q ); }, $pts ) ) . '" fill="' . $x['c'] . '" fill-opacity=".14" stroke="' . $x['c'] . '" stroke-width="2"/>'; foreach ( $pts as $q ) { $svg .= '<circle cx="' . $q[0] . '" cy="' . $q[1] . '" r="3" fill="' . $x['c'] . '"/>'; } }
+	echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>The shape</b> · percentile radar</span><span class="dbd-badge">Bigger and rounder is more complete</span></div><div class="dbd-pb">' . $svg . '</svg>' . ( $ungraded ? '<p class="dbd-note">' . esc_html( implode( ', ', $ungraded ) ) . ( count( $ungraded ) > 1 ? ' are' : ' is' ) . ' not graded yet, so no shape.</p>' : '' ) . '</div></section>';
+}
+/* where he wins (JS) */
+echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Where he wins</b> · EPA per ' . ( $grp === 'qb' ? 'throw' : 'target' ) . ' by lane and depth</span><span class="dbd-badge">Same scale across</span></div><div class="dbd-cheat" id="dbd-cheat">' . implode( '', array_map( function ( $x, $i ) { return '<div><h5><i style="background:' . $x['c'] . '"></i>' . esc_html( $x['row']['name'] ) . '</h5><div class="grid" id="dbd-cheat-' . $i . '"><div class="dbd-skel"><span class="dbd-note">Loading…</span></div></div></div>'; }, $P, array_keys( $P ) ) ) . '</div><p class="dbd-note">Green cells turn targets into points, red cells lose them. Cells with one target are left grey.</p></section>';
+echo '</div>';
+
 /* ---- field maps (JS) */
 echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Where the ball finds them</b> · same scale, same field</span><span class="dbd-badge" id="dbd-cmapn">loading plays</span></div><div class="dbd-cmaps">';
 foreach ( $P as $i => $x ) { echo '<div><h4><i style="background:' . $x['c'] . '"></i>' . esc_html( $x['row']['name'] ) . ' <span class="n" id="dbd-cmapc-' . $i . '"></span></h4><div id="dbd-cmap-' . $i . '"><div class="dbd-skel"><span class="dbd-note">Loading…</span></div></div></div>'; }
 echo '</div><div class="dbd-legend" id="dbd-cmapleg"></div><p class="dbd-note">' . ( $grp === 'rb' ? 'Designed carries by gap, from each team\'s play file.' : 'Targets placed by air yards and side of the field, from each team\'s play file.' ) . '</p></section>';
+
+/* ---- one field + depth butterfly (JS), the race + grouped weeks (JS, Chartist) */
+$two = array_slice( $P, 0, 2 );
+echo '<div class="dbd-cgrid">';
+echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>On one field</b> · ' . ( $grp === 'qb' ? 'every throw' : 'every target' ) . ', same field</span><span class="dbd-badge">Filled is caught, a ring is not</span></div><div class="dbd-pb" id="dbd-cfield"><div class="dbd-skel"><span class="dbd-note">Loading…</span></div></div></section>';
+echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Depth butterfly</b> · ' . esc_html( implode( ' and ', array_map( function ( $x ) { return $x['rec']['short'] ?? $x['row']['name']; }, $two ) ) ) . '</span><span class="dbd-badge">Solid is caught</span></div><div class="dbd-pb" id="dbd-cbfly"><div class="dbd-skel"><span class="dbd-note">Loading…</span></div></div><p class="dbd-note">' . ( $n > 2 ? 'The first two slots, back to back.' : 'Back to back by depth band.' ) . ' The widest band is where the offense goes to him; the gap between solid and faded is where it misses.</p></section>';
+echo '</div><div class="dbd-cgrid">';
+echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>The race</b> · cumulative yards</span><span class="dbd-badge">Flat steps are byes</span></div><div class="dbd-pb"><div class="dbd-cch ct-chart" id="dbd-crace"></div></div></section>';
+echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Week by week</b> · grouped</span><span class="dbd-badge">Same Sunday, side by side</span></div><div class="dbd-pb"><div class="dbd-cch ct-chart" id="dbd-cweek"></div></div></section>';
+echo '</div>';
+
+/* ---- floor and ceiling (PHP): boom, solid or dud against the pool's game weeks */
+$maxW = max( 1, (int) DBD_Data::through_week() ); $qw = $gi['week'] ?? null;
+$ser = array(); foreach ( $P as $i => $x ) { $ser[ $i ] = DBD_Grades::week_series( $x['rec'], $grp, $maxW ); }
+if ( ! $qw ) { $all = array(); foreach ( $ser as $sv ) { foreach ( $sv as $v ) { if ( $v !== null ) { $all[] = $v; } } } sort( $all ); $qw = $all ? array( 'p25' => $all[ (int) ( count( $all ) * .25 ) ], 'p75' => $all[ min( count( $all ) - 1, (int) ( count( $all ) * .75 ) ) ] ) : array( 'p25' => 0, 'p75' => 0 ); }
+echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Floor and ceiling</b> · boom, solid or dud, week by week</span><span class="dbd-badge">Boom ' . (int) $qw['p75'] . '+ · dud under ' . (int) $qw['p25'] . '</span></div><div class="dbd-pb dbd-cstrip">';
+foreach ( $P as $i => $x ) {
+	$cells = ''; $vals = array();
+	foreach ( $ser[ $i ] as $wi => $v ) { $wk = $wi + 1; if ( $v === null ) { $cells .= '<span class="bye" title="Week ' . $wk . ': no game">' . $wk . '<small>Wk ' . $wk . '</small></span>'; continue; } $vals[] = $v; $cls = $v >= $qw['p75'] ? 'boom' : ( $v <= $qw['p25'] ? 'dud' : 'solid' ); $cells .= '<span class="' . $cls . '" title="Week ' . $wk . ': ' . (int) $v . ' yards">' . (int) $v . '<small>Wk ' . $wk . '</small></span>'; }
+	$avg = $vals ? array_sum( $vals ) / count( $vals ) : 0; $sd = 0; foreach ( $vals as $v ) { $sd += ( $v - $avg ) * ( $v - $avg ); } $sd = $vals ? sqrt( $sd / count( $vals ) ) : 0;
+	echo '<div class="r"><b><i style="background:' . $x['c'] . '"></i>' . esc_html( $x['rec']['short'] ?? $x['row']['name'] ) . '</b><div class="wk">' . $cells . '</div><small>' . round( $avg ) . ' ± ' . round( $sd ) . '</small></div>';
+}
+echo '</div><p class="dbd-note">Thresholds are the quartiles of every game week by qualified ' . esc_html( $pool ) . ' this season' . ( isset( $gi['week']['n'] ) ? ' (' . (int) $gi['week']['n'] . ' player weeks)' : '' ) . '. The right column is the average week and its swing.</p></section>';
 
 /* ---- week by week, one table per metric */
 $M = array( 'rec' => array( array( 'Yds', 'receiving_yards' ), array( 'Tgt', 'targets' ), array( 'Rec', 'receptions' ), array( 'EPA', 'receiving_epa' ), array( 'Snap', 'snap' ) ),

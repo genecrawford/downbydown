@@ -39,6 +39,14 @@
     window.addEventListener('resize', function () { pill(seg.querySelector('[aria-selected="true"]'), false); });
   }
 
+  /* the race and the grouped weeks: Chartist on the weekly series PHP handed over */
+  if (window.Chartist && C.series && C.series.length) {
+    var race = C.series.map(function (sv) { var c = 0; return sv.map(function (v) { c += v || 0; return c; }); });
+    var CH1 = $('#dbd-crace'), CH2 = $('#dbd-cweek');
+    if (CH1) new Chartist.LineChart(CH1, { labels: C.labels, series: race }, { lineSmooth: Chartist.Interpolation.step(), showPoint: true, axisY: { onlyInteger: true, low: 0 }, chartPadding: { right: 20, top: 10 } });
+    if (CH2) new Chartist.BarChart(CH2, { labels: C.labels, series: C.series.map(function (sv) { return sv.map(function (v) { return v || 0; }); }) }, { seriesBarDistance: C.series.length > 2 ? 9 : 12, axisY: { onlyInteger: true, low: 0 }, chartPadding: { right: 10, top: 10 } });
+  }
+
   /* field maps: one play file per distinct team, drawn on a shared air-yard scale */
   if (!C.players.length) return;
   var COL = { pass: '#5b9cf6', inc: '#9a96a6', bad: '#e0564b', td: '#4fd18b', run: '#f0b429' }, FL = 'rgba(255,255,255,.22)', FI = 'rgba(255,255,255,.75)';
@@ -58,6 +66,49 @@
     $('#dbd-cmapn').textContent = sets.map(function (s, i) { return C.players[i].short + ' ' + s.length; }).join(' · ');
     $('#dbd-cmapleg').innerHTML = C.group === 'rb' ? '<span><i style="background:' + COL.td + '"></i>Positive EPA</span><span><i style="background:' + COL.run + '"></i>Negative EPA, 40%+ success</span><span><i style="background:' + COL.bad + '"></i>Under 40% success</span>' : '<span><i style="background:' + COL.pass + '"></i>Catch</span><span><i style="background:' + COL.inc + '"></i>Incomplete</span><span><i style="background:' + COL.bad + '"></i>Interception</span><span><i style="background:' + COL.td + '"></i>Touchdown</span>';
     sets.forEach(function (s, i) { $('#dbd-cmapc-' + i).textContent = '· ' + s.length + (C.group === 'rb' ? ' carries' : C.group === 'qb' ? ' throws' : ' targets'); $('#dbd-cmap-' + i).innerHTML = C.group === 'rb' ? runmap(s) : passmap(s.filter(function (q) { return q.air != null; }), minA, maxA); });
+
+    /* targets (or throws) per player for the one-field, butterfly and heat graphics */
+    var tsets = C.players.map(function (p) { return (C.group === 'qb' ? sets[C.players.indexOf(p)] : byId(p).filter(isT)).filter(function (q) { return q.air != null; }); });
+    var SLOT = ['#161e36', '#cb2026', '#d99a06'];
+
+    /* one field */
+    (function () {
+      var host = $('#dbd-cfield'); if (!host) return;
+      var all = [].concat.apply([], tsets), Wd = 360, H = 380, Tp = 36, Bt = 28, Lf = 34, Rt = 10;
+      if (!all.length) { host.innerHTML = '<p class="dbd-note">No targets in the play files yet.</p>'; return; }
+      var airs2 = all.map(function (q) { return q.air; }), mn = Math.min(-10, Math.floor(Math.min.apply(null, airs2) / 5) * 5), mx = Math.max.apply(null, [40].concat(airs2));
+      var y = function (a) { return Tp + (mx - a) / (mx - mn) * (H - Tp - Bt); }, lw = (Wd - Lf - Rt) / 3, lanes = { left: 0, middle: 1, right: 2 };
+      var g = '<svg viewBox="0 0 ' + Wd + ' ' + H + '" width="100%" style="display:block;background:#2c4a35;border-radius:4px" role="img" aria-label="Targets on one field">';
+      for (var a = -10; a <= mx; a += 10) g += '<line x1="' + Lf + '" x2="' + (Wd - Rt) + '" y1="' + y(a) + '" y2="' + y(a) + '" stroke="' + FL + '" stroke-width="' + (a === 0 ? 2 : 1) + '"/><text x="' + (Lf - 6) + '" y="' + (y(a) + 4) + '" fill="' + FI + '" font-size="10" text-anchor="end">' + a + '</text>';
+      ['Left', 'Middle', 'Right'].forEach(function (nm, i) { g += '<text x="' + (Lf + lw * i + lw / 2) + '" y="' + (H - 9) + '" fill="' + FI + '" font-size="11" text-anchor="middle">' + nm + '</text>'; if (i) g += '<line x1="' + (Lf + lw * i) + '" x2="' + (Lf + lw * i) + '" y1="' + Tp + '" y2="' + (H - Bt) + '" stroke="' + FL + '" stroke-dasharray="2 4"/>'; });
+      tsets.forEach(function (set, pi) { set.forEach(function (q) { var li = lanes[q.loc] == null ? 1 : lanes[q.loc]; g += '<circle cx="' + (Lf + lw * li + lw * (.12 + .76 * hash(q.i + 1))) + '" cy="' + y(q.air) + '" r="' + (q.k === 'comp' ? 6 : 5) + '" fill="' + (q.k === 'comp' ? SLOT[pi] : 'none') + '" stroke="' + SLOT[pi] + '" stroke-width="2" fill-opacity=".9"><title>' + esc(q.desc) + '</title></circle>'; }); });
+      g += '</svg>';
+      var lane = function (set, l) { return set.filter(function (q) { return (q.loc || 'middle') === l; }).length; };
+      var side = ['left', 'middle', 'right'].map(function (l) { var counts = tsets.map(function (set) { return lane(set, l); }), tot = counts.reduce(function (x, y) { return x + y; }, 0) || 1; return '<div class="lane"><span class="l">' + l + '</span><span class="b">' + counts.map(function (c, i) { return '<i style="width:' + (c / tot * 100) + '%;background:' + SLOT[i] + '"></i>'; }).join('') + '</span><span class="n">' + counts.join(' · ') + '</span></div>'; }).join('');
+      host.innerHTML = g + '<div class="dbd-clanes">' + side + '</div>';
+    })();
+
+    /* depth butterfly, first two slots */
+    (function () {
+      var host = $('#dbd-cbfly'); if (!host) return;
+      if (tsets.length < 2) { host.innerHTML = '<p class="dbd-note">Add a second player for the butterfly.</p>'; return; }
+      var A = tsets[0], B = tsets[1], bands = [['Deep 20+', function (q) { return q.air >= 20; }], ['Medium 10-19', function (q) { return q.air >= 10 && q.air < 20; }], ['Short 0-9', function (q) { return q.air >= 0 && q.air < 10; }], ['Behind', function (q) { return q.air < 0; }]];
+      var mxb = Math.max.apply(null, [1].concat(bands.map(function (b) { return Math.max(A.filter(b[1]).length, B.filter(b[1]).length); })));
+      var h = '<div class="dbd-cbf"><div class="hd"><i style="background:' + SLOT[0] + '"></i>' + esc(C.players[0].short) + '</div><div></div><div class="hd r">' + esc(C.players[1].short) + '<i style="background:' + SLOT[1] + '"></i></div>';
+      bands.forEach(function (b) { var a = A.filter(b[1]), bb = B.filter(b[1]), ac = a.filter(function (q) { return q.k === 'comp'; }).length, bc = bb.filter(function (q) { return q.k === 'comp'; }).length;
+        h += '<div class="bar left" style="--c:' + SLOT[0] + '"><i style="width:' + (a.length / mxb * 100) + '%"></i><b style="width:' + (ac / mxb * 100) + '%"></b><span>' + ac + '/' + a.length + '</span></div><div class="lab">' + b[0] + '</div><div class="bar right" style="--c:' + SLOT[1] + '"><i style="width:' + (bb.length / mxb * 100) + '%"></i><b style="width:' + (bc / mxb * 100) + '%"></b><span>' + bc + '/' + bb.length + '</span></div>'; });
+      host.innerHTML = h + '</div>';
+    })();
+
+    /* where he wins: lanes by depth, EPA per target, same color scale for everyone */
+    (function () {
+      var bands = [['Deep', function (q) { return q.air >= 20; }], ['Mid', function (q) { return q.air >= 10 && q.air < 20; }], ['Short', function (q) { return q.air < 10; }]], lanes3 = ['left', 'middle', 'right'];
+      tsets.forEach(function (T, pi) { var host = $('#dbd-cheat-' + pi); if (!host) return;
+        var g = '<div></div>' + lanes3.map(function (l) { return '<div class="h">' + l + '</div>'; }).join('');
+        bands.forEach(function (b) { g += '<div class="h l">' + b[0] + '</div>' + lanes3.map(function (l) { var a = T.filter(function (q) { return b[1](q) && (q.loc || 'middle') === l; }); if (a.length < 2) return '<div class="c few"><b>' + (a.length || '·') + '</b><span>&nbsp;</span></div>'; var e = a.reduce(function (s2, q) { return s2 + (q.epa || 0); }, 0) / a.length, al = Math.min(.75, Math.abs(e) / 1.2 + .12); return '<div class="c" style="background:' + (e >= 0 ? 'rgba(30,127,74,' + al + ')' : 'rgba(180,38,31,' + al + ')') + '"><b>' + (e > 0 ? '+' : '') + e.toFixed(2) + '</b><span>' + a.length + ' tgt</span></div>'; }).join(''); });
+        host.innerHTML = g;
+      });
+    })();
   }).catch(function (err) { $('#dbd-cmapn').textContent = 'could not load the plays'; root.querySelectorAll('.dbd-cmaps .dbd-skel').forEach(function (k) { k.innerHTML = '<span class="dbd-note">' + esc(err.message || err) + '</span>'; }); });
 
   function hash(i) { return (i * 2654435761 % 4294967296) / 4294967296; }

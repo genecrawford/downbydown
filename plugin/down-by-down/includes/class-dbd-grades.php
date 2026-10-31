@@ -54,6 +54,20 @@ class DBD_Grades {
 		return array_map( function ( $x ) { return $x[1]; }, array_slice( $c, 0, $n ) );
 	}
 
+	/** The group's primary yardage keys: what a week is measured in. */
+	public static function yds_keys( $grp ) {
+		return array( 'rec' => array( 'receiving_yards' ), 'rb' => array( 'rushing_yards', 'receiving_yards' ), 'qb' => array( 'passing_yards' ) )[ $grp ] ?? array( 'receiving_yards' );
+	}
+
+	/** Weekly primary yards for weeks 1..$max: a number for a played week, null for a bye or a miss. */
+	public static function week_series( $rec, $grp, $max ) {
+		$keys = self::yds_keys( $grp ); $by = array();
+		foreach ( $rec['weeks'] ?? array() as $w ) { $v = 0; foreach ( $keys as $k ) { $v += (float) ( $w[ $k ] ?? 0 ); } $by[ (int) $w['week'] ] = $v; }
+		$out = array();
+		for ( $wk = 1; $wk <= $max; $wk++ ) { $out[] = array_key_exists( $wk, $by ) ? round( $by[ $wk ] ) : ( isset( $rec['snaps'][ (string) $wk ] ) ? 0 : null ); }
+		return $out;
+	}
+
 	public static function pool_label( $grp ) {
 		return array( 'rec' => 'receivers and tight ends', 'rb' => 'backs', 'qb' => 'quarterbacks' )[ $grp ] ?? 'players';
 	}
