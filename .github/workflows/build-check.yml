@@ -17,7 +17,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install pandas
-        run: pip install pandas
+        run: pip install pandas pillow
       - name: Download nflverse files
         run: |
           set -e
@@ -39,5 +39,5 @@ jobs:
           set -e
           cp -r data /tmp/out
           python3 tools/build_data.py "$pbp" in/roster.csv in/games.csv in/teams.csv /tmp/out
-          python3 -c "import json;t=json.load(open('/tmp/out/teams.json'));print(len(t),'teams;',sum(1 for v in t.values() if v.get('logo')),'with logos')"
+          python3 -c "import json;t=json.load(open('/tmp/out/teams.json'));print(len(t),'teams;',sum(1 for v in t.values() if v.get('logo')),'with logos;',sum(1 for v in t.values() if v.get('logo_s')),'with a logo scale');print(' '.join(k+'='+str(v.get('logo_s')) for k,v in sorted(t.items())))"
           ls /tmp/out/players | head -40 | tr '\n' ' '

@@ -84,11 +84,11 @@
     var runFirst = grp === 'rb' && runs.length >= tgts.length;
     if (runFirst) {
       $('#dbd-map1h').textContent = 'Carries by gap'; $('#dbd-pmap').innerHTML = runmap(runs, C.num, 0, C.accent); $('#dbd-mapn').textContent = runs.length + ' carries · ' + tgts.length + ' targets';
-      $('#dbd-pleg').innerHTML = '<span><i style="background:' + COL.td + '"></i>Positive EPA</span><span><i style="background:' + COL.run + '"></i>Negative EPA, 40%+ success</span><span><i style="background:' + COL.bad + '"></i>Under 40% success</span>';
+      $('#dbd-pleg').innerHTML = '<span><i class="dot" style="background:' + COL.td + '"></i>Positive EPA</span><span><i class="dot" style="background:' + COL.run + '"></i>Negative EPA, 40%+ success</span><span><i class="dot" style="background:' + COL.bad + '"></i>Under 40% success</span>';
       $('#dbd-mapnote').textContent = 'Designed runs only, grouped by the gap nflverse records. Scrambles and kneels are left out. Depth bands on the right are his targets.';
     } else {
       $('#dbd-map1h').textContent = grp === 'qb' ? 'Throws on the field' : 'Targets on the field'; $('#dbd-pmap').innerHTML = passmap(mapSet.filter(function (p) { return p.air != null; })); $('#dbd-mapn').textContent = mapSet.length + (grp === 'qb' ? ' throws' : ' targets');
-      $('#dbd-pleg').innerHTML = '<span><i style="background:' + COL.pass + '"></i>Catch</span><span><i style="background:' + COL.inc + '"></i>Incomplete</span><span><i style="background:' + COL.bad + '"></i>Interception</span><span><i style="background:' + COL.td + '"></i>Touchdown</span>';
+      $('#dbd-pleg').innerHTML = '<span><i class="dot" style="background:' + COL.pass + '"></i>Catch</span><span><i class="dot" style="background:' + COL.inc + '"></i>Incomplete</span><span><i class="dot" style="background:' + COL.bad + '"></i>Interception</span><span><i class="dot" style="background:' + COL.td + '"></i>Touchdown</span>';
       $('#dbd-mapnote').textContent = 'Each dot is one target, placed by air yards beyond the line of scrimmage (the thick 0 line) and the side of the field. Hover a dot for the play.';
     }
 

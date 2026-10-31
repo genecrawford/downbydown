@@ -794,3 +794,19 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
   .dbd .dbd-player .dbd-hdr>.dbd-pn-link{margin-right:auto}
   .dbd .dbd-player .dbd-cmp-sug{max-width:none;justify-content:flex-start;flex-basis:100%}
 }
+
+/* ==== edge and density cleanup (1.4.1) ==== */
+/* every table in a panel: the outer cells carry no side padding, so the first column lines up with the panel label on the wrapper's 14px edge */
+.dbd .dbd-panel table tr>:first-child{padding-left:0}
+.dbd .dbd-panel table tr>:last-child{padding-right:0}
+/* tables that sit in a panel without a padded wrapper get the edge as a margin */
+.dbd .dbd-ox-2 .dbd-ox-split,.dbd .dbd-panel>table{width:calc(100% - 2 * var(--dbd-s3));margin-left:var(--dbd-s3);margin-right:var(--dbd-s3)}
+/* rows that carry a headshot, jersey or logo get room above and below it */
+.dbd .dbd-panel table td:has(.dbd-head,.dbd-jersey,.dbd-lgw,svg.dbd-mk){padding-top:7px;padding-bottom:7px}
+/* chips that lead a label keep a gap */
+.dbd .dbd-ox-split .dbd-dchip{margin-right:var(--dbd-s2)}
+/* legends for dot charts use dots */
+.dbd .dbd-legend i.dot{width:9px;height:9px;border-radius:50%}
+.dbd .dbd-legend+.dbd-note{padding-top:var(--dbd-s2)}
+/* team logos at a common optical size: the build measures each logo's artwork and stores a scale */
+.dbd .dbd-lgw>img.dbd-logo,.dbd-lgw>img.dbd-logo{transform:translateX(-50%) scale(var(--lgs,1));transform-origin:50% 50%}

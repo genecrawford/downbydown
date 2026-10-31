@@ -32,7 +32,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install pandas
-        run: pip install --quiet pandas
+        run: pip install --quiet pandas pillow
 
       - name: Work out the season
         id: season

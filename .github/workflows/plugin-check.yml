@@ -44,7 +44,25 @@ jobs:
           set -e
           # the repo's team data gains logo URLs at the next nightly build; add them here so the logo path renders now
           curl -sSL -o teams.csv https://github.com/nflverse/nflverse-data/releases/download/teams/teams_colors_logos.csv
-          python3 -c "import csv,json;t=json.load(open('data/teams.json'));r={x['team_abbr']:x for x in csv.DictReader(open('teams.csv'))};[v.update(logo=r[k]['team_logo_espn']) for k,v in t.items() if k in r and 'logo' not in v];json.dump(t,open('data/teams.json','w'))"
+          pip install --quiet pillow
+          python3 - <<'PY'
+          import csv, json, io, urllib.request
+          from PIL import Image
+          t = json.load(open('data/teams.json')); r = {x['team_abbr']: x for x in csv.DictReader(open('teams.csv'))}
+          for k, v in t.items():
+              if k in r and not v.get('logo'): v['logo'] = r[k]['team_logo_espn']
+              if v.get('logo') and not v.get('logo_s'):
+                  try:  # optional: a slow or unreadable logo keeps the default scale rather than stopping the review pages
+                      im = Image.open(io.BytesIO(urllib.request.urlopen(v['logo'], timeout=20).read())).convert('RGBA')
+                      bb = im.getchannel('A').point(lambda a: 255 if a > 20 else 0).getbbox()
+                      if not bb: continue
+                      fw = (bb[2] - bb[0]) / im.width; fh = (bb[3] - bb[1]) / im.height
+                      v['logo_s'] = round(max(0.7, min(1.5, min((0.6 / max(fw * fh, 0.05)) ** 0.5, 1.35 / max(fw, fh)))), 2)
+                  except Exception as e:
+                      print('logo scale: skipped', k, repr(e)[:80])
+          json.dump(t, open('data/teams.json', 'w'))
+          print(' '.join(k + '=' + str(v.get('logo_s')) for k, v in sorted(t.items())))
+          PY
           export DBD_HARNESS_MEDIA=1 DBD_HARNESS_HTML=pages DBD_HARNESS_LOGOS=1
           php tools/view_harness.php data player 00-0036322
           php tools/view_harness.php data player 00-0033293
