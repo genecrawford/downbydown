@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.4.1
+Stable tag: 1.4.2
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,9 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.4.2 =
+* Phones: tables and their panel labels share one edge. Where the table wrapper narrows to 8px on small screens, panel headers, reads, notes, legends, chart grids and headings move to the same 8px line instead of staying at 14px, so nothing on a phone sits 5px out of line and no table loses width.
 
 = 1.4.1 =
 * Edges: every table in a panel now starts on the same 14px line as the panel's label (before: anywhere from 2 to 24px, depending on the table); the defense-tier table no longer touches the panel edge.
