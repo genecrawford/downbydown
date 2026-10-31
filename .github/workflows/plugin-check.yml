@@ -18,6 +18,16 @@ jobs:
         run: |
           set -e
           find plugin tools -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Render the views with a WordPress shim
+        run: |
+          set -e
+          php tools/view_harness.php data player 00-0036322
+          php tools/view_harness.php data player 00-0033293
+          php tools/view_harness.php data player 00-0035228
+          php tools/view_harness.php data player 00-0036259
+          php tools/view_harness.php data players
+          php tools/view_harness.php data team MIN
+          php tools/view_harness.php data hub
       - name: Render share cards
         run: |
           set -e
