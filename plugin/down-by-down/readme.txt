@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.2.1
+Stable tag: 1.2.2
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,11 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.2.2 =
+* Players index: bigger team tiles, search spans every team, and every stat table on the site sorts by its column headings (index, game log, teammates, Who gets the ball, situations). Standings stay grouped by division.
+* Player hero: with Player photos on, the headshot sits large in the open space right of the title, cut out over a soft team-color glow; the jersey tile stays by the name. Larger marks in the Players index (34px) and Teammates (30px).
+* Data build: teams on bye kept their players. The roster filter took the league's latest week, so a bye week emptied that team's roster (Saints, Giants, Texans and 49ers in Week 8); it now takes each team's own latest week.
 
 = 1.2.1 =
 * Optional player photos: a Player photos switch on the Down by Down admin page (off by default) shows the NFL headshots nflverse publishes, lazily, on top of the jersey tile, falling back to the tile if an image fails. The site hotlinks the league's CDN; the switch removes every photo at once.

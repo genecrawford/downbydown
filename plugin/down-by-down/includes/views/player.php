@@ -37,11 +37,11 @@ echo '<main class="dbd-content dbd-player" style="--dbd-team:' . esc_attr( DBD_M
 /* ---- hero */
 echo '<div class="dbd-ttitle"><div class="t-stagger">';
 echo '<p class="dbd-kicker t-stagger-line t-stagger-line--1">' . esc_html( "$season season · {$p['pos']} · #{$p['num']} · " . $ord( (int) $p['exp'] + 1 ) . ' season' ) . '</p>';
-echo '<h1 class="t-stagger-line t-stagger-line--2 withmark">' . DBD_Marks::player( $a, $p['num'], 58, $p['photo'] ?? null ) . '<span>' . esc_html( $first ) . ' <em>' . esc_html( $last ) . '</em></span></h1>';
+echo '<h1 class="t-stagger-line t-stagger-line--2 withmark">' . DBD_Marks::jersey( $a, $p['num'], 58 ) . '<span>' . esc_html( $first ) . ' <em>' . esc_html( $last ) . '</em></span></h1>';
 $bio = array_filter( array( $p['age'] ? 'Age ' . (int) $p['age'] : '', $p['ht'] ?: '', $p['wt'] ? (int) $p['wt'] . ' lb' : '', $p['col'] ?: '', $p['draft'] ?: '' ) );
 echo '<p class="dbd-sub t-stagger-line t-stagger-line--3">' . esc_html( implode( ' · ', $bio ) ) . '.' . ( $depth ? ' Listed <b>' . esc_html( $depth ) . '</b> on the ' . esc_html( $p['depth']['grp'] ) . ' depth chart.' : '' ) . ' Snap share <b>' . round( $snapAvg ) . '%</b> across ' . $ng . ' ' . ( $ng === 1 ? 'game' : 'games' ) . '.</p>';
 echo '<div class="dbd-pills">' . ( $p['inj'] ? '<span class="dbd-pill ' . $icls . '">Week ' . (int) $p['inj']['week'] . ' report · ' . esc_html( $p['inj']['what'] ) . ' · ' . esc_html( str_ireplace( ' in practice', '', $st ) ) . '</span>' : '<span class="dbd-pill good">No injury listing</span>' ) . ( $depth ? '<span class="dbd-pill">' . esc_html( $depth ) . '</span>' : '' ) . '<a class="dbd-pill" href="' . esc_url( $tpurl ) . '">' . esc_html( $t['nick'] ) . ' players</a></div>';
-echo '</div><div class="dbd-hdr"><a class="dbd-pn-link" href="' . esc_url( $turl ) . '">' . DBD_Marks::pennant( $a, 40 ) . esc_html( $t['nick'] ) . ' offense</a><span class="dbd-badge" id="dbd-psnaps">' . ( $p['snaps'] ? round( $snapAvg ) . '% of snaps' : 'no snap data' ) . '</span></div></div>';
+echo '</div>' . DBD_Marks::hero_photo( $a, $p['photo'] ?? null ) . '<div class="dbd-hdr"><a class="dbd-pn-link" href="' . esc_url( $turl ) . '">' . DBD_Marks::pennant( $a, 40 ) . esc_html( $t['nick'] ) . ' offense</a><span class="dbd-badge" id="dbd-psnaps">' . ( $p['snaps'] ? round( $snapAvg ) . '% of snaps' : 'no snap data' ) . '</span></div></div>';
 
 /* ---- tiles by position group */
 $tg = $sum( 'targets' ); $rc = $sum( 'receptions' ); $ry = $sum( 'receiving_yards' ); $rtd = $sum( 'receiving_tds' ); $air = $sum( 'receiving_air_yards' ); $yac = $sum( 'receiving_yards_after_catch' ); $repa = $sum( 'receiving_epa' ); $rfd = $sum( 'receiving_first_downs' );
@@ -80,7 +80,7 @@ $drops = 0; $bt = 0; $rats = array();
 foreach ( $p['pfr'] ?? array() as $x ) { $drops += (int) ( $x['drop'] ?? 0 ); $bt += (int) ( $x['bt'] ?? 0 ) + (int) ( $x['rbt'] ?? 0 ); if ( isset( $x['rat'] ) && $x['rat'] !== null ) { $rats[] = (float) $x['rat']; } }
 $cell = function ( $v, $cls = '' ) { return '<td' . ( $cls ? ' class="' . $cls . '"' : '' ) . '>' . $v . '</td>'; };
 $e = function ( $v ) { return '<td class="' . ( $v >= 0 ? 'pos' : 'neg' ) . '">' . ( $v > 0 ? '+' : '' ) . number_format( $v, 1 ) . '</td>'; };
-echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Game log</b> · week by week</span><span class="dbd-badge">Season totals in the last row</span></div><div class="dbd-tw"><table class="dbd-glog">';
+echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Game log</b> · week by week</span><span class="dbd-badge">Season totals in the last row</span></div><div class="dbd-tw"><table class="dbd-glog dbd-sortable">';
 if ( $grp === 'rec' ) {
 	echo '<thead><tr><th>Wk</th><th>Opponent</th><th>Snap</th><th>Tgt</th><th>Rec</th><th>Yds</th><th>TD</th><th>aDOT</th><th>YAC</th><th>Share</th><th>EPA</th><th>Drops</th></tr></thead><tbody>';
 	foreach ( $L as $w ) { $wk = (int) $w['week']; echo '<tr>' . $cell( $wk ) . $cell( $res( $wk, $w['team'] ?? null ), 'res' ) . $cell( $snap( $wk ) ) . $cell( (int) $w['targets'] ) . $cell( (int) $w['receptions'] ) . $cell( (int) $w['receiving_yards'] ) . $cell( (int) $w['receiving_tds'] ?: '' ) . $cell( $f1( $div( $w['receiving_air_yards'], $w['targets'] ) ) ) . $cell( (int) $w['receiving_yards_after_catch'] ) . $cell( $pct( (float) $w['target_share'] ) ) . $e( (float) $w['receiving_epa'] ) . $cell( $pf( $wk, 'drop' ) ?: '' ) . '</tr>'; }
@@ -126,8 +126,8 @@ foreach ( DBD_Data::team_players( $a ) as $m ) {
 	$mates[] = array( $m, $tc, $s( 'receiving_yards' ) + $s( 'rushing_yards' ), $s( 'receiving_tds' ) + $s( 'rushing_tds' ), $s( 'receiving_epa' ) + $s( 'rushing_epa' ) );
 }
 usort( $mates, function ( $x, $y ) { return $y[1] <=> $x[1]; } ); $mates = array_slice( $mates, 0, 8 );
-echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Teammates</b> · share of the ball</span></div><div class="dbd-tw"><table class="dbd-mates"><thead><tr><th>Player</th><th>Touches</th><th>Yds</th><th>TD</th><th>EPA</th></tr></thead><tbody>';
+echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Teammates</b> · share of the ball</span></div><div class="dbd-tw"><table class="dbd-mates dbd-sortable"><thead><tr><th>Player</th><th>Touches</th><th>Yds</th><th>TD</th><th>EPA</th></tr></thead><tbody>';
 foreach ( $mates as $x ) { list( $m, $tc, $y, $td, $ep ) = $x; $href = DBD_Router::url( array( 'player' => $m['id'] ) );
-	echo '<tr class="dbd-trow" data-href="' . esc_url( $href ) . '"><td class="dbd-nm"><span class="dbd-nmi">' . DBD_Marks::player( $a, $m['num'], 24, $m['photo'] ?? null ) . '<a href="' . esc_url( $href ) . '">' . esc_html( $m['name'] ) . '</a><small>' . esc_html( $m['pos'] ) . '</small></span></td><td>' . (int) $tc . '</td><td>' . (int) round( $y ) . '</td><td>' . ( (int) $td ?: '' ) . '</td>' . $e( $ep ) . '</tr>'; }
+	echo '<tr class="dbd-trow" data-href="' . esc_url( $href ) . '"><td class="dbd-nm"><span class="dbd-nmi">' . DBD_Marks::player( $a, $m['num'], 30, $m['photo'] ?? null ) . '<a href="' . esc_url( $href ) . '">' . esc_html( $m['name'] ) . '</a><small>' . esc_html( $m['pos'] ) . '</small></span></td><td>' . (int) $tc . '</td><td>' . (int) round( $y ) . '</td><td>' . ( (int) $td ?: '' ) . '</td>' . $e( $ep ) . '</tr>'; }
 echo '</tbody></table></div></section>';
 echo '</div></div></main>';

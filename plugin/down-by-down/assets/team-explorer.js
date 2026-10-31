@@ -57,7 +57,7 @@
       '</div></section>' +
       '<div class="dbd-rail">' +
       '<section class="dbd-panel dbd-detail"><div class="dbd-ph"><span class="dbd-lab"><b>Play detail</b></span><span class="dbd-badge"><span class="t-text-swap" id="dbd-detailmode">Best by EPA</span></span></div><div class="dbd-pb" id="dbd-detail"></div></section>' +
-      '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Who gets the ball</b></span><span class="dbd-badge">Click to filter</span></div><div class="dbd-tw"><table class="dbd-usage" id="dbd-usage"></table></div></section>' +
+      '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Who gets the ball</b></span><span class="dbd-badge">Click to filter</span></div><div class="dbd-tw"><table class="dbd-usage dbd-sortable" id="dbd-usage"></table></div></section>' +
       '</div></div><div class="dbd-tt" id="dbd-tt" role="tooltip"></div>';
 
     var st = { games: new Set(), down: '', type: '', zone: '', sg: '', q: '', pl: '', sel: null, selAuto: true };
@@ -175,7 +175,7 @@
       var dd = B.map(function (b) { var a = F.filter(b[1]); return row(b[0], a, (b[0].indexOf('3rd') === 0 || b[0].indexOf('4th') === 0) && a.length ? Math.round(a.filter(function (p) { return p.fd || p.td; }).length / a.length * 100) + '%' : ''); }).join('');
       var qs = [1, 2, 3, 4].map(function (q) { return row('Q' + q, F.filter(function (p) { return p.q == q; })); }).join('');
       var sit = [['Leading', function (p) { return p.sd > 0; }], ['Tied', function (p) { return p.sd == 0; }], ['Trailing', function (p) { return p.sd < 0; }]].map(function (s) { return row(s[0], F.filter(s[1])); }).join('');
-      $('#dbd-tend').innerHTML = '<h4>Down and distance</h4><div class="dbd-tw" style="padding:0 14px"><table><tr><th>Situation</th><th>Plays</th><th>Pass rate</th><th>Success</th><th>EPA/play</th><th>Converted</th></tr>' + dd + '</table></div><div class="dbd-sprays"><div><h4>By quarter</h4><table><tr><th>Qtr</th><th>Plays</th><th>Pass</th><th>Success</th><th>EPA</th></tr>' + qs + '</table></div><div><h4>By game score</h4><table><tr><th>When</th><th>Plays</th><th>Pass</th><th>Success</th><th>EPA</th></tr>' + sit + '</table></div></div>';
+      $('#dbd-tend').innerHTML = '<h4>Down and distance</h4><div class="dbd-tw" style="padding:0 14px"><table class="dbd-sortable"><tr><th>Situation</th><th>Plays</th><th>Pass rate</th><th>Success</th><th>EPA/play</th><th>Converted</th></tr>' + dd + '</table></div><div class="dbd-sprays"><div><h4>By quarter</h4><table class="dbd-sortable"><tr><th>Qtr</th><th>Plays</th><th>Pass</th><th>Success</th><th>EPA</th></tr>' + qs + '</table></div><div><h4>By game score</h4><table class="dbd-sortable"><tr><th>When</th><th>Plays</th><th>Pass</th><th>Success</th><th>EPA</th></tr>' + sit + '</table></div></div>';
     }
 
     /* ---- tendencies charts (Chartist, bundled). Overlays (labels, ticks, rules) are HTML on top of the SVG,

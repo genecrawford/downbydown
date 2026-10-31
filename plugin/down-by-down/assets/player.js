@@ -71,9 +71,9 @@
     var teamTouch = grp === 'qb' ? teamPass : P.filter(function (p) { return isT(p) || p.k === 'run'; });
     var sitRow = function (n, f) { var a = touches.filter(f), t = teamTouch.filter(f), y = a.reduce(function (s, p) { return s + (p.yds || 0); }, 0), e = a.reduce(function (s, p) { return s + (p.epa || 0); }, 0); return '<tr><td>' + n + '</td><td>' + a.length + '</td><td>' + (t.length ? Math.round(a.length / t.length * 100) + '%' : '-') + '</td><td>' + (a.length ? f1(y / a.length) : '-') + '</td><td class="' + (e >= 0 ? 'pos' : 'neg') + '">' + (a.length ? sgn(e / a.length) : '-') + '</td></tr>'; };
     var hdr = '<tr><th></th><th>Touches</th><th>Of team</th><th>Yds/touch</th><th>EPA</th></tr>';
-    $('#dbd-sit').innerHTML = '<div><h4>By down</h4><table>' + hdr + [1, 2, 3, 4].map(function (d) { return sitRow(['', '1st', '2nd', '3rd', '4th'][d], function (p) { return p.dn == d; }); }).join('') + '</table></div>' +
-      '<div><h4>By quarter</h4><table>' + hdr + [1, 2, 3, 4].map(function (q) { return sitRow('Q' + q, function (p) { return p.q == q; }); }).join('') + '</table></div>' +
-      '<div><h4>By game score</h4><table>' + hdr + [['Leading', function (p) { return p.sd > 0; }], ['Tied', function (p) { return p.sd == 0; }], ['Trailing', function (p) { return p.sd < 0; }], ['Red zone', function (p) { return p.yl <= 20; }]].map(function (s) { return sitRow(s[0], s[1]); }).join('') + '</table></div>';
+    $('#dbd-sit').innerHTML = '<div><h4>By down</h4><table class="dbd-sortable">' + hdr + [1, 2, 3, 4].map(function (d) { return sitRow(['', '1st', '2nd', '3rd', '4th'][d], function (p) { return p.dn == d; }); }).join('') + '</table></div>' +
+      '<div><h4>By quarter</h4><table class="dbd-sortable">' + hdr + [1, 2, 3, 4].map(function (q) { return sitRow('Q' + q, function (p) { return p.q == q; }); }).join('') + '</table></div>' +
+      '<div><h4>By game score</h4><table class="dbd-sortable">' + hdr + [['Leading', function (p) { return p.sd > 0; }], ['Tied', function (p) { return p.sd == 0; }], ['Trailing', function (p) { return p.sd < 0; }], ['Red zone', function (p) { return p.yl <= 20; }]].map(function (s) { return sitRow(s[0], s[1]); }).join('') + '</table></div>';
 
     /* ---- intel fills */
     var fill = function (k, txt, cls) { var el = root.querySelector('[data-fill="' + k + '"]'); if (!el) return; el.textContent = txt; if (cls) el.className = cls; };

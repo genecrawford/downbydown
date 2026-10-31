@@ -1,4 +1,4 @@
-/* Down by Down 1.2.0. Light theme only. Everything is scoped under .dbd so the theme (Divi) cannot reach in,
+/* Down by Down 1.2.2. Light theme only. Everything is scoped under .dbd so the theme (Divi) cannot reach in,
    and a reset block pins the elements we use back to our values. Team identity comes from the generated marks;
    field green appears only inside the charts. */
 .dbd{
@@ -360,14 +360,16 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 .dbd-head .dbd-jersey{display:block}
 .dbd-head img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 15%;display:block}
 .dbd-ptools{align-items:end}
-.dbd-teampick{display:flex;flex-wrap:wrap;gap:4px;max-width:560px}
-.dbd-mkbtn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:4px;opacity:.45;text-decoration:none;font:800 10px var(--dbd-display);letter-spacing:.06em;color:var(--dbd-ink);border:1px solid transparent;transition:opacity .12s}
-.dbd-mkbtn:hover,.dbd-mkbtn.on{opacity:1}.dbd-mkbtn.on{border-color:var(--dbd-red)}
+.dbd-teampick{display:flex;flex-wrap:wrap;gap:6px;max-width:640px}
+.dbd-mkbtn{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:6px;text-decoration:none;font:800 11px var(--dbd-display);letter-spacing:.06em;color:var(--dbd-ink);background:var(--dbd-panel);border:1px solid var(--dbd-line);box-shadow:0 0 0 2px transparent;transition:box-shadow .12s,border-color .12s,transform .12s}
+.dbd-mkbtn .dbd-mk{display:block}
+.dbd-mkbtn:hover{border-color:var(--dbd-line-2);transform:translateY(-1px)}
+.dbd-mkbtn.on{border-color:var(--dbd-red);box-shadow:0 0 0 2px var(--dbd-red)}
 .dbd-seg a.t-tab{text-decoration:none;color:inherit;display:inline-flex;align-items:center}
 .dbd-srch{font:500 13px var(--dbd-body);padding:6px 10px;border:1px solid var(--dbd-line-2);border-radius:var(--dbd-r);background:var(--dbd-panel);color:var(--dbd-ink);min-width:220px}
 .dbd-plist{width:100%;border-collapse:collapse}
 .dbd-plist th{font:700 10px var(--dbd-display);text-transform:uppercase;letter-spacing:.12em;color:var(--dbd-muted);text-align:right;padding:6px 6px;border-bottom:1px solid var(--dbd-line);white-space:nowrap}
-.dbd-plist td{padding:6px 6px;border-top:1px solid var(--dbd-line);text-align:right;font:500 12px var(--dbd-mono);vertical-align:middle;white-space:nowrap}
+.dbd-plist td{padding:4px 6px;border-top:1px solid var(--dbd-line);text-align:right;font:500 12px var(--dbd-mono);vertical-align:middle;white-space:nowrap}
 .dbd-plist th:first-child,.dbd-plist td:first-child,.dbd-plist th:nth-child(2),.dbd-plist td:nth-child(2),.dbd-plist th:nth-child(3),.dbd-plist td:nth-child(3),.dbd-plist th:last-child,.dbd-plist td:last-child{text-align:left}
 .dbd-plist td.dbd-nm{font:500 13px var(--dbd-body)}
 .dbd-plist .dbd-nmi{display:flex;align-items:center;gap:10px}
@@ -383,6 +385,10 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 .dbd-pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
 .dbd-pills a.dbd-pill{text-decoration:none}.dbd-pills a.dbd-pill:hover{border-color:var(--dbd-ink-2)}
 .dbd-hdr{display:flex;flex-direction:column;align-items:flex-end;gap:8px;justify-self:end}
+.dbd-player .dbd-ttitle{grid-template-columns:minmax(0,1fr) auto auto;column-gap:clamp(12px,3vw,40px)}
+.dbd-herophoto{margin:0 0 -6px;position:relative;width:240px;height:190px;align-self:end;justify-self:center;overflow:hidden;pointer-events:none}
+.dbd-herophoto::before{content:"";position:absolute;left:50%;bottom:-30px;width:250px;height:160px;transform:translateX(-50%);border-radius:50%;background:radial-gradient(ellipse at 50% 55%,color-mix(in srgb,var(--dbd-team) 28%,transparent),transparent 72%)}
+.dbd-herophoto img{position:absolute;left:50%;bottom:0;transform:translateX(-50%);height:190px;width:auto;max-width:none;display:block}
 .dbd-pn-link{display:flex;align-items:center;gap:8px;font:700 12px var(--dbd-display);text-transform:uppercase;letter-spacing:.14em;color:var(--dbd-ink-2);text-decoration:none}
 .dbd-pn-link:hover{color:var(--dbd-ink)}
 .dbd-pwork{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:18px;align-items:start}
@@ -419,6 +425,9 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 .dbd-wk3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;padding:12px 14px}
 .dbd-wk3 h4{margin:0 0 8px;font:700 11px var(--dbd-display);text-transform:uppercase;letter-spacing:.16em;color:var(--dbd-ink-2)}
 .dbd-wk3 table{width:100%;border-collapse:collapse}
+.dbd-sortable th{cursor:pointer;user-select:none}
+.dbd-sortable th:hover,.dbd-sortable th[aria-sort]{color:var(--dbd-ink)}
+.dbd-sortable th[aria-sort="descending"]::after{content:" \25BE"}.dbd-sortable th[aria-sort="ascending"]::after{content:" \25B4"}
 .dbd-plink{color:inherit;text-decoration:underline;text-decoration-color:var(--dbd-line-2);text-underline-offset:3px}.dbd-plink:hover{text-decoration-color:var(--dbd-red)}
 @media (max-width:1000px){.dbd-pwork{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:1100px){.dbd-wk3{grid-template-columns:minmax(0,1fr)}}
@@ -435,6 +444,7 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 @container dbd (max-width: 1000px){
   .dbd-work,.dbd-mgrid,.dbd-two,.dbd-pwork{grid-template-columns:minmax(0,1fr)}
   .dbd-wk3{grid-template-columns:minmax(0,1fr)}.dbd-hdr{align-items:flex-start;justify-self:start}
+  .dbd-player .dbd-ttitle{grid-template-columns:minmax(0,1fr)}.dbd-herophoto{justify-self:start;width:200px;height:150px;margin:6px 0 0}.dbd-herophoto img{height:150px}
   .dbd-work{grid-template-areas:"drive" "rail" "spray" "situ" "charts"}.dbd-rail{position:static;max-height:none;overflow:visible}
   .dbd-slate .dbd-at{display:none}.dbd-slate .dbd-num{padding-right:10px}
 }

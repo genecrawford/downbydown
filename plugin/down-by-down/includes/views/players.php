@@ -30,7 +30,7 @@ if ( ! $idx ) {
 echo '<section class="dbd-panel"><div class="dbd-toolbar dbd-ptools">';
 echo '<div class="dbd-fg"><span>Team</span><div class="dbd-teampick" id="dbd-teampick"><a class="dbd-mkbtn' . ( $team ? '' : ' on' ) . '" href="' . esc_url( $purl( $pos ? array( 'pos' => $pos ) : array() ) ) . '" data-team="" title="All teams">ALL</a>';
 foreach ( array_keys( DBD_Data::teams() ) as $a ) {
-	echo '<a class="dbd-mkbtn' . ( $a === $team ? ' on' : '' ) . '" href="' . esc_url( $purl( array_filter( array( 'team' => $a, 'pos' => $pos ) ) ) ) . '" data-team="' . esc_attr( $a ) . '" title="' . esc_attr( DBD_Data::team( $a )['name'] ) . '">' . DBD_Marks::tile( $a, 24 ) . '</a>';
+	echo '<a class="dbd-mkbtn' . ( $a === $team ? ' on' : '' ) . '" href="' . esc_url( $purl( array_filter( array( 'team' => $a, 'pos' => $pos ) ) ) ) . '" data-team="' . esc_attr( $a ) . '" title="' . esc_attr( DBD_Data::team( $a )['name'] ) . '">' . DBD_Marks::tile( $a, 32 ) . '</a>';
 }
 echo '</div></div>';
 echo '<div class="dbd-fg"><span>Position</span><div class="dbd-seg t-tabs" id="dbd-pos" role="tablist"><span class="t-tabs-pill" aria-hidden="true"></span>';
@@ -43,26 +43,26 @@ echo '</div></section>';
 
 /* ---- rows: this team, or the league leaders */
 $rows = array_values( array_filter( $idx, function ( $p ) use ( $team, $pos, $q ) {
-	if ( $team && $p['team'] !== $team ) { return false; }
+	if ( $team && $q === '' && $p['team'] !== $team ) { return false; }  // a search spans every team
 	if ( $pos && $p['pos'] !== $pos && ! ( $pos === 'RB' && $p['pos'] === 'FB' ) ) { return false; }
 	if ( $q !== '' && stripos( $p['name'], $q ) === false && (string) $p['num'] !== $q && strcasecmp( $p['team'], $q ) !== 0 && ( empty( $p['col'] ) || stripos( $p['col'], $q ) === false ) ) { return false; }
 	return true;
 } ) );
 $cap = $team || $q !== '' ? 0 : 60;
 if ( $cap && count( $rows ) > $cap ) { $rows = array_slice( $rows, 0, $cap ); }
-$lab = $team ? '<b>Roster usage</b> · sorted by snap share' : ( $q !== '' ? '<b>Search</b> · ' . esc_html( $q ) : '<b>League leaders</b> · top ' . count( $rows ) . ' by snap share' );
-echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab" id="dbd-plab">' . $lab . '</span><span class="dbd-badge">Click a row</span></div><div class="dbd-tw"><table class="dbd-plist" id="dbd-plist"><thead><tr><th>Player</th><th>Team</th><th>Pos</th><th>Snap %</th><th>Tgt / Att</th><th>Rec</th><th>Car</th><th>Yds</th><th>TD</th><th>EPA</th><th>Status</th></tr></thead><tbody>';
+$lab = $q !== '' ? '<b>Search</b> · ' . esc_html( $q ) . ' · all teams' : ( $team ? '<b>Roster usage</b> · sorted by snap share' : '<b>League leaders</b> · top ' . count( $rows ) . ' by snap share' );
+echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab" id="dbd-plab">' . $lab . '</span><span class="dbd-badge">Click a row</span></div><div class="dbd-tw"><table class="dbd-plist dbd-sortable" id="dbd-plist"><thead><tr><th data-sort="name">Player</th><th data-sort="team">Team</th><th data-sort="pos">Pos</th><th data-sort="snap">Snap %</th><th data-sort="use">Tgt / Att</th><th data-sort="rec">Rec</th><th data-sort="car">Car</th><th data-sort="yds">Yds</th><th data-sort="td">TD</th><th data-sort="epa">EPA</th><th data-sort="st">Status</th></tr></thead><tbody>';
 foreach ( $rows as $p ) {
 	$href = DBD_Router::url( array( 'player' => $p['id'] ) ); $st = (string) ( $p['st'] ?? '' );
 	$cls  = preg_match( '/out|did not/i', $st ) ? ' o' : ( preg_match( '/questionable|limited|doubtful/i', $st ) ? ' q' : '' );
 	$lbl  = preg_match( '/did not/i', $st ) ? 'DNP' : ( preg_match( '/limited/i', $st ) ? 'Limited' : ( preg_match( '/full/i', $st ) ? 'Full' : $st ) );
-	echo '<tr class="dbd-trow" data-href="' . esc_url( $href ) . '"><td class="dbd-nm"><span class="dbd-nmi">' . DBD_Marks::player( $p['team'], $p['num'], 26, $p['photo'] ?? null ) . '<a href="' . esc_url( $href ) . '">' . esc_html( $p['name'] ) . '</a>' . ( ! empty( $p['slot'] ) ? '<small>' . esc_html( $p['slot'] ) . '</small>' : '' ) . '</span></td>';
+	echo '<tr class="dbd-trow" data-href="' . esc_url( $href ) . '"><td class="dbd-nm"><span class="dbd-nmi">' . DBD_Marks::player( $p['team'], $p['num'], 34, $p['photo'] ?? null ) . '<a href="' . esc_url( $href ) . '">' . esc_html( $p['name'] ) . '</a>' . ( ! empty( $p['slot'] ) ? '<small>' . esc_html( $p['slot'] ) . '</small>' : '' ) . '</span></td>';
 	echo '<td class="dbd-ptm">' . DBD_Marks::tile( $p['team'], 20 ) . '</td><td class="dbd-ppos">' . esc_html( $p['pos'] ) . '</td><td class="dbd-psnap"><span class="dbd-sb"><i style="--w:' . (int) $p['snap'] . '%"></i></span>' . (int) $p['snap'] . '%</td>';
 	$use = $p['pos'] === 'QB' ? ( $p['att'] ?? 0 ) : $p['tgt'];
 	echo '<td>' . ( $use ?: '' ) . '</td><td>' . ( $p['rec'] ?: '' ) . '</td><td>' . ( $p['car'] ?: '' ) . '</td><td>' . (int) $p['yds'] . '</td><td>' . ( $p['td'] ?: '' ) . '</td><td class="' . ( $p['epa'] >= 0 ? 'pos' : 'neg' ) . '">' . ( $p['epa'] > 0 ? '+' : '' ) . number_format( (float) $p['epa'], 1 ) . '</td>';
 	echo '<td>' . ( $st !== '' ? '<span class="dbd-st' . $cls . '">' . esc_html( $lbl . ( ! empty( $p['what'] ) ? ' · ' . $p['what'] : '' ) ) . '</span>' : '' ) . '</td></tr>';
 }
 if ( ! $rows ) { echo '<tr><td colspan="11" class="dbd-note">No players match.</td></tr>'; }
-echo '</tbody></table></div><p class="dbd-note">Snap share is the season average of offensive snaps played. Status is the latest practice or game report; blank means no listing. Quarterbacks show pass attempts in the Tgt / Att column. Search matches name, number, team abbreviation or college.</p></section>';
+echo '</tbody></table></div><p class="dbd-note">Snap share is the season average of offensive snaps played. Status is the latest practice or game report; blank means no listing. Quarterbacks show pass attempts in the Tgt / Att column. Search matches name, number, team abbreviation or college across every team. Click a column heading to sort.</p></section>';
 echo '</main>';
 echo '<script type="application/json" id="dbd-pindex">' . wp_json_encode( $idx ) . '</script>';
