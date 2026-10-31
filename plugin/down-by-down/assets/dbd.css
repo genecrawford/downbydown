@@ -769,6 +769,7 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 .dbd .dbd-panel>.dbd-ph .dbd-lab{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dbd .dbd-panel>.dbd-ph>.dbd-badge{flex:0 0 auto}
 .dbd .dbd-panel>.dbd-ph.dbd-glogh{flex-wrap:nowrap}
+.dbd .dbd-panel>.dbd-ph:has(.dbd-seg){padding-top:5px;padding-bottom:5px}  /* a header that carries a view switch keeps the 40px height */
 @container dbd (max-width:700px){.dbd .dbd-panel>.dbd-ph.dbd-glogh{flex-wrap:wrap}.dbd .dbd-panel>.dbd-ph .dbd-lab{white-space:normal}}
 /* reads and notes on the panel's 14px edge: read s2 top, s3 bottom; note s3 bottom */
 .dbd .dbd-ox-say,.dbd .dbd-cx-say,.dbd .dbd-tr-say,.dbd .dbd-mv-say,.dbd .dbd-fp-say,.dbd .dbd-cr-say,.dbd .dbd-week-say{margin:0;padding:var(--dbd-s2) var(--dbd-s3) var(--dbd-s3);font:500 13px/1.55 var(--dbd-body)}

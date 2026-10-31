@@ -42,6 +42,9 @@ jobs:
       - name: Render pages for review (headshots and logos on, the theme's table rule on)
         run: |
           set -e
+          # the repo's team data gains logo URLs at the next nightly build; add them here so the logo path renders now
+          curl -sSL -o teams.csv https://github.com/nflverse/nflverse-data/releases/download/teams/teams_colors_logos.csv
+          python3 -c "import csv,json;t=json.load(open('data/teams.json'));r={x['team_abbr']:x for x in csv.DictReader(open('teams.csv'))};[v.update(logo=r[k]['team_logo_espn']) for k,v in t.items() if k in r and 'logo' not in v];json.dump(t,open('data/teams.json','w'))"
           export DBD_HARNESS_MEDIA=1 DBD_HARNESS_HTML=pages DBD_HARNESS_LOGOS=1
           php tools/view_harness.php data player 00-0036322
           php tools/view_harness.php data player 00-0033293
