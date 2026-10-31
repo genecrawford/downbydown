@@ -681,3 +681,18 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 #dbd-drive svg{width:100%!important;min-width:0!important;height:auto;max-width:100%}
 .dbd-usagep{margin-top:0}
 @media (max-width:640px){.dbd-crumb{white-space:normal}.dbd-ox-rib .c i{display:none}.dbd-ox-rib .c{min-height:40px}}
+
+/* ---- the shape of his season: trend lines (SCOPE §21) ---- */
+.dbd-tr-say{margin:0;padding:8px 14px 10px;font:500 13px/1.55 var(--dbd-body);color:var(--dbd-ink)}.dbd-tr-say b{font-weight:600}
+.dbd-tr4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;padding:12px 14px 2px}
+.dbd-trc{min-width:0}
+.dbd-trc .th{display:flex;align-items:baseline;gap:8px;margin-bottom:2px;flex-wrap:wrap}
+.dbd-trc .th b{font:700 11px var(--dbd-display);text-transform:uppercase;letter-spacing:.14em;color:var(--dbd-ink-2);margin-right:auto}
+.dbd-trc .th .v{font:600 15px var(--dbd-mono);color:var(--dbd-ink)}
+.dbd-trc .th .d{font:600 10px var(--dbd-mono);padding:1px 5px;border-radius:3px;border:1px solid var(--dbd-line-2);color:var(--dbd-muted);white-space:nowrap}
+.dbd-trc .th .d i{font-style:normal}
+.dbd-trc .th .d.up{color:var(--dbd-good);border-color:var(--dbd-good)}.dbd-trc .th .d.dn{color:var(--dbd-bad);border-color:var(--dbd-bad)}
+.dbd-trc svg{display:block;width:100%;height:auto;max-width:100%}
+.dbd-trc svg [tabindex]:focus-visible{outline:none;stroke:var(--dbd-red);stroke-width:2}
+@container dbd (max-width:860px){.dbd-tr4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@container dbd (max-width:480px){.dbd-trc .th b{flex-basis:100%;margin-right:0}.dbd-trc .th .v{font-size:14px;margin-right:auto}}

@@ -123,7 +123,108 @@ $dchipShort = function ( $tm ) use ( $drank, $dtip ) { $rk = $drank( $tm ); retu
 $dchip = function ( $tm ) use ( $drank, $dtip, $dk ) { $rk = $drank( $tm ); if ( ! $rk ) { return '<td class="dbd-dcell"></td>'; } return '<td class="dbd-dcell" data-v="' . $rk . '"><span class="dbd-dchip ' . DBD_Grades::defense_tier( $rk ) . '" data-tip="' . esc_attr( $dtip( $tm ) ) . '" tabindex="0">' . esc_html( DBD_Grades::ordinal( $rk ) . ' ' . $dk['lab'] ) . '</span></td>'; };
 $oppOf = function ( $wk, $tm = null ) use ( $a ) { $tm = $tm ?: $a; $g = DBD_Data::team_game( $tm, $wk ); if ( ! $g ) { return null; } return $g['home'] === $tm ? $g['away'] : $g['home']; };
 
-echo '</section>' . $band( 'weeks', 'Week by week', 'the game log and the defenses behind it' );
+echo '</section>' . $band( 'weeks', 'Week by week', 'the shape of his season, the game log and the defenses behind it' );
+
+/* ---- the schedule, week by week per team: the trend panel and Who he's faced both read it */
+$sched = DBD_Data::schedule(); $games = array(); $maxWk = 0; $curWk = (int) ( $sched['current_week'] ?? $through );
+foreach ( (array) ( $sched['weeks'] ?? array() ) as $wkn => $gl ) {
+	foreach ( (array) $gl as $g ) {
+		$wi = (int) ( $g['week'] ?? $wkn ); $maxWk = max( $maxWk, $wi ); $fin = ( $g['status'] ?? '' ) === 'final' || ( isset( $g['home_score'] ) && $g['home_score'] !== null );
+		$games[ $g['home'] ][] = array( 'wk' => $wi, 'opp' => $g['away'], 'home' => true, 'played' => $fin );
+		$games[ $g['away'] ][] = array( 'wk' => $wi, 'opp' => $g['home'], 'home' => false, 'played' => $fin );
+	}
+}
+foreach ( $games as &$gg ) { usort( $gg, function ( $x, $y ) { return $x['wk'] - $y['wk']; } ); } unset( $gg );
+
+/* ---- the shape of his season (SCOPE §21): four per-game metrics, week by week, his trailing three games over the league's middle half */
+if ( $L ) {
+	$tdefs = DBD_Grades::trend_defs( $grp ); $WIN = DBD_Grades::TREND_WIN;
+	/* his season by league week: a game (stats, or a zero line where he dressed), a DNP where his team played without him, a bye, or a week still ahead */
+	$Lby = array(); foreach ( $L as $w ) { $Lby[ (int) $w['week'] ] = $w; }
+	$tmG = array(); foreach ( $games[ $a ] ?? array() as $x ) { $tmG[ $x['wk'] ] = $x; }
+	$rows = array(); $lastWk = max( 18, $maxWk );
+	for ( $wk = 1; $wk <= $lastWk; $wk++ ) {
+		if ( isset( $Lby[ $wk ] ) ) { $w = $Lby[ $wk ]; $tm = $w['team'] ?? $a; $gm = DBD_Data::team_game( $tm, $wk ); $opp = $w['opponent_team'] ?? $oppOf( $wk, $tm );
+			$rows[ $wk ] = array( 'kind' => 'game', 'w' => $w, 'tm' => $tm, 'opp' => (string) $opp, 'home' => $gm ? $gm['home'] === $tm : true, 'res' => $gm && $gm['home_score'] !== null ? ( ( $gm['home'] === $tm ? $gm['home_score'] > $gm['away_score'] : $gm['away_score'] > $gm['home_score'] ) ? 'W' : ( $gm['home_score'] === $gm['away_score'] ? 'T' : 'L' ) ) . ' ' . (int) ( $gm['home'] === $tm ? $gm['home_score'] : $gm['away_score'] ) . '-' . (int) ( $gm['home'] === $tm ? $gm['away_score'] : $gm['home_score'] ) : '' ); }
+		elseif ( isset( $tmG[ $wk ] ) ) { $x = $tmG[ $wk ]; $rows[ $wk ] = array( 'kind' => $x['played'] ? 'dnp' : 'ahead', 'opp' => $x['opp'], 'home' => $x['home'] ); }
+		else { $rows[ $wk ] = array( 'kind' => 'bye' ); }
+	}
+	$playedWks = array_keys( $Lby ); sort( $playedWks ); $nPlayed = count( $playedWks );
+	/* one series per metric: per-game value, trailing-window line, season figure, the league's quartiles, the direction call */
+	$series = array();
+	foreach ( $tdefs as $def ) {
+		$pts = array();
+		foreach ( $playedWks as $wk ) { list( $n, $dn ) = DBD_Grades::trend_parts( $def, $Lby[ $wk ] ); $pts[] = array( 'wk' => $wk, 'n' => $n, 'dn' => $dn, 'v' => $dn ? $n / $dn : null ); }
+		$roll = array();
+		foreach ( $pts as $i => $q ) { if ( $i < $WIN - 1 ) { $roll[] = null; continue; } $sn = 0; $sd = 0; for ( $j = $i - $WIN + 1; $j <= $i; $j++ ) { $sn += $pts[ $j ]['n']; $sd += $pts[ $j ]['dn']; } $roll[] = $sd ? $sn / $sd : null; }
+		$SN = array_sum( array_column( $pts, 'n' ) ); $SD = array_sum( array_column( $pts, 'dn' ) ); $sAvg = $SD ? $SN / $SD : null;
+		$lg = DBD_Grades::trend_league( $grp, $def[0] ); $cur = null; $li = null;
+		foreach ( $roll as $i => $v ) { if ( $v !== null ) { $cur = $v; $li = $i; } }
+		$iqr = $lg ? (float) $lg['p75'] - (float) $lg['p25'] : ( $sAvg ? abs( $sAvg ) * 0.4 : 1 );
+		$dir = ( $cur === null || $sAvg === null ) ? 'flat' : ( $cur - $sAvg > DBD_Grades::TREND_DIR * $iqr ? 'up' : ( $sAvg - $cur > DBD_Grades::TREND_DIR * $iqr ? 'down' : 'flat' ) );
+		$series[] = array( 'key' => $def[0], 'lab' => $def[1], 'kind' => $def[2], 'rate' => $def[4] !== null, 'pts' => $pts, 'roll' => $roll, 'avg' => $sAvg, 'lg' => $lg, 'cur' => $cur, 'li' => $li, 'iqr' => $iqr, 'dir' => $dir );
+	}
+	$tf = function ( $m, $v ) { return DBD_Grades::trend_fmt( $m['kind'], $v ); };
+	/* the charts */
+	$Wd = 220; $Hh = 108; $Lm = 6; $Rm = 38; $Tp = 12; $Bm = 16; $step = ( $Wd - $Lm - $Rm ) / 18; $bw = max( 3, $step * 0.55 );
+	$xw = function ( $wk ) use ( $Lm, $step ) { return round( $Lm + ( $wk - 0.5 ) * $step, 2 ); };
+	$fo = 'font-family="IBM Plex Mono,monospace"';
+	$charts = '';
+	foreach ( $series as $m ) {
+		$vals = array_filter( array_column( $m['pts'], 'v' ), function ( $v ) { return $v !== null; } ); $rl = array_filter( $m['roll'], function ( $v ) { return $v !== null; } );
+		$hi = max( array_merge( array( 0 ), $vals, $rl, $m['lg'] ? array( (float) $m['lg']['p75'] ) : array() ) ); $lo = min( array_merge( array( 0 ), $vals, $rl, $m['lg'] ? array( (float) $m['lg']['p25'] ) : array() ) );
+		$span = ( $hi - $lo ) ?: 1; $yv = function ( $v ) use ( $Tp, $hi, $span, $Hh, $Bm ) { return round( $Tp + ( $hi - $v ) / $span * ( $Hh - $Tp - $Bm ), 2 ); };
+		$g = '<svg viewBox="0 0 ' . $Wd . ' ' . $Hh . '" role="img" aria-label="' . esc_attr( $m['lab'] . ' by week' ) . '">';
+		if ( $m['lg'] ) { $g .= '<rect x="' . $Lm . '" y="' . $yv( $m['lg']['p75'] ) . '" width="' . ( $Wd - $Lm - $Rm ) . '" height="' . max( 1, $yv( $m['lg']['p25'] ) - $yv( $m['lg']['p75'] ) ) . '" fill="var(--dbd-line)"/><line x1="' . $Lm . '" x2="' . ( $Wd - $Rm ) . '" y1="' . $yv( $m['lg']['p50'] ) . '" y2="' . $yv( $m['lg']['p50'] ) . '" stroke="var(--dbd-muted)" stroke-dasharray="3 3"/><text x="' . ( $Wd - $Rm + 3 ) . '" y="' . ( $yv( $m['lg']['p50'] ) + 3 ) . '" font-size="8" fill="var(--dbd-muted)" ' . $fo . '>lg ' . esc_html( $tf( $m, $m['lg']['p50'] ) ) . '</text>'; }
+		$g .= '<line x1="' . $Lm . '" x2="' . ( $Wd - $Rm ) . '" y1="' . $yv( 0 ) . '" y2="' . $yv( 0 ) . '" stroke="var(--dbd-line-2)"/>';
+		foreach ( $rows as $wk => $r ) { $cx = $xw( $wk );
+			if ( $r['kind'] === 'bye' ) { $g .= '<line x1="' . $cx . '" x2="' . $cx . '" y1="' . ( $yv( 0 ) - 3 ) . '" y2="' . ( $yv( 0 ) + 3 ) . '" stroke="var(--dbd-muted)" stroke-dasharray="1 1"/>'; }
+			elseif ( $r['kind'] === 'dnp' ) { $g .= '<text x="' . $cx . '" y="' . ( $yv( 0 ) + 3 ) . '" font-size="9" fill="var(--dbd-bad)" text-anchor="middle" ' . $fo . ' tabindex="0" data-tip="' . esc_attr( '<b>Week ' . $wk . ' ' . ( $r['home'] ? 'vs' : 'at' ) . ' ' . esc_html( $teams[ $r['opp'] ]['nick'] ?? $r['opp'] ) . '</b><br>he did not play' ) . '">×</text>'; }
+			if ( $wk === $curWk ) { $g .= '<line x1="' . $cx . '" x2="' . $cx . '" y1="' . ( $Hh - $Bm + 2 ) . '" y2="' . ( $Hh - $Bm + 6 ) . '" stroke="var(--dbd-red)" stroke-width="2"/>'; }
+			if ( ( $wk - 1 ) % 3 === 0 ) { $g .= '<text x="' . $cx . '" y="' . ( $Hh - 3 ) . '" font-size="8" fill="var(--dbd-muted)" text-anchor="middle" ' . $fo . '>' . $wk . '</text>'; }
+		}
+		foreach ( $m['pts'] as $q ) { if ( $q['v'] === null ) { continue; } $r = $rows[ $q['wk'] ]; $top = min( $yv( 0 ), $yv( $q['v'] ) ); $hgt = max( 1, abs( $yv( $q['v'] ) - $yv( 0 ) ) );
+			$tip = '<b>Week ' . $q['wk'] . ' ' . ( ! empty( $r['tm'] ) && $r['tm'] !== $a ? esc_html( $r['tm'] ) . ' ' : '' ) . ( $r['home'] ? 'vs' : 'at' ) . ' ' . esc_html( $teams[ $r['opp'] ]['nick'] ?? $r['opp'] ) . ( $r['res'] ? ' · ' . $r['res'] : '' ) . '</b><br>' . esc_html( $m['lab'] ) . ' <b>' . esc_html( $tf( $m, $q['v'] ) ) . '</b>' . ( $m['lg'] ? ' <span class="m">league median ' . esc_html( $tf( $m, $m['lg']['p50'] ) ) . '</span>' : '' );
+			$g .= '<rect x="' . round( $xw( $q['wk'] ) - $bw / 2, 2 ) . '" y="' . $top . '" width="' . round( $bw, 2 ) . '" height="' . $hgt . '" fill="' . ( $q['v'] < 0 ? 'var(--dbd-bad)' : 'var(--dbd-ink-2)' ) . '" fill-opacity=".5" tabindex="0" data-tip="' . esc_attr( $tip ) . '"></rect>'; }
+		$line = array(); foreach ( $m['pts'] as $i => $q ) { if ( $m['roll'][ $i ] !== null ) { $line[] = $xw( $q['wk'] ) . ',' . $yv( $m['roll'][ $i ] ); } }
+		if ( $line ) { $g .= '<polyline points="' . implode( ' ', $line ) . '" fill="none" stroke="var(--dbd-red)" stroke-width="2" stroke-linejoin="round"/>'; }
+		if ( $m['li'] !== null ) { $q = $m['pts'][ $m['li'] ]; $w3 = array(); for ( $j = $m['li'] - $WIN + 1; $j <= $m['li']; $j++ ) { $w3[] = 'Wk ' . $m['pts'][ $j ]['wk']; }
+			$g .= '<circle cx="' . $xw( $q['wk'] ) . '" cy="' . $yv( $m['cur'] ) . '" r="3.5" fill="var(--dbd-red)" stroke="var(--dbd-panel)" stroke-width="1.5" tabindex="0" data-tip="' . esc_attr( '<b>Last three</b> (' . implode( ', ', $w3 ) . ')<br>' . esc_html( $m['lab'] ) . ' <b>' . esc_html( $tf( $m, $m['cur'] ) ) . '</b>' ) . '"></circle>'; }
+		$g .= '</svg>';
+		$near = ( $m['lg'] && $m['cur'] !== null ) ? $m['cur'] - (float) $m['lg']['p50'] : null;
+		$dcls = $near === null ? '' : ( abs( $near ) < DBD_Grades::TREND_NEAR * $m['iqr'] ? '' : ( $near > 0 ? ' up' : ' dn' ) );
+		$chip = $near === null ? '' : '<span class="d' . $dcls . '" data-tip="' . esc_attr( 'His last three against the league median' ) . '" tabindex="0">' . ( $near > 0 ? '+' : '' ) . number_format( $near, $m['kind'] === 'sgn' ? 2 : 1 ) . '<i> vs lg</i></span>';
+		$head = $m['cur'] !== null ? $tf( $m, $m['cur'] ) : $tf( $m, $m['avg'] );
+		$charts .= '<div class="dbd-trc"><div class="th"><b>' . esc_html( $m['lab'] ) . '</b><span class="v">' . esc_html( $head ) . '</span>' . $chip . '</div>' . $g . '</div>';
+	}
+	/* the read: direction, shape, streak or share above the median, season high or low, efficiency */
+	list( $U, $Yd, $E ) = $series; $say = array();
+	$word = function ( $m ) { return $m['dir'] === 'up' ? 'climbing' : ( $m['dir'] === 'down' ? 'slipping' : 'steady' ); };
+	if ( $nPlayed < $WIN ) { $say[] = 'Too few games for a trend yet: <b>' . $nPlayed . '</b> played.'; }
+	else {
+		$say[] = esc_html( $U['lab'] ) . ' are <b>' . $word( $U ) . '</b>: ' . $tf( $U, $U['cur'] ) . ( $U['rate'] ? '' : ' a game' ) . ' over his last three against ' . $tf( $U, $U['avg'] ) . ' for the season.';
+		$yc = DBD_Grades::trend_fmt( 'n', $Yd['cur'] === null ? null : round( $Yd['cur'] ) ); $ya = DBD_Grades::trend_fmt( 'n', $Yd['avg'] === null ? null : round( $Yd['avg'] ) );
+		if ( $U['dir'] === 'up' && $Yd['dir'] === 'up' ) { $say[] = 'The role and the production are both growing: <b>' . $yc . '</b> yards a game lately against ' . $ya . '.'; }
+		elseif ( $U['dir'] === 'up' && $Yd['cur'] > $Yd['avg'] ) { $say[] = 'The yards are edging up with it: ' . $yc . ' a game lately against ' . $ya . '.'; }
+		elseif ( $U['dir'] === 'up' ) { $say[] = 'The volume is up; the yards haven\'t followed yet (' . $yc . ' against ' . $ya . ').'; }
+		elseif ( $Yd['dir'] === 'up' ) { $say[] = 'He is doing more with less: <b>' . $yc . '</b> yards a game over the last three against ' . $ya . '.'; }
+		elseif ( $U['dir'] === 'down' && $Yd['dir'] === 'down' ) { $say[] = 'The role is shrinking, and the yards with it (' . $yc . ' against ' . $ya . ').'; }
+		elseif ( $Yd['dir'] !== 'flat' ) { $say[] = 'Yards are ' . $word( $Yd ) . ': ' . $yc . ' a game lately against ' . $ya . '.'; }
+		$best = null;
+		foreach ( array( $U, $Yd ) as $m ) { if ( ! $m['lg'] ) { continue; } $n = 0; $above = null;
+			for ( $i = count( $m['pts'] ) - 1; $i >= 0; $i-- ) { $v = $m['pts'][ $i ]['v']; if ( $v === null ) { break; } $ab = $v > (float) $m['lg']['p50']; if ( $above === null ) { $above = $ab; } if ( $ab !== $above ) { break; } $n++; }
+			if ( $n >= DBD_Grades::TREND_STREAK && ( ! $best || $n > $best['n'] ) ) { $best = array( 'n' => $n, 'above' => $above, 'm' => $m ); } }
+		if ( $best ) { $say[] = '<b>' . $best['n'] . ' straight</b> games ' . ( $best['above'] ? 'above' : 'below' ) . ' a starter\'s median in ' . esc_html( strtolower( $best['m']['lab'] ) ) . '.'; }
+		elseif ( $Yd['lg'] ) { $ab = 0; foreach ( $Yd['pts'] as $q ) { if ( $q['v'] !== null && $q['v'] >= (float) $Yd['lg']['p50'] ) { $ab++; } } $say[] = 'At or above a starter\'s median in yards in <b>' . $ab . ' of ' . count( $Yd['pts'] ) . '</b> games.'; }
+		$ys = array_column( $Yd['pts'], 'v' ); $lastY = end( $ys ); $lastWkP = end( $playedWks );
+		if ( count( $ys ) >= 4 && $lastY == max( $ys ) ) { $say[] = 'Week ' . $lastWkP . ' was his season high in yards.'; }
+		elseif ( count( $ys ) >= 4 && $lastY == min( $ys ) ) { $say[] = 'Week ' . $lastWkP . ' was his season low in yards.'; }
+		if ( $E['dir'] !== 'flat' ) { $say[] = esc_html( $E['lab'] ) . ' is ' . ( $E['dir'] === 'up' ? 'rising' : 'falling' ) . ' too: ' . $tf( $E, $E['cur'] ) . ' over the last three.'; }
+	}
+	echo '<section class="dbd-panel dbd-tr"><div class="dbd-ph"><span class="dbd-lab"><b>The shape of his season</b> · week by week against the league</span><span class="dbd-badge">' . $nPlayed . ' game' . ( $nPlayed === 1 ? '' : 's' ) . ' · through week ' . (int) $through . '</span></div>';
+	echo '<div class="dbd-tr4">' . $charts . '</div><p class="dbd-tr-say">' . implode( ' ', $say ) . '</p>';
+	echo '<p class="dbd-note" style="padding-top:0">Bars are his week. The shaded band is the league\'s middle half at his position, every qualifying player-game this season, and the dashed line is its median. The solid line is his trailing three games. An × on the baseline is a game his team played without him; a dotted tick is the bye.</p></section>';
+}
 
 /* ---- game log (PHP): Default, Advanced and Traditional tables; player.js switches which one shows */
 $res = function ( $wk, $tm = null ) use ( $a ) { $tm = $tm ?: $a; $g = DBD_Data::team_game( $tm, $wk ); if ( ! $g ) { return ''; } $home = $g['home'] === $tm; $opp = $home ? $g['away'] : $g['home']; $pf = $home ? $g['home_score'] : $g['away_score']; $pa = $home ? $g['away_score'] : $g['home_score'];
@@ -177,15 +278,7 @@ foreach ( $views as $name => $vd ) {
 echo ( $traded ? '<p class="dbd-note">Weeks marked with another team come from that team\'s stat line. The field map and situations below cover ' . esc_html( $t['nick'] ) . ' snaps only.</p>' : '' ) . '</section>';
 
 /* ---- who he has faced (SCOPE §19): slate rank, the eighteen-week ribbon, his line by defense tier, yards against the rank */
-$sched = DBD_Data::schedule(); $games = array(); $maxWk = 0; $curWk = (int) ( $sched['current_week'] ?? $through );
-foreach ( (array) ( $sched['weeks'] ?? array() ) as $wkn => $gl ) {
-	foreach ( (array) $gl as $g ) {
-		$wi = (int) ( $g['week'] ?? $wkn ); $maxWk = max( $maxWk, $wi ); $fin = ( $g['status'] ?? '' ) === 'final' || ( isset( $g['home_score'] ) && $g['home_score'] !== null );
-		$games[ $g['home'] ][] = array( 'wk' => $wi, 'opp' => $g['away'], 'home' => true, 'played' => $fin );
-		$games[ $g['away'] ][] = array( 'wk' => $wi, 'opp' => $g['home'], 'home' => false, 'played' => $fin );
-	}
-}
-foreach ( $games as &$gg ) { usort( $gg, function ( $x, $y ) { return $x['wk'] - $y['wk']; } ); } unset( $gg );
+/* the schedule was read above, before the trend panel */
 $myRows = array();
 foreach ( $L as $w ) { $wk = (int) $w['week']; $opp = $w['opponent_team'] ?? $oppOf( $wk, $w['team'] ?? null ); $rk = $drank( $opp ); if ( $rk ) { $myRows[] = array( 'w' => $w, 'wk' => $wk, 'opp' => $opp, 'rk' => $rk ); } }
 if ( $hasDef && $myRows && $games ) {
