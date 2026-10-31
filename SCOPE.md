@@ -558,7 +558,7 @@ Gene: "make the 10 things the next roadmap and build this first slice." Benchmar
 | 7 | **Playstyle fingerprint** (§23) | 1.3.9 | Top of How he's used: eight usage traits per position as league-percentile bars, trait tags, and a generated read of how he is used (depth, screens, middle of the field, YAC, third down, red zone, motion, play action, formation) | `fp` per player and per-group `fp` pools from the build, computed from the play rows |
 | 8 | **Career** (§24) | 1.3.10 | A Career band on the player page: season-by-season table back to his rookie year with a totals row, a yards-per-season chart with this season's pace, career highs and a read; play-level views stay current season | `data/career/{year}.json` season aggregates cached once per past year from `stats_player_week_{year}`, assembled into `players/career/{TEAM}.json` |
 | 9 | **Share card** | later | A server-rendered image of the hero and percentile bars for social | PHP GD or an SVG-to-PNG step in the build |
-| 10 | **This week panel** | later | His next matchup from the schedule with the opposing defense's rank at his position | Schedule and team defense metrics (shipped) |
+| 10 | **This week** (§25) | 1.3.11 | A strip under the hero tiles: his next game (kickoff, line, total), the defense's rank at his position and what it allows, his line against that tier this season and the last meeting, his status, and a one-line read | Schedule and team defense metrics (shipped); nothing new |
 
 The nfelo model layer (§13 backlog, greerreNFL's OK needed) is 1.4.0 and runs independent of this list.
 
@@ -869,3 +869,33 @@ Seasons are regular season only; a player with no prior seasons in the data (a r
 Playoff seasons (the weekly files carry them; a toggle can come later), college and draft history beyond the hero's draft line, season-by-season grades (the league pools are current-season only), and a career view on the compare page.
 
 Status: built as 1.3.10 (2026-10-31).
+
+## 25. This week: his next game (scoped and mocked 2026-10-31, `mockup-v5/player.html`)
+
+Roadmap slice 10 (§16). A strip on the player page between the season tiles and the jump nav, so the most time-sensitive thing on the page sits at the top: who he plays next and what that defense gives up at his position. Mocked on the Vikings' Week 8 trip to Detroit (Jefferson `?id=00-0036322`, Jones `?id=00-0033293`, Murray `?id=00-0035228`), which the real schedule and metrics files already hold.
+
+### What it is
+
+**"This week" · Week 8 · at Lions.** One compact panel, four cells left to right, stacking on phones:
+
+- **The game.** The opponent's mark and nickname with home or away, kickoff in the site's time zone ("Sun Nov 1 · 1:00 PM ET · Ford Field"), and the market line from the schedule file ("DET −3 · O/U 46.5"). A bye reads "Bye week" with the following game named; a season with nothing left reads "Season over".
+- **The defense.** The opponent's rank against his position (the §19 chip, tiered: tough, middle, soft) with the number behind it: "allow +0.42 EPA per target to wide receivers, league +0.10", and the plain word for the tier ("a soft matchup", "a tough one", "middle of the pack").
+- **His history.** His line this season against defenses in that tier (games, usage a game, yards a game, from the §19 split), and the last meeting with this opponent this season when there has been one ("Week 3 at MIN: 6 catches, 89 yards, 1 TD"), else "First meeting this season".
+- **His status.** The injury line from the hero (status and what), or "No listing", and his snap share over the last three games so a returning player's ramp shows.
+
+Under the cells, **the read**, one or two sentences in the takeaways voice from fixed phrasing: the matchup word and the number, his history against the tier, and the last meeting if any ("A soft matchup: the Lions rank 31st vs WR, allowing +0.42 EPA a target. He has averaged 84 yards a game against bottom-10 defenses this season, and he caught 6 for 89 against them in Week 3.").
+
+**Which game is "this week":** the current week's game while it is still to play; once it is final (mid-week on this site, since the build runs nightly), the next game on the schedule, with the strip titled "Next up · Week 9" instead. The current-week rule is the schedule file's `current_week`.
+
+### Data and rendering
+
+- **No build change.** The schedule file carries kickoff, stadium, spread and total per game; the metrics file carries every defense's EPA allowed per target by position with ranks; the player file carries his weekly line, snaps and injury listing. Spread follows nflverse's sign (positive = home team favored) and is rendered as the favorite's name and number.
+- **Plugin (`1.3.11`).** PHP renders the strip in `player.php` from data already loaded for the page; the tier split reuses the §19 helpers. Kickoff times convert from the schedule's Eastern clock to the WordPress time zone. The shared tooltip carries the defense's full line on the chip. No JS.
+- Layout: a four-cell grid in the main column; two cells across under 860px container, one under 480px. Nothing scrolls sideways.
+- Reduced motion: no animation in the panel.
+
+### Not in this slice
+
+A team-level this-week card on the team page and the hub (the hub's slate already names the game), weather, and the opponent's injury report.
+
+Status: built as 1.3.11 (2026-10-31).

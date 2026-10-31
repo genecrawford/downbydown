@@ -68,6 +68,54 @@ echo '<div class="dbd-tiles">';
 foreach ( $tiles as $x ) { echo '<div class="dbd-tile"><div class="l">' . esc_html( $x[0] ) . '</div><div class="v">' . esc_html( $x[1] ) . '</div><div class="s">' . esc_html( $x[2] ) . '</div></div>'; }
 echo '</div>';
 
+/* ---- opponent context (SCOPE §19): the defense faced each week, ranked against his position. Metrics and schedule are already shipped. */
+$dk = DBD_Grades::defense_key( $p['pos'] ); $dkey = $dk['key']; $M = DBD_Data::metrics(); $dlg = $M['league'][ $dkey ] ?? null; $hasDef = $dlg !== null && ! empty( $M['rank']['def'] );
+$teams = DBD_Data::teams();
+$drank = function ( $tm ) use ( $M, $dkey ) { return $tm && isset( $M['rank']['def'][ $tm ][ $dkey ] ) ? (int) $M['rank']['def'][ $tm ][ $dkey ] : null; };
+$dval  = function ( $tm ) use ( $M, $dkey ) { return $M['defense'][ $tm ][ $dkey ] ?? null; };
+$dtip  = function ( $tm ) use ( $drank, $dval, $dlg, $dk, $teams, $sgn ) { $v = $dval( $tm ); return '<b>' . esc_html( $teams[ $tm ]['nick'] ?? $tm ) . '</b> allow ' . ( $v === null ? '-' : $sgn( (float) $v ) ) . ' EPA ' . esc_html( $dk['unit'] ) . ( $dlg === null ? '' : ' <span class="m">league ' . $sgn( (float) $dlg ) . '</span>' ) . '<br>' . esc_html( DBD_Grades::ordinal( $drank( $tm ) ) ) . '-toughest of 32 ' . esc_html( $dk['lab'] ); };
+$dchipShort = function ( $tm ) use ( $drank, $dtip ) { $rk = $drank( $tm ); return $rk ? '<span class="dbd-dchip ' . DBD_Grades::defense_tier( $rk ) . '" data-tip="' . esc_attr( $dtip( $tm ) ) . '" tabindex="0">' . esc_html( DBD_Grades::ordinal( $rk ) ) . ' D</span>' : ''; };  /* phone-sized: the fold under the opponent */
+$dchip = function ( $tm ) use ( $drank, $dtip, $dk ) { $rk = $drank( $tm ); if ( ! $rk ) { return '<td class="dbd-dcell"></td>'; } return '<td class="dbd-dcell" data-v="' . $rk . '"><span class="dbd-dchip ' . DBD_Grades::defense_tier( $rk ) . '" data-tip="' . esc_attr( $dtip( $tm ) ) . '" tabindex="0">' . esc_html( DBD_Grades::ordinal( $rk ) . ' ' . $dk['lab'] ) . '</span></td>'; };
+$oppOf = function ( $wk, $tm = null ) use ( $a ) { $tm = $tm ?: $a; $g = DBD_Data::team_game( $tm, $wk ); if ( ! $g ) { return null; } return $g['home'] === $tm ? $g['away'] : $g['home']; };
+
+/* ---- this week (SCOPE §25): his next game, the defense at his position, his history against that tier, his status. Schedule, metrics and his own line; nothing new. */
+$curWk0 = (int) DBD_Data::current_week(); $mineAll = array(); $maxW = 0;
+foreach ( (array) ( DBD_Data::schedule()['weeks'] ?? array() ) as $wkn => $gl ) { foreach ( (array) $gl as $twGm ) { if ( $twGm['home'] === $a || $twGm['away'] === $a ) { $twGm['wk'] = (int) ( $twGm['week'] ?? $wkn ); $mineAll[] = $twGm; } } }
+usort( $mineAll, function ( $x, $y ) { return $x['wk'] - $y['wk']; } );
+$twCur = null; $twNext = null; foreach ( $mineAll as $twGm ) { $fin = ( $twGm['status'] ?? '' ) === 'final' || isset( $twGm['home_score'] ); if ( $twGm['wk'] === $curWk0 ) { $twCur = $twGm; } if ( ! $twNext && $twGm['wk'] >= $curWk0 && ! $fin ) { $twNext = $twGm; } }
+if ( $mineAll ) {
+	if ( ! $twNext ) {
+		echo '<section class="dbd-panel dbd-week"><div class="dbd-ph"><span class="dbd-lab"><b>This week</b> · season over</span></div><p class="dbd-week-say">No games left on the schedule.</p></section>';
+	} else {
+		$twGm = $twNext; $twHome = $twGm['home'] === $a; $twOpp = $twHome ? $twGm['away'] : $twGm['home']; $later = $twGm['wk'] > $curWk0; $bye = ! $twCur && $later; $oppNick = $teams[ $twOpp ]['nick'] ?? $twOpp;
+		/* kickoff in the site's time zone; the schedule's clock is Eastern */
+		$kick = ''; try { $dt = new DateTime( ( $twGm['date'] ?? '' ) . ' ' . ( $twGm['time'] ?: '13:00' ), new DateTimeZone( 'America/New_York' ) ); $kick = wp_date( 'D M j · g:i A T', $dt->getTimestamp() ); } catch ( Exception $e ) { $kick = trim( ( $twGm['day'] ?? '' ) . ' ' . ( $twGm['time'] ?? '' ) ); }
+		$fav = $twGm['spread'] === null || $twGm['spread'] === '' ? '' : ( (float) $twGm['spread'] > 0 ? $twGm['home'] . ' −' . (float) $twGm['spread'] : ( (float) $twGm['spread'] < 0 ? $twGm['away'] . ' −' . abs( (float) $twGm['spread'] ) : 'pick' ) );
+		$twRk = $drank( $twOpp ); $twVal = $dval( $twOpp ); $twTier = DBD_Grades::defense_tier( $twRk ); $tierWord = array( 'tough' => 'a tough matchup', 'mid' => 'a middle-of-the-pack matchup', 'soft' => 'a soft matchup' )[ $twTier ] ?? ''; $tierName = array( 'tough' => 'top-10', 'mid' => 'middle', 'soft' => 'bottom-10' )[ $twTier ] ?? '';
+		/* his line against defenses of that tier this season, and the last meeting with this opponent */
+		$uDef = $grp === 'rec' ? array( function ( $w ) { return $w['targets']; }, 'targets', function ( $w ) { return $w['receiving_yards']; } ) : ( $grp === 'rb' ? array( function ( $w ) { return $w['carries'] + $w['targets']; }, 'touches', function ( $w ) { return $w['rushing_yards'] + $w['receiving_yards']; } ) : array( function ( $w ) { return $w['attempts']; }, 'attempts', function ( $w ) { return $w['passing_yards']; } ) );
+		$twSame = array(); $twMet = null;
+		foreach ( $L as $w ) { $o = $w['opponent_team'] ?? $oppOf( (int) $w['week'], $w['team'] ?? null ); if ( $o && DBD_Grades::defense_tier( $drank( $o ) ) === $twTier && $twTier !== '' ) { $twSame[] = $w; } if ( $o === $twOpp ) { $twMet = $w; } }
+		$twG = count( $twSame ); $twU = 0; $twY = 0; foreach ( $twSame as $w ) { $twU += (float) $uDef[0]( $w ); $twY += (float) $uDef[2]( $w ); }
+		$lineOf = function ( $w ) use ( $grp ) { if ( $grp === 'rec' ) { return (int) $w['receptions'] . ' catch' . ( (int) $w['receptions'] === 1 ? '' : 'es' ) . ', ' . (int) $w['receiving_yards'] . ' yards' . ( $w['receiving_tds'] ? ', ' . (int) $w['receiving_tds'] . ' TD' : '' ); }
+			if ( $grp === 'rb' ) { return (int) $w['carries'] . ' carries for ' . (int) $w['rushing_yards'] . ( $w['targets'] ? ', ' . (int) $w['receptions'] . ' catch' . ( (int) $w['receptions'] === 1 ? '' : 'es' ) . ' for ' . (int) $w['receiving_yards'] : '' ) . ( ( $w['rushing_tds'] + $w['receiving_tds'] ) ? ', ' . (int) ( $w['rushing_tds'] + $w['receiving_tds'] ) . ' TD' : '' ); }
+			return (int) $w['completions'] . ' of ' . (int) $w['attempts'] . ' for ' . (int) $w['passing_yards'] . ( $w['passing_tds'] ? ', ' . (int) $w['passing_tds'] . ' TD' : '' ) . ( $w['passing_interceptions'] ? ', ' . (int) $w['passing_interceptions'] . ' INT' : '' ); };
+		/* status: the injury line and his snap share over the last three games */
+		$snk = array_map( 'intval', array_keys( $p['snaps'] ?? array() ) ); sort( $snk ); $last3 = array_slice( $snk, -3 ); $snv = array(); foreach ( $last3 as $k ) { $snv[] = (float) $p['snaps'][ (string) $k ]; } $snAvg = $snv ? (int) round( array_sum( $snv ) / count( $snv ) ) : null;
+		$stTxt = $p['inj'] ? $p['inj']['status'] . ( ! empty( $p['inj']['what'] ) ? ' · ' . $p['inj']['what'] : '' ) : 'No listing'; $stCls = ! $p['inj'] ? 'good' : ( preg_match( '/out|did not/i', (string) $p['inj']['status'] ) ? 'bad' : '' );
+		echo '<section class="dbd-panel dbd-week"><div class="dbd-ph"><span class="dbd-lab"><b>' . ( $later ? 'Next up' : 'This week' ) . '</b> · Week ' . (int) $twGm['wk'] . ' · ' . ( $twHome ? 'vs' : 'at' ) . ' ' . esc_html( $oppNick ) . '</span><span class="dbd-badge">' . ( $bye ? 'Week ' . $curWk0 . ': bye' : esc_html( $kick ) ) . '</span></div><div class="dbd-week4">';
+		echo '<div><h5>The game</h5><div class="big">' . DBD_Marks::tile( $twOpp, 30 ) . '<span>' . ( $twHome ? 'vs' : 'at' ) . ' ' . esc_html( $oppNick ) . '</span></div><div class="m">' . esc_html( $kick ) . '<br>' . esc_html( $twGm['stadium'] ?? '' ) . ( $fav ? '<br><b>' . esc_html( $fav ) . '</b> · O/U ' . esc_html( $twGm['total'] ?? '–' ) : '' ) . '</div></div>';
+		echo '<div><h5>The defense ' . esc_html( $dk['lab'] ) . '</h5><div class="big">' . ( $twRk ? '<span class="dbd-dchip ' . $twTier . '" data-tip="' . esc_attr( $dtip( $twOpp ) ) . '" tabindex="0">' . esc_html( DBD_Grades::ordinal( $twRk ) . ' ' . $dk['lab'] ) . '</span>' : '<span class="dbd-dchip">not ranked yet</span>' ) . '</div><div class="m">' . ( $twVal === null ? 'Not ranked yet' : 'allow <b>' . $sgn( (float) $twVal ) . '</b> EPA ' . esc_html( $dk['unit'] ) . ( $dlg === null ? '' : ', league ' . $sgn( (float) $dlg ) ) ) . '<br>' . esc_html( $tierWord ) . '</div></div>';
+		echo '<div><h5>His history</h5><div class="m">' . ( $twG ? 'vs ' . esc_html( $tierName ) . ' defenses: <b>' . $twG . '</b> game' . ( $twG === 1 ? '' : 's' ) . ', ' . number_format( $twU / $twG, 1 ) . ' ' . esc_html( $uDef[1] ) . ' a game, <b>' . round( $twY / $twG ) . '</b> yards a game' : ( $tierName ? 'No games against ' . esc_html( $tierName ) . ' defenses yet' : 'No ranked defenses yet' ) ) . '<br>' . ( $twMet ? 'Week ' . (int) $twMet['week'] . ' vs ' . esc_html( $twOpp ) . ': ' . esc_html( $lineOf( $twMet ) ) : 'First meeting this season' ) . '</div></div>';
+		echo '<div><h5>His status</h5><div class="w ' . $stCls . '">' . esc_html( $stTxt ) . '</div><div class="m">' . ( $snAvg !== null ? 'Snap share, last ' . count( $snv ) . ': <b>' . $snAvg . '%</b>' : '' ) . '</div></div></div>';
+		$twSay = $twRk ? esc_html( ucfirst( $tierWord ) ) . ': the ' . esc_html( $oppNick ) . ' rank <b>' . esc_html( DBD_Grades::ordinal( $twRk ) ) . '</b> ' . esc_html( $dk['lab'] ) . ', allowing ' . $sgn( (float) $twVal ) . ' EPA ' . esc_html( $dk['unit'] ) . '.' : 'The ' . esc_html( $oppNick ) . ' are not ranked ' . esc_html( $dk['lab'] ) . ' yet.';
+		if ( $twG ) { $twSay .= ' He has averaged <b>' . round( $twY / $twG ) . '</b> yards a game against ' . esc_html( $tierName ) . ' defenses this season' . ( $twMet ? ', and he went ' . esc_html( $lineOf( $twMet ) ) . ' against them in Week ' . (int) $twMet['week'] . '.' : '.' ); }
+		elseif ( $twMet ) { $twSay .= ' He went ' . esc_html( $lineOf( $twMet ) ) . ' against them in Week ' . (int) $twMet['week'] . '.'; }
+		if ( $bye ) { $twSay = 'Week ' . $curWk0 . ' is the bye. ' . $twSay; }
+		echo '<p class="dbd-week-say">' . $twSay . '</p></section>';
+	}
+}
+
 /* ---- bands by question (SCOPE §20): a sticky jump nav, then five bands. The rail is gone. */
 echo '<nav class="dbd-jump" aria-label="On this page"><a href="#dbd-good">How good is he</a><a href="#dbd-used">How he\'s used</a><a href="#dbd-with" id="dbd-jump-with" hidden>Who he works with</a><a href="#dbd-weeks">Week by week</a>' . ( $CR ? '<a href="#dbd-career">Career</a>' : '' ) . '<a href="#dbd-more">Intel &amp; plays</a></nav>';
 $band = function ( $id, $kick, $sub, $hidden = false ) { return '<section class="dbd-band" id="dbd-' . $id . '"' . ( $hidden ? ' hidden' : '' ) . '><h2 class="dbd-bandh">' . $kick . '<span>' . $sub . '</span></h2>'; };
@@ -158,15 +206,6 @@ echo '<div class="dbd-tw"><table class="dbd-cx-tab' . ( $grp === 'qb' ? ' dbd-so
 echo '<div class="dbd-cx-2"><div><h4 id="dbd-cx-maph"></h4><div id="dbd-cx-map"></div><div class="dbd-cx-chips" id="dbd-cx-chips" role="group" aria-label="Isolate one ' . ( $grp === 'qb' ? 'receiver' : 'passer' ) . '"></div><p class="dbd-note" id="dbd-cx-mapnote" style="padding:8px 0 0"></p></div>';
 echo '<div><h4 id="dbd-cx-wkh"></h4><div class="dbd-cx-wks" id="dbd-cx-wks"></div><div class="dbd-cx-wkl" id="dbd-cx-wkl"></div><h4>By depth</h4><div class="dbd-cx-dg" id="dbd-cx-dg"></div></div></div></section>';
 
-/* ---- opponent context (SCOPE §19): the defense faced each week, ranked against his position. Metrics and schedule are already shipped. */
-$dk = DBD_Grades::defense_key( $p['pos'] ); $dkey = $dk['key']; $M = DBD_Data::metrics(); $dlg = $M['league'][ $dkey ] ?? null; $hasDef = $dlg !== null && ! empty( $M['rank']['def'] );
-$teams = DBD_Data::teams();
-$drank = function ( $tm ) use ( $M, $dkey ) { return $tm && isset( $M['rank']['def'][ $tm ][ $dkey ] ) ? (int) $M['rank']['def'][ $tm ][ $dkey ] : null; };
-$dval  = function ( $tm ) use ( $M, $dkey ) { return $M['defense'][ $tm ][ $dkey ] ?? null; };
-$dtip  = function ( $tm ) use ( $drank, $dval, $dlg, $dk, $teams, $sgn ) { $v = $dval( $tm ); return '<b>' . esc_html( $teams[ $tm ]['nick'] ?? $tm ) . '</b> allow ' . ( $v === null ? '-' : $sgn( (float) $v ) ) . ' EPA ' . esc_html( $dk['unit'] ) . ( $dlg === null ? '' : ' <span class="m">league ' . $sgn( (float) $dlg ) . '</span>' ) . '<br>' . esc_html( DBD_Grades::ordinal( $drank( $tm ) ) ) . '-toughest of 32 ' . esc_html( $dk['lab'] ); };
-$dchipShort = function ( $tm ) use ( $drank, $dtip ) { $rk = $drank( $tm ); return $rk ? '<span class="dbd-dchip ' . DBD_Grades::defense_tier( $rk ) . '" data-tip="' . esc_attr( $dtip( $tm ) ) . '" tabindex="0">' . esc_html( DBD_Grades::ordinal( $rk ) ) . ' D</span>' : ''; };  /* phone-sized: the fold under the opponent */
-$dchip = function ( $tm ) use ( $drank, $dtip, $dk ) { $rk = $drank( $tm ); if ( ! $rk ) { return '<td class="dbd-dcell"></td>'; } return '<td class="dbd-dcell" data-v="' . $rk . '"><span class="dbd-dchip ' . DBD_Grades::defense_tier( $rk ) . '" data-tip="' . esc_attr( $dtip( $tm ) ) . '" tabindex="0">' . esc_html( DBD_Grades::ordinal( $rk ) . ' ' . $dk['lab'] ) . '</span></td>'; };
-$oppOf = function ( $wk, $tm = null ) use ( $a ) { $tm = $tm ?: $a; $g = DBD_Data::team_game( $tm, $wk ); if ( ! $g ) { return null; } return $g['home'] === $tm ? $g['away'] : $g['home']; };
 
 echo '</section>' . $band( 'weeks', 'Week by week', 'the shape of his season, the game log and the defenses behind it' );
 
