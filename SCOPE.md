@@ -930,3 +930,87 @@ Roadmap slice 9 (§16), the last on the list. Two things that are one image: the
 Team cards, game cards and compare cards (the renderer is written so a second layout can be added), a dark card, and a card for the hub.
 
 Status: built as 1.3.12 (2026-10-31). The repo gained a Plugin check workflow (PHP syntax plus three rendered cards as an artifact) since no machine here runs PHP.
+
+## 27. Roadmap 2 (proposed 2026-10-31, revised the same day with Gene's list; awaiting his order)
+
+All ten slices of §16 are live as of 1.3.13. The player page is now the deepest page on the site; the game page, the team page and the hub have barely moved since 1.3.0, and the site still describes only the offensive half of the sport. Gene's own list (2026-10-31) added fantasy, a lineup tool, team logos, a visual pass, the defense, and a look at what nfelo's player page has that ours does not; his first item, every player on the index instead of the top 60, shipped in 1.3.9.
+
+### What nfelo's QB page has that ours does not (read 2026-10-31, Josh Allen 2026)
+
+- Ranks on the headline numbers ("Total EPA 80 · 1st in the NFL"); ours rank only in the season-stats table.
+- Three stats we do not show: success rate, ANY/A and total EPA; also QBR, which is ESPN's and not reproducible.
+- A **playstyle decomposition** of EPA into components (after the catch, air yards, rushing, sack avoidance, interception avoidance, incompletion avoidance) with each component's league percentile, and the season against the career average. Ours is a fingerprint of shares, which says how he is used, not where his value comes from.
+- A compact **passes-by-location grid** (behind, short, intermediate, deep by left, middle, right) with frequency against the league. Ours has the field map and the depth bars, not the 4 × 3 grid.
+- A game log that lists all eighteen weeks including the bye and DNP rows; ours lists played weeks and leaves the slate to the ribbon.
+- A season switcher in the URL (that is the season archive, below).
+
+Ours has what theirs does not: every position, the play-level field map, the connection, the opponent context, trend lines, movers, the career band, this week and the card.
+
+### The slices
+
+| # | Slice | Page | Reader question it answers | What it needs | Size |
+|---|---|---|---|---|---|
+| 1 | **Design pass** (Gene) | Everywhere | Does every element breathe? An audit of spacing, padding, header heights, table cell rhythm, chart margins and the hero at 1440, 1024, 768 and 375, written as a checklist in the scope, then fixed in one release | Nothing new | M |
+| 2 | **Team logos** (Gene) | Everywhere | The real marks, handled like the headshots: hotlinked from the public CDN URLs the nflverse teams file already carries, behind the same admin toggle, with the drawn tiles as the fallback; used in heroes, game pages, the hub slate and the cards | Nothing new | S |
+| 3 | **Player page, nfelo parity** | Player | The list above: ranks on the hero tiles; success rate, ANY/A and total EPA in the stats; an EPA decomposition for quarterbacks (and a receiving one for receivers: air, after the catch, drops, first downs); the passes-by-location grid against the league; all eighteen weeks in the game log | Career pool for the season-vs-career line comes from the career caches; the rest is on the page | M |
+| 4 | **Win probability** | Game | How did this game turn? The chart across the game, the swings marked, the top plays by WPA, a "the game turned on…" read | `wp` and `wpa` on the play rows (the pbp carries them) | M |
+| 5 | **Box score and the players in this game** | Game | Who did what? Each team's player lines for the week, linking out, and who got the ball in that game | Nothing new | M |
+| 6 | **Fantasy lens** (Gene) | Player, Compare, Leaders | Should I start him? Points per game in standard, half and full PPR, position rank, floor and ceiling from his weekly line, and the matchup: fantasy points the opponent allows to his position, from the weekly files joined to the schedule; a Fantasy tab on compare | Fantasy columns are in the weekly files; a per-defense allowed table from the build | M |
+| 7 | **My team** (Gene) | New `?view=myteam` | Here is my lineup; show me everything about it. Pick players by search, kept in the browser and shareable as a URL (`?myteam=id,id,…`), laid out as a lineup: each slot with this week's matchup chip, status, snap trend and fantasy pace, one click to the player page or a compare | Nothing new once 6 ships | M to L |
+| 8 | **Leaders** | New `?view=leaders` | Who leads the league in what this site measures? Boards for every grade metric, fingerprint trait and fantasy format, with position and minimum-usage filters | `players/leaders.json` from the build | M |
+| 9 | **The defensive half** (Gene) | Team | What does this defense allow, and how? A Defense tab on the team page from the plays the team defended: by position, depth, situation, formation, with the ranks the player pages quote and the fantasy points allowed from 6 | `plays/{TEAM}-def.json` from the pbp by defensive team | L |
+| 10 | **Week in review** | New `?view=week` | What happened this week? Movers, best plays by EPA and WPA, the biggest swings, the cards; past weeks stay reachable | Nothing new once 4 ships; a league-wide best-plays pass in the build | M |
+| 11 | **Hub refresh** | Hub | What should I look at today? Movers card, this-week cards per game with the line and the defense context, standings in reach | Nothing new | S to M |
+| 12 | **Compare, finished** | Compare | The deferred overlays: career lines, fingerprint bars, trend lines | Nothing new | S to M |
+| 13 | **Polish release** | Everywhere | Pretty URLs with per-matchup Open Graph images, the top-level admin menu, team and game cards, pruning old card PNGs, the skeleton reveal | Nothing new | S each |
+| 14 | **Season archive** | Everywhere | Next September, where did 2026 go? Data per season, a season switch | Build and data layout; before the 2027 season | L |
+| 15 | **nfelo layer (1.4.0)** | Hub, game | The model's numbers beside ours | greerreNFL's OK | M |
+
+**Foundations ride along:** the view harness learns the game, compare and matchups views; the nightly build gains a sanity step; the 22 MB of career caches is the known cost of the backfill.
+
+**Recommended order:** 1 and 2 together as one release (the visual pass and the logos touch the same places), then 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13; 14 in the summer; 15 when it unblocks. The reasoning: the visual pass first so everything built after it lands on a settled grid; nfelo parity next because it is the page people compare us against; the game page because games happen weekly; fantasy before My team because the lineup is only useful with points and matchups behind it; the defensive half once the landing pages are strong.
+
+## 28. Design pass and team logos (scoped and mocked 2026-10-31, `mockup-v5/system.html`)
+
+Roadmap 2, slices 1 and 2 as one release (Gene: "go over all the visual elements and make sure they all have proper spacing around the content and everything is properly proportioned for good UX"; "explore using the NFL logos in some places, the same way we handled the player photos"). The audit below was measured on the live site (1.3.13, inside the Divi page with Gene's sidebar) at 1440 and 375, on the player, team and hub pages, by reading computed styles, not by eye.
+
+### What the audit found
+
+| # | Finding | Measured | Effect |
+|---|---|---|---|
+| A1 | **Divi's table rule wins over ours.** The theme's inline `.entry-content tr td { padding: 6px 24px }` is more specific than `.dbd-stat td` and `.dbd-glog td`, so nearly every table cell on the site has 24px left and right instead of 4 to 6 | 296 of 400 cells on the player page, 161 of 173 on the team page, 146 of 200 on the hub | Every table is about 40px wider per column than designed; this is most of why tables still scroll on phones (four on Jefferson's page: 681, 530, 499 and 443px of content in a 341px box) |
+| A2 | **Fourteen text sizes** in one page, 123 runs of text at 8 or 9px | 8, 9, 10, 11, 12, 13, 14, 15, 18, 19, 21, 22, 28, 54px | 8 and 9px is below comfortable reading on every screen; the steps are too close to read as hierarchy |
+| A3 | **Eleven letter-spacings** on uppercase labels | 0.01 to 0.20em | Labels that are the same kind of thing look subtly different |
+| A4 | **Panel headers four different heights** | 34, 39, 57, 62px; the two tall ones wrap (Where he ranks' sub-label, the game log's view switch) | Panels side by side start their content at different heights |
+| A5 | **Panel insides padded six ways** | content 14/12, 14/0, 0/0, 14/8; read paragraphs 14/10/0, 14/8/0, 14/8/10, 14/8/6; notes 14 or 0 on the left | Text edges inside panels do not line up with each other or with the header |
+| A6 | **Phone hero falls apart.** At 375 the headshot sits alone between the bio and the team block with dead space around it, and the pennant, snap badge, Share card, Compare and Players like him stack as five loose rows | about 160px of empty space, a 330px header stack | The first screen on a phone is mostly air and buttons |
+| A7 | **No team logos anywhere**; teams are drawn tiles and pennants | 0 images on the hub | Gene's request |
+
+### The fix
+
+**A spacing scale, used everywhere.** Four steps: 4, 8, 14, 22px, as CSS variables (`--dbd-s1` to `--dbd-s4`). Panel header padding s3 by s2+2 (14 by 10, as now) with a fixed minimum height of 40px; every first block inside a panel padded s3 on the sides and s3 on top; read paragraphs s3 sides, s2 top, s3 bottom; notes s3 sides, s3 bottom; gaps between panels s3, between bands s4. Panel headers never wrap at desktop: a long sub-label truncates with a tooltip, and the game log's view switch drops under the label only under 700px container.
+
+**A type scale of seven steps:** 11, 12, 13, 15, 18, 28 and the hero size; nothing under 11px. Uppercase labels use one tracking (0.14em) for panel labels and one (0.08em) for table headers.
+
+**Tables:** our cell rules gain enough specificity to beat the theme (`.dbd .dbd-stat td`, scoped to the plugin's root) and the theme's padding stops applying inside the app. Measured effect in the mock on Jefferson's real game log with the extra Air, YAC and target-share columns: 928px of content with the theme's padding, 496px with ours, 47% narrower at the same font; on a phone the tiered columns fold the rest, so three of the four phone scrollers should stop scrolling.
+
+**Phone hero:** the headshot moves up beside the name as a 96px cutout (the desktop hero keeps the large cutout), the team block collapses to one row (pennant and nickname left, snap share right), and Share card, Compare and Players like him become one wrapping row of buttons under it.
+
+**Team logos, handled like the headshots:**
+
+- The nightly build adds `logo` (ESPN's 500px PNG, which every team has and which responds as an image) and `logo_sq` (nflverse's squared logo) to `teams.json`.
+- A **Show NFL team logos** checkbox under Settings, off by default, beside the headshot one, with the same note about hotlinking marks the site does not own.
+- When it is on, `DBD_Marks::tile()` and `dbdMark()` return the logo as an `<img>` (sized, lazy, `alt` the team name) with the drawn tile as the fallback on error; the pennant keeps its shape and puts the logo in the flag; the share card draws the logo in the brand bar's corner instead of nothing. When it is off, everything is as it is today.
+- Places the logo shows: the hub slate and game of the week, standings, the team page hero, the game page header and head to head, the player hero's team block, the players index team picker and rows, the this-week strip and the opponent chips' tooltips.
+
+### Data and rendering
+
+- Build: two columns into `teams.json`. Plugin (`1.4.0`, since it touches every page): the scale and the table fix in `dbd.css`, the phone hero in `player.php` and CSS, the toggle in `settings.php` and `DBD_Data::logos()`, the logo branch in `DBD_Marks` and `marks.js`, the card's corner logo in `DBD_Card`.
+- The view harness checks the tables' computed padding in a later foundations pass; this release adds a CSS rule test to the mock only.
+- Measured acceptance: no text under 11px; panel headers one height at desktop; no table cell padded more than 8px on a side; on Jefferson's page at 375, one table scrolls (the connection's, which has no honest narrower form) instead of four.
+
+### Not in this release
+
+Pretty URLs and the admin menu (polish release), dark mode (not wanted), a logo on the share card's hero (the headshot stays the subject).
+
+Status: built as 1.4.0 (2026-10-31). As built: the type floor (11px) and the two letter-spacings apply everywhere; 17px merged into 18px; the larger display sizes (20 to 34px headings and scores) were left as they were rather than forced onto the seven-step scale, to avoid reflowing headline layouts for little gain. The table fix raises every plugin rule by one class under .dbd rather than patching individual tables.

@@ -1,0 +1,43 @@
+# Build check: run the real nightly data build against this season's nflverse files whenever the build script
+# changes, into a copy of the repo's data (so the career caches are reused and nothing is committed).
+name: Build check
+on:
+  pull_request:
+    paths:
+      - 'tools/build_data.py'
+      - '.github/workflows/build-data.yml'
+      - '.github/workflows/build-check.yml'
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install pandas
+        run: pip install pandas
+      - name: Download nflverse files
+        run: |
+          set -e
+          Y=$(date -u +%Y); M=$(date -u +%-m); if [ "$M" -lt 3 ]; then Y=$((Y-1)); fi; S=$Y
+          mkdir -p in
+          curl -sSL -o in/roster.csv "https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_${S}.csv"
+          curl -sSL -o in/teams.csv  "https://github.com/nflverse/nflverse-data/releases/download/teams/teams_colors_logos.csv"
+          curl -sSL -o in/games.csv  "https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv"
+          if curl -sSL -f -o in/pbp.csv.gz "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_${S}.csv.gz"; then echo "pbp=in/pbp.csv.gz" >> "$GITHUB_ENV"; else echo "pbp=-" >> "$GITHUB_ENV"; fi
+          dl() { if curl -sSL -f -o "in/$2" "https://github.com/nflverse/nflverse-data/releases/download/$1"; then echo "$3=in/$2" >> "$GITHUB_ENV"; fi; }
+          dl "stats_player/stats_player_week_${S}.csv"  stats.csv   DBD_STATS
+          dl "snap_counts/snap_counts_${S}.csv"         snaps.csv   DBD_SNAPS
+          dl "pfr_advstats/advstats_week_rec_${S}.csv"  pfr.csv     DBD_PFR
+          dl "injuries/injuries_${S}.csv"               inj.csv     DBD_INJ
+          dl "depth_charts/depth_charts_${S}.csv"       depth.csv   DBD_DEPTH
+          dl "ftn_charting/ftn_charting_${S}.csv"       ftn.csv     DBD_FTN
+      - name: Run the build into a copy of the data
+        run: |
+          set -e
+          cp -r data /tmp/out
+          python3 tools/build_data.py "$pbp" in/roster.csv in/games.csv in/teams.csv /tmp/out
+          python3 -c "import json;t=json.load(open('/tmp/out/teams.json'));print(len(t),'teams;',sum(1 for v in t.values() if v.get('logo')),'with logos')"
+          ls /tmp/out/players | head -40 | tr '\n' ' '

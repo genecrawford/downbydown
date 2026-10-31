@@ -43,6 +43,17 @@ class DBD_Marks {
 	}
 
 	public static function tile( $abbr, $size = 24 ) {
+		$svg = self::tile_svg( $abbr, $size );
+		$logo = $svg ? DBD_Data::logo( $abbr ) : null;
+		return $logo ? self::with_logo( $svg, $logo, $size, $size, DBD_Data::team( $abbr )['name'] ?? $abbr ) : $svg;
+	}
+
+	/** The real logo over the drawn mark: the mark shows until the image loads, then hides; a failed image removes itself (SCOPE §28). */
+	public static function with_logo( $svg, $logo, $w, $h, $alt ) {
+		return '<span class="dbd-lgw" style="width:' . (int) $w . 'px;height:' . (int) $h . 'px">' . $svg . '<img class="dbd-logo" src="' . esc_url( $logo ) . '" alt="' . esc_attr( $alt ) . '" width="' . (int) $h . '" height="' . (int) $h . '" loading="lazy" decoding="async" referrerpolicy="no-referrer" onload="this.previousElementSibling.style.visibility=\'hidden\'" onerror="this.remove()"></span>';
+	}
+
+	public static function tile_svg( $abbr, $size = 24 ) {
 		$t = DBD_Data::team( $abbr );
 		if ( ! $t ) { return ''; }
 		$c1 = self::color( $t['c1'], '#161e36' ); $c2 = self::color( $t['c2'], '#cb2026' );
@@ -91,6 +102,12 @@ class DBD_Marks {
 	}
 
 	public static function pennant( $abbr, $height = 40 ) {
+		$svg = self::pennant_svg( $abbr, $height );
+		$logo = $svg ? DBD_Data::logo( $abbr ) : null;
+		return $logo ? self::with_logo( $svg, $logo, (int) round( $height * 1.6 ), $height, DBD_Data::team( $abbr )['name'] ?? $abbr ) : $svg;
+	}
+
+	public static function pennant_svg( $abbr, $height = 40 ) {
 		$t = DBD_Data::team( $abbr );
 		if ( ! $t ) { return ''; }
 		$c1 = self::color( $t['c1'], '#161e36' ); $c2 = self::color( $t['c2'], '#cb2026' );

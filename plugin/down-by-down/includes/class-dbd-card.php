@@ -76,7 +76,10 @@ class DBD_Card {
 			for ( $yy = 0; $yy < $th; $yy++ ) { for ( $xx = 0; $xx < $twd; $xx++ ) { $c = imagecolorat( $sm, $xx, $yy ); $r = ( $c >> 16 ) & 255; $g = ( $c >> 8 ) & 255; $b = $c & 255; $k = min( $r, $g, $b ) / 255;
 				imagesetpixel( $im, 44 * $S + $xx, 15 * $S + $yy, imagecolorallocate( $im, (int) round( $r - $k * ( 255 - $br ) ), (int) round( $g - $k * ( 255 - $bgc ) ), (int) round( $b - $k * ( 255 - $bb ) ) ) ); } }
 			imagedestroy( $sm ); } }
-		$spaced( $F['disp'], 16, 1156, 38, $ink2, strtoupper( $spec['season'] . ' season · through week ' . $spec['through'] ), 0.2, 'right' );
+		$sw = $spaced( $F['disp'], 16, 1156, 38, $ink2, strtoupper( $spec['season'] . ' season · through week ' . $spec['through'] ), 0.2, 'right' );
+		/* the team logo in the brand bar's corner when logos are on (SCOPE §28) */
+		$tl = ! empty( $assets['team_logo'] ) ? @imagecreatefromstring( $assets['team_logo'] ) : false;
+		if ( $tl ) { $ls = 40 * $S; imagealphablending( $im, true ); imagecopyresampled( $im, $tl, (int) round( ( 1156 - $sw - 54 ) * $S ), 12 * $S, 0, 0, $ls, $ls, imagesx( $tl ), imagesy( $tl ) ); imagedestroy( $tl ); }
 		$rect( 0, 64, self::W, 6, $accent );
 
 		/* hero: disc, headshot or number, kicker, name */
@@ -140,13 +143,15 @@ class DBD_Card {
 		$row = DBD_Data::player( $id ); if ( ! $row ) { $fail( 404 ); }
 		$rec = DBD_Data::player_record( $row['team'], $id ); if ( ! $rec ) { $fail( 404 ); }
 		$through = (int) DBD_Data::through_week(); $up = wp_upload_dir(); $dir = trailingslashit( $up['basedir'] ) . 'down-by-down/cards'; wp_mkdir_p( $dir );
-		$file = $dir . '/' . $id . '-' . (int) DBD_Data::season() . '-' . $through . '-' . DBD_VERSION . '.png';  /* season, data week and plugin version: a new year or a new design never serves an old card */
+		$logo = DBD_Data::logo( $row['team'] );
+		$file = $dir . '/' . $id . '-' . (int) DBD_Data::season() . '-' . $through . '-' . DBD_VERSION . ( $logo ? '-l' : '' ) . '.png';  /* turning logos on or off draws a fresh card */  /* season, data week and plugin version: a new year or a new design never serves an old card */
 		if ( ! file_exists( $file ) ) {
 			$team = DBD_Data::team( $row['team'] ); $grp = DBD_Grades::group_of( $row['pos'] ); $gi = $grp ? ( DBD_Grades::group_info( $grp ) ?: array() ) : array();
 			$spec = self::spec( $rec, $row, $team, $gi, DBD_Data::season(), $through ); if ( ! $spec ) { $fail( 404 ); }
 			$photo = null;
 			if ( ! empty( $rec['photo'] ) ) { $r = wp_remote_get( $rec['photo'], array( 'timeout' => 5 ) ); if ( ! is_wp_error( $r ) && (int) wp_remote_retrieve_response_code( $r ) === 200 ) { $photo = wp_remote_retrieve_body( $r ); } }
-			$im = self::draw( $spec, array( 'fonts' => DBD_PATH . 'assets/fonts/', 'logo' => DBD_PATH . 'assets/card-logo.png', 'photo' => $photo ) ); if ( ! $im ) { $fail( 500 ); }
+			$tlogo = null; if ( $logo ) { $r2 = wp_remote_get( $logo, array( 'timeout' => 5 ) ); if ( ! is_wp_error( $r2 ) && (int) wp_remote_retrieve_response_code( $r2 ) === 200 ) { $tlogo = wp_remote_retrieve_body( $r2 ); } }
+			$im = self::draw( $spec, array( 'fonts' => DBD_PATH . 'assets/fonts/', 'logo' => DBD_PATH . 'assets/card-logo.png', 'photo' => $photo, 'team_logo' => $tlogo ) ); if ( ! $im ) { $fail( 500 ); }
 			/* write beside the final name, then rename into place, so a request arriving mid-write never streams a half-written PNG */
 			$tmp = $dir . '/.' . wp_generate_password( 12, false ) . '.tmp'; $ok = imagepng( $im, $tmp, 6 ); imagedestroy( $im );
 			if ( ! $ok || ! file_exists( $tmp ) || filesize( $tmp ) < 1000 || ! @rename( $tmp, $file ) ) { @unlink( $tmp ); $fail( 500 ); }

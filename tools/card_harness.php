@@ -18,7 +18,8 @@ $teams = $j( 'teams.json' ); $league = $j( 'players/league.json' ); $grp = DBD_G
 if ( ! DBD_Card::available() ) { fwrite( STDERR, "GD with FreeType is not available\n" ); exit( 3 ); }
 $spec = DBD_Card::spec( $rec, $row, $teams[ $row['team'] ] ?? array(), $gi, $idx['season'], $idx['through'] );
 $photo = ! empty( $rec['photo'] ) ? @file_get_contents( $rec['photo'], false, stream_context_create( array( 'http' => array( 'timeout' => 10 ) ) ) ) : null;
-$im = DBD_Card::draw( $spec, array( 'fonts' => $plugin . 'assets/fonts/', 'logo' => $plugin . 'assets/card-logo.png', 'photo' => $photo ?: null ) );
+$tl = getenv( 'DBD_HARNESS_LOGOS' ) && ! empty( $teams[ $row['team'] ]['logo'] ) ? @file_get_contents( $teams[ $row['team'] ]['logo'] ) : null;
+$im = DBD_Card::draw( $spec, array( 'fonts' => $plugin . 'assets/fonts/', 'logo' => $plugin . 'assets/card-logo.png', 'photo' => $photo ?: null, 'team_logo' => $tl ?: null ) );
 if ( ! $im ) { fwrite( STDERR, "draw() returned nothing\n" ); exit( 4 ); }
 imagepng( $im, $out, 6 ); imagedestroy( $im );
 $sz = getimagesize( $out ); echo "wrote $out {$sz[0]}x{$sz[1]} for {$rec['name']} (" . ( $photo ? 'headshot' : 'no headshot' ) . ")\n";
