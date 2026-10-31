@@ -169,20 +169,24 @@ if ( $hasDef && $myRows && $games ) {
 	sort( $slates );
 	$myAvg = array_sum( array_column( $myRows, 'rk' ) ) / count( $myRows );
 	$myRank = count( array_filter( $slates, function ( $v ) use ( $myAvg ) { return $v < $myAvg; } ) ) + 1; $med = $slates ? $slates[ (int) floor( count( $slates ) / 2 ) ] : null;
-	$mineG = $games[ $a ] ?? array(); $ahead = array_values( array_filter( $mineG, function ( $x ) { return ! $x['played']; } ) ); $playedG = array_filter( $mineG, function ( $x ) { return $x['played']; } );
+	$mineG = $games[ $a ] ?? array(); $ahead = array_values( array_filter( $mineG, function ( $x ) { return ! $x['played']; } ) );
 	$aheadTough = count( array_filter( $ahead, function ( $x ) use ( $drank ) { return DBD_Grades::defense_tier( $drank( $x['opp'] ) ) === 'tough'; } ) ); $aheadSoft = count( array_filter( $ahead, function ( $x ) use ( $drank ) { return DBD_Grades::defense_tier( $drank( $x['opp'] ) ) === 'soft'; } ) ); $next = $ahead[0] ?? null;
 	$lab = esc_html( $dk['lab'] );
 	$say = 'He has faced the <b>' . esc_html( DBD_Grades::ordinal( $myRank ) ) . '-toughest</b> slate ' . $lab . ': his opponents rank <b>' . $f1( $myAvg ) . '</b> of 32 on average' . ( $med === null ? '' : ' (league middle ' . $f1( $med ) . ')' ) . '.';
 	if ( $next && $drank( $next['opp'] ) ) { $say .= ' Ahead: <b>' . $aheadTough . '</b> of his next ' . count( $ahead ) . ( $aheadTough === 1 ? ' is' : ' are' ) . ' top-10 ' . $lab . ( $aheadSoft ? ' and ' . $aheadSoft . ( $aheadSoft === 1 ? ' is' : ' are' ) . ' bottom-10' : '' ) . ', starting with the <b>' . esc_html( $teams[ $next['opp'] ]['nick'] ?? $next['opp'] ) . '</b> (' . esc_html( DBD_Grades::ordinal( $drank( $next['opp'] ) ) ) . ( $next['home'] ? '' : ', away' ) . ') in Week ' . (int) $next['wk'] . '.'; }
-	echo '<section class="dbd-panel dbd-ox"><div class="dbd-ph"><span class="dbd-lab"><b>Who he\'s faced</b> · defenses ranked ' . $lab . '</span><span class="dbd-badge">' . count( $playedG ) . ' played · ' . count( $ahead ) . ' ahead</span></div>';
+	echo '<section class="dbd-panel dbd-ox"><div class="dbd-ph"><span class="dbd-lab"><b>Who he\'s faced</b> · defenses ranked ' . $lab . '</span><span class="dbd-badge">' . count( $L ) . ' played · ' . count( $ahead ) . ' ahead</span></div>';
 	echo '<p class="dbd-ox-say">' . $say . '</p>';
 	/* ribbon */
-	$byWk = array(); foreach ( $mineG as $x ) { $byWk[ $x['wk'] ] = $x; } $playedSet = array_flip( $played ); $rib = '';
+	/* played weeks come from his own log (his team that week and its opponent, so a traded player's early weeks are right); weeks still to play come from the current team's schedule */
+	$byWk = array(); foreach ( $mineG as $x ) { $byWk[ $x['wk'] ] = $x; }
+	foreach ( $L as $w ) { $wk = (int) $w['week']; $tm = $w['team'] ?? $a; $gm = DBD_Data::team_game( $tm, $wk ); $opp = $w['opponent_team'] ?? $oppOf( $wk, $tm ); if ( $opp ) { $byWk[ $wk ] = array( 'wk' => $wk, 'opp' => $opp, 'home' => $gm ? $gm['home'] === $tm : true, 'played' => true, 'tm' => $tm, 'his' => true ); } }
+	$rib = '';
 	for ( $wk = 1; $wk <= max( 18, $maxWk ); $wk++ ) {
 		$x = $byWk[ $wk ] ?? null;
 		if ( ! $x ) { $rib .= '<div class="c bye"><small>WK ' . $wk . '</small><b>—</b><i>bye</i></div>'; continue; }
-		$rk = $drank( $x['opp'] ); $cls = DBD_Grades::defense_tier( $rk ) . ( $x['played'] ? ' done' : ' ahead' ) . ( $x['played'] && ! isset( $playedSet[ $wk ] ) ? ' dnp' : '' ) . ( $wk === $curWk ? ' now' : '' );
-		$rib .= '<div class="c ' . $cls . '" tabindex="0" data-tip="' . esc_attr( '<b>Week ' . $wk . ' ' . ( $x['home'] ? 'vs' : 'at' ) . ' ' . esc_html( $teams[ $x['opp'] ]['nick'] ?? $x['opp'] ) . '</b>' . ( $x['played'] && ! isset( $playedSet[ $wk ] ) ? ' · he did not play' : '' ) . '<br>' . ( $rk ? $dtip( $x['opp'] ) : 'not ranked yet' ) ) . '"><small>' . ( $x['home'] ? 'VS' : 'AT' ) . ' ' . esc_html( $x['opp'] ) . '</small><b>' . ( $rk ?: '–' ) . '</b><i>' . ( $rk ? $lab : '' ) . '</i></div>';
+		$dnp = $x['played'] && empty( $x['his'] ); $away = ! empty( $x['tm'] ) && $x['tm'] !== $a ? esc_html( $x['tm'] ) . ' ' : '';
+		$rk = $drank( $x['opp'] ); $cls = DBD_Grades::defense_tier( $rk ) . ( $x['played'] ? ' done' : ' ahead' ) . ( $dnp ? ' dnp' : '' ) . ( $wk === $curWk ? ' now' : '' );
+		$rib .= '<div class="c ' . $cls . '" tabindex="0" data-tip="' . esc_attr( '<b>Week ' . $wk . ' ' . $away . ( $x['home'] ? 'vs' : 'at' ) . ' ' . esc_html( $teams[ $x['opp'] ]['nick'] ?? $x['opp'] ) . '</b>' . ( $dnp ? ' · he did not play' : '' ) . '<br>' . ( $rk ? $dtip( $x['opp'] ) : 'not ranked yet' ) ) . '"><small>' . $away . ( $x['home'] ? 'VS' : 'AT' ) . ' ' . esc_html( $x['opp'] ) . '</small><b>' . ( $rk ?: '–' ) . '</b><i>' . ( $rk ? $lab : '' ) . '</i></div>';
 	}
 	echo '<h4>The slate · played solid, ahead dashed</h4><div class="dbd-ox-rib">' . $rib . '</div>';
 	echo '<div class="dbd-legend"><span><i class="sq" style="background:#161e36"></i>Top 10, tough</span><span><i class="sq" style="background:var(--dbd-line-2)"></i>11 to 22</span><span><i class="sq" style="background:rgba(30,127,74,.35)"></i>23 to 32, soft</span><span>Number is the defense\'s rank ' . $lab . ', season to date. Dashed cells are still to play; the red outline is this week.</span></div>';
