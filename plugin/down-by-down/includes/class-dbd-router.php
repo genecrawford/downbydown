@@ -269,6 +269,7 @@ class DBD_Router {
 			wp_enqueue_script( 'dbd-players', DBD_URL . 'assets/players.js', array( 'dbd-marks' ), DBD_VERSION, true );
 			wp_localize_script( 'dbd-players', 'DBD_PLIST', array( 'base' => self::url(), 'team' => $r['pteam'], 'pos' => $r['pos'], 'q' => $r['q'], 'teams' => DBD_Data::teams(), 'heads' => DBD_Data::headshots() ) );
 		}
+		if ( DBD_Data::logos() && wp_script_is( 'dbd-marks', 'enqueued' ) ) { wp_add_inline_script( 'dbd-marks', 'window.DBD_LOGOS_ON=true;', 'before' ); }  /* team logos (SCOPE §28) */
 	}
 
 	/* ------------------------------------------------------------------ rendering */

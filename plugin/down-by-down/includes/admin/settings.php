@@ -10,6 +10,7 @@ add_action( 'admin_menu', function () {
 add_action( 'admin_init', function () {
 	register_setting( 'dbd', DBD_Sync::OPT_SOURCE, array( 'type' => 'string', 'sanitize_callback' => 'esc_url_raw', 'default' => DBD_DEFAULT_SOURCE ) );
 	register_setting( 'dbd', 'dbd_headshots', array( 'type' => 'boolean', 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => false ) );
+	register_setting( 'dbd', 'dbd_logos', array( 'type' => 'boolean', 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => false ) );
 } );
 
 add_action( 'admin_post_dbd_sync_now', function () {
@@ -72,6 +73,9 @@ function dbd_settings_page() {
 				<tr><th scope="row">Player photos</th>
 					<td><label><input type="checkbox" name="dbd_headshots" value="1" <?php checked( DBD_Data::headshots() ); ?>> Show NFL headshots on player pages and the Players index</label>
 					<p class="description">Off by default. The photos are hotlinked from the NFL's image CDN using the URLs nflverse publishes; they are league property and not licensed to this site. When on, each photo loads lazily over the player's jersey tile and falls back to the tile if the image fails. Turn this off to remove every photo at once.</p></td></tr>
+				<tr><th scope="row">Team logos</th>
+					<td><label><input type="checkbox" name="dbd_logos" value="1" <?php checked( DBD_Data::logos() ); ?>> Show NFL team logos in place of the drawn team tiles</label>
+					<p class="description">Off by default. The logos are hotlinked from the ESPN image CDN using the URLs nflverse publishes; they are league and team property and not licensed to this site. When on, each logo loads lazily over the drawn tile, which stays if a logo fails to load. Run Sync now once after turning this on if the team data predates 1.4.0.</p></td></tr>
 			</table>
 			<?php submit_button( 'Save' ); ?>
 		</form>

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design system | Down by Down</title>
+<link href="https://fonts.googleapis.com/css2?family=Tourney:wght@800&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="dbd.css">
+<script src="data/teams.js"></script>
+<script src="data/marks.js"></script>
+<script src="data/logos.js?v=1"></script>
+<script src="data/players-MIN.js?v=6"></script>
+<script src="data/MIN.js?v=3"></script>
+<style>
+/* ---- the proposed system (SCOPE §28) ---- */
+:root{--s1:4px;--s2:8px;--s3:14px;--s4:22px;
+  --t-xs:11px;--t-sm:12px;--t-md:13px;--t-lg:15px;--t-xl:18px;--t-2xl:28px;
+  --track-lab:.14em;--track-th:.08em;--ph-h:40px}
+body{background:var(--bg)} .wrap{max-width:1180px;margin:0 auto;padding:32px 24px 80px;display:flex;flex-direction:column;gap:34px}
+.sec>h2{font:800 13px var(--display);letter-spacing:.2em;text-transform:uppercase;color:var(--red);margin:0 0 6px}
+.sec>p.lede{margin:0 0 14px;font:500 14px/1.55 var(--body);color:var(--ink-2);max-width:760px}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;align-items:start}
+@media (max-width:900px){.row2{grid-template-columns:minmax(0,1fr)}}
+.tag{display:inline-block;font:700 10px var(--display);letter-spacing:.14em;text-transform:uppercase;padding:2px 8px;border-radius:999px;margin-bottom:8px}
+.tag.bad{background:color-mix(in srgb,var(--bad) 12%,transparent);color:var(--bad)} .tag.good{background:color-mix(in srgb,var(--good) 14%,transparent);color:var(--good)}
+/* scales */
+.scale{display:flex;gap:22px;align-items:flex-end;flex-wrap:wrap}
+.scale .sp{display:flex;flex-direction:column;align-items:center;gap:6px;font:500 11px var(--mono);color:var(--muted)} .scale .sp i{display:block;background:var(--red);opacity:.75;width:44px}
+.type{display:flex;flex-direction:column;gap:10px}
+.type .r{display:grid;grid-template-columns:80px 1fr;gap:16px;align-items:baseline;border-top:1px solid var(--line);padding-top:10px}
+.type .r small{font:500 11px var(--mono);color:var(--muted)}
+.counts{font:500 12px var(--mono);color:var(--ink-2)} .counts b{color:var(--bad)}
+/* the panel anatomy, system version */
+.sys .panel>.ph{min-height:var(--ph-h);padding:10px var(--s3);box-sizing:border-box;flex-wrap:nowrap}
+.sys .panel>.ph .lab{letter-spacing:var(--track-lab);font-size:var(--t-xs);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.sys .say{margin:0;padding:var(--s2) var(--s3) var(--s3);font:500 var(--t-md)/1.55 var(--body)}
+.sys .note{padding:0 var(--s3) var(--s3);font-size:var(--t-xs)}
+.sys .pb{padding:var(--s3)}
+.old .panel>.ph .lab small{font-size:9px}
+.old .say{margin:0;padding:10px 14px 0;font:500 13px/1.55 var(--body)} .old .note{padding:8px 0 0 0;font-size:11px} .old .pb{padding:12px 14px 0}
+.mini{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.mini div{border:1px solid var(--line);border-radius:4px;padding:8px} .mini b{display:block;font:800 18px var(--hero)} .old .mini small{font-size:8px} .sys .mini small{font-size:var(--t-xs)}
+.mini small{font:500 9px var(--mono);color:var(--muted)}
+/* tables before and after */
+.tbl{width:auto;border-collapse:collapse}
+.tbl th{font:700 10px var(--display);text-transform:uppercase;letter-spacing:var(--track-th);color:var(--muted);text-align:right;border-bottom:1px solid var(--line)}
+.tbl td{font:500 12px var(--mono);text-align:right;border-top:1px solid var(--line);white-space:nowrap}
+.tbl td:nth-child(2),.tbl th:nth-child(2){text-align:left} .tbl td:first-child,.tbl th:first-child{text-align:left}
+.tbl.divi th,.tbl.divi td{padding:6px 24px} .tbl.fixed th,.tbl.fixed td{padding:5px 6px}
+.tw2{overflow-x:auto;padding:0 var(--s3) var(--s2)} .wmeter{font:600 11px var(--mono);color:var(--ink-2);padding:var(--s2) var(--s3) var(--s3)} .wmeter b{color:var(--ink)}
+/* phone heroes */
+.phones{display:flex;gap:28px;flex-wrap:wrap;justify-content:center}
+.phone{width:375px;border:10px solid #1b1d22;border-radius:28px;background:var(--bg);overflow:hidden;box-shadow:0 14px 40px rgba(0,0,0,.18)}
+.phone .in{padding:18px 16px 22px;height:600px;overflow:hidden}
+.phone .k{font:700 10px var(--display);letter-spacing:.16em;text-transform:uppercase;color:var(--red);margin:0 0 6px}
+.phone h1{font:800 34px/1 var(--hero);text-transform:uppercase;margin:0} .phone h1 em{font-style:normal;display:block}
+.phone .bio{font:400 14px/1.55 var(--body);color:var(--ink-2);margin:10px 0}
+.pill{display:inline-block;font:700 10px var(--display);letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--line-2);border-radius:4px;padding:2px 7px;margin:0 4px 4px 0;color:var(--ink-2)}
+.btn{display:inline-flex;align-items:center;gap:6px;font:700 11px var(--display);letter-spacing:.14em;text-transform:uppercase;border:1px solid var(--line-2);border-radius:999px;padding:5px 11px;color:var(--ink);background:var(--panel)}
+.btn.dark{background:var(--ink);color:var(--panel);border-color:var(--ink);border-radius:6px}
+.phone .old-photo{width:240px;height:150px;margin:58px 0 30px;border-radius:6px;background:linear-gradient(180deg,#e9e6df,#f4f1ea);display:grid;place-items:end center;overflow:hidden}
+.phone .old-photo img,.phone .new-photo img{width:100%;height:100%;object-fit:cover;object-position:top}
+.phone .stack>*{display:flex;margin:0 0 10px}
+.phone .new-top{display:grid;grid-template-columns:1fr 96px;gap:12px;align-items:end}
+.phone .new-photo{width:96px;height:96px;border-radius:50%;background:var(--team);overflow:hidden}
+.phone .teamrow{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:12px 0}
+.phone .teamrow .t{display:flex;align-items:center;gap:8px;font:700 12px var(--display);letter-spacing:.14em;text-transform:uppercase}
+.phone .btns{display:flex;flex-wrap:wrap;gap:6px}
+.phone .likes{font:500 12px var(--body);color:var(--ink-2);margin-top:10px} .phone .likes b{font:700 10px var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-right:6px}
+.phone .tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px} .phone .tiles div{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px} .phone .tiles b{display:block;font:800 22px var(--hero)} .phone .tiles small{font:500 11px var(--mono);color:var(--muted)}
+/* logos */
+.lg{display:inline-block;object-fit:contain;vertical-align:middle}
+.ctx{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px} @media (max-width:900px){.ctx{grid-template-columns:minmax(0,1fr)}}
+.slate .g{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;padding:8px var(--s3);border-top:1px solid var(--line);font:600 14px var(--body)} .slate .g:first-child{border-top:0}
+.slate .g .sc{font:600 13px var(--mono)} .slate .g small{font:500 11px var(--mono);color:var(--muted);margin-left:6px}
+.picker{display:flex;flex-wrap:wrap;gap:6px;padding:var(--s3)} .picker span{width:36px;height:36px;display:grid;place-items:center;border-radius:6px;border:1px solid var(--line)} .picker span.on{border-color:var(--red);box-shadow:0 0 0 2px color-mix(in srgb,var(--red) 25%,transparent)}
+.gamehdr{display:flex;align-items:center;justify-content:center;gap:28px;padding:var(--s4) var(--s3)} .gamehdr .tm{display:flex;flex-direction:column;align-items:center;gap:6px;font:700 13px var(--display);letter-spacing:.14em;text-transform:uppercase} .gamehdr .at{font:800 22px var(--hero);color:var(--muted)}
+.toggle{display:inline-flex;align-items:center;gap:8px;font:600 13px var(--body);color:var(--ink);background:var(--panel);border:1px solid var(--line-2);border-radius:6px;padding:6px 10px;cursor:pointer;user-select:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div>
+    <p class="kicker">Design pass · SCOPE §28 · mock</p>
+    <h1 class="withmark"><span>Spacing, <em>type</em> and logos</span></h1>
+    <p class="sub" style="max-width:780px">Every number on this page was measured on the live site (1.3.13) before it was proposed. Left or top is today; right or bottom is the fix. The logos are the real ESPN marks nflverse publishes, loaded the way the headshots are; flip the switch to see the drawn tiles, which is what the site shows when the setting is off.</p>
+  </div>
+
+  <section class="sec"><h2>1 · The scales</h2><p class="lede">Today: <span class="counts">fourteen text sizes, <b>123</b> runs of text at 8 or 9px, eleven letter-spacings on uppercase labels, panel insides padded six ways.</span> Proposed: four spacing steps and seven type steps, nothing under 11px.</p>
+    <div class="row2">
+      <div class="panel"><div class="ph"><span class="lab"><b>Spacing</b> · four steps</span></div><div class="pb" style="padding:14px"><div class="scale" id="sp"></div><p class="note" style="padding:12px 0 0">s3 (14px) is the default edge inside every panel; s4 (22px) is the gap between bands. s1 and s2 are for inside small things: chips, cells, tile labels.</p></div></div>
+      <div class="panel"><div class="ph"><span class="lab"><b>Type</b> · seven steps</span></div><div class="pb" style="padding:14px"><div class="type" id="ty"></div></div></div>
+    </div>
+  </section>
+
+  <section class="sec"><h2>2 · A panel, before and after</h2><p class="lede">The same panel as it renders now and on the system. Header one height whether the label is long or short, the read and the note on the same left edge as the label, 11px as the floor.</p>
+    <div class="row2">
+      <div class="old"><span class="tag bad">Today</span><div class="panel"><div class="ph"><span class="lab"><b>Where he ranks</b> · among 136 receivers and tight ends with 15 targets+</span><span class="badge">League percentiles</span></div><div class="pb"><div class="mini" id="m1"></div></div><p class="say">The read paragraph starts 10px down and has no bottom space before the note.</p><p class="note">The note is flush to the panel edge here, 14px in elsewhere.</p></div></div>
+      <div class="sys"><span class="tag good">System</span><div class="panel"><div class="ph"><span class="lab" title="among 136 receivers and tight ends with 15 targets+"><b>Where he ranks</b> · among 136 receivers and tight ends with 15 targets+</span><span class="badge">League percentiles</span></div><div class="pb"><div class="mini" id="m2"></div></div><p class="say">The read starts 8px under the content and leaves 14px before the note, on the same 14px edge as the label.</p><p class="note">Notes sit on that edge too, 11px, never smaller.</p></div></div>
+    </div>
+  </section>
+
+  <section class="sec"><h2>3 · Tables: the theme's padding</h2><p class="lede">Divi's inline rule <code>.entry-content tr td { padding: 6px 24px }</code> is more specific than ours, so on the live site almost every cell has 24px on each side: 296 of 400 cells on a player page, 161 of 173 on a team page. Below is Jefferson's real game log both ways, at the same font.</p>
+    <div class="panel"><div class="ph"><span class="lab"><b>Game log</b> · today, with the theme's padding</span><span class="tag bad" style="margin:0">Live now</span></div><div class="tw2"><table class="tbl divi" id="t1"></table></div><p class="wmeter" id="w1"></p></div>
+    <div class="panel" style="margin-top:14px"><div class="ph"><span class="lab"><b>Game log</b> · with the plugin's own padding restored</span><span class="tag good" style="margin:0">Fix</span></div><div class="tw2"><table class="tbl fixed" id="t2"></table></div><p class="wmeter" id="w2"></p></div>
+  </section>
+
+  <section class="sec"><h2>4 · The phone hero</h2><p class="lede">At 375px today the headshot floats alone with about 160px of air around it, and the team link, snap badge, Share card, Compare and Players like him stack as five loose rows. Proposed: the headshot goes up beside the name as a 96px cutout, the team block becomes one row, the actions one wrapping row.</p>
+    <div class="phones"><div><span class="tag bad">Today</span><div class="phone"><div class="in" id="ph1"></div></div></div><div><span class="tag good">System</span><div class="phone"><div class="in" id="ph2"></div></div></div></div>
+  </section>
+
+  <section class="sec"><h2>5 · Team logos, where they would show</h2><p class="lede">Handled like the headshots: hotlinked from the URLs nflverse publishes, behind a Settings checkbox that is off by default, the drawn tile as the fallback if an image fails. <label class="toggle"><input type="checkbox" id="lgon" checked> Show NFL team logos</label></p>
+    <div class="ctx">
+      <div class="panel"><div class="ph"><span class="lab"><b>The slate</b> · hub</span></div><div class="slate" id="slate"></div></div>
+      <div class="panel"><div class="ph"><span class="lab"><b>Game header</b> · game page</span></div><div class="gamehdr" id="ghdr"></div><div class="ph" style="border-top:1px solid var(--line);border-bottom:0"><span class="lab"><b>Team picker</b> · players index</span></div><div class="picker" id="pick"></div></div>
+    </div>
+  </section>
+</div>
+<script>
+const T=window.DBD_TEAMS, LOGO=window.DBD_LOGOS, P=window.DBD_PLAYERS.players, G=window.DBD_DATA.games;
+let logosOn=true;
+const mark=(a,s)=>logosOn&&LOGO[a]?`<img class="lg" src="${LOGO[a].logo}" width="${s}" height="${s}" alt="${T[a].name}" loading="lazy" onerror="this.outerHTML=window.dbdMark('${a}',${s})">`:window.dbdMark(a,s);
+/* 1 scales */
+document.getElementById('sp').innerHTML=[['s1',4],['s2',8],['s3',14],['s4',22]].map(([n,v])=>`<div class="sp"><i style="height:${v*3}px"></i>${n} · ${v}px</div>`).join('');
+const TY=[['11px','Labels, table headers, notes','600 11px var(--display)','uppercase','.14em'],['12px','Table numbers, tile sub-lines','500 12px var(--mono)','',''],['13px','Read paragraphs, table names','500 13px var(--body)','',''],['15px','Body, hero bio','400 15px var(--body)','',''],['18px','Panel figures, chart headers','600 18px var(--mono)','',''],['28px','Tile values','800 28px var(--hero)','',''],['hero','Player name, page titles','800 54px/1 var(--hero)','uppercase','']];
+document.getElementById('ty').innerHTML=TY.map(([s,u,f,tt,ls])=>`<div class="r"><small>${s}</small><span style="font:${f};text-transform:${tt||'none'};letter-spacing:${ls||'normal'}">${s==='hero'?'Jefferson':u}</span></div>`).join('');
+/* 2 panel minis */
+const J=P.find(p=>p.short==='J.Jefferson'), sum=k=>J.weeks.reduce((a,w)=>a+(+w[k]||0),0);
+const mini=[['Targets',sum('targets'),'6.2 per game'],['Receptions',sum('receptions'),'74% catch rate'],['Yards',sum('receiving_yards'),'60.4 per game'],['TD',sum('receiving_tds'),'in 5 games']].map(x=>`<div><small>${x[0]}</small><b>${x[1]}</b><small>${x[2]}</small></div>`).join('');
+document.getElementById('m1').innerHTML=mini;document.getElementById('m2').innerHTML=mini;
+/* 3 tables */
+const gw={};G.forEach(g=>gw[g.week]=g);
+const res=w=>{const g=gw[w.week];return g?`${g.home?'vs':'at'} ${g.opp} ${g.pf>g.pa?'W':'L'} ${g.pf}-${g.pa}`:w.opponent_team;};
+const head='<tr><th>Wk</th><th>Opponent</th><th>Defense</th><th>Snap</th><th>Tgt</th><th>Rec</th><th>Yds</th><th>TD</th><th>EPA</th><th>Air</th><th>YAC</th><th>Tgt share</th></tr>';
+const body=J.weeks.map(w=>`<tr><td>${w.week}</td><td>${res(w)}</td><td>—</td><td>${J.snaps[w.week]??'-'}%</td><td>${w.targets}</td><td>${w.receptions}</td><td>${w.receiving_yards}</td><td>${w.receiving_tds||''}</td><td>${(w.receiving_epa>0?'+':'')+(+w.receiving_epa).toFixed(1)}</td><td>${w.receiving_air_yards}</td><td>${w.receiving_yards_after_catch}</td><td>${Math.round(w.target_share*100)}%</td></tr>`).join('');
+['t1','t2'].forEach(id=>document.getElementById(id).innerHTML=head+body);
+requestAnimationFrame(()=>{const a=document.getElementById('t1').scrollWidth,b=document.getElementById('t2').scrollWidth;document.getElementById('w1').innerHTML=`Content width <b>${a}px</b>. On a phone (341px of panel) this scrolls ${a-341}px sideways.`;document.getElementById('w2').innerHTML=`Content width <b>${b}px</b>, ${Math.round((1-b/a)*100)}% narrower. ${b<=700?'It fits a tablet panel; on a phone the tiered columns fold the rest.':''}`;});
+/* 4 phones */
+const photo=J.photo, bio=`Age 27 · 6'1" · 192 lb · LSU · Pick 22 overall (2020). Listed <b>WR1</b> on the 3WR 1TE depth chart. Snap share <b>77%</b> across 5 games.`;
+const pills=`<div style="margin-top:4px"><span class="pill" style="color:var(--good);border-color:var(--good)">No injury listing</span><span class="pill">WR1</span><span class="pill">Vikings players</span></div>`;
+document.getElementById('ph1').innerHTML=`<p class="k">2026 season · WR · #18 · 7th season</p><h1>Justin <em>Jefferson</em></h1><p class="bio">${bio}</p>${pills}<div class="old-photo"><img src="${photo}" alt=""></div><div class="stack"><div>${window.dbdPennant('MIN',34)}<span style="font:700 12px var(--display);letter-spacing:.14em;text-transform:uppercase;align-self:center;margin-left:8px">Vikings offense</span></div><div><span class="pill">77% of snaps</span></div><div><span class="btn">Share card</span></div><div><span class="btn dark">Compare</span></div></div>`;
+const drawPh2=()=>{document.getElementById('ph2').innerHTML=`<div class="new-top"><div><p class="k">2026 season · WR · #18 · 7th season</p><h1>Justin <em>Jefferson</em></h1></div><div class="new-photo" style="--team:${T.MIN.c1}"><img src="${photo}" alt=""></div></div><p class="bio">${bio}</p>${pills}<div class="teamrow"><span class="t">${mark('MIN',28)} Vikings offense</span><span class="pill" style="margin:0">77% of snaps</span></div><div class="btns"><span class="btn">Share card</span><span class="btn dark">Compare</span></div><div class="likes"><b>Players like him</b>Dallas Goedert · Germie Bernard · Wan'Dale Robinson</div><div class="tiles"><div><small>Targets</small><b>31</b><small>6.2 per game</small></div><div><small>Receptions</small><b>23</b><small>74% catch rate</small></div></div>`;};
+/* 5 logos */
+const GAMES=[['MIN','DET','27','20','Final'],['BUF','KC','24','31','Final'],['SF','SEA','Sun 4:25 PM','',''],['PHI','DAL','Sun 8:20 PM','','']];
+const drawLogos=()=>{document.getElementById('slate').innerHTML=GAMES.map(([a,h,x,y,st])=>`<div class="g">${mark(a,30)}<span>${T[a].nick} <small>at</small> ${T[h].nick}</span><span class="sc">${y?`${x}–${y} <small>${st}</small>`:`<small>${x}</small>`}</span></div>`).join('');
+ document.getElementById('ghdr').innerHTML=`<div class="tm">${mark('MIN',72)}Vikings</div><span class="at">at</span><div class="tm">${mark('DET',72)}Lions</div>`;
+ document.getElementById('pick').innerHTML=['MIN','GB','CHI','DET','KC','PHI','BUF','SF','DAL','BAL','CIN','LA'].map((a,i)=>`<span class="${i?'':'on'}">${mark(a,26)}</span>`).join('');drawPh2();};
+document.getElementById('lgon').onchange=e=>{logosOn=e.target.checked;drawLogos();};
+drawLogos();
+</script>
+</body>
+</html>

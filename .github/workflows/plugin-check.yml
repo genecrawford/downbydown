@@ -39,3 +39,16 @@ jobs:
         with:
           name: share-cards
           path: card-*.png
+      - name: Render pages for review (headshots and logos on, the theme's table rule on)
+        run: |
+          set -e
+          export DBD_HARNESS_MEDIA=1 DBD_HARNESS_HTML=pages DBD_HARNESS_LOGOS=1
+          php tools/view_harness.php data player 00-0036322
+          php tools/view_harness.php data player 00-0033293
+          php tools/view_harness.php data players
+          php tools/view_harness.php data hub
+          php tools/card_harness.php data 00-0036322 pages/card-logo.png
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pages
+          path: pages/

@@ -16,7 +16,7 @@ Usage:
   with at least one unplayed game, or the last week once everything is final.
 
 Writes:
-  teams.json      {ABBR: {name, nick, conf, div, c1, c2}}
+  teams.json      {ABBR: {name, nick, conf, div, c1, c2, logo, logo_sq}}  (logo = ESPN 500px PNG, logo_sq = nflverse squared)
   plays/{ABBR}.json  {season, team, byes, games:[...], keys:[...], plays:[[...]]}  (pid = ball handler's gsis_id; FTN flags when available)
   players/{ABBR}.json  roster rows for QB/RB/FB/WR/TE with weekly stat lines, snap share, PFR extras, injury line, depth slot, grades, fp (playstyle traits)
   players/index.json   one row per player league-wide for the Players index and search
@@ -72,7 +72,7 @@ teams = pd.read_csv(teams_path)
 active = set(sched.home_team) | set(sched.away_team)
 teams = teams[teams.team_abbr.isin(active)]
 T = {r.team_abbr: dict(name=r.team_name, nick=r.team_nick, conf=r.team_conf, div=r.team_division,
-                       c1=r.team_color, c2=r.team_color2) for r in teams.itertuples()}
+                       c1=r.team_color, c2=r.team_color2, logo=c(getattr(r, 'team_logo_espn', None)), logo_sq=c(str(getattr(r, 'team_logo_squared', '') or '').replace('https://github.com/nflverse/nflverse-pbp/raw/master/', 'https://raw.githubusercontent.com/nflverse/nflverse-pbp/master/')) or None) for r in teams.itertuples()}
 json.dump(T, open(f'{out}/teams.json', 'w'), separators=(',', ':'))
 
 

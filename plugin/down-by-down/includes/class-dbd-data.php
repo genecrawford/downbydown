@@ -88,6 +88,18 @@ class DBD_Data {
 	/* ---- player layer (1.2.0): players/index.json and players/{TEAM}.json */
 
 	/** Admin toggle: show NFL headshots (hotlinked from the URLs nflverse publishes). Off by default. */
+	/** Admin toggle: show NFL team logos (hotlinked from the URLs nflverse publishes). Off by default (SCOPE §28). */
+	public static function logos() {
+		return (bool) get_option( 'dbd_logos', false );
+	}
+
+	/** A team's logo URL when logos are on and the data carries one, else null. */
+	public static function logo( $abbr ) {
+		if ( ! self::logos() ) { return null; }
+		$u = self::team( $abbr )['logo'] ?? null;
+		return ( $u && preg_match( '#^https://[^"\'<>\s]+$#', $u ) ) ? $u : null;
+	}
+
 	public static function headshots() {
 		return (bool) get_option( 'dbd_headshots', false );
 	}

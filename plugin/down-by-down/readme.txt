@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.3.13
+Stable tag: 1.4.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,11 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.4.0 =
+* Design pass. The theme's table padding (Divi's inline 24px on every cell) no longer reaches inside the app: every plugin rule now sits one class above the theme, so tables are about half as wide as before at the same type. No text under 11px anywhere; uppercase labels on two letter-spacings instead of eleven; panel headers one height, a long label truncating with its full text on hover; reads and notes on the panel's 14px edge; a spacing scale (4, 8, 14, 22px) for panels and bands.
+* Phone hero: the headshot sits beside the name as a round cutout, the team block is one row, and Share card, Compare and Players like him wrap as one row.
+* Team logos: a new "Show NFL team logos" setting, off by default, beside the headshot one. When on, the real logos load over the drawn team tiles and pennants everywhere they appear, and the share card puts the team's logo in its corner; a logo that fails to load leaves the drawn mark. The nightly build adds the logo URLs to the team data, so run Sync now once after updating.
 
 = 1.3.13 =
 * Fix: player pages stopped after the trend panel on 1.3.9 through 1.3.12 for any graded player, hiding the game log, Who he's faced, Career and Intel bands behind a critical error. The Playstyle block reused the season-targets variable for its tags.
