@@ -594,3 +594,34 @@ Roadmap slice 2 (§16). Two or three players of one position group side by side.
 ### Not in this slice
 
 Comparing across seasons, comparing a player to a league average line in the log, and comparing defenses. Three players is the ceiling for the layout to hold at 1000 px.
+
+## 18. The connection: QB to receiver (scoped and mocked 2026-10-31, `mockup-v5/player.html`)
+
+Roadmap slice 3 (§16). One new panel on the player page, between the field map and the game log, that reads two ways depending on who the page is about. The mock runs on the real Vikings play file, where Murray and Wentz have both thrown this season, so both readings are live: Murray's page (`player.html?id=00-0035228`) and Hockenson's (`?id=00-0035229`).
+
+### What it is
+
+**On a quarterback's page: "The connection · who he throws to."**
+
+- **Table of receivers**, one row per player he has targeted, sorted by targets, every header sortable: receiver (color swatch, jersey tile, name linking to his page, position), targets, share of his throws (number plus an inline bar in the receiver's color), receptions, catch rate, yards, aDOT, YAC per reception, touchdowns, third-down targets with conversions, red-zone targets with touchdowns, EPA per target (green or red). An "All throws" footer row. Throws with no intended receiver (throwaways, batted balls) are counted in the takeaway line, not in the table.
+- **Takeaway line** in the takeaways voice, generated from the table: first read (most targets, with share, catch rate and EPA a throw), who draws the deep ball (highest aDOT among receivers with five or more targets), the most efficient pairing (best EPA a throw, five-plus targets), the third-down favorite (three or more third-down targets), and the no-receiver count.
+- **Where each receiver gets it.** The target field map with dots colored by receiver: the top six receivers get a fixed six-color palette, everyone else grey. Outcome moves to shape: filled dot is a catch, hollow is an incompletion, a red ring is an interception, a white ring a touchdown. Lane headers keep the completions and rate per third of the field. Under it, a chip per receiver with his target count; click a chip (or his table row) to isolate his targets on the map, in the weekly stack and in the table; click again to clear.
+- **How he spreads it, week by week.** One stacked column per league week, segments in receiver colors, height is targets, total on top; a bye is a dashed baseline and weeks not yet played are blank. Hover a segment for that receiver's week: targets, catches, yards, EPA.
+- **By depth.** A grid of receivers (top six plus "others") by depth band (behind the line, short, medium, deep): targets in the cell with catch rate underneath, shaded by target count.
+
+**On every other player's page: "The connection · his line by passer."**
+
+- **Table of passers**, one row per quarterback who has targeted him: passer (swatch, tile, name), targets, share of that passer's throws that went to him, receptions, catch rate, yards, aDOT, YAC per reception, touchdowns, EPA per target, passer rating when targeting him. Under each passer a muted **"to everyone else"** row with the same columns for that passer's other throws, so the chemistry reads as a delta on the same line.
+- **Takeaway line**: each passer to him versus to everyone else (catch rate and EPA a target), and his share of each passer's throws when there are two.
+- **Who threw it where**: his target map with dots colored by passer, same shapes and chips as the QB side. **Targets by week, by passer**: the stacked columns, which is where a quarterback change shows up. **By depth** by passer.
+- A player with no targets this season (a back who has only carried) does not get the panel.
+
+Colors are a fixed palette of six (blue, gold, red, green, violet, orange) plus grey, assigned by target rank, never team colors, so the swatch in the table, the dot on the field, the segment in the stack and the chip all agree. Takeaway thresholds (five targets, three third-down targets) are constants in one place.
+
+### Data and rendering
+
+- Nothing new from the build. Every number comes from the play rows already shipped: `qb` is the passer, `pid` the targeted receiver on `comp`, `inc` and `int` plays; sacks and scrambles are excluded. Names, numbers, positions and the link come from the team player file, with the row's `pl` short name as the fallback for a receiver who is not in it.
+- Rendered by `player.js` from the play file it already fetches for the field map, so the panel costs no extra request; PHP emits the panel shell with a skeleton. A player with games on two teams uses the same per-team files the map already pulls.
+- Passer rating when targeted is the standard formula over the targets in question (completions, yards, touchdowns, interceptions per target). Catch rate is receptions over targets. aDOT averages only plays with an air-yards value.
+- Tooltips use the shared `[data-tip]` rich tooltip; the table uses the generic `dbd-sortable` sorter with a numeric read of each cell.
+- Reduced motion: the isolate toggle swaps opacity with no transition.

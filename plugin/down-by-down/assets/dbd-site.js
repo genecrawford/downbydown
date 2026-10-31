@@ -26,7 +26,7 @@
     var rows = Array.prototype.filter.call(table.rows, function (r) { return r !== hdr && !r.querySelector('th') && !(r.parentNode && r.parentNode.tagName === 'TFOOT'); });
     var blank = function (t) { return t === '' || t === '-' || t === '\u2013'; };
     var num = function (t) { t = t.replace(/[%,]/g, '').replace(/\u2212/g, '-').trim(); return /^[-+]?\d+(\.\d+)?$/.test(t) ? parseFloat(t) : null; };  /* whole cell must be a number */
-    var cell = function (r) { var c = r.children[idx]; if (!c) return ''; var a = c.querySelector('a'); return (a ? a.textContent : c.textContent).trim(); };  /* a name link wins over the jersey number inside its svg */
+    var cell = function (r) { var c = r.children[idx]; if (!c) return ''; if (c.getAttribute('data-v') != null) return c.getAttribute('data-v'); var a = c.querySelector('a'); return (a ? a.textContent : c.textContent).trim(); };  /* a name link wins over the jersey number inside its svg */
     var vals = rows.map(cell).filter(function (t) { return !blank(t); });
     var numeric = vals.length > 0 && vals.every(function (t) { return num(t) !== null; });
     var cur = th.getAttribute('aria-sort'), dir = cur === 'descending' ? 1 : cur === 'ascending' ? -1 : (numeric ? -1 : 1);

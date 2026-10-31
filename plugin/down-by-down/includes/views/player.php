@@ -87,6 +87,12 @@ echo '<section class="dbd-panel" id="dbd-pmap-panel"><div class="dbd-ph"><span c
 echo '<div class="dbd-sprays"><div><h4 id="dbd-map1h">On the field</h4><div id="dbd-pmap"><div class="dbd-skel"><span class="dbd-note">Loading every snap…</span></div></div></div><div><h4>By depth of target</h4><div class="dbd-bands" id="dbd-bands"></div><p class="dbd-note" id="dbd-bandnote" style="padding:8px 0 0"></p></div></div>';
 echo '<div class="dbd-legend" id="dbd-pleg"></div><p class="dbd-note" id="dbd-mapnote"></p></section>';
 
+/* ---- the connection (JS, SCOPE §18): a quarterback's receivers, or everyone else's line by passer. Hidden until player.js finds targets. */
+echo '<section class="dbd-panel dbd-cx" id="dbd-cx" hidden><div class="dbd-ph"><span class="dbd-lab"><b>The connection</b> · ' . ( $grp === 'qb' ? 'who he throws to' : 'his line by passer' ) . '</span><span class="dbd-badge" id="dbd-cx-n"></span></div>';
+echo '<div class="dbd-tw"><table class="dbd-cx-tab' . ( $grp === 'qb' ? ' dbd-sortable' : '' ) . '" id="dbd-cx-tab"></table></div><p class="dbd-cx-say" id="dbd-cx-say"></p>';
+echo '<div class="dbd-cx-2"><div><h4 id="dbd-cx-maph"></h4><div id="dbd-cx-map"></div><div class="dbd-cx-chips" id="dbd-cx-chips" role="group" aria-label="Isolate one ' . ( $grp === 'qb' ? 'receiver' : 'passer' ) . '"></div><p class="dbd-note" id="dbd-cx-mapnote" style="padding:8px 0 0"></p></div>';
+echo '<div><h4 id="dbd-cx-wkh"></h4><div class="dbd-cx-wks" id="dbd-cx-wks"></div><div class="dbd-cx-wkl" id="dbd-cx-wkl"></div><h4>By depth</h4><div class="dbd-cx-dg" id="dbd-cx-dg"></div></div></div></section>';
+
 /* ---- game log (PHP): Default, Advanced and Traditional tables; player.js switches which one shows */
 $res = function ( $wk, $tm = null ) use ( $a ) { $tm = $tm ?: $a; $g = DBD_Data::team_game( $tm, $wk ); if ( ! $g ) { return ''; } $home = $g['home'] === $tm; $opp = $home ? $g['away'] : $g['home']; $pf = $home ? $g['home_score'] : $g['away_score']; $pa = $home ? $g['away_score'] : $g['home_score'];
 	if ( $pf === null ) { return ( $home ? 'vs ' : 'at ' ) . $opp; }

@@ -9,8 +9,8 @@
 <link rel="stylesheet" href="transitions.css">
 <script src="data/teams.js"></script>
 <script src="data/marks.js"></script>
-<script src="data/MIN.js"></script>
-<script src="data/players-MIN.js"></script>
+<script src="data/MIN.js?v=3"></script>
+<script src="data/players-MIN.js?v=3"></script>
 <script src="data/league-pct.js"></script>
 <style>
 .pmark{display:grid;place-items:center;width:58px;height:58px;border-radius:6px;background:var(--team);color:var(--team2);font:800 24px var(--hero);flex:0 0 auto;box-shadow:inset 0 0 0 2px rgba(255,255,255,.55),0 0 0 1px var(--line-2)}
@@ -57,6 +57,43 @@
 .sstat td.rk b{color:var(--ink);font-weight:600} .sstat tr.top td.rk b{color:var(--good)}
 .glog .seg{margin-left:auto}
 .glog-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+
+/* the connection */
+.conn .tw{padding:0 14px 6px}
+.conn table{width:100%;border-collapse:collapse}
+.conn th{font:700 10px var(--display);text-transform:uppercase;letter-spacing:.12em;color:var(--muted);text-align:right;padding:6px 5px;border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none}
+.conn th:first-child{text-align:left} .conn th[aria-sort]{color:var(--ink)} .conn th[aria-sort]::after{content:" ▾";font-size:9px} .conn th[aria-sort="ascending"]::after{content:" ▴"}
+.conn td{padding:6px 5px;border-top:1px solid var(--line);text-align:right;font:500 12px var(--mono);white-space:nowrap}
+.conn td.nm{text-align:left;font:500 13px var(--body);display:flex;align-items:center;gap:8px} .conn td.nm a{color:var(--ink);text-decoration:none} .conn td.nm a:hover{text-decoration:underline;text-underline-offset:3px}
+.conn td.nm small{font:500 10px var(--mono);color:var(--muted)}
+.conn td small{font-size:9px;color:var(--muted)}
+.conn .sw{width:10px;height:10px;border-radius:2px;flex:0 0 auto;background:var(--c)}
+.conn td.sh{min-width:110px} .conn .shb{display:inline-block;vertical-align:middle;width:64px;height:8px;border-radius:4px;background:var(--line);margin-left:6px;position:relative;overflow:hidden} .conn .shb i{position:absolute;inset:0 auto 0 0;width:var(--w);background:var(--c)}
+.conn tr.oth td{color:var(--muted);font-size:11px;border-top:0;padding-top:0} .conn tr.oth td.nm{font:500 11px var(--mono);color:var(--muted);padding-left:34px}
+.conn tr.on td{background:rgba(22,30,54,.05)}
+.conn .say{margin:0;padding:8px 14px 12px;font:500 13px/1.55 var(--body);color:var(--ink)} .conn .say b{font-weight:600}
+.conn2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;padding:4px 14px 14px;border-top:1px solid var(--line)}
+@media (max-width:1100px){.conn2{grid-template-columns:minmax(0,1fr)}}
+.conn2 h4{margin:12px 0 8px;font:700 11px var(--display);text-transform:uppercase;letter-spacing:.16em;color:var(--ink-2)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chips button{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border:1px solid var(--line-2);border-radius:999px;background:var(--panel);font:500 11px var(--mono);color:var(--ink);cursor:pointer}
+.chips button i{width:9px;height:9px;border-radius:50%;background:var(--c)} .chips button small{color:var(--muted)}
+.chips .oth{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border:1px solid var(--line-2);border-radius:999px;font:500 11px var(--mono);color:var(--muted)} .chips .oth i{width:9px;height:9px;border-radius:50%;background:var(--c)}
+.chips button[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)} .chips button[aria-pressed="true"] small{color:rgba(255,255,255,.7)}
+.chips.dim button:not([aria-pressed="true"]){opacity:.5}
+.wks{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px;align-items:end;height:170px;padding:0 2px}
+.wks .col{display:flex;flex-direction:column-reverse;height:100%;position:relative}
+.wks .col i{display:block;background:var(--c);height:var(--h);min-height:1px;border-top:1px solid var(--panel)} .wks .col i.oth{background:#9a96a6}
+.wks .col i.dim{opacity:.2}
+.wks .col b{position:absolute;top:calc(100% - var(--t) - 16px);left:0;right:0;text-align:center;font:600 10px var(--mono);color:var(--ink-2)}
+.wks .col.bye{border-bottom:2px dashed var(--line-2)}
+.wkl{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px;padding:4px 2px 0;font:500 10px var(--mono);color:var(--muted);text-align:center}
+.dgrid{display:grid;grid-template-columns:minmax(90px,auto) repeat(4,minmax(0,1fr));gap:3px;font:500 11px var(--mono)}
+.dgrid .h{font:700 9px var(--display);text-transform:uppercase;letter-spacing:.1em;color:var(--muted);text-align:center;padding:2px 0 4px}
+.dgrid .r{display:flex;align-items:center;gap:6px;font:500 12px var(--body);color:var(--ink);padding-right:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dgrid .c{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:36px;border-radius:3px;background:rgba(22,30,54,calc(.04 + var(--a) * .5));color:var(--ink)}
+.dgrid .c b{font:600 13px var(--mono)} .dgrid .c small{font:500 9px var(--mono);color:var(--ink-2)} .dgrid .c.z{background:var(--bg);color:var(--muted)}
+.dgrid .c.hot{color:#fff} .dgrid .c.hot small{color:rgba(255,255,255,.75)}
 </style>
 </head>
 <body>
@@ -86,6 +123,12 @@
           <section class="panel"><div class="ph"><span class="lab"><b id="maplab">Where the ball finds him</b> · every target, by depth and side</span><span class="badge" id="mapn"></span></div>
             <div class="sprays"><div><h4 id="map1h">Targets on the field</h4><div id="map"></div></div><div><h4>By depth of target</h4><div class="bands" id="bands" style="padding:0"></div><h4 style="margin-top:14px">Catch rate by depth</h4><p class="note" style="padding:0" id="bandnote"></p></div></div>
             <div class="legend" id="leg"></div><p class="note" id="mapnote"></p></section>
+
+          <section class="panel conn" id="connsec"><div class="ph"><span class="lab"><b id="connlab">The connection</b> · <span id="connsub"></span></span><span class="badge" id="connn"></span></div>
+            <div class="tw"><table id="conntab"></table></div><p class="say" id="connsay"></p>
+            <div class="conn2"><div><h4 id="cmaph">Where each receiver gets it</h4><div id="cmap"></div><div class="chips" id="cchips"></div><p class="note" style="padding:8px 0 0" id="cmapnote"></p></div>
+              <div><h4 id="cwkh">How he spreads it, week by week</h4><div class="wks" id="cwks"></div><div class="wkl" id="cwkl"></div><h4 id="cdgh">By depth</h4><div class="dgrid" id="cdg"></div></div></div>
+          </section>
 
           <section class="panel"><div class="ph glog-h"><span class="lab"><b>Game log</b> · week by week</span><div class="seg" id="gview"></div></div><div class="tw" style="padding:0 14px 8px"><table class="glog" id="glog"></table></div></section>
 
@@ -237,6 +280,95 @@ document.getElementById('best').innerHTML=bestSet.map(q=>{const g=gIdx[q.g]||{};
 /* teammates */
 const mates=PL.filter(x=>x.id!==p.id&&x.weeks.length).map(x=>{const s=k=>x.weeks.reduce((a,w)=>a+(+w[k]||0),0);return{x,tc:s('targets')+s('carries'),y:s('receiving_yards')+s('rushing_yards'),td:s('receiving_tds')+s('rushing_tds'),e:s('receiving_epa')+s('rushing_epa')};}).filter(m=>m.tc>0).sort((a,b)=>b.tc-a.tc).slice(0,8);
 document.getElementById('mates').innerHTML='<tr><th>Player</th><th>Touches</th><th>Yds</th><th>TD</th><th>EPA</th></tr>'+mates.map(m=>`<tr class="clk" onclick="location.href='player.html?id=${m.x.id}'"><td class="nm"><span class="pmark sm">${m.x.num}</span><a href="player.html?id=${m.x.id}">${m.x.name}</a> <small style="font:500 10px var(--mono);color:var(--muted)">${m.x.pos}</small></td><td>${m.tc}</td><td>${Math.round(m.y)}</td><td>${m.td||''}</td><td class="${m.e>=0?'pos':'neg'}">${sgn(m.e,1)}</td></tr>`).join('');
+
+/* ---- the connection: QB page = who he throws to; everyone else = his line by passer */
+(function(){
+const RCOL=['#5b9cf6','#f0b429','#e0564b','#4fd18b','#c77dff','#ff9f43'],OTH='#9a96a6',isQB=grp==='qb',byId={};PL.forEach(x=>byId[x.id]=x);
+const throws=P.filter(q=>q.pt==='pass'&&['comp','inc','int'].includes(q.k)&&q.dn!=null);/* two-point tries are not targets */
+const rtd=q=>q.k==='comp'&&!!q.td&&!/FUMBLE/i.test(q.desc||'');/* a catch-and-fumble returned for a score is not a receiving TD */
+const mineT=isQB?throws.filter(q=>q.qb===p.id):throws.filter(q=>q.pid===p.id);
+const sec=document.getElementById('connsec'); if(!mineT.length){sec.remove();return;}
+const key=isQB?'pid':'qb';
+const line=a=>{const n=a.length,c=a.filter(q=>q.k==='comp'),y=c.reduce((s,q)=>s+(q.yds||0),0),air=a.filter(q=>q.air!=null),ad=air.length?air.reduce((s,q)=>s+q.air,0)/air.length:null,yac=c.reduce((s,q)=>s+(q.yac||0),0),td=a.filter(rtd).length,fd=a.filter(q=>q.fd).length,ints=a.filter(q=>q.k==='int').length,e=a.reduce((s,q)=>s+(q.epa||0),0),third=a.filter(q=>q.dn==3),rz=a.filter(q=>q.yl<=20);return{n,c:c.length,y,ad,yac,td,fd,ints,e,third:third.length,thirdc:third.filter(q=>q.fd||q.td).length,rz:rz.length,rzt:rz.filter(rtd).length};};
+const prate=l=>{if(!l.n)return'-';const a=Math.max(0,Math.min(2.375,(l.c/l.n-.3)*5)),b=Math.max(0,Math.min(2.375,(l.y/l.n-3)*.25)),c=Math.max(0,Math.min(2.375,l.td/l.n*20)),d=Math.max(0,Math.min(2.375,2.375-l.ints/l.n*25));return f1((a+b+c+d)/6*100);};
+const groups={};mineT.forEach(q=>{const k=q[key]||'_none';(groups[k]=groups[k]||[]).push(q);});
+const parts=Object.keys(groups).filter(k=>k!=='_none').map(k=>({id:k,x:byId[k],nm:(byId[k]||{}).name||groups[k][0].pl,short:(byId[k]||{}).short||groups[k][0].pl,pos:(byId[k]||{}).pos||'',num:(byId[k]||{}).num||'',l:line(groups[k]),q:groups[k]})).sort((a,b)=>b.l.n-a.l.n);
+if(!parts.length){sec.remove();return;}
+parts.forEach((r,i)=>{r.col=i<RCOL.length?RCOL[i]:OTH;r.oth=isQB?null:line(throws.filter(q=>q.qb===r.id&&q.pid!==p.id));r.share=isQB?r.l.n/mineT.length:r.l.n/throws.filter(q=>q.qb===r.id).length;});
+const none=(groups._none||[]).length, colOf={};parts.forEach(r=>colOf[r.id]=r.col);
+const who=isQB?'receiver':'passer', whos=isQB?'receivers':'passers';
+document.getElementById('connsub').textContent=isQB?'who he throws to':'his line by passer';
+document.getElementById('connn').textContent=`${mineT.length} ${isQB?'throws':'targets'} · ${parts.length} ${parts.length===1?who:whos}`;
+document.getElementById('cmaph').textContent=isQB?'Where each receiver gets it':'Who threw it where';
+document.getElementById('cwkh').textContent=isQB?'How he spreads it, week by week':'Targets by week, by passer';
+/* table */
+const COLS=isQB?[['nm','Receiver'],['n','Tgt'],['share','Share'],['c','Rec'],['catch','Catch'],['y','Yds'],['ad','aDOT'],['yacr','YAC/rec'],['td','TD'],['third','3rd dn'],['rz','RZ'],['epat','EPA/tgt']]
+                 :[['nm','Passer'],['n','Tgt'],['share','Of his throws'],['c','Rec'],['catch','Catch'],['y','Yds'],['ad','aDOT'],['yacr','YAC/rec'],['td','TD'],['epat','EPA/tgt'],['rate','Rating']];
+const val=(r,k)=>{const l=r.l;switch(k){case'nm':return r.nm;case'catch':return l.c/l.n;case'yacr':return l.c?l.yac/l.c:0;case'epat':return l.e/l.n;case'rate':return +prate(l);case'share':return r.share;default:return l[k];}};
+const cell=(r,k)=>{const l=r.l;switch(k){
+ case'nm':return`<td class="nm"><i class="sw" style="--c:${r.col}"></i><span class="pmark sm">${r.num}</span><a href="player.html?id=${r.id}">${r.nm}</a><small>${r.pos}</small></td>`;
+ case'share':return`<td class="sh">${pct(r.share)}<span class="shb" style="--c:${r.col}"><i style="--w:${Math.round(r.share*100)}%"></i></span></td>`;
+ case'catch':return`<td>${pct(l.c/l.n)}</td>`;case'ad':return`<td>${l.ad==null?'-':f1(l.ad)}</td>`;case'yacr':return`<td>${l.c?f1(l.yac/l.c):'-'}</td>`;
+ case'td':case'fd':return`<td>${l[k]||''}</td>`;case'third':return`<td>${l.third?`${l.third} <small style="color:var(--muted)">· ${l.thirdc} conv</small>`:''}</td>`;case'rz':return`<td>${l.rz?`${l.rz} <small style="color:var(--muted)">· ${l.rzt} TD</small>`:''}</td>`;
+ case'epat':{const v=l.e/l.n;return`<td class="${v>=0?'pos':'neg'}">${sgn(v)}</td>`;}case'rate':return`<td>${prate(l)}</td>`;default:return`<td>${l[k]}</td>`;}};
+let sk='n',sd=-1;
+function drawTab(){const rows=parts.slice().sort((a,b)=>{const x=val(a,sk),y=val(b,sk);return(typeof x==='string'?x.localeCompare(y):(x-y))*sd;});
+ let h='<tr>'+COLS.map(c=>`<th data-k="${c[0]}" ${c[0]===sk?`aria-sort="${sd<0?'descending':'ascending'}"`:''}>${c[1]}</th>`).join('')+'</tr>';
+ rows.forEach(r=>{h+=`<tr data-id="${r.id}" class="${iso===r.id?'on':''}">${COLS.map(c=>cell(r,c[0])).join('')}</tr>`;
+  if(r.oth&&r.oth.n)h+=`<tr class="oth"><td class="nm">to everyone else</td><td>${r.oth.n}</td><td></td><td>${r.oth.c}</td><td>${pct(r.oth.c/r.oth.n)}</td><td>${r.oth.y}</td><td>${r.oth.ad==null?'-':f1(r.oth.ad)}</td><td>${r.oth.c?f1(r.oth.yac/r.oth.c):'-'}</td><td>${r.oth.td||''}</td><td class="${r.oth.e>=0?'pos':'neg'}">${sgn(r.oth.e/r.oth.n)}</td><td>${prate(r.oth)}</td></tr>`;});
+ if(isQB){const all=line(mineT);h+=`<tr style="font-weight:600"><td class="nm" style="padding-left:34px">All throws</td><td>${all.n}</td><td class="sh"></td><td>${all.c}</td><td>${pct(all.c/all.n)}</td><td>${all.y}</td><td>${f1(all.ad)}</td><td>${f1(all.yac/all.c)}</td><td>${all.td}</td><td>${all.third}</td><td>${all.rz}</td><td class="${all.e>=0?'pos':'neg'}">${sgn(all.e/all.n)}</td></tr>`;}
+ document.getElementById('conntab').innerHTML=h;}
+document.getElementById('conntab').addEventListener('click',e=>{const th=e.target.closest('th');if(th){const k=th.dataset.k;if(k===sk)sd=-sd;else{sk=k;sd=k==='nm'?1:-1;}drawTab();return;}const tr=e.target.closest('tr[data-id]');if(tr&&!e.target.closest('a')){setIso(iso===tr.dataset.id?null:tr.dataset.id);}});
+/* the say line */
+const q5=parts.filter(r=>r.l.n>=5), top=parts[0], deep=q5.slice().sort((a,b)=>(b.l.ad||0)-(a.l.ad||0))[0], best=q5.slice().sort((a,b)=>b.l.e/b.l.n-a.l.e/a.l.n)[0], third=parts.slice().sort((a,b)=>b.l.third-a.l.third)[0];
+let say;
+if(isQB){say=`<b>${top.short}</b> is the first read: ${top.l.n} of ${mineT.length} throws (${pct(top.share)}), ${pct(top.l.c/top.l.n)} caught, ${sgn(top.l.e/top.l.n)} EPA a throw.`;
+ if(deep&&deep!==top)say+=` <b>${deep.short}</b> draws the deep ball, ${f1(deep.l.ad)} air yards a target.`;
+ if(best&&best!==top)say+=` The most efficient pairing is <b>${best.short}</b> at ${sgn(best.l.e/best.l.n)} a throw on ${best.l.n} targets.`;
+ if(third&&third.l.third>=3)say+=` On third down he looks for <b>${third.short}</b> (${third.l.third} targets, ${third.l.thirdc} converted).`;
+ if(none)say+=` ${none} throw${none>1?'s':''} had no intended receiver.`;}
+else{say=parts.map(r=>`<b>${r.short}</b> to him: ${r.l.n} targets, ${pct(r.l.c/r.l.n)} caught, ${sgn(r.l.e/r.l.n)} EPA a target${r.oth&&r.oth.n?`; to everyone else ${pct(r.oth.c/r.oth.n)} and ${sgn(r.oth.e/r.oth.n)}`:''}.`).join(' ');
+ if(parts.length>1)say+=` He is ${pct(parts[0].share)} of ${parts[0].short}'s throws and ${pct(parts[1].share)} of ${parts[1].short}'s.`;}
+document.getElementById('connsay').innerHTML=say;
+/* field map colored by receiver or passer */
+let iso=null;
+function cmap(Dp){
+  const Wd=360,H=420,Tp=40,B=30,Lf=34,R=10,airs=Dp.map(q=>q.air);
+  const minA=Math.min(-10,Math.floor(Math.min(...airs,0)/5)*5),maxA=Math.max(40,...airs);
+  const y=a=>Tp+(maxA-a)/(maxA-minA)*(H-Tp-B),lw=(Wd-Lf-R)/3,lanes={left:0,middle:1,right:2};
+  let g=`<svg viewBox="0 0 ${Wd} ${H}" width="100%" style="display:block;background:#2c4a35;border-radius:4px" role="img" aria-label="Target map by ${who}">`;
+  for(let a=-10;a<=maxA;a+=10)g+=`<line x1="${Lf}" x2="${Wd-R}" y1="${y(a)}" y2="${y(a)}" stroke="${FL}" stroke-width="${a===0?2:1}"/><text x="${Lf-6}" y="${y(a)+4}" fill="${FI}" font-size="10" text-anchor="end">${a}</text>`;
+  g+=`<text x="${Lf-6}" y="${Tp-24}" fill="${FI}" font-size="10" text-anchor="end">air yds</text>`;
+  ['Left','Middle','Right'].forEach((n,i)=>{g+=`<text x="${Lf+lw*i+lw/2}" y="${H-10}" fill="${FI}" font-size="11" text-anchor="middle">${n}</text>`;if(i)g+=`<line x1="${Lf+lw*i}" x2="${Lf+lw*i}" y1="${Tp}" y2="${H-B}" stroke="${FL}" stroke-dasharray="2 4"/>`;});
+  const shown=iso?Dp.filter(q=>(q[key]||'_none')===iso):Dp, byLane={left:[],middle:[],right:[]};
+  Dp.slice().sort((a,b)=>((a[key]===iso)-(b[key]===iso))).forEach(q=>{const li=lanes[q.loc]??1;if(!iso||(q[key]||'_none')===iso)(byLane[q.loc]||byLane.middle).push(q);const cx=Lf+lw*li+lw*(.12+.76*hash(q.i+1)),cy=y(q.air),c=colOf[q[key]]||OTH,on=!iso||(q[key]||'_none')===iso,r=q.td?7:5.5;
+   const nm=(byId[q[key]]||{}).short||q.pl||'no target';
+   if(q.k==='comp')g+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${c}" fill-opacity="${on?.92:.12}" stroke="${q.td?'#fff':'rgba(0,0,0,.35)'}" stroke-width="${q.td?2:1}" stroke-opacity="${on?1:.1}"><title>${nm} · Wk ${gIdx[q.g]?.week} ${gIdx[q.g]?.opp}: ${q.desc}</title></circle>`;
+   else g+=`<circle cx="${cx}" cy="${cy}" r="${r-1}" fill="none" stroke="${q.k==='int'?COL.bad:c}" stroke-width="2" stroke-opacity="${on?.95:.12}"><title>${nm} · Wk ${gIdx[q.g]?.week} ${gIdx[q.g]?.opp}: ${q.desc}</title></circle>`;});
+  Object.keys(byLane).forEach(k=>{const arr=byLane[k];if(!arr.length)return;const c=arr.filter(q=>q.k==='comp').length;g+=`<text x="${Lf+lw*lanes[k]+lw/2}" y="${Tp-24}" fill="#fff" font-size="11" font-weight="600" text-anchor="middle">${c}/${arr.length} · ${Math.round(c/arr.length*100)}%</text>`;});
+  return g+'</svg>';
+}
+const mapSet2=mineT.filter(q=>q.air!=null);
+function drawMap(){document.getElementById('cmap').innerHTML=cmap(mapSet2);}
+const chipsEl=document.getElementById('cchips');
+chipsEl.innerHTML=parts.slice(0,RCOL.length).map(r=>`<button type="button" data-id="${r.id}" aria-pressed="false" style="--c:${r.col}"><i></i>${r.short}<small>${r.l.n}</small></button>`).join('')+(parts.length>RCOL.length?`<span class="oth" style="--c:${OTH}"><i></i>${parts.length-RCOL.length} others<small>${parts.slice(RCOL.length).reduce((s,r)=>s+r.l.n,0)}</small></span>`:'');
+function setIso(id){iso=id;chipsEl.classList.toggle('dim',!!iso);chipsEl.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.id===iso));drawMap();drawTab();drawWks();}
+chipsEl.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;setIso(iso===b.dataset.id?null:b.dataset.id);});
+document.getElementById('cmapnote').textContent=`Filled dots are catches, hollow are incompletions, a red ring is an interception, a white ring a touchdown. Click a ${who} to isolate his targets; click again to clear.`;
+/* weekly stacks */
+const weeks=[];for(let w=1;w<=D.through;w++)weeks.push(w);
+const gw={};G.forEach(g=>gw[g.week]=g);
+function drawWks(){const withR=mineT.filter(q=>q[key]);const tot=weeks.map(w=>withR.filter(q=>gIdx[q.g]?.week===w).length),mx=Math.max(1,...tot);
+ document.getElementById('cwks').innerHTML=weeks.map((w,i)=>{const g=gw[w];if(!g)return`<div class="col ${(RAW.byes||[]).includes(w)?'bye':''}" title="Week ${w}${(RAW.byes||[]).includes(w)?': bye':''}"></div>`;const T=tot[i];
+  return`<div class="col"><b style="--t:${T/mx*100}%">${T||''}</b>`+parts.map(r=>{const a=r.q.filter(q=>q.g===g.id);if(!a.length)return'';const l=line(a);return`<i class="${iso&&iso!==r.id?'dim':''} ${r.col===OTH?'oth':''}" style="--c:${r.col};--h:${a.length/mx*100}%" title="Wk ${w} ${g.home?'vs':'at'} ${g.opp} · ${r.short}: ${l.n} tgt · ${l.c} rec · ${l.y} yds · ${sgn(l.e,1)} EPA"></i>`;}).join('')+'</div>';}).join('');
+ document.getElementById('cwkl').innerHTML=weeks.map(w=>`<span>${gw[w]?`${w}<br><small style="color:var(--line-2)">${gw[w].opp}</small>`:w+'<br><small>'+((RAW.byes||[]).includes(w)?'bye':'')+'</small>'}</span>`).join('');}
+/* depth grid */
+const bands=[['Behind',q=>q.air<0],['Short',q=>q.air>=0&&q.air<10],['Medium',q=>q.air>=10&&q.air<20],['Deep',q=>q.air>=20]];
+const rows=parts.slice(0,6);if(parts.length>6)rows.push({short:`${parts.length-6} others`,col:OTH,q:parts.slice(6).flatMap(r=>r.q)});
+const cells=rows.map(r=>bands.map(b=>r.q.filter(q=>q.air!=null).filter(b[1]))),mxc=Math.max(1,...cells.flat().map(a=>a.length));
+document.getElementById('cdg').innerHTML='<div></div>'+bands.map(b=>`<div class="h">${b[0]}</div>`).join('')+rows.map((r,i)=>`<div class="r"><i class="sw" style="--c:${r.col}"></i>${r.short}</div>`+cells[i].map(a=>{const n=a.length,c=a.filter(q=>q.k==='comp').length,al=n/mxc;return n?`<div class="c ${al>.6?'hot':''}" style="--a:${al}" title="${r.short}: ${n} targets, ${c} caught, ${a.reduce((s,q)=>s+(q.yds||0),0)} yds"><b>${n}</b><small>${Math.round(c/n*100)}%</small></div>`:`<div class="c z" style="--a:0">·</div>`;}).join('')).join('');
+drawTab();drawMap();drawWks();
+})();
 </script>
 </body>
 </html>
