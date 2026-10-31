@@ -354,16 +354,20 @@ def mover_rows():
             if mv_week not in played: continue
             played_n += 1
             prior = [w for w in played if w < mv_week]
-            base = dict(id=p['id'], name=p['name'], team=t, pos=p['pos'], num=p['num'], photo=p['photo'], g=len(prior))
+            wrow = wk.get(mv_week); tm_wk = (wrow or {}).get('team') or p['snapteam'].get(str(mv_week)) or t
+            opp = (wrow or {}).get('opponent_team') or next((g['away'] if g['home'] == tm_wk else g['home'] for g in weeks.get(str(mv_week), []) if tm_wk in (g['home'], g['away'])), None)
+            base = dict(id=p['id'], name=p['name'], team=t, pos=p['pos'], num=p['num'], photo=p['photo'], g=len(prior), opp=opp)
             def val(kind, w):
                 r = wk.get(w)
                 if kind == 'snaps': return sn.get(w)
                 if r is None: return 0.0
                 if kind == 'targets': return 100 * _num(r.get('target_share'))
-                return _num(r.get('receiving_epa')) + _num(r.get('rushing_epa')) + _num(r.get('passing_epa'))
+                if p['pos'] == 'QB': return _num(r.get('passing_epa'))
+                if p['pos'] in ('RB', 'FB'): return _num(r.get('rushing_epa')) + _num(r.get('receiving_epa'))
+                return _num(r.get('receiving_epa'))
             now_sn = sn.get(mv_week)
             if played[0] == mv_week and now_sn is not None and now_sn >= MV_DEBUT: rows.append(('face', dict(base, kind='debut', now=now_sn)))
-            elif prior and now_sn is not None and now_sn >= MV_START and max([sn.get(w) or 0 for w in prior]) < MV_PRIOR: rows.append(('face', dict(base, kind='first start', now=now_sn, before=max(sn.get(w) or 0 for w in prior))))
+            elif prior and now_sn is not None and now_sn >= MV_START and max([sn.get(w) or 0 for w in prior]) <= MV_PRIOR: rows.append(('face', dict(base, kind='first start', now=now_sn, before=max(sn.get(w) or 0 for w in prior))))
             if len(prior) < MV_MING: continue
             for k in MV_FLOOR:
                 if k == 'targets' and p['pos'] == 'QB': continue
