@@ -51,8 +51,8 @@
   root.addEventListener('mouseover', function (e) { var el = e.target.closest('[data-tip]'); if (!el) { if (tip.classList.contains('is-shown') && !e.target.closest('.dbd-play')) hideTip(); return; } showTip(el, e.clientX, e.clientY); });
   root.addEventListener('mousemove', function (e) { var el = e.target.closest('[data-tip]'); if (el && tip.classList.contains('is-shown')) { var w = tip.offsetWidth, h = tip.offsetHeight, top = e.clientY - h - 14; tip.style.left = Math.min(e.clientX + 14, innerWidth - w - 8) + 'px'; tip.style.top = (top < 8 ? e.clientY + 18 : top) + 'px'; } });
   root.addEventListener('mouseleave', hideTip);
-  root.addEventListener('focusin', function (e) { var el = e.target.closest('[data-tip]'); if (!el) return; var r = el.getBoundingClientRect(); showTip(el, r.left + r.width / 2, r.top); });
-  root.addEventListener('focusout', function (e) { if (e.target.closest('[data-tip]')) hideTip(); });
+  root.addEventListener('focusin', function (e) { var el = e.target.closest('[data-tip]'); if (!el) return; var r = el.getBoundingClientRect(); showTip(el, r.left + r.width / 2, r.top); el.setAttribute('aria-describedby', 'dbd-tt'); });
+  root.addEventListener('focusout', function (e) { var el = e.target.closest('[data-tip]'); if (el) { el.removeAttribute('aria-describedby'); hideTip(); } });
 
   /* whole rows are links */
   root.addEventListener('click', function (e) {
