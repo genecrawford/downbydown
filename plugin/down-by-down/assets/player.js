@@ -11,6 +11,15 @@
   var COL = { run: '#f0b429', pass: '#5b9cf6', inc: '#9a96a6', bad: '#e0564b', td: '#4fd18b' }, FL = 'rgba(255,255,255,.22)', FI = 'rgba(255,255,255,.75)';
   var grp = C.pos === 'QB' ? 'qb' : (C.pos === 'RB' || C.pos === 'FB') ? 'rb' : 'rec';
 
+  /* Compare button: build on whoever is already in the tray (the last compare page's players) */
+  var cb = root.querySelector('#dbd-cmp-btn');
+  if (cb) {
+    var tray = []; try { tray = JSON.parse(localStorage.getItem('dbd-cmp') || '[]'); } catch (e) {}
+    tray = tray.filter(function (x) { return x && x !== cb.dataset.id; }).slice(-2);
+    if (tray.length) { cb.href = cb.dataset.base + (cb.dataset.base.indexOf('?') >= 0 ? '&' : '?') + 'compare=' + encodeURIComponent(tray.concat([cb.dataset.id]).join(',')); cb.textContent = 'Compare with ' + tray.length + ' picked'; }
+    cb.addEventListener('click', function () { try { localStorage.setItem('dbd-cmp', JSON.stringify(tray.concat([cb.dataset.id]))); } catch (e) {} });
+  }
+
   /* game log views: PHP rendered all three tables; this shows one and slides the pill */
   var gv = root.querySelector('.dbd-gview');
   if (gv) {
