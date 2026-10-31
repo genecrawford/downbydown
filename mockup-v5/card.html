@@ -54,7 +54,7 @@ const f1=v=>isFinite(v)?(+v).toFixed(1):'-', pct=v=>isFinite(v)?Math.round(v*100
 const first=p.name.split(' ')[0], last=p.name.slice(first.length+1), t=T[TEAM];
 const tg=sum('targets'),rc=sum('receptions'),ry=sum('receiving_yards'),rtd=sum('receiving_tds'),ca=sum('carries'),ruy=sum('rushing_yards'),rutd=sum('rushing_tds'),att=sum('attempts'),cmp=sum('completions'),py=sum('passing_yards'),ptd=sum('passing_tds'),pint=sum('passing_interceptions');
 const tiles={rec:[['Targets',tg,f1(tg/gp)+' per game'],['Receptions',rc,pct(rc/tg)+' catch rate'],['Yards',ry,f1(ry/gp)+' per game'],['TD',rtd,'in '+gp+' games']],
- rb:[['Carries',ca,f1(ca/gp)+' per game'],['Rush yards',ruy,f1(ruy/ca)+' per carry'],['TD',rutd+rtd,'rushing + receiving'],['Receptions',rc,ry+' yards']],
+ rb:[['Carries',ca,f1(ca/gp)+' per game'],['Rush yards',ruy,f1(ruy/ca)+' per carry'],['TD',rutd+rtd,'rush + rec'],['Receptions',rc,ry+' yards']],
  qb:[['Attempts',att,pct(cmp/att)+' completed'],['Pass yards',py,f1(py/att)+' per attempt'],['TD',ptd,'in '+gp+' games'],['INT',pint,'']]}[grp];
 const DIST=LG.dist[grp], N=LG.n[grp], me=LG.players[grp].find(x=>x.id===p.id)||{}, low=LG.low[grp], q=p.grades&&p.grades.q;
 const pctile=(k,v)=>{const a=DIST[k]||[];if(v==null||!a.length)return null;let b=0,e=0;for(const x of a){if(x<v)b++;else if(x===v)e++;}let pc=(b+e/2)/a.length;if(low.includes(k))pc=1-pc;return Math.round(pc*100);};
