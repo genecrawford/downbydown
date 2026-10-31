@@ -173,7 +173,7 @@
     });
     [['LT', 84], ['LG', 141], ['C', 200], ['RG', 259], ['RT', 316]].forEach(function (l) { g += '<rect x="' + (l[1] - 17) + '" y="' + (LOS + 8) + '" width="34" height="30" rx="5" fill="#f4f1ea" stroke="rgba(0,0,0,.25)"/><text x="' + l[1] + '" y="' + (LOS + 28) + '" fill="#161e36" font-size="12" font-weight="800" font-family="Tourney,Arial Black,sans-serif" text-anchor="middle">' + l[0] + '</text>'; });
     g += '<circle cx="200" cy="' + (LOS + 104) + '" r="15" fill="' + (color || '#161e36') + '" stroke="#fff" stroke-width="2"/><text x="200" y="' + (LOS + 109) + '" fill="#fff" font-size="12" font-weight="800" font-family="Tourney,Arial Black,sans-serif" text-anchor="middle">' + esc(num == null ? 'RB' : num) + '</text>';
-    g += '<text x="14" y="' + (LOS + 56) + '" fill="' + FI + '" font-size="9">carries</text></svg>';
+    g += '</svg>';  /* the counts under the line are carries; the caption at the top says so */
     return g;
   }
 })();
