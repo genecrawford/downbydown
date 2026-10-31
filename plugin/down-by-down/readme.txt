@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.4.2
+Stable tag: 1.4.3
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,9 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.4.3 =
+* The team logo in the player hero sits in a bigger slot: 64px square instead of 64 by 40, so the logo draws at about 61px for most teams (49px in 1.4.2, 38px in 1.4.1), and the snap-share badge and buttons below move down to make room rather than being overlapped. 48px on phones.
 
 = 1.4.2 =
 * One panel edge everywhere, and a roomier one: every panel's label, reads, notes, legends, chart grids, headings and tables now sit 20px in from the panel's border on desktop and tablet (they were at 14 to 16px after 1.4.1), and 12px on phones (where tables sat at 10px and labels at 15px).
