@@ -295,8 +295,12 @@ for t, pl in team_players.items():
             npool[gr['grp']] += 1
             for k, v in gr['m'].items():
                 if v is not None: dist[gr['grp']].setdefault(k, []).append(v)
-            for w in p['weeks']:  # the pool's game weeks: the yardstick for a boom or a dud week
+            # the pool's game weeks, the yardstick for a boom or a dud: every week he played, a snaps-only week counting as zero
+            statwk = {int(w['week']) for w in p['weeks']}
+            for w in p['weeks']:
                 wkyds[gr['grp']].append(sum(_num(w.get(k)) for k in YDS[gr['grp']]))
+            for wk in p['snaps']:
+                if int(wk) not in statwk: wkyds[gr['grp']].append(0.0)
 for g in dist:
     for k in dist[g]: dist[g][k].sort()
 def quart(a):
