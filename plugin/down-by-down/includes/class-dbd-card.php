@@ -69,7 +69,13 @@ class DBD_Card {
 		$line = $mix( '#161e36', 0.14 ); $line2 = $mix( '#161e36', 0.30 );
 
 		/* brand bar */
-		if ( ! empty( $assets['logo'] ) && is_readable( $assets['logo'] ) ) { $lg = @imagecreatefrompng( $assets['logo'] ); if ( $lg ) { $lw = imagesx( $lg ); $lh = imagesy( $lg ); $th = 34 * $S; $twd = (int) round( $lw * $th / $lh ); imagecopyresampled( $im, $lg, 44 * $S, 15 * $S, 0, 0, $twd, $th, $lw, $lh ); imagedestroy( $lg ); } }
+		if ( ! empty( $assets['logo'] ) && is_readable( $assets['logo'] ) ) { $lg = @imagecreatefrompng( $assets['logo'] ); if ( $lg ) {
+			/* the logo PNG sits on white; resample it small, then key the white out onto the card's background: out = C - (min(C)/255) * (255 - bg) */
+			$lw = imagesx( $lg ); $lh = imagesy( $lg ); $th = 34 * $S; $twd = (int) round( $lw * $th / $lh ); $sm = imagecreatetruecolor( $twd, $th ); $white = imagecolorallocate( $sm, 255, 255, 255 ); imagefilledrectangle( $sm, 0, 0, $twd, $th, $white );
+			imagecopyresampled( $sm, $lg, 0, 0, 0, 0, $twd, $th, $lw, $lh ); imagedestroy( $lg ); list( $br, $bgc, $bb ) = $rgb( self::BG );
+			for ( $yy = 0; $yy < $th; $yy++ ) { for ( $xx = 0; $xx < $twd; $xx++ ) { $c = imagecolorat( $sm, $xx, $yy ); $r = ( $c >> 16 ) & 255; $g = ( $c >> 8 ) & 255; $b = $c & 255; $k = min( $r, $g, $b ) / 255;
+				imagesetpixel( $im, 44 * $S + $xx, 15 * $S + $yy, imagecolorallocate( $im, (int) round( $r - $k * ( 255 - $br ) ), (int) round( $g - $k * ( 255 - $bgc ) ), (int) round( $b - $k * ( 255 - $bb ) ) ) ); } }
+			imagedestroy( $sm ); } }
 		$spaced( $F['disp'], 16, 1156, 38, $ink2, strtoupper( $spec['season'] . ' season · through week ' . $spec['through'] ), 0.2, 'right' );
 		$rect( 0, 64, self::W, 6, $accent );
 
