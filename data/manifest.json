@@ -2,7 +2,7 @@
  "season": 2026,
  "week": 8,
  "through_week": 8,
- "built_at": "2026-10-31T02:04:25Z",
+ "built_at": "2026-10-31T02:40:33Z",
  "files": {
   "metrics.json": "058e9d6970894e7970ffb0c33453c00d252473c6",
   "schedule.json": "a4129c2b70d5659887a983b6227f2822c3f6da86",
@@ -40,7 +40,7 @@
   "players/TEN.json": "a664fc065852bd384f6905915ae6527b624f3385",
   "players/WAS.json": "c390c76756493ee789f4f7e9a65f8874e5a169ca",
   "players/index.json": "a25d3fc948c671dde8ae5416462cb8ea028bf78b",
-  "players/league.json": "36af3e177f4ba7b49cb2dcb6ba68e4a0304090cb",
+  "players/league.json": "d635d2f29a01870bfda40988a25adf4c1107b4a3",
   "plays/ARI.json": "2afa5c246e6a0dbaf05cedbd55ed8290a499c80b",
   "plays/ATL.json": "7e34160b5ce86107c376a3a9b7eee6ff5c87e237",
   "plays/BAL.json": "a7f397d6a661a74628a1c6663f0b356c7e91ec18",
