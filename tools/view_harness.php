@@ -12,7 +12,9 @@ $warnings = 0; set_error_handler( function ( $no, $str, $file, $line ) use ( &$w
 
 /* ---- a data folder laid out like uploads/down-by-down: a symlink to the repo's data dir */
 $tmp = sys_get_temp_dir() . '/dbd-harness'; if ( ! is_dir( $tmp ) ) { mkdir( $tmp ); } $link = $tmp . '/down-by-down';
-if ( ! is_dir( $link ) ) { symlink( realpath( $data ), $link ); }
+$want = realpath( $data ); if ( ! $want ) { fwrite( STDERR, "no data dir $data\n" ); exit( 2 ); }
+if ( is_link( $link ) && readlink( $link ) !== $want ) { unlink( $link ); }  /* a run on another checkout left its link behind */
+if ( ! file_exists( $link ) ) { symlink( $want, $link ); }
 
 /* ---- WordPress shim: only what the plugin touches while rendering */
 define( 'ABSPATH', __DIR__ . '/' ); define( 'DBD_VERSION', 'harness' ); define( 'DBD_PATH', realpath( __DIR__ . '/../plugin/down-by-down' ) . '/' ); define( 'DBD_URL', 'https://example.test/wp-content/plugins/down-by-down/' ); define( 'DBD_DEFAULT_SOURCE', '' ); define( 'DBD_FILE', DBD_PATH . 'down-by-down.php' );
