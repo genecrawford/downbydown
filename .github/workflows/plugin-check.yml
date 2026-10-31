@@ -24,6 +24,7 @@ jobs:
           php tools/card_harness.php data 00-0036322 card-wr.png
           php tools/card_harness.php data 00-0033293 card-rb.png
           php tools/card_harness.php data 00-0035228 card-qb.png
+          php tools/card_harness.php data 00-0036259 card-ungraded.png
       - uses: actions/upload-artifact@v4
         with:
           name: share-cards
