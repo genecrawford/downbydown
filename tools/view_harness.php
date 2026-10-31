@@ -11,7 +11,7 @@ error_reporting( E_ALL ); ini_set( 'display_errors', 'stderr' );
 $warnings = 0; set_error_handler( function ( $no, $str, $file, $line ) use ( &$warnings ) { $warnings++; fwrite( STDERR, "  warning: $str at " . basename( $file ) . ":$line\n" ); return true; } );
 
 /* ---- a data folder laid out like uploads/down-by-down: a symlink to the repo's data dir */
-$tmp = sys_get_temp_dir() . '/dbd-harness'; @mkdir( $tmp ); $link = $tmp . '/down-by-down';
+$tmp = sys_get_temp_dir() . '/dbd-harness'; if ( ! is_dir( $tmp ) ) { mkdir( $tmp ); } $link = $tmp . '/down-by-down';
 if ( ! is_dir( $link ) ) { symlink( realpath( $data ), $link ); }
 
 /* ---- WordPress shim: only what the plugin touches while rendering */
@@ -63,4 +63,6 @@ ob_start();
 try { include $file; $html = ob_get_clean(); }
 catch ( Throwable $e ) { $partial = ob_get_clean(); fwrite( STDERR, "FATAL in $view: " . get_class( $e ) . ': ' . $e->getMessage() . ' at ' . basename( $e->getFile() ) . ':' . $e->getLine() . "\n  output before the error: " . strlen( $partial ) . " bytes, last tag: " . ( preg_match_all( '/<[a-z0-9-]+/i', $partial, $mm ) ? end( $mm[0] ) : '-' ) . "\n" ); exit( 1 ); }
 echo "rendered $view " . ( $arg ?: '' ) . ": " . strlen( $html ) . " bytes, route " . DBD_Router::$route['view'] . ", $warnings warning" . ( $warnings === 1 ? '' : 's' ) . "\n";
-if ( strlen( $html ) < 2000 ) { fwrite( STDERR, "suspiciously short output\n" ); exit( 3 ); }
+/* the team and hub views are shells that the explorer script fills; the player and players views carry their tables */
+$floor = in_array( $view, array( 'player', 'players' ), true ) ? 20000 : 800;
+if ( strlen( $html ) < $floor ) { fwrite( STDERR, "suspiciously short output (under $floor bytes)\n" ); exit( 3 ); }
