@@ -20,6 +20,8 @@ Writes:
   plays/{ABBR}.json  {season, team, byes, games:[...], keys:[...], plays:[[...]]}  (pid = ball handler's gsis_id; FTN flags when available)
   players/{ABBR}.json  roster rows for QB/RB/FB/WR/TE with weekly stat lines, snap share, PFR extras, injury line, depth slot, grades, fp (playstyle traits)
   players/index.json   one row per player league-wide for the Players index and search
+  career/{year}.json  season totals for every player, one file per finished season (built once, kept)
+  players/career/{ABBR}.json  each rostered player's season rows, oldest first, this season last
   players/movers.json  who moved in the last full week: snap share, target share and EPA against his own season, new faces
   players/league.json  per position group: qualifier, n, sorted metric lists (the pool behind the percentile grades), week + game quartiles (trend yardsticks)
   metrics.json    offense/defense metrics per team, league averages, ranks, through_week
@@ -433,6 +435,51 @@ if mv_week:
         rs = [r for kk, r in mrows if kk == k]
         movers[k] = dict(up=sorted([r for r in rs if r['delta'] > 0], key=lambda r: -r['delta'])[:MV_PER], down=sorted([r for r in rs if r['delta'] < 0], key=lambda r: r['delta'])[:MV_PER])
     json.dump(clean(movers), open(f'{out}/players/movers.json', 'w'), separators=(',', ':'))
+
+# ---------------------------------------------------------------- career (SCOPE §24): season totals per player, regular season only
+# data/career/{year}.json is built once per finished season from stats_player_week_{year}.csv.gz and never rebuilt; this season comes from the weekly stats already loaded.
+import urllib.request, gzip, io
+CAREER_FROM = 1999
+CAREER_SUM = ['completions', 'attempts', 'passing_yards', 'passing_tds', 'passing_interceptions', 'sacks_suffered', 'passing_epa', 'carries', 'rushing_yards', 'rushing_tds', 'rushing_epa',
+              'receptions', 'targets', 'receiving_yards', 'receiving_tds', 'receiving_epa', 'receiving_first_downs', 'receiving_air_yards', 'receiving_yards_after_catch']
+def season_totals(wk):
+    """{player id: season row} from a weekly stats frame: games, last team, sums, mean target share."""
+    if not len(wk): return {}
+    if 'season_type' in wk.columns: wk = wk[wk.season_type == 'REG']
+    tcol = 'team' if 'team' in wk.columns else 'recent_team'; out = {}
+    for pid, g in wk.sort_values('week').groupby('player_id'):
+        row = dict(season=int(g.season.iloc[0]), g=int(len(g)), team=str(g[tcol].iloc[-1]), teams=[str(x) for x in dict.fromkeys(g[tcol].astype(str))],
+                   name=c(g.player_display_name.iloc[-1]) if 'player_display_name' in g.columns else None, pos=c(g.position.iloc[-1]) if 'position' in g.columns else None)
+        for k in CAREER_SUM:
+            v = float(g[k].fillna(0).sum()) if k in g.columns else 0.0
+            row[k] = round(v, 2) if 'epa' in k else int(round(v))
+        ts = g['target_share'].dropna() if 'target_share' in g.columns else []
+        row['tshare'] = round(float(ts.mean()), 4) if len(ts) else None
+        out[pid] = row
+    return out
+os.makedirs(f'{out}/career', exist_ok=True)
+career_years = {}
+for y in range(CAREER_FROM, season):
+    cp = f'{out}/career/{y}.json'
+    if os.path.exists(cp):
+        career_years[y] = json.load(open(cp)); continue
+    try:
+        raw = urllib.request.urlopen(f'https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_{y}.csv.gz', timeout=120).read()
+        wk = pd.read_csv(io.BytesIO(gzip.decompress(raw)), low_memory=False)
+        career_years[y] = season_totals(wk)
+        json.dump(clean(career_years[y]), open(cp, 'w'), separators=(',', ':'))
+        print('career: built', y, len(career_years[y]), 'players')
+    except Exception as e:
+        print('career: skipped', y, repr(e)[:120])
+career_now = season_totals(stats) if len(stats) else {}
+for t, pl in team_players.items():
+    rows = {}
+    for p in pl:
+        hist = [career_years[y][p['id']] for y in sorted(career_years) if p['id'] in career_years[y]]
+        if p['id'] in career_now: hist.append(career_now[p['id']])
+        if hist: rows[p['id']] = [{k: v for k, v in r.items() if k not in ('name', 'pos')} for r in hist]
+    os.makedirs(f'{out}/players/career', exist_ok=True)
+    json.dump(clean(dict(season=season, team=t, through=through_week, players=rows)), open(f'{out}/players/career/{t}.json', 'w'), separators=(',', ':'))
 
 # ---------------------------------------------------------------- manifest
 files = {}

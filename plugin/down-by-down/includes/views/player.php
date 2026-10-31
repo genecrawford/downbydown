@@ -29,6 +29,7 @@ $parts = explode( ' ', $p['name'], 2 ); $first = $parts[0]; $last = $parts[1] ??
 $ord = function ( $n ) { $s = array( 'th', 'st', 'nd', 'rd' ); $v = $n % 100; return $n . ( $s[ ( $v - 20 ) % 10 ] ?? $s[ $v ] ?? $s[0] ); };
 $depth = ! empty( $p['depth'] ) ? $p['depth']['slot'] . $p['depth']['rank'] : '';
 $st = $p['inj']['status'] ?? ''; $icls = preg_match( '/out|did not/i', $st ) ? 'bad' : ( preg_match( '/limited|questionable|doubtful/i', $st ) ? '' : 'good' );
+$CRF = DBD_Data::get( 'players/career/' . $a . '.json' ); $CR = $CRF['players'][ $p['id'] ] ?? array();  /* career rows (SCOPE §24), empty on an older data file */
 $turl = DBD_Router::url( array( 'team' => $a ) ); $purl = DBD_Router::url( array( 'view' => 'players' ) ); $tpurl = DBD_Router::url( array( 'view' => 'players', 'team' => $a ) );
 
 echo DBD_Router::topbar( array( 'players' => $purl, $t['nick'] => $tpurl, $p['name'] => null ) );
@@ -68,7 +69,7 @@ foreach ( $tiles as $x ) { echo '<div class="dbd-tile"><div class="l">' . esc_ht
 echo '</div>';
 
 /* ---- bands by question (SCOPE §20): a sticky jump nav, then five bands. The rail is gone. */
-echo '<nav class="dbd-jump" aria-label="On this page"><a href="#dbd-good">How good is he</a><a href="#dbd-used">How he\'s used</a><a href="#dbd-with" id="dbd-jump-with" hidden>Who he works with</a><a href="#dbd-weeks">Week by week</a><a href="#dbd-more">Intel &amp; plays</a></nav>';
+echo '<nav class="dbd-jump" aria-label="On this page"><a href="#dbd-good">How good is he</a><a href="#dbd-used">How he\'s used</a><a href="#dbd-with" id="dbd-jump-with" hidden>Who he works with</a><a href="#dbd-weeks">Week by week</a>' . ( $CR ? '<a href="#dbd-career">Career</a>' : '' ) . '<a href="#dbd-more">Intel &amp; plays</a></nav>';
 $band = function ( $id, $kick, $sub, $hidden = false ) { return '<section class="dbd-band" id="dbd-' . $id . '"' . ( $hidden ? ' hidden' : '' ) . '><h2 class="dbd-bandh">' . $kick . '<span>' . $sub . '</span></h2>'; };
 echo $band( 'good', 'How good is he', 'league grades and the season line, side by side' ) . '<div class="dbd-two">';
 
@@ -389,7 +390,59 @@ if ( $hasDef && $myRows && $games ) {
 }
 
 
-echo '</section>' . $band( 'more', 'Intel &amp; plays', 'the report, his best snaps, his teammates' ) . '<div class="dbd-three">';
+echo '</section>';
+
+/* ---- career (SCOPE §24): season by season from players/career/{TEAM}.json, regular season only */
+if ( $CR ) {
+	$cgrp = $grp; $ccols = DBD_Grades::career_cols( $cgrp ); $ydsLab = DBD_Grades::career_yds_label( $cgrp ); $PG = DBD_Grades::PACE_G;
+	$CRs = array_map( function ( $r ) use ( $cgrp ) { return DBD_Grades::career_derive( $cgrp, $r ); }, $CR );
+	$isCur = function ( $r ) use ( $season ) { return (int) $r['season'] === (int) $season; };
+	$cur = $CRs[ count( $CRs ) - 1 ]; $past = array_values( array_filter( $CRs, function ( $r ) use ( $isCur ) { return ! $isCur( $r ); } ) );
+	$cf = function ( $kind, $v ) { if ( $v === null || $v === '' ) { return '–'; } switch ( $kind ) { case 's': return (string) $v; case 'n': return number_format( (float) $v ); case 'f1': return number_format( (float) $v, 1 ); case 'pct': return round( $v * 100 ) . '%'; default: return ( $v > 0 ? '+' : '' ) . number_format( (float) $v, 2 ); } };
+	/* totals row */
+	$tot = array( 'season' => 'Career', 'g' => 0 ); foreach ( array( 'completions', 'attempts', 'passing_yards', 'passing_tds', 'passing_interceptions', 'sacks_suffered', 'passing_epa', 'carries', 'rushing_yards', 'rushing_tds', 'rushing_epa', 'receptions', 'targets', 'receiving_yards', 'receiving_tds', 'receiving_epa' ) as $k ) { $tot[ $k ] = 0; foreach ( $CR as $r ) { $tot[ $k ] += (float) ( $r[ $k ] ?? 0 ); } }
+	foreach ( $CR as $r ) { $tot['g'] += (int) $r['g']; } $cteams = array(); foreach ( $CR as $r ) { foreach ( (array) ( $r['teams'] ?? array( $r['team'] ) ) as $tm ) { $cteams[ $tm ] = true; } } $cteams = array_keys( $cteams );  /* every team he suited up for, mid-season moves included */ $tot['team'] = count( $cteams ) . ' tm'; $tot = DBD_Grades::career_derive( $cgrp, $tot ); $tot['cmpatt'] = number_format( (int) $tot['completions'] ) . '/' . number_format( (int) $tot['attempts'] );
+	/* career highs per counting column */
+	$chi = array(); foreach ( $ccols as $i => $c ) { if ( $c[3] ) { $chi[ $i ] = max( array_map( function ( $r ) use ( $c ) { return (float) ( $r[ $c[1] ] ?? 0 ); }, $CRs ) ); } }
+	$ccell = function ( $c, $r, $i, $isTot ) use ( $cf, $chi, $CRs ) { $v = $r[ $c[1] ] ?? null; $tier = preg_match( '/\^(\d)$/', $c[0], $m ) ? ' dbd-t' . $m[1] : ''; $hi = ! $isTot && $c[3] && count( $CRs ) > 1 && $v !== null && (float) $v == $chi[ $i ]; return '<td class="' . trim( $tier . ( $hi ? ' hi' : '' ) ) . '" data-v="' . esc_attr( is_numeric( $v ) ? $v : ( $c[1] === 'team' ? (string) $v : ( $c[1] === 'cmpatt' ? (string) ( $r['attempts'] ?? '' ) : '' ) ) ) . '">' . esc_html( $cf( $c[2], $v ) ) . '</td>'; };
+	$thead = ''; foreach ( $ccols as $c ) { $tier = preg_match( '/\^(\d)$/', $c[0], $m ) ? ' class="dbd-t' . $m[1] . '"' : ''; $thead .= '<th' . $tier . '>' . esc_html( preg_replace( '/\^\d$/', '', $c[0] ) ) . '</th>'; }
+	$tbody = ''; foreach ( $CRs as $r ) { $tbody .= '<tr' . ( $isCur( $r ) ? ' class="cur" title="This season, through week ' . (int) $through . '"' : '' ) . '>'; foreach ( $ccols as $i => $c ) { $tbody .= $ccell( $c, $r, $i, false ); } $tbody .= '</tr>'; }
+	$tfoot = '<tr class="tot">'; foreach ( $ccols as $i => $c ) { $tfoot .= $ccell( $c, $tot, $i, true ); } $tfoot .= '</tr>';  /* tfoot: the shared sorter leaves it in place */
+	/* career line */
+	$cline = array( 'rec' => array( array( 'Targets', 'targets' ), array( 'Receptions', 'receptions' ), array( 'Yards', 'receiving_yards' ), array( 'TD', 'receiving_tds' ) ), 'rb' => array( array( 'Carries', 'carries' ), array( 'Rush yards', 'rushing_yards' ), array( 'TD', 'td' ), array( 'Receptions', 'receptions' ) ), 'qb' => array( array( 'Attempts', 'attempts' ), array( 'Yards', 'passing_yards' ), array( 'TD', 'passing_tds' ), array( 'INT', 'passing_interceptions' ) ) )[ $cgrp ];
+	$lineh = '<div><b>' . number_format( (int) $tot['g'] ) . '</b><small>Games</small></div>'; foreach ( $cline as $x ) { $lineh .= '<div><b>' . number_format( (float) $tot[ $x[1] ] ) . '</b><small>' . esc_html( $x[0] ) . '</small></div>'; }
+	$ns = count( $CRs ); $lineh .= '<span class="span">' . (int) $CRs[0]['season'] . ' to ' . (int) $cur['season'] . ' · ' . $ns . ' season' . ( $ns > 1 ? 's' : '' ) . ' · ' . count( $cteams ) . ' team' . ( count( $cteams ) > 1 ? 's' : '' ) . '</span>';
+	/* the read: best season and this season's pace */
+	$best = null; foreach ( $past as $r ) { if ( ! $best || $r['yds'] > $best['yds'] ) { $best = $r; } }
+	$pace = ( $isCur( $cur ) && $cur['g'] ) ? $cur['yds'] / $cur['g'] * $PG : null;
+	if ( ! $past ) { $csay = 'First season: <b>' . (int) $cur['g'] . '</b> game' . ( (int) $cur['g'] === 1 ? '' : 's' ) . ' in, ' . number_format( (float) $cur['yds'] ) . ' ' . esc_html( $ydsLab ) . ( $pace ? ', a ' . $PG . '-game pace of <b>' . number_format( $pace ) . '</b>' : '' ) . '.'; }
+	else { $csay = 'His best year was <b>' . (int) $best['season'] . '</b>, ' . number_format( (float) $best['yds'] ) . ' ' . esc_html( $ydsLab ) . ' in ' . (int) $best['g'] . ' games' . ( $best['team'] !== $cur['team'] ? ' with ' . esc_html( $best['team'] ) : '' ) . '.';
+		if ( $pace !== null ) { $csay .= ' This season\'s ' . number_format( $cur['yds'] / $cur['g'], 1 ) . ' a game puts him on pace for <b>' . number_format( $pace ) . '</b> over ' . $PG . ', ' . ( $pace >= $best['yds'] ? 'a career high' : ( $pace >= $best['yds'] * 0.85 ? 'close to it' : 'short of it' ) ) . '.'; } }
+	/* chart: yards by season */
+	$Wd = 640; $Hh = 140; $Lm = 40; $Rm = 12; $Tp = 18; $Bm = 22; $n = count( $CRs ); $step = ( $Wd - $Lm - $Rm ) / $n; $bw = min( 44, $step * 0.6 );
+	$mx = max( array_merge( array_map( function ( $r ) { return (float) $r['yds']; }, $CRs ), array( $pace ?: 0, 10 ) ) ) * 1.08;
+	$Yc = function ( $v ) use ( $Tp, $mx, $Hh, $Bm ) { return round( $Tp + ( 1 - $v / $mx ) * ( $Hh - $Tp - $Bm ), 1 ); }; $Xc = function ( $i ) use ( $Lm, $step ) { return round( $Lm + $step * ( $i + 0.5 ), 1 ); };
+	$fo = 'font-family="IBM Plex Mono,monospace"'; $teamNick = DBD_Data::teams();
+	$cg = '<svg viewBox="0 0 ' . $Wd . ' ' . $Hh . '" role="img" aria-label="' . esc_attr( $ydsLab . ' by season' ) . '">';
+	foreach ( array( 0, .5, 1 ) as $fr ) { $v = round( $mx * $fr / 100 ) * 100; $cg .= '<line x1="' . $Lm . '" x2="' . ( $Wd - $Rm ) . '" y1="' . $Yc( $v ) . '" y2="' . $Yc( $v ) . '" stroke="var(--dbd-line)"/><text x="' . ( $Lm - 6 ) . '" y="' . ( $Yc( $v ) + 3 ) . '" font-size="9" fill="var(--dbd-muted)" text-anchor="end" ' . $fo . '>' . number_format( $v ) . '</text>'; }
+	foreach ( $CRs as $i => $r ) { $v = (float) $r['yds']; $isc = $isCur( $r ); $tipc = '<b>' . (int) $r['season'] . ' ' . esc_html( $teamNick[ $r['team'] ]['nick'] ?? $r['team'] ) . '</b>' . ( $isc ? ' · through week ' . (int) $through : '' ) . '<br>' . number_format( $v ) . ' ' . esc_html( $ydsLab ) . ' in ' . (int) $r['g'] . ' game' . ( (int) $r['g'] === 1 ? '' : 's' ) . ' (' . number_format( $r['g'] ? $v / $r['g'] : 0, 1 ) . ' a game)';
+		if ( $isc && $pace ) { $cg .= '<rect x="' . ( $Xc( $i ) - $bw / 2 ) . '" y="' . $Yc( $pace ) . '" width="' . round( $bw, 1 ) . '" height="' . max( 0, $Yc( $v ) - $Yc( $pace ) ) . '" fill="var(--dbd-line)" tabindex="0" data-tip="' . esc_attr( '<b>Pace</b> over ' . $PG . ' games: ' . number_format( $pace ) . ' ' . esc_html( $ydsLab ) ) . '"></rect>'; }
+		$cg .= '<rect x="' . ( $Xc( $i ) - $bw / 2 ) . '" y="' . $Yc( $v ) . '" width="' . round( $bw, 1 ) . '" height="' . max( 1, $Yc( 0 ) - $Yc( $v ) ) . '" fill="' . ( $isc ? 'var(--dbd-panel)' : 'var(--dbd-team)' ) . '" stroke="var(--dbd-team)" stroke-width="' . ( $isc ? 2 : 0 ) . '" tabindex="0" data-tip="' . esc_attr( $tipc ) . '"></rect>';
+		if ( $best && $r['season'] === $best['season'] ) { $cg .= '<text x="' . $Xc( $i ) . '" y="' . ( $Yc( $v ) - 5 ) . '" font-size="10" fill="var(--dbd-red)" text-anchor="middle" ' . $fo . '>★</text>'; }
+		$cg .= '<text x="' . $Xc( $i ) . '" y="' . ( $Hh - 6 ) . '" font-size="9" fill="' . ( $isc ? 'var(--dbd-ink)' : 'var(--dbd-muted)' ) . '" text-anchor="middle" ' . $fo . '>' . substr( (string) $r['season'], -2 ) . ( $r['team'] !== $cur['team'] ? '·' . esc_html( $r['team'] ) : '' ) . '</text>'; }
+	$cg .= '<line x1="' . $Lm . '" x2="' . ( $Wd - $Rm ) . '" y1="' . $Yc( 0 ) . '" y2="' . $Yc( 0 ) . '" stroke="var(--dbd-line-2)"/></svg>';
+	/* career highs */
+	$chdefs = array( 'rec' => array( array( 'Yards', 'receiving_yards', 'n' ), array( 'TD', 'receiving_tds', 'n' ), array( 'Receptions', 'receptions', 'n' ) ), 'rb' => array( array( 'Rush yards', 'rushing_yards', 'n' ), array( 'TD', 'td', 'n' ), array( 'Carries', 'carries', 'n' ) ), 'qb' => array( array( 'Yards', 'passing_yards', 'n' ), array( 'TD', 'passing_tds', 'n' ), array( 'Rating', 'rating', 'f1' ) ) )[ $cgrp ];
+	$chh = ''; if ( $ns > 1 ) { $chh = '<span class="l">Career highs</span>'; foreach ( $chdefs as $x ) { $b = null; foreach ( $CRs as $r ) { if ( $r[ $x[1] ] !== null && ( ! $b || $r[ $x[1] ] > $b[ $x[1] ] ) ) { $b = $r; } } if ( $b ) { $chh .= '<span class="h">' . esc_html( $x[0] ) . ' <b>' . esc_html( $cf( $x[2], $b[ $x[1] ] ) ) . '</b> · ' . (int) $b['season'] . '</span>'; } } }
+	echo $band( 'career', 'Career', 'season by season, back to his rookie year' );
+	echo '<section class="dbd-panel dbd-career"><div class="dbd-ph"><span class="dbd-lab"><b>Career</b> · regular season</span><span class="dbd-badge">' . $ns . ' season' . ( $ns > 1 ? 's' : '' ) . '</span></div>';
+	echo '<div class="dbd-cr-line">' . $lineh . '</div><p class="dbd-cr-say">' . $csay . '</p><div class="dbd-cr-chart">' . $cg . '</div>';
+	echo '<div class="dbd-tw"><table class="dbd-glog dbd-stat dbd-sortable dbd-crtab"><thead><tr>' . $thead . '</tr></thead><tbody>' . $tbody . '</tbody><tfoot>' . $tfoot . '</tfoot></table></div>';
+	echo ( $chh ? '<div class="dbd-cr-highs">' . $chh . '</div>' : '' ) . '<p class="dbd-note">Regular season only, from nflverse weekly stats back to 1999. This season is partial and drawn hollow; the pace is his per-game rate over ' . $PG . ' games. Bold cells are career highs.</p></section>';
+	echo '</section>';
+}
+
+echo $band( 'more', 'Intel &amp; plays', 'the report, his best snaps, his teammates' ) . '<div class="dbd-three">';
 
 /* ---- intel (PHP basics, JS fills the play-file lines) */
 echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Intel</b></span><span class="dbd-badge">Week ' . (int) $through . '</span></div><div class="dbd-pb"><dl class="dbd-kv dbd-intel">';
