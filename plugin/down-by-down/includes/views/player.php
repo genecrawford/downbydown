@@ -425,7 +425,7 @@ if ( $hasDef && $myRows && $games ) {
 	foreach ( $pts as $q ) { $cov += ( $q['r'] - $mx ) * ( $q['y'] - $avgY ); $vx += ( $q['r'] - $mx ) ** 2; $vy += ( $q['y'] - $avgY ) ** 2; }
 	$rr = ( $vx && $vy ) ? $cov / sqrt( $vx * $vy ) : 0; $rs = number_format( $rr, 2 );
 	$read = $n < 4 ? 'Too few games to read a pattern yet.' : ( $rr > DBD_Grades::DEF_CORR ? 'His yards climb as the defense gets softer (r = ' . $rs . '): the schedule has been doing some of the work.' : ( $rr < -DBD_Grades::DEF_CORR ? 'He has done more against the better defenses (r = ' . $rs . ').' : 'His production barely moves with the opponent (r = ' . $rs . '); it has traveled.' ) );
-	echo '<div><h4>Yards against the rank of the defense</h4><div class="dbd-ox-sc">' . $sc . '</div><p class="dbd-note" style="padding:6px 14px 0">' . esc_html( $read ) . '</p></div></div></section>';
+	echo '<div><h4>Yards against the rank of the defense</h4><div class="dbd-ox-sc">' . $sc . '</div><p class="dbd-note" style="padding:6px var(--dbd-edge,14px) 0">' . esc_html( $read ) . '</p></div></div></section>';
 }
 
 
