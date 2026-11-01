@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.8.0
+Stable tag: 1.8.1
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,9 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.8.1 =
+* Fixes from the 1.8.0 live check. The player page's scorecard is one column below about 940px (beside the site's sidebar on a laptop its two columns ran past the panel). Methods notes read in the 12px body face instead of 11px monospace. Compare's values join the type scale. Notes the page scripts draw after load fold on a short timer rather than an animation frame, which pauses in a tab that is not showing.
 
 = 1.8.0 =
 * Readability across the site (SCOPE §31, the pass after the player page). Methods notes fold under "How this is measured" on every page, including the notes the team explorer and the player page draw after load.

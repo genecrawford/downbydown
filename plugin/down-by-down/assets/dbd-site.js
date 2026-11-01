@@ -27,7 +27,7 @@
     });
   };
   foldNotes();
-  if (window.MutationObserver) { var fq = 0; new MutationObserver(function () { if (fq) return; fq = requestAnimationFrame(function () { fq = 0; foldNotes(); }); }).observe(root, { childList: true, subtree: true }); }
+  if (window.MutationObserver) { var fq = 0; new MutationObserver(function () { if (fq) return; fq = setTimeout(function () { fq = 0; foldNotes(); }, 60); }).observe(root, { childList: true, subtree: true }); }  /* a timer, not an animation frame: frames pause in a tab that is not showing */
 
   /* sortable stat tables: click a heading. Numeric columns start descending, text ascending; blanks sink.
      The Players index sorts its own data in players.js; everything else sorts the rows in place. */

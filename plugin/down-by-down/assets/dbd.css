@@ -1086,3 +1086,7 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 .dbd .dbd-chgrid .dbd-ch{height:240px}  /* two to a row, a little shorter */
 .dbd .dbd-chgrid .dbd-chart{container:dbdc/inline-size}  /* each chart measures itself: two to a row leaves about 345px */
 @container dbdc (max-width:480px){.dbd .dbd-ch-rule span{display:none}}  /* week labels on the cumulative chart collide below this; the rules stay */
+/* 1.8.1 · fixes from the 1.8.0 live check */
+@container dbd (max-width:940px){.dbd .dbd-score2{grid-template-columns:minmax(0,1fr)}.dbd .dbd-score2 table+table thead{display:none}}  /* the scorecard's two columns need about 940px; below that, one */
+.dbd .dbd-note{font:400 12px/1.5 var(--dbd-body)}  /* notes in the reading face, like the rest of the small print */
+.dbd .dbd-cpct .cv{font:600 13px var(--dbd-body);font-variant-numeric:tabular-nums}  /* compare's values join the type scale */
