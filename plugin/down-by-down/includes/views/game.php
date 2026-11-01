@@ -178,13 +178,16 @@ $SR = DBD_Data::series( $AWAY, $HOME );
 if ( $SR && ! empty( $SR['n'] ) ) {
 	$srN = function ( $a ) { return DBD_Data::team( $a )['nick'] ?? $a; }; $wl = function ( $x ) { return (int) $x[0] . '–' . (int) $x[1] . ( ! empty( $x[2] ) ? '–' . (int) $x[2] : '' ); };
 	$lead = $SR['w'] > $SR['l'] ? $AWAY : ( $SR['l'] > $SR['w'] ? $HOME : null );
-	$srSay = $lead ? 'The ' . esc_html( $srN( $lead ) ) . ' lead the series <b>' . max( $SR['w'], $SR['l'] ) . '–' . min( $SR['w'], $SR['l'] ) . '</b> since ' . (int) $SR['first'] . '.' : 'The series is even at ' . (int) $SR['w'] . '–' . (int) $SR['l'] . ' since ' . (int) $SR['first'] . '.';
+	$srT = (int) ( $SR['t'] ?? 0 ) ? '–' . (int) $SR['t'] : '';  /* ties count, and show */
+	$srSince = (int) $SR['since'] . ( (int) $SR['first'] > (int) $SR['since'] ? ' (they first met in ' . (int) $SR['first'] . ')' : '' );
+	$srSay = $lead ? 'The ' . esc_html( $srN( $lead ) ) . ' lead the series <b>' . max( $SR['w'], $SR['l'] ) . '–' . min( $SR['w'], $SR['l'] ) . $srT . '</b> since ' . $srSince . '.' : 'The series is even at ' . (int) $SR['w'] . '–' . (int) $SR['l'] . $srT . ' since ' . $srSince . '.';
 	$sk = $SR['streak'] ?? null;
 	if ( $sk && $sk[0] && (int) $sk[1] > 1 ) { $srSay .= $sk[0] === $lead ? ' They have won the last ' . (int) $sk[1] . '.' : ' The ' . esc_html( $srN( $sk[0] ) ) . ' have won the last ' . (int) $sk[1] . '.'; }
 	$L = $SR['lastm'] ?? null;
 	if ( $L && ( $L['id'] ?? '' ) !== $g['id'] ) {  /* on a final, the last meeting is this game, which the panels above already cover */
-		$lw = (int) $L['home_score'] > (int) $L['away_score'] ? $L['home'] : $L['away']; $ts = strtotime( $L['date'] ); $xmas = $ts && gmdate( 'm-d', $ts ) === '12-25';
-		$srSay .= ' <b>' . esc_html( $ts ? gmdate( 'M j, Y', $ts ) : $L['date'] ) . '</b>' . ( $xmas ? ' (Christmas)' : '' ) . ( ! empty( $L['stadium'] ) ? ', at ' . esc_html( $L['stadium'] ) : '' ) . ': the ' . esc_html( $srN( $lw ) ) . ' won ' . max( (int) $L['home_score'], (int) $L['away_score'] ) . '–' . min( (int) $L['home_score'], (int) $L['away_score'] ) . ( ! empty( $L['ot'] ) ? ' in overtime' : '' ) . '.';
+		$tie = (int) $L['home_score'] === (int) $L['away_score']; $lw = (int) $L['home_score'] > (int) $L['away_score'] ? $L['home'] : $L['away']; $ts = strtotime( $L['date'] ); $xmas = $ts && gmdate( 'm-d', $ts ) === '12-25';
+		$srSay .= ' <b>' . esc_html( $ts ? gmdate( 'M j, Y', $ts ) : $L['date'] ) . '</b>' . ( $xmas ? ' (Christmas)' : '' ) . ( ! empty( $L['stadium'] ) ? ', at ' . esc_html( $L['stadium'] ) : '' ) . ': '
+			. ( $tie ? 'the teams tied ' . (int) $L['home_score'] . '–' . (int) $L['away_score'] : 'the ' . esc_html( $srN( $lw ) ) . ' won ' . max( (int) $L['home_score'], (int) $L['away_score'] ) . '–' . min( (int) $L['home_score'], (int) $L['away_score'] ) ) . ( ! empty( $L['ot'] ) ? ' in overtime' : '' ) . '.';
 		if ( ! empty( $L['qb'][0] ) && ! empty( $L['qb'][1] ) ) { $srSay .= ' ' . esc_html( $L['qb'][1] ) . ' started at quarterback for the ' . esc_html( $srN( $L['home'] ) ) . ' and ' . esc_html( $L['qb'][0] ) . ' for the ' . esc_html( $srN( $L['away'] ) ) . ( ! empty( $L['coach'][0] ) && ! empty( $L['coach'][1] ) ? '; ' . esc_html( $L['coach'][1] ) . ' and ' . esc_html( $L['coach'][0] ) . ' coached.' : '.' ); }
 	} elseif ( $final ) { $srSay .= ' This game is the latest meeting.'; }
 	$hn = DBD_Data::team( $HOME ); $city = trim( str_replace( $hn['nick'], '', $hn['name'] ) );
@@ -211,9 +214,9 @@ if ( $SR && ! empty( $SR['n'] ) ) {
 		$recT .= '<tr><td>Last 5</td><td>' . $dots( $recA['last5'] ) . '</td><td>' . $dots( $recH['last5'] ) . '</td></tr><tr><td>Streak</td><td>' . esc_html( $stk( $recA['streak'] ) ) . '</td><td>' . esc_html( $stk( $recH['streak'] ) ) . '</td></tr><tr><td>Points a game</td><td>' . $ppg( $recA ) . '</td><td>' . $ppg( $recH ) . '</td></tr>';
 		$recT = '<div><h4 class="dbd-wph">' . (int) DBD_Data::season() . ' records</h4><table class="dbd-stat dbd-srr"><thead><tr><th></th><th>' . esc_html( $srN( $AWAY ) ) . '</th><th>' . esc_html( $srN( $HOME ) ) . '</th></tr></thead><tbody>' . $recT . '</tbody></table></div>';
 	}
-	echo '<section class="dbd-panel dbd-series"><div class="dbd-ph"><span class="dbd-lab"><b>The series</b> · ' . esc_html( $srN( $AWAY ) ) . ' and ' . esc_html( $srN( $HOME ) ) . ' since ' . (int) $SR['first'] . ', and this season\'s records</span><span class="dbd-badge">' . (int) $SR['n'] . ' meetings</span></div>';
+	echo '<section class="dbd-panel dbd-series"><div class="dbd-ph"><span class="dbd-lab"><b>The series</b> · ' . esc_html( $srN( $AWAY ) ) . ' and ' . esc_html( $srN( $HOME ) ) . ' since ' . (int) $SR['since'] . ', and this season\'s records</span><span class="dbd-badge">' . (int) $SR['n'] . ' meetings</span></div>';
 	echo '<p class="dbd-wp-say">' . $srSay . '</p><div class="dbd-sr2"><div><div class="dbd-wpchips sr">' . $chipH . '</div><h4 class="dbd-wph">The last ' . count( (array) $SR['last5'] ) . '</h4><table class="dbd-stat dbd-srl"><tbody>' . $rows . '</tbody></table></div>' . $recT . '</div>';
-	echo '<p class="dbd-note">Every meeting since ' . (int) $SR['first'] . ', regular season and playoffs, from nflverse\'s game list, which starts in ' . (int) $SR['first'] . '; the all-time series goes back further. Franchises that moved count as one team (the Raiders, Chargers and Rams). Home and away are from the ' . esc_html( $srN( $AWAY ) ) . '\' side. Records are this regular season.</p></section>';
+	echo '<p class="dbd-note">Every meeting since ' . (int) $SR['since'] . ', regular season and playoffs, from nflverse\'s game list, which starts in ' . (int) $SR['since'] . '; the all-time series goes back further. Franchises that moved count as one team (the Raiders, Chargers and Rams). Home and away are from the ' . esc_html( $srN( $AWAY ) ) . '\' side. Records are this regular season.</p></section>';
 }
 echo $luHtml;
 

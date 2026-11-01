@@ -146,8 +146,9 @@ class DBD_Data {
 		if ( ! $s ) { return null; }
 		if ( $s['a'] !== $a ) {  /* stored alphabetically from the first team's side; flip to the asking team's: its home games were the other's road games */
 			$s = array_merge( $s, array( 'a' => $a, 'b' => $b, 'w' => $s['l'], 'l' => $s['w'], 'post' => array( $s['post'][1], $s['post'][0] ),
-				'home' => array( $s['road'][1], $s['road'][0] ), 'road' => array( $s['home'][1], $s['home'][0] ) ) );
+				'home' => array( $s['road'][1], $s['road'][0], $s['road'][2] ?? 0 ), 'road' => array( $s['home'][1], $s['home'][0], $s['home'][2] ?? 0 ) ) );
 		}
+		$s['since'] = (int) ( $f['first'] ?? $s['first'] );  /* the year nflverse's game list starts; $s['first'] is when these two first met in it */
 		return $s;
 	}
 

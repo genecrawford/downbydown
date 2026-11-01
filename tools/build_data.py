@@ -715,14 +715,14 @@ def _sv(r, k):
 def series_rec(a, b):
     m = _sg[((_sg.home_team == a) & (_sg.away_team == b)) | ((_sg.home_team == b) & (_sg.away_team == a))]
     if not len(m): return None
-    w = l = t = hw = hl = rw = rl = pw = pl = 0; res = []; most = {a: [0, None], b: [0, None]}; big = {a: [0, None], b: [0, None]}; last5 = []
+    w = l = t = hw = hl = ht = rw = rl = rt = pw = pl = 0; res = []; most = {a: [0, None], b: [0, None]}; big = {a: [0, None], b: [0, None]}; last5 = []
     for r in m.itertuples():
         home = r.home_team == a; sa = int(r.home_score if home else r.away_score); sb = int(r.away_score if home else r.home_score)
         o = 'W' if sa > sb else ('L' if sa < sb else 'T'); res.append(o); w += o == 'W'; l += o == 'L'; t += o == 'T'
         if r.game_type != 'REG': pw += o == 'W'; pl += o == 'L'
         if getattr(r, 'location', '') != 'Neutral':
-            if home: hw += o == 'W'; hl += o == 'L'
-            else: rw += o == 'W'; rl += o == 'L'
+            if home: hw += o == 'W'; hl += o == 'L'; ht += o == 'T'
+            else: rw += o == 'W'; rl += o == 'L'; rt += o == 'T'
         for tm, s in ((a, sa), (b, sb)):
             if s > most[tm][0]: most[tm] = [s, int(r.season)]
         if sa - sb > big[a][0]: big[a] = [sa - sb, int(r.season)]
@@ -733,7 +733,7 @@ def series_rec(a, b):
         if x == res[-1]: k += 1
         else: break
     lm = m.iloc[-1]
-    return dict(a=a, b=b, first=int(m.season.min()), n=len(m), w=w, l=l, t=t, home=[hw, hl], road=[rw, rl], post=[pw, pl],
+    return dict(a=a, b=b, first=int(m.season.min()), n=len(m), w=w, l=l, t=t, home=[hw, hl, ht], road=[rw, rl, rt], post=[pw, pl],  # first: the pair's first meeting in the list
                 streak=[a if res[-1] == 'W' else (b if res[-1] == 'L' else None), k], most=most, big=big, last5=last5[-5:],
                 lastm=dict(id=lm['game_id'], date=str(lm['gameday']), away=lm['away_team'], home=lm['home_team'], away_score=int(lm['away_score']), home_score=int(lm['home_score']),
                            ot=int(_num(lm.get('overtime', 0))), qb=[c(lm.get('away_qb_name')), c(lm.get('home_qb_name'))], coach=[c(lm.get('away_coach')), c(lm.get('home_coach'))], stadium=c(lm.get('stadium'))))
