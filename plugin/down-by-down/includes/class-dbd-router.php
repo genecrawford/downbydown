@@ -76,11 +76,12 @@ class DBD_Router {
 			$r['view'] = 'compare'; $r['compare'] = $rows; $r['cgroup'] = $grp; $r['cmixed'] = $mixed;
 		} elseif ( $view === 'players' ) {
 			$r['view']  = 'players';
-			$r['pteam'] = isset( $teams[ $team ] ) ? $team : '';
+			$pt = strtoupper( self::q( 'pt' ) );  /* the index's own team filter; team= opens that team's page */
+			$r['pteam'] = isset( $teams[ $team ] ) ? $team : ( isset( $teams[ $pt ] ) ? $pt : '' ); $r['ptfilter'] = ! isset( $teams[ $team ] ) && isset( $teams[ $pt ] );
 			$pos        = strtoupper( self::q( 'pos' ) );
 			$r['pos']   = in_array( $pos, array( 'QB', 'RB', 'WR', 'TE' ), true ) ? $pos : '';
 			$r['q']     = mb_substr( self::q( 'q' ), 0, 40 );
-			if ( $r['pteam'] && $r['q'] === '' ) { $r['view'] = 'teamplayers'; }  /* a team's players is its own page (SCOPE §32); the league index filters by team in place */
+			if ( $r['pteam'] && ! $r['ptfilter'] && $r['q'] === '' ) { $r['view'] = 'teamplayers'; }  /* a team's players is its own page (SCOPE §32); the league index filters by team in place */
 		} elseif ( $team !== '' ) {
 			$r['view'] = isset( $teams[ $team ] ) ? 'team' : 'notfound';
 			$r['team'] = $team;
@@ -180,7 +181,7 @@ class DBD_Router {
 		if ( $r['view'] === 'matchups' ) { $args = array( 'view' => 'matchups' ); if ( $r['week'] !== DBD_Data::current_week() ) { $args['week'] = $r['week']; } }
 		if ( $r['view'] === 'teams' ) { $args = array( 'view' => 'teams' ); }
 		if ( $r['view'] === 'player' ) { $args = array( 'player' => $r['player']['id'] ); }
-		if ( $r['view'] === 'players' ) { $args = array( 'view' => 'players' ); if ( $r['pteam'] ) { $args['team'] = $r['pteam']; } if ( $r['pos'] ) { $args['pos'] = $r['pos']; } }
+		if ( $r['view'] === 'players' ) { $args = array( 'view' => 'players' ); if ( $r['pteam'] ) { $args['pt'] = $r['pteam']; } if ( $r['pos'] ) { $args['pos'] = $r['pos']; } }
 		if ( $r['view'] === 'teamplayers' ) { $args = array( 'view' => 'players', 'team' => $r['pteam'] ); }
 		if ( $r['view'] === 'compare' ) { $ids = array_map( function ( $p ) { return $p['id']; }, $r['compare'] ); sort( $ids ); $args = $ids ? array( 'compare' => implode( ',', $ids ) ) : array( 'view' => 'players' ); }
 		$url = self::url( $args );

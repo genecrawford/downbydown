@@ -109,6 +109,7 @@ class DBD_Lineup {
 			list( $why, $p ) = $pk; if ( ! $p ) { continue; }
 			$def = array( 'qb' => array( 'epadb', 'epadb', 'EPA per dropback' ), 'rb' => array( 'epatch', 'repc', 'EPA per touch' ), 'rec' => array( 'epat', 'epat', 'EPA per target' ) )[ $why ];
 			$r = $p['trk'][ $def[0] ] ?? null; $v = $p['grades']['m'][ $def[1] ] ?? null;
+			if ( $why === 'rb' ) { $tch = $S( $p, 'carries' ) + $S( $p, 'targets' ); $v = $tch ? ( $S( $p, 'rushing_epa' ) + $S( $p, 'receiving_epa' ) ) / $tch : null; }  /* EPA per touch, the stat its rank is for */
 			$sub = $v === null ? '' : $def[2] . ' ' . ( $v > 0 ? '+' : '' ) . number_format( (float) $v, 2 ) . ( $r && $r[0] <= 30 ? ' · ' . ( ! empty( $r[1] ) ? 'T-' : '' ) . DBD_Grades::ordinal( (int) $r[0] ) : '' );
 			$cards .= '<a class="dbd-pw" href="' . esc_url( DBD_Router::url( array( 'player' => $p['id'] ) ) ) . '">' . DBD_Marks::player( $team, $p['num'] ?? null, 34, $p['photo'] ?? null ) . '<span><b>' . esc_html( $p['name'] ) . '</b><small>' . esc_html( $p['pos'] . ' · ' . self::off_line( $team, $p['id'] ) ) . '</small><em' . ( $r && $r[0] <= 10 ? ' class="top"' : '' ) . '>' . esc_html( $sub ) . '</em></span></a>';
 		}
