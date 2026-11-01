@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.7.0
+Stable tag: 1.8.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,12 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.8.0 =
+* Readability across the site (SCOPE §31, the pass after the player page). Methods notes fold under "How this is measured" on every page, including the notes the team explorer and the player page draw after load.
+* Players index: 50 rows at a time with "Show 50 more" and "Show all"; sorting, positions, teams and search still run over every player, and the page still carries every row for search engines.
+* Team explorer: Tendencies sets its charts two to a row beside the play detail rail (they were one to a row, about two screens).
+* Hub: each upcoming game's card carries its line and total, and the slate table that repeated the cards moves to Matchups, with a link from the hub.
 
 = 1.7.0 =
 * Readability and scanning, the player page (SCOPE §31). The short version opens the page: one line per band from the reads the page already writes, each linked to its band.

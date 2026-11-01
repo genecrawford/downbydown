@@ -23,7 +23,7 @@ if ( $ranked ) {
 echo '<div class="dbd-title dbd-hero"><div class="dbd-ghost" aria-hidden="true">10 20 30 40 50</div><div class="t-stagger">';
 echo '<p class="dbd-kicker t-stagger-line t-stagger-line--1">' . esc_html( "$season season · $label" ) . '</p>';
 echo '<h1 class="t-stagger-line t-stagger-line--2">Every snap, drawn on the <em>field.</em></h1>';
-echo '<p class="dbd-sub t-stagger-line t-stagger-line--3">How every NFL offense actually plays, from public play-by-play, updated every night. <a href="#dbd-slate">Open a game</a> to see how the offense matches up against the defense, or <a href="#dbd-teams">pick a team</a> and dig through its plays.</p>';
+echo '<p class="dbd-sub t-stagger-line t-stagger-line--3">How every NFL offense actually plays, from public play-by-play, updated every night. <a href="#dbd-games">Open a game</a> to see how the offense matches up against the defense, or <a href="#dbd-teams">pick a team</a> and dig through its plays.</p>';
 echo '</div>';
 if ( $gotw ) {
 	$k = DBD_Data::kickoff( $gotw ); $O = $gotw_best['O']; $D = $gotw_best['D'];
@@ -44,7 +44,7 @@ echo '</div>';
 
 /* ---- score strip */
 if ( $games ) {
-	echo '<div class="dbd-strip" aria-label="This week\'s games">';
+	echo '<span id="dbd-games" class="dbd-anchor"></span><div class="dbd-strip" aria-label="This week\'s games">';
 	foreach ( $games as $g ) {
 		$f = DBD_Router::is_final( $g ); $aw = $f && $g['away_score'] > $g['home_score']; $hw = $f && $g['home_score'] > $g['away_score'];
 		$sel = $gotw && $g['id'] === $gotw['id'] ? ' sel' : '';
@@ -54,15 +54,15 @@ if ( $games ) {
 			list( $a, $s, $won ) = $row; $t = DBD_Data::team( $a );
 			echo '<div class="dbd-row' . ( $f && ! $won ? ' l' : '' ) . '">' . DBD_Marks::tile( $a, 24 ) . '<div><b>' . esc_html( $t['nick'] ) . '</b><small>' . esc_html( DBD_Data::record_text( $a ) ) . '</small></div><span class="dbd-s">' . ( $f ? (int) $s : '–' ) . '</span></div>';
 		}
+		$ln = DBD_Router::line_text( $g ); $tot = isset( $g['total'] ) && $g['total'] !== null && $g['total'] !== '' ? 'O/U ' . $g['total'] : '';  /* SCOPE §31: the line rides on the card, so the hub needs no second slate */
+		if ( ! $f && ( $ln || $tot ) ) { echo '<div class="dbd-scln">' . esc_html( implode( ' · ', array_filter( array( $ln, $tot ) ) ) ) . '</div>'; }
 		echo '</a>';
 	}
 	echo '</div>';
 }
 
-/* ---- slate */
-echo '<span id="slate" class="dbd-anchor"></span><section class="dbd-panel" id="dbd-slate"><div class="dbd-ph"><span class="dbd-lab"><b>The slate</b> · ' . esc_html( $label ) . ' · ' . count( $games ) . ' games</span><span>Lines and totals from nflverse. Kickoffs in your local time. <a href="' . esc_url( DBD_Router::url( array( 'view' => 'matchups' ) ) ) . '">Every week</a></span></div>';
-include DBD_PATH . 'includes/views/partials/slate-table.php';
-echo '</section>';
+/* ---- slate: the cards above carry every game, its kickoff and its line; the full table with stadiums and recaps lives on Matchups (SCOPE §31) */
+echo '<p class="dbd-slatelink"><a href="' . esc_url( DBD_Router::url( array( 'view' => 'matchups', 'week' => $week ) ) ) . '">The full slate: every line, total and stadium, and every week</a></p>';
 
 /* ---- standings */
 echo '<span id="teams" class="dbd-anchor"></span><div class="dbd-two" id="dbd-teams">';
