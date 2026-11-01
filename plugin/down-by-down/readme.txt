@@ -31,6 +31,9 @@ Not affiliated with the NFL or any team. No team logos are used; team marks are 
 
 == Changelog ==
 
+= Next release =
+* Fix: on phones, an overtime score on the last snap (a walk-off) hung half outside the win probability chart. It now sits just left of its moment.
+
 = 1.6.0 =
 * Win probability on the game page (SCOPE §30). Every final game gains How it played out: a generated read (who won and from how low, the turning point, the biggest swing), four numbers (the favorite at kickoff, the winner's low point, swings past 50%, the biggest swing), a chart of each side's chance across the game with every score, the five biggest swings, the turning point and the low point marked (hover or drag for the clock, the chance and the score), and the plays that swung it.
 * Overtime: nflverse's model does not hold together under the current overtime rules, so the chart covers regulation (a tied game ends regulation at 50%) and overtime shows its scoring plays and the result.

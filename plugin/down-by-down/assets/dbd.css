@@ -995,3 +995,4 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 .dbd .dbd-wpc .ots{position:absolute;transform:translate(-50%,-50%);z-index:3;padding:1px 4px;border-radius:3px;background:var(--dbd-ink);color:var(--dbd-panel);font:700 11px/15px var(--dbd-mono);font-style:normal}
 .dbd .dbd-wpc .fin{position:absolute;bottom:-1px;width:10px;height:10px;margin-left:-11px;border-radius:50%;background:var(--dbd-ink);z-index:3}.dbd .dbd-wpc .fin.top{top:-1px;bottom:auto}
 @container dbd (max-width:600px){.dbd .dbd-wpc .otb span{display:none}}  /* the band is narrow on a phone; the axis already says OT */
+.dbd .dbd-wpc .ots.r{transform:translate(calc(-100% - 2px),-50%)}  /* a walk-off score at the end of overtime sits left of its moment, inside the chart */

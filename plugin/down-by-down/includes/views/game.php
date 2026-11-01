@@ -73,8 +73,8 @@ if ( $WP && ! empty( $WP['s'] ) ) {
 	$lo = isset( $WP['lo'] ) && $WP['lo'] !== null && $wWin ? $wS[ (int) $WP['lo'] ] : null;
 	if ( $lo ) { $lx = $wX( $lo[0] ); $mk .= '<em class="lo' . ( $wWin === $HOME ? ' dn' : '' ) . ( $lx > 70 ? ' lft' : '' ) . '" style="left:' . $lx . '%;top:' . $wY( $lo[1] ) . '%"><span>' . esc_html( $wWin ) . ' low ' . $wPct( $wFor( $wWin, $lo[1] ) ) . '</span></em>'; }
 	if ( $wOT ) {
-		$mk .= '<div class="otb" style="left:' . $wX( 3600 ) . '%"><span>Overtime</span></div>';  /* overtime scores are stacked down the band so close ones never overlap */
-		foreach ( $wOts as $k => $o ) { $mk .= '<i class="ots" style="left:' . $wX( $o[0] ) . '%;top:' . min( 88, 34 + 18 * $k ) . '%" data-tip="' . esc_attr( '<b>' . $wClock( $o[0] ) . '</b> ' . esc_html( $o[2] ) . '<br>' . $AWAY . ' ' . (int) $o[4] . ' · ' . $HOME . ' ' . (int) $o[3] ) . '" tabindex="0">' . esc_html( (string) $o[1] ) . '</i>'; }
+		$mk .= '<div class="otb" style="left:' . $wX( 3600 ) . '%"><span>Overtime</span></div>';  /* overtime scores are stacked down the band so close ones never overlap; one at the very end reads leftward so it stays inside the chart */
+		foreach ( $wOts as $k => $o ) { $mk .= '<i class="ots' . ( $wX( $o[0] ) > 94 ? ' r' : '' ) . '" style="left:' . $wX( $o[0] ) . '%;top:' . min( 88, 34 + 18 * $k ) . '%" data-tip="' . esc_attr( '<b>' . $wClock( $o[0] ) . '</b> ' . esc_html( $o[2] ) . '<br>' . $AWAY . ' ' . (int) $o[4] . ' · ' . $HOME . ' ' . (int) $o[3] ) . '" tabindex="0">' . esc_html( (string) $o[1] ) . '</i>'; }
 		if ( $wWin ) { $mk .= '<i class="fin' . ( $wWin === $HOME ? ' top' : '' ) . '" style="left:100%"></i>'; }
 	}
 	/* the scrubber: the snaps, then the end of regulation (the result, or 50% when it went to overtime), then overtime's scores, which carry no chance */
