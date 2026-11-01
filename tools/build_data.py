@@ -303,13 +303,17 @@ for t in T:
     out_players.sort(key=lambda p: -(sum(p['snaps'].values()) / len(p['snaps'])) if p['snaps'] else 0)
     team_players[t] = out_players
 # ---- grades: season metrics per player, and the league pool per position group (SCOPE §15)
-GROUPS = {'QB': 'qb', 'RB': 'rb', 'FB': 'rb', 'WR': 'rec', 'TE': 'rec'}
-MINQ = {'rec': 15, 'rb': 30, 'qb': 50}; MINLABEL = {'rec': '15 targets', 'rb': '30 touches', 'qb': '50 attempts'}
-LOW = {'rec': ['drop'], 'rb': [], 'qb': ['sack', 'intr']}
+# Pools (SCOPE §38): wide receivers and tight ends grade in separate pools, the way fantasy leagues rank them. A player's
+# grades carry both his kind (rec, rb, qb: which stats and labels apply) and his pool (wr, te, rb, qb: who he is ranked against).
+GROUPS = {'QB': 'qb', 'RB': 'rb', 'FB': 'rb', 'WR': 'wr', 'TE': 'te'}
+KIND = {'wr': 'rec', 'te': 'rec', 'rb': 'rb', 'qb': 'qb'}
+MINQ = {'wr': 15, 'te': 15, 'rb': 30, 'qb': 50}; MINLABEL = {'wr': '15 targets', 'te': '15 targets', 'rb': '30 touches', 'qb': '50 attempts'}
+LOW = {'wr': ['drop'], 'te': ['drop'], 'rb': [], 'qb': ['sack', 'intr']}
 
 def grade(p):
-    grp = GROUPS.get(p['pos'])
-    if not grp: return None
+    pool_ = GROUPS.get(p['pos'])
+    if not pool_: return None
+    grp = KIND[pool_]
     ws = p['weeks']; S = lambda k: sum(_num(x.get(k)) for x in ws)
     played = {int(x['week']) for x in ws} | {int(k) for k in p['snaps']}; g = max(1, len(played))
     tg, rc, ca, att, sk = S('targets'), S('receptions'), S('carries'), S('attempts'), S('sacks_suffered')
@@ -317,7 +321,7 @@ def grade(p):
     d = lambda a, b: (a / b) if b else None
     if grp == 'rec':
         m = dict(tshare=d(S('target_share'), len(ws)), adot=d(S('receiving_air_yards'), tg), yacpc=d(S('receiving_yards_after_catch'), rc), catch=d(rc, tg), epat=d(S('receiving_epa'), tg),
-                 fdpt=d(S('receiving_first_downs'), tg), drop=d(drops, tg), ypg=S('receiving_yards') / g); q = tg >= MINQ['rec']
+                 fdpt=d(S('receiving_first_downs'), tg), drop=d(drops, tg), ypg=S('receiving_yards') / g); q = tg >= MINQ[pool_]
     elif grp == 'rb':
         tch = ca + tg
         m = dict(ypc=d(S('rushing_yards'), ca), repc=d(S('rushing_epa'), ca), epat=d(S('receiving_epa'), tg) if tg >= 5 else None, btpt=d(bt, tch), expl=d(S('rushing_10') + S('receiving_20'), tch),
@@ -326,11 +330,12 @@ def grade(p):
         qbw = [x for x in ws if _num(x.get('attempts')) > 0]; db = att + sk
         m = dict(epadb=d(S('passing_epa'), db), cpoe=d(sum(_num(x.get('passing_cpoe')) for x in qbw), len(qbw)), sack=d(sk, db), ypa=d(S('passing_yards'), att), tdr=d(S('passing_tds'), att),
                  intr=d(S('passing_interceptions'), att), adot=d(S('passing_air_yards'), att), rushepa=S('rushing_epa') / g); q = att >= MINQ['qb']
-    return dict(grp=grp, q=bool(q), m={k: (round(v, 4) if v is not None else None) for k, v in m.items()})
+    return dict(grp=grp, pool=pool_, q=bool(q), m={k: (round(v, 4) if v is not None else None) for k, v in m.items()})
 
 dist = {g: {} for g in MINQ}; npool = {g: 0 for g in MINQ}; wkyds = {g: [] for g in MINQ}; wkm = {g: {} for g in MINQ}
 # per-game trend metrics (SCOPE §21): usage, yards, efficiency, role. Counts take a zero for a snaps-only week; rates only count games with a target, touch or dropback.
 def game_metrics(g, w):
+    g = KIND.get(g, g)
     if g == 'rec':
         tg = _num(w.get('targets')); r = {'tgt': tg, 'yds': _num(w.get('receiving_yards'))}
         if tg: r['epat'] = _num(w.get('receiving_epa')) / tg; r['adot'] = _num(w.get('receiving_air_yards')) / tg
@@ -344,6 +349,7 @@ def game_metrics(g, w):
     return r
 GAME_COUNTS = {'rec': ['tgt', 'yds'], 'rb': ['tch', 'yds', 'tgt'], 'qb': ['db', 'yds']}
 YDS = {'rec': ('receiving_yards',), 'rb': ('rushing_yards', 'receiving_yards'), 'qb': ('passing_yards',)}
+for _pl in ('wr', 'te'): GAME_COUNTS[_pl] = GAME_COUNTS['rec']; YDS[_pl] = YDS['rec']
 # ---- playstyle fingerprint (SCOPE §23): eight usage traits per group as shares of a player's own plays, plus the league pool per trait
 FP_BLITZ_MIN = 10
 def fp_for(plays, posmap):
@@ -361,7 +367,7 @@ def fp_for(plays, posmap):
     for pid in {q['pid'] for q in U} | qbids:
         g = GROUPS.get(posmap.get(pid))
         if not g: continue
-        if g == 'rec':
+        if KIND[g] == 'rec':
             m = [q for q in T if q['pid'] == pid]; comps = [q for q in m if q['k'] == 'comp']
             yds = sum(q['yds'] or 0 for q in comps); yac = sum(q['yac'] or 0 for q in comps)
             fp = dict(n=len(m), share=share(m, T), deep=rate(m, lambda q: q['air'] >= 20, lambda q: q['air'] is not None), scr=rate(m, lambda q: q['scr'] == 1), mid=rate(m, lambda q: q['loc'] == 'middle', lambda q: q['loc']),
@@ -386,22 +392,22 @@ for t, pl in team_players.items():
     for p in pl:
         gr = grade(p); p['grades'] = gr
         fpe = fpt.get(p['id']); p['fp'] = fpe[1] if fpe else None
-        if gr and gr['q'] and fpe and fpe[0] == gr['grp']:
+        if gr and gr['q'] and fpe and fpe[0] == gr['pool']:
             for k, v in fpe[1].items():
-                if k not in ('n', 'share') and v is not None: fpdist[gr['grp']].setdefault(k, []).append(v)
+                if k not in ('n', 'share') and v is not None: fpdist[gr['pool']].setdefault(k, []).append(v)
         if gr and gr['q']:
-            npool[gr['grp']] += 1
+            npool[gr['pool']] += 1
             for k, v in gr['m'].items():
-                if v is not None: dist[gr['grp']].setdefault(k, []).append(v)
+                if v is not None: dist[gr['pool']].setdefault(k, []).append(v)
             # the pool's game weeks, the yardstick for a boom or a dud: every week he played, a snaps-only week counting as zero
             statwk = {int(w['week']) for w in p['weeks']}
             for w in p['weeks']:
-                wkyds[gr['grp']].append(sum(_num(w.get(k)) for k in YDS[gr['grp']]))
-                for k, v in game_metrics(gr['grp'], w).items(): wkm[gr['grp']].setdefault(k, []).append(v)
+                wkyds[gr['pool']].append(sum(_num(w.get(k)) for k in YDS[gr['pool']]))
+                for k, v in game_metrics(gr['pool'], w).items(): wkm[gr['pool']].setdefault(k, []).append(v)
             for wk in p['snaps']:
                 if int(wk) not in statwk:
-                    wkyds[gr['grp']].append(0.0)
-                    for k in GAME_COUNTS[gr['grp']]: wkm[gr['grp']].setdefault(k, []).append(0.0)
+                    wkyds[gr['pool']].append(0.0)
+                    for k in GAME_COUNTS[gr['pool']]: wkm[gr['pool']].setdefault(k, []).append(0.0)
 for g in dist:
     for k in dist[g]: dist[g][k].sort()
 for g in fpdist:
@@ -482,7 +488,7 @@ def ep_for(p, grp):
         sec.append(['pass', S('passing_epa'), [[k, q[k], q[k] / db] for k in EP_PARTS['pass']] + ([['two', q['two'], None]] if q['two'] else [])])
         sec.append(['rush', S('rushing_epa'), [['scr', u.get('scr', 0.0), u.get('scr', 0.0) / db], ['run', u.get('run', 0.0), None]] + ([['two', u['two'], None]] if u.get('two') else [])])
         base = dict(u=int(db), sr=q['succ'] / db, any=d(q['yds'] + 20 * q['td'] - 45 * q['nint'] - q['sky'], q['att'] + q['nsk']), gr=_grid(GQ.get(pid, {})))
-    elif grp == 'rec':
+    elif KIND.get(grp, grp) == 'rec':
         t = EPR.get(pid)
         if not t or not t['tg']: return None
         sec.append(['rec', S('receiving_epa'), [[k, t[k], t[k] / t['tg']] for k in EP_PARTS['rec']] + ([['two', t['two'], None]] if t['two'] else [])])
@@ -512,6 +518,7 @@ TILE = {
                ptd=lambda p, S, m: S('passing_tds'), epadb=lambda p, S, m: m.get('epadb'), sack=lambda p, S, m: m.get('sack'), ruy=lambda p, S, m: S('rushing_yards'),
                any=lambda p, S, m: (p.get('ep') or {}).get('any')),
 }
+TILE['wr'] = TILE['te'] = TILE['rec']
 TILE_LOW = {'sack'}
 def _rank(vals, v, low=False):
     if v is None: return None
@@ -524,7 +531,7 @@ def _pc(vals, v):
 allp = [p for pl in team_players.values() for p in pl]
 for p in allp:
     gr = p.get('grades'); p['ep'] = ep_for(p, gr['grp']) if gr and have_pbp else None
-pool = {g: [p for p in allp if p.get('grades') and p['grades']['q'] and p['grades']['grp'] == g] for g in MINQ}
+pool = {g: [p for p in allp if p.get('grades') and p['grades']['q'] and p['grades'].get('pool') == g] for g in MINQ}
 for g, members in pool.items():
     # per-part rates (or totals where a part has no per-play rate), success, ANY/A and total EPA among the qualifiers
     pv = defaultdict(list)
@@ -555,7 +562,12 @@ def quart(a):
     if not a: return None
     a = sorted(a); q = lambda f: a[min(len(a) - 1, int(len(a) * f))]
     return dict(p25=q(.25), p50=q(.5), p75=q(.75), n=len(a))
-json.dump(clean(dict(season=season, through=through_week, groups={g: dict(n=npool[g], min=MINLABEL[g], low=LOW[g], dist=dist[g], week=quart(wkyds[g]), game={k: quart(v) for k, v in wkm[g].items()}, fp=fpdist[g]) for g in MINQ}, grid=lg_grid)), open(f'{out}/players/league.json', 'w'), separators=(',', ':'))
+lg_groups = {g: dict(n=npool[g], min=MINLABEL[g], low=LOW[g], dist=dist[g], week=quart(wkyds[g]), game={k: quart(v) for k, v in wkm[g].items()}, fp=fpdist[g]) for g in MINQ}
+# the combined receivers pool, as 1.13 and earlier read it, so the live site keeps grading until the 1.14 plugin is installed
+lg_groups['rec'] = dict(n=npool['wr'] + npool['te'], min=MINLABEL['wr'], low=LOW['wr'], dist={k: sorted(dist['wr'].get(k, []) + dist['te'].get(k, [])) for k in set(dist['wr']) | set(dist['te'])},
+                        week=quart(wkyds['wr'] + wkyds['te']), game={k: quart(wkm['wr'].get(k, []) + wkm['te'].get(k, [])) for k in set(wkm['wr']) | set(wkm['te'])},
+                        fp={k: sorted(fpdist['wr'].get(k, []) + fpdist['te'].get(k, [])) for k in set(fpdist['wr']) | set(fpdist['te'])})
+json.dump(clean(dict(season=season, through=through_week, groups=lg_groups, grid=lg_grid)), open(f'{out}/players/league.json', 'w'), separators=(',', ':'))
 # ---- the fantasy lens (SCOPE §34): points per format, range, booms and busts, position ranks, points allowed by each defense
 # nflverse's weekly stats carry standard and full-PPR points; half PPR is their average. Every QB, RB (FB counts as RB), WR and TE
 # with a stat line is in the pool, rostered or not, so ranks and points allowed count everyone who scored.
@@ -631,13 +643,13 @@ print('fantasy:', len(fx_sum), 'players,', len(fx_allow), 'defenses')
 
 # ---- leaders (SCOPE §37): every Scorecard metric and Playstyle trait by group, and the fantasy boards, for the Leaders page.
 # Rows are [id, value, usage, qualified]; the plugin sorts (lower-is-better stats ascending) and labels them from its own definitions.
-LD_FLOOR = {'rec': 5, 'rb': 10, 'qb': 20}   # usage floor for the lowest filter step: targets, touches, attempts
+LD_FLOOR = {'wr': 5, 'te': 5, 'rb': 10, 'qb': 20}   # usage floor for the lowest filter step: targets, touches, attempts
 ld_players, ld_groups = {}, {g: {'g': defaultdict(list), 'fp': defaultdict(list)} for g in LD_FLOOR}
 for p in allp:
     gr = p.get('grades')
-    if not gr or gr.get('grp') not in LD_FLOOR: continue
-    g = gr['grp']; S_ = (lambda ws: (lambda k: sum(_num(x.get(k)) for x in ws)))(p['weeks'])
-    use = int(S_('targets')) if g == 'rec' else (int(S_('carries') + S_('targets')) if g == 'rb' else int(S_('attempts')))
+    if not gr or gr.get('pool') not in LD_FLOOR: continue
+    g = gr['pool']; S_ = (lambda ws: (lambda k: sum(_num(x.get(k)) for x in ws)))(p['weeks'])
+    use = int(S_('targets')) if KIND[g] == 'rec' else (int(S_('carries') + S_('targets')) if g == 'rb' else int(S_('attempts')))
     if use < LD_FLOOR[g]: continue
     ld_players[p['id']] = [p['name'], fx_team.get(p['id']), p['pos'], p['num'], p['photo']]
     q_ = 1 if gr.get('q') else 0
@@ -667,8 +679,10 @@ for fm in ld_fan:
             if r[0] not in ld_players:
                 p = next(x for x in fan_p if x['id'] == r[0])
                 ld_players[r[0]] = [p['name'], fx_team.get(p['id']), p['pos'], p['num'], p['photo']]
-json.dump(clean(dict(season=season, through=through_week, min=MINQ, floor=LD_FLOOR, players=ld_players,
-                     groups={g: {'g': dict(v['g']), 'fp': dict(v['fp'])} for g, v in ld_groups.items()}, fan=ld_fan)), open(f'{out}/players/leaders.json', 'w'), separators=(',', ':'))
+ld_out = {g: {'g': dict(v['g']), 'fp': dict(v['fp'])} for g, v in ld_groups.items()}
+ld_out['rec'] = {src: {k: sorted(ld_out['wr'][src].get(k, []) + ld_out['te'][src].get(k, []), key=lambda r: -r[1]) for k in set(ld_out['wr'][src]) | set(ld_out['te'][src])} for src in ('g', 'fp')}  # 1.13's combined board
+json.dump(clean(dict(season=season, through=through_week, min=dict(MINQ, rec=MINQ['wr']), floor=dict(LD_FLOOR, rec=LD_FLOOR['wr']), players=ld_players,
+                     groups=ld_out, fan=ld_fan)), open(f'{out}/players/leaders.json', 'w'), separators=(',', ':'))
 print('leaders:', len(ld_players), 'players,', {g: len(v['g'].get(next(iter(v['g']), ''), [])) for g, v in ld_groups.items()})
 
 for t, pl in team_players.items():
