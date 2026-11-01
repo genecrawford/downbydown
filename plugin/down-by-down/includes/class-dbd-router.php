@@ -74,6 +74,8 @@ class DBD_Router {
 				$rows[] = $row; if ( count( $rows ) >= 3 ) { break; }
 			}
 			$r['view'] = 'compare'; $r['compare'] = $rows; $r['cgroup'] = $grp; $r['cmixed'] = $mixed;
+		} elseif ( self::q( 'myteam' ) !== '' || $view === 'myteam' ) {  /* My team (SCOPE §36): the team is the address; an empty one restores from the device in myteam.js */
+			$r['view'] = 'myteam'; $r['myteam'] = DBD_MyTeam::parse( self::q( 'myteam' ) );
 		} elseif ( $view === 'players' ) {
 			$r['view']  = 'players';
 			$pt = strtoupper( self::q( 'pt' ) );  /* the index's own team filter; team= opens that team's page */
@@ -155,6 +157,8 @@ class DBD_Router {
 			case 'players':
 				if ( $r['pteam'] ) { $t = DBD_Data::team( $r['pteam'] ); return array( "{$t['nick']} players", "Every {$t['name']} skill player who has taken an offensive snap in $season, with snap share, targets, carries, yards, EPA and this week's injury status." ); }
 				return array( 'Pick a player', "Every NFL skill player who has taken an offensive snap in $season: snap share, targets, carries, yards, touchdowns, EPA and injury status, by team and position." );
+			case 'myteam':
+				return array( 'My team', 'Your fantasy lineup on one page: this week\'s matchup, injury status, snap trend and points a game for every player you follow.' );
 			case 'notfound':
 				return array( 'Not found', '' );
 			default:
@@ -180,6 +184,7 @@ class DBD_Router {
 		if ( $r['view'] === 'game' ) { $args = array( 'game' => $r['game']['id'] ); if ( $r['side'] === 'home' ) { $args['side'] = 'home'; } }
 		if ( $r['view'] === 'matchups' ) { $args = array( 'view' => 'matchups' ); if ( $r['week'] !== DBD_Data::current_week() ) { $args['week'] = $r['week']; } }
 		if ( $r['view'] === 'teams' ) { $args = array( 'view' => 'teams' ); }
+		if ( $r['view'] === 'myteam' ) { $args = array( 'view' => 'myteam' ); }
 		if ( $r['view'] === 'player' ) { $args = array( 'player' => $r['player']['id'] ); }
 		if ( $r['view'] === 'players' ) { $args = array( 'view' => 'players' ); if ( $r['pteam'] ) { $args['pt'] = $r['pteam']; } if ( $r['pos'] ) { $args['pos'] = $r['pos']; } }
 		if ( $r['view'] === 'teamplayers' ) { $args = array( 'view' => 'players', 'team' => $r['pteam'] ); }
@@ -201,6 +206,7 @@ class DBD_Router {
 		if ( $r['view'] === 'player' && class_exists( 'DBD_Seo' ) ) { echo DBD_Seo::player_jsonld( $r['player'] ); }
 		if ( $r['view'] === 'players' && $r['q'] !== '' ) { echo '<meta name="robots" content="noindex,follow">' . "\n"; }
 		if ( $r['view'] === 'compare' ) { echo '<meta name="robots" content="noindex,follow">' . "\n"; }
+		if ( $r['view'] === 'myteam' ) { echo '<meta name="robots" content="noindex,follow">' . "\n"; }  /* personal */
 	}
 
 	/* ------------------------------------------------------------------ assets */
@@ -267,6 +273,11 @@ class DBD_Router {
 			wp_enqueue_script( 'dbd-chartist', DBD_URL . 'assets/vendor/chartist.umd.js', array(), '1.3.0', true );
 			wp_enqueue_script( 'dbd-compare', DBD_URL . 'assets/compare.js', array( 'dbd-marks', 'dbd-chartist' ), DBD_VERSION, true );
 			wp_localize_script( 'dbd-compare', 'DBD_CMP', array( 'base' => self::url(), 'group' => $r['cgroup'], 'players' => $pl, 'files' => $files, 'teams' => DBD_Data::teams(), 'heads' => DBD_Data::headshots(), 'series' => $series, 'labels' => $labels, 'yds' => array( 'rec' => 'Receiving yards', 'rb' => 'Scrimmage yards', 'qb' => 'Passing yards' )[ $r['cgroup'] ] ?? 'Yards' ) );
+		}
+		if ( $r['view'] === 'myteam' ) {
+			wp_enqueue_script( 'dbd-marks', DBD_URL . 'assets/marks.js', array(), DBD_VERSION, true );
+			wp_enqueue_script( 'dbd-myteam', DBD_URL . 'assets/myteam.js', array( 'dbd-marks' ), DBD_VERSION, true );
+			wp_localize_script( 'dbd-myteam', 'DBD_MT', array( 'base' => self::url(), 'ids' => array_map( function ( $p ) { return $p['id']; }, $r['myteam'] ), 'max' => DBD_MyTeam::MAX, 'given' => self::q( 'myteam' ) !== '', 'teams' => DBD_Data::teams(), 'heads' => DBD_Data::headshots() ) );
 		}
 		if ( $r['view'] === 'game' ) { wp_enqueue_script( 'dbd-game', DBD_URL . 'assets/game.js', array(), DBD_VERSION, true ); }  /* the win probability scrubber */
 		if ( $r['view'] === 'players' ) {

@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.11.1
+Stable tag: 1.12.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,13 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.12.0 =
+* My team (SCOPE §36): a new page, ?view=myteam, that lays out the players you follow as a fantasy lineup (QB, 2 RB, 2 WR, TE, FLEX, then the bench). Each row has this week's opponent and kickoff with the opponent's rank in points allowed to his position, the injury report line, a six-week snap sparkline, and points a game with his last three games. A read and four numbers sum up the week: starters' points a week, byes, players ruled out and soft matchups.
+* The lineup picks itself: each slot takes your highest scorer by points a game in the chosen format, skipping byes and players ruled out.
+* The team lives in the address bar (?myteam=…), so the link is the share link, and it is saved on the device. Opening someone else's link shows their team without replacing yours, with a choice to save it. Add players by search; remove, copy the link or clear the team on the page.
+* Player pages add a "+ My team" button to the side card.
+* The page is noindex. No new data files.
 
 = 1.11.1 =
 * Player pages (SCOPE §35): the column beside the headshot becomes one card. The team and his snap share sit on top, Compare and Share card are two equal buttons, and Players like him is a list with a Compare link on each row.
