@@ -33,7 +33,7 @@ Not affiliated with the NFL or any team. No team logos are used; team marks are 
 
 = 1.15.1 =
 * The Offense | Defense switch on team pages renamed its class (dbd-sideswitch). It shared dbd-side with the site's Divi sidebar column, so the sidebar's sticky, full-height column styles landed on the switch.
-* Data build: weekly stat rows count only for games already in the play-by-play file, so a build during Sunday games keeps totals, game logs and fantasy in step with the plays.
+* Data build: play-by-play and nflverse's weekly stats can land a day apart. The EPA split, snap-only zero-point weeks and game totals now count only the games both have, so a build mid-Sunday no longer half-counts a game.
 
 = 1.15.0 =
 * The defensive half (SCOPE §39): every team page has an Offense | Defense switch, and the Defense tab (?team=MIN&side=def) is as deep as a player page. Eight hero tiles ranked among 32 and a short version; a defense Scorecard against all 32 and a game-by-game chart of EPA allowed against what each offense usually manages; where offenses find room (a depth-by-direction pass grid, seven run lanes, the position ranks the player pages quote with fantasy points allowed and the players who hurt them most, and situations); how they play (pressure and the blitz, the box and the run, what offenses try, discipline and tackling, from FTN and PFR); the defenders (the front, linebackers and the secondary, with PFR's pressures and coverage); and the play explorer on every snap they defended.
