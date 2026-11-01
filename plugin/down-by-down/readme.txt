@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.8.1
+Stable tag: 1.9.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,14 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.9.0 =
+* Game page (SCOPE §32). Takeaways are now Keys to the game, and an upcoming game adds Players to watch: each team's quarterback, lead back and two most-targeted receivers, and its defense's two playmakers, with league ranks.
+* The lineups: on an upcoming game, a play-art board of the offense the page is set to against the other team's defense, starters from the depth charts, names on the board and seasons in the tooltips. A phone gets numbers on the board and a list below.
+* Box score: a final game lists each team's passing, rushing and receiving lines with snap share and share of the carries and targets, a read naming each team's best player by EPA, and lines for defense (sacks, interceptions) and kicking.
+* Team players: a team's players is its own page now, with the lineup (offense, defense, special teams), the roster grouped by position, and that team's movers only. The league index keeps the movers.
+* Tabbed panels are handled site-wide, and the tab pill is measured again once the page and its fonts have loaded.
+* The build writes lineups.json and box/w{N}.json, and the sync pulls them.
 
 = 1.8.1 =
 * Fixes from the 1.8.0 live check. The player page's scorecard is one column below about 940px (beside the site's sidebar on a laptop its two columns ran past the panel). Methods notes read in the 12px body face instead of 11px monospace. Compare's values join the type scale. Notes the page scripts draw after load fold on a short timer rather than an animation frame, which pauses in a tab that is not showing.

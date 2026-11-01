@@ -8,6 +8,8 @@ on:
       - 'tools/view_harness.php'
       - 'plugin/down-by-down/includes/views/player.php'
       - 'plugin/down-by-down/includes/views/game.php'
+      - 'plugin/down-by-down/includes/views/teamplayers.php'
+      - 'plugin/down-by-down/includes/class-dbd-lineup.php'
       - '.github/workflows/build-data.yml'
       - '.github/workflows/build-check.yml'
   workflow_dispatch:
@@ -88,6 +90,28 @@ jobs:
           if finals - have: bad.append('final games with no win probability: ' + ', '.join(sorted(finals - have)))
           if bad: print('\n'.join(bad)); sys.exit(1)
           PY
+      - name: Check the lineups and box scores (SCOPE §32)
+        run: |
+          python3 - <<'PY'
+          import json, glob, sys
+          bad = []
+          lu = json.load(open('/tmp/out/lineups.json'))['teams']
+          for t, u in sorted(lu.items()):
+              no, nd = len(u['off']), len(u['def'])
+              if no != 11: bad.append(f'{t}: {no} offensive starters')
+              if nd not in (11, 12): bad.append(f'{t}: {nd} defensive starters')
+              if any(not e.get('name') for e in list(u['off'].values()) + list(u['def'].values())): bad.append(f'{t}: a starter with no name')
+          print(len(lu), 'teams in lineups.json;', 'KC', sorted(lu.get('KC', {}).get('off', {})), lu.get('KC', {}).get('grp'))
+          sch = json.load(open('/tmp/out/schedule.json'))
+          finals = {g['id'] for gl in sch['weeks'].values() for g in gl if g['status'] == 'final' and g.get('game_type', 'REG') == 'REG'}
+          have = {gid for f in glob.glob('/tmp/out/box/w*.json') for gid in json.load(open(f))['games']}
+          if finals - have: bad.append('final games with no box score: ' + ', '.join(sorted(finals - have)))
+          b = json.load(open('/tmp/out/box/w2.json')); g = b['games'].get('2026_02_IND_KC')
+          if g: print('IND at KC box:', len(g['away']['off']), 'and', len(g['home']['off']), 'offensive lines; defense', g['away']['d'][:2], 'kicking', g['away']['k'])
+          print(len(have), 'box scores')
+          if lu and len(lu) != 32: bad.append(f'{len(lu)} teams in lineups.json')
+          if bad: print('\n'.join(bad)); sys.exit(1)
+          PY
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
@@ -98,6 +122,10 @@ jobs:
           export DBD_HARNESS_HTML=pages
           for id in 00-0034857 00-0036322 00-0033293 00-0036259; do php tools/view_harness.php /tmp/out player $id; done
           for gm in 2026_04_LA_PHI 2026_02_IND_KC 2026_05_NYG_WAS; do php tools/view_harness.php /tmp/out game $gm; grep -q 'class="dbd-panel dbd-wp"' "pages/game-$gm.html" || { echo "no win probability panel on $gm"; exit 1; }; done
+          php tools/view_harness.php /tmp/out game 2026_02_IND_KC && grep -q 'class="dbd-panel dbd-box"' pages/game-2026_02_IND_KC.html || { echo "no box score on IND at KC"; exit 1; }
+          UP=$(python3 -c "import json;s=json.load(open('/tmp/out/schedule.json'));print(next((g['id'] for w in sorted(s['weeks'],key=int) for g in s['weeks'][w] if g['status']!='final'),''))")
+          if [ -n "$UP" ]; then php tools/view_harness.php /tmp/out game $UP && grep -q 'class="dbd-panel dbd-lu"' "pages/game-$UP.html" || { echo "no lineups on $UP"; exit 1; }; fi
+          php tools/view_harness.php /tmp/out teamplayers MIN && grep -q 'dbd-lufield unit' pages/teamplayers-MIN.html || { echo "no lineup on the Vikings page"; exit 1; }
       - uses: actions/upload-artifact@v4
         with:
           name: pages-fresh-data

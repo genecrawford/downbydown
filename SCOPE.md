@@ -1186,3 +1186,52 @@ The type scale lands with the first release and reaches the other pages through 
 - **Personalizing which tabs open by default.** The first tab is the most-read one; remembering a reader's tab is a later polish.
 
 Size: player page M; each later page S to M. Status: signed off 2026-11-01 ("so much better, can you build this and then make a pass over the rest of the pages"); the player page built as 1.7.0.
+
+## 32. Game page and team players (scoped and mocked 2026-11-01, `mockup-v9/`)
+
+Roadmap 2 slice 5 (the box score), combined with Gene's notes the same day: "when I click to this page from a 'team players' link it should not show the Movers first. We should probably make a team players page that can exist on its own," and for the matchup page, "a 'keys to the game' section … perhaps a rebranding of [Takeaways] or an inclusion of the top position players in a small grid below it," and "an offensive vs defensive lineup view … kind of like a 'Madden Football' style play graphic." The matchup page here is the game page (`?game=`, "Colts offense vs Chiefs defense"), where Takeaways live. The mock is three live 1.8.1 pages with the new parts outlined: an upcoming game (`game-upcoming.html`, Chiefs at Broncos, Week 8), a final (`game-final.html`, Colts at Chiefs, Week 2) and the Vikings' team players page (`team-players.html`). Every number is this season's nflverse data.
+
+### The game page
+
+| Part | Upcoming game | Final game |
+|---|---|---|
+| **Keys to the game** (Takeaways, renamed) | The four generated cards, retitled "Keys to the game · where this matchup tilts", plus **Players to watch**: for each team, its quarterback, lead back and two most-targeted receivers (season line, the efficiency stat the hero tiles rank, the rank when it is top 30, green when top 10), and its defense's two playmakers (season line; sacks, or interceptions for a defensive back, with the league rank when it is top 30) | Kept below the box score, labeled "from the season numbers, not this game alone" |
+| **The lineups** (new) | A play-art board: the offense the page is set to (the existing away/home toggle flips it) in its base three-receiver set below the line, the other team's defense in its base front above, starters from each team's depth chart. Offense in its team color with jersey numbers, defense in white with the other team's color; the nickel back drawn lighter. Names on the board, every player's season in his tooltip, skill players link to their pages. On a phone the board shows numbers and a list below it names every starter with his season | Not shown: the box score says who actually played |
+| **Box score** (new) | — | After How it played out. Each team's passing, rushing and receiving lines for the game (with the player's snap share beside his name, and his share of the team's carries or targets), a read naming each team's best player by EPA, and a line for defense (sacks, interceptions) and kicking (field goals). Two columns of teams on a wide screen, stacked on a phone |
+
+Measured in the mock: Chiefs at Broncos, the Chiefs' 3WR 1TE (Mahomes, Walker, Rice, Worthy, Royals, Kelce, Benson, Suamataia, Humphrey, Smith, Moore) against the Broncos' Base 3-4 (Allen, Jones, Uwazurike; Cooper, Bonitto, Strnad, Singleton; Moss, Surtain, McMillion at nickel; Jones, Hufanga). Colts at Chiefs: "J.Downs led the Colts at +8.2 EPA (7 catches for 72). P.Mahomes led the Chiefs at +13.9 EPA (32 of 47 for 382)"; defense "D.Buckner 1 sack, J.Tillery 1 sack", kicking "S.Shrader 3/3 FG (long 49)".
+
+### The team players page (standalone)
+
+`?view=players&team=MIN` stops being the league index with a team filter and becomes the team's own page (the league index keeps `?view=players`):
+
+1. **The header**: "Vikings players", the team, and a link to all players.
+2. **The lineup**: one tabbed panel, Offense · 3WR 1TE, Defense · 3-4, Special teams (kicker, punter, returners, snapper, holder), each unit filling its own board, the same chips and tooltips as the game page.
+3. **The roster**: every skill player with a snap, grouped Quarterbacks, Running backs, Wide receivers, Tight ends, each with his depth slot, snap share, usage, yards, TD, EPA and injury status.
+4. **This team's movers** only, after the roster; when none moved enough, one line and a link to the league's movers.
+
+The league-wide Movers panel no longer opens the team page (it was 1,687px of other teams). Measured: the mock team page is 1.8 screens.
+
+### Data
+
+- **Lineups**: the build already downloads `depth_charts_{season}.csv` and keeps only skill positions. It keeps each team's **latest snapshot** of every position (the file is daily, 270 snapshots so far), the starter in each slot (lowest rank), with jersey numbers from the roster file. Every team lists a "3WR 1TE" offense and a Base 3-4 or Base 4-3 defense, and the 25 position codes are a closed set, so the board places each slot from a fixed map. Written as `lineups.json`: per team, offense, defense and special teams starters with id, name, jersey, position name, and for defenders and kickers their season line from the weekly stats (tackles, sacks, interceptions, passes defended; field goals). About 60 KB.
+- **Box score**: offense comes from the player files' weekly lines (already on the site, with snap share). Defense and kicking for each game come from the same weekly stats file the build reads, for every player (today it keeps skill positions only): `box/w{N}.json`, per game, each team's sack, interception and field-goal lines. About 4 KB a week.
+- **Sync**: the allowlist gains `lineups.json` and `box/w{N}.json`, so the release must be live before those files arrive (as with win probability); until then the lineups and the box score's defense line are absent and the rest of the page renders.
+- **Build check**: every team has 11 offensive and 11 or 12 defensive starters with names, and every final game has a box file.
+
+### Plugin (1.9.0)
+
+`game.php` (Keys to the game with Players to watch, the lineups on upcoming games, the box score on finals), a new `team-players.php` view routed for `?view=players&team=`, the lineup board as a shared renderer (`DBD_Marks::lineup()` or a partial) used by both, `dbd.css`, the tab pill measured again on load (the mock showed it can be set before the fonts arrive), view-harness renders of an upcoming game, a final and a team page, and the sync allowlist.
+
+### Left out
+
+- **Personnel and formations from the play-by-play**: nflverse's 2026 play-by-play carries no personnel or formation columns, so the board shows each team's listed base set, not what it actually lines up in most.
+- **Lineups for past games**: the board uses today's depth chart, so a final shows the box score instead.
+- **Full defensive box scores** (tackles for every defender): the box score keeps defense to sacks and interceptions; the season lines on the board carry tackles.
+- **Player pages for linemen and defenders**: their chips carry a tooltip, not a link.
+
+### Acceptance (measured on the built pages)
+
+Chiefs at Broncos shows both lineups as above with no overlapping chips at 375 and 1440; Colts at Chiefs shows the box score lines above; the Vikings page opens with the lineup, not the league's movers, and lists 19 players in four groups. No text under 11px; no horizontal scroll at 375.
+
+Size: L (three parts, one new view, two data files). Status: signed off 2026-11-01 and built as 1.9.0.

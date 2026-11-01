@@ -29,6 +29,24 @@
   foldNotes();
   if (window.MutationObserver) { var fq = 0; new MutationObserver(function () { if (fq) return; fq = setTimeout(function () { fq = 0; foldNotes(); }, 60); }).observe(root, { childList: true, subtree: true }); }  /* a timer, not an animation frame: frames pause in a tab that is not showing */
 
+  /* tabbed panels (SCOPE §31, site-wide since 1.9.0): every pane is in the page; a tab shows one and slides the pill. Charts and
+     segmented controls inside re-measure on resize. The pill is measured again once the page and its fonts have loaded, since a
+     tab measured before the webfont arrives is narrower than it ends up. */
+  root.querySelectorAll('.dbd-tabbed').forEach(function (box) {
+    var bar = box.querySelector('.dbd-btabs'); if (!bar) return;
+    var pill = function (b, anim) { var pl = bar.querySelector('.t-tabs-pill'); if (!pl || !b) return; if (!anim) pl.style.transition = 'none'; pl.style.transform = 'translateX(' + b.offsetLeft + 'px)'; pl.style.width = b.offsetWidth + 'px'; if (!anim) { void pl.offsetWidth; pl.style.transition = ''; } };
+    var cur = function () { pill(bar.querySelector('[aria-selected="true"]'), false); };
+    bar.addEventListener('click', function (e) {
+      var b = e.target.closest('.t-tab'); if (!b) return;
+      bar.querySelectorAll('.t-tab').forEach(function (x) { x.setAttribute('aria-selected', x === b ? 'true' : 'false'); });
+      box.querySelectorAll(':scope > .dbd-pane').forEach(function (p) { p.hidden = p.getAttribute('data-pane') !== b.getAttribute('data-pane'); });
+      pill(b, true); if (b.scrollIntoView && bar.scrollWidth > bar.clientWidth) b.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      window.dispatchEvent(new Event('resize'));
+    });
+    setTimeout(cur, 0); window.addEventListener('resize', cur); window.addEventListener('load', cur);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(cur);
+  });
+
   /* sortable stat tables: click a heading. Numeric columns start descending, text ascending; blanks sink.
      The Players index sorts its own data in players.js; everything else sorts the rows in place. */
   root.addEventListener('click', function (e) {
