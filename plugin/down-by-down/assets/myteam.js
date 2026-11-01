@@ -9,7 +9,7 @@
   var KEY = 'dbd-myteam', ids = (C.ids || []).slice();
   var read = function () { try { var v = JSON.parse(localStorage.getItem(KEY) || '[]'); return Array.isArray(v) ? v.filter(function (x) { return /^\d{2}-\d{7}$/.test(x); }) : []; } catch (e) { return []; } };
   var save = function (list) { try { if (list.length) localStorage.setItem(KEY, JSON.stringify(list)); else localStorage.removeItem(KEY); } catch (e) {} };
-  var url = function (list) { var b = C.base + (C.base.indexOf('?') >= 0 ? '&' : '?'); return list.length ? b + 'myteam=' + list.join(',') : b + 'view=myteam'; };
+  var url = function (list) { var b = C.base + (C.base.indexOf('?') >= 0 ? '&' : '?'); return list.length ? b + 'myteam=' + list.join('%2C') : b + 'view=myteam'; };  /* %2C: WordPress redirects a bare comma to it, an extra round trip */
   var empty = function () { return C.base + (C.base.indexOf('?') >= 0 ? '&' : '?') + 'myteam=none'; };  /* an emptied shared team stays empty instead of restoring the saved one (Greptile, PR #40) */
   var shared = false;  /* a shared team being viewed: edits stay in the address until the reader saves it (Greptile, PR #40) */
   var go = function (list) { if (!shared) save(list); location.href = shared && !list.length ? empty() : url(list); };
