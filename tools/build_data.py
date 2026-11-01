@@ -32,6 +32,8 @@ Writes:
   lineups.json    each team's starters from its latest depth chart, offense, defense and special teams, with jerseys and defenders' season lines (SCOPE §32)
   box/w{N}.json   each final game's box score: offense lines with snap share, defense sacks and interceptions, kicking (SCOPE §32)
   series.json     every scheduled pair's series since 1999 and every team's record broken down (SCOPE §33)
+  fantasy.json    points allowed by each defense to QB/RB/WR/TE in standard, half and PPR, with ranks, the starter line and boom/bust lines (SCOPE §34);
+                  player files gain fan (per-format totals, range, booms, busts, ranks), index rows fp/fr/fpos
   manifest.json   {season, week, through_week, built_at, files: {path: sha1}}
 
 Runs nightly in GitHub Actions during the season; the WordPress plugin pulls what changed.
@@ -228,7 +230,7 @@ def _draft(r):
 
 SKILL = ('QB', 'RB', 'FB', 'WR', 'TE')
 WEEK_FIELDS = ['week', 'team', 'opponent_team', 'targets', 'receptions', 'receiving_yards', 'receiving_tds', 'receiving_air_yards', 'receiving_yards_after_catch', 'receiving_epa', 'receiving_first_downs', 'target_share', 'air_yards_share', 'wopr',
-               'carries', 'rushing_yards', 'rushing_tds', 'rushing_epa', 'rushing_first_downs', 'attempts', 'completions', 'passing_yards', 'passing_tds', 'passing_interceptions', 'passing_epa', 'passing_cpoe', 'sacks_suffered', 'passing_air_yards', 'passing_first_downs', 'receiving_20', 'rushing_10']
+               'carries', 'rushing_yards', 'rushing_tds', 'rushing_epa', 'rushing_first_downs', 'attempts', 'completions', 'passing_yards', 'passing_tds', 'passing_interceptions', 'passing_epa', 'passing_cpoe', 'sacks_suffered', 'passing_air_yards', 'passing_first_downs', 'receiving_20', 'rushing_10', 'fantasy_points', 'fantasy_points_ppr']
 _rw = _r[_r.position.isin(SKILL)].copy()
 if 'week' in _rw.columns:
     # each team's own latest roster week: teams on bye have no rows for the current week and would vanish otherwise
@@ -553,6 +555,79 @@ def quart(a):
     a = sorted(a); q = lambda f: a[min(len(a) - 1, int(len(a) * f))]
     return dict(p25=q(.25), p50=q(.5), p75=q(.75), n=len(a))
 json.dump(clean(dict(season=season, through=through_week, groups={g: dict(n=npool[g], min=MINLABEL[g], low=LOW[g], dist=dist[g], week=quart(wkyds[g]), game={k: quart(v) for k, v in wkm[g].items()}, fp=fpdist[g]) for g in MINQ}, grid=lg_grid)), open(f'{out}/players/league.json', 'w'), separators=(',', ':'))
+# ---- the fantasy lens (SCOPE §34): points per format, range, booms and busts, position ranks, points allowed by each defense
+# nflverse's weekly stats carry standard and full-PPR points; half PPR is their average. Every QB, RB (FB counts as RB), WR and TE
+# with a stat line is in the pool, rostered or not, so ranks and points allowed count everyone who scored.
+FX_FMT = ('std', 'half', 'ppr'); FX_POS = ('QB', 'RB', 'WR', 'TE')
+FX_BOOM = {'QB': (25, 25, 25), 'RB': (12, 16, 20), 'WR': (12, 16, 20), 'TE': (9, 12, 15)}   # standard, half, PPR: lines set in PPR, scaled for a reception's worth
+FX_BUST = {'QB': (12, 12, 12), 'RB': (5, 6.5, 8), 'WR': (5, 6.5, 8), 'TE': (3, 4, 5)}
+FX_START = {'QB': 12, 'RB': 24, 'WR': 24, 'TE': 12}                                           # the last weekly starter in a 12-team league
+def _fxpct(a, q):
+    a = sorted(a); i = (len(a) - 1) * q; lo = int(i); hi = min(lo + 1, len(a) - 1); return a[lo] + (a[hi] - a[lo]) * (i - lo)
+fx_by = defaultdict(list); fx_pos = {}
+if len(stats) and 'fantasy_points' in stats.columns and 'fantasy_points_ppr' in stats.columns:
+    for w in stats.itertuples():
+        fp_ = 'RB' if getattr(w, 'position', None) == 'FB' else getattr(w, 'position', None)
+        if fp_ not in FX_POS or not isinstance(w.player_id, str): continue
+        sd, pp = _num(w.fantasy_points), _num(w.fantasy_points_ppr)
+        fx_by[w.player_id].append(dict(w=int(w.week), opp=w.opponent_team, pts=(sd, (sd + pp) / 2, pp))); fx_pos[w.player_id] = fp_
+# a game he played without a stat line (snaps, no touch) still counts, at zero points: it is a bust week and a game in his average (Greptile, PR #38)
+fx_opp = {}
+for g_ in sched.itertuples():
+    fx_opp[(g_.home_team, int(g_.week))] = g_.away_team; fx_opp[(g_.away_team, int(g_.week))] = g_.home_team
+fx_team = {p_['id']: t_ for t_, pl_ in team_players.items() for p_ in pl_}
+fx_reg = int(sched[sched.game_type == 'REG'].week.max()) if 'game_type' in sched.columns and (sched.game_type == 'REG').any() else 18  # snap counts run into the playoffs; the lens is the regular season
+for p in allp:
+    ps_ = fx_pos.get(p['id']) or ('RB' if p['pos'] == 'FB' else p['pos'])
+    if ps_ not in FX_POS: continue
+    have = {x['w'] for x in fx_by.get(p['id'], [])}
+    for wk_, sp_ in p['snaps'].items():
+        wk_ = int(wk_)
+        if sp_ and wk_ not in have and wk_ <= fx_reg:
+            tm_ = p['snapteam'].get(str(wk_)) or fx_team[p['id']]  # a week played for another team (trade) carries that team
+            fx_by[p['id']].append(dict(w=wk_, opp=fx_opp.get((tm_, wk_)), pts=(0.0, 0.0, 0.0))); fx_pos[p['id']] = ps_
+            p.setdefault('fx0', []).append(wk_)  # the player page draws these weeks as zero-point games, not misses
+fx_sum = {}
+for pid_, ws_ in fx_by.items():
+    ps_ = fx_pos[pid_]; s_ = {}
+    for i_, fm in enumerate(FX_FMT):
+        v = [x['pts'][i_] for x in ws_]
+        s_[fm] = dict(tot=round(sum(v), 1), g=len(v), ppg=round(sum(v) / len(v), 2), lo=round(_fxpct(v, .2), 1), hi=round(_fxpct(v, .8), 1),
+                      boom=sum(1 for x in v if x >= FX_BOOM[ps_][i_]), bust=sum(1 for x in v if x < FX_BUST[ps_][i_]))
+    fx_sum[pid_] = s_
+fx_rank = {}; fx_start = {}
+for ps_ in FX_POS:
+    ids_ = [x for x in fx_sum if fx_pos[x] == ps_]
+    if not ids_: continue
+    fx_start[ps_] = []
+    for fm in FX_FMT:
+        mx = max(fx_sum[x][fm]['g'] for x in ids_); q_ = [x for x in ids_ if fx_sum[x][fm]['g'] >= mx / 2]  # half the most games at the position, so a one-game wonder does not rank first
+        tots = sorted((fx_sum[x][fm]['tot'] for x in ids_), reverse=True); ppgs = sorted((fx_sum[x][fm]['ppg'] for x in q_), reverse=True)
+        for x in ids_:
+            fx_rank.setdefault(x, {})[fm] = dict(tot=1 + sum(1 for o in tots if o > fx_sum[x][fm]['tot']), ppg=(1 + sum(1 for o in ppgs if o > fx_sum[x][fm]['ppg'])) if x in q_ else None, n=len(q_))
+        fx_start[ps_].append(ppgs[min(len(ppgs), FX_START[ps_]) - 1] if ppgs else None)
+for p in allp:
+    if p['id'] in fx_sum: p['fan'] = dict(pos=fx_pos[p['id']], s=fx_sum[p['id']], rk=fx_rank[p['id']])
+for r_ in index_rows:
+    if r_['id'] in fx_sum:
+        r_['fp'] = [fx_sum[r_['id']][fm]['ppg'] for fm in FX_FMT]; r_['fr'] = [fx_rank[r_['id']][fm]['ppg'] for fm in FX_FMT]; r_['fpos'] = fx_pos[r_['id']]
+# points allowed: every player at the position against that defense, per game the defense played
+fx_al = defaultdict(lambda: defaultdict(lambda: [0.0, 0.0, 0.0])); fx_gm = defaultdict(set)
+for pid_, ws_ in fx_by.items():
+    for x in ws_:
+        if not isinstance(x['opp'], str): continue
+        a_ = fx_al[x['opp']][fx_pos[pid_]]
+        for i_ in range(3): a_[i_] += x['pts'][i_]
+        fx_gm[x['opp']].add(x['w'])
+fx_allow = {d: {ps_: [round(fx_al[d][ps_][i_] / len(fx_gm[d]), 2) for i_ in range(3)] for ps_ in FX_POS} for d in fx_al if fx_gm[d]}
+fx_arank = {d: {ps_: [0, 0, 0] for ps_ in FX_POS} for d in fx_allow}
+for ps_ in FX_POS:
+    for i_ in range(3):
+        for k_, d in enumerate(sorted(fx_allow, key=lambda d: -fx_allow[d][ps_][i_])): fx_arank[d][ps_][i_] = k_ + 1  # 1 = allows the most
+json.dump(clean(dict(season=season, through=through_week, fmt=list(FX_FMT), allow=fx_allow, rank=fx_arank, g={d: len(fx_gm[d]) for d in fx_allow}, start=fx_start,
+                     boom={k: list(v) for k, v in FX_BOOM.items()}, bust={k: list(v) for k, v in FX_BUST.items()}, slot=FX_START)), open(f'{out}/fantasy.json', 'w'), separators=(',', ':'))
+print('fantasy:', len(fx_sum), 'players,', len(fx_allow), 'defenses')
+
 for t, pl in team_players.items():
     json.dump(clean(dict(season=season, team=t, through=through_week, players=pl)), open(f'{out}/players/{t}.json', 'w'), separators=(',', ':'))
 

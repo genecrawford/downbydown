@@ -33,6 +33,8 @@ jobs:
           php tools/view_harness.php data game 2026_08_MIN_DET
           php tools/view_harness.php data teamplayers MIN
           php tools/view_harness.php data hub
+          php tools/view_harness.php data matchups
+          php tools/view_harness.php data compare 00-0036322,00-0039075
       - name: Render share cards
         run: |
           set -e

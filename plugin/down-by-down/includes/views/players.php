@@ -73,19 +73,20 @@ if ( $MV && ! empty( $MV['week'] ) ) {
 	echo '<p class="dbd-note">Each row compares his last full week with his average over the games he had played before it, so a mover broke from his own pattern. Boards list the ' . DBD_Grades::MV_PER . ' biggest climbers, then the ' . DBD_Grades::MV_PER . ' biggest fallers, past a floor (' . DBD_Grades::MV_FLOOR_SNAPS . ' points of snap share, ' . DBD_Grades::MV_FLOOR_TARGETS . ' of target share, ' . number_format( DBD_Grades::MV_FLOOR_EPA, 1 ) . ' EPA). The sparkline is his season; the dot is that week. New faces took their first snap that week with ' . DBD_Grades::MV_DEBUT . '% or more, or passed ' . DBD_Grades::MV_START . '% for the first time.</p></section>';
 }
 
-/* ---- filters: team tiles, position switch, search. All real links; JS takes over once loaded. */
-echo '<section class="dbd-panel"><div class="dbd-toolbar dbd-ptools">';
-echo '<div class="dbd-fg"><span>Team</span><div class="dbd-teampick" id="dbd-teampick"><a class="dbd-mkbtn' . ( $team ? '' : ' on' ) . '" href="' . esc_url( $purl( $pos ? array( 'pos' => $pos ) : array() ) ) . '" data-team="" title="All teams">ALL</a>';
-foreach ( array_keys( DBD_Data::teams() ) as $a ) {
-	echo '<a class="dbd-mkbtn' . ( $a === $team ? ' on' : '' ) . '" href="' . esc_url( $purl( array_filter( array( 'pt' => $a, 'pos' => $pos ) ) ) ) . '" data-team="' . esc_attr( $a ) . '" title="' . esc_attr( DBD_Data::team( $a )['name'] ) . '">' . DBD_Marks::tile( $a, 32 ) . '</a>';
-}
-echo '</div></div>';
+/* ---- filters (SCOPE §34): what you're looking for on one line (search, position, fantasy scoring), then the team tiles on their own line. All real links; JS takes over once loaded. */
+echo '<section class="dbd-panel"><div class="dbd-toolbar dbd-ptools dbd-pbar"><div class="dbd-prow">';
+echo '<div class="dbd-fg dbd-fq"><label for="dbd-pq">Search</label><input class="dbd-srch" id="dbd-pq" type="search" value="' . esc_attr( $q ) . '" placeholder="Name, number or college" autocomplete="off"></div>';
 echo '<div class="dbd-fg"><span>Position</span><div class="dbd-seg t-tabs" id="dbd-pos" role="tablist"><span class="t-tabs-pill" aria-hidden="true"></span>';
 foreach ( array( '' => 'All', 'QB' => 'QB', 'RB' => 'RB', 'WR' => 'WR', 'TE' => 'TE' ) as $k => $lab ) {
 	echo '<a class="t-tab" role="tab" href="' . esc_url( $purl( array_filter( array( 'pt' => $team, 'pos' => $k ) ) ) ) . '" data-v="' . esc_attr( $k ) . '" aria-selected="' . ( $pos === $k ? 'true' : 'false' ) . '">' . $lab . '</a>';
 }
 echo '</div></div>';
-echo '<div class="dbd-fg"><label for="dbd-pq">Search</label><input class="dbd-srch" id="dbd-pq" type="search" value="' . esc_attr( $q ) . '" placeholder="Name, number or college" autocomplete="off"></div>';
+echo '<div class="dbd-fg dbd-ffmt"><span>Fantasy scoring</span>' . DBD_Fantasy::seg() . '</div></div>';
+echo '<div class="dbd-fg dbd-fteam"><span>Team</span><div class="dbd-teampick" id="dbd-teampick"><a class="dbd-mkbtn' . ( $team ? '' : ' on' ) . '" href="' . esc_url( $purl( $pos ? array( 'pos' => $pos ) : array() ) ) . '" data-team="" title="All teams">ALL</a>';
+foreach ( array_keys( DBD_Data::teams() ) as $a ) {
+	echo '<a class="dbd-mkbtn' . ( $a === $team ? ' on' : '' ) . '" href="' . esc_url( $purl( array_filter( array( 'pt' => $a, 'pos' => $pos ) ) ) ) . '" data-team="' . esc_attr( $a ) . '" title="' . esc_attr( DBD_Data::team( $a )['name'] ) . '">' . DBD_Marks::tile( $a, 32 ) . '</a>';
+}
+echo '</div></div>';
 echo '</div></section>';
 
 /* ---- rows: this team, or the league leaders */
@@ -97,7 +98,7 @@ $rows = array_values( array_filter( $idx, function ( $p ) use ( $team, $pos, $q 
 } ) );
 /* every player lists (Gene, 2026-10-31: no top-60 cap); the sort is snap share */
 $lab = $q !== '' ? '<b>Search</b> · ' . esc_html( $q ) . ' · all teams' : ( $team ? '<b>Roster usage</b> · sorted by snap share' : '<b>Every player</b> · ' . count( $rows ) . ' by snap share' );
-echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab" id="dbd-plab">' . $lab . '</span><span class="dbd-badge">Click a row</span></div><div class="dbd-tw"><table class="dbd-plist dbd-stat dbd-sortable" id="dbd-plist"><thead><tr><th data-sort="name">Player</th><th data-sort="team" class="dbd-t2">Team</th><th data-sort="pos">Pos</th><th data-sort="snap" class="dbd-t2">Snap %</th><th data-sort="use">Tgt / Att</th><th data-sort="rec" class="dbd-t2">Rec</th><th data-sort="car" class="dbd-t2">Car</th><th data-sort="yds">Yds</th><th data-sort="td">TD</th><th data-sort="epa">EPA</th><th data-sort="st" class="dbd-t3">Status</th></tr></thead><tbody>';
+echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab" id="dbd-plab">' . $lab . '</span><span class="dbd-badge">Click a row</span></div><div class="dbd-tw"><table class="dbd-plist dbd-stat dbd-sortable" id="dbd-plist"><thead><tr><th data-sort="name">Player</th><th data-sort="team" class="dbd-t2">Team</th><th data-sort="pos">Pos</th><th data-sort="snap" class="dbd-t2">Snap %</th><th data-sort="use">Tgt / Att</th><th data-sort="rec" class="dbd-t2">Rec</th><th data-sort="car" class="dbd-t2">Car</th><th data-sort="yds">Yds</th><th data-sort="td">TD</th><th data-sort="epa">EPA</th><th data-sort="fp" class="dbd-pfph">Fpts/g</th><th data-sort="st" class="dbd-t3">Status</th></tr></thead><tbody>';
 ob_start();
 foreach ( $rows as $p ) {
 	$href = DBD_Router::url( array( 'player' => $p['id'] ) ); $st = (string) ( $p['st'] ?? '' );
@@ -107,10 +108,11 @@ foreach ( $rows as $p ) {
 	echo '<td class="dbd-ptm">' . DBD_Marks::tile( $p['team'], 20 ) . '</td><td class="dbd-ppos">' . esc_html( $p['pos'] ) . '</td><td class="dbd-psnap"><span class="dbd-sb"><i style="--w:' . (int) $p['snap'] . '%"></i></span>' . (int) $p['snap'] . '%</td>';
 	$use = $p['pos'] === 'QB' ? ( $p['att'] ?? 0 ) : $p['tgt'];
 	echo '<td>' . ( $use ?: '' ) . '</td><td>' . ( $p['rec'] ?: '' ) . '</td><td>' . ( $p['car'] ?: '' ) . '</td><td>' . (int) $p['yds'] . '</td><td>' . ( $p['td'] ?: '' ) . '</td><td class="' . ( $p['epa'] >= 0 ? 'pos' : 'neg' ) . '">' . ( $p['epa'] > 0 ? '+' : '' ) . number_format( (float) $p['epa'], 1 ) . '</td>';
+	echo DBD_Fantasy::index_cell( $p );
 	echo '<td>' . ( $st !== '' ? '<span class="dbd-st' . $cls . '">' . esc_html( $lbl . ( ! empty( $p['what'] ) ? ' · ' . $p['what'] : '' ) ) . '</span>' : '' ) . '</td></tr>';
 }
-if ( ! $rows ) { echo '<tr><td colspan="11" class="dbd-note">No players match.</td></tr>'; }
-echo DBD_Router::tierize( ob_get_clean(), array( null, 'dbd-t2', null, 'dbd-t2', null, 'dbd-t2', 'dbd-t2', null, null, null, 'dbd-t3' ) );
-echo '</tbody></table></div><p class="dbd-note">Snap share is the season average of offensive snaps played. Status is the latest practice or game report; blank means no listing. Quarterbacks show pass attempts in the Tgt / Att column. Search matches name, number, team abbreviation or college across every team. Click a column heading to sort.</p></section>';
+if ( ! $rows ) { echo '<tr><td colspan="12" class="dbd-note">No players match.</td></tr>'; }
+echo DBD_Router::tierize( ob_get_clean(), array( null, 'dbd-t2', null, 'dbd-t2', null, 'dbd-t2', 'dbd-t2', null, null, null, null, 'dbd-t3' ) );
+echo '</tbody></table></div><p class="dbd-note">Snap share is the season average of offensive snaps played. Status is the latest practice or game report; blank means no listing. Quarterbacks show pass attempts in the Tgt / Att column. Search matches name, number, team abbreviation or college across every team. Fpts/g is fantasy points a game in the scoring you pick, with the rank at his position among players with enough games. Click a column heading to sort.</p></section>';
 echo '</main>';
 echo '<script type="application/json" id="dbd-pindex">' . wp_json_encode( $idx ) . '</script>';

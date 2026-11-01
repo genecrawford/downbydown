@@ -184,6 +184,10 @@ if ( $scRows ) {
 	echo '<p class="dbd-note">' . ( $graded ? 'Each bar is the league at his position; the marker is him. Right is better, the dashed line is the median. Ranks are out of the qualifying pool, ties shown as T-, and move every week as the pool changes.' : 'Graded once he reaches ' . esc_html( $gi['min'] ?? 'the qualifier' ) . '. ' . $N . ' ' . esc_html( DBD_Grades::pool_label( $ggrp ) ) . ' qualify so far.' ) . '</p></section>';
 }
 
+/* ---- fantasy (SCOPE §34): points in every format, rank, range, booms and busts, the weeks, the next matchup. From the player file's fan block; older data skips it. */
+list( $fxHtml, $fxShort ) = DBD_Fantasy::panel( $p, $a );
+echo $fxHtml;
+
 echo '</section>';
 echo $band( 'used', 'How he\'s used', 'his fingerprint, where the ball finds him and when' );
 
@@ -711,6 +715,7 @@ $first = function ( $h ) { $h = trim( (string) $h ); return preg_match( '/^(.*?[
 $short = array_filter( array(
 	array( 'How good', ! empty( $epSay[0] ) ? $epSay[0] : '', '#dbd-good' ),
 	array( 'Where it comes from', ! empty( $epSay[1] ) ? $epSay[1] : '', '#dbd-used' ),
+	array( 'Fantasy', $fxShort ?? '', '#dbd-fantasy' ),
 	array( 'How he\'s used', ! empty( $fsay[0] ) ? $first( $fsay[0] ) : '', '#dbd-used' ),
 	array( 'Lately', $first( $shortLately ?? '' ), '#dbd-weeks' ),
 	array( 'This week', isset( $twSay ) ? $first( $twSay ) : '', '#dbd-weeks' ),

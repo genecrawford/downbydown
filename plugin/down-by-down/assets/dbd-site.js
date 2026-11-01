@@ -29,6 +29,28 @@
   foldNotes();
   if (window.MutationObserver) { var fq = 0; new MutationObserver(function () { if (fq) return; fq = setTimeout(function () { fq = 0; foldNotes(); }, 60); }).observe(root, { childList: true, subtree: true }); }  /* a timer, not an animation frame: frames pause in a tab that is not showing */
 
+  /* fantasy scoring (SCOPE §34): standard, half PPR or PPR, remembered on this device. Every format is in the page; html[data-fx]
+     picks which [data-fx] blocks show (CSS), the switches mark the choice, and sortable cells swap their sort value from data-fv. */
+  (function () {
+    var K = 'dbd-fx', IX = { std: 0, half: 1, ppr: 2 }, html = document.documentElement, fx = 'half';
+    try { fx = localStorage.getItem(K) || 'half'; } catch (e) {}
+    if (!(fx in IX)) fx = 'half';
+    var pill = function (bar) { var t = bar.querySelector('[aria-selected="true"]'), pl = bar.querySelector('.t-tabs-pill'); if (!t || !pl || !t.offsetWidth) return; pl.style.transform = 'translateX(' + t.offsetLeft + 'px)'; pl.style.width = t.offsetWidth + 'px'; };
+    var set = function (v, save) {
+      fx = v; html.setAttribute('data-fx', v);
+      if (save) { try { localStorage.setItem(K, v); } catch (e) {} }
+      root.querySelectorAll('.dbd-fxseg').forEach(function (bar) { bar.querySelectorAll('[data-fxset]').forEach(function (b) { b.setAttribute('aria-selected', b.getAttribute('data-fxset') === v ? 'true' : 'false'); }); pill(bar); });
+      root.querySelectorAll('[data-fv]').forEach(function (td) { var a = td.getAttribute('data-fv').split(','); if (a[IX[v]] != null) td.setAttribute('data-v', a[IX[v]]); });
+      try { document.dispatchEvent(new CustomEvent('dbd:fx', { detail: v })); } catch (e) {}
+    };
+    window.dbdFx = function () { return fx; };
+    set(fx, false);
+    root.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('.dbd-fxseg [data-fxset]'); if (!b) return; e.preventDefault(); set(b.getAttribute('data-fxset'), true); });
+    var again = function () { root.querySelectorAll('.dbd-fxseg').forEach(pill); };
+    window.addEventListener('load', again); window.addEventListener('resize', again); setTimeout(again, 60);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(again);
+  })();
+
   /* tabbed panels (SCOPE §31, site-wide since 1.9.0): every pane is in the page; a tab shows one and slides the pill. Charts and
      segmented controls inside re-measure on resize. The pill is measured again once the page and its fonts have loaded, since a
      tab measured before the webfont arrives is narrower than it ends up. */

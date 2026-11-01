@@ -10,6 +10,10 @@ on:
       - 'plugin/down-by-down/includes/views/game.php'
       - 'plugin/down-by-down/includes/views/teamplayers.php'
       - 'plugin/down-by-down/includes/class-dbd-lineup.php'
+      - 'plugin/down-by-down/includes/class-dbd-fantasy.php'
+      - 'plugin/down-by-down/includes/views/players.php'
+      - 'plugin/down-by-down/includes/views/matchups.php'
+      - 'plugin/down-by-down/includes/views/compare.php'
       - '.github/workflows/build-data.yml'
       - '.github/workflows/build-check.yml'
   workflow_dispatch:
@@ -129,6 +133,41 @@ jobs:
           print(len(d['pairs']), 'pairs since', d['first'])
           if bad: print('\n'.join(bad)); sys.exit(1)
           PY
+      - name: Check the fantasy numbers (SCOPE §34)
+        run: |
+          python3 - <<'PY'
+          import json, glob, sys
+          f = json.load(open('/tmp/out/fantasy.json')); bad = []
+          if len(f['allow']) != 32: bad.append(f"{len(f['allow'])} defenses in fantasy.json, not 32")
+          for d, ps in f['allow'].items():
+              for pos in ('QB', 'RB', 'WR', 'TE'):
+                  v = ps.get(pos)
+                  if not v or len(v) != 3: bad.append(f'{d} {pos}: missing points allowed'); continue
+                  if not (v[0] - .01 <= v[1] <= v[2] + .01): bad.append(f'{d} {pos}: half PPR {v[1]} not between {v[0]} and {v[2]}')
+          n = 0
+          for fn in glob.glob('/tmp/out/players/[A-Z]*.json'):
+              for p in json.load(open(fn))['players']:
+                  fan = p.get('fan')
+                  if not fan: continue
+                  n += 1
+                  if set(fan['s']) != {'std', 'half', 'ppr'}: bad.append(f"{p['name']}: formats {sorted(fan['s'])}")
+                  s_ = fan['s']
+                  if not (s_['std']['ppg'] - .01 <= s_['half']['ppg'] <= s_['ppr']['ppg'] + .01): bad.append(f"{p['name']}: half PPR out of order")
+                  for w in p['weeks']:
+                      if 'fantasy_points' not in w or 'fantasy_points_ppr' not in w: bad.append(f"{p['name']} week {w.get('week')}: no fantasy points"); break
+          idx = json.load(open('/tmp/out/players/index.json'))['players']
+          withfp = [r for r in idx if r.get('fp')]
+          for r in withfp:
+              if not (r['fp'][0] - .01 <= r['fp'][1] <= r['fp'][2] + .01): bad.append(f"index {r['name']}: fp out of order")
+          top = lambda pos: sorted((r for r in withfp if r.get('fpos') == pos and r['fr'][1]), key=lambda r: r['fr'][1])[:3]
+          for pos in ('QB', 'RB', 'WR', 'TE'): print(pos, 'half PPR leaders:', ', '.join(f"{r['name']} {r['fp'][1]:.1f}" for r in top(pos)))
+          j = next((r for r in withfp if r['id'] == '00-0036322'), None)
+          if j: print('Jefferson', j['fp'], j['fr'])
+          print('DET allows WRs', f['allow']['DET']['WR'], 'rank', f['rank']['DET']['WR'], '; starter lines', f['start'])
+          print(n, 'player files with a fantasy block;', len(withfp), 'index rows with points')
+          if n < 300: bad.append(f'only {n} players have a fantasy block')
+          if bad: print('\n'.join(bad[:40])); sys.exit(1)
+          PY
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
@@ -145,6 +184,12 @@ jobs:
           php tools/view_harness.php /tmp/out teamplayers MIN && grep -q 'dbd-lufield unit' pages/teamplayers-MIN.html || { echo "no lineup on the Vikings page"; exit 1; }
           php tools/view_harness.php /tmp/out game 2026_08_MIN_DET && grep -q 'class="dbd-panel dbd-series"' pages/game-2026_08_MIN_DET.html || { echo "no series on Vikings at Lions"; exit 1; }
           grep -q 'dbd-recline' pages/teamplayers-MIN.html || { echo "no record line on the Vikings page"; exit 1; }
+          grep -q 'class="dbd-panel dbd-fx"' pages/player-00-0036322.html || { echo "no fantasy panel on Jefferson"; exit 1; }
+          php tools/view_harness.php /tmp/out players "" && grep -q 'dbd-pfp" data-fv=' pages/players.html || { echo "no fantasy column on the Players index"; exit 1; }
+          php tools/view_harness.php /tmp/out matchups ""
+          if [ -n "$UP" ]; then grep -q 'class="dbd-panel dbd-fxm"' pages/matchups.html || { echo "no fantasy matchups on the Matchups page"; exit 1; }; fi
+          CMP=$(python3 -c "import json;i=json.load(open('/tmp/out/players/index.json'))['players'];w=[r['id'] for r in sorted((r for r in i if r.get('fpos')=='WR' and r.get('fr') and r['fr'][1]),key=lambda r:r['fr'][1])[:2]];print(','.join(w))")
+          php tools/view_harness.php /tmp/out compare "$CMP" && grep -q 'class="dbd-panel dbd-fx dbd-cfx"' "pages/compare-$CMP.html" || { echo "no fantasy panel on compare $CMP"; exit 1; }
       - uses: actions/upload-artifact@v4
         with:
           name: pages-fresh-data

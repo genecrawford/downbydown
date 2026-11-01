@@ -118,6 +118,9 @@ foreach ( $P as $i => $x ) {
 }
 echo '</div><p class="dbd-note">Thresholds are the quartiles of every game week by qualified ' . esc_html( $pool ) . ' this season' . ( isset( $gi['week']['n'] ) ? ' (' . (int) $gi['week']['n'] . ' player weeks)' : '' ) . '. The right column is the average week and its swing.</p></section>';
 
+/* ---- fantasy (SCOPE §34): the four numbers side by side and the weeks grouped, per format */
+echo DBD_Fantasy::compare( $P );
+
 /* ---- week by week, one table per metric */
 $M = array( 'rec' => array( array( 'Yds', 'receiving_yards' ), array( 'Tgt', 'targets' ), array( 'Rec', 'receptions' ), array( 'EPA', 'receiving_epa' ), array( 'Snap', 'snap' ) ),
 	'rb' => array( array( 'Yds', 'rushing_yards' ), array( 'Car', 'carries' ), array( 'Tgt', 'targets' ), array( 'EPA', 'rushing_epa' ), array( 'Snap', 'snap' ) ),
