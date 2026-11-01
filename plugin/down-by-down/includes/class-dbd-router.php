@@ -69,7 +69,7 @@ class DBD_Router {
 			foreach ( array_unique( array_map( 'trim', explode( ',', self::q( 'compare' ) ) ) ) as $id ) {
 				if ( ! preg_match( '/^\d{2}-\d{7}$/', $id ) ) { continue; }
 				$row = DBD_Data::player( $id ); if ( ! $row ) { continue; }
-				$g = DBD_Grades::group_of( $row['pos'] ); if ( ! $g ) { continue; }
+				$g = DBD_Grades::pool_of( $row['pos'] ); if ( ! $g ) { continue; }  /* SCOPE §38: a wide receiver compares with wide receivers, a tight end with tight ends */
 				if ( ! $grp ) { $grp = $g; } elseif ( $g !== $grp ) { $mixed = true; continue; }
 				$rows[] = $row; if ( count( $rows ) >= 3 ) { break; }
 			}
@@ -281,7 +281,7 @@ class DBD_Router {
 			wp_enqueue_style( 'dbd-chartist', DBD_URL . 'assets/vendor/chartist.css', array( 'dbd' ), '1.3.0' );
 			wp_enqueue_script( 'dbd-chartist', DBD_URL . 'assets/vendor/chartist.umd.js', array(), '1.3.0', true );
 			wp_enqueue_script( 'dbd-compare', DBD_URL . 'assets/compare.js', array( 'dbd-marks', 'dbd-chartist' ), DBD_VERSION, true );
-			wp_localize_script( 'dbd-compare', 'DBD_CMP', array( 'base' => self::url(), 'group' => $r['cgroup'], 'players' => $pl, 'files' => $files, 'teams' => DBD_Data::teams(), 'heads' => DBD_Data::headshots(), 'series' => $series, 'labels' => $labels, 'yds' => array( 'rec' => 'Receiving yards', 'rb' => 'Scrimmage yards', 'qb' => 'Passing yards' )[ $r['cgroup'] ] ?? 'Yards' ) );
+			wp_localize_script( 'dbd-compare', 'DBD_CMP', array( 'base' => self::url(), 'group' => $r['cgroup'], 'players' => $pl, 'files' => $files, 'teams' => DBD_Data::teams(), 'heads' => DBD_Data::headshots(), 'series' => $series, 'labels' => $labels, 'yds' => array( 'rec' => 'Receiving yards', 'rb' => 'Scrimmage yards', 'qb' => 'Passing yards' )[ DBD_Grades::kind( $r['cgroup'] ) ] ?? 'Yards' ) );
 		}
 		if ( $r['view'] === 'leaders' ) { wp_enqueue_script( 'dbd-leaders', DBD_URL . 'assets/leaders.js', array(), DBD_VERSION, true ); }
 		if ( $r['view'] === 'myteam' ) {

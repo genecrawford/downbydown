@@ -9,12 +9,12 @@
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   var f1 = function (v) { return isFinite(v) ? (+v).toFixed(1) : '-'; }, sgn = function (v, d) { d = d == null ? 2 : d; return (v > 0 ? '+' : '') + (+v).toFixed(d); }, pc = function (n, d) { return d ? Math.round(n / d * 100) + '%' : '-'; };
   var COL = { run: '#f0b429', pass: '#5b9cf6', inc: '#9a96a6', bad: '#e0564b', td: '#4fd18b' }, FL = 'rgba(255,255,255,.22)', FI = 'rgba(255,255,255,.75)';
-  var grp = C.pos === 'QB' ? 'qb' : (C.pos === 'RB' || C.pos === 'FB') ? 'rb' : 'rec';
+  var grp = C.pos === 'QB' ? 'qb' : (C.pos === 'RB' || C.pos === 'FB') ? 'rb' : C.pos === 'TE' ? 'te' : 'wr';
 
   /* Compare button: build on whoever is already in the tray (the last compare page's players) */
   var cb = root.querySelector('#dbd-cmp-btn');
   if (cb) {
-    var grp = C.pos === 'QB' ? 'qb' : (C.pos === 'RB' || C.pos === 'FB') ? 'rb' : 'rec', tray = [];
+    var grp = C.pos === 'QB' ? 'qb' : (C.pos === 'RB' || C.pos === 'FB') ? 'rb' : C.pos === 'TE' ? 'te' : 'wr', tray = [];
     try { var t = JSON.parse(localStorage.getItem('dbd-cmp') || 'null'); if (t && t.ids && t.grp === grp) tray = t.ids; } catch (e) {}  /* another group's tray is ignored: this page starts fresh */
     tray = tray.filter(function (x) { return x && x !== cb.dataset.id; }).slice(-2);
     if (tray.length) { cb.href = cb.dataset.base + (cb.dataset.base.indexOf('?') >= 0 ? '&' : '?') + 'compare=' + encodeURIComponent(tray.concat([cb.dataset.id]).join(',')); cb.textContent = 'Compare with ' + tray.length + ' picked'; }

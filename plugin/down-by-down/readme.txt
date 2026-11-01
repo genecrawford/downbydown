@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.13.1
+Stable tag: 1.14.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,10 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.14.0 =
+* Wide receivers and tight ends grade in separate pools (SCOPE §38), the way fantasy leagues rank them. Player pages compare a wide receiver with wide receivers and a tight end with tight ends: the Scorecard, the tile ranks, Playstyle percentiles, the EPA split and the trend yardsticks. Leaders reads each position's own pool; Compare and Players like him stay within the position; My team compares wide receivers and tight ends separately; the share card grades among his position.
+* The build writes per-position pools to league.json and leaders.json, and keeps the combined receivers pool so an older plugin keeps working until this one is installed.
 
 = 1.13.1 =
 * A new version syncs on its own about two minutes after it is installed, so data files it newly knows about arrive without pressing Sync now. The sync the nightly data build triggers can run while the old version is still installed, and hosts can keep running the old code for a minute after an upload; this covers both. Settings shows whether the installed version has synced.

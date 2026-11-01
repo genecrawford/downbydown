@@ -172,12 +172,33 @@ jobs:
           if n < 300: bad.append(f'only {n} players have a fantasy block')
           if bad: print('\n'.join(bad[:40])); sys.exit(1)
           PY
+      - name: Check the WR and TE pools (SCOPE §38)
+        run: |
+          python3 - <<'PY'
+          import json, glob, sys
+          L = json.load(open('/tmp/out/players/league.json')); bad = []
+          for g in ('wr', 'te', 'rb', 'qb', 'rec'):
+              if g not in L['groups']: bad.append(f'league.json has no {g} pool')
+          if not bad:
+              n = {g: L['groups'][g]['n'] for g in ('wr', 'te', 'rec')}; print('pool sizes', n)
+              if n['wr'] + n['te'] != n['rec']: bad.append('wr + te does not add up to the combined pool')
+              if n['te'] < 15 or n['wr'] < 40: bad.append('a pool is implausibly small')
+          for fn in glob.glob('/tmp/out/players/[A-Z]*.json'):
+              for p in json.load(open(fn))['players']:
+                  gr = p.get('grades')
+                  if not gr: continue
+                  want = {'WR': 'wr', 'TE': 'te', 'RB': 'rb', 'FB': 'rb', 'QB': 'qb'}.get(p['pos'])
+                  if gr.get('pool') != want: bad.append(f"{p['name']}: pool {gr.get('pool')} for a {p['pos']}")
+                  if want in ('wr', 'te') and gr.get('grp') != 'rec': bad.append(f"{p['name']}: kind {gr.get('grp')}")
+          if bad: print('\n'.join(bad[:30])); sys.exit(1)
+          PY
       - name: Check the leaders file (SCOPE §37)
         run: |
           python3 - <<'PY'
           import json, sys
           L = json.load(open('/tmp/out/players/leaders.json')); bad = []
-          want = {'rec': ['tshare', 'adot', 'yacpc', 'catch', 'epat', 'fdpt', 'drop', 'ypg'], 'rb': ['ypc', 'repc', 'btpt', 'expl', 'tpg', 'tgtshare', 'ypt'], 'qb': ['epadb', 'cpoe', 'sack', 'ypa', 'tdr', 'intr', 'adot', 'rushepa']}
+          RECK = ['tshare', 'adot', 'yacpc', 'catch', 'epat', 'fdpt', 'drop', 'ypg']
+          want = {'wr': RECK, 'te': RECK, 'rec': RECK, 'rb': ['ypc', 'repc', 'btpt', 'expl', 'tpg', 'tgtshare', 'ypt'], 'qb': ['epadb', 'cpoe', 'sack', 'ypa', 'tdr', 'intr', 'adot', 'rushepa']}
           for g, ks in want.items():
               for k in ks:
                   rows = L['groups'][g]['g'].get(k) or []
@@ -190,7 +211,9 @@ jobs:
               if not top: bad.append(f'fan ppg.{pos}: empty'); continue
               t = top[0]; print(pos, 'half-PPR leader:', L['players'][t[0]][0], t[1])
               if idx.get(t[0], {}).get('fr', [0, 0, 0])[1] != 1: bad.append(f'fan ppg.{pos}: leader is not rank 1 in the index')
-          rec = sorted((r for r in L['groups']['rec']['g']['tshare'] if r[3]), key=lambda r: -r[1])[0]; print('target share leader:', L['players'][rec[0]][0], rec[1])
+          for g in ('wr', 'te'):
+              top = sorted((r for r in L['groups'][g]['g']['tshare'] if r[3]), key=lambda r: -r[1])[0]; print(g, 'target share leader:', L['players'][top[0]][0], top[1])
+              if any(L['players'][r[0]][2] != g.upper() for r in L['groups'][g]['g']['tshare']): bad.append(f'{g}: a player of another position on the board')
           print(len(L['players']), 'players in leaders.json')
           if bad: print('\n'.join(bad)); sys.exit(1)
           PY
@@ -221,6 +244,7 @@ jobs:
           echo "sample team: $MT"
           php tools/view_harness.php /tmp/out myteam "$MT" && python3 -c "import sys;s=open('pages/myteam-$MT.html').read();n=s.count('class=\"mt-row')-s.count('class=\"mt-row empty');print(n,'filled rows');sys.exit(0 if n>=36 else 1)" || { echo "the sample team did not fill the lineup and bench in all three formats"; exit 1; }
           grep -q 'class="dbd-mtbtn"' pages/player-00-0036322.html || { echo "no My team button on Jefferson"; exit 1; }
+          grep -q 'among [0-9]* wide receivers' pages/player-00-0036322.html || { echo "Jefferson is not graded among wide receivers"; exit 1; }
           php tools/view_harness.php /tmp/out leaders "" && [ "$(grep -o 'class="dbd-panel ld-card"' pages/leaders.html | wc -l)" -eq 7 ] || { echo "the fantasy tab does not have seven boards"; exit 1; }
           php tools/view_harness.php /tmp/out leaders wr && [ "$(grep -o 'class="dbd-panel ld-card"' pages/leaders-wr.html | wc -l)" -eq 16 ] || { echo "the wide receivers tab does not have sixteen boards"; exit 1; }
           php tools/view_harness.php /tmp/out leaders te && [ "$(grep -o 'class="dbd-panel ld-card"' pages/leaders-te.html | wc -l)" -eq 16 ] || { echo "the tight ends tab does not have sixteen boards"; exit 1; }

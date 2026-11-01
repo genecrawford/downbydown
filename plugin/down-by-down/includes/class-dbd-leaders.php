@@ -9,13 +9,15 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 class DBD_Leaders {
 	const TOP    = 10;
 	const GROUPS = array( 'fan' => 'Fantasy', 'wr' => 'Wide receivers', 'te' => 'Tight ends', 'rb' => 'Backs', 'qb' => 'Quarterbacks' );
-	/* wide receivers and tight ends share a data group (rec) but rank as separate positions, the way fantasy leagues do (Gene, 2026-11-01) */
-	const SPLIT  = array( 'wr' => array( 'rec', 'WR', 'wide receivers' ), 'te' => array( 'rec', 'TE', 'tight ends' ) );
-	public static function data_group( $g ) { return self::SPLIT[ $g ][0] ?? $g; }
-	public static function pos_of( $g ) { return self::SPLIT[ $g ][1] ?? null; }
-	public static function pool( $g ) { return self::SPLIT[ $g ][2] ?? DBD_Grades::pool_label( $g ); }
-	const STEPS  = array( 'rec' => array( 15, 10, 5 ), 'rb' => array( 30, 20, 10 ), 'qb' => array( 50, 35, 20 ) );  /* the qualified pool, then two lower steps */
-	const UNIT   = array( 'rec' => 'targets', 'rb' => 'touches', 'qb' => 'attempts' );
+	/* wide receivers and tight ends rank as separate positions, the way fantasy leagues do (SCOPE §38). leaders.json has a wr and a te
+	   group from 1.14.0's build; an older file has only the combined rec group, read here filtered by position. */
+	const SPLIT  = array( 'wr' => array( 'rec', 'WR' ), 'te' => array( 'rec', 'TE' ) );
+	public static function has( $g ) { return isset( self::file()['groups'][ $g ] ); }
+	public static function data_group( $g ) { return ( isset( self::SPLIT[ $g ] ) && ! self::has( $g ) ) ? self::SPLIT[ $g ][0] : $g; }
+	public static function pos_of( $g ) { return ( isset( self::SPLIT[ $g ] ) && ! self::has( $g ) ) ? self::SPLIT[ $g ][1] : null; }
+	public static function pool( $g ) { return DBD_Grades::pool_label( $g ); }
+	const STEPS  = array( 'wr' => array( 15, 10, 5 ), 'te' => array( 15, 10, 5 ), 'rec' => array( 15, 10, 5 ), 'rb' => array( 30, 20, 10 ), 'qb' => array( 50, 35, 20 ) );  /* the qualified pool, then two lower steps */
+	const UNIT   = array( 'wr' => 'targets', 'te' => 'targets', 'rec' => 'targets', 'rb' => 'touches', 'qb' => 'attempts' );
 	const FAN    = array( 'ppg.QB' => array( 'Points a game', 'quarterbacks with enough games' ), 'ppg.RB' => array( 'Points a game', 'running backs with enough games' ), 'ppg.WR' => array( 'Points a game', 'wide receivers with enough games' ), 'ppg.TE' => array( 'Points a game', 'tight ends with enough games' ),
 		'tot' => array( 'Season points', 'every position' ), 'boom' => array( 'Boom weeks', 'every position' ), 'lo' => array( 'Highest floor', 'his 20th-percentile game, 3+ games' ) );
 

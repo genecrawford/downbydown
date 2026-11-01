@@ -13,7 +13,7 @@ $ids  = array_map( function ( $p ) { return $p['id']; }, $rows );
 $P    = array();
 foreach ( $rows as $i => $row ) { $P[] = array( 'row' => $row, 'rec' => DBD_Data::player_record( $row['team'], $row['id'] ) ?: array( 'weeks' => array(), 'snaps' => array(), 'grades' => null ), 'c' => $COLS[ $i ], 't' => DBD_Data::team( $row['team'] ) ); }
 $n  = count( $P ); $gi = $grp ? DBD_Grades::group_info( $grp ) : null; $N = (int) ( $gi['n'] ?? 0 );
-$pool = $grp ? DBD_Grades::pool_label( $grp ) : 'players'; $one = array( 'rec' => 'receiver or tight end', 'rb' => 'back', 'qb' => 'quarterback' )[ $grp ] ?? 'player';
+$pool = $grp ? DBD_Grades::pool_label( DBD_Grades::in_use( $grp ) ) : 'players'; $one = array( 'wr' => 'wide receiver', 'te' => 'tight end', 'rec' => 'receiver or tight end', 'rb' => 'back', 'qb' => 'quarterback' )[ $grp ] ?? 'player'; $kind = DBD_Grades::kind( $grp );  /* SCOPE §38: $grp is the pool (wr, te, rb, qb); $kind picks the stats */
 $ordn = array( 'DBD_Grades', 'ordinal' ); $pct = function ( $v ) { return $v === null ? '-' : round( $v * 100 ) . '%'; }; $sgn = function ( $v, $d = 1 ) { return ( $v > 0 ? '+' : '' ) . number_format( (float) $v, $d ); };
 $low = $gi['low'] ?? array(); $better = function ( $k, $a, $b ) use ( $low ) { if ( $a === null ) { return false; } if ( $b === null ) { return true; } return in_array( $k, $low, true ) ? $a < $b : $a > $b; };
 
@@ -124,7 +124,7 @@ echo DBD_Fantasy::compare( $P );
 /* ---- week by week, one table per metric */
 $M = array( 'rec' => array( array( 'Yds', 'receiving_yards' ), array( 'Tgt', 'targets' ), array( 'Rec', 'receptions' ), array( 'EPA', 'receiving_epa' ), array( 'Snap', 'snap' ) ),
 	'rb' => array( array( 'Yds', 'rushing_yards' ), array( 'Car', 'carries' ), array( 'Tgt', 'targets' ), array( 'EPA', 'rushing_epa' ), array( 'Snap', 'snap' ) ),
-	'qb' => array( array( 'Yds', 'passing_yards' ), array( 'Att', 'attempts' ), array( 'TD', 'passing_tds' ), array( 'EPA', 'passing_epa' ), array( 'Snap', 'snap' ) ) )[ $grp ];
+	'qb' => array( array( 'Yds', 'passing_yards' ), array( 'Att', 'attempts' ), array( 'TD', 'passing_tds' ), array( 'EPA', 'passing_epa' ), array( 'Snap', 'snap' ) ) )[ $kind ];
 $weeks = array();
 foreach ( $P as $x ) { foreach ( $x['rec']['weeks'] as $w ) { $weeks[ (int) $w['week'] ] = 1; } foreach ( array_keys( $x['rec']['snaps'] ?? array() ) as $wk ) { $weeks[ (int) $wk ] = 1; } }
 $weeks = array_keys( $weeks ); sort( $weeks );
@@ -155,7 +155,7 @@ echo '<p class="dbd-note">Rows are league weeks, so byes and missed games show a
 $S = function ( $x, $k ) { $t = 0; foreach ( $x['rec']['weeks'] as $w ) { $t += (float) ( $w[ $k ] ?? 0 ); } return $t; };
 $base = array();
 foreach ( $P as $x ) {
-	if ( $grp === 'rec' )    { $base[] = array( array( 'Targets', $S( $x, 'targets' ) ), array( 'Receptions', $S( $x, 'receptions' ) ), array( 'Yards', $S( $x, 'receiving_yards' ) ), array( 'Touchdowns', $S( $x, 'receiving_tds' ) ) ); }
+	if ( $kind === 'rec' )   { $base[] = array( array( 'Targets', $S( $x, 'targets' ) ), array( 'Receptions', $S( $x, 'receptions' ) ), array( 'Yards', $S( $x, 'receiving_yards' ) ), array( 'Touchdowns', $S( $x, 'receiving_tds' ) ) ); }
 	elseif ( $grp === 'rb' ) { $base[] = array( array( 'Carries', $S( $x, 'carries' ) ), array( 'Rush yards', $S( $x, 'rushing_yards' ) ), array( 'Rush TD', $S( $x, 'rushing_tds' ) ), array( 'Targets', $S( $x, 'targets' ) ) ); }
 	else                     { $base[] = array( array( 'Attempts', $S( $x, 'attempts' ) ), array( 'Completions', $S( $x, 'completions' ) ), array( 'Pass yards', $S( $x, 'passing_yards' ) ), array( 'Touchdowns', $S( $x, 'passing_tds' ) ) ); }
 }
@@ -178,5 +178,5 @@ if ( $gi ) {
 echo '</tbody></table></div></section></main>';
 
 /* same-group index for the slot search */
-$idx = array_values( array_filter( DBD_Data::player_index(), function ( $o ) use ( $grp, $ids ) { return DBD_Grades::group_of( $o['pos'] ) === $grp && ! in_array( $o['id'], $ids, true ); } ) );
+$idx = array_values( array_filter( DBD_Data::player_index(), function ( $o ) use ( $grp, $ids ) { return DBD_Grades::pool_of( $o['pos'] ) === $grp && ! in_array( $o['id'], $ids, true ); } ) );
 echo '<script type="application/json" id="dbd-cindex">' . wp_json_encode( array_map( function ( $o ) { return array( 'id' => $o['id'], 'name' => $o['name'], 'team' => $o['team'], 'pos' => $o['pos'], 'num' => $o['num'], 'snap' => $o['snap'] ); }, $idx ) ) . '</script>';

@@ -24,6 +24,7 @@ $f1  = function ( $v ) { return is_finite( $v ) && ! is_nan( $v ) ? number_forma
 $sgn = function ( $v, $d = 2 ) { return ( $v > 0 ? '+' : '' ) . number_format( $v, $d ); };
 $div = function ( $n, $d ) { return $d ? $n / $d : NAN; };
 $grp = $p['pos'] === 'QB' ? 'qb' : ( in_array( $p['pos'], array( 'RB', 'FB' ), true ) ? 'rb' : 'rec' );
+$gpool = DBD_Grades::in_use( $p['grades']['pool'] ?? DBD_Grades::pool_of( $p['pos'] ) ?? $grp );  /* SCOPE §38: who he is ranked against (wide receivers and tight ends separately), or the combined pool an older data file has */
 $snapAvg = ! empty( $p['snaps'] ) ? array_sum( $p['snaps'] ) / count( $p['snaps'] ) : 0;
 $parts = explode( ' ', $p['name'], 2 ); $first = $parts[0]; $last = $parts[1] ?? '';
 $ord = function ( $n ) { $s = array( 'th', 'st', 'nd', 'rd' ); $v = $n % 100; return $n . ( $s[ ( $v - 20 ) % 10 ] ?? $s[ $v ] ?? $s[0] ); };
@@ -58,7 +59,7 @@ $att = $sum( 'attempts' ); $cmp = $sum( 'completions' ); $py = $sum( 'passing_ya
 $tshare = $avg( 'target_share' ); $ashare = $avg( 'air_yards_share' );
 $qbw = array_filter( $W, function ( $w ) { return ( $w['attempts'] ?? 0 ) > 0; } ); $cpoe = $qbw ? array_sum( array_map( function ( $w ) { return (float) ( $w['passing_cpoe'] ?? 0 ); }, $qbw ) ) / count( $qbw ) : 0;
 /* SCOPE §29: the EPA split, success rate, ANY/A and the tiles' league ranks, all from the player file; an older data file shows none of them */
-$EP = ! empty( $p['ep']['sec'] ) ? $p['ep'] : null; $TRK = (array) ( $p['trk'] ?? array() ); $poolN = (int) ( DBD_Grades::group_info( $grp )['n'] ?? 0 );
+$EP = ! empty( $p['ep']['sec'] ) ? $p['ep'] : null; $TRK = (array) ( $p['trk'] ?? array() ); $poolN = (int) ( DBD_Grades::group_info( $gpool )['n'] ?? 0 );
 $hasPfd = (bool) array_filter( $W, function ( $w ) { return array_key_exists( 'passing_first_downs', $w ); } );  /* first downs reached the weekly lines in 1.5.0's build */
 if ( $grp === 'rec' ) {
 	$tiles = array( array( 'Targets', (int) $tg, $f1( $tg / $gp ) . ' per game', 'tgt', 'targets' ), array( 'Receptions', (int) $rc, $pct( $div( $rc, $tg ) ) . ' catch rate', 'rec', 'receptions' ), array( 'Yards', (int) $ry, round( $ry / $gp ) . ' per game', 'yds', 'receiving yards' ), array( 'Touchdowns', (int) $rtd, (int) $rfd . ' first downs', 'td', 'receiving touchdowns' ),
@@ -72,10 +73,10 @@ if ( $grp === 'rec' ) {
 		isset( $EP['any'] ) ? array( 'ANY/A', number_format( (float) $EP['any'], 2 ), 'net yds per dropback', 'any', 'ANY/A' ) : array( 'Snap share', round( $snapAvg ) . '%', 'offensive snaps', null, '' ) );  /* the hero badge already shows snap share */
 }
 /* the rank line: "5th of 38" against the pool Where he ranks uses, green inside the top 10, ties as T-; none for a player outside the pool */
-$trkLine = function ( $k, $what ) use ( $TRK, $poolN, $grp ) {
+$trkLine = function ( $k, $what ) use ( $TRK, $poolN, $gpool ) {
 	if ( ! $k || empty( $TRK[ $k ] ) || ! $poolN ) { return ''; }
 	$rk = (int) $TRK[ $k ][0]; $lab = ( ! empty( $TRK[ $k ][1] ) ? 'T-' : '' ) . DBD_Grades::ordinal( $rk );
-	return '<div class="dbd-trk' . ( $rk <= 10 ? ' top' : '' ) . '" data-tip="' . esc_attr( '<b>' . $lab . '</b> of ' . $poolN . ' qualifying ' . DBD_Grades::pool_label( $grp ) . ' in ' . $what ) . '" tabindex="0"><b>' . esc_html( $lab ) . '</b> of ' . $poolN . '</div>';
+	return '<div class="dbd-trk' . ( $rk <= 10 ? ' top' : '' ) . '" data-tip="' . esc_attr( '<b>' . $lab . '</b> of ' . $poolN . ' qualifying ' . DBD_Grades::pool_label( $gpool ) . ' in ' . $what ) . '" tabindex="0"><b>' . esc_html( $lab ) . '</b> of ' . $poolN . '</div>';
 };
 echo '<div class="dbd-tiles">';
 foreach ( $tiles as $x ) { echo '<div class="dbd-tile"><div class="l">' . esc_html( $x[0] ) . '</div><div class="v">' . esc_html( $x[1] ) . '</div><div class="s">' . esc_html( $x[2] ) . '</div>' . $trkLine( $x[3] ?? null, $x[4] ?? '' ) . '</div>'; }
@@ -157,12 +158,12 @@ echo $band( 'good', 'How good is he', 'his line against the league at his positi
 
 /* ---- scorecard (SCOPE §31): Where he ranks and Season stats were the same stats twice. One table: value, rank, the league bar, percentile.
    The unranked counting stats sit on the hero tiles. Two columns of rows on a wide screen, one on a phone. */
-$gr = $p['grades'] ?? null; $ggrp = $gr['grp'] ?? $grp; $gi = $gr ? DBD_Grades::group_info( $ggrp ) : null; $N = (int) ( $gi['n'] ?? 0 ); $graded = $gr && ! empty( $gr['q'] ) && $N > 0;
+$gr = $p['grades'] ?? null; $ggrp = $gr['grp'] ?? $grp; $gi = $gr ? DBD_Grades::group_info( $gpool ) : null; $N = (int) ( $gi['n'] ?? 0 ); $graded = $gr && ! empty( $gr['q'] ) && $N > 0;
 $scRows = array();
 if ( $gr && $gi ) {
 	foreach ( DBD_Grades::defs( $ggrp ) as $d ) {
-		list( $k, $lab, $sub, $kind ) = $d; $v = $gr['m'][ $k ] ?? null; $pc = $graded ? DBD_Grades::pctile( $ggrp, $k, $v ) : null;
-		$rk = $pc === null ? null : DBD_Grades::rank( $ggrp, $k, $v ); $med = DBD_Grades::median( $ggrp, $k ); $Nk = count( $gi['dist'][ $k ] ?? array() );
+		list( $k, $lab, $sub, $kind ) = $d; $v = $gr['m'][ $k ] ?? null; $pc = $graded ? DBD_Grades::pctile( $gpool, $k, $v ) : null;
+		$rk = $pc === null ? null : DBD_Grades::rank( $gpool, $k, $v ); $med = DBD_Grades::median( $gpool, $k ); $Nk = count( $gi['dist'][ $k ] ?? array() );
 		$tip = '<b>' . esc_html( $p['name'] ) . '</b><br>' . esc_html( $lab ) . ': <b>' . esc_html( DBD_Grades::fmt( $kind, $v ) ) . '</b>' . ( $pc === null ? '' : ' · ' . esc_html( DBD_Grades::ordinal( $pc ) ) . ' percentile · ' . esc_html( DBD_Grades::ordinal( $rk ) ) . ' of ' . $Nk ) . '<br><span class="m">League median ' . esc_html( DBD_Grades::fmt( $kind, $med ) ) . ( $sub ? ' · ' . esc_html( $sub ) : '' ) . '</span>';
 		$scRows[] = array( 'lab' => $lab, 'sub' => $sub, 'v' => DBD_Grades::fmt( $kind, $v ), 'rk' => $rk ? array( $rk, 0 ) : null, 'n' => $Nk, 'pc' => $pc, 'tip' => $tip );
 	}
@@ -182,9 +183,9 @@ if ( $scRows ) {
 			. '<td class="b"><div class="bar">' . ( $pc === null ? '' : '<i style="--p:' . (int) $pc . '" data-tip="' . esc_attr( $r['tip'] ) . '" tabindex="0" role="img" aria-label="' . esc_attr( $r['lab'] . ' ' . $r['v'] . ', ' . DBD_Grades::ordinal( $pc ) . ' percentile' ) . '"></i>' ) . '</div></td>'
 			. '<td class="g' . ( $pc !== null && $pc >= 75 ? ' hi' : ( $pc !== null && $pc <= 25 ? ' lo' : '' ) ) . '">' . ( $pc === null ? '' : esc_html( DBD_Grades::ordinal( $pc ) ) ) . '</td></tr>'; };
 	$scHead = '<thead><tr><th>Stat</th><th>Value</th><th>Rank</th><th>League</th><th>Pctl</th></tr></thead>'; $half = (int) ceil( count( $scRows ) / 2 );
-	echo '<section class="dbd-panel dbd-score"><div class="dbd-ph"><span class="dbd-lab"><b>Scorecard</b> · ' . ( $gi ? 'among ' . $N . ' ' . esc_html( DBD_Grades::pool_label( $ggrp ) ) . ' with ' . esc_html( $gi['min'] ) . '+' : 'this season' ) . '</span><span class="dbd-badge">' . ( $graded ? 'League percentiles' : 'graded at ' . esc_html( $gi['min'] ?? '' ) ) . '</span></div>';
+	echo '<section class="dbd-panel dbd-score"><div class="dbd-ph"><span class="dbd-lab"><b>Scorecard</b> · ' . ( $gi ? 'among ' . $N . ' ' . esc_html( DBD_Grades::pool_label( $gpool ) ) . ' with ' . esc_html( $gi['min'] ) . '+' : 'this season' ) . '</span><span class="dbd-badge">' . ( $graded ? 'League percentiles' : 'graded at ' . esc_html( $gi['min'] ?? '' ) ) . '</span></div>';
 	echo '<div class="dbd-score2"><table class="dbd-stat">' . $scHead . '<tbody>' . implode( '', array_map( $scTr, array_slice( $scRows, 0, $half ) ) ) . '</tbody></table><table class="dbd-stat">' . $scHead . '<tbody>' . implode( '', array_map( $scTr, array_slice( $scRows, $half ) ) ) . '</tbody></table></div>';
-	echo '<p class="dbd-note">' . ( $graded ? 'Each bar is the league at his position; the marker is him. Right is better, the dashed line is the median. Ranks are out of the qualifying pool, ties shown as T-, and move every week as the pool changes.' : 'Graded once he reaches ' . esc_html( $gi['min'] ?? 'the qualifier' ) . '. ' . $N . ' ' . esc_html( DBD_Grades::pool_label( $ggrp ) ) . ' qualify so far.' ) . '</p></section>';
+	echo '<p class="dbd-note">' . ( $graded ? 'Each bar is the league at his position; the marker is him. Right is better, the dashed line is the median. Ranks are out of the qualifying pool, ties shown as T-, and move every week as the pool changes.' : 'Graded once he reaches ' . esc_html( $gi['min'] ?? 'the qualifier' ) . '. ' . $N . ' ' . esc_html( DBD_Grades::pool_label( $gpool ) ) . ' qualify so far.' ) . '</p></section>';
 }
 
 /* ---- fantasy (SCOPE §34): points in every format, rank, range, booms and busts, the weeks, the next matchup. From the player file's fan block; older data skips it. */
@@ -197,12 +198,12 @@ echo $band( 'used', 'How he\'s used', 'his fingerprint, where the ball finds him
 $usedP = array();  /* SCOPE §31: the band's panels become tabs */
 ob_start();
 /* ---- playstyle fingerprint (SCOPE §23): eight usage traits against the league pool at his position, tags, and a generated read. From the player file's fp and league.json's fp pools; an older data file skips the panel. */
-$FP = $p['fp'] ?? null; $fgi = DBD_Grades::group_info( $grp ); $fpool = $fgi['fp'] ?? null;
+$FP = $p['fp'] ?? null; $fgi = DBD_Grades::group_info( $gpool ); $fpool = $fgi['fp'] ?? null;
 if ( $FP && $fpool ) {
-	$fdefs = DBD_Grades::fp_defs( $grp ); $funit = DBD_Grades::fp_unit( $grp ); $fq = ! empty( $p['grades']['q'] ); $Nf = (int) ( $fgi['n'] ?? 0 ); $fpl = DBD_Grades::pool_label( $grp );
+	$fdefs = DBD_Grades::fp_defs( $grp ); $funit = DBD_Grades::fp_unit( $grp ); $fq = ! empty( $p['grades']['q'] ); $Nf = (int) ( $fgi['n'] ?? 0 ); $fpl = DBD_Grades::pool_label( $gpool );
 	$fshare = $FP['share'] ?? null; $pcs = function ( $v ) { return $v === null ? '–' : round( $v * 100 ) . '%'; };
 	$TR = array();
-	foreach ( $fdefs as $d ) { $v = $FP[ $d[0] ] ?? null; $pc = $fq ? DBD_Grades::pctile( $grp, $d[0], $v, 'fp' ) : null; $lg = DBD_Grades::median( $grp, $d[0], 'fp' ); $TR[] = array( 'd' => $d, 'v' => $v, 'pc' => $pc, 'lg' => $lg, 'dev' => $pc === null ? -1 : abs( $pc - 50 ) ); }
+	foreach ( $fdefs as $d ) { $v = $FP[ $d[0] ] ?? null; $pc = $fq ? DBD_Grades::pctile( $gpool, $d[0], $v, 'fp' ) : null; $lg = DBD_Grades::median( $gpool, $d[0], 'fp' ); $TR[] = array( 'd' => $d, 'v' => $v, 'pc' => $pc, 'lg' => $lg, 'dev' => $pc === null ? -1 : abs( $pc - 50 ) ); }
 	/* bars */
 	$fbars = ''; $fbarRows = array();
 	foreach ( $TR as $ft ) { $d = $ft['d']; $vs = DBD_Grades::fp_fmt( $d[3], $ft['v'] );
@@ -248,7 +249,7 @@ $usedP[] = array( 'Playstyle', ob_get_clean() );
 ob_start();
 /* ---- where his EPA comes from (SCOPE §29): the season's EPA split by what happened, each part's per-play rate and league percentile, a read, and this season against his career */
 if ( $EP ) {
-	$epQ = $grp === 'qb'; $epRB = $grp === 'rb'; $epPool = DBD_Grades::pool_label( $grp ); $epG = $graded && ! empty( $EP['rk']['tot'] );
+	$epQ = $grp === 'qb'; $epRB = $grp === 'rb'; $epPool = DBD_Grades::pool_label( $gpool ); $epG = $graded && ! empty( $EP['rk']['tot'] );
 	$EPL = array(  /* label, small print, where it comes from, what it is */
 		'air' => array( 'Air yards', $epQ ? 'on completions' : 'on catches', 'in the air', 'air yards' ),
 		'yac' => array( 'After the catch', $epQ ? 'his share, catch to whistle' : '', 'after the catch', 'yards after the catch' ),
@@ -423,7 +424,7 @@ if ( $L ) {
 		$roll = array();
 		foreach ( $pts as $i => $q ) { if ( $i < $WIN - 1 ) { $roll[] = null; continue; } $sn = 0; $sd = 0; for ( $j = $i - $WIN + 1; $j <= $i; $j++ ) { $sn += $pts[ $j ]['n']; $sd += $pts[ $j ]['dn']; } $roll[] = $sd ? $sn / $sd : null; }
 		$SN = array_sum( array_column( $pts, 'n' ) ); $SD = array_sum( array_column( $pts, 'dn' ) ); $sAvg = $SD ? $SN / $SD : null;
-		$lg = DBD_Grades::trend_league( $grp, $def[0] ); $li = null;
+		$lg = DBD_Grades::trend_league( $gpool, $def[0] ); $li = null;
 		$cur = $roll ? $roll[ count( $roll ) - 1 ] : null;  /* the final window, null when his last three games have no target, touch or dropback */
 		foreach ( $roll as $i => $v ) { if ( $v !== null ) { $li = $i; } }  /* the last point the line reaches */
 		$iqr = $lg ? (float) $lg['p75'] - (float) $lg['p25'] : ( $sAvg ? abs( $sAvg ) * 0.4 : 1 );
