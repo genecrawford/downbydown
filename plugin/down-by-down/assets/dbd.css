@@ -1306,7 +1306,7 @@ html:not([data-fx]) .dbd [data-fx="half"],html[data-fx="std"] .dbd [data-fx="std
 .dbd .mt-row .ic:hover{border-color:var(--dbd-red);color:var(--dbd-red)}
 .dbd .mt-row.empty .who .m{font:500 13px var(--dbd-body);color:var(--dbd-muted)}
 .dbd .mt-bh{display:flex;align-items:baseline;gap:8px;padding:16px var(--dbd-edge) 6px;border-bottom:1px solid var(--dbd-line);font:700 12px var(--dbd-display);text-transform:uppercase;letter-spacing:.14em}
-.dbd .mt-cmp{display:flex;flex-wrap:wrap;gap:6px}
+.dbd .mt-cmp>span{flex-wrap:wrap;gap:6px}html:not([data-fx]) .dbd .mt-cmp>[data-fx="half"],html[data-fx="std"] .dbd .mt-cmp>[data-fx="std"],html[data-fx="half"] .dbd .mt-cmp>[data-fx="half"],html[data-fx="ppr"] .dbd .mt-cmp>[data-fx="ppr"]{display:flex}
 .dbd .mt-board>.dbd-ph{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:center}
 @container dbd (max-width:860px){
   .dbd .mt-hd{display:none}

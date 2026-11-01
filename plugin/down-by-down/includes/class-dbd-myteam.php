@@ -160,14 +160,18 @@ class DBD_MyTeam {
 		return '<p class="dbd-wp-say">' . $say . '</p><div class="dbd-wpchips">' . $ch . '</div>';
 	}
 
-	/** Compare links: the top three at each group, when there are two or more. */
+	/** Compare links: the top three at each group in each scoring format, when there are two or more; [data-fx] shows the chosen format's set. */
 	public static function compare_links( $rows ) {
 		$grp = array( 'QB' => array( 'Compare your quarterbacks', array( 'QB' ) ), 'RB' => array( 'Compare your backs', array( 'RB' ) ), 'rec' => array( 'Compare your receivers', array( 'WR', 'TE' ) ) );
-		$h = ''; $sorted = $rows; usort( $sorted, function ( $a, $b ) { return self::ppg( $b, 1 ) <=> self::ppg( $a, 1 ); } );
-		foreach ( $grp as $g ) {
-			$ids = array(); foreach ( $sorted as $r ) { if ( in_array( self::fpos( $r ), $g[1], true ) ) { $ids[] = $r['id']; } if ( count( $ids ) >= 3 ) { break; } }
-			if ( count( $ids ) > 1 ) { $h .= '<a class="dbd-pill" href="' . esc_url( DBD_Router::url( array( 'compare' => implode( ',', $ids ) ) ) ) . '">' . esc_html( $g[0] ) . '</a>'; }
+		$out = '';
+		foreach ( DBD_Fantasy::FMT as $i => $fm ) {
+			$sorted = $rows; usort( $sorted, function ( $a, $b ) use ( $i ) { return self::ppg( $b, $i ) <=> self::ppg( $a, $i ); } ); $h = '';
+			foreach ( $grp as $g ) {
+				$ids = array(); foreach ( $sorted as $r ) { if ( in_array( self::fpos( $r ), $g[1], true ) ) { $ids[] = $r['id']; } if ( count( $ids ) >= 3 ) { break; } }
+				if ( count( $ids ) > 1 ) { $h .= '<a class="dbd-pill" href="' . esc_url( DBD_Router::url( array( 'compare' => implode( ',', $ids ) ) ) ) . '">' . esc_html( $g[0] ) . '</a>'; }
+			}
+			$out .= '<span data-fx="' . $fm . '">' . $h . '</span>';
 		}
-		return $h;
+		return $out;
 	}
 }

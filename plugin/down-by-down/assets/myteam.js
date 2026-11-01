@@ -10,7 +10,8 @@
   var read = function () { try { var v = JSON.parse(localStorage.getItem(KEY) || '[]'); return Array.isArray(v) ? v.filter(function (x) { return /^\d{2}-\d{7}$/.test(x); }) : []; } catch (e) { return []; } };
   var save = function (list) { try { if (list.length) localStorage.setItem(KEY, JSON.stringify(list)); else localStorage.removeItem(KEY); } catch (e) {} };
   var url = function (list) { var b = C.base + (C.base.indexOf('?') >= 0 ? '&' : '?'); return list.length ? b + 'myteam=' + list.join(',') : b + 'view=myteam'; };
-  var go = function (list) { save(list); location.href = url(list); };
+  var shared = false;  /* a shared team being viewed: edits stay in the address until the reader saves it (Greptile, PR #40) */
+  var go = function (list) { if (!shared) save(list); location.href = url(list); };
   var same = function (a, b) { return a.length === b.length && a.slice().sort().join() === b.slice().sort().join(); };
   var stored = read();
 
@@ -19,11 +20,12 @@
   else if (ids.length) {
     if (!stored.length || same(stored, ids)) save(ids);
     else {
+      shared = true;
       var bar = document.createElement('div'); bar.className = 'dbd-panel mt-shared';
       bar.innerHTML = '<p><b>This is a shared team.</b> Your own saved team (' + stored.length + ' player' + (stored.length === 1 ? '' : 's') + ') is kept until you choose.</p><span><button type="button" class="dbd-cbtn mt-keep">Save this as my team</button><a class="dbd-cbtn" href="' + url(stored) + '">Open my team</a></span>';
       var main = root.querySelector('main'), title = main && main.querySelector('.dbd-ttitle');
       if (title) title.after(bar);
-      bar.querySelector('.mt-keep').addEventListener('click', function () { save(ids); stored = ids.slice(); bar.remove(); });
+      bar.querySelector('.mt-keep').addEventListener('click', function () { save(ids); stored = ids.slice(); shared = false; bar.remove(); });
     }
   }
 
@@ -33,7 +35,7 @@
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function draw() {
     var n = (q.value || '').trim().toLowerCase(); cur = -1;
-    if (!n) { list.hidden = true; list.innerHTML = ''; return; }
+    if (!n) { hits = []; list.hidden = true; list.innerHTML = ''; return; }
     hits = ALL.filter(function (p) { return ids.indexOf(p.id) < 0 && (p.name.toLowerCase().indexOf(n) >= 0 || (p.team || '').toLowerCase() === n || String(p.num) === n); })
       .sort(function (a, b) { return (b.fp || 0) - (a.fp || 0); }).slice(0, 8);
     list.innerHTML = hits.length ? hits.map(function (p, i) { return '<li role="option" id="mt-o' + i + '" data-i="' + i + '">' + (window.dbdMark ? window.dbdMark(p.team, 20) : '') + '<b>' + esc(p.name) + '</b><small>' + esc(p.team + ' · ' + p.pos + (p.fp != null ? ' · ' + p.fp.toFixed(1) + ' half-PPR' : '')) + '</small></li>'; }).join('') : '<li class="none">No players match</li>';
@@ -50,7 +52,7 @@
     q.addEventListener('keydown', function (e) {
       if (e.key === 'ArrowDown' && hits.length) { cur = Math.min(hits.length - 1, cur + 1); mark(); e.preventDefault(); }
       else if (e.key === 'ArrowUp' && hits.length) { cur = Math.max(0, cur - 1); mark(); e.preventDefault(); }
-      else if (e.key === 'Enter') { pick(cur < 0 ? 0 : cur); e.preventDefault(); }
+      else if (e.key === 'Enter') { e.preventDefault(); if (!list.hidden && hits.length) pick(cur < 0 ? 0 : cur); }  /* nothing shown, nothing added */
       else if (e.key === 'Escape') { list.hidden = true; }
     });
     list.addEventListener('mousedown', function (e) { var li = e.target.closest('li[data-i]'); if (li) { e.preventDefault(); pick(+li.dataset.i); } });
