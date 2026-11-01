@@ -120,7 +120,7 @@ if ( $WP && ! empty( $WP['s'] ) ) {
 /* ---- box score (SCOPE §32): a final game's offense lines with snap share, then defense and kicking, from box/w{week}.json */
 $BX = $final ? DBD_Data::box( $g ) : null;
 if ( $BX && ! empty( $BX['keys'] ) ) {
-	$bk = array_flip( $BX['keys'] ); $bsay = array(); $bcols = '';
+	$bk = array_flip( $BX['keys'] ); $bsay = array(); $bcols = ''; $bpbp = ( $BX['away']['src'] ?? '' ) === 'pbp' || ( $BX['home']['src'] ?? '' ) === 'pbp';
 	foreach ( array( 'away', 'home' ) as $bside ) {
 		$bt = $BX[ $bside ] ?? null; if ( ! $bt ) { continue; } $btm = $bt['team']; $rows = (array) ( $bt['off'] ?? array() );
 		$v = function ( $r, $k ) use ( $bk ) { return isset( $bk[ $k ] ) ? ( $r[ $bk[ $k ] ] ?? 0 ) : 0; };
@@ -147,7 +147,7 @@ if ( $BX && ! empty( $BX['keys'] ) ) {
 			. '<p class="dbd-bxdk"><b>Defense</b> ' . ( $dl ? implode( ', ', $dl ) : 'no sacks or interceptions' ) . ( $kk ? ' · <b>Kicking</b> ' . $kk : '' ) . '</p></div>';
 	}
 	echo '<section class="dbd-panel dbd-box"><div class="dbd-ph"><span class="dbd-lab"><b>Box score</b> · every offensive player who touched the ball</span><span class="dbd-badge">Week ' . (int) $g['week'] . '</span></div>';
-	echo '<p class="dbd-wp-say">' . implode( ' ', $bsay ) . '</p><div class="dbd-bx2">' . $bcols . '</div><p class="dbd-note">Each player\'s line for this game from nflverse\'s weekly stats; the percentage beside his name is his share of the offense\'s snaps. Share is his part of the team\'s carries or targets in this game. Defense lists sacks and interceptions; kicking lists field goals.</p></section>';
+	echo '<p class="dbd-wp-say">' . implode( ' ', $bsay ) . '</p><div class="dbd-bx2">' . $bcols . '</div><p class="dbd-note">' . ( $bpbp ? 'Each player\'s line for this game counted from the play-by-play, since nflverse\'s weekly stats for it haven\'t posted yet; they replace these lines with the next build once they do. The percentage' : 'Each player\'s line for this game from nflverse\'s weekly stats; the percentage' ) . ' beside his name is his share of the offense\'s snaps. Share is his part of the team\'s carries or targets in this game. Defense lists sacks and interceptions; kicking lists field goals.</p></section>';
 }
 
 /* ---- the lineups (SCOPE §32): an upcoming game draws this offense against the other team's defense from the depth charts; a final has the box score instead */

@@ -826,17 +826,60 @@ if env('DBD_DEPTH'):
     print('lineups:', len(lineups), 'teams;', sum(len(v['off']) for v in lineups.values()), 'offensive and', sum(len(v['def']) for v in lineups.values()), 'defensive starters')
 # box scores: every final game, both teams
 os.makedirs(f'{out}/box', exist_ok=True)
-if len(stats):
+if len(stats) or have_pbp:  # with no weekly file at all, every final is counted from the plays
     snap_of = {p['id']: p['snaps'] for pl in team_players.values() for p in pl}
     OFFK = ['completions', 'attempts', 'passing_yards', 'passing_tds', 'passing_interceptions', 'sacks_suffered', 'passing_epa', 'carries', 'rushing_yards', 'rushing_tds', 'rushing_epa', 'targets', 'receptions', 'receiving_yards', 'receiving_tds', 'receiving_epa']
     tcol = 'team' if 'team' in stats.columns else 'recent_team'
-    byweek = {}
+    _bxn = dict(zip(_r.gsis_id, _r.full_name))
+    def box_pbp(gid, tm, wk):
+        """One team's box score from the play-by-play, for a final game nflverse's weekly stats haven't posted yet (they can trail by a day).
+        The same lines the weekly stats carry: passing on dropbacks (sacks apart, the quarterback's credited EPA), rushing on runs and kneels,
+        receiving on targets; two-point tries left out. Defense from the sack and interception credits, kicking from the field goal tries."""
+        g = df[df.game_id == gid]
+        if not len(g): return None
+        P = defaultdict(lambda: dict.fromkeys(OFFK, 0.0)); pn = {}
+        one = lambda x: 1 if _fv(x) == 1 else 0
+        for r in g[(g.posteam == tm) & g.play_type.isin(['pass', 'run', 'qb_kneel', 'qb_spike'])].itertuples(index=False):
+            if one(getattr(r, 'two_point_attempt', None)): continue
+            e = _fv(r.epa) or 0.0; qe = _fv(getattr(r, 'qb_epa', None)); qe = e if qe is None else qe
+            if r.play_type in ('pass', 'qb_spike') and isinstance(r.passer_player_id, str):
+                q = P[r.passer_player_id]; pn.setdefault(r.passer_player_id, r.passer_player_name); q['passing_epa'] += qe
+                if one(r.sack): q['sacks_suffered'] += 1; continue
+                q['attempts'] += 1; q['completions'] += one(r.complete_pass); q['passing_yards'] += _fv(r.passing_yards) or 0
+                q['passing_tds'] += one(r.pass_touchdown); q['passing_interceptions'] += one(r.interception)
+                if isinstance(r.receiver_player_id, str):
+                    w = P[r.receiver_player_id]; pn.setdefault(r.receiver_player_id, r.receiver_player_name)
+                    w['targets'] += 1; w['receptions'] += one(r.complete_pass); w['receiving_yards'] += _fv(r.receiving_yards) or 0
+                    w['receiving_tds'] += one(r.pass_touchdown); w['receiving_epa'] += e
+            elif isinstance(r.rusher_player_id, str):
+                u = P[r.rusher_player_id]; pn.setdefault(r.rusher_player_id, r.rusher_player_name)
+                u['carries'] += 1; u['rushing_yards'] += _fv(r.rushing_yards) or 0; u['rushing_tds'] += one(r.rush_touchdown); u['rushing_epa'] += e
+        offr = []
+        for pid, v in P.items():
+            if v['attempts'] or v['carries'] or v['targets']:
+                nm = _short(_bxn[pid]) if isinstance(_bxn.get(pid), str) else str(pn.get(pid) or '')
+                offr.append([pid, nm, c(pos.get(pid)), (snap_of.get(pid) or {}).get(str(int(wk)))] + [round(v[k], 2) if 'epa' in k else int(v[k]) for k in OFFK])
+        dd = defaultdict(lambda: [0.0, 0])
+        gd = g[g.defteam == tm]
+        for col, w in (('sack_player_name', 1.0), ('half_sack_1_player_name', 0.5), ('half_sack_2_player_name', 0.5)):
+            if col in gd.columns:
+                for n in gd[col].dropna(): dd[n][0] += w
+        if 'interception_player_name' in gd.columns:
+            for n in gd[gd.interception == 1].interception_player_name.dropna(): dd[n][1] += 1
+        defr = sorted([[n, round(x[0], 1), int(x[1])] for n, x in dd.items()], key=lambda x: -(x[1] * 2 + x[2] * 3))
+        kick = None
+        fg = g[(g.posteam == tm) & (g.field_goal_attempt == 1)] if 'field_goal_attempt' in g.columns else g.iloc[0:0]
+        if len(fg):
+            mk = fg[fg.field_goal_result == 'made']
+            kick = [str(fg.kicker_player_name.dropna().iloc[0]) if fg.kicker_player_name.notna().any() else '', int(len(mk)), int(len(fg)), int(mk.kick_distance.max()) if len(mk) else 0]
+        return dict(team=tm, off=offr, d=defr, k=kick, src='pbp')
+    byweek = {}; bx_pbp = []; bx_chk = None
     for wk, gl in weeks.items():
         for gm in gl:
             if gm['status'] != 'final': continue
             rec = {}
             for side, tm in (('away', gm['away']), ('home', gm['home'])):
-                rows = stats[(stats.week == int(wk)) & (stats[tcol] == tm)]
+                rows = stats[(stats.week == int(wk)) & (stats[tcol] == tm)] if len(stats) else stats
                 offr, defr, kick = [], [], None
                 for r in rows.itertuples():
                     v = {k: _num(getattr(r, k, 0)) for k in OFFK}
@@ -847,10 +890,25 @@ if len(stats):
                     if _num(getattr(r, 'fg_att', 0)): kick = [_short(getattr(r, 'player_display_name', '')), int(_num(r.fg_made)), int(_num(r.fg_att)), int(_num(getattr(r, 'fg_long', 0)))]
                 defr.sort(key=lambda x: -(x[1] * 2 + x[2] * 3))
                 rec[side] = dict(team=tm, off=offr, d=defr, k=kick)
-            byweek.setdefault(int(wk), {})[gm['id']] = rec
+                if have_pbp and offr and bx_chk is None:  # once: build this side from the plays too, to show the fallback matches the weekly lines
+                    alt = box_pbp(gm['id'], tm, wk)
+                    if alt:
+                        A = {x[0]: x for x in alt['off']}; ki = {k: i + 4 for i, k in enumerate(OFFK)}; worst = [0, '']
+                        for x in offr:
+                            y = A.get(x[0])
+                            for k in ('passing_yards', 'rushing_yards', 'receiving_yards', 'attempts', 'carries', 'targets'):
+                                dlt = abs((y[ki[k]] if y else 0) - x[ki[k]])
+                                if dlt > worst[0]: worst = [dlt, f"{x[1]} {k}"]
+                        bx_chk = dict(game=gm['id'], team=tm, players=len(offr), pbp_players=len(alt['off']), worst=worst, d=[defr, alt['d']], k=[kick, alt['k']])
+                if not offr and have_pbp:  # the weekly stats haven't posted this game yet: draw it from the plays
+                    alt = box_pbp(gm['id'], tm, wk)
+                    if alt and alt['off']: rec[side] = alt; bx_pbp.append(f"{gm['id']} {tm}")
+            if any(rec[s_]['off'] for s_ in rec): byweek.setdefault(int(wk), {})[gm['id']] = rec  # a final with no lines from either source gets no box, not an empty one
     for wk, games in byweek.items():
         json.dump(clean(dict(season=season, week=wk, keys=['id', 'name', 'pos', 'snap'] + OFFK, games=games)), open(f'{out}/box/w{wk}.json', 'w'), separators=(',', ':'))
     print('box scores:', sum(len(v) for v in byweek.values()), 'games in', len(byweek), 'weeks')
+    print('box scores from the plays (weekly stats not posted yet):', len(bx_pbp), bx_pbp[:6])
+    print('box fallback check against the weekly lines:', bx_chk)
 
 # ---------------------------------------------------------------- the series and the records (SCOPE §33): series.json
 # nflverse's game list starts in 1999. Every pair of teams on this season's schedule gets its series since then (record,
