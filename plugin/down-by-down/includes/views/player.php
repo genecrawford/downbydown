@@ -24,7 +24,7 @@ $f1  = function ( $v ) { return is_finite( $v ) && ! is_nan( $v ) ? number_forma
 $sgn = function ( $v, $d = 2 ) { return ( $v > 0 ? '+' : '' ) . number_format( $v, $d ); };
 $div = function ( $n, $d ) { return $d ? $n / $d : NAN; };
 $grp = $p['pos'] === 'QB' ? 'qb' : ( in_array( $p['pos'], array( 'RB', 'FB' ), true ) ? 'rb' : 'rec' );
-$gpool = $p['grades']['pool'] ?? DBD_Grades::pool_of( $p['pos'] ) ?? $grp;  /* SCOPE §38: who he is ranked against (wide receivers and tight ends separately) */
+$gpool = DBD_Grades::in_use( $p['grades']['pool'] ?? DBD_Grades::pool_of( $p['pos'] ) ?? $grp );  /* SCOPE §38: who he is ranked against (wide receivers and tight ends separately), or the combined pool an older data file has */
 $snapAvg = ! empty( $p['snaps'] ) ? array_sum( $p['snaps'] ) / count( $p['snaps'] ) : 0;
 $parts = explode( ' ', $p['name'], 2 ); $first = $parts[0]; $last = $parts[1] ?? '';
 $ord = function ( $n ) { $s = array( 'th', 'st', 'nd', 'rd' ); $v = $n % 100; return $n . ( $s[ ( $v - 20 ) % 10 ] ?? $s[ $v ] ?? $s[0] ); };
@@ -73,7 +73,7 @@ if ( $grp === 'rec' ) {
 		isset( $EP['any'] ) ? array( 'ANY/A', number_format( (float) $EP['any'], 2 ), 'net yds per dropback', 'any', 'ANY/A' ) : array( 'Snap share', round( $snapAvg ) . '%', 'offensive snaps', null, '' ) );  /* the hero badge already shows snap share */
 }
 /* the rank line: "5th of 38" against the pool Where he ranks uses, green inside the top 10, ties as T-; none for a player outside the pool */
-$trkLine = function ( $k, $what ) use ( $TRK, $poolN, $grp ) {
+$trkLine = function ( $k, $what ) use ( $TRK, $poolN, $gpool ) {
 	if ( ! $k || empty( $TRK[ $k ] ) || ! $poolN ) { return ''; }
 	$rk = (int) $TRK[ $k ][0]; $lab = ( ! empty( $TRK[ $k ][1] ) ? 'T-' : '' ) . DBD_Grades::ordinal( $rk );
 	return '<div class="dbd-trk' . ( $rk <= 10 ? ' top' : '' ) . '" data-tip="' . esc_attr( '<b>' . $lab . '</b> of ' . $poolN . ' qualifying ' . DBD_Grades::pool_label( $gpool ) . ' in ' . $what ) . '" tabindex="0"><b>' . esc_html( $lab ) . '</b> of ' . $poolN . '</div>';

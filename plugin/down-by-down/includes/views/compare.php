@@ -13,7 +13,7 @@ $ids  = array_map( function ( $p ) { return $p['id']; }, $rows );
 $P    = array();
 foreach ( $rows as $i => $row ) { $P[] = array( 'row' => $row, 'rec' => DBD_Data::player_record( $row['team'], $row['id'] ) ?: array( 'weeks' => array(), 'snaps' => array(), 'grades' => null ), 'c' => $COLS[ $i ], 't' => DBD_Data::team( $row['team'] ) ); }
 $n  = count( $P ); $gi = $grp ? DBD_Grades::group_info( $grp ) : null; $N = (int) ( $gi['n'] ?? 0 );
-$pool = $grp ? DBD_Grades::pool_label( $grp ) : 'players'; $one = array( 'wr' => 'wide receiver', 'te' => 'tight end', 'rec' => 'receiver or tight end', 'rb' => 'back', 'qb' => 'quarterback' )[ $grp ] ?? 'player'; $kind = DBD_Grades::kind( $grp );  /* SCOPE §38: $grp is the pool (wr, te, rb, qb); $kind picks the stats */
+$pool = $grp ? DBD_Grades::pool_label( DBD_Grades::in_use( $grp ) ) : 'players'; $one = array( 'wr' => 'wide receiver', 'te' => 'tight end', 'rec' => 'receiver or tight end', 'rb' => 'back', 'qb' => 'quarterback' )[ $grp ] ?? 'player'; $kind = DBD_Grades::kind( $grp );  /* SCOPE §38: $grp is the pool (wr, te, rb, qb); $kind picks the stats */
 $ordn = array( 'DBD_Grades', 'ordinal' ); $pct = function ( $v ) { return $v === null ? '-' : round( $v * 100 ) . '%'; }; $sgn = function ( $v, $d = 1 ) { return ( $v > 0 ? '+' : '' ) . number_format( (float) $v, $d ); };
 $low = $gi['low'] ?? array(); $better = function ( $k, $a, $b ) use ( $low ) { if ( $a === null ) { return false; } if ( $b === null ) { return true; } return in_array( $k, $low, true ) ? $a < $b : $a > $b; };
 

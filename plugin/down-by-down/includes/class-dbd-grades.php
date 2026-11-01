@@ -149,6 +149,8 @@ class DBD_Grades {
 	public static function pool_of( $pos ) {
 		return array( 'QB' => 'qb', 'RB' => 'rb', 'FB' => 'rb', 'WR' => 'wr', 'TE' => 'te' )[ $pos ] ?? null;
 	}
+	/** The pool the league file actually has for this one: wr or te, or the combined rec in a file from before 1.14.0, so labels match the numbers. */
+	public static function in_use( $pool ) { $G = self::league()['groups'] ?? array(); return ( isset( $G[ $pool ] ) || self::kind( $pool ) !== 'rec' ) ? $pool : 'rec'; }
 	/** The kind of a pool or a kind: wr and te are receivers. */
 	public static function kind( $g ) { return ( $g === 'wr' || $g === 'te' ) ? 'rec' : $g; }
 

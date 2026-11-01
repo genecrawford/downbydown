@@ -29,7 +29,7 @@ class DBD_Card {
 		else { $tiles = array( array( 'Attempts', $att, $pct( $cmp, $att ) . ' completed' ), array( 'Pass yards', $py, ( $att ? $f1( $py / $att ) : '-' ) . ' per attempt' ), array( 'TD', $ptd, 'in ' . $gp . ' games' ), array( 'INT', $pint, '' ) ); }
 		$q = ! empty( $rec['grades']['q'] ); $m = $rec['grades']['m'] ?? array(); $rows = array();
 		foreach ( DBD_Grades::defs( $grp ) as $d ) { $v = $m[ $d[0] ] ?? null; $pc = $q ? DBD_Grades::pctile_in( $gi['dist'][ $d[0] ] ?? array(), $v, in_array( $d[0], $gi['low'] ?? array(), true ) ) : null; $rows[] = array( 'lab' => $d[1], 'pc' => $pc ); }
-		$parts = explode( ' ', (string) $rec['name'], 2 ); $N = (int) ( $gi['n'] ?? 0 ); $gpool = $rec['grades']['pool'] ?? DBD_Grades::pool_of( $rec['pos'] ?? '' ) ?? $grp;
+		$parts = explode( ' ', (string) $rec['name'], 2 ); $N = (int) ( $gi['n'] ?? 0 ); $gpool = DBD_Grades::in_use( $rec['grades']['pool'] ?? DBD_Grades::pool_of( $rec['pos'] ?? '' ) ?? $grp );
 		return array(
 			'season' => (int) $season, 'through' => (int) $through,
 			'team' => array( 'abbr' => $row['team'] ?? '', 'nick' => $team['nick'] ?? ( $row['team'] ?? '' ), 'c1' => $team['c1'] ?? '#4F2683', 'c2' => $team['c2'] ?? '#FFC62F', 'accent' => DBD_Marks::accent( $team ?: null, self::BG ) ),
@@ -146,7 +146,7 @@ class DBD_Card {
 		$logo = DBD_Data::logo( $row['team'] );
 		$file = $dir . '/' . $id . '-' . (int) DBD_Data::season() . '-' . $through . '-' . DBD_VERSION . ( $logo ? '-l' : '' ) . '.png';  /* turning logos on or off draws a fresh card */  /* season, data week and plugin version: a new year or a new design never serves an old card */
 		if ( ! file_exists( $file ) ) {
-			$team = DBD_Data::team( $row['team'] ); $grp = $rec['grades']['pool'] ?? DBD_Grades::pool_of( $row['pos'] ); $gi = $grp ? ( DBD_Grades::group_info( $grp ) ?: array() ) : array();  /* SCOPE §38: the player's own pool */
+			$team = DBD_Data::team( $row['team'] ); $grp = DBD_Grades::in_use( $rec['grades']['pool'] ?? DBD_Grades::pool_of( $row['pos'] ) ); $gi = $grp ? ( DBD_Grades::group_info( $grp ) ?: array() ) : array();  /* SCOPE §38: the player's own pool */
 			$spec = self::spec( $rec, $row, $team, $gi, DBD_Data::season(), $through ); if ( ! $spec ) { $fail( 404 ); }
 			$photo = null;
 			if ( ! empty( $rec['photo'] ) ) { $r = wp_remote_get( $rec['photo'], array( 'timeout' => 5 ) ); if ( ! is_wp_error( $r ) && (int) wp_remote_retrieve_response_code( $r ) === 200 ) { $photo = wp_remote_retrieve_body( $r ); } }
