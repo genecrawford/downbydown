@@ -1,0 +1,76 @@
+/* ===== mock chrome (not shipped) ===== */
+.mk-bar{position:sticky;top:0;z-index:60;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;padding:8px 16px;background:#fff7d6;border-bottom:1px solid #e6d58a;font:500 13px "IBM Plex Sans",sans-serif;color:#3b4255}
+.mk-bar b{font-weight:600;color:#121417}.mk-bar a{color:#b4261f;font-weight:600}.mk-bar a[aria-current]{color:#121417;text-decoration:none}.mk-bar label{margin-left:auto;display:flex;gap:6px;align-items:center}
+.mk-new{position:relative;outline:2px dashed #cb2026;outline-offset:4px}
+.mk-new::before{content:attr(data-mk);position:absolute;top:-13px;left:12px;z-index:2;background:#cb2026;color:#fff;font:700 10px "Barlow Condensed",sans-serif;letter-spacing:.14em;text-transform:uppercase;padding:2px 7px;border-radius:3px}
+.mk-off .mk-new{outline:0}.mk-off .mk-new::before{display:none}
+@media (max-width:600px){.mk-bar{position:static}}
+
+/* ===== the type scale: five sizes, one data face =====
+   12 small print and labels · 13 data (tables, chips, rows) · 15 reads · 22 tile values · hero
+   Numbers move from 11px monospace to 13px IBM Plex Sans with tabular figures: the same column alignment, half the texture. */
+.v8 .dbd{--dbd-muted:#5d616a}
+.v8 .dbd table td,.v8 .dbd table th,.v8 .dbd .dbd-pct .row .v,.v8 .dbd .dbd-pct .row .g,.v8 .dbd .dbd-tile .s,.v8 .dbd .dbd-tile .dbd-trk,.v8 .dbd .dbd-ep-wf .v,.v8 .dbd .dbd-ep-wf .p,.v8 .dbd .dbd-wk3 td,.v8 .dbd .dbd-week4 .m{font-family:var(--dbd-body)!important;font-variant-numeric:tabular-nums}
+.v8 .dbd table td{font-size:13px!important;line-height:1.45}
+.v8 .dbd table th{font:600 12px var(--dbd-body)!important;text-transform:none!important;letter-spacing:0!important;color:var(--dbd-ink-2)!important}
+.v8 .dbd small,.v8 .dbd .dbd-pct .row .l small,.v8 .dbd .dbd-ep-wf .l small,.v8 .dbd .dbd-lzg .rl small{font:400 12px var(--dbd-body)!important;color:var(--dbd-muted);letter-spacing:0}
+.v8 .dbd .dbd-tile .s,.v8 .dbd .dbd-tile .dbd-trk{font-size:12px!important}
+.v8 .dbd .dbd-pct .row .l{font-size:14px}.v8 .dbd .dbd-pct .row .v{font-size:13px!important}
+.v8 .dbd [class*="-say"]{font-size:15px!important;line-height:1.55!important;max-width:78ch}
+.v8 .dbd .dbd-badge{font-size:11px}
+.v8 .dbd .dbd-lab{font-size:13px}.v8 .dbd .dbd-lab b{font-size:14px}
+.v8 .dbd .dbd-bandh{font-size:22px}
+.v8 .dbd .dbd-bandh span{font:400 14px var(--dbd-body);text-transform:none;letter-spacing:0;color:var(--dbd-muted)}
+
+/* the short version */
+.v8 .dbd .v8-short ul{list-style:none;margin:0;padding:6px var(--dbd-edge) 14px}
+.v8 .dbd .v8-short li{display:grid;grid-template-columns:150px minmax(0,1fr);gap:16px;padding:9px 0;border-top:1px solid var(--dbd-line);font:400 15px/1.5 var(--dbd-body);color:var(--dbd-ink-2)}
+.v8 .dbd .v8-short li:first-child{border-top:0}
+.v8 .dbd .v8-short li a{font:700 12px/1.9 var(--dbd-display);text-transform:uppercase;letter-spacing:.12em;color:var(--dbd-red);text-decoration:none}
+.v8 .dbd .v8-short li b{color:var(--dbd-ink);font-weight:600}
+
+/* scorecard */
+.v8 .dbd .v8-score2{display:grid;grid-template-columns:1fr 1fr;gap:0 28px;padding:4px var(--dbd-edge) 8px}
+.v8 .dbd .v8-score table{width:100%;border-collapse:collapse}
+.v8 .dbd .v8-score th{text-align:left;padding:8px 6px;border-bottom:1px solid var(--dbd-line-2)}
+.v8 .dbd .v8-score td{padding:7px 6px;border-bottom:1px solid var(--dbd-line);vertical-align:middle}
+.v8 .dbd .v8-score td.n{font-weight:500;color:var(--dbd-ink)}.v8 .dbd .v8-score td.n small{display:block}
+.v8 .dbd .v8-score td.v{font-weight:600;color:var(--dbd-ink);white-space:nowrap;text-align:right}
+.v8 .dbd .v8-score td.rk{white-space:nowrap;color:var(--dbd-muted)}.v8 .dbd .v8-score td.rk b{color:var(--dbd-ink)}
+.v8 .dbd .v8-score tr.top td.rk b{color:var(--dbd-good)}
+.v8 .dbd .v8-score td.b{width:34%}
+.v8 .dbd .v8-score td.g{width:44px;text-align:right;font:800 13px var(--dbd-hero)!important}.v8 .dbd .v8-score td.g.hi{color:var(--dbd-good)}.v8 .dbd .v8-score td.g.lo{color:var(--dbd-bad)}
+.v8 .dbd .v8-score .bar{height:10px!important;border-radius:5px;background:linear-gradient(90deg,rgba(180,38,31,.18),rgba(107,111,120,.12) 50%,rgba(30,127,74,.22));position:relative}
+.v8 .dbd .v8-score .bar i{position:absolute;top:-3px;width:4px;height:16px;border-radius:2px;background:var(--dbd-team);left:calc(var(--p) * 1%);transform:translateX(-50%);box-shadow:0 0 0 2px var(--dbd-panel);cursor:help}
+.v8 .dbd .v8-score .bar::after{content:"";position:absolute;left:50%;top:-2px;height:14px;border-left:1px dashed var(--dbd-line-2)}
+
+/* tabbed bands */
+.v8 .dbd .v8-tabbed>.dbd-ph{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}
+.v8 .dbd .v8-tabbed .v8-tabs{flex-wrap:wrap}
+.v8 .dbd .v8-pane{border:0!important;box-shadow:none!important;margin:0!important;background:transparent!important;border-radius:0!important}
+.v8 .dbd .v8-pane>.dbd-ph{border-top:1px solid var(--dbd-line);background:transparent}
+.v8 .dbd .v8-pane[hidden]{display:none!important}
+.v8 .dbd .v8-pane>.dbd-ph .dbd-lab{text-transform:none;letter-spacing:0;font:500 13px var(--dbd-body);color:var(--dbd-muted)}
+
+/* methods notes fold */
+.v8 .dbd details.v8-how{margin:6px var(--dbd-edge) 12px}
+.v8 .dbd details.v8-how summary{cursor:pointer;font:600 12px var(--dbd-body);color:var(--dbd-ink-2);list-style:none;display:inline-flex;gap:6px;align-items:center}
+.v8 .dbd details.v8-how summary::-webkit-details-marker{display:none}
+.v8 .dbd details.v8-how summary::before{content:"i";display:inline-grid;place-items:center;width:15px;height:15px;border-radius:50%;border:1px solid var(--dbd-line-2);font:700 10px/1 var(--dbd-body);color:var(--dbd-muted)}
+.v8 .dbd details.v8-how .dbd-note{padding:6px 0 0!important;margin:0}
+
+/* the connection: core columns first */
+.v8 .dbd .v8-more{margin-left:auto;padding:4px 10px;background:none;border:1px solid var(--dbd-line-2);border-radius:var(--dbd-r);font:600 12px var(--dbd-body);color:var(--dbd-ink-2);cursor:pointer}
+.v8 .dbd #dbd-cx:not(.v8-all) #dbd-cx-tab tr>*:is(:nth-child(4),:nth-child(7),:nth-child(8),:nth-child(10),:nth-child(11)){display:none}  /* core: receiver, targets, share, catch rate, yards, TD, EPA per target */
+
+@container dbd (max-width:600px){
+  .v8 .dbd .v8-short li{grid-template-columns:1fr;gap:2px}
+  .v8 .dbd .v8-score2{grid-template-columns:1fr}
+  .v8 .dbd .v8-score td.b,.v8 .dbd .v8-score th:nth-child(4){display:none}
+  .v8 .dbd .v8-score td,.v8 .dbd .v8-score th{padding:7px 4px}
+  .v8 .dbd .dbd-bandh{font-size:18px;flex-wrap:wrap}.v8 .dbd .dbd-bandh span{flex-basis:100%;margin:2px 0 0}
+}
+
+/* the depth bands' text column was a fixed 112px for about 165px of text (a live overflow); it sizes to its text now */
+.v8 .dbd .dbd-bands{grid-template-columns:110px minmax(0,1fr) auto;font:500 12px var(--dbd-body);font-variant-numeric:tabular-nums}
+.v8 .dbd .v8-tabh{justify-content:flex-start!important}
