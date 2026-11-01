@@ -185,8 +185,8 @@ jobs:
           php tools/view_harness.php /tmp/out game 2026_08_MIN_DET && grep -q 'class="dbd-panel dbd-series"' pages/game-2026_08_MIN_DET.html || { echo "no series on Vikings at Lions"; exit 1; }
           grep -q 'dbd-recline' pages/teamplayers-MIN.html || { echo "no record line on the Vikings page"; exit 1; }
           grep -q 'class="dbd-panel dbd-fx"' pages/player-00-0036322.html || { echo "no fantasy panel on Jefferson"; exit 1; }
-          php tools/view_harness.php /tmp/out players && grep -q 'dbd-pfp" data-fv=' pages/players.html || { echo "no fantasy column on the Players index"; exit 1; }
-          php tools/view_harness.php /tmp/out matchups
+          php tools/view_harness.php /tmp/out players "" && grep -q 'dbd-pfp" data-fv=' pages/players.html || { echo "no fantasy column on the Players index"; exit 1; }
+          php tools/view_harness.php /tmp/out matchups ""
           if [ -n "$UP" ]; then grep -q 'class="dbd-panel dbd-fxm"' pages/matchups.html || { echo "no fantasy matchups on the Matchups page"; exit 1; }; fi
           CMP=$(python3 -c "import json;i=json.load(open('/tmp/out/players/index.json'))['players'];w=[r['id'] for r in sorted((r for r in i if r.get('fpos')=='WR' and r.get('fr') and r['fr'][1]),key=lambda r:r['fr'][1])[:2]];print(','.join(w))")
           php tools/view_harness.php /tmp/out compare "$CMP" && grep -q 'class="dbd-panel dbd-fx dbd-cfx"' "pages/compare-$CMP.html" || { echo "no fantasy panel on compare $CMP"; exit 1; }

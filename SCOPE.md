@@ -1321,4 +1321,4 @@ Quarterbacks catch no passes, so theirs stay the same in every format. Ranks by 
 
 Jefferson half PPR: 12.1 a game, WR20, 60.6 total (WR27), most weeks 6.0–18.1, 1 boom and 2 busts, Week 4 a miss and Week 6 the bye. Josh Allen QB1 at 26.8. Jahmyr Gibbs RB1 at 25.8. Detroit allows WRs 31.6 half-PPR points a game, the 3rd-most. No overflow at 375 on all three pages; no text under 11px.
 
-Size: M. Status: scoped and mocked, awaiting sign-off.
+Size: M. Status: signed off 2026-11-01 and built as 1.11.0.

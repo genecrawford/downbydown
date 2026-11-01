@@ -54,12 +54,16 @@ class DBD_Fantasy {
 	/** His season by league week: game (with the line), dnp where his team played without him, bye, or ahead. A traded player's weeks follow the team he was on. */
 	public static function weeks( $p, $a ) {
 		$by = array(); foreach ( (array) ( $p['weeks'] ?? array() ) as $w ) { $by[ (int) $w['week'] ] = $w; }
+		$zero = array_map( 'intval', (array) ( $p['fx0'] ?? array() ) );
 		$wl = DBD_Data::weeks(); $last = max( 18, $wl ? max( $wl ) : 18 );
 		$tm = $a; foreach ( $by as $w ) { $tm = $w['team'] ?? $a; break; }
 		$rows = array();
 		for ( $wk = 1; $wk <= $last; $wk++ ) {
 			if ( isset( $by[ $wk ] ) ) { $tm = $by[ $wk ]['team'] ?? $tm; $rows[ $wk ] = array( 'kind' => 'game', 'w' => $by[ $wk ] ); continue; }
-			$g = DBD_Data::team_game( $tm, $wk );
+			$g = DBD_Data::team_game( $p['snapteam'][ (string) $wk ] ?? $tm, $wk );
+			if ( $g && in_array( $wk, $zero, true ) ) {  /* snaps without a stat line: a game at zero points, not a miss */
+				$t0 = $p['snapteam'][ (string) $wk ] ?? $tm; $rows[ $wk ] = array( 'kind' => 'game', 'w' => array( 'week' => $wk, 'team' => $t0, 'opponent_team' => $g['home'] === $t0 ? $g['away'] : $g['home'] ) ); continue;
+			}
 			if ( ! $g ) { $rows[ $wk ] = array( 'kind' => 'bye' ); continue; }
 			$fin = ( $g['status'] ?? '' ) === 'final' || isset( $g['home_score'] );
 			$rows[ $wk ] = array( 'kind' => $fin ? 'dnp' : 'ahead', 'opp' => $g['home'] === $tm ? $g['away'] : $g['home'] );
@@ -87,7 +91,7 @@ class DBD_Fantasy {
 				$cols .= '<span class="c next"><b></b>' . $lab . '</span>';
 			}
 		}
-		$ref = $st === null ? '' : '<span class="ref" style="bottom:' . $pc( $st ) . '"><em>' . esc_html( $pos . self::slot( $pos ) ) . ' · ' . self::num( $st ) . '</em></span>';
+		$ref = $st === null ? '' : '<span class="ref" style="--y:' . round( max( 0, $st ) / $hi, 4 ) . '"><em>' . esc_html( $pos . self::slot( $pos ) ) . ' · ' . self::num( $st ) . '</em></span>';
 		return '<div class="dbd-fxbars"><div class="dbd-fxcols" role="img" aria-label="' . esc_attr( self::LABEL[ $fm ] . ' points by week' ) . '">' . $ref . $cols . '</div></div>';
 	}
 
@@ -191,7 +195,9 @@ class DBD_Fantasy {
 					array( null, (int) $s['g'] >= 3 ? self::num( $s['lo'] ) . '–' . self::num( $s['hi'] ) : '–', '' ),
 					array( null, (int) $s['boom'] . ' · ' . (int) $s['bust'], self::line( self::boom( $pos, $fm ) ) . '+ · under ' . self::line( self::bust( $pos, $fm ) ) ),
 				) : null;
-				$wk = array(); foreach ( (array) ( $x['rec']['weeks'] ?? array() ) as $w ) { $wk[ (int) $w['week'] ] = self::pts( $w, $fm ); } $vals[ $i ] = $wk;
+				$wk = array(); foreach ( (array) ( $x['rec']['weeks'] ?? array() ) as $w ) { $wk[ (int) $w['week'] ] = self::pts( $w, $fm ); }
+				foreach ( (array) ( $x['rec']['fx0'] ?? array() ) as $z ) { $wk[ (int) $z ] = 0.0; }  /* snaps, no stat line: zero points */
+				$vals[ $i ] = $wk;
 			}
 			$tb = '';
 			foreach ( array( 'Points a game', 'Season', 'Most weeks', 'Booms · busts' ) as $ri => $lab ) {

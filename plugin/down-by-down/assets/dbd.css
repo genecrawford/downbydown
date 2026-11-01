@@ -1195,7 +1195,7 @@ html:not([data-fx]) .dbd [data-fx="half"],html[data-fx="std"] .dbd [data-fx="std
 .dbd .dbd-fxcols .c.bye>b{background:none;height:8px;border-left:1px dashed var(--dbd-muted);width:0;min-height:0;border-radius:0}
 .dbd .dbd-fxcols .c.next>b{background:var(--dbd-line-2);height:3px;min-height:0}
 .dbd .dbd-fxcols .c>i{position:absolute;top:100%;margin-top:4px;font:500 11px var(--dbd-body);font-style:normal;color:var(--dbd-muted)}
-.dbd .dbd-fxcols .ref{position:absolute;left:0;right:0;margin-bottom:20px;border-top:1px dashed var(--dbd-muted);z-index:1;pointer-events:none}
+.dbd .dbd-fxcols .ref{position:absolute;left:0;right:0;bottom:calc(20px + (100% - 20px) * var(--y,0));border-top:1px dashed var(--dbd-muted);z-index:1;pointer-events:none}  /* the bars' own scale: the columns are the chart less its 20px label strip */
 .dbd .dbd-fxcols .ref em{position:absolute;left:100%;top:-8px;margin-left:6px;white-space:nowrap;font:500 11px var(--dbd-body);font-style:normal;color:var(--dbd-muted)}
 @container dbd (max-width:600px){.dbd .dbd-fxcols{gap:2px;height:120px;margin-right:48px}.dbd .dbd-fxcols .ref em{max-width:44px;white-space:normal;line-height:1.15;top:-14px}}
 /* Players index: the filter bar regrouped, and the Fpts/g column */

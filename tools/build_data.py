@@ -571,6 +571,22 @@ if len(stats) and 'fantasy_points' in stats.columns and 'fantasy_points_ppr' in 
         if fp_ not in FX_POS or not isinstance(w.player_id, str): continue
         sd, pp = _num(w.fantasy_points), _num(w.fantasy_points_ppr)
         fx_by[w.player_id].append(dict(w=int(w.week), opp=w.opponent_team, pts=(sd, (sd + pp) / 2, pp))); fx_pos[w.player_id] = fp_
+# a game he played without a stat line (snaps, no touch) still counts, at zero points: it is a bust week and a game in his average (Greptile, PR #38)
+fx_opp = {}
+for g_ in sched.itertuples():
+    fx_opp[(g_.home_team, int(g_.week))] = g_.away_team; fx_opp[(g_.away_team, int(g_.week))] = g_.home_team
+fx_team = {p_['id']: t_ for t_, pl_ in team_players.items() for p_ in pl_}
+fx_reg = int(sched[sched.game_type == 'REG'].week.max()) if 'game_type' in sched.columns and (sched.game_type == 'REG').any() else 18  # snap counts run into the playoffs; the lens is the regular season
+for p in allp:
+    ps_ = fx_pos.get(p['id']) or ('RB' if p['pos'] == 'FB' else p['pos'])
+    if ps_ not in FX_POS: continue
+    have = {x['w'] for x in fx_by.get(p['id'], [])}
+    for wk_, sp_ in p['snaps'].items():
+        wk_ = int(wk_)
+        if sp_ and wk_ not in have and wk_ <= fx_reg:
+            tm_ = p['snapteam'].get(str(wk_)) or fx_team[p['id']]  # a week played for another team (trade) carries that team
+            fx_by[p['id']].append(dict(w=wk_, opp=fx_opp.get((tm_, wk_)), pts=(0.0, 0.0, 0.0))); fx_pos[p['id']] = ps_
+            p.setdefault('fx0', []).append(wk_)  # the player page draws these weeks as zero-point games, not misses
 fx_sum = {}
 for pid_, ws_ in fx_by.items():
     ps_ = fx_pos[pid_]; s_ = {}
