@@ -77,7 +77,8 @@ if ( $WP && ! empty( $WP['s'] ) ) {
 		foreach ( $wOts as $k => $o ) { $mk .= '<i class="ots" style="left:' . $wX( $o[0] ) . '%;top:' . min( 88, 34 + 18 * $k ) . '%" data-tip="' . esc_attr( '<b>' . $wClock( $o[0] ) . '</b> ' . esc_html( $o[2] ) . '<br>' . $AWAY . ' ' . (int) $o[4] . ' · ' . $HOME . ' ' . (int) $o[3] ) . '" tabindex="0">' . esc_html( (string) $o[1] ) . '</i>'; }
 		if ( $wWin ) { $mk .= '<i class="fin' . ( $wWin === $HOME ? ' top' : '' ) . '" style="left:100%"></i>'; }
 	}
-	$wData = wp_json_encode( array( 'e' => $wEnd, 'h' => $HOME, 'a' => $AWAY, 's' => $wS ) );
+	/* the scrubber: the snaps, then the end of regulation (the result, or 50% when it went to overtime), then overtime's scores, which carry no chance */
+	$wData = wp_json_encode( array( 'e' => $wEnd, 'h' => $HOME, 'a' => $AWAY, 's' => array_merge( $wS, array( array( 3600, $wRfin, (int) ( $wOT ? $WP['reg'][0] : $wHs ), (int) ( $wOT ? $WP['reg'][1] : $wAs ) ) ) ), 'o' => array_map( function ( $o ) { return array( (int) $o[0], (int) $o[3], (int) $o[4] ); }, $wOts ) ) );
 	$chart = '<div class="dbd-wpc" data-wp="' . esc_attr( $wData ) . '"><div class="side"><span class="h">' . esc_html( $HOME ) . ' wins</span><span class="m">50%</span><span class="a">' . esc_html( $AWAY ) . ' wins</span></div><div class="area" role="img" aria-label="' . esc_attr( 'Win probability across the game, ' . $HOME . ' on top' ) . '">' . $svg . '<i class="mid"></i><i class="g25"></i><i class="g75"></i>' . $mk . '<i class="cur" hidden></i><div class="read" hidden></div></div><div class="ql">' . $ql . '</div></div>';
 	/* chips */
 	$fav = (int) $WP['pre'] >= 500 ? $HOME : $AWAY; $favV = $wFor( $fav, $WP['pre'] ); $sp = $WP['spread'] ?? null;

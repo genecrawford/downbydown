@@ -8,7 +8,15 @@
       while (i < S.length - 1 && S[i + 1][0] <= el) i++;
       var x = S[i], hw = Math.round(x[1] / 10), fav = hw >= 50 ? D.h : D.a, fv = hw >= 50 ? hw : 100 - hw;
       cur.hidden = false; rd.hidden = false; cur.style.left = (f * 100) + '%';
-      rd.innerHTML = '<b>' + clock(x[0]) + '</b> · ' + fav + ' <b>' + fv + '%</b> · ' + D.a + ' ' + x[3] + ' ' + D.h + ' ' + x[2];
+      if (el > 3600 && D.e > 3600) {  /* overtime: the score at that moment, no chance (the model does not hold up there) */
+        var h = S[S.length - 1][2], a = S[S.length - 1][3];
+        (D.o || []).forEach(function (o) { if (o[0] <= el) { h = o[1]; a = o[2]; } });
+        rd.innerHTML = '<b>' + clock(el) + '</b> · overtime · ' + D.a + ' ' + a + ' ' + D.h + ' ' + h;
+      } else if (x[0] >= 3600) {
+        rd.innerHTML = '<b>End of regulation</b> · ' + (x[1] === 500 ? 'tied' : (x[1] > 500 ? D.h : D.a) + ' won') + ' · ' + D.a + ' ' + x[3] + ' ' + D.h + ' ' + x[2];
+      } else {
+        rd.innerHTML = '<b>' + clock(x[0]) + '</b> · ' + (hw === 50 ? 'even' : fav + ' <b>' + fv + '%</b>') + ' · ' + D.a + ' ' + x[3] + ' ' + D.h + ' ' + x[2];
+      }
       var w = rd.offsetWidth, px = f * r.width; rd.style.left = Math.max(0, Math.min(r.width - w, px + 8 > r.width - w ? px - w - 8 : px + 8)) + 'px';
     };
     var hide = function () { cur.hidden = true; rd.hidden = true; };

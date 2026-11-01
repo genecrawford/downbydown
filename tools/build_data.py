@@ -580,7 +580,7 @@ def wp_clean(d):
     return d if len(d) <= 150 else d[:147].rsplit(' ', 1)[0] + '…'
 def wp_game(g):
     """One final game's record, or None when the play-by-play has no win probability for it."""
-    s = []; meta = []; sc = (0, 0); ots = []; ot = False; reg_end = (0, 0)
+    s = []; meta = []; sc = (0, 0); ots = []; ot = False; reg_end = (0, 0); home_t = g.iloc[0].home_team; away_t = g.iloc[0].away_team
     for r in g.itertuples(index=False):  # the file's own order; timeouts and quarter ends are not snaps and would take the next snap's swing
         if not isinstance(r.play_type, str): continue
         hw = _fv(getattr(r, 'vegas_home_wp', None)); gs = _fv(r.game_seconds_remaining); q = int(_num(r.qtr))
@@ -590,8 +590,9 @@ def wp_game(g):
                 s.append([int(round(3600 - gs)), int(round(hw * 1000)), sc[0], sc[1]]); meta.append(r)
             reg_end = cur
         else:
-            if cur != (sc if ot else reg_end):
-                ots.append([int(round(3600 + 600 - (gs or 0))), r.posteam if isinstance(r.posteam, str) else None, wp_clean(r.desc), cur[0], cur[1]])
+            base = sc if ot else reg_end
+            if cur != base:  # the scoring team is whichever total rose, so a pick-six or a safety is credited to the defense
+                ots.append([int(round(3600 + 600 - (gs or 0))), home_t if cur[0] > base[0] else away_t, wp_clean(r.desc), cur[0], cur[1]])
             ot = True
         sc = cur
     if len(s) < 20: return None
@@ -607,7 +608,7 @@ def wp_game(g):
         if not ot:
             for p in plays:
                 if wv(s[p['i']][1]) <= 500 < wv(after[p['i']]): tp = p['i']
-    seq = [x[1] for x in s] + [rfin]
+    seq = [v for v in [x[1] for x in s] + [rfin] if v != 500]  # even odds favor no one: 490 -> 500 -> 510 is one change, 490 -> 500 -> 490 none
     top = sorted(plays, key=lambda p: -abs(p['d']))[:5]
     pl = lambda i: [i, after[i] - s[i][1], meta[i].posteam if isinstance(meta[i].posteam, str) else None, wp_clean(meta[i].desc)]
     return dict(pre=s[0][1], spread=c(getattr(g.iloc[0], 'spread_line', None)), s=s, fin=fin, ot=ot, reg=list(reg_end), otsc=ots,
