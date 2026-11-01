@@ -648,7 +648,7 @@ def _defl(pid):
 _rk = {}
 for k in ('def_sacks', 'def_interceptions', 'def_pass_defended'):
     vals = sorted((v.get(k, 0) for v in seasonal.values() if v.get(k, 0) > 0), reverse=True)
-    _rk[k] = lambda x, vals=vals: (1 + sum(1 for y in vals if y > x)) if x > 0 else None
+    _rk[k] = lambda x, vals=vals: [1 + sum(1 for y in vals if y > x), 1 if sum(1 for y in vals if y == x) > 1 else 0] if x > 0 else None  # [rank, tied]
 if env('DBD_DEPTH'):
     _dc = pd.read_csv(env('DBD_DEPTH'), low_memory=False, usecols=['dt', 'team', 'player_name', 'gsis_id', 'pos_grp', 'pos_name', 'pos_abb', 'pos_slot', 'pos_rank'])
     _dc = _dc[_dc['dt'] == _dc.groupby('team')['dt'].transform('max')]  # each team's latest snapshot

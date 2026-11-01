@@ -118,8 +118,9 @@ class DBD_Lineup {
 			foreach ( array_slice( $d, 0, 2 ) as $e ) {
 				$s = $e['s'] ?? array( 0, 0, 0, 0, 0 ); $rk = $e['rk'] ?? array( null, null, null ); $db = (bool) preg_match( '/corner|safety|nickel/i', (string) ( $e['pos'] ?? '' ) );
 				$lead = ( $db && $s[2] ) || ( $s[2] * 2 > $s[1] ) ? 1 : ( $s[1] ? 0 : 2 );  /* interceptions for a defensive back, sacks for a rusher, else passes defended */
-				$val = array( $s[1], $s[2], $s[3] )[ $lead ]; $words = array( array( 'sack', 'sacks' ), array( 'INT', 'INT' ), array( 'pass defended', 'passes defended' ) )[ $lead ]; $r = $rk[ $lead ] ?? null;
-				$sub = $val ? ( 0 + $val ) . ' ' . ( (float) $val === 1.0 ? $words[0] : $words[1] ) . ( $r && $r <= 30 ? ' · ' . DBD_Grades::ordinal( (int) $r ) . ' in the NFL' : '' ) : '';
+				$val = array( $s[1], $s[2], $s[3] )[ $lead ]; $words = array( array( 'sack', 'sacks' ), array( 'INT', 'INT' ), array( 'pass defended', 'passes defended' ) )[ $lead ];
+				$rr = $rk[ $lead ] ?? null; $r = is_array( $rr ) ? (int) $rr[0] : (int) $rr; $tie = is_array( $rr ) && ! empty( $rr[1] );  /* [rank, tied] since 1.9.0's build */
+				$sub = $val ? ( 0 + $val ) . ' ' . ( (float) $val === 1.0 ? $words[0] : $words[1] ) . ( $r && $r <= 30 ? ' · ' . ( $tie ? 'T-' : '' ) . DBD_Grades::ordinal( $r ) . ' in the NFL' : '' ) : '';
 				$cards .= '<span class="dbd-pw d">' . DBD_Marks::jersey( $team, $e['num'] ?? null, 34 ) . '<span><b>' . esc_html( $e['name'] ?? '' ) . '</b><small>' . esc_html( ( $e['pos'] ?? '' ) . ' · ' . self::def_line( $e ) ) . '</small><em' . ( $r && $r <= 10 ? ' class="top"' : '' ) . '>' . esc_html( $sub ) . '</em></span></span>';
 			}
 		}
