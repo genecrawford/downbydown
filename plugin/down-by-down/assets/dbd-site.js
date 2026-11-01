@@ -105,10 +105,11 @@
       try {
         var marks = JSON.parse(pen.textContent || '{}');
         var row = root.querySelector('.dbd-stand tr[data-href*="team=' + abbr + '"] .dbd-nm a');
+        /* the standings link carries the full name and the phone's short name; the box shows the full one */
         if (marks[abbr] && row) {
           var a = document.createElement('a');
           a.className = 'dbd-panel dbd-lastbox'; a.href = row.href;
-          a.innerHTML = '<span class="dbd-lab">Pick up where you left off</span><span class="lb">' + marks[abbr] + '<b>' + row.textContent + '</b></span><span class="dbd-go">Open the explorer</span>';
+          a.innerHTML = '<span class="dbd-lab">Pick up where you left off</span><span class="lb">' + marks[abbr] + '<b>' + (row.querySelector('.full') || row).textContent + '</b></span><span class="dbd-go">Open the explorer</span>';
           last.appendChild(a);
         }
       } catch (e) {}
