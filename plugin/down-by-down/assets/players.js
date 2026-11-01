@@ -23,9 +23,9 @@
 
   function status(p) { var s = p.st || ''; if (!s) return ''; var cls = /out|did not/i.test(s) ? ' o' : /questionable|limited|doubtful/i.test(s) ? ' q' : ''; var lbl = /did not/i.test(s) ? 'DNP' : /limited/i.test(s) ? 'Limited' : /full/i.test(s) ? 'Full' : s; return '<span class="dbd-st' + cls + '">' + esc(lbl + (p.what ? ' · ' + p.what : '')) + '</span>'; }
   function stdot(p) { var s = p.st || ''; if (!s) return ''; var cls = /out|did not/i.test(s) ? ' o' : /questionable|limited|doubtful/i.test(s) ? ' q' : ''; var lbl = /did not/i.test(s) ? 'DNP' : /limited/i.test(s) ? 'Limited' : /full/i.test(s) ? 'Full' : s; return '<i class="dbd-stdot' + cls + '" data-tip="' + esc(lbl + (p.what ? ' · ' + p.what : '')) + '" tabindex="0" aria-label="' + esc(lbl) + '"></i>'; }  /* phones: the Status column is hidden, the dot carries it */
-  function row(p) { var h = purl(p.id); return '<tr class="dbd-trow" data-href="' + esc(h) + '"><td class="dbd-nm"><span class="dbd-nmi">' + window.dbdPlayer(p.team, p.num, 34, p.photo, !!C.heads) + '<a href="' + esc(h) + '">' + esc(p.name) + '</a>' + (p.slot ? '<small>' + esc(p.slot) + '</small>' : '') + stdot(p) + '</span></td><td class="dbd-ptm">' + window.dbdMark(p.team, 20) + '</td><td class="dbd-ppos">' + esc(p.pos) + '</td><td class="dbd-psnap"><span class="dbd-sb"><i style="--w:' + (p.snap | 0) + '%"></i></span>' + (p.snap | 0) + '%</td><td>' + ((p.pos === 'QB' ? p.att : p.tgt) || '') + '</td><td>' + (p.rec || '') + '</td><td>' + (p.car || '') + '</td><td>' + (p.yds | 0) + '</td><td>' + (p.td || '') + '</td><td class="' + (p.epa >= 0 ? 'pos' : 'neg') + '">' + (p.epa > 0 ? '+' : '') + (+p.epa).toFixed(1) + '</td>' + fpCell(p) + '<td>' + status(p) + '</td></tr>'; }
+  function row(p) { var h = purl(p.id); return '<tr class="dbd-trow" data-href="' + esc(h) + '"><td class="dbd-nm"><span class="dbd-nmi">' + window.dbdPlayer(p.team, p.num, 34, p.photo, !!C.heads) + '<a href="' + esc(h) + '">' + esc(p.name) + '</a>' + (p.slot ? '<small>' + esc(p.slot) + '</small>' : '') + stdot(p) + '</span></td><td class="dbd-ptm">' + window.dbdMark(p.team, 20) + '</td><td class="dbd-ppos">' + esc(p.pos) + '</td><td class="dbd-psnap"><span class="dbd-sb"><i style="--w:' + (p.snap | 0) + '%"></i></span>' + (p.snap | 0) + '%</td><td>' + ((p.pos === 'QB' ? p.att : p.tgt) || '') + '</td><td>' + (p.rec || '') + '</td><td>' + (p.car || '') + '</td><td>' + (p.yds | 0) + '</td><td>' + (p.td || '') + '</td><td class="' + (p.epa >= 0 ? 'pos' : 'neg') + '">' + (p.epa > 0 ? '+' : '') + (+p.epa).toFixed(1) + '</td>' + fpCell(p) + '<td>' + status(p) + '</td><td class="dbd-pmt"><button class="dbd-mtadd" type="button" data-mtid="' + esc(p.id) + '" data-mtname="' + esc(p.name) + '" aria-pressed="false" aria-label="Add ' + esc(p.name) + ' to My team"><span class="off" aria-hidden="true">+</span><span class="on" aria-hidden="true">✓</span></button></td></tr>'; }
 
-  var PT = [null, 'dbd-t2', null, 'dbd-t2', null, 'dbd-t2', 'dbd-t2', null, null, null, null, 'dbd-t3'];  /* column tiers, same as the PHP header (SCOPE §20) */
+  var PT = [null, 'dbd-t2', null, 'dbd-t2', null, 'dbd-t2', 'dbd-t2', null, null, null, null, 'dbd-t3', null];  /* column tiers, same as the PHP header (SCOPE §20) */
   function tierize(html, tiers) {
     return html.replace(/<tr\b[^>]*>[\s\S]*?<\/tr>/g, function (r) { var i = -1; return r.replace(/<t([dh])\b([^>]*)>/g, function (m, tag, attrs) { i++; var t = tiers[i]; if (!t) return m; var cm = attrs.match(/\bclass="([^"]*)"/); attrs = cm ? attrs.replace(cm[0], 'class="' + t + ' ' + cm[1] + '"') : attrs + ' class="' + t + '"'; return '<t' + tag + attrs + '>'; }); });
   }
@@ -36,7 +36,7 @@
     var rows = ALL.filter(function (p) { return (!st.team || needle || p.team === st.team) && posOk(p) && qOk(p); });
     if (sort.key) rows.sort(function (a, b) { var x = val(a, sort.key), y = val(b, sort.key); return (x < y ? -1 : x > y ? 1 : 0) * sort.dir; });
     var by = sort.key ? LABEL[sort.key] : 'snap share';
-    $('#dbd-plist tbody').innerHTML = rows.length ? tierize(rows.slice(0, lim).map(row).join(''), PT) : '<tr><td colspan="12" class="dbd-note">No players match.</td></tr>';
+    $('#dbd-plist tbody').innerHTML = rows.length ? tierize(rows.slice(0, lim).map(row).join(''), PT) : '<tr><td colspan="13" class="dbd-note">No players match.</td></tr>';
     var more = $('#dbd-plmore'), left = rows.length - Math.min(lim, rows.length);
     if (more) { more.hidden = left <= 0; more.querySelector('.n').textContent = 'Show ' + Math.min(PAGE, left) + ' more'; more.querySelector('.all').textContent = 'Show all ' + rows.length; more.querySelector('.of').textContent = Math.min(lim, rows.length) + ' of ' + rows.length; }
     var t = st.team && C.teams[st.team];
@@ -45,6 +45,7 @@
     pick.querySelectorAll('.dbd-mkbtn').forEach(function (b) { b.classList.toggle('on', (b.dataset.team || '') === st.team); });
     pos.querySelectorAll('.t-tab').forEach(function (b) { b.setAttribute('aria-selected', (b.dataset.v || '') === st.pos ? 'true' : 'false'); });
     slidePill(pos, pos.querySelector('[aria-selected="true"]'), true);
+    if (window.dbdMtSync) window.dbdMtSync();  /* My team buttons on the redrawn rows */
     try { history.replaceState(null, '', url({ pt: st.team, pos: st.pos, q: st.q })); } catch (e) {}  /* pt=, not team=: ?view=players&team= is the team's own page (1.9.0) */
     /* movers (SCOPE §22): the team tile marks its rows, position and search dim the rest */
     root.querySelectorAll('#dbd-mv [data-id]').forEach(function (el) {

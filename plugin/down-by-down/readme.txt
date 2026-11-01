@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.12.0
+Stable tag: 1.12.1
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,9 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.12.1 =
+* The Players index adds a My team button at the end of every row: a round + that becomes a green check once he is on your team. It stays pinned to the right edge when the table scrolls sideways on a phone, and it works on rows the filters redraw.
 
 = 1.12.0 =
 * My team (SCOPE §36): a new page, ?view=myteam, that lays out the players you follow as a fantasy lineup (QB, 2 RB, 2 WR, TE, FLEX, then the bench). Each row has this week's opponent and kickoff with the opponent's rank in points allowed to his position, the injury report line, a six-week snap sparkline, and points a game with his last three games. A read and four numbers sum up the week: starters' points a week, byes, players ruled out and soft matchups.
