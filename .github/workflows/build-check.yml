@@ -193,8 +193,9 @@ jobs:
           CMP=$(python3 -c "import json;i=json.load(open('/tmp/out/players/index.json'))['players'];w=[r['id'] for r in sorted((r for r in i if r.get('fpos')=='WR' and r.get('fr') and r['fr'][1]),key=lambda r:r['fr'][1])[:2]];print(','.join(w))")
           php tools/view_harness.php /tmp/out compare "$CMP" && grep -q 'class="dbd-panel dbd-fx dbd-cfx"' "pages/compare-$CMP.html" || { echo "no fantasy panel on compare $CMP"; exit 1; }
           php tools/view_harness.php /tmp/out myteam "" && grep -q 'class="mt-sample"' pages/myteam.html || { echo "no sample link on the empty My team page"; exit 1; }
-          MT=$(grep -o 'myteam=[0-9,-]*' pages/myteam.html | head -1 | cut -d= -f2)
-          php tools/view_harness.php /tmp/out myteam "$MT" && [ "$(grep -o 'class="mt-row' "pages/myteam-$MT.html" | wc -l)" -ge 21 ] || { echo "the sample team did not fill the lineup in all three formats"; exit 1; }
+          MT=$(python3 -c "import re,urllib.parse as u;s=open('pages/myteam.html').read();v=re.search(r'myteam=([^\"&]+)\" class=\"mt-sample\"',s).group(1);print(u.unquote(u.unquote(v)))")
+          echo "sample team: $MT"
+          php tools/view_harness.php /tmp/out myteam "$MT" && python3 -c "import sys;s=open('pages/myteam-$MT.html').read();n=s.count('class=\"mt-row')-s.count('class=\"mt-row empty');print(n,'filled rows');sys.exit(0 if n>=36 else 1)" || { echo "the sample team did not fill the lineup and bench in all three formats"; exit 1; }
           grep -q 'class="dbd-mtbtn"' pages/player-00-0036322.html || { echo "no My team button on Jefferson"; exit 1; }
       - uses: actions/upload-artifact@v4
         with:
