@@ -826,7 +826,7 @@ if env('DBD_DEPTH'):
     print('lineups:', len(lineups), 'teams;', sum(len(v['off']) for v in lineups.values()), 'offensive and', sum(len(v['def']) for v in lineups.values()), 'defensive starters')
 # box scores: every final game, both teams
 os.makedirs(f'{out}/box', exist_ok=True)
-if len(stats):
+if len(stats) or have_pbp:  # with no weekly file at all, every final is counted from the plays
     snap_of = {p['id']: p['snaps'] for pl in team_players.values() for p in pl}
     OFFK = ['completions', 'attempts', 'passing_yards', 'passing_tds', 'passing_interceptions', 'sacks_suffered', 'passing_epa', 'carries', 'rushing_yards', 'rushing_tds', 'rushing_epa', 'targets', 'receptions', 'receiving_yards', 'receiving_tds', 'receiving_epa']
     tcol = 'team' if 'team' in stats.columns else 'recent_team'
@@ -879,7 +879,7 @@ if len(stats):
             if gm['status'] != 'final': continue
             rec = {}
             for side, tm in (('away', gm['away']), ('home', gm['home'])):
-                rows = stats[(stats.week == int(wk)) & (stats[tcol] == tm)]
+                rows = stats[(stats.week == int(wk)) & (stats[tcol] == tm)] if len(stats) else stats
                 offr, defr, kick = [], [], None
                 for r in rows.itertuples():
                     v = {k: _num(getattr(r, k, 0)) for k in OFFK}
