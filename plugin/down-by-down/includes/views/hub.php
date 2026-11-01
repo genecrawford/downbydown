@@ -44,7 +44,7 @@ echo '</div>';
 
 /* ---- score strip */
 if ( $games ) {
-	echo '<span id="dbd-games" class="dbd-anchor"></span><div class="dbd-strip" aria-label="This week\'s games">';
+	echo '<span id="dbd-games" class="dbd-anchor"></span><span id="slate" class="dbd-anchor"></span><span id="dbd-slate" class="dbd-anchor"></span><div class="dbd-strip" aria-label="This week\'s games">';  /* the old #slate and #dbd-slate links land on the games too */
 	foreach ( $games as $g ) {
 		$f = DBD_Router::is_final( $g ); $aw = $f && $g['away_score'] > $g['home_score']; $hw = $f && $g['home_score'] > $g['away_score'];
 		$sel = $gotw && $g['id'] === $gotw['id'] ? ' sel' : '';
@@ -61,8 +61,8 @@ if ( $games ) {
 	echo '</div>';
 }
 
-/* ---- slate: the cards above carry every game, its kickoff and its line; the full table with stadiums and recaps lives on Matchups (SCOPE §31) */
-echo '<p class="dbd-slatelink"><a href="' . esc_url( DBD_Router::url( array( 'view' => 'matchups', 'week' => $week ) ) ) . '">The full slate: every line, total and stadium, and every week</a></p>';
+/* ---- slate: the cards above carry every game, its kickoff and its line; the full table with lines, totals and recap links lives on Matchups (SCOPE §31) */
+echo '<p class="dbd-slatelink"><a href="' . esc_url( DBD_Router::url( array( 'view' => 'matchups', 'week' => $week ) ) ) . '">The full slate: every line and total, and every week</a></p>';
 
 /* ---- standings */
 echo '<span id="teams" class="dbd-anchor"></span><div class="dbd-two" id="dbd-teams">';
