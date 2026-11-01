@@ -1335,3 +1335,12 @@ html:not([data-fx]) .dbd [data-fx="half"],html[data-fx="std"] .dbd [data-fx="std
 .dbd .dbd-mtadd .on{display:none}.dbd .dbd-mtadd[aria-pressed="true"] .on{display:inline}.dbd .dbd-mtadd[aria-pressed="true"] .off{display:none}
 .dbd .dbd-mtadd[aria-pressed="true"]{border-color:var(--dbd-good);background:rgba(30,127,74,.1);color:var(--dbd-good)}
 @media (prefers-reduced-motion:reduce){.dbd .dbd-mtadd{transition:none}}
+/* My team empty slots: a round + that opens a search in the row (SCOPE §36 addendum) */
+.dbd .mt-row.empty .who{grid-column:2/-1}
+.dbd .mt-row.empty .mt-slot{gap:10px}
+.dbd .mt-slotadd{display:grid;place-items:center;flex:0 0 36px;width:36px;height:36px;padding:0;border-radius:50%;border:1.5px dashed var(--dbd-line-2);background:transparent;color:var(--dbd-ink-2);font:500 20px/1 var(--dbd-body);cursor:pointer}
+.dbd .mt-slotadd:hover,.dbd .mt-slotadd:focus-visible{border-color:var(--dbd-red);border-style:solid;color:var(--dbd-red)}
+.dbd .mt-slotq{position:relative;flex:1 1 auto;max-width:420px}.dbd .mt-slotq .dbd-srch{width:100%}
+.dbd .mt-row.open{z-index:5}
+.dbd .mt-slotadd[hidden],.dbd .mt-slot>.m[hidden],.dbd .mt-slotq[hidden]{display:none}
+.dbd .mt-row.empty::before{background:var(--dbd-line-2)}

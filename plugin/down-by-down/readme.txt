@@ -33,6 +33,7 @@ Not affiliated with the NFL or any team. No team logos are used; team marks are 
 
 = 1.12.1 =
 * The Players index adds a My team button at the end of every row: a round + that becomes a green check once he is on your team. It stays pinned to the right edge when the table scrolls sideways on a phone, and it works on rows the filters redraw.
+* My team: every empty lineup slot has a round + that opens a search right in the row, limited to the positions that slot takes (FLEX takes backs, receivers and tight ends). Escape, or leaving it empty, puts the + back. The empty My team page now shows the empty lineup, so each slot can be filled from the start.
 
 = 1.12.0 =
 * My team (SCOPE §36): a new page, ?view=myteam, that lays out the players you follow as a fantasy lineup (QB, 2 RB, 2 WR, TE, FLEX, then the bench). Each row has this week's opponent and kickoff with the opponent's rank in points allowed to his position, the injury report line, a six-week snap sparkline, and points a game with his last three games. A read and four numbers sum up the week: starters' points a week, byes, players ruled out and soft matchups.
