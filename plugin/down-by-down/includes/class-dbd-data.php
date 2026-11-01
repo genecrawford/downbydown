@@ -139,6 +139,23 @@ class DBD_Data {
 		return self::get( 'lineups.json' )['teams'][ $abbr ] ?? null;
 	}
 
+	/** The series since 1999 between two teams (SCOPE §33), read from $a's side: w/l, home/road, most points, biggest win keyed by team. Null before the file exists. */
+	public static function series( $a, $b ) {
+		$f = self::get( 'series.json' ); $k = array( $a, $b ); sort( $k );
+		$s = $f['pairs'][ implode( '-', $k ) ] ?? null;
+		if ( ! $s ) { return null; }
+		if ( $s['a'] !== $a ) {  /* stored alphabetically from the first team's side; flip to the asking team's: its home games were the other's road games */
+			$s = array_merge( $s, array( 'a' => $a, 'b' => $b, 'w' => $s['l'], 'l' => $s['w'], 'post' => array( $s['post'][1], $s['post'][0] ),
+				'home' => array( $s['road'][1], $s['road'][0] ), 'road' => array( $s['home'][1], $s['home'][0] ) ) );
+		}
+		return $s;
+	}
+
+	/** A team's record this season, broken down (SCOPE §33): rec[all|div|conf|nonconf|home|away] = [w, l, t], pf, pa, g, last5, streak. */
+	public static function record_split( $abbr ) {
+		return self::get( 'series.json' )['records'][ $abbr ] ?? null;
+	}
+
 	/** A final game's box score (SCOPE §32): ['keys' => offense columns, 'away' => [...], 'home' => [...]]; null before the file exists. */
 	public static function box( $game ) {
 		$f = self::get( 'box/w' . (int) ( $game['week'] ?? 0 ) . '.json' );

@@ -1235,3 +1235,37 @@ The league-wide Movers panel no longer opens the team page (it was 1,687px of ot
 Chiefs at Broncos shows both lineups as above with no overlapping chips at 375 and 1440; Colts at Chiefs shows the box score lines above; the Vikings page opens with the lineup, not the league's movers, and lists 19 players in four groups. No text under 11px; no horizontal scroll at 375.
 
 Size: L (three parts, one new view, two data files). Status: signed off 2026-11-01 and built as 1.9.0.
+
+## 33. The series and the records (scoped and mocked 2026-11-01, `mockup-v10/`)
+
+From the Vikings' own game notes for Week 8 at Detroit, which Gene shared: of what that page has, the parts we can build from data we already download are the series history with the last meeting, and each team's record broken down. The mock is the live 1.9.0 Vikings at Lions page (`series-min-det.html`) with one new panel, **The series**, after Keys to the game.
+
+### What the reader sees
+
+- **The read**: who leads the series since 1999 and the current streak, then the last meeting, its date, place, score, starting quarterbacks and coaches. Vikings at Lions: "The Vikings lead the series 36–18 since 1999. They have won the last 2. Dec 25, 2025 (Christmas), at U.S. Bank Stadium: the Vikings won 23–10. Max Brosmer started at quarterback for the Vikings and Jared Goff for the Lions; Kevin O'Connell and Dan Campbell coached."
+- **Four numbers**: the first-named team's record at home (Vikings 21–6) and on the road (15–12), most points by each side (Vikings 42 in 2007, Lions 36 in 2002) and the biggest win each way (Vikings by 32 in 2007, Lions by 22 in 2024). Playoff meetings, when there are any, get their own line.
+- **The last five meetings**: season and week, the score with the winner in bold, and "playoffs" or "OT" where it applies; a meeting this season links to that game's page and its box score.
+- **This season's records, side by side**: overall, division, conference, other conference, home, away, the last five as W/L marks, the streak, and points scored and allowed a game. Checked against the Vikings' notes: Vikings 6–0 (division 2–0, conference 4–0, other conference 2–0, home 3–0, away 3–0), Lions 4–2. The team players page carries the same breakdown as one line under its title.
+
+### Data
+
+- nflverse's game list (`games.csv`, which the build already downloads for the schedule) has every game since 1999 with scores, site, overtime, starting quarterbacks, coaches and stadium. Three franchises moved in that span and count as one team each under today's code (Oakland and Las Vegas, San Diego and the Los Angeles Chargers, St. Louis and the Los Angeles Rams).
+- The build writes **`series.json`**: for every pair of teams on this season's schedule, the series since 1999 (record, home and road, playoffs, streak, most points and biggest win each way, the last five meetings, the last meeting's quarterbacks, coaches and stadium), and for every team this season's record breakdown. About 120 KB.
+- The sync allowlist gains `series.json`, so the panel appears after the release is live and a sync has run, with "Sync now" after the upload (the lesson from 1.9.0: the data build pings the site while it still runs the old plugin).
+
+### Left out
+
+- **The all-time series**: nflverse's game list starts in 1999, so the panel says "since 1999". The Vikings' notes have the all-time record (82–45–2); ours reads 36–18.
+- **The last meeting's player notes** (the Vikings' "six takeaways" and Jordan Addison's 65-yard touchdown run): those need that game's play-by-play, which the site keeps only for this season. A meeting earlier this season links to our box score instead.
+- **Storylines and milestones** (a coach's 50th win, a first 7–0 start since 2000): a separate idea for later.
+- **Season leaders side by side**: Players to watch already covers it.
+
+### Plugin
+
+`game.php` (the panel), `teamplayers.php` (the record line), `DBD_Data::series()`, the CSS, the view harness, and the sync allowlist. The build check confirms every scheduled pair has a series record and every team a breakdown that adds up to its games played.
+
+### Acceptance
+
+Vikings at Lions shows 36–18, 21–6 and 15–12, the 23–10 Christmas meeting, and the records above; no overflow at 375 (the records table measures 301px in a 301px panel in the mock).
+
+Size: S to M. Status: signed off 2026-11-01 and built as 1.10.0.

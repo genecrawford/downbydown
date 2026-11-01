@@ -1158,3 +1158,19 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 /* the player marks in Players to watch */
 .dbd .dbd-pw>.dbd-mk,.dbd .dbd-pw>.dbd-head{flex:none}
 .dbd .dbd-pwcol h4 .dbd-mk{vertical-align:middle}
+/* 1.10.0 · the series and the records (SCOPE §33) */
+.dbd .dbd-sr2{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:24px;padding:0 var(--dbd-edge) 8px}
+.dbd .dbd-wpchips.sr{grid-template-columns:repeat(2,minmax(0,1fr));padding:10px 0 4px}
+.dbd .dbd-wpchips.sr b{font-size:18px}
+.dbd .dbd-sr2 .dbd-wph{margin:12px 0 4px}
+.dbd .dbd-srl,.dbd .dbd-srr{width:100%;border-collapse:collapse}
+.dbd .dbd-srl td,.dbd .dbd-srr td,.dbd .dbd-srr th{padding:7px 6px;border-bottom:1px solid var(--dbd-line)}
+.dbd .dbd-srl td:first-child{color:var(--dbd-muted);white-space:nowrap}
+.dbd .dbd-srl span{color:var(--dbd-muted)}.dbd .dbd-srl span.w{color:var(--dbd-ink);font-weight:600}.dbd .dbd-srl i{font-style:normal;color:var(--dbd-muted);margin:0 4px}
+.dbd .dbd-srl td.r{text-align:right}
+.dbd .dbd-srr th{text-align:right}.dbd .dbd-srr td{text-align:right;font-weight:600;color:var(--dbd-ink)}.dbd .dbd-srr td:first-child,.dbd .dbd-srr th:first-child{text-align:left;font-weight:500;color:var(--dbd-ink-2)}
+.dbd .dbd-srr .dots{display:inline-flex;gap:3px}.dbd .dbd-srr .dots i{display:grid;place-items:center;width:18px;height:18px;border-radius:3px;font:700 11px var(--dbd-body);font-style:normal;color:#fff}
+.dbd .dbd-srr .dots i.w{background:var(--dbd-good)}.dbd .dbd-srr .dots i.l{background:var(--dbd-bad)}.dbd .dbd-srr .dots i.t{background:var(--dbd-muted)}
+@container dbd (max-width:760px){.dbd .dbd-sr2{grid-template-columns:minmax(0,1fr)}.dbd .dbd-wpchips.sr b{font-size:16px}.dbd .dbd-srr td,.dbd .dbd-srr th{padding:7px 3px}.dbd .dbd-srr .dots{gap:2px}.dbd .dbd-srr .dots i{width:15px;height:16px}}
+.dbd .dbd-srl a{color:var(--dbd-ink-2)}
+.dbd .dbd-recline{margin:8px 0 0;font:500 14px var(--dbd-body);font-variant-numeric:tabular-nums;color:var(--dbd-ink-2)}.dbd .dbd-recline b{color:var(--dbd-ink);font-weight:600}

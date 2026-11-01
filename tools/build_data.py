@@ -31,6 +31,7 @@ Writes:
   wp/w{N}.json    win probability for each final game that week: regulation series, overtime scores, top swings, turning point, low point (SCOPE §30)
   lineups.json    each team's starters from its latest depth chart, offense, defense and special teams, with jerseys and defenders' season lines (SCOPE §32)
   box/w{N}.json   each final game's box score: offense lines with snap share, defense sacks and interceptions, kicking (SCOPE §32)
+  series.json     every scheduled pair's series since 1999 and every team's record broken down (SCOPE §33)
   manifest.json   {season, week, through_week, built_at, files: {path: sha1}}
 
 Runs nightly in GitHub Actions during the season; the WordPress plugin pulls what changed.
@@ -699,6 +700,66 @@ if len(stats):
     for wk, games in byweek.items():
         json.dump(clean(dict(season=season, week=wk, keys=['id', 'name', 'pos', 'snap'] + OFFK, games=games)), open(f'{out}/box/w{wk}.json', 'w'), separators=(',', ':'))
     print('box scores:', sum(len(v) for v in byweek.values()), 'games in', len(byweek), 'weeks')
+
+# ---------------------------------------------------------------- the series and the records (SCOPE §33): series.json
+# nflverse's game list starts in 1999. Every pair of teams on this season's schedule gets its series since then (record,
+# home and road, playoffs, streak, most points and biggest win each way, the last five, the last meeting's quarterbacks,
+# coaches and stadium); every team gets this season's record broken down. Moved franchises count as one team.
+SR_MOVE = {'OAK': 'LV', 'SD': 'LAC', 'STL': 'LA'}
+_srF = lambda t: SR_MOVE.get(t, t)
+_sg = sched_all[sched_all.home_score.notna()].copy()
+_sg['home_team'] = _sg.home_team.map(_srF); _sg['away_team'] = _sg.away_team.map(_srF)
+_sg = _sg.sort_values(['gameday', 'gametime'])
+def _sv(r, k):
+    v = getattr(r, k, None); return c(v) if v is not None else None
+def series_rec(a, b):
+    m = _sg[((_sg.home_team == a) & (_sg.away_team == b)) | ((_sg.home_team == b) & (_sg.away_team == a))]
+    if not len(m): return None
+    w = l = t = hw = hl = rw = rl = pw = pl = 0; res = []; most = {a: [0, None], b: [0, None]}; big = {a: [0, None], b: [0, None]}; last5 = []
+    for r in m.itertuples():
+        home = r.home_team == a; sa = int(r.home_score if home else r.away_score); sb = int(r.away_score if home else r.home_score)
+        o = 'W' if sa > sb else ('L' if sa < sb else 'T'); res.append(o); w += o == 'W'; l += o == 'L'; t += o == 'T'
+        if r.game_type != 'REG': pw += o == 'W'; pl += o == 'L'
+        if getattr(r, 'location', '') != 'Neutral':
+            if home: hw += o == 'W'; hl += o == 'L'
+            else: rw += o == 'W'; rl += o == 'L'
+        for tm, s in ((a, sa), (b, sb)):
+            if s > most[tm][0]: most[tm] = [s, int(r.season)]
+        if sa - sb > big[a][0]: big[a] = [sa - sb, int(r.season)]
+        if sb - sa > big[b][0]: big[b] = [sb - sa, int(r.season)]
+        last5.append([r.game_id, int(r.season), int(r.week), r.game_type, r.away_team, int(r.away_score), r.home_team, int(r.home_score), int(_num(getattr(r, 'overtime', 0)))])
+    k = 0
+    for x in reversed(res):
+        if x == res[-1]: k += 1
+        else: break
+    lm = m.iloc[-1]
+    return dict(a=a, b=b, first=int(m.season.min()), n=len(m), w=w, l=l, t=t, home=[hw, hl], road=[rw, rl], post=[pw, pl],
+                streak=[a if res[-1] == 'W' else (b if res[-1] == 'L' else None), k], most=most, big=big, last5=last5[-5:],
+                lastm=dict(id=lm['game_id'], date=str(lm['gameday']), away=lm['away_team'], home=lm['home_team'], away_score=int(lm['away_score']), home_score=int(lm['home_score']),
+                           ot=int(_num(lm.get('overtime', 0))), qb=[c(lm.get('away_qb_name')), c(lm.get('home_qb_name'))], coach=[c(lm.get('away_coach')), c(lm.get('home_coach'))], stadium=c(lm.get('stadium'))))
+def record_rec(tm):
+    g = _sg[(_sg.season == season) & (_sg.game_type == 'REG') & ((_sg.home_team == tm) | (_sg.away_team == tm))].sort_values('week')
+    conf, div = T[tm]['conf'], T[tm]['div']; rec = {}; pf = pa = 0; seq = []
+    for r in g.itertuples():
+        home = r.home_team == tm; opp = r.away_team if home else r.home_team
+        s, o = (int(r.home_score), int(r.away_score)) if home else (int(r.away_score), int(r.home_score)); i = 0 if s > o else (1 if s < o else 2)
+        pf += s; pa += o; seq.append('WLT'[i])
+        for k in ['all', 'home' if home else 'away'] + (['div'] if T.get(opp, {}).get('div') == div else []) + (['conf'] if T.get(opp, {}).get('conf') == conf else ['nonconf']):
+            rec.setdefault(k, [0, 0, 0])[i] += 1
+    k = 0
+    for x in reversed(seq):
+        if x == seq[-1]: k += 1
+        else: break
+    return dict(rec=rec, pf=pf, pa=pa, g=len(seq), last5=''.join(seq[-5:]), streak=(seq[-1] + str(k)) if seq else '')
+_pairs = {}
+for gl in weeks.values():
+    for gm in gl:
+        key = '-'.join(sorted((gm['away'], gm['home'])))
+        if key not in _pairs:
+            s_ = series_rec(*sorted((gm['away'], gm['home'])))
+            if s_: _pairs[key] = s_
+json.dump(clean(dict(season=season, first=int(_sg.season.min()) if len(_sg) else None, pairs=_pairs, records={t: record_rec(t) for t in T})), open(f'{out}/series.json', 'w'), separators=(',', ':'))
+print('series:', len(_pairs), 'pairs since', int(_sg.season.min()) if len(_sg) else '-', '; records for', len(T), 'teams')
 
 # ---------------------------------------------------------------- movers (SCOPE §22): who moved in the last full week, against his own season
 MV_FLOOR = {'snaps': 12.0, 'targets': 6.0, 'epa': 4.0}; MV_MING = 2; MV_PER = 5; MV_DEBUT = 25; MV_START = 50; MV_PRIOR = 30
