@@ -1322,3 +1322,36 @@ Quarterbacks catch no passes, so theirs stay the same in every format. Ranks by 
 Jefferson half PPR: 12.1 a game, WR20, 60.6 total (WR27), most weeks 6.0–18.1, 1 boom and 2 busts, Week 4 a miss and Week 6 the bye. Josh Allen QB1 at 26.8. Jahmyr Gibbs RB1 at 25.8. Detroit allows WRs 31.6 half-PPR points a game, the 3rd-most. No overflow at 375 on all three pages; no text under 11px.
 
 Size: M. Status: signed off 2026-11-01 and built as 1.11.0.
+
+## 35. Player hero side card and the Playstyle pane (scoped and mocked 2026-11-01, `mockup-v12/`)
+
+Gene flagged two parts of the player page as needing UX work (Kyler Murray's page). The mock is the live 1.11.0 pages for Murray (`hero-00-0035228.html`) and Justin Jefferson (`hero-00-0036322.html`) with the two parts changed.
+
+### Hero side column
+
+Today the column right of the photo is five loose items stacked and right-aligned: the team mark and name, a snaps pill, a Share card pill, the Compare button, and "Players like him" chips that wrap raggedly. It becomes one card, 272px wide, left-aligned inside:
+
+- **The team** on top: the logo, "Vikings offense" (links to the team), and "83% of snaps" as a muted line under the name instead of a pill.
+- **Two equal actions** side by side, the same height: Compare (solid) and Share card (outline).
+- **Players like him** under a hairline, as a list: each row is the team mark, the name, and "Compare →", so the three read as choices rather than tags.
+
+On phones the card spans the width under the name and photo, in the same order.
+
+### Playstyle pane
+
+Today the read and tags sit in a narrow left column beside the eight trait bars. The bars run much taller, so the left column leaves a large empty block, and the tags crowd the read. Instead:
+
+- **The read across the top** at reading width (14px), with the tags on their own row below it and a hairline under them.
+- **The eight traits in two columns of four**, each column with a header: Trait · League (the line is the median) · Him · Pctl. Wide panels show two columns; under 820px it is one column with one header. Percentile colors are kept (green high, red low).
+
+### Plugin
+
+`player.php` (the hero column markup and the Playstyle pane markup) and `dbd.css`. No data change and no new files. The share card is unaffected.
+
+### Acceptance
+
+Murray and Jefferson match the mock at 1440, 660 and 375; no empty block under the Playstyle read at any width; no horizontal scroll at 375; the Compare button still feeds the compare tray (it keeps its id).
+
+Gene's sign-off note: make the tags significantly larger or more visually interesting. Each tag becomes a small card: an arrow in a circle for which end of the league he sits at (filled in the team color at the top, outlined at the bottom), the tag in 16px display type, and the stat behind it underneath ("Scrambles 10% · 91st pctl"). On phones each tag card is full width.
+
+Size: S. Status: signed off 2026-11-01 and built as 1.11.1.

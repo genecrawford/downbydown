@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.11.0
+Stable tag: 1.11.1
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,10 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.11.1 =
+* Player pages (SCOPE §35): the column beside the headshot becomes one card. The team and his snap share sit on top, Compare and Share card are two equal buttons, and Players like him is a list with a Compare link on each row.
+* The Playstyle pane puts the read across the top and the eight traits in two columns of four, each with a header, so there is no empty block beside a short read. The tags become larger cards with an arrow for which end of the league he sits at and the stat behind each one.
 
 = 1.11.0 =
 * The fantasy lens (SCOPE §34): standard, half-PPR and PPR points for every quarterback, back, receiver and tight end. A Standard / Half PPR / PPR switch, remembered on the device (half PPR until you pick), sets the format on every page.
