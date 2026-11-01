@@ -59,7 +59,7 @@ jobs:
           python3 - <<'PY'
           import json, glob, os, sys
           bad = []; worst = (0, None); n = 0
-          for f in glob.glob('/tmp/out/players/*.json'):
+          for f in glob.glob('/tmp/out/players/[A-Z]*.json'):  # team files only (index, league, movers and leaders sit beside them)
               if os.path.basename(f) in ('index.json', 'league.json', 'movers.json'): continue
               for p in json.load(open(f))['players']:
                   ep = p.get('ep')

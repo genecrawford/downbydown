@@ -632,7 +632,6 @@ print('fantasy:', len(fx_sum), 'players,', len(fx_allow), 'defenses')
 # ---- leaders (SCOPE §37): every Scorecard metric and Playstyle trait by group, and the fantasy boards, for the Leaders page.
 # Rows are [id, value, usage, qualified]; the plugin sorts (lower-is-better stats ascending) and labels them from its own definitions.
 LD_FLOOR = {'rec': 5, 'rb': 10, 'qb': 20}   # usage floor for the lowest filter step: targets, touches, attempts
-LD_TOP = 60                                  # the fantasy all-position boards keep this many
 ld_players, ld_groups = {}, {g: {'g': defaultdict(list), 'fp': defaultdict(list)} for g in LD_FLOOR}
 for p in allp:
     gr = p.get('grades')
@@ -658,9 +657,9 @@ for i_, fm in enumerate(FX_FMT):
         rows = [p for p in fan_p if p['fan']['pos'] == ps_ and p['fan']['rk'][fm]['ppg']]
         rows.sort(key=lambda p: p['fan']['rk'][fm]['ppg'])
         b['ppg.' + ps_] = [[p['id'], p['fan']['s'][fm]['ppg'], p['fan']['s'][fm]['g'], p['fan']['rk'][fm]['ppg']] for p in rows]
-    b['tot'] = [[p['id'], p['fan']['s'][fm]['tot'], p['fan']['s'][fm]['g']] for p in sorted(fan_p, key=lambda p: -p['fan']['s'][fm]['tot'])[:LD_TOP]]
-    b['boom'] = [[p['id'], p['fan']['s'][fm]['boom'], p['fan']['s'][fm]['g']] for p in sorted(fan_p, key=lambda p: (-p['fan']['s'][fm]['boom'], -p['fan']['s'][fm]['ppg']))[:LD_TOP] if p['fan']['s'][fm]['boom']]
-    b['lo'] = [[p['id'], p['fan']['s'][fm]['lo'], p['fan']['s'][fm]['g']] for p in sorted((p for p in fan_p if p['fan']['rk'][fm]['ppg'] and p['fan']['s'][fm]['g'] >= 3), key=lambda p: -p['fan']['s'][fm]['lo'])[:LD_TOP]]
+    b['tot'] = [[p['id'], p['fan']['s'][fm]['tot'], p['fan']['s'][fm]['g']] for p in sorted(fan_p, key=lambda p: -p['fan']['s'][fm]['tot'])]
+    b['boom'] = [[p['id'], p['fan']['s'][fm]['boom'], p['fan']['s'][fm]['g']] for p in sorted(fan_p, key=lambda p: (-p['fan']['s'][fm]['boom'], -p['fan']['s'][fm]['ppg'])) if p['fan']['s'][fm]['boom']]
+    b['lo'] = [[p['id'], p['fan']['s'][fm]['lo'], p['fan']['s'][fm]['g']] for p in sorted((p for p in fan_p if p['fan']['rk'][fm]['ppg'] and p['fan']['s'][fm]['g'] >= 3), key=lambda p: -p['fan']['s'][fm]['lo'])]
     ld_fan[fm] = b
 for fm in ld_fan:
     for k, rows in ld_fan[fm].items():

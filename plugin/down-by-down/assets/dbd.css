@@ -1379,3 +1379,4 @@ html:not([data-fx]) .dbd [data-fx="half"],html[data-fx="std"] .dbd [data-fx="std
 .dbd .ld-full td:nth-child(3){font-weight:600}
 .dbd .ld-min{font:500 13px var(--dbd-body);padding:6px 10px;border:1px solid var(--dbd-line-2);border-radius:var(--dbd-r);background:var(--dbd-panel);color:var(--dbd-ink)}
 .dbd .ld-foot{margin-top:4px}
+.dbd .ld-full tr[hidden]{display:none}
