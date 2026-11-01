@@ -640,7 +640,7 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 .dbd .dbd-ox-rib .c.tough{background:#161e36;color:#fff;border-color:#161e36}.dbd .dbd-ox-rib .c.tough small,.dbd .dbd-ox-rib .c.tough i{color:rgba(255,255,255,.7)}
 .dbd .dbd-ox-rib .c.soft{background:rgba(30,127,74,.14);border-color:rgba(30,127,74,.35)}.dbd .dbd-ox-rib .c.soft i{color:var(--dbd-good)}
 .dbd .dbd-ox-rib .c.ahead{opacity:.9;border-style:dashed}.dbd .dbd-ox-rib .c.ahead.tough{background:transparent;color:var(--dbd-ink);border:2px dashed #161e36}.dbd .dbd-ox-rib .c.ahead.tough small,.dbd .dbd-ox-rib .c.ahead.tough i{color:var(--dbd-muted)}
-.dbd .dbd-ox-rib .c.bye{border-style:dotted;color:var(--dbd-muted);background:transparent}.dbd .dbd-ox-rib .c.dnp::after{content:"DNP";position:absolute;right:3px;top:2px;font:700 11px var(--dbd-display);color:var(--dbd-bad)}
+.dbd .dbd-ox-rib .c.bye{border-style:dotted;color:var(--dbd-muted);background:transparent}.dbd .dbd-ox-rib .c.dnp::after{content:"DNP";position:absolute;right:4px;top:-7px;padding:0 3px;background:var(--dbd-panel);border-radius:2px;line-height:12px;font:700 11px/12px var(--dbd-display);color:var(--dbd-bad)}
 .dbd .dbd-ox-rib .c.now{box-shadow:0 0 0 2px var(--dbd-red)}.dbd .dbd-ox-rib .c:focus-visible{outline:2px solid var(--dbd-red);outline-offset:1px}
 .dbd .dbd-ox .dbd-legend{padding:8px 14px 4px}.dbd .dbd-ox .dbd-legend i.sq{width:10px;height:10px;border-radius:2px}
 .dbd .dbd-ox-2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;padding:4px 0 14px}.dbd .dbd-ox-2>div{min-width:0}
@@ -936,3 +936,5 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 .dbd .dbd-glog tr.dbd-gx[hidden]{display:none}
 /* a sorted game log sets the bye, did-not-play and upcoming rows aside; sorting by week brings them back */
 .dbd .dbd-glog.is-sorted tr.dbd-gx,.dbd .dbd-glog.is-sorted~.dbd-gx-more{display:none}
+/* the slate's DNP tag sits on the cell's top border, so it never covers the opponent label in a narrow cell; the rows and the strip get room for it */
+.dbd .dbd-ox-rib{row-gap:9px;padding-top:4px}

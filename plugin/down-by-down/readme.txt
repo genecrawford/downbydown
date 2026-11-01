@@ -31,6 +31,9 @@ Not affiliated with the NFL or any team. No team logos are used; team marks are 
 
 == Changelog ==
 
+= Next release =
+* Fix: on phones the red DNP tag in Who he's faced covered the opponent label ("VS MIA"). It now sits on the cell's top border.
+
 = 1.5.0 =
 * nfelo parity on the player page (SCOPE §29). Each hero tile now carries its league rank ("5th of 38", green inside the top 10, ties as T-) against the same pool Where he ranks uses; a player outside the pool shows none. A quarterback's Snap share tile becomes ANY/A, since the hero badge already shows snap share.
 * Season stats gain success rate, ANY/A (quarterbacks) and total EPA, each ranked.
