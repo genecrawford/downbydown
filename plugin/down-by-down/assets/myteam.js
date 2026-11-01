@@ -18,16 +18,15 @@
 
   /* an empty address restores the saved team; a given one is saved unless it is someone else's */
   if (!C.given) { if (stored.length) { location.replace(url(stored)); return; } }
-  else if (ids.length) {
-    if (!stored.length || same(stored, ids)) save(ids);
-    else {
-      shared = true;
-      var bar = document.createElement('div'); bar.className = 'dbd-panel mt-shared';
-      bar.innerHTML = '<p><b>This is a shared team.</b> Your own saved team (' + stored.length + ' player' + (stored.length === 1 ? '' : 's') + ') is kept until you choose.</p><span><button type="button" class="dbd-cbtn mt-keep">Save this as my team</button><a class="dbd-cbtn" href="' + url(stored) + '">Open my team</a></span>';
-      var main = root.querySelector('main'), title = main && main.querySelector('.dbd-ttitle');
-      if (title) title.after(bar);
-      bar.querySelector('.mt-keep').addEventListener('click', function () { save(ids); stored = ids.slice(); shared = false; bar.remove(); });
-    }
+  else if (ids.length && (!stored.length || same(stored, ids))) save(ids);
+  else if (stored.length && !same(stored, ids)) {
+    /* someone else's team, or an emptied one: shown as it is, and the saved team is kept until the reader chooses (Greptile, PR #40) */
+    shared = true;
+    var bar = document.createElement('div'); bar.className = 'dbd-panel mt-shared';
+    bar.innerHTML = '<p><b>' + (ids.length ? 'This is a shared team.' : 'This team is empty.') + '</b> Your own saved team (' + stored.length + ' player' + (stored.length === 1 ? '' : 's') + ') is kept until you choose.</p><span>' + (ids.length ? '<button type="button" class="dbd-cbtn mt-keep">Save this as my team</button>' : '') + '<a class="dbd-cbtn" href="' + url(stored) + '">Open my team</a></span>';
+    var main = root.querySelector('main'), title = main && main.querySelector('.dbd-ttitle');
+    if (title) title.after(bar);
+    var keep = bar.querySelector('.mt-keep'); if (keep) keep.addEventListener('click', function () { save(ids); stored = ids.slice(); shared = false; bar.remove(); });
   }
 
   /* search: name, team or number, best scorers first, players already on the team left out */
