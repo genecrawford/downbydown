@@ -1174,3 +1174,7 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 @container dbd (max-width:760px){.dbd .dbd-sr2{grid-template-columns:minmax(0,1fr)}.dbd .dbd-wpchips.sr b{font-size:16px}.dbd .dbd-srr td,.dbd .dbd-srr th{padding:7px 3px}.dbd .dbd-srr .dots{gap:2px}.dbd .dbd-srr .dots i{width:15px;height:16px}}
 .dbd .dbd-srl a{color:var(--dbd-ink-2)}
 .dbd .dbd-recline{margin:8px 0 0;font:500 14px var(--dbd-body);font-variant-numeric:tabular-nums;color:var(--dbd-ink-2)}.dbd .dbd-recline b{color:var(--dbd-ink);font-weight:600}
+/* the theme draws a 1px border around every table in a post (.entry-content table:not(.variations)); ours sit flush in their panels with their own row lines */
+.entry-content .dbd main table,.dbd main table{border:0}
+.entry-content .dbd main table tr>:first-child,.dbd main table tr>:first-child{padding-left:10px!important}  /* and text never sits flush with a table's edge */
+.entry-content .dbd main table tr>:last-child,.dbd main table tr>:last-child{padding-right:10px!important}
