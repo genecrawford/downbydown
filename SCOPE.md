@@ -1014,3 +1014,57 @@ Roadmap 2, slices 1 and 2 as one release (Gene: "go over all the visual elements
 Pretty URLs and the admin menu (polish release), dark mode (not wanted), a logo on the share card's hero (the headshot stays the subject).
 
 Status: built as 1.4.0 (2026-10-31). As built: the type floor (11px) and the two letter-spacings apply everywhere; 17px merged into 18px; the larger display sizes (20 to 34px headings and scores) were left as they were rather than forced onto the seven-step scale, to avoid reflowing headline layouts for little gain. The table fix raises every plugin rule by one class under .dbd rather than patching individual tables.
+
+## 29. Player page, nfelo parity (scoped and mocked 2026-10-31, `mockup-v6/`)
+
+Roadmap 2, slice 3. Gene's question: what does nfelo's player page have that ours does not (the list is in §27). The mock is the real 1.4.3 page for **Josh Allen** (`parity-qb.html`) and **Justin Jefferson** (`parity-wr.html`), fetched from downbydown.com, with the new parts added and outlined in red. Every number in it is this season's data through Week 8, computed from nflverse play-by-play the way the build will compute it.
+
+### What changes on the page
+
+| # | Part | What the reader sees | Allen, measured | Jefferson, measured |
+|---|---|---|---|---|
+| P1 | **Ranks on the hero tiles** | Each tile gets a bottom line, "5th of 38", green inside the top 10, ties as "T-16th", with a tooltip naming the stat and the pool. The pool is the one "Where he ranks" already uses (QBs with 50+ attempts, receivers with 15+ targets, backs with 30+ touches); a player outside it shows no rank line. Counting stats rank on season totals, as nfelo does, so a missed game costs places | ANY/A 5th, rushing yards 1st, EPA per dropback 5th of 38 | targets T-68th, EPA per target 10th of 136 (he missed Week 4) |
+| P2 | **Three new season stats** | Success rate, ANY/A (QBs) and Total EPA join the Season stats table, each with its league rank. On the QB tiles, ANY/A replaces Snap share, which the hero badge already shows | success 48% (13th), ANY/A 7.83 (5th), total EPA +72.5 (2nd) | success 52% (73rd), total +22.3 (17th) |
+| P3 | **Where his EPA comes from** (new panel, after Playstyle) | A waterfall that splits the season's EPA by what happened, with each part's total, per-play rate and league percentile, a one-sentence read, and this season's efficiency against his career (from the career caches) with a bar per season | air yards +28.0 (67th), after the catch +96.4 (88th), incompletions −41.3, interceptions −8.7, sacks −20.6 (41st), passing +53.0; scrambles +21.2 (96th), designed runs −1.7; total +72.5. Passing EPA per dropback +0.29 against +0.14 career: the best of his nine seasons | air +15.2 (78th), after the catch +13.3 (63rd), incompletions −7.3, no interceptions; total +22.3. +0.72 per target against +0.36 career |
+| P4 | **Depth by direction** (new panel, under P3) | The 4 × 3 grid (behind the line, short 0–9, intermediate 10–19, deep 20+; left, middle, right) with two views: **How often** (his share of throws or targets against the league's, tinted where he goes more than the league) and **EPA per throw** (his against the league's in that cell, green or red). The line of scrimmage is drawn across. Cells under three plays show no EPA. A sentence names the most over-used cell with five or more plays | deep middle 5% against the league's 2%, +1.53 EPA a throw | the grid on targets |
+| P5 | **Game log, all eighteen weeks** | The bye week and the weeks he did not play appear in place (a did-not-play row shows the team's result, and that week's injury designation when the report had one); this week's game follows, and the rest of the schedule sits behind a "Rest of the schedule · N games" button. All three views (Default, Advanced, Traditional) get the rows; sorting a column sets them aside, and they never count in the totals row | bye in Week 7, Week 8 vs Ravens, 10 more behind the button | did not play Week 4, bye Week 6 |
+
+**Running backs** get P1, P2 and P5, and a P3 with runs and receiving parts (designed runs; air yards, after the catch and incompletions on targets; total). P4 shows for a back only with 15+ targets.
+
+### Definitions
+
+- **Dropback:** a pass attempt, a sack or a scramble. **Success:** nflverse's flag (the play gained EPA). **ANY/A:** (passing yards + 20 × TD − 45 × INT − sack yards) ÷ (attempts + sacks).
+- **Total EPA:** passing plus rushing for a QB, rushing plus receiving for a back, receiving for a receiver, from the same weekly figures the tiles already use.
+- **The split (P3):** completions divide at the catch using nflverse's air EPA; for a QB the after-the-catch part is his credited EPA (nflverse's QB EPA) minus the air part, so the passing parts add up to the passing EPA the tile shows. Parts come from the play file and totals from the weekly file; the two differ slightly (fumbles after the catch, laterals, stat corrections), and the gap shows as an **Other** row, hidden when under 0.1. Allen's is −0.8, Jefferson's +1.0.
+- **Percentiles** are per play (per dropback, per target, per touch) among the same qualifying pool, higher is better, so a cost smaller than most ranks high.
+- **Depth and direction** use nflverse's air yards and pass location, as the offense sees the field; sacks and throws with no charted direction are left out.
+
+### Ride-along fixes (found while building the mock)
+
+- The QB tile "TD / INT" reads "0 first downs" for every quarterback: the build never carried passing first downs. Allen has 66.
+- The This week panel's kickoff badge reads "6:00 PM GMT+0000" on the live site; it should read Eastern time like everything else on the page.
+
+### Data and rendering
+
+- **Build** (`tools/build_data.py`): reads `air_epa`, `comp_air_epa`, `qb_epa`, `pass_location` and `first_down` from the play-by-play it already downloads and writes a per-player `ep` object into `players/{TEAM}.json` (parts with totals, per-play rates and percentiles, success rate, ANY/A, the grid cells with the league's share and EPA per cell) plus `trk` (tile ranks). `league.json` gains the league grid. The weekly columns gain `passing_first_downs`; the injuries step keeps a per-week designation (`injw`). Play files and the sync allowlist do not change. About 1 KB per qualifying player across the team files.
+- **Build check:** for every qualifier the parts must add to the play-file total within 0.01, and the run fails if any Other row is larger than 3 EPA.
+- **Plugin** (1.5.0): `player.php` (rank line, the three stats, two panels, the game log rows), `dbd.css`, `player.js` (the grid's view switch, the schedule button, sorting that sets non-game rows aside), the view harness fixtures (a QB, a receiver, a back and a non-qualifier with no rank lines), and the This week time zone.
+
+### Left out
+
+- **QBR:** ESPN's, not reproducible.
+- **Career average for each part:** the career caches carry totals, not air or after-the-catch EPA; that would need every season's play-by-play back to 1999 as a one-off backfill. The career line compares overall efficiency only.
+- **Run splits by gap for backs:** the field map already covers gaps.
+
+### Acceptance (measured on the built page)
+
+Allen: total EPA +72.5, 2nd of 38; ANY/A 7.83, 5th; the parts add to passing +53.0 and rushing +19.5. Jefferson: total +22.3, 17th of 136; Week 4 did-not-play and Week 6 bye rows in place. No new text under 11px; no horizontal page scroll at 375; the two new panels checked at 1440, 1024, 768 and 375.
+
+Size: M. Status: signed off 2026-11-01 and built as 1.5.0.
+
+### Built (1.5.0)
+
+- **Two-point tries.** nflverse's weekly EPA counts two-point attempts, which is where the mock's Other rows came from (Allen's −0.8 is one failed try; Michael Penix Jr.'s +3.2 is three good ones). The build gives them their own part, "Two-point tries", shown only when a player has one and left out of the rates and percentiles. With that, every qualifier's Other row is under 0.01 EPA, so the build check fails at 3 EPA as scoped but in practice watches for a regression.
+- **Ranks** come from the site's own pool (the players Where he ranks grades), so a few ranks differ from the mock's play-count pool: Allen's success rate is T-12th (mock 13th), Jefferson's T-67th (mock 73rd). The acceptance numbers hold: Allen +72.5, 2nd of 38; ANY/A 7.83, 5th; passing +53.0 and rushing +19.5. Jefferson +22.3, 17th of 136.
+- **Data:** `ep` = {u, sr, any (QBs), tot, sec: [[section, weekly total, other, [[part, EPA, per play, percentile]]]], rk, pc, gr: {cell: [n, EPA per play, completions]}}; `trk` = {tile key: [rank, tie]}; `injw` = {week: [designation, injury]}; league.json `grid` = {qb, tgt: {cell: [share, EPA per play]}}.
+

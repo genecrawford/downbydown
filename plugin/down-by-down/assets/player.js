@@ -30,6 +30,25 @@
     window.addEventListener('resize', function () { gpill(gv.querySelector('[aria-selected="true"]'), false); });
   }
 
+  /* depth by direction (SCOPE §29): How often or EPA per throw, the same sliding pill as the game log */
+  var lz = root.querySelector('.dbd-lz'), lzv = lz && lz.querySelector('.dbd-lzv');
+  if (lzv) {
+    var lpill = function (b, anim) { var pl = lzv.querySelector('.t-tabs-pill'); if (!pl || !b) return; var go = function () { pl.style.transform = 'translateX(' + b.offsetLeft + 'px)'; pl.style.width = b.offsetWidth + 'px'; }; if (anim) { go(); return; } var prev = pl.style.transition; pl.style.transition = 'none'; go(); void pl.offsetWidth; pl.style.transition = prev; };
+    lzv.addEventListener('click', function (e) { var b = e.target.closest('.t-tab'); if (!b) return; lzv.querySelectorAll('.t-tab').forEach(function (x) { x.setAttribute('aria-selected', x === b ? 'true' : 'false'); }); lz.setAttribute('data-mode', b.dataset.m); lpill(b, true); });
+    requestAnimationFrame(function () { lpill(lzv.querySelector('[aria-selected="true"]'), false); });
+    window.addEventListener('resize', function () { lpill(lzv.querySelector('[aria-selected="true"]'), false); });
+  }
+
+  /* the game log's rest of the schedule: one button per view, all three open and close together */
+  var more = root.querySelectorAll('.dbd-gx-more');
+  more.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var open = btn.getAttribute('aria-expanded') !== 'true';
+      root.querySelectorAll('.dbd-glog tr.dbd-gx.up:not(.next)').forEach(function (r) { r.hidden = !open; });
+      more.forEach(function (b) { b.setAttribute('aria-expanded', open ? 'true' : 'false'); b.textContent = open ? 'Hide the rest of the schedule' : 'Rest of the schedule · ' + b.dataset.n + ' game' + (b.dataset.n === '1' ? '' : 's'); });
+    });
+  });
+
   fetch(C.dataUrl, { credentials: 'omit' }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(boot)
     .catch(function (err) { $('#dbd-pmap').innerHTML = '<p class="dbd-note">Could not load the plays (' + esc(err.message || err) + ').</p>'; $('#dbd-mapn').textContent = ''; });
 
