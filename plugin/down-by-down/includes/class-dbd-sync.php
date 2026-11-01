@@ -2,7 +2,7 @@
 /**
  * Pulls the data files from the GitHub repo into uploads/down-by-down/.
  * Triggered by the GitHub Action (POST /wp-json/dbd/v1/sync with the token), by WP-Cron daily,
- * and by the Sync now button on the settings page. Downloads only files whose manifest hash changed,
+ * by the Sync now button on the settings page, and once after each plugin update (1.13.1). Downloads only files whose manifest hash changed,
  * validates the JSON, then renames into place so a bad download never replaces a good file.
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
@@ -13,11 +13,25 @@ class DBD_Sync {
 	const OPT_TOKEN  = 'dbd_sync_token';
 	const OPT_LOG    = 'dbd_sync_log';
 	const HOOK       = 'dbd_sync_event';
+	const HOOK_UPDATE = 'dbd_sync_after_update';
+	const OPT_VER    = 'dbd_synced_version';  /* the plugin version that last ran a successful sync */
+	const AFTER      = 120;                   /* seconds after an update: hosts can keep serving the old compiled code for a minute or so */
 
 	public static function init() {
 		add_action( self::HOOK, array( __CLASS__, 'sync' ) );
 		add_action( 'rest_api_init', array( __CLASS__, 'rest' ) );
+		add_action( self::HOOK_UPDATE, array( __CLASS__, 'after_update' ) );
 		if ( ! wp_next_scheduled( self::HOOK ) ) { self::schedule(); }
+		/* a new version that has not synced yet (an upload, an update) pulls the data on its own a couple of minutes later, so files
+		   it newly knows about arrive without pressing Sync now; the sync the data build triggers may have run on the old version */
+		if ( get_option( self::OPT_VER ) !== DBD_VERSION && ! wp_next_scheduled( self::HOOK_UPDATE ) && ! get_transient( 'dbd_sync_upd_' . DBD_VERSION ) ) { wp_schedule_single_event( time() + self::AFTER, self::HOOK_UPDATE ); }
+	}
+
+	/** The post-update sync: skipped when this version has already synced (Sync now, the webhook or the daily pull got there first). */
+	public static function after_update() {
+		if ( get_option( self::OPT_VER ) === DBD_VERSION ) { return; }
+		set_transient( 'dbd_sync_upd_' . DBD_VERSION, 1, HOUR_IN_SECONDS );  /* a failed try waits an hour before the next, per version */
+		self::sync( 'update' );
 	}
 
 	public static function schedule() {
@@ -30,6 +44,7 @@ class DBD_Sync {
 
 	public static function unschedule() {
 		wp_clear_scheduled_hook( self::HOOK );
+		wp_clear_scheduled_hook( self::HOOK_UPDATE );
 	}
 
 	public static function source() {
@@ -108,6 +123,7 @@ class DBD_Sync {
 		if ( $out['error'] === '' ) {
 			file_put_contents( $dir . '/manifest.json', wp_json_encode( $remote ) );
 			$out['ok'] = true;
+			update_option( self::OPT_VER, DBD_VERSION );  /* autoloaded: init() reads it on every request */
 			self::recompute_stats();
 		}
 		return self::finish( $out, $start );

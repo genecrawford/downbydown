@@ -54,6 +54,7 @@ function dbd_settings_page() {
 			<tr><td>Built</td><td><?php echo esc_html( $m['built_at'] ?? 'never' ); ?> <?php echo esc_html( DBD_Data::updated_text() ? '(' . DBD_Data::updated_text() . ')' : '' ); ?></td></tr>
 			<tr><td>Files</td><td><?php echo count( $m['files'] ?? array() ); ?> in <code><?php echo esc_html( DBD_Data::dir() ); ?></code></td></tr>
 			<tr><td>Next scheduled pull</td><td><?php echo $next ? esc_html( get_date_from_gmt( gmdate( 'Y-m-d H:i:s', $next ), 'M j, g:i A' ) ) : 'not scheduled'; ?><?php if ( $cron_off ) : ?> <strong>WP-Cron is disabled on this site.</strong> Make sure a real cron hits <code>wp-cron.php</code> or runs <code>wp cron event run <?php echo esc_html( DBD_Sync::HOOK ); ?></code> daily.<?php endif; ?></td></tr>
+			<tr><td>After an update</td><td><?php $sv = (string) get_option( DBD_Sync::OPT_VER ); $su = wp_next_scheduled( DBD_Sync::HOOK_UPDATE ); echo $sv === DBD_VERSION ? 'This version (' . esc_html( DBD_VERSION ) . ') has synced.' : ( $su ? 'A sync for ' . esc_html( DBD_VERSION ) . ' runs at ' . esc_html( get_date_from_gmt( gmdate( 'Y-m-d H:i:s', $su ), 'g:i A' ) ) . '.' : 'Not synced on ' . esc_html( DBD_VERSION ) . ' yet.' ); ?> A new version pulls the data on its own about two minutes after it is installed.</td></tr>
 			</tbody>
 		</table>
 		<p>
