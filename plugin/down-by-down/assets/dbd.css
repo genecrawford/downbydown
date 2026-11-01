@@ -1178,3 +1178,47 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 .entry-content .dbd main table,.dbd main table{border:0}
 .entry-content .dbd main table tr>:first-child,.dbd main table tr>:first-child{padding-left:10px!important}  /* and text never sits flush with a table's edge */
 .entry-content .dbd main table tr>:last-child,.dbd main table tr>:last-child{padding-right:10px!important}
+
+/* ===== the fantasy lens (SCOPE §34) ===== */
+/* every format is in the page; the html element's data-fx (set by dbd-site.js from the remembered choice) picks the blocks that show; half PPR without it */
+.dbd [data-fx]{display:none}
+html:not([data-fx]) .dbd [data-fx="half"],html[data-fx="std"] .dbd [data-fx="std"],html[data-fx="half"] .dbd [data-fx="half"],html[data-fx="ppr"] .dbd [data-fx="ppr"]{display:revert}
+.dbd .dbd-fx>.dbd-ph,.dbd .dbd-fxm>.dbd-ph{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}
+.dbd .dbd-fxseg .t-tab{white-space:nowrap}
+/* weekly bars: HTML, so the week labels stay 11px at phone width */
+.dbd .dbd-fxbars{padding:16px var(--dbd-edge) 6px}
+.dbd .dbd-fxcols{position:relative;display:grid;grid-template-columns:repeat(18,minmax(0,1fr));gap:4px;height:150px;padding-bottom:20px;margin-right:72px}
+.dbd .dbd-fxcols .c{position:relative;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;border-bottom:1px solid var(--dbd-line-2)}
+.dbd .dbd-fxcols .c>b{display:block;width:70%;min-height:2px;background:var(--dbd-team);border-radius:2px 2px 0 0}
+.dbd .dbd-fxcols .c.boom>b{background:var(--dbd-good)}.dbd .dbd-fxcols .c.bust>b{background:var(--dbd-bad)}
+.dbd .dbd-fxcols .c.dnp>b{background:none;color:var(--dbd-bad);font:600 13px/1 var(--dbd-body);text-align:center;min-height:0}
+.dbd .dbd-fxcols .c.bye>b{background:none;height:8px;border-left:1px dashed var(--dbd-muted);width:0;min-height:0;border-radius:0}
+.dbd .dbd-fxcols .c.next>b{background:var(--dbd-line-2);height:3px;min-height:0}
+.dbd .dbd-fxcols .c>i{position:absolute;top:100%;margin-top:4px;font:500 11px var(--dbd-body);font-style:normal;color:var(--dbd-muted)}
+.dbd .dbd-fxcols .ref{position:absolute;left:0;right:0;margin-bottom:20px;border-top:1px dashed var(--dbd-muted);z-index:1;pointer-events:none}
+.dbd .dbd-fxcols .ref em{position:absolute;left:100%;top:-8px;margin-left:6px;white-space:nowrap;font:500 11px var(--dbd-body);font-style:normal;color:var(--dbd-muted)}
+@container dbd (max-width:600px){.dbd .dbd-fxcols{gap:2px;height:120px;margin-right:48px}.dbd .dbd-fxcols .ref em{max-width:44px;white-space:normal;line-height:1.15;top:-14px}}
+/* Players index: the filter bar regrouped, and the Fpts/g column */
+.dbd .dbd-pbar{display:block;padding-top:14px;padding-bottom:14px}
+.dbd .dbd-pbar .dbd-prow{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:end}
+.dbd .dbd-pbar .dbd-fq{flex:1 1 260px;max-width:420px}.dbd .dbd-pbar .dbd-fq .dbd-srch{width:100%}
+.dbd .dbd-pbar .dbd-ffmt{margin-left:auto}
+.dbd .dbd-pbar .dbd-fteam{margin-top:14px;padding-top:14px;border-top:1px solid var(--dbd-line)}
+.dbd .dbd-pbar .dbd-fteam .dbd-teampick{max-width:none}
+@container dbd (max-width:600px){.dbd .dbd-pbar .dbd-fq{flex-basis:100%;max-width:none}.dbd .dbd-pbar .dbd-ffmt{margin-left:0}}
+.dbd td.dbd-pfp{min-width:64px;white-space:nowrap}.dbd td.dbd-pfp small{display:block;font:500 11px var(--dbd-body);color:var(--dbd-muted)}
+/* Matchups: points allowed by position */
+.dbd .dbd-fxmt td,.dbd .dbd-fxmt th{text-align:center}.dbd .dbd-fxmt td.nm,.dbd .dbd-fxmt th:first-child{text-align:left}
+.dbd .dbd-fxmt td.nm i{font-style:normal;color:var(--dbd-muted);margin:0 5px}.dbd .dbd-fxmt td.nm .full{color:var(--dbd-muted)}
+.dbd .dbd-fxr{display:inline-block;min-width:38px;padding:2px 5px;border-radius:3px;font:500 13px var(--dbd-body);font-variant-numeric:tabular-nums;color:var(--dbd-muted)}
+.dbd .dbd-fxr.soft,.dbd .dbd-fxm .dbd-legend i.soft{background:rgba(30,127,74,.16);color:var(--dbd-good);font-weight:600}
+.dbd .dbd-fxr.tough,.dbd .dbd-fxm .dbd-legend i.tough{background:rgba(180,38,31,.12);color:var(--dbd-bad);font-weight:600}
+.dbd .dbd-fxm .dbd-legend{display:flex;flex-wrap:wrap;gap:6px 16px;padding-top:8px;font:500 12px var(--dbd-body);color:var(--dbd-muted)}
+.dbd .dbd-fxm .dbd-legend span{display:inline-flex;align-items:center;gap:6px}.dbd .dbd-fxm .dbd-legend i.sq{display:inline-block;width:12px;height:12px;border-radius:2px}
+@container dbd (max-width:600px){.dbd .dbd-fxmt td.nm .full{display:none}.dbd .dbd-fxr{min-width:34px;padding:2px 3px}}
+/* Compare: grouped weeks in each player's color */
+.dbd .dbd-fxgrp{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px;height:150px;padding-bottom:20px}
+.dbd .dbd-fxgrp .g{position:relative;display:flex;align-items:flex-end;justify-content:center;gap:1px;border-bottom:1px solid var(--dbd-line-2)}
+.dbd .dbd-fxgrp .g>b{flex:1 1 0;max-width:12px;min-height:2px;background:var(--c);border-radius:2px 2px 0 0}.dbd .dbd-fxgrp .g>b.none{min-height:0;height:0}
+.dbd .dbd-fxgrp .g>i{position:absolute;top:100%;margin-top:4px;font:500 11px var(--dbd-body);font-style:normal;color:var(--dbd-muted)}
+@container dbd (max-width:600px){.dbd .dbd-fxgrp{gap:2px;height:120px}}

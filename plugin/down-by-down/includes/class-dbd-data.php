@@ -170,6 +170,11 @@ class DBD_Data {
 		return $f['games'][ $game['id'] ?? '' ] ?? null;
 	}
 
+	/** Points allowed by every defense to QB/RB/WR/TE in standard, half and PPR, with ranks, the starter line and boom/bust lines (SCOPE §34); empty before the file exists. */
+	public static function fantasy() {
+		return self::get( 'fantasy.json' ) ?: array();
+	}
+
 	public static function team_game( $abbr, $week ) {
 		foreach ( self::week_games( $week ) as $g ) { if ( $g['home'] === $abbr || $g['away'] === $abbr ) { return $g; } }
 		return null;

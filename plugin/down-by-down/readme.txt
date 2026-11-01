@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.10.0
+Stable tag: 1.11.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -31,7 +31,13 @@ Not affiliated with the NFL or any team. No team logos are used; team marks are 
 
 == Changelog ==
 
-= Next release =
+= 1.11.0 =
+* The fantasy lens (SCOPE §34): standard, half-PPR and PPR points for every quarterback, back, receiver and tight end. A Standard / Half PPR / PPR switch, remembered on the device (half PPR until you pick), sets the format on every page.
+* Player pages add a Fantasy panel after the Scorecard: a read with points a game and the position rank, his usual range, booms and busts, and how many points his next opponent allows at his position; four numbers; and every week of the season as a bar, green on a boom week and red on a bust, against the starter line (QB12, RB24, WR24, TE12). The short version gains a Fantasy line.
+* The Players index adds a sortable Fpts/g column with the position rank, and its filters are regrouped: search, position and fantasy scoring on one line, the team logos on their own line below.
+* The Matchups page adds Fantasy matchups for the games left in the week: each defense's rank in points allowed to QBs, RBs, WRs and TEs, soft matchups in green and tough ones in red.
+* Compare adds a Fantasy panel: the four numbers side by side and the weeks grouped in each player's color.
+* The build adds nflverse's fantasy points to every weekly line, a fantasy block to each player file, points a game to the index, and writes fantasy.json; the sync pulls it.
 * Tables sit flush in their panels: the theme's 1px border around every table in a post no longer shows on the site's tables, and every table's first and last column is inset 10px so text never touches an edge.
 
 = 1.10.0 =

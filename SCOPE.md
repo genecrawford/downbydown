@@ -1269,3 +1269,56 @@ From the Vikings' own game notes for Week 8 at Detroit, which Gene shared: of wh
 Vikings at Lions shows 36–18, 21–6 and 15–12, the 23–10 Christmas meeting, and the records above; no overflow at 375 (the records table measures 301px in a 301px panel in the mock).
 
 Size: S to M. Status: signed off 2026-11-01 and built as 1.10.0.
+
+## 34. The fantasy lens (scoped and mocked 2026-11-01, `mockup-v11/`)
+
+Roadmap 2 slice 6. Fantasy points for every quarterback, running back, receiver and tight end, in the three common formats, on the pages people already use. The mock is the live 1.10.0 site with the new parts outlined: Justin Jefferson's page (`fantasy-player.html`), the Players index (`fantasy-index.html`) and the Matchups page (`fantasy-matchups.html`).
+
+### What the reader sees
+
+- **A format switch: Standard, Half PPR, PPR.** Half PPR is the default. The choice is remembered on that device and carries to every page, so someone who plays PPR sets it once.
+- **Player page, a Fantasy panel** in "How good is he", after the Scorecard, for QB, RB, WR and TE:
+  - **The read**: "Jefferson scores 12.1 half-PPR points a game, WR20 of 147 WRs with enough games. Most weeks land between 6.0 and 18.1; 1 boom week (16+) and 2 busts (under 6.5). This week the Lions allow the 3rd-most half-PPR points to WRs, 31.6 a game."
+  - **Four numbers**: points a game with its rank, season total with its rank and games, most weeks (his 20th to 80th percentile game), and booms and busts.
+  - **Every week of the season as a bar**: green on a boom week, red on a bust, × for a game he missed, a dashed tick for the bye, a flat stub for weeks still to come. A dashed line marks the starter line, the points a game of the QB12, RB24, WR24 or TE12 (the last weekly starter in a 12-team league). Hovering a bar shows the week, the opponent and the points.
+  - The short version at the top of the page gains a Fantasy line.
+- **Players index**: a sortable **Fpts/g** column with the position rank under it, and the filter bar regrouped so it reads in one order (the old bar scattered team, position, search and the new switch across the panel). The top line holds what you're looking for: Search (wide, first), Position, then Fantasy scoring at the right. Team sits on its own line below a hairline, with all 32 logos. On phones the same order stacks: search full width, position, scoring, then the team grid.
+- **Matchups page, Fantasy matchups**: every game left this week, each offense against the defense it faces, with that defense's rank in points allowed to QBs, RBs, WRs and TEs. 1st to 8th (allows the most) is green, a soft matchup; 25th to 32nd is red, a tough one. Hovering shows points allowed a game. On phones the defense's nickname drops and the table fits 375px without scrolling.
+- **Compare** (described, not mocked): a Fantasy tab with the two players' weekly bars overlaid and their four numbers side by side.
+
+### Thresholds
+
+Boom and bust lines are set in PPR and scaled to the other formats, because a reception is worth less there:
+
+| | QB | RB | WR | TE |
+|---|---|---|---|---|
+| Boom (PPR / half / standard) | 25 / 25 / 25 | 20 / 16 / 12 | 20 / 16 / 12 | 15 / 12 / 9 |
+| Bust (PPR / half / standard) | 12 / 12 / 12 | 8 / 6.5 / 5 | 8 / 6.5 / 5 | 5 / 4 / 3 |
+
+Quarterbacks catch no passes, so theirs stay the same in every format. Ranks by points a game count players with at least half the games of the most-played player at the position, so a one-game wonder doesn't rank first.
+
+### Data
+
+- nflverse's weekly player stats, which the build already downloads, have `fantasy_points` (standard) and `fantasy_points_ppr`. Half PPR is the average of the two. These are nflverse's standard scoring (6-point rushing and receiving touchdowns, 4-point passing touchdowns, minus 2 for an interception or a lost fumble).
+- `WEEK_FIELDS` gains both fields, so every week in the player files carries them.
+- Each player file gains a `fantasy` block: per format the total, games, points a game, most-weeks range, booms, busts and both ranks.
+- Index rows gain points a game and position rank per format.
+- A new **`fantasy.json`**: per defense, position and format, points allowed a game and the rank, plus the starter line per position and format. About 20 KB.
+- The sync allowlist gains `fantasy.json`; as with 1.9.0 and 1.10.0, press "Sync now" after uploading.
+
+### Left out
+
+- **Kickers and defenses**: nflverse has no team-defense fantasy scoring, and kicker scoring varies by league.
+- **Custom scoring** (6-point passing touchdowns, bonuses, TE premium): the three formats cover most leagues; a scoring editor is a later idea.
+- **Projections and start/sit advice**: everything here is what happened, not a forecast.
+- **Rest-of-season strength of schedule**: possible later from the same `fantasy.json`.
+
+### Plugin
+
+`player.php` (the panel and the short-version line), `players.php` and `players.js` (the column and switch), `game.php` or the matchups view (the grid), `compare.php` (the tab), `DBD_Data::fantasy()`, a small `DBD_Fantasy` class for the read and the thresholds, `dbd-site.js` (the remembered format), the CSS, the view harness, and the sync allowlist. The build check confirms every ranked player has all three formats, half PPR sits between standard and PPR for every week, and all 32 defenses have points allowed at all four positions.
+
+### Acceptance
+
+Jefferson half PPR: 12.1 a game, WR20, 60.6 total (WR27), most weeks 6.0–18.1, 1 boom and 2 busts, Week 4 a miss and Week 6 the bye. Josh Allen QB1 at 26.8. Jahmyr Gibbs RB1 at 25.8. Detroit allows WRs 31.6 half-PPR points a game, the 3rd-most. No overflow at 375 on all three pages; no text under 11px.
+
+Size: M. Status: scoped and mocked, awaiting sign-off.
