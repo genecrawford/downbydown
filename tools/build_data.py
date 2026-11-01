@@ -242,6 +242,14 @@ if 'week' in _rw.columns:
     _rw = _rw.sort_values('week').drop_duplicates('gsis_id', keep='last')
 stats = pd.read_csv(env('DBD_STATS'), low_memory=False) if env('DBD_STATS') else pd.DataFrame()
 if len(stats) and 'season_type' in stats.columns: stats = stats[stats.season_type == 'REG']
+# a build mid-Sunday can find games in the weekly stats that the play-by-play file doesn't have yet: keep only the games pbp has,
+# so totals, game logs and fantasy agree with the plays (and the EPA split's parts add up to its totals)
+if len(stats) and have_pbp and {'week', 'team'} <= set(stats.columns):
+    _g = df[['week', 'home_team', 'away_team']].drop_duplicates()
+    _have = set(zip(_g.week, _g.home_team)) | set(zip(_g.week, _g.away_team))
+    _keep = [(w, t) in _have for w, t in zip(stats.week, stats.team)]
+    if not all(_keep): print('stats: dropped', len(_keep) - sum(_keep), 'player rows from games not yet in the play-by-play')
+    stats = stats[_keep]
 snaps = pd.read_csv(env('DBD_SNAPS'), low_memory=False) if env('DBD_SNAPS') else pd.DataFrame()
 pfr = pd.read_csv(env('DBD_PFR'), low_memory=False) if env('DBD_PFR') else pd.DataFrame()
 inj = pd.read_csv(env('DBD_INJ'), low_memory=False) if env('DBD_INJ') else pd.DataFrame()
