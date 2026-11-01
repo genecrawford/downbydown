@@ -17,6 +17,18 @@
     if (!isNaN(d)) { try { el.textContent = d.toLocaleString([], fmt.day); } catch (e) {} }
   });
 
+  /* methods notes (SCOPE §31): a note of 14 words or more folds under "How this is measured", on every page, including notes the page
+     scripts draw after load. Notes with an id are live captions that a script rewrites, so they stay as they are. */
+  var foldNotes = function (scope) {
+    (scope || root).querySelectorAll('p.dbd-note:not([id])').forEach(function (n) {
+      if (n.closest('details') || n.textContent.trim().split(/\s+/).length < 14) return;
+      var d = document.createElement('details'); d.className = 'dbd-how'; d.innerHTML = '<summary>How this is measured</summary>';
+      n.parentNode.insertBefore(d, n); d.appendChild(n);
+    });
+  };
+  foldNotes();
+  if (window.MutationObserver) { var fq = 0; new MutationObserver(function () { if (fq) return; fq = requestAnimationFrame(function () { fq = 0; foldNotes(); }); }).observe(root, { childList: true, subtree: true }); }
+
   /* sortable stat tables: click a heading. Numeric columns start descending, text ascending; blanks sink.
      The Players index sorts its own data in players.js; everything else sorts the rows in place. */
   root.addEventListener('click', function (e) {
