@@ -122,6 +122,14 @@ jobs:
           if (finals & inpbp) - have: bad.append('final games with no box score: ' + ', '.join(sorted((finals & inpbp) - have)))
           b = json.load(open('/tmp/out/box/w2.json')); g = b['games'].get('2026_02_IND_KC')
           if g: print('IND at KC box:', len(g['away']['off']), 'and', len(g['home']['off']), 'offensive lines; defense', g['away']['d'][:2], 'kicking', g['away']['k'])
+          empty = []; frompbp = []
+          for f in glob.glob('/tmp/out/box/w*.json'):
+              for gid, g in json.load(open(f))['games'].items():
+                  for sd in ('away', 'home'):
+                      if not g[sd]['off']: empty.append(f"{gid} {g[sd]['team']}")
+                      if g[sd].get('src') == 'pbp': frompbp.append(f"{gid} {g[sd]['team']}")
+          if empty: bad.append('box sides with no offensive lines: ' + ', '.join(sorted(empty)))
+          print(len(frompbp), 'box sides counted from the plays:', sorted(frompbp)[:8])
           print(len(have), 'box scores')
           if lu and len(lu) != 32: bad.append(f'{len(lu)} teams in lineups.json')
           if bad: print('\n'.join(bad)); sys.exit(1)
@@ -256,6 +264,7 @@ jobs:
           for id in 00-0034857 00-0036322 00-0033293 00-0036259; do php tools/view_harness.php /tmp/out player $id; done
           for gm in 2026_04_LA_PHI 2026_02_IND_KC 2026_05_NYG_WAS; do php tools/view_harness.php /tmp/out game $gm; grep -q 'class="dbd-panel dbd-wp"' "pages/game-$gm.html" || { echo "no win probability panel on $gm"; exit 1; }; done
           php tools/view_harness.php /tmp/out game 2026_02_IND_KC && grep -q 'class="dbd-panel dbd-box"' pages/game-2026_02_IND_KC.html || { echo "no box score on IND at KC"; exit 1; }
+          php tools/view_harness.php /tmp/out game 2026_08_MIN_DET >/dev/null && grep -o 'counted from the play-by-play\|from nflverse.s weekly stats' pages/game-2026_08_MIN_DET.html | head -1 || true
           UP=$(python3 -c "import json;s=json.load(open('/tmp/out/schedule.json'));print(next((g['id'] for w in sorted(s['weeks'],key=int) for g in s['weeks'][w] if g['status']!='final'),''))")
           if [ -n "$UP" ]; then php tools/view_harness.php /tmp/out game $UP && grep -q 'class="dbd-panel dbd-lu"' "pages/game-$UP.html" || { echo "no lineups on $UP"; exit 1; }; fi
           php tools/view_harness.php /tmp/out teamplayers MIN && grep -q 'dbd-lufield unit' pages/teamplayers-MIN.html || { echo "no lineup on the Vikings page"; exit 1; }

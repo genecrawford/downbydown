@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.15.1
+Stable tag: 1.15.2
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,9 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.15.2 =
+* Box scores for games nflverse's weekly stats haven't posted yet (they can trail a day) are counted from the play-by-play instead of showing empty with "no sacks or interceptions". The note under the box says which source it used; the weekly lines replace them with the next build.
 
 = 1.15.1 =
 * The Offense | Defense switch on team pages renamed its class (dbd-sideswitch). It shared dbd-side with the site's Divi sidebar column, so the sidebar's sticky, full-height column styles landed on the switch.
