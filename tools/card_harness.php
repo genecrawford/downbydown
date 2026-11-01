@@ -14,7 +14,7 @@ $j = function ( $rel ) use ( $data ) { $f = rtrim( $data, '/' ) . '/' . $rel; if
 $idx = $j( 'players/index.json' ); $row = null; foreach ( $idx['players'] as $p ) { if ( $p['id'] === $id ) { $row = $p; break; } }
 if ( ! $row ) { fwrite( STDERR, "no player $id in the index\n" ); exit( 2 ); }
 $teamf = $j( 'players/' . $row['team'] . '.json' ); $rec = null; foreach ( $teamf['players'] as $p ) { if ( $p['id'] === $id ) { $rec = $p; break; } }
-$teams = $j( 'teams.json' ); $league = $j( 'players/league.json' ); $grp = DBD_Grades::group_of( $row['pos'] ); $gi = $league['groups'][ $grp ] ?? array();
+$teams = $j( 'teams.json' ); $league = $j( 'players/league.json' ); $grp = DBD_Grades::group_of( $row['pos'] ); $gp = DBD_Grades::pool_of( $row['pos'] ); $gi = $league['groups'][ $gp ] ?? $league['groups'][ $grp ] ?? array();  /* SCOPE §38: the pool, or the combined group in an older file */
 if ( ! DBD_Card::available() ) { fwrite( STDERR, "GD with FreeType is not available\n" ); exit( 3 ); }
 $spec = DBD_Card::spec( $rec, $row, $teams[ $row['team'] ] ?? array(), $gi, $idx['season'], $idx['through'] );
 $photo = ! empty( $rec['photo'] ) ? @file_get_contents( $rec['photo'], false, stream_context_create( array( 'http' => array( 'timeout' => 10 ) ) ) ) : null;

@@ -171,7 +171,7 @@ class DBD_MyTeam {
 
 	/** Compare links: the top three at each group in each scoring format, when there are two or more; [data-fx] shows the chosen format's set. */
 	public static function compare_links( $rows ) {
-		$grp = array( 'QB' => array( 'Compare your quarterbacks', array( 'QB' ) ), 'RB' => array( 'Compare your backs', array( 'RB' ) ), 'rec' => array( 'Compare your receivers', array( 'WR', 'TE' ) ) );
+		$grp = array( 'QB' => array( 'Compare your quarterbacks', array( 'QB' ) ), 'RB' => array( 'Compare your backs', array( 'RB' ) ), 'WR' => array( 'Compare your wide receivers', array( 'WR' ) ), 'TE' => array( 'Compare your tight ends', array( 'TE' ) ) );  /* SCOPE §38: compare stays within a position */
 		$out = '';
 		foreach ( DBD_Fantasy::FMT as $i => $fm ) {
 			$sorted = $rows; usort( $sorted, function ( $a, $b ) use ( $i ) { return self::ppg( $b, $i ) <=> self::ppg( $a, $i ); } ); $h = '';

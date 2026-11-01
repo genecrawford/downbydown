@@ -2,6 +2,9 @@
 /**
  * Player grades (SCOPE §15): percentile and rank of a player's season metrics against every qualifying
  * player at his position group, from players/league.json (sorted metric lists per group) that the build writes.
+ * Since 1.14.0 (SCOPE §38) a group has a kind and a pool: wide receivers and tight ends share the receiver kind (the same
+ * stats, labels and charts) but rank in separate pools, wr and te. Definition lookups take either and use the kind;
+ * league lookups (group_info, pctile, rank, median) take the pool.
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
@@ -9,6 +12,7 @@ class DBD_Grades {
 
 	/** key, label, sub-label, format kind. Lower-is-better keys are flagged in the league file. */
 	public static function defs( $grp ) {
+		$grp = self::kind( $grp );
 		static $d = array(
 			'rec' => array( array( 'tshare', 'Target share', 'of team targets', 'pct' ), array( 'adot', 'Depth of target', 'air yards per target', 'f1' ), array( 'yacpc', 'After the catch', 'yards per reception', 'f1' ), array( 'catch', 'Catch rate', 'receptions per target', 'pct' ),
 				array( 'epat', 'EPA per target', '', 'sgn' ), array( 'fdpt', 'First downs', 'per target', 'pct' ), array( 'drop', 'Drop rate', 'drops per target, lower is better', 'pct' ), array( 'ypg', 'Yards per game', '', 'f1' ) ),
@@ -36,6 +40,7 @@ class DBD_Grades {
 	const TREND_WIN = 3; const TREND_STREAK = 3; const TREND_DIR = 0.5; const TREND_NEAR = 0.25;
 	/** key, label, format kind (n = count, f1, sgn, sgn1), numerator fields, denominator fields (null = a count per game), weight field (cpoe is per attempt). */
 	public static function trend_defs( $grp ) {
+		$grp = self::kind( $grp );
 		static $d = array(
 			'rec' => array( array( 'tgt', 'Targets', 'n', array( 'targets' ), null, null ), array( 'yds', 'Rec yards', 'n', array( 'receiving_yards' ), null, null ), array( 'epat', 'EPA / target', 'sgn', array( 'receiving_epa' ), array( 'targets' ), null ), array( 'adot', 'aDOT', 'f1', array( 'receiving_air_yards' ), array( 'targets' ), null ) ),
 			'rb'  => array( array( 'tch', 'Touches', 'n', array( 'carries', 'targets' ), null, null ), array( 'yds', 'Scrimmage yds', 'n', array( 'rushing_yards', 'receiving_yards' ), null, null ), array( 'epatch', 'EPA / touch', 'sgn', array( 'rushing_epa', 'receiving_epa' ), array( 'carries', 'targets' ), null ), array( 'tgt', 'Targets', 'n', array( 'targets' ), null, null ) ),
@@ -69,6 +74,7 @@ class DBD_Grades {
 	const FP_HI = 75; const FP_LO = 25; const FP_MOVE = 0.04;
 	/** key, label, sub-label, kind (pct|sgn), high tag, low tag, high sentence, low sentence. Sentences take {F} first name, {v} his figure, {l} league median, {sh} his overall share; null = situational, read against his share. */
 	public static function fp_defs( $grp ) {
+		$grp = self::kind( $grp );
 		static $d = array(
 			'rec' => array(
 				array( 'deep', 'Deep share', 'targets 20+ yards downfield', 'pct', 'Downfield', 'Rarely deep', '{F} is a downfield target: {v} of his targets travel 20 yards or more, against {l} for the league\'s receivers.', '{F} rarely goes deep: {v} of his targets travel 20 yards or more, against {l} for the league\'s receivers.' ),
@@ -103,12 +109,13 @@ class DBD_Grades {
 		);
 		return $d[ $grp ] ?? array();
 	}
-	public static function fp_unit( $grp ) { return array( 'rec' => 'targets', 'rb' => 'touches', 'qb' => 'dropbacks' )[ $grp ] ?? 'plays'; }
+	public static function fp_unit( $grp ) { $grp = self::kind( $grp ); return array( 'rec' => 'targets', 'rb' => 'touches', 'qb' => 'dropbacks' )[ $grp ] ?? 'plays'; }
 	public static function fp_fmt( $kind, $v ) { if ( $v === null ) { return '–'; } return $kind === 'sgn' ? ( $v > 0 ? '+' : '' ) . number_format( (float) $v, 2 ) : round( $v * 100 ) . '%'; }
 
 	/** Career (SCOPE §24): a pace projects the per-game rate over this many games; columns per group as label, source, format, counting (career-high eligible). Labels carry ^2/^3 column tiers. */
 	const PACE_G = 17;
 	public static function career_cols( $grp ) {
+		$grp = self::kind( $grp );
 		static $d = array(
 			'rec' => array( array( 'Season', 'season', 's', false ), array( 'Team', 'team', 's', false ), array( 'G', 'g', 'n', false ), array( 'Tgt', 'targets', 'n', true ), array( 'Rec', 'receptions', 'n', true ), array( 'Yds', 'receiving_yards', 'n', true ), array( 'TD', 'receiving_tds', 'n', true ),
 				array( 'Y/R^2', 'ypr', 'f1', false ), array( 'Yds/g^2', 'ypg', 'f1', false ), array( 'EPA/tgt^3', 'epat', 'sgn', false ) ),
@@ -121,6 +128,7 @@ class DBD_Grades {
 	}
 	/** A season row's derived figures: the group's primary yards, per-game rates, rating. */
 	public static function career_derive( $grp, $r ) {
+		$grp = self::kind( $grp );
 		$d = function ( $a, $b ) { return $b ? $a / $b : null; };
 		$r['td'] = (int) ( $r['rushing_tds'] ?? 0 ) + (int) ( $r['receiving_tds'] ?? 0 );
 		$r['ypr'] = $d( $r['receiving_yards'] ?? 0, $r['receptions'] ?? 0 ); $r['ypg'] = $d( $r['receiving_yards'] ?? 0, $r['g'] ?? 0 ); $r['epat'] = $d( $r['receiving_epa'] ?? 0, $r['targets'] ?? 0 );
@@ -131,11 +139,18 @@ class DBD_Grades {
 		$r['yds'] = $grp === 'rec' ? ( $r['receiving_yards'] ?? 0 ) : ( $grp === 'rb' ? ( $r['rushing_yards'] ?? 0 ) + ( $r['receiving_yards'] ?? 0 ) : ( $r['passing_yards'] ?? 0 ) );
 		return $r;
 	}
-	public static function career_yds_label( $grp ) { return array( 'rec' => 'receiving yards', 'rb' => 'scrimmage yards', 'qb' => 'passing yards' )[ $grp ] ?? 'yards'; }
+	public static function career_yds_label( $grp ) { $grp = self::kind( $grp ); return array( 'rec' => 'receiving yards', 'rb' => 'scrimmage yards', 'qb' => 'passing yards' )[ $grp ] ?? 'yards'; }
 
+	/** A position's kind (rec, rb, qb): which stats, labels and charts apply. */
 	public static function group_of( $pos ) {
 		return array( 'QB' => 'qb', 'RB' => 'rb', 'FB' => 'rb', 'WR' => 'rec', 'TE' => 'rec' )[ $pos ] ?? null;
 	}
+	/** A position's pool (wr, te, rb, qb): who he is ranked against (SCOPE §38). */
+	public static function pool_of( $pos ) {
+		return array( 'QB' => 'qb', 'RB' => 'rb', 'FB' => 'rb', 'WR' => 'wr', 'TE' => 'te' )[ $pos ] ?? null;
+	}
+	/** The kind of a pool or a kind: wr and te are receivers. */
+	public static function kind( $g ) { return ( $g === 'wr' || $g === 'te' ) ? 'rec' : $g; }
 
 	/** Whether an index row clears the group's qualifier. */
 	public static function qualifies( $row ) {
@@ -156,10 +171,10 @@ class DBD_Grades {
 
 	/** Suggested rivals: the n qualified players in the same group whose usage per game is nearest his. */
 	public static function suggest( $row, $n = 3 ) {
-		$g = self::group_of( $row['pos'] ?? '' ); if ( ! $g ) { return array(); }
+		$g = self::pool_of( $row['pos'] ?? '' ); if ( ! $g ) { return array(); }
 		$u = self::usage( $row ); $c = array();
 		foreach ( DBD_Data::player_index() as $o ) {
-			if ( $o['id'] === $row['id'] || self::group_of( $o['pos'] ) !== $g || ! self::qualifies( $o ) || ( $o['g'] ?? 0 ) < 3 ) { continue; }
+			if ( $o['id'] === $row['id'] || self::pool_of( $o['pos'] ) !== $g || ! self::qualifies( $o ) || ( $o['g'] ?? 0 ) < 3 ) { continue; }
 			$c[] = array( abs( self::usage( $o ) - $u ), $o );
 		}
 		usort( $c, function ( $x, $y ) { return $x[0] <=> $y[0]; } );
@@ -168,6 +183,7 @@ class DBD_Grades {
 
 	/** The group's primary yardage keys: what a week is measured in. */
 	public static function yds_keys( $grp ) {
+		$grp = self::kind( $grp );
 		return array( 'rec' => array( 'receiving_yards' ), 'rb' => array( 'rushing_yards', 'receiving_yards' ), 'qb' => array( 'passing_yards' ) )[ $grp ] ?? array( 'receiving_yards' );
 	}
 
@@ -181,7 +197,7 @@ class DBD_Grades {
 	}
 
 	public static function pool_label( $grp ) {
-		return array( 'rec' => 'receivers and tight ends', 'rb' => 'backs', 'qb' => 'quarterbacks' )[ $grp ] ?? 'players';
+		return array( 'wr' => 'wide receivers', 'te' => 'tight ends', 'rec' => 'receivers and tight ends', 'rb' => 'backs', 'qb' => 'quarterbacks' )[ $grp ] ?? 'players';
 	}
 
 	public static function league() {
@@ -189,7 +205,8 @@ class DBD_Grades {
 	}
 
 	public static function group_info( $grp ) {
-		return self::league()['groups'][ $grp ] ?? null;
+		$G = self::league()['groups'] ?? array();
+		return $G[ $grp ] ?? ( self::kind( $grp ) === 'rec' ? ( $G['rec'] ?? null ) : null );  /* a league file from before 1.14.0 has only the combined receivers pool */
 	}
 
 	/** Percentile 0 to 100 among the pool: players below plus half the ties, flipped for lower-is-better. Null when ungradable. */

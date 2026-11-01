@@ -1449,3 +1449,27 @@ Fantasy tab in half PPR: Josh Allen leads QBs at 26.8, Jahmyr Gibbs RBs at 25.8,
 Size: M. Status: built as 1.13.0.
 
 Addendum (Gene, 2026-11-01): "we need to separate the WR's and TE's … most fantasy leagues treat them as different scoring/ranking positions." Built in 1.13.1: the Receivers and tight ends tab becomes two tabs, Wide receivers and Tight ends, each ranking only its own position (same 15-target pool, same sixteen boards); the All / WR / TE switch is gone. Full boards are `wr.*` and `te.*`; `rec.*` links and `g=rec` open the wide receivers. The player page Scorecard still grades receivers and tight ends in one pool; splitting that pool is a separate, larger change.
+
+## 38. Wide receivers and tight ends in separate pools (Gene, 2026-11-01: "we need to separate them")
+
+After the Leaders split (§37 addendum), the player pages still graded a receiver against wide receivers and tight ends together ("17th of 136 receivers and tight ends"). Fantasy leagues rank them as different positions, so every league comparison now does too.
+
+### What changes for the reader
+
+- **Player pages**: the Scorecard, the hero tile ranks, the Playstyle percentiles, the EPA split ranks and the trend yardsticks compare a wide receiver with wide receivers and a tight end with tight ends ("among 98 wide receivers with 15+ targets"; "among 38 tight ends"). The stats, labels and charts are the same.
+- **Leaders**: the Wide receivers and Tight ends tabs read their own pools from the data.
+- **Compare**: a wide receiver compares with wide receivers and a tight end with tight ends; adding the other position is left out with the existing note. Players like him suggests the same position.
+- **My team**: "Compare your wide receivers" and "Compare your tight ends" replace "Compare your receivers".
+- **The share card**: grades among his own position.
+
+### How
+
+- The build gives every player's grades a kind (`rec`, `rb`, `qb`: which stats apply, unchanged) and a pool (`wr`, `te`, `rb`, `qb`: who he ranks against). Distributions, Playstyle pools, trend quartiles, EPA split percentiles and tile ranks are computed per pool. The qualifier stays 15 targets for both.
+- `league.json` has `wr`, `te`, `rb` and `qb` groups, plus the combined `rec` group the 1.13 plugin reads; `leaders.json` likewise keeps a combined `rec`. So the live site keeps grading until 1.14.0 is installed, and the new plugin falls back to the combined group if it meets an older file.
+- In the plugin, `DBD_Grades` gains `pool_of()` and `kind()`. Definition lookups take a pool or a kind; league lookups take the pool.
+
+### Acceptance
+
+The build check confirms the wr and te pools add up to the combined pool, every WR and TE carries his own pool, the Leaders WR and TE boards hold only their position, and Justin Jefferson's page reads "among … wide receivers".
+
+Size: M. Status: built as 1.14.0.
