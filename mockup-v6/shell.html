@@ -1,0 +1,21 @@
+<!doctype html><html class="no-js"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>%TITLE%</title>
+<link href="https://fonts.googleapis.com/css2?family=Tourney:wght@800&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/dbd.css"><link rel="stylesheet" href="assets/transitions.css"><link rel="stylesheet" href="assets/parity.css">
+</head><body class="dbd-app">
+<div class="mk-bar"><b>Mock · nfelo parity</b><span>Real page from downbydown.com (1.4.3), with the new parts outlined. Numbers are this season's real data.</span><a href="parity-qb.html">Josh Allen (QB)</a><a href="parity-wr.html">Justin Jefferson (WR)</a><label><input type="checkbox" id="mk-toggle" checked> Show outlines</label></div>
+<div class="entry-content">%ROOT%</div>
+%JS%
+<script src="assets/dbd-site.js"></script><script src="assets/marks.js"></script><script src="assets/player.js"></script>
+<script>
+(function(){
+  document.getElementById('mk-toggle').addEventListener('change',function(e){document.body.classList.toggle('mk-off',!e.target.checked);});
+  document.querySelectorAll('.dbd-lz').forEach(function(p){
+    var seg=p.querySelector('.dbd-lzv'),pill=seg.querySelector('.t-tabs-pill');
+    var place=function(b){pill.style.transform='translateX('+b.offsetLeft+'px)';pill.style.width=b.offsetWidth+'px';};
+    requestAnimationFrame(function(){place(seg.querySelector('[aria-selected="true"]'));});
+    seg.addEventListener('click',function(e){var b=e.target.closest('.t-tab');if(!b)return;seg.querySelectorAll('.t-tab').forEach(function(x){x.setAttribute('aria-selected',x===b?'true':'false');});place(b);p.setAttribute('data-mode',b.getAttribute('data-m'));});
+  });
+  document.querySelectorAll('.dbd-gx-more').forEach(function(b){b.addEventListener('click',function(){var open=b.getAttribute('aria-expanded')!=='true';b.setAttribute('aria-expanded',open?'true':'false');b.closest('.dbd-tw').querySelectorAll('tr.dbd-gx.up:not(.next)').forEach(function(r){r.hidden=!open;});b.textContent=open?'Hide the rest of the schedule':b.textContent.replace('Hide','Rest of');if(!open){b.textContent='Rest of the schedule · '+b.closest('.dbd-tw').querySelectorAll('tr.dbd-gx.up:not(.next)').length+' games';}});});
+})();
+</script>
+</body></html>

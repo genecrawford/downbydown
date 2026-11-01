@@ -18,12 +18,14 @@ Usage:
 Writes:
   teams.json      {ABBR: {name, nick, conf, div, c1, c2, logo, logo_sq}}  (logo = ESPN 500px PNG, logo_sq = nflverse squared)
   plays/{ABBR}.json  {season, team, byes, games:[...], keys:[...], plays:[[...]]}  (pid = ball handler's gsis_id; FTN flags when available)
-  players/{ABBR}.json  roster rows for QB/RB/FB/WR/TE with weekly stat lines, snap share, PFR extras, injury line, depth slot, grades, fp (playstyle traits)
+  players/{ABBR}.json  roster rows for QB/RB/FB/WR/TE with weekly stat lines, snap share, PFR extras, injury line, depth slot, grades, fp (playstyle traits),
+                       ep (EPA split, success, ANY/A, depth-by-direction grid), trk (hero tile ranks), injw (report designation per week)
   players/index.json   one row per player league-wide for the Players index and search
   career/{year}.json  season totals for every player, one file per finished season (built once, kept)
   players/career/{ABBR}.json  each rostered player's season rows, oldest first, this season last
   players/movers.json  who moved in the last full week: snap share, target share and EPA against his own season, new faces
-  players/league.json  per position group: qualifier, n, sorted metric lists (the pool behind the percentile grades), week + game quartiles (trend yardsticks)
+  players/league.json  per position group: qualifier, n, sorted metric lists (the pool behind the percentile grades), week + game quartiles (trend yardsticks);
+                       grid: the league's share and EPA per depth-by-direction cell, for throws and for targets
   metrics.json    offense/defense metrics per team, league averages, ranks, through_week
   schedule.json   {season, current_week, weeks: {"1": [games], ...}} with status per game
   manifest.json   {season, week, through_week, built_at, files: {path: sha1}}
@@ -222,7 +224,7 @@ def _draft(r):
 
 SKILL = ('QB', 'RB', 'FB', 'WR', 'TE')
 WEEK_FIELDS = ['week', 'team', 'opponent_team', 'targets', 'receptions', 'receiving_yards', 'receiving_tds', 'receiving_air_yards', 'receiving_yards_after_catch', 'receiving_epa', 'receiving_first_downs', 'target_share', 'air_yards_share', 'wopr',
-               'carries', 'rushing_yards', 'rushing_tds', 'rushing_epa', 'rushing_first_downs', 'attempts', 'completions', 'passing_yards', 'passing_tds', 'passing_interceptions', 'passing_epa', 'passing_cpoe', 'sacks_suffered', 'passing_air_yards', 'receiving_20', 'rushing_10']
+               'carries', 'rushing_yards', 'rushing_tds', 'rushing_epa', 'rushing_first_downs', 'attempts', 'completions', 'passing_yards', 'passing_tds', 'passing_interceptions', 'passing_epa', 'passing_cpoe', 'sacks_suffered', 'passing_air_yards', 'passing_first_downs', 'receiving_20', 'rushing_10']
 _rw = _r[_r.position.isin(SKILL)].copy()
 if 'week' in _rw.columns:
     # each team's own latest roster week: teams on bye have no rows for the current week and would vanish otherwise
@@ -236,6 +238,12 @@ pfr = pd.read_csv(env('DBD_PFR'), low_memory=False) if env('DBD_PFR') else pd.Da
 inj = pd.read_csv(env('DBD_INJ'), low_memory=False) if env('DBD_INJ') else pd.DataFrame()
 depth = pd.read_csv(env('DBD_DEPTH'), low_memory=False, usecols=['dt', 'team', 'gsis_id', 'pos_grp', 'pos_abb', 'pos_rank']) if env('DBD_DEPTH') else pd.DataFrame()
 if len(depth): depth = depth[depth.pos_abb.isin(SKILL)]
+# every week's report designation per player (SCOPE §29): the game log's did-not-play rows say "Out · hamstring" for that week
+injw_all = {}
+if len(inj) and 'gsis_id' in inj.columns and 'report_status' in inj.columns:
+    for w in inj[inj.report_status.notna()].itertuples():
+        if isinstance(w.gsis_id, str):
+            injw_all.setdefault(w.gsis_id, {})[str(int(w.week))] = [c(w.report_status), c(getattr(w, 'report_primary_injury', None))]
 index_rows = []
 team_players = {}
 for t in T:
@@ -270,6 +278,7 @@ for t in T:
             m = in_t[in_t.gsis_id == r.gsis_id]
             if len(m):
                 w = m.iloc[0]; p['inj'] = dict(week=int(w.week), status=c(w.report_status) or c(w.practice_status), what=c(w.report_primary_injury) or c(w.practice_primary_injury))
+        if r.gsis_id in injw_all: p['injw'] = injw_all[r.gsis_id]
         if len(dp_t):
             m = dp_t[dp_t.gsis_id == r.gsis_id]
             if len(m):
@@ -390,11 +399,156 @@ for g in dist:
     for k in dist[g]: dist[g][k].sort()
 for g in fpdist:
     for k in fpdist[g]: fpdist[g][k].sort()
+# ---- where the EPA comes from, depth by direction, success rate, ANY/A and tile ranks (SCOPE §29)
+# Every regular-season dropback, target and run is split by what happened. Completions divide at the catch with nflverse's
+# air EPA; a quarterback's side uses his credited EPA (qb_epa), so his passing parts add up to the weekly passing EPA the
+# tiles show. Parts come from play-by-play and section totals from the weekly lines; the gap is the section's "other".
+from collections import defaultdict
+def _cell(air, loc):
+    if air is None or loc not in ('left', 'middle', 'right'): return None
+    return ('behind' if air < 0 else ('short' if air < 10 else ('inter' if air < 20 else 'deep'))) + '-' + loc
+_fv = lambda x: None if x is None or (isinstance(x, float) and math.isnan(x)) else float(x)
+EPQ = defaultdict(lambda: defaultdict(float)); EPR = defaultdict(lambda: defaultdict(float)); EPU = defaultdict(lambda: defaultdict(float))
+GQ = defaultdict(lambda: defaultdict(lambda: [0, 0.0, 0])); GR = defaultdict(lambda: defaultdict(lambda: [0, 0.0, 0]))
+LGQ = defaultdict(lambda: [0, 0.0]); LGR = defaultdict(lambda: [0, 0.0])
+if have_pbp:
+    _e = df[df.play_type.isin(['pass', 'run', 'qb_kneel', 'qb_spike'])]
+    if 'season_type' in _e.columns: _e = _e[_e.season_type == 'REG']
+    for r in _e.itertuples(index=False):
+        e0 = _fv(r.epa) or 0.0; qe = _fv(getattr(r, 'qb_epa', None)); qe = e0 if qe is None else qe
+        s0 = 1.0 if _fv(r.success) == 1 else 0.0; scr = _fv(r.qb_scramble) == 1
+        if _fv(getattr(r, 'two_point_attempt', None)) == 1:  # the weekly EPA counts two-point tries; they get their own part and stay out of the rates
+            if r.play_type == 'pass' and isinstance(r.passer_player_id, str):
+                EPQ[r.passer_player_id]['two'] += qe
+                if isinstance(r.receiver_player_id, str): EPR[r.receiver_player_id]['two'] += e0
+            elif isinstance(r.rusher_player_id, str): EPU[r.rusher_player_id]['two'] += e0
+            continue
+        if r.play_type in ('pass', 'qb_spike') and not scr:
+            pid = r.passer_player_id
+            if not isinstance(pid, str): continue
+            q = EPQ[pid]; q['db'] += 1; q['succ'] += s0
+            if _fv(r.sack) == 1:
+                q['sk'] += qe; q['nsk'] += 1; q['sky'] -= _fv(r.yards_gained) or 0; continue
+            q['att'] += 1  # a spike is a pass attempt (ANY/A's denominator); its EPA sits with the incompletions
+            if r.play_type == 'qb_spike':
+                q['inc'] += qe; continue
+            comp = _fv(r.complete_pass) == 1; cl = _cell(_fv(r.air_yards), r.pass_location if isinstance(r.pass_location, str) else None)
+            if _fv(r.interception) == 1: q['int'] += qe; q['nint'] += 1
+            elif comp:
+                a = _fv(r.comp_air_epa) or 0.0; q['air'] += a; q['yac'] += qe - a
+                q['yds'] += _fv(r.passing_yards) or 0; q['td'] += 1 if _fv(r.pass_touchdown) == 1 else 0
+            else: q['inc'] += qe
+            if cl:
+                g = GQ[pid][cl]; g[0] += 1; g[1] += qe; g[2] += 1 if comp else 0; LGQ[cl][0] += 1; LGQ[cl][1] += qe
+            tid = r.receiver_player_id
+            if isinstance(tid, str):
+                t = EPR[tid]; t['tg'] += 1; t['succ'] += s0
+                if _fv(r.interception) == 1: t['int'] += e0
+                elif comp: t['air'] += _fv(r.comp_air_epa) or 0.0; t['yac'] += _fv(r.comp_yac_epa) or 0.0
+                else: t['inc'] += e0
+                if cl:
+                    g = GR[tid][cl]; g[0] += 1; g[1] += e0; g[2] += 1 if comp else 0; LGR[cl][0] += 1; LGR[cl][1] += e0
+        else:
+            pid = r.rusher_player_id
+            if not isinstance(pid, str): continue
+            u = EPU[pid]
+            if scr:
+                u['scr'] += e0; u['nscr'] += 1; EPQ[pid]['db'] += 1; EPQ[pid]['succ'] += s0
+            else:
+                u['run'] += e0; u['car'] += 1; u['succ'] += s0
+def _lgrid(L):
+    n = sum(v[0] for v in L.values())
+    return {k: [round(v[0] / n, 4), round(v[1] / v[0], 3)] for k, v in L.items() if v[0]} if n else {}
+lg_grid = dict(qb=_lgrid(LGQ), tgt=_lgrid(LGR))
+def _grid(G):
+    return {k: [v[0], round(v[1] / v[0], 3), v[2]] for k, v in G.items() if v[0]}
+EP_PARTS = {'pass': ('air', 'yac', 'inc', 'int', 'sk'), 'rush': ('scr', 'run'), 'rec': ('air', 'yac', 'inc', 'int')}
+EP_NOPC = ('two',)  # parts with no rate and no percentile
+def ep_for(p, grp):
+    """The player's split, or None when he has no plays in his role. Parts are [key, total, per play, percentile]; the percentile is filled once the pool is known."""
+    ws = p['weeks']; S = lambda k: sum(_num(x.get(k)) for x in ws); pid = p['id']
+    sec = []; d = lambda a, b: (a / b) if b else None
+    if grp == 'qb':
+        q = EPQ.get(pid)
+        if not q or not q['db']: return None
+        u = EPU.get(pid, {}); db = q['db']
+        sec.append(['pass', S('passing_epa'), [[k, q[k], q[k] / db] for k in EP_PARTS['pass']] + ([['two', q['two'], None]] if q['two'] else [])])
+        sec.append(['rush', S('rushing_epa'), [['scr', u.get('scr', 0.0), u.get('scr', 0.0) / db], ['run', u.get('run', 0.0), None]] + ([['two', u['two'], None]] if u.get('two') else [])])
+        base = dict(u=int(db), sr=q['succ'] / db, any=d(q['yds'] + 20 * q['td'] - 45 * q['nint'] - q['sky'], q['att'] + q['nsk']), gr=_grid(GQ.get(pid, {})))
+    elif grp == 'rec':
+        t = EPR.get(pid)
+        if not t or not t['tg']: return None
+        sec.append(['rec', S('receiving_epa'), [[k, t[k], t[k] / t['tg']] for k in EP_PARTS['rec']] + ([['two', t['two'], None]] if t['two'] else [])])
+        base = dict(u=int(t['tg']), sr=t['succ'] / t['tg'], gr=_grid(GR.get(pid, {})))
+    else:
+        u = EPU.get(pid, {}); t = EPR.get(pid, {}); car = u.get('car', 0); tg = t.get('tg', 0)
+        if not car and not tg: return None
+        sec.append(['rush', S('rushing_epa'), [['run', u.get('run', 0.0), d(u.get('run', 0.0), car)]] + ([['two', u['two'], None]] if u.get('two') else [])])
+        if tg: sec.append(['rec', S('receiving_epa'), [[k, t.get(k, 0.0), t.get(k, 0.0) / tg] for k in EP_PARTS['rec']] + ([['two', t['two'], None]] if t.get('two') else [])])
+        base = dict(u=int(car + tg), car=int(car), tg=int(tg), sr=(u.get('succ', 0.0) + t.get('succ', 0.0)) / (car + tg), gr=_grid(GR.get(pid, {})))
+    out = []
+    for k, tot, parts in sec:
+        rp = [[pk, round(v, 3), (round(pr, 4) if pr is not None else None), None] for pk, v, pr in parts]
+        out.append([k, round(tot, 3), round(tot - sum(x[1] for x in rp), 3), rp])
+    base.update(sec=out, tot=round(sum(x[1] for x in out), 3))
+    if base.get('any') is not None: base['any'] = round(base['any'], 3)
+    base['sr'] = round(base['sr'], 4)
+    return base
+# the hero tiles' metrics, keyed as player.php names them; counting stats rank on season totals, as nfelo's do
+TILE = {
+    'rec': dict(tgt=lambda p, S, m: S('targets'), rec=lambda p, S, m: S('receptions'), yds=lambda p, S, m: S('receiving_yards'), td=lambda p, S, m: S('receiving_tds'),
+                tsh=lambda p, S, m: m.get('tshare'), adot=lambda p, S, m: m.get('adot'), epat=lambda p, S, m: m.get('epat'), yac=lambda p, S, m: m.get('yacpc')),
+    'rb': dict(car=lambda p, S, m: S('carries'), ruy=lambda p, S, m: S('rushing_yards'), rutd=lambda p, S, m: S('rushing_tds'), tgt=lambda p, S, m: S('targets'),
+               tpg=lambda p, S, m: m.get('tpg'), epatch=lambda p, S, m: ((S('rushing_epa') + S('receiving_epa')) / (S('carries') + S('targets'))) if (S('carries') + S('targets')) else None,
+               expl=lambda p, S, m: S('rushing_10') + S('receiving_20'), snap=lambda p, S, m: (sum(p['snaps'].values()) / len(p['snaps'])) if p['snaps'] else None),
+    'qb': dict(att=lambda p, S, m: S('attempts'), cmp=lambda p, S, m: (S('completions') / S('attempts')) if S('attempts') else None, py=lambda p, S, m: S('passing_yards'),
+               ptd=lambda p, S, m: S('passing_tds'), epadb=lambda p, S, m: m.get('epadb'), sack=lambda p, S, m: m.get('sack'), ruy=lambda p, S, m: S('rushing_yards'),
+               any=lambda p, S, m: (p.get('ep') or {}).get('any')),
+}
+TILE_LOW = {'sack'}
+def _rank(vals, v, low=False):
+    if v is None: return None
+    better = sum(1 for x in vals if (x < v - 1e-9 if low else x > v + 1e-9)); ties = sum(1 for x in vals if abs(x - v) <= 1e-9)
+    return [better + 1, 1 if ties > 1 else 0]
+def _pc(vals, v):
+    if v is None or not vals: return None
+    below = sum(1 for x in vals if x < v - 1e-9); eq = sum(1 for x in vals if abs(x - v) <= 1e-9)
+    return int(round(100 * (below + eq / 2) / len(vals)))
+allp = [p for pl in team_players.values() for p in pl]
+for p in allp:
+    gr = p.get('grades'); p['ep'] = ep_for(p, gr['grp']) if gr and have_pbp else None
+pool = {g: [p for p in allp if p.get('grades') and p['grades']['q'] and p['grades']['grp'] == g] for g in MINQ}
+for g, members in pool.items():
+    # per-part rates (or totals where a part has no per-play rate), success, ANY/A and total EPA among the qualifiers
+    pv = defaultdict(list)
+    for p in members:
+        ep = p.get('ep')
+        if not ep: continue
+        for sk, _, _, parts in ep['sec']:
+            for pk, tot, per, _ in parts:
+                if pk not in EP_NOPC: pv[sk + '.' + pk].append(per if per is not None else tot)
+        for k in ('sr', 'any', 'tot'):
+            if ep.get(k) is not None: pv[k].append(ep[k])
+    tv = {k: [] for k in TILE[g]}
+    for p in members:
+        S = (lambda ws: (lambda k: sum(_num(x.get(k)) for x in ws)))(p['weeks']); m = p['grades']['m']
+        for k, fn in TILE[g].items():
+            v = fn(p, S, m)
+            if v is not None: tv[k].append(v)
+    for p in members:
+        ep = p.get('ep')
+        if ep:
+            for sk, _, _, parts in ep['sec']:
+                for x in parts: x[3] = None if x[0] in EP_NOPC else _pc(pv[sk + '.' + x[0]], x[2] if x[2] is not None else x[1])
+            ep['rk'] = {k: _rank(pv[k], ep[k]) for k in ('sr', 'any', 'tot') if ep.get(k) is not None}
+            ep['pc'] = {k: _pc(pv[k], ep[k]) for k in ('sr', 'any', 'tot') if ep.get(k) is not None}
+        S = (lambda ws: (lambda k: sum(_num(x.get(k)) for x in ws)))(p['weeks']); m = p['grades']['m']
+        p['trk'] = {k: _rank(tv[k], fn(p, S, m), k in TILE_LOW) for k, fn in TILE[g].items() if fn(p, S, m) is not None}
 def quart(a):
     if not a: return None
     a = sorted(a); q = lambda f: a[min(len(a) - 1, int(len(a) * f))]
     return dict(p25=q(.25), p50=q(.5), p75=q(.75), n=len(a))
-json.dump(clean(dict(season=season, through=through_week, groups={g: dict(n=npool[g], min=MINLABEL[g], low=LOW[g], dist=dist[g], week=quart(wkyds[g]), game={k: quart(v) for k, v in wkm[g].items()}, fp=fpdist[g]) for g in MINQ})), open(f'{out}/players/league.json', 'w'), separators=(',', ':'))
+json.dump(clean(dict(season=season, through=through_week, groups={g: dict(n=npool[g], min=MINLABEL[g], low=LOW[g], dist=dist[g], week=quart(wkyds[g]), game={k: quart(v) for k, v in wkm[g].items()}, fp=fpdist[g]) for g in MINQ}, grid=lg_grid)), open(f'{out}/players/league.json', 'w'), separators=(',', ':'))
 for t, pl in team_players.items():
     json.dump(clean(dict(season=season, team=t, through=through_week, players=pl)), open(f'{out}/players/{t}.json', 'w'), separators=(',', ':'))
 

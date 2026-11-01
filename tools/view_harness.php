@@ -36,7 +36,7 @@ function get_permalink( $p = null ) { return 'https://example.test/app/'; }
 function add_query_arg( $args, $url = '' ) { if ( ! is_array( $args ) ) { return $url; } $q = http_build_query( $args ); return $url . ( $q ? ( strpos( $url, '?' ) === false ? '?' : '&' ) . $q : '' ); }
 function sanitize_text_field( $s ) { return trim( strip_tags( (string) $s ) ); }
 function wp_unslash( $s ) { return $s; }
-function wp_date( $f, $ts = null ) { return date( $f, $ts ?? time() ); }
+function wp_date( $f, $ts = null, $tz = null ) { $d = new DateTime( '@' . ( $ts ?? time() ) ); $d->setTimezone( $tz ?: new DateTimeZone( 'UTC' ) ); return $d->format( $f ); }  /* UTC by default, like a site left on GMT: the page must pass Eastern itself */
 function wp_timezone() { return new DateTimeZone( 'America/New_York' ); }
 function status_header( $c ) {} function nocache_headers() {}
 function add_action() {} function add_filter() {} function remove_action() {} function do_action() {} function apply_filters( $t, $v ) { return $v; }

@@ -835,3 +835,104 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 .dbd .dbd-pn-link .dbd-lgw>img.dbd-logo{width:64px;height:64px;transform:translateX(-50%) scale(min(var(--lgs,1),1.3))}
 .dbd .dbd-pn-link .dbd-lgw>svg{margin-top:12px}
 @container dbd (max-width:600px){.dbd .dbd-pn-link .dbd-lgw{width:48px!important;height:48px!important}.dbd .dbd-pn-link .dbd-lgw>img.dbd-logo{width:48px;height:48px}.dbd .dbd-pn-link .dbd-lgw>svg{width:48px;height:30px;margin-top:9px}}
+/* 1.5.0 · hero tile rank (SCOPE §29) */
+.dbd .dbd-tile{display:flex;flex-direction:column}
+.dbd .dbd-tile .dbd-trk{margin-top:auto;padding-top:7px;font:500 11px var(--dbd-mono);color:var(--dbd-muted);cursor:default}
+.dbd .dbd-tile .dbd-trk b{font-weight:600;color:var(--dbd-ink)}
+.dbd .dbd-tile .dbd-trk.top b{color:var(--dbd-good)}
+
+/* 1.5.0 · where his EPA comes from (SCOPE §29) */
+.dbd .dbd-ep-say{margin:0;padding:12px var(--dbd-edge) 4px;font:400 14px/1.5 var(--dbd-body);color:var(--dbd-ink-2)}
+.dbd .dbd-ep-say b{color:var(--dbd-ink);font-weight:600}
+.dbd .dbd-ep-wf{padding:6px var(--dbd-edge) 4px}
+.dbd .dbd-ep-wf .row{display:grid;grid-template-columns:200px minmax(0,1fr) 58px 92px 48px;gap:12px;align-items:center;padding:6px 0;border-top:1px solid var(--dbd-line)}
+.dbd .dbd-ep-wf .row.hd{border-top:0;padding:0 0 2px}
+.dbd .dbd-ep-wf .row.hd>div{font:700 11px var(--dbd-display);text-transform:uppercase;letter-spacing:.08em;color:var(--dbd-muted)}
+.dbd .dbd-ep-wf .row.sub,.dbd .dbd-ep-wf .row.total{border-top:1px solid var(--dbd-line-2)}
+.dbd .dbd-ep-wf .l{font:500 13px var(--dbd-body);color:var(--dbd-ink)}
+.dbd .dbd-ep-wf .l small{display:block;font:500 11px var(--dbd-mono);color:var(--dbd-muted)}
+.dbd .dbd-ep-wf .row.sub .l,.dbd .dbd-ep-wf .row.total .l{font-weight:600}
+.dbd .dbd-ep-wf .tr{position:relative;height:18px}
+.dbd .dbd-ep-wf .tr .z{position:absolute;top:-7px;bottom:-7px;border-left:1px solid var(--dbd-line-2)}
+.dbd .dbd-ep-wf .tr .c{position:absolute;top:18px;height:14px;border-left:1px dashed var(--dbd-line-2)}
+.dbd .dbd-ep-wf .row:last-child .tr .c{display:none}
+.dbd .dbd-ep-wf .tr .b{position:absolute;top:2px;height:14px;border-radius:2px;cursor:default}
+.dbd .dbd-ep-wf .b.pos{background:var(--dbd-good);opacity:.8}
+.dbd .dbd-ep-wf .b.neg{background:var(--dbd-bad);opacity:.75}
+.dbd .dbd-ep-wf .b.sub{background:var(--dbd-team);opacity:.45}
+.dbd .dbd-ep-wf .b.total{background:var(--dbd-team);top:0;height:18px}
+.dbd .dbd-ep-wf .v,.dbd .dbd-ep-wf .p{font:600 12px var(--dbd-mono);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.dbd .dbd-ep-wf .p{font-weight:500;color:var(--dbd-muted)}
+.dbd .dbd-ep-wf .row.total .g{color:var(--dbd-good)}
+.dbd .dbd-ep-wf .row.total .v{font:800 15px var(--dbd-hero)}
+.dbd .dbd-ep-wf .g{font:800 13px var(--dbd-hero);text-align:right;color:var(--dbd-ink)}
+.dbd .dbd-ep-wf .g.hi{color:var(--dbd-good)}.dbd .dbd-ep-wf .g.lo{color:var(--dbd-bad)}
+.dbd .dbd-ep-car{display:flex;gap:18px;align-items:flex-end;justify-content:space-between;margin:10px var(--dbd-edge) 0;padding:12px 14px;background:var(--dbd-panel-2);border:1px solid var(--dbd-line);border-radius:var(--dbd-r)}
+.dbd .dbd-ep-car .t{font:400 13px/1.45 var(--dbd-body);color:var(--dbd-ink-2)}
+.dbd .dbd-ep-car .t>b{font:800 18px var(--dbd-hero);color:var(--dbd-ink)}
+.dbd .dbd-ep-car .t span b{font-weight:600;color:var(--dbd-ink)}
+.dbd .dbd-ep-car .sp{display:flex;gap:4px;align-items:flex-end;height:44px;flex:none}
+.dbd .dbd-ep-car .sp i{position:relative;display:block;width:16px;height:var(--h);min-height:2px;background:var(--dbd-line-2);border-radius:2px 2px 0 0;cursor:default}
+.dbd .dbd-ep-car .sp i.neg{background:rgba(180,38,31,.45)}
+.dbd .dbd-ep-car .sp i.now{background:var(--dbd-team)}
+.dbd .dbd-ep-car .sp em{position:absolute;bottom:-15px;left:50%;transform:translateX(-50%);font:500 10px var(--dbd-mono);font-style:normal;color:var(--dbd-muted)}
+.dbd .dbd-ep-car{padding-bottom:22px}
+
+/* 1.5.0 · where he throws (SCOPE §29) */
+.dbd .dbd-lz .dbd-ph{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.dbd .dbd-lzg{display:grid;grid-template-columns:96px repeat(3,minmax(0,1fr));gap:4px;padding:8px var(--dbd-edge) 0}
+.dbd .dbd-lzg .ch{font:700 11px var(--dbd-display);text-transform:uppercase;letter-spacing:.14em;color:var(--dbd-muted);text-align:center;padding-bottom:2px}
+.dbd .dbd-lzg .rl{display:flex;flex-direction:column;justify-content:center;font:600 12px var(--dbd-body);color:var(--dbd-ink)}
+.dbd .dbd-lzg .rl small{font:500 11px var(--dbd-mono);color:var(--dbd-muted)}
+.dbd .dbd-lzg .cell{display:grid;grid-template-columns:1fr auto;grid-template-rows:auto auto;gap:2px 6px;padding:10px 12px;border-radius:4px;border:1px solid var(--dbd-line);min-height:64px;align-content:center;cursor:default;
+  background:color-mix(in srgb,var(--dbd-team) calc(var(--tf) * 100%),var(--dbd-panel))}
+.dbd .dbd-lzg .cell .f,.dbd .dbd-lzg .cell .e{font:800 22px/1 var(--dbd-hero);color:var(--dbd-ink);font-variant-numeric:tabular-nums}
+.dbd .dbd-lzg .cell .d,.dbd .dbd-lzg .cell .n{font:500 11px var(--dbd-mono);color:var(--dbd-muted);align-self:end;text-align:right}
+.dbd .dbd-lzg .cell .d.up{color:var(--dbd-ink);font-weight:600}
+.dbd .dbd-lzg .cell .n{grid-column:1/-1;text-align:left}
+.dbd .dbd-lz[data-mode="f"] .cell .e,.dbd .dbd-lz[data-mode="e"] .cell .f,.dbd .dbd-lz[data-mode="e"] .cell .d{display:none}
+.dbd .dbd-lz[data-mode="e"] .cell{background:color-mix(in srgb,var(--dbd-good) calc(max(var(--te),0) * 100%),color-mix(in srgb,var(--dbd-bad) calc(max(calc(var(--te) * -1),0) * 100%),var(--dbd-panel)))}
+.dbd .dbd-lz[data-mode="e"] .cell .e{grid-row:1}
+.dbd .dbd-lzg .cell.low .f,.dbd .dbd-lzg .cell.low .e{color:var(--dbd-muted)}
+.dbd .dbd-lzk{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;padding:8px var(--dbd-edge) 0;font:500 11px var(--dbd-mono);color:var(--dbd-muted)}
+.dbd .dbd-lzk .los{display:flex;align-items:center;gap:6px}.dbd .dbd-lzk .los::before{content:"";width:22px;border-top:2px solid var(--dbd-ink-2)}
+.dbd .dbd-lzk i{display:inline-block;width:12px;height:12px;border-radius:2px;vertical-align:-2px;margin:0 3px 0 6px;border:1px solid var(--dbd-line)}
+.dbd .dbd-lzk i.up{background:color-mix(in srgb,var(--dbd-team) 45%,var(--dbd-panel))}.dbd .dbd-lzk i.dn{background:var(--dbd-panel)}
+.dbd .dbd-lzk i.pos{background:color-mix(in srgb,var(--dbd-good) 45%,var(--dbd-panel))}.dbd .dbd-lzk i.neg{background:color-mix(in srgb,var(--dbd-bad) 45%,var(--dbd-panel))}
+.dbd .dbd-lz[data-mode="f"] .dbd-lzk .k.e,.dbd .dbd-lz[data-mode="e"] .dbd-lzk .k.f{display:none}
+/* the line of scrimmage: a full-width rule between Short and Behind */
+.dbd .dbd-lzg .los{grid-column:1/-1;position:relative;height:14px}
+.dbd .dbd-lzg .los::before{content:"";position:absolute;left:0;right:0;top:6px;border-top:2px solid var(--dbd-ink-2)}
+.dbd .dbd-lzg .los span{position:absolute;right:0;top:-1px;padding-left:8px;background:var(--dbd-panel);font:600 10px var(--dbd-display);text-transform:uppercase;letter-spacing:.14em;color:var(--dbd-ink-2)}
+
+/* 1.5.0 · game log: every week (SCOPE §29) */
+.dbd .dbd-glog tr.dbd-gx td{color:var(--dbd-muted);font-style:normal}
+.dbd .dbd-glog tr.dbd-gx.bye td.res{font:600 11px var(--dbd-display);text-transform:uppercase;letter-spacing:.14em;text-align:left}
+.dbd .dbd-glog tr.dbd-gx td.res .why{display:block;margin-top:2px;white-space:normal;text-align:left;font:500 12px var(--dbd-body);color:var(--dbd-muted)}
+.dbd .dbd-glog tr.dbd-gx.dnp td.res .why{color:var(--dbd-bad)}
+.dbd .dbd-glog tr.dbd-gx.up td{background:var(--dbd-panel-2)}
+.dbd .dbd-glog tr.dbd-gx.next td{color:var(--dbd-ink-2)}
+.dbd .dbd-glog tr.dbd-gx.next td.res .why{font-weight:600;color:var(--dbd-ink-2)}
+.dbd .dbd-gx-more{display:block;margin:8px 0 2px;padding:6px 10px;background:none;border:1px solid var(--dbd-line-2);border-radius:var(--dbd-r);font:600 12px var(--dbd-body);color:var(--dbd-ink-2);cursor:pointer}
+.dbd .dbd-gx-more:hover{color:var(--dbd-ink);border-color:var(--dbd-ink-2)}
+
+/* 1.5.0 · narrow (SCOPE §29) */
+@container dbd (max-width:600px){
+  .dbd .dbd-ep-wf .row{grid-template-columns:minmax(0,1fr) 54px 40px;gap:4px 8px}
+  .dbd .dbd-ep-wf .row .tr{grid-column:1/-1;grid-row:2}
+  .dbd .dbd-ep-wf .row .p{display:none}
+  .dbd .dbd-ep-wf .row.hd .tr{display:none}
+  .dbd .dbd-ep-car{flex-direction:column;align-items:flex-start}
+  .dbd .dbd-lzg{grid-template-columns:64px repeat(3,minmax(0,1fr));gap:3px}
+  .dbd .dbd-lzg .cell{padding:7px 6px;grid-template-columns:1fr;min-height:58px}
+  .dbd .dbd-lzg .cell .f,.dbd .dbd-lzg .cell .e{font-size:18px}
+  .dbd .dbd-lzg .cell .d{text-align:left}
+  .dbd .dbd-lzg .cell .n{display:none}
+  .dbd .dbd-lz .dbd-ph{flex-wrap:wrap}
+}
+.dbd .dbd-lzg .cell .le{font:500 11px var(--dbd-mono);color:var(--dbd-muted);align-self:end;text-align:right;grid-row:1;grid-column:2}
+.dbd .dbd-lz[data-mode="f"] .cell .le{display:none}
+@container dbd (max-width:600px){.dbd .dbd-lzg .cell .le{grid-row:auto;grid-column:auto;text-align:left}}
+.dbd .dbd-glog tr.dbd-gx[hidden]{display:none}
+/* a sorted game log sets the bye, did-not-play and upcoming rows aside; sorting by week brings them back */
+.dbd .dbd-glog.is-sorted tr.dbd-gx,.dbd .dbd-glog.is-sorted~.dbd-gx-more{display:none}

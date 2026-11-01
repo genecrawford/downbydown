@@ -5,6 +5,8 @@ on:
   pull_request:
     paths:
       - 'tools/build_data.py'
+      - 'tools/view_harness.php'
+      - 'plugin/down-by-down/includes/views/player.php'
       - '.github/workflows/build-data.yml'
       - '.github/workflows/build-check.yml'
   workflow_dispatch:
@@ -41,3 +43,38 @@ jobs:
           python3 tools/build_data.py "$pbp" in/roster.csv in/games.csv in/teams.csv /tmp/out
           python3 -c "import json;t=json.load(open('/tmp/out/teams.json'));print(len(t),'teams;',sum(1 for v in t.values() if v.get('logo')),'with logos;',sum(1 for v in t.values() if v.get('logo_s')),'with a logo scale');print(' '.join(k+'='+str(v.get('logo_s')) for k,v in sorted(t.items())))"
           ls /tmp/out/players | head -40 | tr '\n' ' '
+      - name: Check the EPA split (SCOPE §29)
+        run: |
+          python3 - <<'PY'
+          import json, glob, os, sys
+          bad = []; worst = (0, None); n = 0
+          for f in glob.glob('/tmp/out/players/*.json'):
+              if os.path.basename(f) in ('index.json', 'league.json', 'movers.json'): continue
+              for p in json.load(open(f))['players']:
+                  ep = p.get('ep')
+                  if not ep or not (p.get('grades') or {}).get('q'): continue
+                  n += 1
+                  for k, tot, oth, parts in ep['sec']:
+                      s = sum(x[1] for x in parts) + oth
+                      if abs(s - tot) > 0.01: bad.append(f"{p['name']} {k}: parts {s:.3f} vs total {tot:.3f}")
+                      if abs(oth) > worst[0]: worst = (abs(oth), f"{p['name']} {k} {oth:+.3f}")
+                      if abs(oth) > 3: bad.append(f"{p['name']} {k}: other {oth:+.2f} is over 3 EPA")
+                  if p['id'] in ('00-0034857', '00-0036322'):
+                      print(p['name'], 'total', ep['tot'], 'rank', ep.get('rk', {}).get('tot'), 'ANY/A', ep.get('any'), ep.get('rk', {}).get('any'), [(s[0], s[1]) for s in ep['sec']], 'injw', p.get('injw'))
+          lg = json.load(open('/tmp/out/players/league.json'))
+          print(n, 'qualifiers checked; largest other', worst, '; league grid cells', {k: len(v) for k, v in lg.get('grid', {}).items()})
+          if bad: print('\n'.join(bad)); sys.exit(1)
+          PY
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+      - name: Render player pages from the fresh data (a QB, a receiver, a back, a non-qualifier)
+        run: |
+          set -e
+          export DBD_HARNESS_HTML=pages
+          for id in 00-0034857 00-0036322 00-0033293 00-0036259; do php tools/view_harness.php /tmp/out player $id; done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pages-fresh-data
+          path: pages/

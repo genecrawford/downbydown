@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.4.3
+Stable tag: 1.5.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,14 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.5.0 =
+* nfelo parity on the player page (SCOPE §29). Each hero tile now carries its league rank ("5th of 38", green inside the top 10, ties as T-) against the same pool Where he ranks uses; a player outside the pool shows none. A quarterback's Snap share tile becomes ANY/A, since the hero badge already shows snap share.
+* Season stats gain success rate, ANY/A (quarterbacks) and total EPA, each ranked.
+* New panel, Where his EPA comes from: the season's EPA split by what happened (air yards, after the catch, incompletions, interceptions, sacks, scrambles, runs, two-point tries), each part's per-play rate and league percentile, a one-sentence read, and this season against his career with a bar per season. The parts add up to the totals on the page.
+* New panel, Depth by direction: the 4 × 3 grid of throws or targets (behind the line, short, intermediate, deep; left, middle, right) against the league, with How often and EPA per throw views. Backs get it with 15+ targets.
+* The game log covers every week: the bye and the games he missed sit in place (with that week's injury designation when the report had one), then this week's game, with the rest of the schedule behind a button. Sorting a stat column sets those rows aside; sorting by week brings them back.
+* Fixes: a quarterback's TD / INT tile read "0 first downs" (the data never carried passing first downs; it does now), and the This week kickoff badge printed the site's GMT time instead of Eastern.
 
 = 1.4.3 =
 * The team logo in the player hero sits in a bigger slot: 64px square instead of 64 by 40, so the logo draws at about 61px for most teams (49px in 1.4.2, 38px in 1.4.1), and the snap-share badge and buttons below move down to make room rather than being overlapped. 48px on phones.

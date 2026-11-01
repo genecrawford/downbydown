@@ -24,12 +24,17 @@
     var table = th.closest('table.dbd-sortable'); if (!table || table.id === 'dbd-plist') return;
     var hdr = th.parentNode, idx = Array.prototype.indexOf.call(hdr.children, th);
     var rows = Array.prototype.filter.call(table.rows, function (r) { return r !== hdr && !r.querySelector('th') && !(r.parentNode && r.parentNode.tagName === 'TFOOT'); });
+    /* the game log's bye, did-not-play and upcoming rows (.dbd-gx) step aside while a stat column is sorted; Wk ascending puts the whole season back in order */
+    var gx = rows.filter(function (r) { return r.classList.contains('dbd-gx'); });
     var blank = function (t) { return t === '' || t === '-' || t === '\u2013'; };
     var num = function (t) { t = t.replace(/[%,]/g, '').replace(/\u2212/g, '-').trim(); return /^[-+]?\d+(\.\d+)?$/.test(t) ? parseFloat(t) : null; };  /* whole cell must be a number */
     var cell = function (r) { var c = r.children[idx]; if (!c) return ''; if (c.getAttribute('data-v') != null) return c.getAttribute('data-v'); var a = c.querySelector('a'); return (a ? a.textContent : c.textContent).trim(); };  /* a name link wins over the jersey number inside its svg */
-    var vals = rows.map(cell).filter(function (t) { return !blank(t); });
+    var vals = rows.filter(function (r) { return gx.indexOf(r) < 0; }).map(cell).filter(function (t) { return !blank(t); });  /* a spanning row's cells do not line up with the columns */
     var numeric = vals.length > 0 && vals.every(function (t) { return num(t) !== null; });
     var cur = th.getAttribute('aria-sort'), dir = cur === 'descending' ? 1 : cur === 'ascending' ? -1 : (numeric ? -1 : 1);
+    if (gx.length) {
+      if (idx === 0 && dir === 1) { table.classList.remove('is-sorted'); } else { table.classList.add('is-sorted'); rows = rows.filter(function (r) { return gx.indexOf(r) < 0; }); }
+    }
     rows.sort(function (a, b) { var x = cell(a), y = cell(b); if (blank(x) && blank(y)) return 0; if (blank(x)) return 1; if (blank(y)) return -1; return numeric ? (num(x) - num(y)) * dir : x.localeCompare(y) * dir; });
     Array.prototype.forEach.call(hdr.children, function (h) { h.removeAttribute('aria-sort'); });
     th.setAttribute('aria-sort', dir === 1 ? 'ascending' : 'descending');
