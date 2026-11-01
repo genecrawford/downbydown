@@ -55,7 +55,7 @@
       if (e.key === 'ArrowDown' && hits.length) { cur = Math.min(hits.length - 1, cur + 1); mark(); e.preventDefault(); }
       else if (e.key === 'ArrowUp' && hits.length) { cur = Math.max(0, cur - 1); mark(); e.preventDefault(); }
       else if (e.key === 'Enter') { e.preventDefault(); if (!list.hidden && hits.length) pick(cur < 0 ? 0 : cur); }  /* nothing shown, nothing added */
-      else if (e.key === 'Escape') { list.hidden = true; if (onEmptyBlur) { q.value = ''; onEmptyBlur(); } }
+      else if (e.key === 'Escape') { list.hidden = true; if (onEmptyBlur) { q.value = ''; onEmptyBlur(true); } }
     });
     list.addEventListener('mousedown', function (e) { var li = e.target.closest('li[data-i]'); if (li) { e.preventDefault(); pick(+li.dataset.i); } });
     q.addEventListener('blur', function () { setTimeout(function () { list.hidden = true; if (onEmptyBlur && !q.value.trim()) onEmptyBlur(); }, 150); });
@@ -67,7 +67,7 @@
   root.querySelectorAll('.mt-row.empty[data-pos]').forEach(function (row) {
     var btn = row.querySelector('.mt-slotadd'), lab = row.querySelector('.mt-slot > .m'), box = row.querySelector('.mt-slotq'), inp = row.querySelector('.mt-slotin'), sug = box && box.querySelector('.mt-sug');
     if (!btn || !box || !inp || !sug) return;
-    var close = function () { box.hidden = true; btn.hidden = false; if (lab) lab.hidden = false; btn.setAttribute('aria-expanded', 'false'); row.classList.remove('open'); };
+    var close = function (refocus) { if (box.hidden) return; box.hidden = true; btn.hidden = false; if (lab) lab.hidden = false; btn.setAttribute('aria-expanded', 'false'); row.classList.remove('open'); if (refocus) btn.focus(); };  /* Escape hands focus back to the + (Greptile, PR #41) */
     wire(inp, sug, row.dataset.pos.split(','), close);
     btn.addEventListener('click', function () { btn.hidden = true; if (lab) lab.hidden = true; box.hidden = false; btn.setAttribute('aria-expanded', 'true'); row.classList.add('open'); inp.focus(); });
   });
