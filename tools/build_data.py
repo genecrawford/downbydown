@@ -660,6 +660,7 @@ if env('DBD_DEPTH'):
             unit = 'st' if 'Special' in str(r.pos_grp) else ('def' if str(r.pos_grp).startswith('Base') else 'off')
             key = r.pos_abb + (str(int(r.pos_slot)) if r.pos_abb == 'WR' and r.pos_slot == r.pos_slot else '')  # receivers are told apart by slot
             if key in u[unit] or (unit == 'off' and r.pos_abb == 'FB'): continue  # the slot's starter is its lowest rank; a fullback is not in the three-receiver set
+            if not isinstance(r.player_name, str) or not r.player_name.strip(): continue  # an entry with no name gives the slot to the next player listed
             pid = r.gsis_id if isinstance(r.gsis_id, str) else None
             e = dict(id=pid, name=c(r.player_name), pos=c(r.pos_name), num=jersey.get(pid))
             if unit == 'def' and pid:
