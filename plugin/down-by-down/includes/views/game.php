@@ -117,20 +117,63 @@ if ( $WP && ! empty( $WP['s'] ) ) {
 	echo '<p class="dbd-wp-say">' . implode( ' ', $say ) . '</p><div class="dbd-wpchips">' . $chipH . '</div>' . $chart . '<h4 class="dbd-wph">The plays that swung it</h4><ol class="dbd-wpl">' . $li . '</ol><p class="dbd-note">' . $note . '</p></section>';
 }
 
+/* ---- box score (SCOPE §32): a final game's offense lines with snap share, then defense and kicking, from box/w{week}.json */
+$BX = $final ? DBD_Data::box( $g ) : null;
+if ( $BX && ! empty( $BX['keys'] ) ) {
+	$bk = array_flip( $BX['keys'] ); $bsay = array(); $bcols = '';
+	foreach ( array( 'away', 'home' ) as $bside ) {
+		$bt = $BX[ $bside ] ?? null; if ( ! $bt ) { continue; } $btm = $bt['team']; $rows = (array) ( $bt['off'] ?? array() );
+		$v = function ( $r, $k ) use ( $bk ) { return isset( $bk[ $k ] ) ? ( $r[ $bk[ $k ] ] ?? 0 ) : 0; };
+		$nm = function ( $r ) use ( $v ) { $sn = $v( $r, 'snap' ); return '<a href="' . esc_url( DBD_Router::url( array( 'player' => $v( $r, 'id' ) ) ) ) . '">' . esc_html( (string) $v( $r, 'name' ) ) . '</a>' . ( $sn ? '<small>' . (int) $sn . '%</small>' : '' ); };
+		$ep = function ( $x ) { $x = (float) $x; return '<td class="' . ( $x >= 0 ? 'pos' : 'neg' ) . '">' . ( $x > 0 ? '+' : '' ) . number_format( $x, 1 ) . '</td>'; };
+		$by = function ( $k ) use ( $rows, $v ) { $o = array_values( array_filter( $rows, function ( $r ) use ( $v, $k ) { return (float) $v( $r, $k ) > 0; } ) ); usort( $o, function ( $a, $b ) use ( $v, $k ) { return $v( $b, $k ) <=> $v( $a, $k ); } ); return $o; };
+		$qb = $by( 'attempts' ); $ru = $by( 'carries' ); $rc = $by( 'targets' );
+		$tca = array_sum( array_map( function ( $r ) use ( $v ) { return $v( $r, 'carries' ); }, $ru ) ) ?: 1; $ttg = array_sum( array_map( function ( $r ) use ( $v ) { return $v( $r, 'targets' ); }, $rc ) ) ?: 1;
+		$z = function ( $x ) { return (int) $x ?: ''; };
+		$pas = ''; foreach ( $qb as $r ) { $pas .= '<tr><td class="nm">' . $nm( $r ) . '</td><td>' . (int) $v( $r, 'completions' ) . '/' . (int) $v( $r, 'attempts' ) . '</td><td>' . (int) $v( $r, 'passing_yards' ) . '</td><td>' . $z( $v( $r, 'passing_tds' ) ) . '</td><td>' . $z( $v( $r, 'passing_interceptions' ) ) . '</td><td>' . $z( $v( $r, 'sacks_suffered' ) ) . '</td>' . $ep( $v( $r, 'passing_epa' ) ) . '</tr>'; }
+		$rus = ''; foreach ( $ru as $r ) { $rus .= '<tr><td class="nm">' . $nm( $r ) . '</td><td>' . (int) $v( $r, 'carries' ) . '</td><td>' . round( $v( $r, 'carries' ) / $tca * 100 ) . '%</td><td>' . (int) $v( $r, 'rushing_yards' ) . '</td><td>' . $z( $v( $r, 'rushing_tds' ) ) . '</td>' . $ep( $v( $r, 'rushing_epa' ) ) . '</tr>'; }
+		$rec = ''; foreach ( $rc as $r ) { $rec .= '<tr><td class="nm">' . $nm( $r ) . '</td><td>' . (int) $v( $r, 'targets' ) . '</td><td>' . round( $v( $r, 'targets' ) / $ttg * 100 ) . '%</td><td>' . (int) $v( $r, 'receptions' ) . '</td><td>' . (int) $v( $r, 'receiving_yards' ) . '</td><td>' . $z( $v( $r, 'receiving_tds' ) ) . '</td>' . $ep( $v( $r, 'receiving_epa' ) ) . '</tr>'; }
+		$H = function ( $c ) { return '<thead><tr>' . implode( '', array_map( function ( $x ) { return '<th>' . $x . '</th>'; }, $c ) ) . '</tr></thead>'; };
+		$dl = array(); foreach ( array_slice( (array) ( $bt['d'] ?? array() ), 0, 4 ) as $d ) { $bits = array(); if ( (float) $d[1] ) { $bits[] = ( 0 + $d[1] ) . ' sack' . ( (float) $d[1] === 1.0 ? '' : 's' ); } if ( (int) $d[2] ) { $bits[] = (int) $d[2] . ' INT'; } $dl[] = esc_html( $d[0] . ' ' . implode( ' and ', $bits ) ); }
+		$kk = ! empty( $bt['k'] ) ? esc_html( $bt['k'][0] . ' ' . (int) $bt['k'][1] . '/' . (int) $bt['k'][2] . ' FG' . ( (int) $bt['k'][3] ? ' (long ' . (int) $bt['k'][3] . ')' : '' ) ) : '';
+		$best = null; $bestE = null; foreach ( $rows as $r ) { $e = (float) $v( $r, 'passing_epa' ) + (float) $v( $r, 'rushing_epa' ) + (float) $v( $r, 'receiving_epa' ); if ( $best === null || $e > $bestE ) { $best = $r; $bestE = $e; } }
+		if ( $best ) { $bp = (string) $v( $best, 'pos' );
+			$bl = $bp === 'QB' ? (int) $v( $best, 'completions' ) . ' of ' . (int) $v( $best, 'attempts' ) . ' for ' . (int) $v( $best, 'passing_yards' ) : ( in_array( $bp, array( 'RB', 'FB' ), true ) ? (int) $v( $best, 'carries' ) . ' carries for ' . (int) $v( $best, 'rushing_yards' ) : (int) $v( $best, 'receptions' ) . ' catches for ' . (int) $v( $best, 'receiving_yards' ) );
+			$bsay[] = '<b>' . esc_html( (string) $v( $best, 'name' ) ) . '</b> led the ' . esc_html( DBD_Data::team( $btm )['nick'] ?? $btm ) . ' at ' . ( $bestE > 0 ? '+' : '' ) . number_format( $bestE, 1 ) . ' EPA (' . $bl . ').'; }
+		$bcols .= '<div class="dbd-bxteam"><h4>' . DBD_Marks::tile( $btm, 20 ) . ' ' . esc_html( DBD_Data::team( $btm )['nick'] ?? $btm ) . '</h4>'
+			. ( $pas ? '<table class="dbd-stat dbd-bx">' . $H( array( 'Passing', 'C/A', 'Yds', 'TD', 'INT', 'Sk', 'EPA' ) ) . '<tbody>' . $pas . '</tbody></table>' : '' )
+			. ( $rus ? '<table class="dbd-stat dbd-bx">' . $H( array( 'Rushing', 'Car', 'Share', 'Yds', 'TD', 'EPA' ) ) . '<tbody>' . $rus . '</tbody></table>' : '' )
+			. ( $rec ? '<table class="dbd-stat dbd-bx">' . $H( array( 'Receiving', 'Tgt', 'Share', 'Rec', 'Yds', 'TD', 'EPA' ) ) . '<tbody>' . $rec . '</tbody></table>' : '' )
+			. '<p class="dbd-bxdk"><b>Defense</b> ' . ( $dl ? implode( ', ', $dl ) : 'no sacks or interceptions' ) . ( $kk ? ' · <b>Kicking</b> ' . $kk : '' ) . '</p></div>';
+	}
+	echo '<section class="dbd-panel dbd-box"><div class="dbd-ph"><span class="dbd-lab"><b>Box score</b> · every offensive player who touched the ball</span><span class="dbd-badge">Week ' . (int) $g['week'] . '</span></div>';
+	echo '<p class="dbd-wp-say">' . implode( ' ', $bsay ) . '</p><div class="dbd-bx2">' . $bcols . '</div><p class="dbd-note">Each player\'s line for this game from nflverse\'s weekly stats; the percentage beside his name is his share of the offense\'s snaps. Share is his part of the team\'s carries or targets in this game. Defense lists sacks and interceptions; kicking lists field goals.</p></section>';
+}
+
+/* ---- the lineups (SCOPE §32): an upcoming game draws this offense against the other team's defense from the depth charts; a final has the box score instead */
+$luHtml = '';
+if ( ! $final ) { $luB = DBD_Lineup::board( $O, $D );
+	if ( $luB ) { $luHtml = '<section class="dbd-panel dbd-lu"><div class="dbd-ph"><span class="dbd-lab"><b>The lineups</b> · ' . esc_html( $Ot['nick'] ) . ' offense against the ' . esc_html( $Dt['nick'] ) . ' defense</span><span class="dbd-badge">Depth charts</span></div>' . $luB
+		. '<p class="dbd-note">Starters from each team\'s current depth chart (nflverse, from ESPN), drawn in the offense\'s base three-receiver set against the defense\'s base front. The nickel back, the extra defensive back most teams use against three receivers, is drawn lighter. Left and right are as the offense sees the field. The toggle at the top flips which offense is drawn.</p></section>'; } }
+
 if ( ! $cards ) {
+	echo $luHtml;
 	echo '<div class="dbd-empty"><h2>Numbers appear after Week 1</h2><p>Takeaways, the head-to-head table and the pass zones fill in once both teams have played.</p></div></main>';
 	return;
 }
 if ( $early ) { echo '<div class="dbd-panel dbd-notice"><div class="dbd-pb">Fewer than three games for one or both teams. Ranks are shown, but treat every number as a small sample.</div></div>'; }
 
-/* ---- takeaways */
-echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Takeaways</b> · ' . ( $final ? 'from the season numbers, not this game alone' : 'generated from the numbers' ) . '</span><span class="dbd-badge">' . count( $cards ) . ' reads</span></div><div class="dbd-takes t-stagger">';
+/* ---- keys to the game (SCOPE §32, Takeaways renamed): the generated reads, and on an upcoming game the players to watch */
+echo '<section class="dbd-panel dbd-keys"><div class="dbd-ph"><span class="dbd-lab"><b>Keys to the game</b> · ' . ( $final ? 'from the season numbers, not this game alone' : 'where this matchup tilts, from the season numbers' ) . '</span><span class="dbd-badge">' . count( $cards ) . ' reads</span></div><div class="dbd-takes t-stagger">';
 $n = 0;
 foreach ( $cards as $c ) {
 	$n++;
 	echo '<div class="dbd-take t-stagger-line t-stagger-line--' . $n . ' ' . esc_attr( $c[1] ) . '"><span class="n">' . sprintf( '%02d', $n ) . '</span><div class="tag">' . esc_html( $c[0] ) . '</div><h3>' . esc_html( $c[2] ) . '</h3><p>' . esc_html( $c[3] ) . '</p>' . ( $early ? '<span class="small">Early season: small samples</span>' : '' ) . '</div>';
 }
-echo '</div></section>';
+echo '</div>';
+if ( ! $final ) { $pw = DBD_Lineup::watch( $AWAY ) . DBD_Lineup::watch( $HOME ); if ( $pw ) { echo '<h4 class="dbd-wph">Players to watch</h4><div class="dbd-pw2">' . $pw . '</div>'; } }
+echo '</section>';
+echo $luHtml;
 
 /* ---- head to head + zones */
 echo '<div class="dbd-mgrid">';

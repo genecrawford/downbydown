@@ -29,6 +29,8 @@ Writes:
   metrics.json    offense/defense metrics per team, league averages, ranks, through_week
   schedule.json   {season, current_week, weeks: {"1": [games], ...}} with status per game
   wp/w{N}.json    win probability for each final game that week: regulation series, overtime scores, top swings, turning point, low point (SCOPE §30)
+  lineups.json    each team's starters from its latest depth chart, offense, defense and special teams, with jerseys and defenders' season lines (SCOPE §32)
+  box/w{N}.json   each final game's box score: offense lines with snap share, defense sacks and interceptions, kicking (SCOPE §32)
   manifest.json   {season, week, through_week, built_at, files: {path: sha1}}
 
 Runs nightly in GitHub Actions during the season; the WordPress plugin pulls what changed.
@@ -625,6 +627,78 @@ if have_pbp and 'vegas_home_wp' in df.columns:
     for wk, games in byweek.items():
         json.dump(dict(season=season, week=wk, games=games), open(f'{out}/wp/w{wk}.json', 'w'), separators=(',', ':'))
     print('win probability:', sum(len(v) for v in byweek.values()), 'games in', len(byweek), 'weeks')
+
+# ---------------------------------------------------------------- lineups and box scores (SCOPE §32)
+# lineups.json: each team's starters from its latest depth chart snapshot (the file is daily), every position, with jersey
+# numbers from the roster and, for defenders and kickers, their season line. box/w{N}.json: each final game's player lines,
+# offense with snap share, defense (sacks, interceptions) and kicking (field goals), from the weekly stats for every player.
+DEF_K = ['def_tackles_solo', 'def_tackle_assists', 'def_sacks', 'def_interceptions', 'def_pass_defended', 'def_tackles_for_loss']
+def _short(name):
+    parts = str(name or '').split(' '); return (parts[0][:1] + '.' + parts[-1]) if len(parts) > 1 else str(name or '')
+jersey = {r.gsis_id: c(r.jersey_number) for r in _r.itertuples() if isinstance(r.gsis_id, str)}
+seasonal = {}
+if len(stats):
+    for pid, g in stats.groupby('player_id'):
+        row = {k: float(g[k].fillna(0).sum()) for k in DEF_K + ['fg_made', 'fg_att'] if k in g.columns}
+        if 'fg_long' in g.columns: row['fg_long'] = float(g['fg_long'].fillna(0).max())
+        seasonal[pid] = row
+def _defl(pid):
+    s = seasonal.get(pid, {}); return [int(s.get('def_tackles_solo', 0) + s.get('def_tackle_assists', 0)), round(s.get('def_sacks', 0), 1), int(s.get('def_interceptions', 0)), int(s.get('def_pass_defended', 0)), round(s.get('def_tackles_for_loss', 0), 1)]
+# league ranks for the playmaking stats the players-to-watch cards quote
+_rk = {}
+for k in ('def_sacks', 'def_interceptions', 'def_pass_defended'):
+    vals = sorted((v.get(k, 0) for v in seasonal.values() if v.get(k, 0) > 0), reverse=True)
+    _rk[k] = lambda x, vals=vals: [1 + sum(1 for y in vals if y > x), 1 if sum(1 for y in vals if y == x) > 1 else 0] if x > 0 else None  # [rank, tied]
+if env('DBD_DEPTH'):
+    _dc = pd.read_csv(env('DBD_DEPTH'), low_memory=False, usecols=['dt', 'team', 'player_name', 'gsis_id', 'pos_grp', 'pos_name', 'pos_abb', 'pos_slot', 'pos_rank'])
+    _dc = _dc[_dc['dt'] == _dc.groupby('team')['dt'].transform('max')]  # each team's latest snapshot
+    lineups = {}
+    for t, g in _dc.groupby('team'):
+        if t not in T: continue
+        u = {'off': {}, 'def': {}, 'st': {}, 'grp': {}}
+        for r in g.sort_values('pos_rank').itertuples():
+            unit = 'st' if 'Special' in str(r.pos_grp) else ('def' if str(r.pos_grp).startswith('Base') else 'off')
+            key = r.pos_abb + (str(int(r.pos_slot)) if r.pos_abb == 'WR' and r.pos_slot == r.pos_slot else '')  # receivers are told apart by slot
+            if key in u[unit] or (unit == 'off' and r.pos_abb == 'FB'): continue  # the slot's starter is its lowest rank; a fullback is not in the three-receiver set
+            if not isinstance(r.player_name, str) or not r.player_name.strip(): continue  # an entry with no name gives the slot to the next player listed
+            pid = r.gsis_id if isinstance(r.gsis_id, str) else None
+            e = dict(id=pid, name=c(r.player_name), pos=c(r.pos_name), num=jersey.get(pid))
+            if unit == 'def' and pid:
+                e['s'] = _defl(pid); sv = seasonal.get(pid, {})
+                e['rk'] = [_rk['def_sacks'](sv.get('def_sacks', 0)), _rk['def_interceptions'](sv.get('def_interceptions', 0)), _rk['def_pass_defended'](sv.get('def_pass_defended', 0))]
+            if unit == 'st' and pid and r.pos_abb == 'PK':
+                sv = seasonal.get(pid, {}); e['fg'] = [int(sv.get('fg_made', 0)), int(sv.get('fg_att', 0)), int(sv.get('fg_long', 0))]
+            u[unit][key] = e; u['grp'][unit] = c(r.pos_grp)
+        lineups[t] = u
+    json.dump(clean(dict(season=season, teams=lineups)), open(f'{out}/lineups.json', 'w'), separators=(',', ':'))
+    print('lineups:', len(lineups), 'teams;', sum(len(v['off']) for v in lineups.values()), 'offensive and', sum(len(v['def']) for v in lineups.values()), 'defensive starters')
+# box scores: every final game, both teams
+os.makedirs(f'{out}/box', exist_ok=True)
+if len(stats):
+    snap_of = {p['id']: p['snaps'] for pl in team_players.values() for p in pl}
+    OFFK = ['completions', 'attempts', 'passing_yards', 'passing_tds', 'passing_interceptions', 'sacks_suffered', 'passing_epa', 'carries', 'rushing_yards', 'rushing_tds', 'rushing_epa', 'targets', 'receptions', 'receiving_yards', 'receiving_tds', 'receiving_epa']
+    tcol = 'team' if 'team' in stats.columns else 'recent_team'
+    byweek = {}
+    for wk, gl in weeks.items():
+        for gm in gl:
+            if gm['status'] != 'final': continue
+            rec = {}
+            for side, tm in (('away', gm['away']), ('home', gm['home'])):
+                rows = stats[(stats.week == int(wk)) & (stats[tcol] == tm)]
+                offr, defr, kick = [], [], None
+                for r in rows.itertuples():
+                    v = {k: _num(getattr(r, k, 0)) for k in OFFK}
+                    if v['attempts'] or v['carries'] or v['targets']:
+                        offr.append([r.player_id, _short(getattr(r, 'player_display_name', '')), c(getattr(r, 'position', None)), (snap_of.get(r.player_id) or {}).get(str(int(wk)))] + [round(v[k], 2) if 'epa' in k else int(v[k]) for k in OFFK])
+                    sk, it = _num(getattr(r, 'def_sacks', 0)), _num(getattr(r, 'def_interceptions', 0))
+                    if sk or it: defr.append([_short(getattr(r, 'player_display_name', '')), round(sk, 1), int(it)])
+                    if _num(getattr(r, 'fg_att', 0)): kick = [_short(getattr(r, 'player_display_name', '')), int(_num(r.fg_made)), int(_num(r.fg_att)), int(_num(getattr(r, 'fg_long', 0)))]
+                defr.sort(key=lambda x: -(x[1] * 2 + x[2] * 3))
+                rec[side] = dict(team=tm, off=offr, d=defr, k=kick)
+            byweek.setdefault(int(wk), {})[gm['id']] = rec
+    for wk, games in byweek.items():
+        json.dump(clean(dict(season=season, week=wk, keys=['id', 'name', 'pos', 'snap'] + OFFK, games=games)), open(f'{out}/box/w{wk}.json', 'w'), separators=(',', ':'))
+    print('box scores:', sum(len(v) for v in byweek.values()), 'games in', len(byweek), 'weeks')
 
 # ---------------------------------------------------------------- movers (SCOPE §22): who moved in the last full week, against his own season
 MV_FLOOR = {'snaps': 12.0, 'targets': 6.0, 'epa': 4.0}; MV_MING = 2; MV_PER = 5; MV_DEBUT = 25; MV_START = 50; MV_PRIOR = 30

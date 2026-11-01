@@ -76,10 +76,12 @@ class DBD_Router {
 			$r['view'] = 'compare'; $r['compare'] = $rows; $r['cgroup'] = $grp; $r['cmixed'] = $mixed;
 		} elseif ( $view === 'players' ) {
 			$r['view']  = 'players';
-			$r['pteam'] = isset( $teams[ $team ] ) ? $team : '';
+			$pt = strtoupper( self::q( 'pt' ) );  /* the index's own team filter; team= opens that team's page */
+			$r['pteam'] = isset( $teams[ $team ] ) ? $team : ( isset( $teams[ $pt ] ) ? $pt : '' ); $r['ptfilter'] = ! isset( $teams[ $team ] ) && isset( $teams[ $pt ] );
 			$pos        = strtoupper( self::q( 'pos' ) );
 			$r['pos']   = in_array( $pos, array( 'QB', 'RB', 'WR', 'TE' ), true ) ? $pos : '';
 			$r['q']     = mb_substr( self::q( 'q' ), 0, 40 );
+			if ( $r['pteam'] && ! $r['ptfilter'] && $r['q'] === '' ) { $r['view'] = 'teamplayers'; }  /* a team's players is its own page (SCOPE §32); the league index filters by team in place */
 		} elseif ( $team !== '' ) {
 			$r['view'] = isset( $teams[ $team ] ) ? 'team' : 'notfound';
 			$r['team'] = $team;
@@ -149,6 +151,7 @@ class DBD_Router {
 			case 'compare':
 				$names = array_map( function ( $p ) { return $p['name']; }, $r['compare'] );
 				return array( $names ? implode( ' vs ', $names ) : 'Compare players', $names ? 'Side by side: where each grades against the league, where the ball finds each of them, and how their weeks line up.' : 'Pick two or three players of one position and see them side by side.' );
+			case 'teamplayers':
 			case 'players':
 				if ( $r['pteam'] ) { $t = DBD_Data::team( $r['pteam'] ); return array( "{$t['nick']} players", "Every {$t['name']} skill player who has taken an offensive snap in $season, with snap share, targets, carries, yards, EPA and this week's injury status." ); }
 				return array( 'Pick a player', "Every NFL skill player who has taken an offensive snap in $season: snap share, targets, carries, yards, touchdowns, EPA and injury status, by team and position." );
@@ -178,7 +181,8 @@ class DBD_Router {
 		if ( $r['view'] === 'matchups' ) { $args = array( 'view' => 'matchups' ); if ( $r['week'] !== DBD_Data::current_week() ) { $args['week'] = $r['week']; } }
 		if ( $r['view'] === 'teams' ) { $args = array( 'view' => 'teams' ); }
 		if ( $r['view'] === 'player' ) { $args = array( 'player' => $r['player']['id'] ); }
-		if ( $r['view'] === 'players' ) { $args = array( 'view' => 'players' ); if ( $r['pteam'] ) { $args['team'] = $r['pteam']; } if ( $r['pos'] ) { $args['pos'] = $r['pos']; } }
+		if ( $r['view'] === 'players' ) { $args = array( 'view' => 'players' ); if ( $r['pteam'] ) { $args['pt'] = $r['pteam']; } if ( $r['pos'] ) { $args['pos'] = $r['pos']; } }
+		if ( $r['view'] === 'teamplayers' ) { $args = array( 'view' => 'players', 'team' => $r['pteam'] ); }
 		if ( $r['view'] === 'compare' ) { $ids = array_map( function ( $p ) { return $p['id']; }, $r['compare'] ); sort( $ids ); $args = $ids ? array( 'compare' => implode( ',', $ids ) ) : array( 'view' => 'players' ); }
 		$url = self::url( $args );
 		echo "\n" . '<meta name="description" content="' . esc_attr( $d ) . '">' . "\n";

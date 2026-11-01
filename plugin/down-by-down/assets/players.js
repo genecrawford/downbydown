@@ -43,7 +43,7 @@
     pick.querySelectorAll('.dbd-mkbtn').forEach(function (b) { b.classList.toggle('on', (b.dataset.team || '') === st.team); });
     pos.querySelectorAll('.t-tab').forEach(function (b) { b.setAttribute('aria-selected', (b.dataset.v || '') === st.pos ? 'true' : 'false'); });
     slidePill(pos, pos.querySelector('[aria-selected="true"]'), true);
-    try { history.replaceState(null, '', url({ team: st.team, pos: st.pos, q: st.q })); } catch (e) {}
+    try { history.replaceState(null, '', url({ pt: st.team, pos: st.pos, q: st.q })); } catch (e) {}  /* pt=, not team=: ?view=players&team= is the team's own page (1.9.0) */
     /* movers (SCOPE §22): the team tile marks its rows, position and search dim the rest */
     root.querySelectorAll('#dbd-mv [data-id]').forEach(function (el) {
       el.classList.toggle('hi', !!st.team && el.dataset.team === st.team);

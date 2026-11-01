@@ -29,6 +29,8 @@ jobs:
           php tools/view_harness.php data players
           php tools/view_harness.php data team MIN
           php tools/view_harness.php data game 2026_04_LA_PHI
+          php tools/view_harness.php data game 2026_08_KC_DEN
+          php tools/view_harness.php data teamplayers MIN
           php tools/view_harness.php data hub
       - name: Render share cards
         run: |

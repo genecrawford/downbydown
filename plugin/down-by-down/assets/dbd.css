@@ -1090,3 +1090,71 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 @container dbd (max-width:940px){.dbd .dbd-score2{grid-template-columns:minmax(0,1fr)}.dbd .dbd-score2 table+table thead{display:none}}  /* the scorecard's two columns need about 940px; below that, one */
 .dbd .dbd-note{font:400 12px/1.5 var(--dbd-body)}  /* notes in the reading face, like the rest of the small print */
 .dbd .dbd-cpct .cv{font:600 13px var(--dbd-body);font-variant-numeric:tabular-nums}  /* compare's values join the type scale */
+/* 1.9.0 · the lineups (SCOPE §32): a play-art board, offense below the line, defense above */
+.dbd .dbd-luwrap{padding:12px var(--dbd-edge) 8px}
+.dbd .dbd-lulists{display:none}  /* on a wide screen the board names everyone and its tooltips carry the season; the list is the phone's version */
+.dbd .dbd-lufield{position:relative;aspect-ratio:16/7;border-radius:6px;overflow:hidden;
+  background:repeating-linear-gradient(0deg,transparent 0 calc(10% - 1px),rgba(255,255,255,.08) calc(10% - 1px) 10%),linear-gradient(180deg,#1d4a32,#235a3c)}
+.dbd .dbd-lufield.unit{aspect-ratio:16/7;max-width:900px;margin:12px auto 4px;width:calc(100% - 2 * var(--dbd-edge))}
+.dbd .dbd-lulos{position:absolute;left:0;right:0;top:52.5%;border-top:2px solid rgba(255,255,255,.55)}
+.dbd .dbd-lulos.off{top:19%}.dbd .dbd-lulos.def{top:84%}
+.dbd .dbd-lutag{position:absolute;left:10px;font:700 11px var(--dbd-display);text-transform:uppercase;letter-spacing:.12em;color:rgba(255,255,255,.75)}
+.dbd .dbd-lutag.def{top:8px}.dbd .dbd-lutag.off{bottom:8px}
+.dbd .dbd-lup{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:2px;text-decoration:none;z-index:2}
+.dbd .dbd-lup i{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;font:800 12px var(--dbd-hero);font-style:normal;background:var(--c);color:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.9)}
+.dbd .dbd-lup.def i{background:#fff;color:var(--c);box-shadow:inset 0 0 0 3px var(--c)}
+.dbd .dbd-lup.fade{opacity:.55}
+.dbd .dbd-lup span{font:600 12px var(--dbd-body);color:#fff;white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.dbd .dbd-lup.lo span{margin-top:14px}
+.dbd .dbd-lup.def{flex-direction:column-reverse}.dbd .dbd-lup.def.lo span{margin:0 0 14px}
+.dbd .dbd-lup.sk:hover i,.dbd .dbd-lup:focus-visible i{transform:scale(1.12)}
+.dbd .dbd-lulists{grid-template-columns:1fr;gap:12px;align-content:start}
+.dbd .dbd-lulists h4{margin:0 0 4px;font:700 12px var(--dbd-display);text-transform:uppercase;letter-spacing:.12em;color:var(--dbd-ink-2)}
+.dbd .dbd-lulist{list-style:none;margin:0;padding:0}
+.dbd .dbd-lulist li{display:grid;grid-template-columns:42px minmax(0,1fr);gap:8px;padding:4px 0;border-top:1px solid var(--dbd-line);font:500 13px var(--dbd-body)}
+.dbd .dbd-lulist li b{font:700 11px var(--dbd-display);letter-spacing:.08em;color:var(--dbd-muted);padding-top:2px}
+.dbd .dbd-lulist .n a{color:var(--dbd-ink);font-weight:600}
+.dbd .dbd-lulist .n small{display:block;font:400 12px var(--dbd-body);color:var(--dbd-muted)}
+.dbd .dbd-lulist.st{padding:12px var(--dbd-edge);display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 24px}
+
+/* players to watch */
+.dbd .dbd-pw2{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:0 var(--dbd-edge) 14px}
+.dbd .dbd-pwcol h4{display:flex;align-items:center;gap:8px;margin:0 0 6px;font:700 12px var(--dbd-display);text-transform:uppercase;letter-spacing:.12em;color:var(--dbd-ink-2)}
+.dbd .dbd-pw{display:flex;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--dbd-line);text-decoration:none;color:inherit}
+.dbd .dbd-pw b{display:block;font:600 14px var(--dbd-body);color:var(--dbd-ink)}
+.dbd .dbd-pw small{display:block;font:400 12px var(--dbd-body);color:var(--dbd-muted)}
+.dbd .dbd-pw em{display:block;font:600 12px var(--dbd-body);font-style:normal;color:var(--dbd-ink-2)}.dbd .dbd-pw em.top{color:var(--dbd-good)}
+.dbd a.dbd-pw:hover b{color:var(--dbd-red-ink)}
+
+/* box score */
+.dbd .dbd-bx2{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:6px var(--dbd-edge) 8px}
+.dbd .dbd-bxteam h4{display:flex;align-items:center;gap:8px;margin:4px 0 6px;font:700 13px var(--dbd-display);text-transform:uppercase;letter-spacing:.12em;color:var(--dbd-ink)}
+.dbd table.dbd-bx{width:100%;border-collapse:collapse;margin-bottom:10px}
+.dbd table.dbd-bx th{text-align:right;padding:5px 4px;border-bottom:1px solid var(--dbd-line-2)}
+.dbd table.dbd-bx th:first-child{text-align:left;color:var(--dbd-ink)!important}
+.dbd table.dbd-bx td{text-align:right;padding:5px 4px;border-bottom:1px solid var(--dbd-line)}
+.dbd table.dbd-bx td.nm{text-align:left}.dbd table.dbd-bx td.nm a{color:var(--dbd-ink);font-weight:600}.dbd table.dbd-bx td.nm small{margin-left:6px;font:400 12px var(--dbd-body);color:var(--dbd-muted)}
+.dbd .dbd-bxdk{margin:2px 0 6px;font:400 13px/1.5 var(--dbd-body);color:var(--dbd-ink-2)}.dbd .dbd-bxdk b{color:var(--dbd-ink)}
+
+/* team players: the roster by position, this team's movers */
+.dbd .dbd-rost .gh th{padding:12px 6px 4px;text-align:left;font:700 12px var(--dbd-display)!important;text-transform:uppercase!important;letter-spacing:.12em!important;color:var(--dbd-red)!important;border-bottom:1px solid var(--dbd-line-2)}
+.dbd .dbd-rost td.nm a{color:var(--dbd-ink);font-weight:600}.dbd .dbd-rost td.nm small{margin-left:6px;color:var(--dbd-muted)}
+.dbd .dbd-mvlist{list-style:none;margin:0;padding:8px var(--dbd-edge) 14px}.dbd .dbd-mvlist li{padding:6px 0;border-top:1px solid var(--dbd-line);font:500 14px var(--dbd-body)}
+.dbd .dbd-mvlist .up{color:var(--dbd-good);font-weight:600}.dbd .dbd-mvlist .dn{color:var(--dbd-bad);font-weight:600}.dbd .dbd-mvlist small{color:var(--dbd-muted)}
+
+@container dbd (max-width:760px){
+  .dbd .dbd-lulists{display:grid;margin-top:12px}
+  .dbd .dbd-lufield{aspect-ratio:16/11}
+  .dbd .dbd-pw2,.dbd .dbd-bx2{grid-template-columns:1fr}
+}
+@container dbd (max-width:600px){
+  .dbd .dbd-lup span{display:none}            /* numbers only on a phone; the list below names everyone */
+  .dbd .dbd-lup i{width:20px;height:20px;font-size:11px;box-shadow:0 0 0 1.5px rgba(255,255,255,.9)}
+  .dbd .dbd-lup.def i{box-shadow:inset 0 0 0 2px var(--c)}
+  .dbd .dbd-lutag{display:none}
+  .dbd .dbd-lufield.unit{aspect-ratio:16/10}
+  .dbd .dbd-lulist.st{grid-template-columns:1fr}
+}
+/* the player marks in Players to watch */
+.dbd .dbd-pw>.dbd-mk,.dbd .dbd-pw>.dbd-head{flex:none}
+.dbd .dbd-pwcol h4 .dbd-mk{vertical-align:middle}

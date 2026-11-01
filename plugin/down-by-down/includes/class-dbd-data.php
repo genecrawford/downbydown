@@ -134,6 +134,18 @@ class DBD_Data {
 	}
 
 	/** The game a team played in a week, or null (bye). */
+	/** Each team's starters from its latest depth chart (SCOPE §32): offense, defense and special teams; empty before the file exists. */
+	public static function lineup( $abbr ) {
+		return self::get( 'lineups.json' )['teams'][ $abbr ] ?? null;
+	}
+
+	/** A final game's box score (SCOPE §32): ['keys' => offense columns, 'away' => [...], 'home' => [...]]; null before the file exists. */
+	public static function box( $game ) {
+		$f = self::get( 'box/w' . (int) ( $game['week'] ?? 0 ) . '.json' );
+		$g = $f['games'][ $game['id'] ?? '' ] ?? null;
+		return $g ? array_merge( $g, array( 'keys' => $f['keys'] ?? array() ) ) : null;
+	}
+
 	/** A final game's win probability record (SCOPE §30), from wp/w{week}.json; null before the file exists or for a game not yet final. */
 	public static function win_prob( $game ) {
 		$f = self::get( 'wp/w' . (int) ( $game['week'] ?? 0 ) . '.json' );

@@ -88,7 +88,7 @@ class DBD_Sync {
 		$have  = $local['files'] ?? array();
 
 		foreach ( $remote['files'] as $rel => $hash ) {
-			if ( ! preg_match( '#^(plays/[A-Z]{2,3}|players/(?:[A-Z]{2,3}|index|league|movers|career/[A-Z]{2,3})|wp/w\d{1,2}|teams|metrics|schedule)\.json$#', $rel ) ) { continue; }
+			if ( ! preg_match( '#^(plays/[A-Z]{2,3}|players/(?:[A-Z]{2,3}|index|league|movers|career/[A-Z]{2,3})|wp/w\d{1,2}|box/w\d{1,2}|lineups|teams|metrics|schedule)\.json$#', $rel ) ) { continue; }
 			$path = $dir . '/' . $rel;
 			if ( isset( $have[ $rel ] ) && $have[ $rel ] === $hash && file_exists( $path ) ) { continue; }
 			$get = wp_remote_get( $base . $rel, array( 'timeout' => 30 ) );

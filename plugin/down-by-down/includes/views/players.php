@@ -77,12 +77,12 @@ if ( $MV && ! empty( $MV['week'] ) ) {
 echo '<section class="dbd-panel"><div class="dbd-toolbar dbd-ptools">';
 echo '<div class="dbd-fg"><span>Team</span><div class="dbd-teampick" id="dbd-teampick"><a class="dbd-mkbtn' . ( $team ? '' : ' on' ) . '" href="' . esc_url( $purl( $pos ? array( 'pos' => $pos ) : array() ) ) . '" data-team="" title="All teams">ALL</a>';
 foreach ( array_keys( DBD_Data::teams() ) as $a ) {
-	echo '<a class="dbd-mkbtn' . ( $a === $team ? ' on' : '' ) . '" href="' . esc_url( $purl( array_filter( array( 'team' => $a, 'pos' => $pos ) ) ) ) . '" data-team="' . esc_attr( $a ) . '" title="' . esc_attr( DBD_Data::team( $a )['name'] ) . '">' . DBD_Marks::tile( $a, 32 ) . '</a>';
+	echo '<a class="dbd-mkbtn' . ( $a === $team ? ' on' : '' ) . '" href="' . esc_url( $purl( array_filter( array( 'pt' => $a, 'pos' => $pos ) ) ) ) . '" data-team="' . esc_attr( $a ) . '" title="' . esc_attr( DBD_Data::team( $a )['name'] ) . '">' . DBD_Marks::tile( $a, 32 ) . '</a>';
 }
 echo '</div></div>';
 echo '<div class="dbd-fg"><span>Position</span><div class="dbd-seg t-tabs" id="dbd-pos" role="tablist"><span class="t-tabs-pill" aria-hidden="true"></span>';
 foreach ( array( '' => 'All', 'QB' => 'QB', 'RB' => 'RB', 'WR' => 'WR', 'TE' => 'TE' ) as $k => $lab ) {
-	echo '<a class="t-tab" role="tab" href="' . esc_url( $purl( array_filter( array( 'team' => $team, 'pos' => $k ) ) ) ) . '" data-v="' . esc_attr( $k ) . '" aria-selected="' . ( $pos === $k ? 'true' : 'false' ) . '">' . $lab . '</a>';
+	echo '<a class="t-tab" role="tab" href="' . esc_url( $purl( array_filter( array( 'pt' => $team, 'pos' => $k ) ) ) ) . '" data-v="' . esc_attr( $k ) . '" aria-selected="' . ( $pos === $k ? 'true' : 'false' ) . '">' . $lab . '</a>';
 }
 echo '</div></div>';
 echo '<div class="dbd-fg"><label for="dbd-pq">Search</label><input class="dbd-srch" id="dbd-pq" type="search" value="' . esc_attr( $q ) . '" placeholder="Name, number or college" autocomplete="off"></div>';
