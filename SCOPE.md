@@ -1447,3 +1447,5 @@ Roadmap 2 slice 8. Who leads the league in what this site measures? A new page, 
 Fantasy tab in half PPR: Josh Allen leads QBs at 26.8, Jahmyr Gibbs RBs at 25.8, Jaxon Smith-Njigba WRs at 23.9, Brock Bowers TEs at 15.7 (through Week 8). Receivers, target share: the leader's value matches his Scorecard. Drop rate ranks lowest first. The full board's usage filter changes the count and renumbers. No overflow at 375.
 
 Size: M. Status: built as 1.13.0.
+
+Addendum (Gene, 2026-11-01): "we need to separate the WR's and TE's … most fantasy leagues treat them as different scoring/ranking positions." Built in 1.13.1: the Receivers and tight ends tab becomes two tabs, Wide receivers and Tight ends, each ranking only its own position (same 15-target pool, same sixteen boards); the All / WR / TE switch is gone. Full boards are `wr.*` and `te.*`; `rec.*` links and `g=rec` open the wide receivers. The player page Scorecard still grades receivers and tight ends in one pool; splitting that pool is a separate, larger change.

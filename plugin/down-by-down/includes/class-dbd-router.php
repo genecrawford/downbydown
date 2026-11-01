@@ -76,6 +76,7 @@ class DBD_Router {
 			$r['view'] = 'compare'; $r['compare'] = $rows; $r['cgroup'] = $grp; $r['cmixed'] = $mixed;
 		} elseif ( $view === 'leaders' ) {  /* Leaders (SCOPE §37): a tab (g=) or one full board (b=) */
 			$r['view'] = 'leaders'; $g = strtolower( self::q( 'g' ) ); $b = self::q( 'b' );
+			if ( $g === 'rec' ) { $g = 'wr'; }  /* 1.13.0's combined tab */
 			$r['lgroup'] = isset( DBD_Leaders::GROUPS[ $g ] ) ? $g : 'fan';
 			$r['lboard'] = preg_match( '/^[a-z]{2,3}\.[A-Za-z0-9]{1,8}(\.[A-Za-z0-9]{1,8})?$/', $b ) ? $b : '';
 		} elseif ( self::q( 'myteam' ) !== '' || $view === 'myteam' ) {  /* My team (SCOPE §36): the team is the address; an empty one restores from the device in myteam.js */
