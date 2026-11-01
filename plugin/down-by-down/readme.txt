@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.9.0
+Stable tag: 1.10.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,11 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.10.0 =
+* The series (SCOPE §33): every game page adds the two teams' series since 1999, read from the away team's side. A read with the series leader, the streak and the last meeting (date, stadium, score, starting quarterbacks and coaches); home and road records, most points and biggest win each way, playoff meetings when there are any; the last five meetings, linked when they were this season; and both teams' records this season side by side.
+* Team players pages carry the record broken down under the title: overall, division, conference, home, away and the streak.
+* The build writes series.json, and the sync pulls it.
 
 = 1.9.0 =
 * Game page (SCOPE §32). Takeaways are now Keys to the game, and an upcoming game adds Players to watch: each team's quarterback, lead back and two most-targeted receivers, and its defense's two playmakers, with league ranks.

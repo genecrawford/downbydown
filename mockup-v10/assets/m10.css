@@ -1,0 +1,20 @@
+.mk-bar{position:sticky;top:0;z-index:60;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;padding:8px 16px;background:#fff7d6;border-bottom:1px solid #e6d58a;font:500 13px "IBM Plex Sans",sans-serif;color:#3b4255}
+.mk-bar b{font-weight:600;color:#121417}.mk-bar label{margin-left:auto;display:flex;gap:6px;align-items:center}
+.mk-new{position:relative;outline:2px dashed #cb2026;outline-offset:4px}
+.mk-new::before{content:attr(data-mk);position:absolute;top:-13px;left:12px;z-index:6;background:#cb2026;color:#fff;font:700 10px "Barlow Condensed",sans-serif;letter-spacing:.14em;text-transform:uppercase;padding:2px 7px;border-radius:3px}
+.mk-off .mk-new{outline:0}.mk-off .mk-new::before{display:none}
+@media (max-width:600px){.mk-bar{position:static}}
+/* ===== the series (ships in dbd.css) ===== */
+.dbd .dbd-sr2{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:24px;padding:0 var(--dbd-edge) 8px}
+.dbd .dbd-wpchips.sr{grid-template-columns:repeat(2,minmax(0,1fr));padding:10px 0 4px}
+.dbd .dbd-wpchips.sr b{font-size:18px}
+.dbd .dbd-sr2 .dbd-wph{margin:12px 0 4px}
+.dbd .dbd-srl,.dbd .dbd-srr{width:100%;border-collapse:collapse}
+.dbd .dbd-srl td,.dbd .dbd-srr td,.dbd .dbd-srr th{padding:7px 6px;border-bottom:1px solid var(--dbd-line)}
+.dbd .dbd-srl td:first-child{color:var(--dbd-muted);white-space:nowrap}
+.dbd .dbd-srl span{color:var(--dbd-muted)}.dbd .dbd-srl span.w{color:var(--dbd-ink);font-weight:600}.dbd .dbd-srl i{font-style:normal;color:var(--dbd-muted);margin:0 4px}
+.dbd .dbd-srl td.r{text-align:right}
+.dbd .dbd-srr th{text-align:right}.dbd .dbd-srr td{text-align:right;font-weight:600;color:var(--dbd-ink)}.dbd .dbd-srr td:first-child,.dbd .dbd-srr th:first-child{text-align:left;font-weight:500;color:var(--dbd-ink-2)}
+.dbd .dbd-srr .dots{display:inline-flex;gap:3px}.dbd .dbd-srr .dots i{display:grid;place-items:center;width:18px;height:18px;border-radius:3px;font:700 11px var(--dbd-body);font-style:normal;color:#fff}
+.dbd .dbd-srr .dots i.w{background:var(--dbd-good)}.dbd .dbd-srr .dots i.l{background:var(--dbd-bad)}.dbd .dbd-srr .dots i.t{background:var(--dbd-muted)}
+@container dbd (max-width:760px){.dbd .dbd-sr2{grid-template-columns:minmax(0,1fr)}.dbd .dbd-wpchips.sr b{font-size:16px}.dbd .dbd-srr td,.dbd .dbd-srr th{padding:7px 3px}.dbd .dbd-srr .dots{gap:2px}.dbd .dbd-srr .dots i{width:15px;height:16px}}

@@ -173,6 +173,51 @@ foreach ( $cards as $c ) {
 echo '</div>';
 if ( ! $final ) { $pw = DBD_Lineup::watch( $AWAY ) . DBD_Lineup::watch( $HOME ); if ( $pw ) { echo '<h4 class="dbd-wph">Players to watch</h4><div class="dbd-pw2">' . $pw . '</div>'; } }
 echo '</section>';
+/* ---- the series and the records (SCOPE §33): since 1999 from series.json, read from the away team's side, with both teams' records this season */
+$SR = DBD_Data::series( $AWAY, $HOME );
+if ( $SR && ! empty( $SR['n'] ) ) {
+	$srN = function ( $a ) { return DBD_Data::team( $a )['nick'] ?? $a; }; $wl = function ( $x ) { return (int) $x[0] . '–' . (int) $x[1] . ( ! empty( $x[2] ) ? '–' . (int) $x[2] : '' ); };
+	$lead = $SR['w'] > $SR['l'] ? $AWAY : ( $SR['l'] > $SR['w'] ? $HOME : null );
+	$srT = (int) ( $SR['t'] ?? 0 ) ? '–' . (int) $SR['t'] : '';  /* ties count, and show */
+	$srSince = (int) $SR['since'] . ( (int) $SR['first'] > (int) $SR['since'] ? ' (they first met in ' . (int) $SR['first'] . ')' : '' );
+	$srSay = $lead ? 'The ' . esc_html( $srN( $lead ) ) . ' lead the series <b>' . max( $SR['w'], $SR['l'] ) . '–' . min( $SR['w'], $SR['l'] ) . $srT . '</b> since ' . $srSince . '.' : 'The series is even at ' . (int) $SR['w'] . '–' . (int) $SR['l'] . $srT . ' since ' . $srSince . '.';
+	$sk = $SR['streak'] ?? null;
+	if ( $sk && $sk[0] && (int) $sk[1] > 1 ) { $srSay .= $sk[0] === $lead ? ' They have won the last ' . (int) $sk[1] . '.' : ' The ' . esc_html( $srN( $sk[0] ) ) . ' have won the last ' . (int) $sk[1] . '.'; }
+	$L = $SR['lastm'] ?? null;
+	if ( $L && ( $L['id'] ?? '' ) !== $g['id'] ) {  /* on a final, the last meeting is this game, which the panels above already cover */
+		$tie = (int) $L['home_score'] === (int) $L['away_score']; $lw = (int) $L['home_score'] > (int) $L['away_score'] ? $L['home'] : $L['away']; $ts = strtotime( $L['date'] ); $xmas = $ts && gmdate( 'm-d', $ts ) === '12-25';
+		$srSay .= ' <b>' . esc_html( $ts ? gmdate( 'M j, Y', $ts ) : $L['date'] ) . '</b>' . ( $xmas ? ' (Christmas)' : '' ) . ( ! empty( $L['stadium'] ) ? ', at ' . esc_html( $L['stadium'] ) : '' ) . ': '
+			. ( $tie ? 'the teams tied ' . (int) $L['home_score'] . '–' . (int) $L['away_score'] : 'the ' . esc_html( $srN( $lw ) ) . ' won ' . max( (int) $L['home_score'], (int) $L['away_score'] ) . '–' . min( (int) $L['home_score'], (int) $L['away_score'] ) ) . ( ! empty( $L['ot'] ) ? ' in overtime' : '' ) . '.';
+		if ( ! empty( $L['qb'][0] ) && ! empty( $L['qb'][1] ) ) { $srSay .= ' ' . esc_html( $L['qb'][1] ) . ' started at quarterback for the ' . esc_html( $srN( $L['home'] ) ) . ' and ' . esc_html( $L['qb'][0] ) . ' for the ' . esc_html( $srN( $L['away'] ) ) . ( ! empty( $L['coach'][0] ) && ! empty( $L['coach'][1] ) ? '; ' . esc_html( $L['coach'][1] ) . ' and ' . esc_html( $L['coach'][0] ) . ' coached.' : '.' ); }
+	} elseif ( $final ) { $srSay .= ' This game is the latest meeting.'; }
+	$hn = DBD_Data::team( $HOME ); $city = trim( str_replace( $hn['nick'], '', $hn['name'] ) );
+	$srChips = array( array( $srN( $AWAY ) . ' at home', $wl( $SR['home'] ), 'the ' . $srN( $AWAY ) . '\' record' ), array( 'In ' . $city, $wl( $SR['road'] ), 'the ' . $srN( $AWAY ) . '\' record' ),
+		array( 'Most points', $srN( $AWAY ) . ' ' . (int) $SR['most'][ $AWAY ][0] . ' · ' . $srN( $HOME ) . ' ' . (int) $SR['most'][ $HOME ][0], (int) $SR['most'][ $AWAY ][1] . ' · ' . (int) $SR['most'][ $HOME ][1] ),
+		array( 'Biggest win', ( (int) $SR['big'][ $AWAY ][0] ? $srN( $AWAY ) . ' by ' . (int) $SR['big'][ $AWAY ][0] : $srN( $AWAY ) . ': none' ) . ' · ' . ( (int) $SR['big'][ $HOME ][0] ? $srN( $HOME ) . ' by ' . (int) $SR['big'][ $HOME ][0] : $srN( $HOME ) . ': none' ), ( (int) $SR['big'][ $AWAY ][1] ?: '–' ) . ' · ' . ( (int) $SR['big'][ $HOME ][1] ?: '–' ) ) );
+	if ( ! empty( $SR['post'][0] ) || ! empty( $SR['post'][1] ) ) { $srChips[] = array( 'Playoffs', $wl( $SR['post'] ), 'the ' . $srN( $AWAY ) . '\' record' ); }
+	$chipH = ''; foreach ( $srChips as $cc ) { $chipH .= '<div class="c"><small>' . esc_html( $cc[0] ) . '</small><b>' . esc_html( $cc[1] ) . '</b><span>' . esc_html( (string) $cc[2] ) . '</span></div>'; }
+	$rows = '';
+	foreach ( array_reverse( (array) ( $SR['last5'] ?? array() ) ) as $m ) {
+		list( $mid, $ms, $mw, $mt, $ma, $mas, $mh, $mhs, $mot ) = $m; $win = $mas > $mhs ? $ma : ( $mhs > $mas ? $mh : '' );
+		$sc = '<span class="' . ( $win === $ma ? 'w' : '' ) . '">' . esc_html( $ma ) . ' ' . (int) $mas . '</span> <i>at</i> <span class="' . ( $win === $mh ? 'w' : '' ) . '">' . esc_html( $mh ) . ' ' . (int) $mhs . '</span>';
+		$lab = (int) $ms . ' · Wk ' . (int) $mw . ( $mot ? ' · OT' : '' ) . ( $mt !== 'REG' ? ' · playoffs' : '' );
+		$link = (int) $ms === (int) DBD_Data::season() && $mid !== $g['id'] ? DBD_Router::url( array( 'game' => $mid ) ) : '';
+		$rows .= '<tr><td>' . ( $link ? '<a href="' . esc_url( $link ) . '">' . esc_html( $lab ) . '</a>' : esc_html( $lab ) ) . '</td><td>' . $sc . '</td></tr>';
+	}
+	$recA = DBD_Data::record_split( $AWAY ); $recH = DBD_Data::record_split( $HOME ); $recT = '';
+	if ( $recA && $recH && ( $recA['g'] || $recH['g'] ) ) {
+		$cellr = function ( $r, $k ) use ( $wl ) { return isset( $r['rec'][ $k ] ) ? $wl( $r['rec'][ $k ] ) : '0–0'; };
+		$dots = function ( $s ) { $o = ''; foreach ( str_split( (string) $s ) as $ch ) { if ( $ch !== '' ) { $o .= '<i class="' . ( $ch === 'W' ? 'w' : ( $ch === 'L' ? 'l' : 't' ) ) . '">' . esc_html( $ch ) . '</i>'; } } return '<span class="dots">' . $o . '</span>'; };
+		$stk = function ( $s ) { return $s ? ( $s[0] === 'W' ? 'Won ' : ( $s[0] === 'L' ? 'Lost ' : 'Tied ' ) ) . substr( $s, 1 ) : '–'; };
+		$ppg = function ( $r ) { return $r['g'] ? number_format( $r['pf'] / $r['g'], 1 ) . ' – ' . number_format( $r['pa'] / $r['g'], 1 ) : '–'; };
+		foreach ( array( 'all' => 'Overall', 'div' => 'Division', 'conf' => 'Conference', 'nonconf' => 'Other conference', 'home' => 'Home', 'away' => 'Away' ) as $k => $lab ) { $recT .= '<tr><td>' . $lab . '</td><td>' . $cellr( $recA, $k ) . '</td><td>' . $cellr( $recH, $k ) . '</td></tr>'; }
+		$recT .= '<tr><td>Last 5</td><td>' . $dots( $recA['last5'] ) . '</td><td>' . $dots( $recH['last5'] ) . '</td></tr><tr><td>Streak</td><td>' . esc_html( $stk( $recA['streak'] ) ) . '</td><td>' . esc_html( $stk( $recH['streak'] ) ) . '</td></tr><tr><td>Points a game</td><td>' . $ppg( $recA ) . '</td><td>' . $ppg( $recH ) . '</td></tr>';
+		$recT = '<div><h4 class="dbd-wph">' . (int) DBD_Data::season() . ' records</h4><table class="dbd-stat dbd-srr"><thead><tr><th></th><th>' . esc_html( $srN( $AWAY ) ) . '</th><th>' . esc_html( $srN( $HOME ) ) . '</th></tr></thead><tbody>' . $recT . '</tbody></table></div>';
+	}
+	echo '<section class="dbd-panel dbd-series"><div class="dbd-ph"><span class="dbd-lab"><b>The series</b> · ' . esc_html( $srN( $AWAY ) ) . ' and ' . esc_html( $srN( $HOME ) ) . ' since ' . (int) $SR['since'] . ', and this season\'s records</span><span class="dbd-badge">' . (int) $SR['n'] . ' meetings</span></div>';
+	echo '<p class="dbd-wp-say">' . $srSay . '</p><div class="dbd-sr2"><div><div class="dbd-wpchips sr">' . $chipH . '</div><h4 class="dbd-wph">The last ' . count( (array) $SR['last5'] ) . '</h4><table class="dbd-stat dbd-srl"><tbody>' . $rows . '</tbody></table></div>' . $recT . '</div>';
+	echo '<p class="dbd-note">Every meeting since ' . (int) $SR['since'] . ', regular season and playoffs, from nflverse\'s game list, which starts in ' . (int) $SR['since'] . '; the all-time series goes back further. Franchises that moved count as one team (the Raiders, Chargers and Rams). Home and away are from the ' . esc_html( $srN( $AWAY ) ) . '\' side. Records are this regular season.</p></section>';
+}
 echo $luHtml;
 
 /* ---- head to head + zones */

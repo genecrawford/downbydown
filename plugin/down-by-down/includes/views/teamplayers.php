@@ -17,6 +17,14 @@ echo '<p class="dbd-kicker t-stagger-line t-stagger-line--1">' . esc_html( $thro
 echo '<h1 class="t-stagger-line t-stagger-line--2 withmark">' . DBD_Marks::pennant( $team, 48 ) . '<span><em>' . esc_html( $t['nick'] ) . '</em> players</span></h1>';
 echo '<p class="dbd-sub t-stagger-line t-stagger-line--3">The ' . esc_html( $t['nick'] ) . '\' lineup from the depth chart, every skill player\'s season, and who moved this week. <a href="' . esc_url( $turl ) . '">Open the ' . esc_html( $t['nick'] ) . ' offense explorer</a>.</p></div>';
 echo '<a class="dbd-badge" href="' . esc_url( $purl ) . '">All ' . (int) $all . ' players</a></div>';
+/* this season's record, broken down (SCOPE §33) */
+$RS = DBD_Data::record_split( $team );
+if ( $RS && $RS['g'] ) {
+	$w = function ( $k ) use ( $RS ) { $x = $RS['rec'][ $k ] ?? array( 0, 0, 0 ); return (int) $x[0] . '–' . (int) $x[1] . ( ! empty( $x[2] ) ? '–' . (int) $x[2] : '' ); };
+	$bits = array( '<b>' . $w( 'all' ) . '</b>', $w( 'div' ) . ' in the ' . esc_html( $t['div'] ), $w( 'conf' ) . ' in the ' . esc_html( $t['conf'] ), $w( 'home' ) . ' at home', $w( 'away' ) . ' away' );
+	if ( $RS['streak'] ) { $sv = $RS['streak'][0] === 'W' ? 'won' : ( $RS['streak'][0] === 'L' ? 'lost' : 'tied' ); $sn = (int) substr( $RS['streak'], 1 ); $bits[] = $sn > 1 ? $sv . ' ' . $sn . ' straight' : $sv . ' the last game'; }
+	echo '<p class="dbd-recline">' . implode( ' · ', $bits ) . '</p>';
+}
 
 /* ---- the lineup: one tabbed panel, a board per unit */
 $luO = DBD_Lineup::unit( $team, 'off' ); $luD = DBD_Lineup::unit( $team, 'def' ); $luS = DBD_Lineup::special( $team ); $lu = DBD_Data::lineup( $team );

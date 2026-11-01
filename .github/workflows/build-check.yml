@@ -112,6 +112,23 @@ jobs:
           if lu and len(lu) != 32: bad.append(f'{len(lu)} teams in lineups.json')
           if bad: print('\n'.join(bad)); sys.exit(1)
           PY
+      - name: Check the series and records (SCOPE §33)
+        run: |
+          python3 - <<'PY'
+          import json, sys
+          d = json.load(open('/tmp/out/series.json')); bad = []
+          sch = json.load(open('/tmp/out/schedule.json'))
+          pairs = {'-'.join(sorted((g['away'], g['home']))) for gl in sch['weeks'].values() for g in gl}
+          if pairs - set(d['pairs']): bad.append('pairs with no series: ' + ', '.join(sorted(pairs - set(d['pairs']))[:10]))
+          for t, r in d['records'].items():
+              if sum(r['rec'].get('all', [0, 0, 0])) != r['g']: bad.append(f'{t}: record does not add up to games played')
+              if sum(r['rec'].get('home', [0, 0, 0])) + sum(r['rec'].get('away', [0, 0, 0])) != r['g']: bad.append(f'{t}: home and away do not add up')
+          s = d['pairs'].get('DET-MIN')
+          if s: print('DET-MIN from DET side:', s['w'], '-', s['l'], 'home', s['home'], 'road', s['road'], 'streak', s['streak'], 'last', s['lastm']['date'], s['lastm']['qb'])
+          print('MIN record', d['records']['MIN']['rec'], d['records']['MIN']['streak'], '; DET', d['records']['DET']['rec'].get('all'))
+          print(len(d['pairs']), 'pairs since', d['first'])
+          if bad: print('\n'.join(bad)); sys.exit(1)
+          PY
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
@@ -126,6 +143,8 @@ jobs:
           UP=$(python3 -c "import json;s=json.load(open('/tmp/out/schedule.json'));print(next((g['id'] for w in sorted(s['weeks'],key=int) for g in s['weeks'][w] if g['status']!='final'),''))")
           if [ -n "$UP" ]; then php tools/view_harness.php /tmp/out game $UP && grep -q 'class="dbd-panel dbd-lu"' "pages/game-$UP.html" || { echo "no lineups on $UP"; exit 1; }; fi
           php tools/view_harness.php /tmp/out teamplayers MIN && grep -q 'dbd-lufield unit' pages/teamplayers-MIN.html || { echo "no lineup on the Vikings page"; exit 1; }
+          php tools/view_harness.php /tmp/out game 2026_08_MIN_DET && grep -q 'class="dbd-panel dbd-series"' pages/game-2026_08_MIN_DET.html || { echo "no series on Vikings at Lions"; exit 1; }
+          grep -q 'dbd-recline' pages/teamplayers-MIN.html || { echo "no record line on the Vikings page"; exit 1; }
       - uses: actions/upload-artifact@v4
         with:
           name: pages-fresh-data
