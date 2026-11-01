@@ -491,14 +491,16 @@ foreach ( $views as $name => $vd ) {
 	$gxMore = 0;
 	if ( $gxWeeks ) {
 		/* SCOPE §29: the bye and the weeks he missed sit in place, then this week's game; the rest of the schedule waits behind a button */
-		$ncol = 2 + ( $hasDef ? 1 : 0 ) + count( explode( '|', $cols ) ); $gxNext = false; $gxLater = '';
+		/* every cell is kept, so the stat columns the phone layout hides stay hidden on these rows too; the note sits under the opponent */
+		$gxPad = str_repeat( '<td></td>', ( $hasDef ? 1 : 0 ) + count( explode( '|', $cols ) ) ); $gxNext = false; $gxLater = '';
+		$gxTr = function ( $cls, $wk, $res_, $why, $later ) use ( $gxPad ) { return '<tr class="dbd-gx ' . $cls . ( $later ? ' later' : '' ) . '"' . ( $later ? ' hidden' : '' ) . '><td>' . (int) $wk . '</td><td class="res">' . $res_ . ( $why !== '' ? '<span class="why">' . $why . '</span>' : '' ) . '</td>' . $gxPad . '</tr>'; };
 		foreach ( $gxWeeks as $wk => $gr_ ) {
 			if ( $gr_['kind'] === 'game' ) { $body .= $gameRow( $gr_['w'] ); continue; }
-			if ( $gr_['kind'] === 'bye' ) { $body .= '<tr class="dbd-gx bye"><td>' . (int) $wk . '</td><td class="res" colspan="' . ( $ncol - 1 ) . '">Bye week</td></tr>'; continue; }
-			if ( $gr_['kind'] === 'dnp' ) { $iw = $p['injw'][ (string) $wk ] ?? null; $body .= '<tr class="dbd-gx dnp"><td>' . (int) $wk . '</td><td class="res">' . $res( $wk, $gr_['tm'] ) . '</td><td class="why" colspan="' . ( $ncol - 2 ) . '">Did not play' . ( $iw && ! empty( $iw[0] ) ? ' · ' . esc_html( $iw[0] ) . ( ! empty( $iw[1] ) ? ' (' . esc_html( strtolower( $iw[1] ) ) . ')' : '' ) : '' ) . '</td></tr>'; continue; }
+			if ( $gr_['kind'] === 'bye' ) { $tr = $gxTr( 'bye', $wk, 'Bye week', '', $gxNext ); if ( $gxNext ) { $gxLater .= $tr; } else { $body .= $tr; } continue; }  /* a bye still ahead waits in order with the games around it */
+			if ( $gr_['kind'] === 'dnp' ) { $iw = $p['injw'][ (string) $wk ] ?? null; $body .= $gxTr( 'dnp', $wk, $res( $wk, $gr_['tm'] ), 'Did not play' . ( $iw && ! empty( $iw[0] ) ? ' · ' . esc_html( $iw[0] ) . ( ! empty( $iw[1] ) ? ' (' . esc_html( strtolower( $iw[1] ) ) . ')' : '' ) : '' ), false ); continue; }
 			$gm = DBD_Data::team_game( $gr_['tm'], $wk ); $when = '';
 			if ( $gm && ! empty( $gm['date'] ) ) { try { $when = wp_date( 'D M j', ( new DateTime( $gm['date'] . ' ' . ( $gm['time'] ?: '13:00' ), new DateTimeZone( 'America/New_York' ) ) )->getTimestamp(), new DateTimeZone( 'America/New_York' ) ); } catch ( Exception $ex ) { $when = ''; } }
-			$tr = '<tr class="dbd-gx up' . ( $gxNext ? '' : ' next' ) . '"' . ( $gxNext ? ' hidden' : '' ) . '><td>' . (int) $wk . '</td><td class="res">' . ( $gr_['tm'] !== $a ? esc_html( $gr_['tm'] ) . ' ' : '' ) . ( $gr_['home'] ? 'vs ' : 'at ' ) . esc_html( $gr_['opp'] ) . '</td><td class="why" colspan="' . ( $ncol - 2 ) . '">' . esc_html( $when ) . ( $gxNext ? '' : ( (int) $wk === $curWk ? ' · this week' : ' · next up' ) ) . '</td></tr>';
+			$tr = $gxTr( 'up' . ( $gxNext ? '' : ' next' ), $wk, ( $gr_['tm'] !== $a ? esc_html( $gr_['tm'] ) . ' ' : '' ) . ( $gr_['home'] ? 'vs ' : 'at ' ) . esc_html( $gr_['opp'] ), esc_html( $when ) . ( $gxNext ? '' : ( (int) $wk === $curWk ? ' · this week' : ' · next up' ) ), $gxNext );
 			if ( $gxNext ) { $gxLater .= $tr; $gxMore++; } else { $body .= $tr; $gxNext = true; }
 		}
 		$body .= $gxLater;

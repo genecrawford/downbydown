@@ -429,9 +429,9 @@ if have_pbp:
             q = EPQ[pid]; q['db'] += 1; q['succ'] += s0
             if _fv(r.sack) == 1:
                 q['sk'] += qe; q['nsk'] += 1; q['sky'] -= _fv(r.yards_gained) or 0; continue
+            q['att'] += 1  # a spike is a pass attempt (ANY/A's denominator); its EPA sits with the incompletions
             if r.play_type == 'qb_spike':
                 q['inc'] += qe; continue
-            q['att'] += 1
             comp = _fv(r.complete_pass) == 1; cl = _cell(_fv(r.air_yards), r.pass_location if isinstance(r.pass_location, str) else None)
             if _fv(r.interception) == 1: q['int'] += qe; q['nint'] += 1
             elif comp:

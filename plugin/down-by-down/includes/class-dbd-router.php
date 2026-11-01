@@ -105,7 +105,6 @@ class DBD_Router {
 	public static function tierize( $html, array $tiers ) {
 		if ( ! array_filter( $tiers ) ) { return $html; }
 		return preg_replace_callback( '/<tr\b[^>]*>.*?<\/tr>/s', function ( $row ) use ( $tiers ) {
-			if ( strpos( $row[0], 'dbd-gx' ) !== false ) { return $row[0]; }  /* a bye, did-not-play or upcoming row spans the stat columns: it keeps every cell at every width */
 			$i = -1;
 			return preg_replace_callback( '/<t([dh])\b([^>]*)>/', function ( $c ) use ( &$i, $tiers ) {
 				$i++; $t = $tiers[ $i ] ?? null; if ( ! $t ) { return $c[0]; }

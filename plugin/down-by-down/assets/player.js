@@ -44,7 +44,7 @@
   more.forEach(function (btn) {
     btn.addEventListener('click', function () {
       var open = btn.getAttribute('aria-expanded') !== 'true';
-      root.querySelectorAll('.dbd-glog tr.dbd-gx.up:not(.next)').forEach(function (r) { r.hidden = !open; });
+      root.querySelectorAll('.dbd-glog tr.dbd-gx.later').forEach(function (r) { r.hidden = !open; });
       more.forEach(function (b) { b.setAttribute('aria-expanded', open ? 'true' : 'false'); b.textContent = open ? 'Hide the rest of the schedule' : 'Rest of the schedule · ' + b.dataset.n + ' game' + (b.dataset.n === '1' ? '' : 's'); });
     });
   });
