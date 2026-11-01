@@ -1084,3 +1084,5 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 .dbd .dbd-plmore button:hover{border-color:var(--dbd-ink-2);color:var(--dbd-ink)}
 .dbd .dbd-plmore .of{margin-right:auto}
 .dbd .dbd-chgrid .dbd-ch{height:240px}  /* two to a row, a little shorter */
+.dbd .dbd-chgrid .dbd-chart{container:dbdc/inline-size}  /* each chart measures itself: two to a row leaves about 345px */
+@container dbdc (max-width:480px){.dbd .dbd-ch-rule span{display:none}}  /* week labels on the cumulative chart collide below this; the rules stay */
