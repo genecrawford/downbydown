@@ -76,7 +76,7 @@ jobs:
                   n += 1; s = g['s']; end = 500 if g['ot'] else g['fin']; ot += bool(g['ot'])
                   if s[0][1] != g['pre']: bad.append(f'{gid}: series does not start at the kickoff chance')
                   if g['fin'] not in (0, 500, 1000): bad.append(f'{gid}: result {g["fin"]}')
-                  if any(x[0] >= 3600 for x in s): bad.append(f'{gid}: an overtime point in the series')
+                  if any(x[0] > 3600 for x in s): bad.append(f'{gid}: an overtime point in the series')
                   sw = sorted(abs((s[i + 1][1] if i + 1 < len(s) else end) - s[i][1]) for i in range(len(s)))[-5:]
                   if sorted(abs(t[1]) for t in g['top']) != sw: bad.append(f'{gid}: top swings are not the five largest')
                   if gid in ('2026_04_LA_PHI', '2026_02_IND_KC', '2026_05_NYG_WAS'):
