@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.6.0
+Stable tag: 1.7.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -31,7 +31,13 @@ Not affiliated with the NFL or any team. No team logos are used; team marks are 
 
 == Changelog ==
 
-= Next release =
+= 1.7.0 =
+* Readability and scanning, the player page (SCOPE §31). The short version opens the page: one line per band from the reads the page already writes, each linked to its band.
+* Scorecard: Where he ranks and Season stats were the same stats twice; one table now holds value, rank, the league bar and percentile, with bars for success rate, ANY/A and total EPA too.
+* How he's used and Week by week are one panel each with tabs (Playstyle, Where his EPA comes from, Depth by direction, On the field, Situations; This week, Game log, The trend, Defenses faced). Every pane is still in the page.
+* Methods notes fold under "How this is measured". The connection shows its core columns with the rest behind "All columns".
+* A real type scale across the site: numbers in 13px IBM Plex Sans with tabular figures instead of 11px monospace, reads at 15px, table headers in sentence case, darker small print. Phones get one sideways-scrolling row for the jump nav and the tabs.
+* Fixes: two labels were 10px; the depth bands' text ran out of its column.
 * Fix: on phones, an overtime score on the last snap (a walk-off) hung half outside the win probability chart. It now sits just left of its moment.
 
 = 1.6.0 =

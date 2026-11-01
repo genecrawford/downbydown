@@ -1120,3 +1120,69 @@ nflverse's model does not hold together under the current overtime rules, which 
 Rams at Eagles: LA 65% at kickoff, low 5% at Q4 7:31 down 20–10, 8 swings past 50%, turning point at Q4 2:26 (44% → 52%), biggest swing 13 points at Q2 11:02. Colts at Chiefs: KC 73% at kickoff, regulation ends at 50%, overtime shows three scores, 6 swings past 50%, biggest swing 19 points at Q3 10:38. No text under 11px; no horizontal scroll at 375; the panel checked at 1440, 1024, 768 and 375.
 
 Size: M. Status: signed off 2026-11-01 and built as 1.6.0. Build note: timeout and quarter-end rows are not snaps and are left out of the series (otherwise a timeout takes the next snap's swing), and the series keeps the file's own order.
+
+## 31. Readability and scanning (audited, scoped and mocked 2026-11-01, `mockup-v8/`)
+
+Gene (2026-11-01, roadmap paused): "We have a TON of data displayed, I think we need to work on readability and scanning of the page." This section measures the problem on the live site (1.6.0), sets the principles, and mocks them on the densest page, Josh Allen's player page. The mock (`before.html`, `after.html`) is the live page rearranged in the browser: nothing is new or computed, every number is still there, it is regrouped, folded and restyled.
+
+### What the live site measures (1.6.0, 1440 × 900, counted in the browser)
+
+| Page | Screens | Panels | Numbers on screen | Words | Words of methods notes | Text styles | All-caps labels | Text at 12px or under |
+|---|---|---|---|---|---|---|---|---|
+| Player (Allen) | 8.8 (15.9 on a phone) | 16 | 534 | 2,758 | 390 | 32 | 171 | 85% |
+| Players index | 32.3 | 3 | 3,052 | 7,490 | 129 | 13 | 138 | 100% |
+| Team explorer (Bills) | 5.6 | 7 | 210 | 1,167 | 61 | 21 | 92 | 84% |
+| Game (Rams at Eagles) | 2.8 | 5 | 87 | 738 | 74 | 26 | 65 | 64% |
+| Hub | 2.7 | 4 | 68 | 732 | 0 | 22 | 86 | 59% |
+
+### What makes it hard to scan
+
+1. **Everything is the same volume.** 565 of the player page's text elements are 11px IBM Plex Mono; 85% of all text is 12px or under. Headline numbers, table cells, axis labels and footnotes share one size and one gray, so the eye has nothing to land on. The muted gray (#6b6f78) passes contrast (4.5 to 4.95 to 1), but not comfortably at 11px.
+2. **Too many type styles, too many caps.** 32 distinct font, size and weight combinations on one page; 171 all-caps condensed labels. Caps were meant to mark structure; at this count they are texture.
+3. **Every panel has the full anatomy, always open.** Label, badge, a generated read, the chart or table, a legend, and a methods note. The notes alone are 390 words on the player page, all visible.
+4. **The same stat, five times.** EPA per dropback is on a hero tile, in Where he ranks, in Season stats, in the EPA split's subtotal and in the career strip. Where he ranks and Season stats are the same metrics in two panels side by side.
+5. **No answer at the top.** The reads that say what matters ("2nd of 38", "the biggest share comes after the catch") are spread across six bands; a reader has to scroll 9 screens to collect them.
+6. **Wide tables by default.** The connection table is 12 columns; the players index is 32 screens of 11px rows.
+7. **Small breakages found on the way.** Ten text elements are 10px (below our own 11px floor); the depth bands' text column is a fixed 112px for about 165px of text ("34 tgt · 29 rec · 215 yds"), so it runs out of the panel.
+
+### Principles (site-wide)
+
+1. **Answer first.** Each page opens with what it concludes, in sentences the page already writes, each linked to its band.
+2. **One stat, one home.** A metric appears once at full size; elsewhere it is referenced, not repeated.
+3. **Show the headline, fold the method.** Reads and charts stay open; methods notes fold under "How this is measured"; the long tail of columns sits behind "All columns".
+4. **One panel per question.** Panels that answer the same question become tabs in one panel. Every tab is rendered by PHP, so crawlers and the share card still see it; the tab only picks what shows.
+5. **A real type scale.** Five sizes: 12 (small print and labels), 13 (data: tables, chips, rows), 15 (reads), 22 (tile values and band titles), and the hero. Numbers move from 11px monospace to 13px IBM Plex Sans with tabular figures: the same column alignment, half the texture. Mono stays for code-like tokens only (clocks, the play descriptions' yard lines). Caps stay for panel labels, band titles and badges; table headers become 12px sentence case. Muted gray darkens to #5d616a. About ten text styles in all.
+6. **Phones get one row of navigation.** The sticky jump nav and every tab strip become a single row that scrolls sideways.
+
+### The player page in the mock (`after.html`)
+
+| Change | Before | After |
+|---|---|---|
+| **The short version** (new, under the tiles) | — | Five lines, one per band: how good, where it comes from, how he's used, lately, this week; each is the first sentence of a read the page already writes, linked to its band |
+| **Scorecard** | Where he ranks and Season stats, two panels | One table, two columns of rows: value, rank, the league bar, percentile. The unranked counting stats (attempts, yards, TD/INT) already sit on the hero tiles and leave the table. In the build, success rate, ANY/A and total EPA get their bars too (their percentiles are in the data since 1.5.0) |
+| **How he's used** | Five panels | One panel, five tabs: Playstyle, Where his EPA comes from, Depth by direction, On the field, Situations |
+| **Week by week** | This week (above the bands) plus three panels | One panel, four tabs: This week, Game log, The trend, Defenses faced. This week moves into it; the short version carries its one line at the top |
+| **The connection** | 12 columns | Seven by default (receiver, targets, share, catch rate, yards, TD, EPA per target); receptions, aDOT, YAC, third down and red zone behind "All columns" |
+| **Methods notes** | 390 words, always open | Folded under "How this is measured" (29 words stay open: the short ones) |
+| **Type** | 11px mono, 32 styles | The scale above |
+
+**Measured, before → after (same page, same data):** at 1440, 8.8 → 5.9 screens, 534 → 296 numbers on screen, 2,758 → 1,488 words on screen, 390 → 29 words of open notes, 171 → 79 all-caps labels, text at 12px or under 85% → 44%, monospace text 63% → 11%. On a phone, 15.9 → 10.5 screens with no horizontal scroll. The mock leaves the text-style count at 30 because it overrides the old styles rather than replacing them; the build replaces them and lands near ten.
+
+### Rollout
+
+One release per page, the player page first because it is the densest and the one people compare:
+
+1. **Player page** (1.7.0): everything in the table above, the type scale in `dbd.css` as tokens, the 10px and band-overflow fixes, the phone nav row.
+2. **Players index**: position tabs instead of one 32-screen list, 50 rows with "Show more", the column set trimmed the same way, the type scale.
+3. **Team explorer**: the type scale, its notes folded, its tables trimmed.
+4. **Game and hub**: the type scale; the game page's win probability panel gets "How this is measured" too.
+
+The type scale lands with the first release and reaches the other pages through the shared stylesheet, so the later releases are mostly structure.
+
+### Left out
+
+- **New data or new panels.** This pass only reorganizes.
+- **A dark mode.** Not asked for.
+- **Personalizing which tabs open by default.** The first tab is the most-read one; remembering a reader's tab is a later polish.
+
+Size: player page M; each later page S to M. Status: signed off 2026-11-01 ("so much better, can you build this and then make a pass over the rest of the pages"); the player page built as 1.7.0.

@@ -202,7 +202,7 @@
             if (o && o.n) h += '<tr class="dbd-cx-oth"><td class="dbd-cx-nm">to everyone else</td><td>' + o.n + '</td><td></td>' + stat(o) + epaCell(o) + '<td>' + prate(o) + '</td></tr>'; });
           h += '</tbody>';
         }
-        $('#dbd-cx-tab').className = 'dbd-cx-tab dbd-stat' + (isQB ? ' dbd-sortable' : '');
+        $('#dbd-cx-tab').className = 'dbd-cx-tab dbd-stat' + (isQB ? ' dbd-sortable is-qb' : ' is-rx');  /* is-qb / is-rx: which columns are core (SCOPE §31) */
         $('#dbd-cx-tab').innerHTML = tierize(h, TIERS);
       }
       $('#dbd-cx-tab').addEventListener('click', function (e) { if (e.target.closest('a, th')) return; var tr = e.target.closest('tr[data-id]'); if (tr) setIso(iso === tr.dataset.id ? null : tr.dataset.id); });

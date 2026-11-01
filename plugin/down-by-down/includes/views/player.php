@@ -78,6 +78,9 @@ echo '<div class="dbd-tiles">';
 foreach ( $tiles as $x ) { echo '<div class="dbd-tile"><div class="l">' . esc_html( $x[0] ) . '</div><div class="v">' . esc_html( $x[1] ) . '</div><div class="s">' . esc_html( $x[2] ) . '</div>' . $trkLine( $x[3] ?? null, $x[4] ?? '' ) . '</div>'; }
 echo '</div>';
 
+/* SCOPE §31: the rest of the page is buffered; the short version is built from its reads and placed under the tiles at the end */
+ob_start();
+
 /* ---- opponent context (SCOPE §19): the defense faced each week, ranked against his position. Metrics and schedule are already shipped. */
 $dk = DBD_Grades::defense_key( $p['pos'] ); $dkey = $dk['key']; $M = DBD_Data::metrics(); $dlg = $M['league'][ $dkey ] ?? null; $hasDef = $dlg !== null && ! empty( $M['rank']['def'] );
 $teams = DBD_Data::teams();
@@ -93,6 +96,7 @@ $curWk0 = (int) DBD_Data::current_week(); $mineAll = array(); $maxW = 0;
 foreach ( (array) ( DBD_Data::schedule()['weeks'] ?? array() ) as $wkn => $gl ) { foreach ( (array) $gl as $twGm ) { if ( $twGm['home'] === $a || $twGm['away'] === $a ) { $twGm['wk'] = (int) ( $twGm['week'] ?? $wkn ); $mineAll[] = $twGm; } } }
 usort( $mineAll, function ( $x, $y ) { return $x['wk'] - $y['wk']; } );
 $twCur = null; $twNext = null; foreach ( $mineAll as $twGm ) { $fin = ( $twGm['status'] ?? '' ) === 'final' || isset( $twGm['home_score'] ); if ( $twGm['wk'] === $curWk0 ) { $twCur = $twGm; } if ( ! $twNext && $twGm['wk'] >= $curWk0 && ! $fin ) { $twNext = $twGm; } }
+ob_start();  /* SCOPE §31: this week becomes the first tab of Week by week */
 if ( $mineAll ) {
 	if ( ! $twNext ) {
 		echo '<section class="dbd-panel dbd-week"><div class="dbd-ph"><span class="dbd-lab"><b>This week</b> · season over</span></div><p class="dbd-week-say">No games left on the schedule.</p></section>';
@@ -126,41 +130,65 @@ if ( $mineAll ) {
 	}
 }
 
+$weekHtml = ob_get_clean();
+
 /* ---- bands by question (SCOPE §20): a sticky jump nav, then five bands. The rail is gone. */
 echo '<nav class="dbd-jump" aria-label="On this page"><a href="#dbd-good">How good is he</a><a href="#dbd-used">How he\'s used</a><a href="#dbd-with" id="dbd-jump-with" hidden>Who he works with</a><a href="#dbd-weeks">Week by week</a>' . ( $CR ? '<a href="#dbd-career">Career</a>' : '' ) . '<a href="#dbd-more">Intel &amp; plays</a></nav>';
+/* SCOPE §31: one panel per band question. Every pane is rendered (crawlers and the share card see it all); the tab picks which one shows.
+   A pane loses its own title (the tab names it) and keeps its sub-label and badge. Empty panes are skipped. */
+$tabbed = function ( $panes ) {
+	$panes = array_values( array_filter( $panes, function ( $x ) { return trim( (string) $x[1] ) !== ''; } ) );
+	if ( ! $panes ) { return ''; }
+	if ( count( $panes ) === 1 ) { return $panes[0][1]; }
+	$btn = ''; $body = '';
+	foreach ( $panes as $i => $x ) {
+		$btn .= '<button class="t-tab" type="button" role="tab" aria-selected="' . ( $i ? 'false' : 'true' ) . '" data-pane="' . $i . '">' . esc_html( $x[0] ) . '</button>';
+		$h = preg_replace( '/<section class="dbd-panel([^"]*)"/', '<section class="dbd-panel dbd-pane$1" data-pane="' . $i . '"' . ( $i ? ' hidden' : '' ), $x[1], 1 );
+		$h = preg_replace( '/<span class="dbd-lab">(<b[^>]*>.*?<\/b>)\s*·\s*(.*?)<\/span>/s', '<span class="dbd-lab">$1<span class="sub">$2</span></span>', $h, 1 );
+		$body .= $h;
+	}
+	return '<section class="dbd-panel dbd-tabbed"><div class="dbd-ph dbd-tabh"><div class="dbd-seg t-tabs dbd-btabs" role="tablist"><span class="t-tabs-pill" aria-hidden="true"></span>' . $btn . '</div></div>' . $body . '</section>';
+};
 $band = function ( $id, $kick, $sub, $hidden = false ) { return '<section class="dbd-band" id="dbd-' . $id . '"' . ( $hidden ? ' hidden' : '' ) . '><h2 class="dbd-bandh">' . $kick . '<span>' . $sub . '</span></h2>'; };
-echo $band( 'good', 'How good is he', 'league grades and the season line, side by side' ) . '<div class="dbd-two">';
+echo $band( 'good', 'How good is he', 'his line against the league at his position' );
 
-/* ---- where he ranks: percentile bars against the league pool at his position (SCOPE §15) */
+/* ---- scorecard (SCOPE §31): Where he ranks and Season stats were the same stats twice. One table: value, rank, the league bar, percentile.
+   The unranked counting stats sit on the hero tiles. Two columns of rows on a wide screen, one on a phone. */
 $gr = $p['grades'] ?? null; $ggrp = $gr['grp'] ?? $grp; $gi = $gr ? DBD_Grades::group_info( $ggrp ) : null; $N = (int) ( $gi['n'] ?? 0 ); $graded = $gr && ! empty( $gr['q'] ) && $N > 0;
+$scRows = array();
 if ( $gr && $gi ) {
-	echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Where he ranks</b> · among ' . $N . ' ' . esc_html( DBD_Grades::pool_label( $ggrp ) ) . ' with ' . esc_html( $gi['min'] ) . '+</span><span class="dbd-badge">League percentiles</span></div><div class="dbd-pct">';
 	foreach ( DBD_Grades::defs( $ggrp ) as $d ) {
 		list( $k, $lab, $sub, $kind ) = $d; $v = $gr['m'][ $k ] ?? null; $pc = $graded ? DBD_Grades::pctile( $ggrp, $k, $v ) : null;
 		$rk = $pc === null ? null : DBD_Grades::rank( $ggrp, $k, $v ); $med = DBD_Grades::median( $ggrp, $k ); $Nk = count( $gi['dist'][ $k ] ?? array() );
 		$tip = '<b>' . esc_html( $p['name'] ) . '</b><br>' . esc_html( $lab ) . ': <b>' . esc_html( DBD_Grades::fmt( $kind, $v ) ) . '</b>' . ( $pc === null ? '' : ' · ' . esc_html( DBD_Grades::ordinal( $pc ) ) . ' percentile · ' . esc_html( DBD_Grades::ordinal( $rk ) ) . ' of ' . $Nk ) . '<br><span class="m">League median ' . esc_html( DBD_Grades::fmt( $kind, $med ) ) . ( $sub ? ' · ' . esc_html( $sub ) : '' ) . '</span>';
-		echo '<div class="row"><div class="l">' . esc_html( $lab ) . ( $sub ? '<small>' . esc_html( $sub ) . '</small>' : '' ) . '</div><div class="bar">' . ( $pc === null ? '' : '<i style="--p:' . (int) $pc . '" data-tip="' . esc_attr( $tip ) . '" tabindex="0" role="img" aria-label="' . esc_attr( $lab . ' ' . DBD_Grades::fmt( $kind, $v ) . ', ' . DBD_Grades::ordinal( $pc ) . ' percentile' ) . '"></i>' ) . '</div><div class="v">' . esc_html( DBD_Grades::fmt( $kind, $v ) ) . '</div><div class="g' . ( $pc !== null && $pc >= 75 ? ' hi' : ( $pc !== null && $pc <= 25 ? ' lo' : '' ) ) . '">' . ( $pc === null ? '-' : esc_html( DBD_Grades::ordinal( $pc ) ) ) . '</div></div>';
+		$scRows[] = array( 'lab' => $lab, 'sub' => $sub, 'v' => DBD_Grades::fmt( $kind, $v ), 'rk' => $rk ? array( $rk, 0 ) : null, 'n' => $Nk, 'pc' => $pc, 'tip' => $tip );
 	}
-	echo '</div><p class="dbd-note">' . ( $graded ? 'Each bar is the league at his position; the marker is him. Right is better, the dashed line is the median. Grades move every week as the pool changes.' : 'Graded once he reaches ' . esc_html( $gi['min'] ) . '. ' . $N . ' ' . esc_html( DBD_Grades::pool_label( $ggrp ) ) . ' qualify so far.' ) . '</p></section>';
+}
+if ( $EP ) {  /* SCOPE §29: success rate, ANY/A (quarterbacks) and total EPA, ranked in the same pool, with the percentiles the build stores */
+	$er = (array) ( $EP['rk'] ?? array() ); $ep_pc = (array) ( $EP['pc'] ?? array() );
+	$epRow = function ( $k, $lab, $val ) use ( $er, $ep_pc, $graded, $N, $p ) { $pc = $graded && isset( $ep_pc[ $k ] ) ? (int) $ep_pc[ $k ] : null;
+		return array( 'lab' => $lab, 'sub' => '', 'v' => $val, 'rk' => $graded && ! empty( $er[ $k ] ) ? $er[ $k ] : null, 'n' => $N, 'pc' => $pc, 'tip' => '<b>' . esc_html( $p['name'] ) . '</b><br>' . esc_html( $lab ) . ': <b>' . esc_html( $val ) . '</b>' . ( $pc === null ? '' : ' · ' . DBD_Grades::ordinal( $pc ) . ' percentile' ) ); };
+	$scRows[] = $epRow( 'sr', 'Success rate', $pct( (float) $EP['sr'] ) );
+	if ( $grp === 'qb' && isset( $EP['any'] ) ) { $scRows[] = $epRow( 'any', 'ANY/A', number_format( (float) $EP['any'], 2 ) ); }
+	$scRows[] = $epRow( 'tot', 'Total EPA', $sgn( (float) $EP['tot'], 1 ) );
+}
+if ( $scRows ) {
+	$scTr = function ( $r ) { $rk = $r['rk']; $pc = $r['pc'];
+		$rkh = $rk ? '<b>' . ( ! empty( $rk[1] ) ? 'T-' : '' ) . esc_html( DBD_Grades::ordinal( (int) $rk[0] ) ) . '</b> of ' . (int) $r['n'] : '';
+		return '<tr' . ( $rk && $rk[0] <= ceil( $r['n'] * 0.1 ) ? ' class="top"' : '' ) . '><td class="n">' . esc_html( $r['lab'] ) . ( $r['sub'] ? '<small>' . esc_html( $r['sub'] ) . '</small>' : '' ) . '</td><td class="v">' . esc_html( $r['v'] ) . '</td><td class="rk">' . $rkh . '</td>'
+			. '<td class="b"><div class="bar">' . ( $pc === null ? '' : '<i style="--p:' . (int) $pc . '" data-tip="' . esc_attr( $r['tip'] ) . '" tabindex="0" role="img" aria-label="' . esc_attr( $r['lab'] . ' ' . $r['v'] . ', ' . DBD_Grades::ordinal( $pc ) . ' percentile' ) . '"></i>' ) . '</div></td>'
+			. '<td class="g' . ( $pc !== null && $pc >= 75 ? ' hi' : ( $pc !== null && $pc <= 25 ? ' lo' : '' ) ) . '">' . ( $pc === null ? '' : esc_html( DBD_Grades::ordinal( $pc ) ) ) . '</td></tr>'; };
+	$scHead = '<thead><tr><th>Stat</th><th>Value</th><th>Rank</th><th>League</th><th>Pctl</th></tr></thead>'; $half = (int) ceil( count( $scRows ) / 2 );
+	echo '<section class="dbd-panel dbd-score"><div class="dbd-ph"><span class="dbd-lab"><b>Scorecard</b> · ' . ( $gi ? 'among ' . $N . ' ' . esc_html( DBD_Grades::pool_label( $ggrp ) ) . ' with ' . esc_html( $gi['min'] ) . '+' : 'this season' ) . '</span><span class="dbd-badge">' . ( $graded ? 'League percentiles' : 'graded at ' . esc_html( $gi['min'] ?? '' ) ) . '</span></div>';
+	echo '<div class="dbd-score2"><table class="dbd-stat">' . $scHead . '<tbody>' . implode( '', array_map( $scTr, array_slice( $scRows, 0, $half ) ) ) . '</tbody></table><table class="dbd-stat">' . $scHead . '<tbody>' . implode( '', array_map( $scTr, array_slice( $scRows, $half ) ) ) . '</tbody></table></div>';
+	echo '<p class="dbd-note">' . ( $graded ? 'Each bar is the league at his position; the marker is him. Right is better, the dashed line is the median. Ranks are out of the qualifying pool, ties shown as T-, and move every week as the pool changes.' : 'Graded once he reaches ' . esc_html( $gi['min'] ?? 'the qualifier' ) . '. ' . $N . ' ' . esc_html( DBD_Grades::pool_label( $ggrp ) ) . ' qualify so far.' ) . '</p></section>';
 }
 
-/* ---- season stats with league rank */
-$ss = $grp === 'rec' ? array( array( 'Targets', (int) $tg ), array( 'Receptions', (int) $rc ), array( 'Yards', (int) $ry ), array( 'Touchdowns', (int) $rtd ) )
-	: ( $grp === 'rb' ? array( array( 'Carries', (int) $ca ), array( 'Rush yards', (int) $ruy ), array( 'Rush TD', (int) $rutd ), array( 'Targets', (int) $tg ) )
-	: array( array( 'Attempts', (int) $att ), array( 'Completions', (int) $cmp ), array( 'Pass yards', (int) $py ), array( 'TD / INT', (int) $ptd . ' / ' . (int) $pint ) ) );
-if ( $gr ) { foreach ( DBD_Grades::defs( $ggrp ) as $d ) { $v = $gr['m'][ $d[0] ] ?? null; $ss[] = array( $d[1], DBD_Grades::fmt( $d[3], $v ), $graded ? DBD_Grades::rank( $ggrp, $d[0], $v ) : null, count( $gi['dist'][ $d[0] ] ?? array() ) ); } }
-/* SCOPE §29: success rate, ANY/A (quarterbacks) and total EPA, ranked in the same pool; the rank is [place, tie] */
-if ( $EP ) { $er = (array) ( $EP['rk'] ?? array() ); $erk = function ( $k ) use ( $er, $graded ) { return $graded && ! empty( $er[ $k ] ) ? $er[ $k ] : null; };
-	$ss[] = array( 'Success rate', $pct( (float) $EP['sr'] ), $erk( 'sr' ), $N );
-	if ( $grp === 'qb' && isset( $EP['any'] ) ) { $ss[] = array( 'ANY/A', number_format( (float) $EP['any'], 2 ), $erk( 'any' ), $N ); }
-	$ss[] = array( 'Total EPA', $sgn( (float) $EP['tot'], 1 ), $erk( 'tot' ), $N ); }
-echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Season stats</b> · with league rank</span><span class="dbd-badge">' . ( $graded ? 'of ' . $N : 'unranked' ) . '</span></div><div class="dbd-tw"><table class="dbd-sstat dbd-stat">';
-foreach ( $ss as $r ) { $rk = $r[2] ?? null; $tie = false; if ( is_array( $rk ) ) { $tie = ! empty( $rk[1] ); $rk = (int) $rk[0]; } $Nr = isset( $r[3] ) ? (int) $r[3] : $N; echo '<tr' . ( $rk && $rk <= ceil( $Nr * 0.1 ) ? ' class="top"' : '' ) . '><td>' . esc_html( $r[0] ) . '</td><td>' . esc_html( $r[1] ) . '</td><td class="rk">' . ( $rk ? '<b>' . ( $tie ? 'T-' : '' ) . esc_html( DBD_Grades::ordinal( $rk ) ) . '</b> of ' . $Nr : '' ) . '</td></tr>'; }
-echo '</table></div></section>';
-
-echo '</div></section>';
+echo '</section>';
 echo $band( 'used', 'How he\'s used', 'his fingerprint, where the ball finds him and when' );
 
+$usedP = array();  /* SCOPE §31: the band's panels become tabs */
+ob_start();
 /* ---- playstyle fingerprint (SCOPE §23): eight usage traits against the league pool at his position, tags, and a generated read. From the player file's fp and league.json's fp pools; an older data file skips the panel. */
 $FP = $p['fp'] ?? null; $fgi = DBD_Grades::group_info( $grp ); $fpool = $fgi['fp'] ?? null;
 if ( $FP && $fpool ) {
@@ -203,6 +231,8 @@ if ( $FP && $fpool ) {
 	echo '<div class="dbd-fp2"><div><p class="dbd-fp-say">' . implode( ' ', $fsay ) . '</p>' . ( $ftagh ? '<div class="dbd-fp-tags">' . $ftagh . '</div>' : '' ) . '</div><div class="dbd-pct dbd-fpbars">' . $fbars . '</div></div>';
 	echo '<p class="dbd-note">Every trait is a share of his own ' . esc_html( $funit ) . ', so volume does not move it. The marker is him among the league\'s qualifying ' . esc_html( $fpl ) . '; the dashed line is the median. Styles are not grades: a high or low percentile is a description, not a verdict. Play action, screen, RPO, motion and blitz flags come from FTN charting and read low in a week it has not published.</p></section>';
 }
+$usedP[] = array( 'Playstyle', ob_get_clean() );
+ob_start();
 /* ---- where his EPA comes from (SCOPE §29): the season's EPA split by what happened, each part's per-play rate and league percentile, a read, and this season against his career */
 if ( $EP ) {
 	$epQ = $grp === 'qb'; $epRB = $grp === 'rb'; $epPool = DBD_Grades::pool_label( $grp ); $epG = $graded && ! empty( $EP['rk']['tot'] );
@@ -284,6 +314,8 @@ if ( $EP ) {
 	echo '<p class="dbd-ep-say">' . implode( ' ', $epSay ) . '</p><div class="dbd-ep-wf">' . $epWf . '</div>' . $epCar . '<p class="dbd-note">' . $epNote . '</p></section>';
 }
 
+$usedP[] = array( 'Where his EPA comes from', ob_get_clean() );
+ob_start();
 /* ---- depth by direction (SCOPE §29): the 4 × 3 grid of his throws or targets against the league, two views. A back gets it with 15+ targets. */
 $lzLg = DBD_Grades::league()['grid'][ $grp === 'qb' ? 'qb' : 'tgt' ] ?? null;
 if ( $EP && ! empty( $EP['gr'] ) && $lzLg && ( $grp !== 'rb' || (int) ( $EP['tg'] ?? 0 ) >= 15 ) ) {
@@ -314,16 +346,19 @@ if ( $EP && ! empty( $EP['gr'] ) && $lzLg && ( $grp !== 'rb' || (int) ( $EP['tg'
 	echo '<p class="dbd-ep-say">' . $lzSay . '</p><div class="dbd-lzg">' . $lzCells . '</div><div class="dbd-lzk"><span class="k f"><i class="up"></i>more than the league <i class="dn"></i>less</span><span class="k e"><i class="pos"></i>gains EPA <i class="neg"></i>loses EPA</span></div>';
 	echo '<p class="dbd-note">Every ' . ( $grp === 'qb' ? 'pass attempt' : 'target' ) . ' with a charted depth and direction this season; sacks and throws with no charted direction are left out. Left and right are as the offense sees the field. Cells with fewer than three ' . $lzU[0] . ' show no EPA.</p></section>';
 }
-echo '<div class="dbd-two">';
-
+$usedP[] = array( 'Depth by direction', ob_get_clean() );
+ob_start();
 /* ---- field map + depth bands (JS) */
 echo '<section class="dbd-panel" id="dbd-pmap-panel"><div class="dbd-ph"><span class="dbd-lab"><b id="dbd-maplab">' . ( $grp === 'qb' ? 'Where he throws' : ( $grp === 'rb' ? 'Where he runs' : 'Where the ball finds him' ) ) . '</b> · from the play file</span><span class="dbd-badge" id="dbd-mapn">loading</span></div>';
 echo '<div class="dbd-sprays"><div><h4 id="dbd-map1h">On the field</h4><div id="dbd-pmap"><div class="dbd-skel"><span class="dbd-note">Loading every snap…</span></div></div></div><div><h4>By depth of target</h4><div class="dbd-bands" id="dbd-bands"></div><p class="dbd-note" id="dbd-bandnote" style="padding:8px 0 0"></p></div></div>';
 echo '<div class="dbd-legend" id="dbd-pleg"></div><p class="dbd-note" id="dbd-mapnote"></p></section>';
 
+$usedP[] = array( 'On the field', ob_get_clean() );
+ob_start();
 /* ---- situations (JS) */
 echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>When he gets it</b> · touches by situation</span></div><div class="dbd-wk3 dbd-tend" id="dbd-sit"></div></section>';
-echo '</div></section>';
+$usedP[] = array( 'Situations', ob_get_clean() );
+echo $tabbed( $usedP ) . '</section>';
 echo $band( 'with', 'Who he works with', 'the connection, and the rest of the huddle', true );
 
 /* ---- the connection (JS, SCOPE §18): a quarterback's receivers, or everyone else's line by passer. Hidden until player.js finds targets. */
@@ -346,6 +381,7 @@ foreach ( (array) ( $sched['weeks'] ?? array() ) as $wkn => $gl ) {
 }
 foreach ( $games as &$gg ) { usort( $gg, function ( $x, $y ) { return $x['wk'] - $y['wk']; } ); } unset( $gg );
 
+ob_start();
 /* ---- the shape of his season (SCOPE §21): four per-game metrics, week by week, his trailing three games over the league's middle half */
 $gxWeeks = array();  /* every league week as game, dnp, bye or ahead; the game log reads it too (SCOPE §29) */
 if ( $L ) {
@@ -443,6 +479,8 @@ if ( $L ) {
 	echo '<p class="dbd-note" style="padding-top:0">Bars are his week. The shaded band is the league\'s middle half at his position, every qualifying player-game this season, and the dashed line is its median. The solid line is his trailing three games. An × on the baseline is a game his team played without him; a dotted tick is the bye.</p></section>';
 }
 
+$trendHtml = ob_get_clean(); $shortLately = ( isset( $say ) && is_array( $say ) ) ? (string) ( $say[0] ?? '' ) : '';
+ob_start();
 /* ---- game log (PHP): Default, Advanced and Traditional tables; player.js switches which one shows */
 $res = function ( $wk, $tm = null ) use ( $a ) { $tm = $tm ?: $a; $g = DBD_Data::team_game( $tm, $wk ); if ( ! $g ) { return ''; } $home = $g['home'] === $tm; $opp = $home ? $g['away'] : $g['home']; $pf = $home ? $g['home_score'] : $g['away_score']; $pa = $home ? $g['away_score'] : $g['home_score'];
 	if ( $pf === null ) { return ( $home ? 'vs ' : 'at ' ) . $opp; }
@@ -511,6 +549,8 @@ foreach ( $views as $name => $vd ) {
 }
 echo ( $traded ? '<p class="dbd-note">Weeks marked with another team come from that team\'s stat line. The field map and situations below cover ' . esc_html( $t['nick'] ) . ' snaps only.</p>' : '' ) . '</section>';
 
+$logHtml = ob_get_clean();
+ob_start();
 /* ---- who he has faced (SCOPE §19): slate rank, the eighteen-week ribbon, his line by defense tier, yards against the rank */
 /* the schedule was read above, before the trend panel */
 $myRows = array();
@@ -574,7 +614,8 @@ if ( $hasDef && $myRows && $games ) {
 }
 
 
-echo '</section>';
+$facedHtml = ob_get_clean();
+echo $tabbed( array( array( 'This week', $weekHtml ), array( 'Game log', $logHtml ), array( 'The trend', $trendHtml ), array( 'Defenses faced', $facedHtml ) ) ) . '</section>';
 
 /* ---- career (SCOPE §24): season by season from players/career/{TEAM}.json, regular season only */
 if ( $CR ) {
@@ -659,3 +700,24 @@ foreach ( $mates as $x ) { list( $m, $tc, $y, $td, $ep ) = $x; $href = DBD_Route
 	echo '<tr class="dbd-trow" data-href="' . esc_url( $href ) . '"><td class="dbd-nm"><span class="dbd-nmi">' . DBD_Marks::player( $a, $m['num'], 30, $m['photo'] ?? null ) . '<a href="' . esc_url( $href ) . '">' . esc_html( $m['name'] ) . '</a><small>' . esc_html( $m['pos'] ) . '</small></span></td><td>' . (int) $tc . '</td><td data-v="' . (int) round( $y ) . '">' . (int) round( $y ) . ( (int) $td ? ' <small>· ' . (int) $td . ' TD</small>' : '' ) . '</td>' . $e( $ep ) . '</tr>'; }
 echo '</tbody></table></div></section>';
 echo '</div></section></main>';
+
+/* ---- SCOPE §31: fold the methods notes, then put the short version under the tiles */
+$rest = ob_get_clean();
+$rest = preg_replace_callback( '/<p class="dbd-note"((?: style="[^"]*")?)>(.+?)<\/p>/s', function ( $m ) {
+	if ( str_word_count( strip_tags( $m[2] ) ) < 14 ) { return $m[0]; }  /* a short note stays open */
+	return '<details class="dbd-how"><summary>How this is measured</summary><p class="dbd-note"' . $m[1] . '>' . $m[2] . '</p></details>';
+}, $rest );
+$first = function ( $h ) { $h = trim( (string) $h ); return preg_match( '/^(.*?[.!?])(\s|$)/s', $h, $m ) ? $m[1] : $h; };
+$short = array_filter( array(
+	array( 'How good', ! empty( $epSay[0] ) ? $epSay[0] : '', '#dbd-good' ),
+	array( 'Where it comes from', ! empty( $epSay[1] ) ? $epSay[1] : '', '#dbd-used' ),
+	array( 'How he\'s used', ! empty( $fsay[0] ) ? $first( $fsay[0] ) : '', '#dbd-used' ),
+	array( 'Lately', $first( $shortLately ?? '' ), '#dbd-weeks' ),
+	array( 'This week', isset( $twSay ) ? $first( $twSay ) : '', '#dbd-weeks' ),
+), function ( $x ) { return $x[1] !== ''; } );
+if ( $short ) {
+	echo '<section class="dbd-panel dbd-short"><div class="dbd-ph"><span class="dbd-lab"><b>The short version</b></span></div><ul>';
+	foreach ( $short as $x ) { echo '<li><a href="' . esc_attr( $x[2] ) . '">' . esc_html( $x[0] ) . '</a><span>' . $x[1] . '</span></li>'; }  /* the reads are already escaped where they were written */
+	echo '</ul></section>';
+}
+echo $rest;
