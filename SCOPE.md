@@ -1352,6 +1352,6 @@ Today the read and tags sit in a narrow left column beside the eight trait bars.
 
 Murray and Jefferson match the mock at 1440, 660 and 375; no empty block under the Playstyle read at any width; no horizontal scroll at 375; the Compare button still feeds the compare tray (it keeps its id).
 
-Gene's sign-off note: make the tags significantly larger or more visually interesting. Each tag becomes a small card: an arrow in a circle for which end of the league he sits at (filled in the team color at the top, outlined at the bottom), the tag in 16px display type, and the stat behind it underneath ("Scrambles 10% · 91st pctl"). On phones each tag card is full width.
+Gene's sign-off note: make the tags significantly larger or more visually interesting. Each tag becomes a small card: an arrow in a circle for which end of the league he sits at (filled in the team color at the top, outlined at the bottom), the tag in 16px display type, and the stat behind it underneath ("Scrambles 10% · 91st pctl"). The third-down and red-zone tags compare him with his own overall share, not the league, so they take ↗/↘ in a dashed circle instead. On phones each tag card is full width.
 
 Size: S. Status: signed off 2026-11-01 and built as 1.11.1.

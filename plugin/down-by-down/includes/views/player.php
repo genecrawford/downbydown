@@ -224,16 +224,17 @@ if ( $FP && $fpool ) {
 			$parts = array_filter( array( $part( 'on third down', $FP['d3'] ?? null ), $part( 'inside the 20', $FP['rzs'] ?? null ) ) );
 			if ( $parts ) { $fsay[] = esc_html( 'His share of the team\'s ' . $funit . ' is ' . $pcs( $fshare ) . ': ' . implode( '; ', $parts ) . '.' ); }
 			foreach ( array( array( 'd3', 'on third down' ), array( 'rzs', 'inside the 20' ) ) as $sk ) { $m = $mv( $FP[ $sk[0] ] ?? null ); $dd = null; foreach ( $fdefs as $d ) { if ( $d[0] === $sk[0] ) { $dd = $d; } }
-				if ( $dd && $m === 'climbs' ) { $ftags[] = array( 'w' => $dd[4], 'hi' => true, 'tip' => $pcs( $FP[ $sk[0] ] ) . ' of the team\'s ' . $funit . ' ' . $sk[1], 'sub' => $pcs( $FP[ $sk[0] ] ) . ' ' . $sk[1] . ' · ' . $pcs( $fshare ) . ' overall' ); }
-				elseif ( $dd && $m === 'falls' ) { $ftags[] = array( 'w' => $dd[5], 'hi' => false, 'tip' => $pcs( $FP[ $sk[0] ] ) . ' ' . $sk[1] . ' against ' . $pcs( $fshare ) . ' overall', 'sub' => $pcs( $FP[ $sk[0] ] ) . ' ' . $sk[1] . ' · ' . $pcs( $fshare ) . ' overall' ); } }
+				if ( $dd && $m === 'climbs' ) { $ftags[] = array( 'w' => $dd[4], 'hi' => true, 'own' => true, 'tip' => $pcs( $FP[ $sk[0] ] ) . ' of the team\'s ' . $funit . ' ' . $sk[1], 'sub' => $pcs( $FP[ $sk[0] ] ) . ' ' . $sk[1] . ' · ' . $pcs( $fshare ) . ' overall' ); }
+				elseif ( $dd && $m === 'falls' ) { $ftags[] = array( 'w' => $dd[5], 'hi' => false, 'own' => true, 'tip' => $pcs( $FP[ $sk[0] ] ) . ' ' . $sk[1] . ' against ' . $pcs( $fshare ) . ' overall', 'sub' => $pcs( $FP[ $sk[0] ] ) . ' ' . $sk[1] . ' · ' . $pcs( $fshare ) . ' overall' ); } }
 		}
 		$third = null; foreach ( array_slice( $stand, 2 ) as $ft ) { if ( ! in_array( $ft['d'][0], $used, true ) ) { $third = $ft; break; } }
 		if ( $third ) { $hi = $third['pc'] >= DBD_Grades::FP_HI; $fsay[] = $sentence( $third, $hi ); if ( $ftg = $tagOf( $third, $hi ) ) { $ftags[] = $ftg; } }
 		$anyExt = (bool) array_filter( $TR, function ( $ft ) { return $ft['pc'] !== null && ( $ft['pc'] >= DBD_Grades::FP_HI || $ft['pc'] <= DBD_Grades::FP_LO ); } );  /* all eight, the situational pair included */
 		if ( ! $anyExt ) { array_unshift( $fsay, esc_html( $first . ' profiles as a typical ' . ( $grp === 'rec' ? 'receiver' : ( $grp === 'rb' ? 'back' : 'quarterback' ) ) . ' in how he is used: nothing in his fingerprint sits outside the league\'s middle half.' ) ); }
 	}
-	/* SCOPE §35: each tag is a small card, an arrow for which end of the league he sits at, the tag, and the stat behind it */
-	$ftagh = ''; foreach ( array_slice( $ftags, 0, 4 ) as $ftg ) { $ftagh .= '<span class="dbd-fp-tag' . ( $ftg['hi'] ? ' hi' : ' lo' ) . '" data-tip="' . esc_attr( $ftg['tip'] ) . '" tabindex="0"><i aria-hidden="true">' . ( $ftg['hi'] ? '▲' : '▼' ) . '</i><span><b>' . esc_html( $ftg['w'] ) . '</b>' . ( ! empty( $ftg['sub'] ) ? '<small>' . esc_html( $ftg['sub'] ) . '</small>' : '' ) . '</span></span>'; }
+	/* SCOPE §35: each tag is a small card, an arrow, the tag, and the stat behind it. ▲/▼ is which end of the league he sits at;
+	   the third-down and red-zone tags compare him with his own overall share, so they take ↗/↘ and stay outlined (Greptile, PR #39) */
+	$ftagh = ''; foreach ( array_slice( $ftags, 0, 4 ) as $ftg ) { $own = ! empty( $ftg['own'] ); $ftagh .= '<span class="dbd-fp-tag' . ( $own ? ' own' : ( $ftg['hi'] ? ' hi' : ' lo' ) ) . '" data-tip="' . esc_attr( $ftg['tip'] ) . '" tabindex="0"><i aria-hidden="true">' . ( $own ? ( $ftg['hi'] ? '↗' : '↘' ) : ( $ftg['hi'] ? '▲' : '▼' ) ) . '</i><span><b>' . esc_html( $ftg['w'] ) . '</b>' . ( ! empty( $ftg['sub'] ) ? '<small>' . esc_html( $ftg['sub'] ) . '</small>' : '' ) . '</span></span>'; }
 	echo '<section class="dbd-panel dbd-fp"><div class="dbd-ph"><span class="dbd-lab"><b>Playstyle</b> · how he is used, against the league at his position</span><span class="dbd-badge">' . ( $fq ? 'among ' . $Nf . ' ' . esc_html( $fpl ) : 'graded at ' . esc_html( $fgi['min'] ?? '' ) ) . '</span></div>';
 	/* SCOPE §35: the read and tags across the top, then the traits in two columns of four, each with its own header */
 	$fhd = '<div class="hd"><span>Trait</span><span>League<em> · line is the median</em></span><span>Him</span><span>Pctl</span></div>';

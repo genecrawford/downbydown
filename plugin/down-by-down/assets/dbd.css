@@ -1232,7 +1232,7 @@ html:not([data-fx]) .dbd [data-fx="half"],html[data-fx="std"] .dbd [data-fx="std
 .dbd .dbd-hcard>.dbd-pn-link .t small{font:500 12px var(--dbd-body)!important;color:var(--dbd-muted);letter-spacing:0;text-transform:none}
 .dbd .dbd-hcard>.dbd-pn-link:hover .t b{color:var(--dbd-red)}
 .dbd .dbd-hcard .acts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.dbd .dbd-hcard .acts>a{display:flex;align-items:center;justify-content:center;gap:6px;height:34px;margin:0;padding:0 10px;border-radius:var(--dbd-r);font:700 11px var(--dbd-display);letter-spacing:.14em;text-transform:uppercase;white-space:nowrap}
+.dbd .dbd-hcard .acts>a{display:flex;align-items:center;justify-content:center;gap:6px;min-height:34px;margin:0;padding:6px 10px;border-radius:var(--dbd-r);font:700 11px/1.2 var(--dbd-display);letter-spacing:.14em;text-transform:uppercase;text-align:center;min-width:0;overflow-wrap:anywhere}  /* wraps: the compare tray relabels it "Compare with 2 picked" (Greptile, PR #39) */
 .dbd .dbd-hcard .acts>.dbd-share{border:1px solid var(--dbd-line-2);background:transparent}
 .dbd .dbd-hcard .acts>a:only-child{grid-column:1/-1}
 .dbd .dbd-hcard .dbd-cmp-sug{display:flex;flex-direction:column;align-items:stretch;gap:0;max-width:none;padding-top:10px;border-top:1px solid var(--dbd-line)}
@@ -1254,6 +1254,7 @@ html:not([data-fx]) .dbd [data-fx="half"],html[data-fx="std"] .dbd [data-fx="std
 .dbd .dbd-fp1 .dbd-fp-tag>i{display:grid;place-items:center;flex:0 0 30px;width:30px;height:30px;border-radius:50%;font:normal 11px/1 var(--dbd-body);border:1.5px solid var(--dbd-team);color:var(--dbd-team);background:transparent}
 .dbd .dbd-fp1 .dbd-fp-tag.hi{border-color:color-mix(in srgb,var(--dbd-team) 45%,transparent);background:color-mix(in srgb,var(--dbd-team) 7%,var(--dbd-panel))}
 .dbd .dbd-fp1 .dbd-fp-tag.hi>i{background:var(--dbd-team);color:#fff}
+.dbd .dbd-fp1 .dbd-fp-tag.own>i{font-size:15px;border-style:dashed}
 .dbd .dbd-fp1 .dbd-fp-tag>span{display:flex;flex-direction:column;gap:2px;min-width:0}
 .dbd .dbd-fp1 .dbd-fp-tag b{font:700 16px/1.05 var(--dbd-display);text-transform:uppercase;letter-spacing:.08em;color:var(--dbd-ink)}
 .dbd .dbd-fp1 .dbd-fp-tag small{display:block}
