@@ -7,6 +7,7 @@ Usage:
     DBD_STATS  stats_player_week_{season}.csv     DBD_SNAPS  snap_counts_{season}.csv
     DBD_PFR    advstats_week_rec_{season}.csv     DBD_INJ    injuries_{season}.csv
     DBD_DEPTH  depth_charts_{season}.csv          DBD_FTN    ftn_charting_{season}.csv
+    DBD_PFRD   advstats_week_def_{season}.csv (the defensive half, SCOPE §39)
 
   pbp may be "-" (or a missing file) before Week 1, when nflverse has no play-by-play for the
   season yet. The build then writes teams.json and schedule.json and an empty metrics.json so the
@@ -33,6 +34,7 @@ Writes:
   box/w{N}.json   each final game's box score: offense lines with snap share, defense sacks and interceptions, kicking (SCOPE §32)
   series.json     every scheduled pair's series since 1999 and every team's record broken down (SCOPE §33)
   players/leaders.json  every Scorecard metric and Playstyle trait by group above a usage floor, and the fantasy boards (SCOPE §37)
+  defense/{TEAM}.json, defense/league.json, plays/def/{TEAM}.json  the defensive half (SCOPE §39)
   fantasy.json    points allowed by each defense to QB/RB/WR/TE in standard, half and PPR, with ranks, the starter line and boom/bust lines (SCOPE §34);
                   player files gain fan (per-format totals, range, booms, busts, ranks), index rows fp/fr/fpos
   manifest.json   {season, week, through_week, built_at, files: {path: sha1}}
@@ -984,6 +986,185 @@ for t, pl in team_players.items():
         if hist: rows[p['id']] = [{k: v for k, v in r.items() if k not in ('name', 'pos')} for r in hist]
     os.makedirs(f'{out}/players/career', exist_ok=True)
     json.dump(clean(dict(season=season, team=t, through=through_week, players=rows)), open(f'{out}/players/career/{t}.json', 'w'), separators=(',', ':'))
+
+# ---------------------------------------------------------------- the defensive half (SCOPE §39): defense/{TEAM}.json, defense/league.json, plays/def/{TEAM}.json
+# Every figure is the defense's: plays it defended (regular season), FTN's blitz, rusher and box counts, PFR's coverage and pressure charting
+# per defender, nflverse's defender stat lines and snap counts. Ranks put 1st the best defense (or, for style figures, the most).
+os.makedirs(os.path.join(out, 'defense'), exist_ok=True); os.makedirs(os.path.join(out, 'plays', 'def'), exist_ok=True)
+if have_pbp:
+    _nan = lambda v: v is None or (isinstance(v, float) and v != v)
+    DF_ = lambda v: None if _nan(v) else float(v)
+    DI_ = lambda v: 0 if _nan(v) else int(float(v))
+    _cols = ['game_id', 'play_id', 'week', 'posteam', 'defteam', 'play_type', 'two_point_attempt', 'qb_dropback', 'rush_attempt', 'pass_attempt', 'qb_scramble', 'qb_spike', 'qb_kneel',
+             'down', 'ydstogo', 'yardline_100', 'epa', 'success', 'yards_gained', 'first_down', 'touchdown', 'interception', 'fumble_lost', 'sack', 'qb_hit', 'air_yards', 'pass_location',
+             'run_location', 'run_gap', 'complete_pass', 'xpass', 'cpoe', 'fixed_drive', 'fixed_drive_result', 'drive_inside20', 'half_seconds_remaining', 'score_differential',
+             'receiver_player_id', 'rusher_player_id', 'penalty', 'penalty_team', 'penalty_yards', 'first_down_penalty', 'wp']
+    _src = df[df.season_type == 'REG'] if 'season_type' in df.columns else df
+    DP = _src[[c_ for c_ in _cols if c_ in _src.columns]].to_dict('records')
+    DSN = [x for x in DP if x['play_type'] in ('pass', 'run') and DI_(x.get('two_point_attempt')) != 1 and DI_(x.get('qb_spike')) != 1 and DI_(x.get('qb_kneel')) != 1 and DF_(x['epa']) is not None]
+    DTEAMS = sorted(T)
+    FT = {}
+    if env('DBD_FTN'):
+        for x in pd.read_csv(env('DBD_FTN'), low_memory=False, usecols=['nflverse_game_id', 'nflverse_play_id', 'n_blitzers', 'n_pass_rushers', 'n_defense_box', 'is_play_action', 'is_screen_pass', 'is_motion']).itertuples():
+            FT[(x.nflverse_game_id, int(x.nflverse_play_id))] = x
+    def d_agg(rows):
+        n = len(rows); db = [p for p in rows if DI_(p['qb_dropback']) == 1]; ru = [p for p in rows if DI_(p['rush_attempt']) == 1 and DI_(p['qb_scramble']) != 1]
+        e = lambda L: sum(DF_(p['epa']) for p in L) / len(L) if L else None
+        third = [p for p in rows if DI_(p['down']) == 3]
+        return dict(n=n, epa=e(rows), sr=sum(DI_(p['success']) for p in rows) / n if n else None, ypp=sum(DI_(p['yards_gained']) for p in rows) / n if n else None,
+                    expl=sum(1 for p in rows if (p['play_type'] == 'pass' and DI_(p['yards_gained']) >= 20) or (p['play_type'] == 'run' and DI_(p['yards_gained']) >= 10)) / n if n else None,
+                    pepa=e(db), repa=e(ru), ypc=sum(DI_(p['yards_gained']) for p in ru) / len(ru) if ru else None,
+                    sack=sum(DI_(p['sack']) for p in db) / len(db) if db else None, hit=sum(DI_(p['qb_hit']) for p in db) / len(db) if db else None,
+                    intr=sum(DI_(p['interception']) for p in db) / len(db) if db else None,
+                    third=sum(1 for p in third if DI_(p['first_down']) == 1 or DI_(p['touchdown']) == 1) / len(third) if third else None, ndb=len(db), nru=len(ru))
+    DEPTH = (('bh', lambda a: a < 0), ('sh', lambda a: 0 <= a < 10), ('in', lambda a: 10 <= a < 20), ('dp', lambda a: a >= 20))
+    def d_grid(rows):
+        pa = [p for p in rows if DI_(p['pass_attempt']) == 1 and DI_(p['sack']) != 1 and DF_(p['air_yards']) is not None and p['pass_location'] in ('left', 'middle', 'right')]
+        g_ = {}
+        for dk, f in DEPTH:
+            for loc in ('left', 'middle', 'right'):
+                c_ = [p for p in pa if f(DF_(p['air_yards'])) and p['pass_location'] == loc]
+                g_[dk + '.' + loc] = [len(c_), sum(DF_(p['epa']) for p in c_) / len(c_) if c_ else None, sum(DI_(p['complete_pass']) for p in c_) / len(c_) if c_ else None]
+        return g_, len(pa)
+    LANES = (('le', 'left', 'end'), ('lt', 'left', 'tackle'), ('lg', 'left', 'guard'), ('mid', 'middle', ''), ('rg', 'right', 'guard'), ('rt', 'right', 'tackle'), ('re', 'right', 'end'))
+    def d_lanes(rows):
+        ru = [p for p in rows if DI_(p['rush_attempt']) == 1 and DI_(p['qb_scramble']) != 1 and isinstance(p['run_location'], str)]
+        l_ = {}
+        for k_, loc, gap in LANES:
+            c_ = [p for p in ru if p['run_location'] == loc and (loc == 'middle' or p['run_gap'] == gap)]
+            l_[k_] = [len(c_), sum(DI_(p['yards_gained']) for p in c_) / len(c_) if c_ else None, sum(DF_(p['epa']) for p in c_) / len(c_) if c_ else None, sum(DI_(p['success']) for p in c_) / len(c_) if c_ else None]
+        return l_, len(ru)
+    def d_sit(rows):
+        o_ = {}; e = lambda L: sum(DF_(p['epa']) for p in L) / len(L) if L else None
+        for dn in (1, 2, 3):
+            c_ = [p for p in rows if DI_(p['down']) == dn]; o_['d%d' % dn] = [len(c_), e(c_), sum(DI_(p['success']) for p in c_) / len(c_) if c_ else None]
+        for k_, f in (('3s', lambda y: y <= 3), ('3m', lambda y: 4 <= y <= 6), ('3l', lambda y: y >= 7)):
+            c_ = [p for p in rows if DI_(p['down']) == 3 and f(DI_(p['ydstogo']))]; o_[k_] = [len(c_), sum(1 for p in c_ if DI_(p['first_down']) == 1 or DI_(p['touchdown']) == 1) / len(c_) if c_ else None]
+        c_ = [p for p in rows if DF_(p['yardline_100']) is not None and DF_(p['yardline_100']) <= 20]; o_['rz'] = [len(c_), e(c_), sum(DI_(p['touchdown']) for p in c_) / len(c_) if c_ else None]
+        c_ = [p for p in rows if DF_(p['half_seconds_remaining']) is not None and DF_(p['half_seconds_remaining']) <= 120]; o_['2m'] = [len(c_), e(c_)]
+        for k_, f in (('lead', lambda v: v < 0), ('close', lambda v: -8 <= v <= 8), ('trail', lambda v: v > 8)):  # score_differential is the offense's: negative means the defense leads
+            c_ = [p for p in rows if DF_(p['score_differential']) is not None and f(DF_(p['score_differential']))]; o_[k_] = [len(c_), e(c_)]
+        return o_
+    def d_style(rows):
+        e = lambda L: sum(DF_(p['epa']) for p in L) / len(L) if L else None
+        ypc = lambda L: sum(DI_(p['yards_gained']) for p in L) / len(L) if L else None
+        ft = lambda p: FT.get((p['game_id'], DI_(p['play_id'])))
+        db = [(p, ft(p)) for p in rows if DI_(p['qb_dropback']) == 1]; db = [(p, f) for p, f in db if f is not None and not _nan(f.n_pass_rushers)]
+        bz = [p for p, f in db if DI_(f.n_blitzers) > 0]; nb = [p for p, f in db if DI_(f.n_blitzers) == 0]
+        ru = [(p, ft(p)) for p in rows if DI_(p['rush_attempt']) == 1 and DI_(p['qb_scramble']) != 1]; ru = [(p, f) for p, f in ru if f is not None and not _nan(f.n_defense_box)]
+        heavy = [p for p, f in ru if DI_(f.n_defense_box) >= 8]; light = [p for p, f in ru if DI_(f.n_defense_box) <= 6]
+        allp = [(p, ft(p)) for p in rows]; allp = [(p, f) for p, f in allp if f is not None]
+        yes = lambda v: v in (True, 1, 'TRUE', 'True', '1') or (isinstance(v, float) and v == 1.0)
+        passes = [p for p, f in allp if DI_(p['pass_attempt']) == 1]
+        pa = [p for p, f in allp if yes(f.is_play_action) and DI_(p['pass_attempt']) == 1]; scr = [p for p, f in allp if yes(f.is_screen_pass)]; mot = [p for p, f in allp if yes(f.is_motion)]
+        neutral = [p for p in rows if DI_(p['down']) in (1, 2) and DF_(p.get('wp')) is not None and 0.2 <= DF_(p['wp']) <= 0.8 and DF_(p.get('xpass')) is not None and DF_(p['half_seconds_remaining']) is not None and DF_(p['half_seconds_remaining']) > 120]
+        rushers = [DI_(f.n_pass_rushers) for p, f in db]; cp_ = [DF_(p.get('cpoe')) for p in rows if DF_(p.get('cpoe')) is not None]
+        return dict(n_db=len(db), blitz=len(bz) / len(db) if db else None, rush=sum(rushers) / len(rushers) if rushers else None, four=sum(1 for x in rushers if x <= 4) / len(rushers) if rushers else None,
+                    e_bz=e(bz), e_nb=e(nb), box=sum(DI_(f.n_defense_box) for p, f in ru) / len(ru) if ru else None, heavy=len(heavy) / len(ru) if ru else None, ypc_h=ypc(heavy), ypc_l=ypc(light),
+                    pa=len(pa) / len(passes) if passes else None, e_pa=e(pa), scr=len(scr) / len(allp) if allp else None, e_scr=e(scr), mot=len(mot) / len(allp) if allp else None, e_mot=e(mot),
+                    proe=(sum(1 for p in neutral if DI_(p['qb_dropback']) == 1) / len(neutral) - sum(DF_(p['xpass']) for p in neutral) / len(neutral)) if neutral else None,
+                    cpoe=sum(cp_) / len(cp_) if cp_ else None)
+    DD = {t: dict(all=d_agg([p for p in DSN if p['defteam'] == t])) for t in DTEAMS}
+    DLG = dict(all=d_agg(DSN)); DLG['grid'], _ = d_grid(DSN); DLG['lanes'], _ = d_lanes(DSN); DLG['sit'] = d_sit(DSN); DLG['style'] = d_style(DSN)
+    OFFE = {t: (lambda L: sum(DF_(p['epa']) for p in L) / len(L) if L else None)([p for p in DSN if p['posteam'] == t]) for t in DTEAMS}
+    _fin = sched[sched.home_score.notna() & (sched.game_type == 'REG')] if 'game_type' in sched.columns else sched[sched.home_score.notna()]
+    _names = dict(zip(_r.gsis_id, _r.full_name))
+    for t in DTEAMS:
+        x_ = DD[t]; rows = [p for p in DSN if p['defteam'] == t]
+        dr = {}
+        for p in DP:
+            if p['defteam'] == t and not _nan(p.get('fixed_drive')): dr[(p['game_id'], p['fixed_drive'])] = (p.get('fixed_drive_result'), DI_(p.get('drive_inside20')))
+        rz = [v for v in dr.values() if v[1] == 1]
+        x_['drives'] = len(dr); x_['ppd'] = sum(7 if v[0] == 'Touchdown' else (3 if v[0] == 'Field goal' else 0) for v in dr.values()) / len(dr) if dr else None
+        x_['rz_td'] = sum(1 for v in rz if v[0] == 'Touchdown') / len(rz) if rz else None; x_['rz_n'] = len(rz)
+        tk = [p for p in DP if p['defteam'] == t and (DI_(p['interception']) == 1 or DI_(p['fumble_lost']) == 1)]
+        x_['take'] = len(tk); x_['int'] = sum(1 for p in tk if DI_(p['interception']) == 1); x_['fum'] = x_['take'] - x_['int']
+        pen = [p for p in DP if DI_(p.get('penalty')) == 1 and p.get('penalty_team') == t]
+        x_['pen'] = len(pen); x_['pen_yds'] = sum(DI_(p.get('penalty_yards')) for p in pen); x_['pen_fd'] = sum(1 for p in pen if DI_(p.get('first_down_penalty')) == 1)
+        gl = [g for g in _fin.itertuples() if t in (g.home_team, g.away_team)]
+        x_['g'] = len(gl); x_['pa'] = sum(int(g.away_score if g.home_team == t else g.home_score) for g in gl)
+        x_['w'] = sum(1 for g in gl if (g.home_score if g.home_team == t else g.away_score) > (g.away_score if g.home_team == t else g.home_score))
+        x_['l'] = sum(1 for g in gl if (g.home_score if g.home_team == t else g.away_score) < (g.away_score if g.home_team == t else g.home_score)); x_['t'] = x_['g'] - x_['w'] - x_['l']
+        x_['pa_pg'] = x_['pa'] / x_['g'] if x_['g'] else None; x_['take_pg'] = x_['take'] / x_['g'] if x_['g'] else None
+        wk_ = []
+        for gid in sorted({p['game_id'] for p in rows}, key=lambda g_: int(str(g_).split('_')[1])):
+            gr_ = [p for p in rows if p['game_id'] == gid]; opp = gr_[0]['posteam']
+            orows = [p for p in DSN if p['posteam'] == opp and p['game_id'] != gid]; oe = sum(DF_(p['epa']) for p in orows) / len(orows) if orows else None
+            g = next((g for g in gl if g.game_id == gid), None); a_ = d_agg(gr_)
+            wk_.append(dict(gid=gid, wk=int(str(gid).split('_')[1]), opp=opp, home=bool(g is not None and g.home_team == t), epa=a_['epa'], oe=oe, n=a_['n'],
+                            pa=(int(g.away_score if g.home_team == t else g.home_score) if g is not None else None), pf=(int(g.home_score if g.home_team == t else g.away_score) if g is not None else None)))
+        x_['weeks'] = wk_
+        adj = [w['epa'] - w['oe'] for w in wk_ if w['oe'] is not None]; x_['adj'] = sum(adj) / len(adj) if adj else None
+        so = [w['oe'] for w in wk_ if w['oe'] is not None]; x_['sos'] = sum(so) / len(so) if so else None
+        x_['grid'], x_['grid_n'] = d_grid(rows); x_['lanes'], x_['lanes_n'] = d_lanes(rows); x_['sit'] = d_sit(rows); x_['style'] = d_style(rows)
+        who = defaultdict(lambda: [None, None, 0, 0.0, 0, 0])
+        for p in rows:
+            if DI_(p['pass_attempt']) == 1 and isinstance(p['receiver_player_id'], str): pid = p['receiver_player_id']
+            elif DI_(p['rush_attempt']) == 1 and DI_(p['qb_scramble']) != 1 and isinstance(p['rusher_player_id'], str): pid = p['rusher_player_id']
+            else: continue
+            w = who[pid]; w[0] = _names.get(pid); w[1] = p['posteam']; w[2] += DI_(p['yards_gained']); w[3] += DF_(p['epa']); w[4] += 1; w[5] += DI_(p['touchdown'])
+        x_['who'] = [[k_] + v for k_, v in sorted(who.items(), key=lambda kv: -kv[1][3]) if v[0]][:6]
+    # pressure, coverage and missed tackles from PFR's defensive charting; defenders from the stat lines, PFR and snap counts
+    PFRD = pd.read_csv(env('DBD_PFRD'), low_memory=False) if env('DBD_PFRD') else pd.DataFrame()
+    if len(PFRD) and 'game_type' in PFRD.columns: PFRD = PFRD[PFRD.game_type == 'REG']
+    _pfrid = {r_.gsis_id: r_.pfr_id for r_ in _r.itertuples() if isinstance(getattr(r_, 'pfr_id', None), str)}
+    _ros = {r_.gsis_id: r_ for r_ in _r.itertuples()}
+    _sn = snaps[snaps.game_type == 'REG'] if len(snaps) and 'game_type' in snaps.columns else snaps
+    for t in DTEAMS:
+        x_ = DD[t]; pf_t = PFRD[PFRD.team == t] if len(PFRD) else PFRD
+        x_['pressures'] = int(pf_t.def_pressures.fillna(0).sum()) if len(pf_t) else None
+        x_['press'] = x_['pressures'] / x_['all']['ndb'] if x_['pressures'] is not None and x_['all']['ndb'] else None
+        x_['mtk'] = int(pf_t.def_missed_tackles.fillna(0).sum()) if len(pf_t) else None; x_['tkl'] = int(pf_t.def_tackles_combined.fillna(0).sum()) if len(pf_t) else None
+        x_['mtr'] = x_['mtk'] / (x_['mtk'] + x_['tkl']) if x_['mtk'] is not None and (x_['mtk'] + x_['tkl']) else None
+        st_t = stats[(stats.team == t) & stats.position_group.isin(['DL', 'LB', 'DB'])] if len(stats) and 'position_group' in stats.columns else pd.DataFrame()
+        defs = {}
+        for w in st_t.itertuples():
+            d_ = defs.setdefault(w.player_id, dict(id=w.player_id, name=w.player_display_name, pos=w.position, grp=w.position_group, num=c(getattr(_ros.get(w.player_id), 'jersey_number', None)),
+                                                    g=0, tkl=0, tfl=0, sk=0.0, qbh=0, int=0, pd=0, ff=0))
+            d_['g'] += 1; d_['tkl'] += DI_(w.def_tackles_solo) + DI_(w.def_tackle_assists); d_['tfl'] += DI_(w.def_tackles_for_loss); d_['sk'] += DF_(w.def_sacks) or 0.0
+            d_['qbh'] += DI_(w.def_qb_hits); d_['int'] += DI_(w.def_interceptions); d_['pd'] += DI_(w.def_pass_defended); d_['ff'] += DI_(w.def_fumbles_forced)
+        for d_ in defs.values():
+            pid_ = _pfrid.get(d_['id'])
+            pr = pf_t[pf_t.pfr_player_id == pid_] if pid_ and len(pf_t) and 'pfr_player_id' in pf_t.columns else (pf_t[pf_t.pfr_player_name == d_['name']] if len(pf_t) else pf_t)
+            d_['prs'] = int(pr.def_pressures.fillna(0).sum()) if len(pr) else 0; d_['tgt'] = int(pr.def_targets.fillna(0).sum()) if len(pr) else 0
+            d_['cmp'] = int(pr.def_completions_allowed.fillna(0).sum()) if len(pr) else 0; d_['yds'] = int(pr.def_yards_allowed.fillna(0).sum()) if len(pr) else 0
+            d_['tda'] = int(pr.def_receiving_td_allowed.fillna(0).sum()) if len(pr) else 0; d_['mt'] = int(pr.def_missed_tackles.fillna(0).sum()) if len(pr) else 0
+            rv = pr[pr.def_passer_rating_allowed.notna() & (pr.def_targets.fillna(0) > 0)] if len(pr) else pr
+            d_['rate'] = round(float((rv.def_passer_rating_allowed * rv.def_targets).sum() / rv.def_targets.sum()), 1) if len(rv) else None  # PFR's weekly ratings, weighted by targets
+            s_ = _sn[(_sn.pfr_player_id == pid_) & (_sn.team == t)] if pid_ and len(_sn) and 'pfr_player_id' in _sn.columns else (_sn[(_sn.player == d_['name']) & (_sn.team == t)] if len(_sn) else _sn)
+            d_['snap'] = int(round(100 * float(s_.defense_pct.fillna(0).sum()) / max(1, x_['g']))) if len(s_) else 0
+        x_['defenders'] = sorted(defs.values(), key=lambda d_: (-d_['snap'], -d_['tkl']))
+    # ranks among the 32 (1 = the best defense), the distributions behind the Scorecard bars, and the style ranks (1 = the most)
+    def dclean(o):  # clean() and lists too: the grid, lanes and situations are lists of floats
+        if isinstance(o, dict): return {k_: dclean(v) for k_, v in o.items()}
+        if isinstance(o, (list, tuple)): return [dclean(v) for v in o]
+        if isinstance(o, float): return None if o != o else round(o, 4)
+        return o
+    D_KEYS = dict(epa=0, sr=0, ypp=0, expl=0, pepa=0, repa=0, ypc=0, third=0, sack=1, hit=1, intr=1)   # 1: higher is better for the defense
+    D_EXTRA = dict(ppd=0, rz_td=0, press=1, adj=0, take_pg=1, pa_pg=0, mtr=0)
+    dget = lambda t, k: DD[t]['all'][k] if k in D_KEYS else DD[t].get(k)
+    D_RANK = {t: {} for t in DTEAMS}; D_DIST = {}; D_VALS = {}
+    for k_, hib in list(D_KEYS.items()) + list(D_EXTRA.items()):
+        vals = [(t, dget(t, k_)) for t in DTEAMS if dget(t, k_) is not None]
+        for i_, (t, _) in enumerate(sorted(vals, key=lambda tv: -tv[1] if hib else tv[1])): D_RANK[t][k_] = i_ + 1
+        D_DIST[k_] = sorted(v for _, v in vals); D_VALS[k_] = {t: v for t, v in vals}
+    S_KEYS = ('blitz', 'rush', 'four', 'e_bz', 'e_nb', 'box', 'heavy', 'ypc_h', 'ypc_l', 'pa', 'e_pa', 'scr', 'e_scr', 'mot', 'e_mot', 'proe', 'cpoe')
+    S_VALS = {k_: {t: DD[t]['style'][k_] for t in DTEAMS if DD[t]['style'].get(k_) is not None} for k_ in S_KEYS}
+    for k_ in ('pen', 'sos'): S_VALS[k_] = {t: DD[t][k_] for t in DTEAMS if DD[t].get(k_) is not None}
+    for t in DTEAMS:
+        DD[t]['rank'] = D_RANK[t]
+        json.dump(dclean(dict(season=season, through=through_week, team=t, **DD[t])), open(f'{out}/defense/{t}.json', 'w'), separators=(',', ':'))
+    json.dump(dclean(dict(season=season, through=through_week, lg=DLG, rank=D_RANK, dist=D_DIST, vals=D_VALS, style=S_VALS, off_epa=OFFE, hib={**D_KEYS, **D_EXTRA})), open(f'{out}/defense/league.json', 'w'), separators=(',', ':'))
+    # the explorer's rows for the snaps each team defended, in the offense files' format
+    for t in DTEAMS:
+        gids = {p['game_id'] for p in DSN if p['defteam'] == t}
+        drows = []
+        for o_, pl_ in team_plays.items():
+            if o_ == t: continue
+            drows += [[r_[k_] for k_ in keys] for r_ in pl_ if r_['g'] in gids]
+        own = json.load(open(f'{out}/plays/{t}.json'))
+        json.dump(dict(season=season, team=t, side='def', byes=own.get('byes', []), games=own.get('games', []), keys=keys, plays=drows), open(f'{out}/plays/def/{t}.json', 'w'), separators=(',', ':'))
+    print('defense:', len(DTEAMS), 'teams; best', min(DTEAMS, key=lambda t: D_RANK[t]['epa']), round(DD[min(DTEAMS, key=lambda t: D_RANK[t]['epa'])]['all']['epa'], 3))
 
 # ---------------------------------------------------------------- manifest
 files = {}

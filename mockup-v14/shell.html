@@ -1,0 +1,17 @@
+<!doctype html><html class="no-js"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>%TITLE%</title>
+<link href="https://fonts.googleapis.com/css2?family=Tourney:wght@800&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/dbd.css"><link rel="stylesheet" href="assets/transitions.css"><link rel="stylesheet" href="assets/vendor/chartist.css"><link rel="stylesheet" href="assets/m14.css">
+</head><body class="dbd-app">
+<div class="mk-bar"><b>Mock · the defensive half</b><span>The Vikings' Defense tab, built from this season's nflverse files through Week 8, in the live 1.14.0 shell. Every number is real.</span><label><input type="checkbox" id="mk-toggle" checked> Show outlines</label></div>
+<div class="entry-content">%ROOT%</div>
+<script>window.DBD_TEAM = %CFG%;</script>
+<script src="assets/dbd-site.js"></script><script src="assets/marks.js"></script><script src="assets/vendor/chartist.umd.js"></script><script src="assets/team-explorer-def.js"></script>
+<script>
+document.getElementById('mk-toggle').addEventListener('change',function(e){document.body.classList.toggle('mk-off',!e.target.checked);});
+/* the depth grid's How often / EPA switch (player.js does this on player pages) */
+document.querySelectorAll('.dbd-lz').forEach(function(lz){var v=lz.querySelector('.dbd-lzv');if(!v)return;var pl=v.querySelector('.t-tabs-pill');var go=function(){var t=v.querySelector('[aria-selected=true]');if(t&&t.offsetWidth){pl.style.transform='translateX('+t.offsetLeft+'px)';pl.style.width=t.offsetWidth+'px';}};
+v.addEventListener('click',function(e){var b=e.target.closest('.t-tab');if(!b)return;v.querySelectorAll('.t-tab').forEach(function(x){x.setAttribute('aria-selected',x===b?'true':'false');});lz.setAttribute('data-mode',b.dataset.m);go();});setTimeout(go,200);window.addEventListener('load',go);});
+/* the offense / defense switch pill */
+document.querySelectorAll('.ld-side').forEach(function(v){var pl=v.querySelector('.t-tabs-pill');var go=function(){var t=v.querySelector('[aria-selected=true]');if(t&&t.offsetWidth){pl.style.transform='translateX('+t.offsetLeft+'px)';pl.style.width=t.offsetWidth+'px';}};setTimeout(go,200);window.addEventListener('load',go);});
+</script>
+</body></html>

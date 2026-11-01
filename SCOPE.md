@@ -1473,3 +1473,68 @@ After the Leaders split (§37 addendum), the player pages still graded a receive
 The build check confirms the wr and te pools add up to the combined pool, every WR and TE carries his own pool, the Leaders WR and TE boards hold only their position, and Justin Jefferson's page reads "among … wide receivers".
 
 Size: M. Status: built as 1.14.0.
+
+## 39. The defensive half (scoped and mocked 2026-11-01, `mockup-v14/`)
+
+Roadmap 2 slice 9 (Gene's): "What does this defense allow, and how?" Gene: "scope and mock the defense stuff, go deep." The site describes only offenses; every defensive number today is a supporting figure (the defense chip on a player's This week panel, the matchup ranks on a game page, fantasy points allowed). This slice gives every team a **Defense tab** as deep as a player page. The mock is the **Vikings' Defense tab** (`def-MIN.html`), built from this season's nflverse files through Week 8 (`src/defcalc.py` computes all 32 defenses so every rank is real) inside the live 1.14.0 team page shell, with the existing play explorer run on the 339 plays the Vikings defended. The Vikings are the league's best defense this season, which makes them a good test of the reads.
+
+### What nflverse has for the defense (inventory, 2026)
+
+- **Play-by-play** (372 columns): the defending team on every snap, EPA, success, air yards and side, run lane and gap, expected completion (CPOE) and expected pass rate, and every defensive event with the player: solo and assisted tackles, tackles for loss, sacks and half sacks, QB hits, passes defended, interceptions, forced fumbles and recoveries, penalties.
+- **FTN charting** (already downloaded for the offense): blitzers, pass rushers and defenders in the box on every snap; play action, screens, motion and RPOs faced; interception-worthy throws, contested balls.
+- **PFR advanced defense** (`advstats_week_def`, new to the build): per defender per week, targets and completions allowed in coverage, yards, touchdowns and passer rating allowed, depth of target, yards after the catch, blitzes, hurries, QB hits, sacks, pressures, tackles and missed tackles.
+- **Player stats** (already downloaded): every defender's weekly line (tackles, TFL, sacks, QB hits, INT, PD, forced fumbles, defensive TDs).
+- **Snap counts** (already downloaded): defensive snaps and share per player per game.
+- **Not available for 2026**: the participation file (coverage type, man or zone, defensive personnel, offensive formation). Nothing in the tab depends on it.
+
+### What the reader sees
+
+The team page gets an **Offense | Defense** switch under the title (`?team=MIN&side=def`; the offense stays the default). The Defense tab:
+
+- **Title and hero tiles**: "Vikings defense", the record, and eight tiles ranked among 32: EPA allowed a play (−0.19, 1st), success allowed (35%, 1st), points allowed a game (12.3, 1st), takeaways (11, 3rd a game), sack rate (10.2%, 1st), pressure rate (39%, 1st), third downs (29%, 2nd), red zone (TD on 25% of trips, 1st).
+- **The short version**: how good (1st in EPA allowed, and 0.20 a play below what the offenses they faced usually manage, also 1st); how they play (a 71% blitz rate, 1st-most); where offenses find room (runs: 4.0 a carry, 15th; off left tackle 8.6 a carry); who hurt them most (Christian Watson, +6.9 EPA); next up (the opponent offense's rank).
+- **How good is it**
+  - **Scorecard**: the player page's Scorecard, for the defense against all 32: EPA a play, pass EPA a dropback, rush EPA a carry, success rate, explosive rate, yards a play, yards a carry, third downs, sack rate, pressure rate, QB hit rate, INT rate, red-zone TD rate, points per drive, takeaways a game, and EPA against expectation. League bars and percentiles, right is better for the defense.
+  - **Game by game**: each game's EPA a play allowed against what that offense averages in its other games, on a diverging track (green when held below, red when it gave up more), with the result and a read ("held 6 of 6 below their usual; the biggest stop was Week 5 against the Saints"), and the strength of the offenses faced.
+- **Where offenses find room** (four tabs)
+  - **Pass by zone**: the player page's depth-by-direction grid (behind the line, short, intermediate, deep × left, middle, right), How often or EPA allowed against the league, with a read naming the soft spot and the lockdown zone, and CPOE allowed (−10.0, 1st).
+  - **Runs by lane**: seven lanes from left end to right end over an offensive line: yards a carry, EPA, carries, the share of runs as a bar, tinted against the league.
+  - **By position**: targets, yards and EPA per target allowed to wide receivers, tight ends and backs, ranked as the player pages quote them, and fantasy points allowed to every position in the chosen scoring (§34); then **Who hurt them most**, the opposing players with the most EPA against this defense.
+  - **Situations**: by down, third down by distance (1 to 3, 4 to 6, 7+), the red zone, the two-minute drill, and score state, against the league, with a read on the biggest edge and the weakest spot.
+- **How they play** (four cards, from FTN and PFR): **Pressure and the blitz** (blitz rate, pass rushers a dropback, EPA allowed with and without a blitz); **The box and the run** (box count, eight-man boxes, yards a carry into light and heavy boxes); **What offenses try against them** (pass rate over expected, CPOE allowed, play action and motion faced and what they gain); **Discipline and tackling** (penalties and the first downs they gave, missed tackle rate, takeaways). Each figure carries its rank of 32 and the league figure.
+- **The defenders** (three tabs, by snap share): **The front** (snaps, pressures, sacks, QB hits, TFL, tackles, forced fumbles; a linebacker who rushes more than he covers is listed here), **Linebackers** (tackles, TFL, sacks, pressures, targets, passer rating allowed, missed tackles), **The secondary** (targets, catches allowed, yards, TD, passer rating allowed, INT, passes defended). Each tab has a one-line read (Dallas Turner leads the rush with 25 pressures; Isaiah Rodgers allows a 49.2 passer rating on 23 targets). Defenders have no pages of their own; their jersey tile stands in for a headshot.
+- **Every snap they defended**: the existing play explorer in a defense mode on the plays the team defended: games strip, filters, drive chart, pass and run map, situations, tendencies, play detail, and "Who got the ball against them". Labels follow the defense ("EPA allowed / play", "good defenses hold under 40%", the defense's own end zone on the drive chart).
+- **On phones** every band stacks; the grid, lanes, tables and cards fit 375 without sideways scroll, and the run lanes use two-letter labels so no text falls under 11px.
+
+### Elsewhere on the site
+
+- A player's **This week** panel and the game page's matchup ranks link the defense chip to that defense's tab.
+- **Leaders** gains a **Defenses** tab: the 32 teams ranked on each Scorecard stat, from the same league file.
+- The hub standings' DEF rank links to the tab.
+
+### Data
+
+- The build adds **PFR advanced defense** (`advstats_week_def_{season}.csv`) to its downloads, and writes:
+  - **`defense/{TEAM}.json`** per team (about 25 KB): the tiles, Scorecard values, game-by-game rows, the pass grid, run lanes, position and fantasy allowed (from metrics and fantasy.json), who hurt them, situations, the style cards, discipline, and the defenders (stats, PFR coverage and pressure, snap share).
+  - **`defense/league.json`**: the 32-team distributions and ranks for every Scorecard and style figure, the league pass grid, lanes and situations, and the strength of schedule.
+  - **`plays/def/{TEAM}.json`** per team: the explorer's play rows for the snaps the team defended, in the offense file's format (about 85 KB for the Vikings).
+- The sync allowlist gains `defense/[A-Z]{2,3}`, `defense/league` and `plays/def/[A-Z]{2,3}`. From 1.14.0 the plugin syncs itself after an update, so the new files arrive without pressing Sync now.
+- The build check validates all 32 defense files (ranks 1 to 32 with no gaps, the grid and lanes summing to the plays they describe, every defender on the team's roster) and renders the Vikings' tab from fresh data.
+
+### Plugin
+
+The router (`side=def` on a team), `team.php` (the switch, and the defense view in `views/defense.php`), a `DBD_Defense` class (tiles, Scorecard, game by game, grid, lanes, positions, situations, style, defenders), `team-explorer.js` (a defense mode: labels, field side, reads), the Leaders Defenses tab, the This week and game page links, the CSS, the view harness and both CI checks. SEO: "Vikings defense" title and description; the defense tab is indexable.
+
+### Left out
+
+- **Coverage type and personnel** (man or zone, nickel or base): nflverse has no 2026 participation file.
+- **Defender pages**: defenders appear in the tab's tables; pages of their own are a later idea.
+- **Defensive player boards on Leaders** (sacks, pressures, passer rating allowed): possible from the same files, a follow-on.
+- **Opponent-adjusting every figure**: only EPA a play is adjusted (EPA against expectation); the rest are raw.
+- **Special teams**.
+
+### Acceptance
+
+The Vikings' tab matches the mock: EPA allowed −0.19 a play, 1st; blitz rate 71%, 1st-most; pressure rate 39%, 1st; yards a carry 4.0, 15th, and 8.6 off left tackle; held 6 of 6 offenses below their usual; CPOE allowed −10.0, 1st; Dallas Turner 25 pressures; Isaiah Rodgers a 49.2 passer rating on 23 targets. The switch moves between offense and defense; the explorer runs on the defended plays; no overflow at 375 and no text under 11px.
+
+Size: L (one release). Status: signed off 2026-11-01 and built as 1.15.0.

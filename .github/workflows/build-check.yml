@@ -15,6 +15,8 @@ on:
       - 'plugin/down-by-down/includes/views/myteam.php'
       - 'plugin/down-by-down/includes/class-dbd-leaders.php'
       - 'plugin/down-by-down/includes/views/leaders.php'
+      - 'plugin/down-by-down/includes/class-dbd-defense.php'
+      - 'plugin/down-by-down/includes/views/team.php'
       - 'plugin/down-by-down/includes/views/players.php'
       - 'plugin/down-by-down/includes/views/matchups.php'
       - 'plugin/down-by-down/includes/views/compare.php'
@@ -44,6 +46,7 @@ jobs:
           dl "stats_player/stats_player_week_${S}.csv"  stats.csv   DBD_STATS
           dl "snap_counts/snap_counts_${S}.csv"         snaps.csv   DBD_SNAPS
           dl "pfr_advstats/advstats_week_rec_${S}.csv"  pfr.csv     DBD_PFR
+          dl "pfr_advstats/advstats_week_def_${S}.csv"  pfrd.csv    DBD_PFRD
           dl "injuries/injuries_${S}.csv"               inj.csv     DBD_INJ
           dl "depth_charts/depth_charts_${S}.csv"       depth.csv   DBD_DEPTH
           dl "ftn_charting/ftn_charting_${S}.csv"       ftn.csv     DBD_FTN
@@ -217,6 +220,28 @@ jobs:
           print(len(L['players']), 'players in leaders.json')
           if bad: print('\n'.join(bad)); sys.exit(1)
           PY
+      - name: Check the defense files (SCOPE §39)
+        run: |
+          python3 - <<'PY'
+          import json, glob, os, sys
+          L = json.load(open('/tmp/out/defense/league.json')); bad = []
+          files = sorted(glob.glob('/tmp/out/defense/[A-Z]*.json')); print(len(files), 'defense files')
+          if len(files) != 32: bad.append(f'{len(files)} defense files, not 32')
+          for k in ('epa', 'sr', 'ypc', 'third', 'sack', 'press', 'rz_td', 'ppd', 'adj'):
+              ranks = sorted(L['rank'][t][k] for t in L['rank'] if k in L['rank'][t])
+              if ranks != list(range(1, len(ranks) + 1)): bad.append(f'{k}: ranks are not 1 to {len(ranks)}')
+          for fn in files:
+              D = json.load(open(fn)); t = D['team']
+              if sum(v[0] for v in D['grid'].values()) != D['grid_n']: bad.append(f'{t}: the pass grid does not add up')
+              if sum(v[0] for v in D['lanes'].values()) > D['lanes_n']: bad.append(f'{t}: the run lanes add up to more than the runs')
+              if not D['defenders']: bad.append(f'{t}: no defenders')
+              if not D['weeks']: bad.append(f'{t}: no games')
+              if not os.path.exists(f'/tmp/out/plays/def/{t}.json'): bad.append(f'{t}: no defense play file')
+          best = min(L['rank'], key=lambda t: L['rank'][t]['epa']); D = json.load(open(f'/tmp/out/defense/{best}.json'))
+          print('best defense', best, round(D['all']['epa'], 3), 'blitz', D['style'].get('blitz'), 'pressure', D.get('press'), 'top defender', D['defenders'][0]['name'])
+          P = json.load(open('/tmp/out/plays/def/MIN.json')); print('Vikings defended', len(P['plays']), 'plays')
+          if bad: print('\n'.join(bad[:30])); sys.exit(1)
+          PY
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
@@ -245,6 +270,9 @@ jobs:
           php tools/view_harness.php /tmp/out myteam "$MT" && python3 -c "import sys;s=open('pages/myteam-$MT.html').read();n=s.count('class=\"mt-row')-s.count('class=\"mt-row empty');print(n,'filled rows');sys.exit(0 if n>=36 else 1)" || { echo "the sample team did not fill the lineup and bench in all three formats"; exit 1; }
           grep -q 'class="dbd-mtbtn"' pages/player-00-0036322.html || { echo "no My team button on Jefferson"; exit 1; }
           grep -q 'among [0-9]* wide receivers' pages/player-00-0036322.html || { echo "Jefferson is not graded among wide receivers"; exit 1; }
+          php tools/view_harness.php /tmp/out defense MIN && grep -q 'class="dbd-panel dbd-score"' pages/defense-MIN.html && grep -q 'class="dbd-lanes"' pages/defense-MIN.html && grep -q 'dbd-ddef' pages/defense-MIN.html || { echo "the Vikings defense tab is missing a band"; exit 1; }
+          php tools/view_harness.php /tmp/out leaders def && grep -q 'ld-card' pages/leaders-def.html || { echo "no Defenses boards"; exit 1; }
+          php tools/view_harness.php /tmp/out leaders def.take_pg && grep -q 'ld-full' pages/leaders-def.take_pg.html || { echo "no takeaways board"; exit 1; }
           php tools/view_harness.php /tmp/out leaders "" && [ "$(grep -o 'class="dbd-panel ld-card"' pages/leaders.html | wc -l)" -eq 7 ] || { echo "the fantasy tab does not have seven boards"; exit 1; }
           php tools/view_harness.php /tmp/out leaders wr && [ "$(grep -o 'class="dbd-panel ld-card"' pages/leaders-wr.html | wc -l)" -eq 16 ] || { echo "the wide receivers tab does not have sixteen boards"; exit 1; }
           php tools/view_harness.php /tmp/out leaders te && [ "$(grep -o 'class="dbd-panel ld-card"' pages/leaders-te.html | wc -l)" -eq 16 ] || { echo "the tight ends tab does not have sixteen boards"; exit 1; }

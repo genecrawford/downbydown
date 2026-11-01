@@ -34,7 +34,7 @@ if ( $gotw ) {
 	foreach ( array( $gotw['away'], $gotw['home'] ) as $a ) {
 		$t = DBD_Data::team( $a );
 		echo '<div class="dbd-t">' . DBD_Marks::tile( $a, 34 ) . '<b>' . esc_html( $a ) . '</b><span>' . esc_html( $t['nick'] . ' · ' . DBD_Data::record_text( $a ) ) . '</span></div>';
-		echo '<div class="dbd-rkline">OFF #' . (int) DBD_Data::rank( 'off', $a ) . ' · DEF #' . (int) DBD_Data::rank( 'def', $a ) . '</div>';
+		echo '<div class="dbd-rkline">OFF #' . (int) DBD_Data::rank( 'off', $a ) . ' · ' . DBD_Defense::link( $a, 'DEF #' . (int) DBD_Data::rank( 'def', $a ) ) . '</div>';  /* SCOPE §39: to the defense tab */
 	}
 	echo '</div><div class="dbd-line"><span>' . esc_html( DBD_Router::line_text( $gotw ) ) . '</span><span>O/U ' . esc_html( $gotw['total'] ?? '' ) . '</span><span>' . esc_html( $gotw['stadium'] ?? '' ) . '</span></div>';
 	if ( $blurb ) { echo '<p>' . esc_html( $blurb ) . '</p>'; }

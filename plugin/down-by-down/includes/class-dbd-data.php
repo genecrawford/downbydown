@@ -175,6 +175,11 @@ class DBD_Data {
 		return self::get( 'fantasy.json' ) ?: array();
 	}
 
+	/** A team's defense file (SCOPE §39), or null before it exists. */
+	public static function defense( $abbr ) { return self::get( 'defense/' . $abbr . '.json' ) ?: null; }
+	/** The 32-team defense distributions, ranks and league figures (SCOPE §39), or an empty array. */
+	public static function defense_league() { return self::get( 'defense/league.json' ) ?: array(); }
+
 	public static function team_game( $abbr, $week ) {
 		foreach ( self::week_games( $week ) as $g ) { if ( $g['home'] === $abbr || $g['away'] === $abbr ) { return $g; } }
 		return null;
