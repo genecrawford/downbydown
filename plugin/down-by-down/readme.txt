@@ -31,6 +31,9 @@ Not affiliated with the NFL or any team. No team logos are used; team marks are 
 
 == Changelog ==
 
+= Next release =
+* Tables sit flush in their panels: the theme's 1px border around every table in a post no longer shows on the site's tables.
+
 = 1.10.0 =
 * The series (SCOPE §33): every game page adds the two teams' series since 1999, read from the away team's side. A read with the series leader, the streak and the last meeting (date, stadium, score, starting quarterbacks and coaches); home and road records, most points and biggest win each way, playoff meetings when there are any; the last five meetings, linked when they were this season; and both teams' records this season side by side.
 * Team players pages carry the record broken down under the title: overall, division, conference, home, away and the streak.
