@@ -73,8 +73,8 @@ if ( $WP && ! empty( $WP['s'] ) ) {
 	$lo = isset( $WP['lo'] ) && $WP['lo'] !== null && $wWin ? $wS[ (int) $WP['lo'] ] : null;
 	if ( $lo ) { $lx = $wX( $lo[0] ); $mk .= '<em class="lo' . ( $wWin === $HOME ? ' dn' : '' ) . ( $lx > 70 ? ' lft' : '' ) . '" style="left:' . $lx . '%;top:' . $wY( $lo[1] ) . '%"><span>' . esc_html( $wWin ) . ' low ' . $wPct( $wFor( $wWin, $lo[1] ) ) . '</span></em>'; }
 	if ( $wOT ) {
-		$mk .= '<div class="otb" style="left:' . $wX( 3600 ) . '%"><span>Overtime</span></div>';
-		foreach ( $wOts as $o ) { $mk .= '<i class="ots" style="left:' . $wX( $o[0] ) . '%" data-tip="' . esc_attr( '<b>' . $wClock( $o[0] ) . '</b> ' . esc_html( $o[2] ) . '<br>' . $AWAY . ' ' . (int) $o[4] . ' · ' . $HOME . ' ' . (int) $o[3] ) . '" tabindex="0">' . esc_html( (string) $o[1] ) . '</i>'; }
+		$mk .= '<div class="otb" style="left:' . $wX( 3600 ) . '%"><span>Overtime</span></div>';  /* overtime scores are stacked down the band so close ones never overlap */
+		foreach ( $wOts as $k => $o ) { $mk .= '<i class="ots" style="left:' . $wX( $o[0] ) . '%;top:' . min( 88, 34 + 18 * $k ) . '%" data-tip="' . esc_attr( '<b>' . $wClock( $o[0] ) . '</b> ' . esc_html( $o[2] ) . '<br>' . $AWAY . ' ' . (int) $o[4] . ' · ' . $HOME . ' ' . (int) $o[3] ) . '" tabindex="0">' . esc_html( (string) $o[1] ) . '</i>'; }
 		if ( $wWin ) { $mk .= '<i class="fin' . ( $wWin === $HOME ? ' top' : '' ) . '" style="left:100%"></i>'; }
 	}
 	$wData = wp_json_encode( array( 'e' => $wEnd, 'h' => $HOME, 'a' => $AWAY, 's' => $wS ) );
@@ -99,7 +99,9 @@ if ( $WP && ! empty( $WP['s'] ) ) {
 		if ( $tp ) { $i = (int) $tp[0]; $say[] = 'The game turned for good at ' . $wClock( $wS[ $i ][0] ) . ': ' . esc_html( rtrim( $tp[3], '.' ) ) . ' (' . $wPct( $wFor( $wWin, $wS[ $i ][1] ) ) . ' → <b>' . $wPct( $wFor( $wWin, $wAfter( $i ) ) ) . '</b>).'; }
 		if ( $wOT ) { $wl = $wOts ? end( $wOts ) : null; $say[] = 'Tied ' . (int) $WP['reg'][0] . '–' . (int) $WP['reg'][1] . ' after regulation, they won it in overtime' . ( $wl ? ' at ' . $wClock( $wl[0] ) . ': ' . esc_html( rtrim( $wl[2], '.' ) ) . '.' : '.' ); }
 	} else {
-		$say[] = 'Neither team won: ' . $wHs . '–' . $wAs . ' after ' . ( $wOT ? 'overtime' : 'regulation' ) . '. The ' . esc_html( $wNick( $HOME ) ) . ' got as high as <b>' . $wPct( $wFor( $HOME, $hi[ $HOME ][1] ) ) . '</b> (' . $wClock( $hi[ $HOME ][0] ) . '), the ' . esc_html( $wNick( $AWAY ) ) . ' <b>' . $wPct( $wFor( $AWAY, $hi[ $AWAY ][1] ) ) . '</b> (' . $wClock( $hi[ $AWAY ][0] ) . ').';
+		$peak = function ( $tm ) use ( $hi, $wFor, $wPct, $wClock, $wNick ) { $v = $wFor( $tm, $hi[ $tm ][1] ); return $v <= 500 ? 'the ' . esc_html( $wNick( $tm ) ) . ' never had better than even odds' : 'the ' . esc_html( $wNick( $tm ) ) . ' got as high as <b>' . $wPct( $v ) . '</b> (' . $wClock( $hi[ $tm ][0] ) . ')'; };
+		$pk = array( $HOME, $AWAY ); usort( $pk, function ( $x, $y ) use ( $hi, $wFor ) { return $wFor( $y, $hi[ $y ][1] ) <=> $wFor( $x, $hi[ $x ][1] ); } );  /* the closer team first */
+		$say[] = 'Neither team won: ' . $wHs . '–' . $wAs . ' after ' . ( $wOT ? 'overtime' : 'regulation' ) . '. ' . ucfirst( $peak( $pk[0] ) ) . ', and ' . $peak( $pk[1] ) . '.';
 	}
 	if ( $big && ( ! $tp || (int) $big[0] !== (int) $tp[0] ) ) { $say[] = 'The biggest single swing came at ' . $wClock( $wS[ (int) $big[0] ][0] ) . ', ' . round( abs( $big[1] ) / 10 ) . ' points for the ' . esc_html( $wNick( $bigB ) ) . '.'; }
 	/* the plays that swung it, and the turning point as a sixth row when it is not in the five */

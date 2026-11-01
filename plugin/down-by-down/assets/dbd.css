@@ -992,5 +992,6 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 /* overtime: no line (the model does not hold together under the current rules), a hatched band with the scoring plays and the result */
 .dbd .dbd-wpc .otb{position:absolute;top:0;bottom:0;right:0;background:repeating-linear-gradient(135deg,transparent 0 6px,var(--dbd-line) 6px 7px);border-left:1px solid var(--dbd-line-2);pointer-events:none}
 .dbd .dbd-wpc .otb span{position:absolute;top:6px;left:6px;font:700 11px var(--dbd-display);text-transform:uppercase;letter-spacing:.1em;color:var(--dbd-muted);background:var(--dbd-panel);padding:0 3px}
-.dbd .dbd-wpc .ots{position:absolute;top:50%;transform:translate(-50%,-50%);z-index:3;padding:1px 4px;border-radius:3px;background:var(--dbd-ink);color:var(--dbd-panel);font:700 11px/15px var(--dbd-mono);font-style:normal}
+.dbd .dbd-wpc .ots{position:absolute;transform:translate(-50%,-50%);z-index:3;padding:1px 4px;border-radius:3px;background:var(--dbd-ink);color:var(--dbd-panel);font:700 11px/15px var(--dbd-mono);font-style:normal}
 .dbd .dbd-wpc .fin{position:absolute;bottom:-1px;width:10px;height:10px;margin-left:-11px;border-radius:50%;background:var(--dbd-ink);z-index:3}.dbd .dbd-wpc .fin.top{top:-1px;bottom:auto}
+@container dbd (max-width:600px){.dbd .dbd-wpc .otb span{display:none}}  /* the band is narrow on a phone; the axis already says OT */
