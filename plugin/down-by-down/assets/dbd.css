@@ -1380,3 +1380,62 @@ html:not([data-fx]) .dbd [data-fx="half"],html[data-fx="std"] .dbd [data-fx="std
 .dbd .ld-min{font:500 13px var(--dbd-body);padding:6px 10px;border:1px solid var(--dbd-line-2);border-radius:var(--dbd-r);background:var(--dbd-panel);color:var(--dbd-ink)}
 .dbd .ld-foot{margin-top:4px}
 .dbd .ld-full tr[hidden]{display:none}
+
+/* ===== the defensive half (SCOPE §39) ===== */
+/* the offense / defense switch under the title: two links, the current one filled */
+.dbd .dbd-side{display:inline-flex;gap:2px;margin-top:14px;padding:3px;border-radius:var(--dbd-r);background:var(--dbd-panel-2);border:1px solid var(--dbd-line)}
+.dbd .dbd-side a{padding:7px 18px;border-radius:calc(var(--dbd-r) - 2px);font:700 12px var(--dbd-display);letter-spacing:.14em;text-transform:uppercase;color:var(--dbd-ink-2);text-decoration:none}
+.dbd .dbd-side a:hover{color:var(--dbd-red)}.dbd .dbd-side a[aria-current="page"]{background:var(--dbd-red);color:#fff}
+/* game by game: a diverging track per game, the offense's usual as a ring, what they allowed as a dot */
+.dbd .gwl{padding:6px var(--dbd-edge) 8px}
+.dbd .gw{display:grid;grid-template-columns:52px 120px 78px minmax(0,1fr) 92px;gap:10px;align-items:center;padding:7px 0;border-top:1px solid var(--dbd-line)}
+.dbd .gw.hd{border-top:0;font:700 11px var(--dbd-display);text-transform:uppercase;letter-spacing:.12em;color:var(--dbd-muted);padding-bottom:4px}
+.dbd .gw .trh{display:flex;justify-content:space-between}.dbd .gw .trh em{font-style:normal}
+.dbd .gw .wkl{font:600 12px var(--dbd-body);color:var(--dbd-muted)}.dbd .gw .op{font:500 13px var(--dbd-body)}
+.dbd .gw .rs{font:600 12px var(--dbd-body)}.dbd .gw .rs.w{color:var(--dbd-good)}.dbd .gw .rs.l{color:var(--dbd-bad)}
+.dbd .gw .tr{position:relative;height:22px;border-radius:3px;background:var(--dbd-panel-2)}
+.dbd .gw .tr i{position:absolute;top:50%}
+.dbd .gw .tr .z{left:50%;top:2px;bottom:2px;width:1px;background:var(--dbd-line-2)}
+.dbd .gw .tr .gap{top:7px;height:8px;border-radius:4px}.dbd .gw .tr .gap.good{background:rgba(30,127,74,.35)}.dbd .gw .tr .gap.bad{background:rgba(180,38,31,.3)}
+.dbd .gw .tr .ex{width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;border:2px solid var(--dbd-muted);background:var(--dbd-panel)}
+.dbd .gw .tr .me{width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;background:var(--dbd-ink)}
+.dbd .gw .num{font:600 13px var(--dbd-body);font-variant-numeric:tabular-nums;text-align:right}.dbd .gw .num small{display:block;font:400 11px var(--dbd-body)!important;color:var(--dbd-muted)}
+.dbd .dbd-gbg .dbd-legend{display:flex;flex-wrap:wrap;gap:6px 16px;padding:0 var(--dbd-edge) 12px;font:500 12px var(--dbd-body);color:var(--dbd-muted)}
+.dbd .dbd-gbg .dbd-legend span,.dbd .dbd-lanes+.dbd-legend span{display:inline-flex;align-items:center;gap:6px}
+.dbd .dbd-legend .sq{display:inline-block;width:12px;height:12px;border-radius:50%}.dbd .dbd-legend .sq.hollow{border:2px solid var(--dbd-muted);background:var(--dbd-panel)}
+@container dbd (max-width:640px){.dbd .gw{grid-template-columns:40px 72px minmax(0,1fr) 64px;gap:8px}.dbd .gw .rs{display:none}.dbd .gw.hd .trh em{font-size:0}.dbd .gw.hd span:nth-child(3){display:none}.dbd .gw .op{font-size:12px}}
+/* run lanes: seven columns over an offensive line */
+.dbd .dbd-lanes{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;padding:14px var(--dbd-edge) 4px}
+.dbd .dbd-lanes .ln{position:relative;display:flex;flex-direction:column;align-items:center;gap:1px;padding:10px 4px 30px;border-radius:4px;border:1px solid var(--dbd-line);background:var(--dbd-panel);min-height:150px;justify-content:flex-start;overflow:hidden;cursor:default}
+.dbd .dbd-lanes .ln.good{background:color-mix(in srgb,var(--dbd-good) 12%,var(--dbd-panel));border-color:color-mix(in srgb,var(--dbd-good) 35%,transparent)}
+.dbd .dbd-lanes .ln.bad{background:color-mix(in srgb,var(--dbd-bad) 10%,var(--dbd-panel));border-color:color-mix(in srgb,var(--dbd-bad) 35%,transparent)}
+.dbd .dbd-lanes .ln b{font:800 22px/1 var(--dbd-hero)}.dbd .dbd-lanes .ln small{font:500 11px var(--dbd-body)!important;color:var(--dbd-muted)}
+.dbd .dbd-lanes .ln .ep{font:600 13px var(--dbd-body);margin-top:6px}.dbd .dbd-lanes .ln .cn{font:500 11px var(--dbd-body);color:var(--dbd-muted)}
+.dbd .dbd-lanes .ln i{position:absolute;left:20%;right:20%;bottom:22px;height:calc(var(--h) * .5);max-height:46px;background:var(--dbd-team);opacity:.25;border-radius:2px 2px 0 0}
+.dbd .dbd-lanes .ln em{position:absolute;left:0;right:0;bottom:5px;text-align:center;font:700 10px var(--dbd-display);font-style:normal;letter-spacing:.1em;text-transform:uppercase;color:var(--dbd-muted)}
+.dbd .dbd-lanes .line{grid-column:1/-1;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-top:2px}
+.dbd .dbd-lanes .line span{display:grid;place-items:center;height:22px;border-radius:11px;background:var(--dbd-ink);color:#fff;font:700 10px var(--dbd-display);letter-spacing:.1em}
+.dbd .dbd-lanes+.dbd-legend{display:flex;flex-wrap:wrap;gap:6px 16px;padding:8px var(--dbd-edge) 12px;font:500 12px var(--dbd-body);color:var(--dbd-muted)}
+@container dbd (max-width:640px){.dbd .dbd-lanes{gap:3px}.dbd .dbd-lanes .ln{padding:8px 2px 28px;min-height:132px}.dbd .dbd-lanes .ln b{font-size:16px}.dbd .dbd-lanes .ln small,.dbd .dbd-lanes .ln .cn{font-size:11px!important}.dbd .dbd-lanes .ln .ep{font-size:11px}.dbd .dbd-lanes .ln em{font-size:0}.dbd .dbd-lanes .ln em::after{content:attr(data-s);font-size:11px;letter-spacing:.06em}.dbd .dbd-lanes .line{gap:3px}}
+/* by position, who hurt them, situations */
+.dbd .dbd-dpos td small,.dbd .dbd-dwho td small{display:block;font:400 11px var(--dbd-body)!important;color:var(--dbd-muted)}
+.dbd .dbd-dpos td.fx small{display:block}
+.dbd .dbd-h4{margin:14px var(--dbd-edge) 2px;font:700 12px var(--dbd-display);text-transform:uppercase;letter-spacing:.14em;color:var(--dbd-ink)}
+.dbd .dbd-dsit td.pos,.dbd .dbd-dpos td.pos{color:var(--dbd-good)}.dbd .dbd-dsit td.neg,.dbd .dbd-dpos td.neg{color:var(--dbd-bad)}
+.dbd .dbd-dwho td.pos{color:var(--dbd-bad)}.dbd .dbd-dwho td.neg{color:var(--dbd-good)}
+.dbd .dbd-tabbed .dbd-ph:not(.dbd-tabh){display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:center}
+/* style cards: a two-by-two grid */
+.dbd .dbd-stylegrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@container dbd (max-width:900px){.dbd .dbd-stylegrid{grid-template-columns:minmax(0,1fr)}}
+.dbd .dbd-style{margin:0}.dbd .dbd-style .dbd-wpchips{grid-template-columns:repeat(2,minmax(0,1fr));padding-bottom:14px}
+.dbd .dbd-style .dbd-wpchips em{display:block;margin-top:3px;font:500 11px var(--dbd-body);font-style:normal;color:var(--dbd-ink-2)}
+/* the defenders */
+.dbd .dbd-ddef td.n{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.dbd .dbd-ddef td.n b{font:500 13px var(--dbd-body)}.dbd .dbd-ddef td.n small{font:400 11px var(--dbd-body)!important;color:var(--dbd-muted)}
+.dbd .dbd-jt{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:4px;font:800 12px var(--dbd-hero);flex:0 0 auto}
+.dbd .dbd-ddef td:not(.n),.dbd .dbd-ddef th:not(:first-child),.dbd .dbd-dpos td:not(.n),.dbd .dbd-dpos th:not(:first-child),.dbd .dbd-dsit td:not(.n),.dbd .dbd-dsit th:not(:first-child),.dbd .dbd-dwho td:not(.n),.dbd .dbd-dwho th:not(:first-child){text-align:right}
+
+.dbd .gw .op .dbd-lgw,.dbd .dbd-dwho td.n .dbd-lgw{margin-right:5px;vertical-align:-3px}
+.dbd .dbd-dwho td.n a{color:var(--dbd-ink);text-decoration:none}.dbd .dbd-dwho td.n a:hover{color:var(--dbd-red)}
+.dbd .dbd-jt{color:#fff}
+.dbd a.dbd-dchip,.dbd a.dbd-dlink{text-decoration:none;color:inherit}.dbd a.dbd-dchip:hover{outline:1px solid currentColor}.dbd a.dbd-dlink:hover{color:var(--dbd-red);text-decoration:underline}

@@ -62,6 +62,7 @@ jobs:
           dl "stats_player/stats_player_week_${S}.csv"  stats.csv   DBD_STATS
           dl "snap_counts/snap_counts_${S}.csv"         snaps.csv   DBD_SNAPS
           dl "pfr_advstats/advstats_week_rec_${S}.csv"  pfr.csv     DBD_PFR
+          dl "pfr_advstats/advstats_week_def_${S}.csv"  pfrd.csv    DBD_PFRD
           dl "injuries/injuries_${S}.csv"               inj.csv     DBD_INJ
           dl "depth_charts/depth_charts_${S}.csv"       depth.csv   DBD_DEPTH
           dl "ftn_charting/ftn_charting_${S}.csv"       ftn.csv     DBD_FTN

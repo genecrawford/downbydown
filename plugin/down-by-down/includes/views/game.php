@@ -36,7 +36,7 @@ echo '<aside class="dbd-panel dbd-gamebox"><div class="dbd-ph"><span class="dbd-
 foreach ( array( $AWAY, $HOME ) as $a ) {
 	$t = DBD_Data::team( $a ); $sc = $a === $AWAY ? ( $g['away_score'] ?? null ) : ( $g['home_score'] ?? null );
 	echo '<div class="dbd-t">' . DBD_Marks::tile( $a, 34 ) . '<b>' . esc_html( $a ) . '</b><span>' . esc_html( $t['nick'] . ' · ' . DBD_Data::record_text( $a ) ) . '</span></div>';
-	echo '<div class="dbd-rkline">' . ( $final ? '<b class="dbd-score">' . (int) $sc . '</b>' : 'OFF #' . (int) DBD_Data::rank( 'off', $a ) . ' · DEF #' . (int) DBD_Data::rank( 'def', $a ) ) . '</div>';
+	echo '<div class="dbd-rkline">' . ( $final ? '<b class="dbd-score">' . (int) $sc . '</b>' : 'OFF #' . (int) DBD_Data::rank( 'off', $a ) . ' · ' . DBD_Defense::link( $a, 'DEF #' . (int) DBD_Data::rank( 'def', $a ) ) ) . '</div>';  /* SCOPE §39: to the defense tab */
 }
 echo '</div><div class="dbd-line"><span>' . esc_html( DBD_Router::line_text( $g ) ) . '</span><span>' . ( isset( $g['total'] ) ? 'O/U ' . esc_html( $g['total'] ) : '' ) . '</span><span>' . DBD_Router::kickoff_html( $g ) . '</span></div></div></aside>';
 echo '</div>';

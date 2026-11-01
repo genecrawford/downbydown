@@ -14,14 +14,16 @@ if ( ! $F ) { echo '<div class="dbd-empty"><h2>No leaders yet</h2><p>The boards 
 if ( ( $r['lboard'] ?? '' ) !== '' && ! $B ) { echo '<div class="dbd-empty"><h2>No such board</h2><p><a href="' . esc_url( $lurl() ) . '">All the leaders</a></p></div></main>'; return; }
 if ( $B ) {
 	echo '<section class="dbd-panel ld-board"><div class="dbd-toolbar ld-tools">' . $B['filters'] . '<a class="dbd-pill ld-back" href="' . esc_url( $lurl( array( 'g' => $B['group'] ) ) ) . '">← All ' . esc_html( strtolower( DBD_Leaders::GROUPS[ $B['group'] ] ) ) . ' boards</a></div>' . $B['body'];
-	echo '<p class="dbd-note">Ranks are among the players shown, ties marked T-. ' . ( $B['group'] === 'fan' ? 'Points a game counts players with at least half the most games at the position; the format you pick is remembered on this device.' : 'Lower-is-better stats rank lowest first. Usage is his season total of ' . DBD_Leaders::unit( $B['group'] ) . '.' ) . '</p></section></main>';
+	echo '<p class="dbd-note">Ranks are among the ' . ( $B['group'] === 'def' ? 'defenses' : 'players' ) . ' shown, ties marked T-. ' . ( $B['group'] === 'def' ? 'Rank 1 is the best defense on that stat; open any team for its whole defense tab.' : '' ) . ( $B['group'] === 'def' ? '' : ( $B['group'] === 'fan' ? 'Points a game counts players with at least half the most games at the position; the format you pick is remembered on this device.' : 'Lower-is-better stats rank lowest first. Usage is his season total of ' . DBD_Leaders::unit( $B['group'] ) . '.' ) ) . '</p></section></main>';
 	return;
 }
 $g = $r['lgroup'];
 echo '<nav class="dbd-wkbar ld-tabs" aria-label="Leaders"><div class="dbd-wktabs">';
 foreach ( DBD_Leaders::GROUPS as $k => $lab ) { echo '<a href="' . esc_url( $lurl( array( 'g' => $k ) ) ) . '"' . ( $k === $g ? ' aria-current="page"' : '' ) . '>' . esc_html( $lab ) . '</a>'; }
 echo '</div></nav>';
-if ( $g === 'fan' ) {
+if ( $g === 'def' ) {
+	echo DBD_Leaders::defenses();  /* SCOPE §39 */
+} elseif ( $g === 'fan' ) {
 	echo '<section class="dbd-panel ld-tools-p"><div class="dbd-toolbar ld-tools"><div class="dbd-fg"><span>Fantasy scoring</span>' . DBD_Fantasy::seg() . '</div></div></section>';
 	echo DBD_Leaders::fantasy();
 } else {

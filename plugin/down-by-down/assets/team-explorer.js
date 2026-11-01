@@ -4,9 +4,9 @@
 (function () {
   var host = document.getElementById('dbd-explorer');
   if (!host || !window.DBD_TEAM) return;
-  var C = window.DBD_TEAM, TEAM = C.abbr, T = C.team, TEAMS = C.teams, SEASON = C.season;
+  var C = window.DBD_TEAM, TEAM = C.abbr, T = C.team, TEAMS = C.teams, SEASON = C.season, DEF = C.side === 'def';  /* SCOPE §39: the same explorer on the plays this team defended */
   window.DBD_TEAMS = TEAMS;
-  try { localStorage.setItem('dbd-last-team', TEAM); } catch (e) {}
+  if (!DEF) { try { localStorage.setItem('dbd-last-team', TEAM); } catch (e) {} }
 
   fetch(C.dataUrl, { credentials: 'omit' }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
     .then(boot)
@@ -30,7 +30,7 @@
     var byes = RAW.byes || [];
     var PASSRATE = C.passrate || 0.57;
 
-    var snaps = document.getElementById('dbd-snaps'); if (snaps) snaps.textContent = P.length + ' snaps';
+    var snaps = document.getElementById('dbd-snaps'); if (snaps && !DEF) snaps.textContent = P.length + ' snaps';  /* the defense tab's badge carries its EPA rank */
     var kick = document.getElementById('dbd-kicker'); if (kick && lastWeek) kick.textContent = SEASON + ' season · Weeks 1 to ' + lastWeek + (byes.length ? ' · bye week ' + byes.join(', ') : '') + ' · ' + W + '-' + L;
 
     host.innerHTML =
@@ -48,7 +48,7 @@
       '<section class="dbd-panel dbd-sec-drive"><div class="dbd-ph"><span class="dbd-lab"><b>Drive chart</b> · every snap, left to right</span><span class="dbd-badge">Hover or click a play</span></div><div class="dbd-legend"><span><i style="background:' + COL.run + '"></i>Run</span><span><i style="background:' + COL.pass + '"></i>Completion</span><span><i style="background:' + COL.inc + '"></i>Incompletion (air yards)</span><span><i style="background:' + COL.bad + '"></i>Sack / INT</span><span><i style="background:' + COL.td + '"></i>Touchdown</span></div><div class="dbd-scroll" id="dbd-drive"></div><p class="dbd-note">Each row is one snap. ' + esc(T.nick) + ' always move left to right. Rows are grouped by game and drive; a dot marks the line of scrimmage.</p></section>' +
       '<section class="dbd-panel dbd-sec-spray"><div class="dbd-ph"><span class="dbd-lab"><b>Pass &amp; run map</b> · where the ball went</span></div><div class="dbd-sprays"><div><h4>Pass targets by depth</h4><div id="dbd-passmap"></div></div><div><h4>Runs by gap</h4><div id="dbd-runmap"></div></div></div><p class="dbd-note">Pass map plots where the ball was thrown (air yards beyond the line of scrimmage, the thick 0 line) and to which side. Sacks and scrambles are left out. Run map shows designed runs by gap.</p></section>' +
       '<section class="dbd-panel dbd-sec-situ"><div class="dbd-ph"><span class="dbd-lab"><b>Situations</b> · by down, quarter and score</span></div><div id="dbd-tend" class="dbd-tend"></div></section>' +
-      '<section class="dbd-panel dbd-sec-charts dbd-chview"><div class="dbd-ph"><span class="dbd-lab"><b>Tendencies</b> · how this offense behaves</span><span class="dbd-badge">League in red</span></div><div class="dbd-chgrid" id="dbd-charts">' +
+      '<section class="dbd-panel dbd-sec-charts dbd-chview"><div class="dbd-ph"><span class="dbd-lab"><b>Tendencies</b> · ' + (DEF ? 'how offenses attack them' : 'how this offense behaves') + '</span><span class="dbd-badge">League in red</span></div><div class="dbd-chgrid" id="dbd-charts">' +
       '<section class="dbd-chart"><h4>Pass rate by down and distance</h4><p class="dbd-read" id="dbd-read1"></p><div class="dbd-ch dbd-ch-hbar" id="dbd-c1"></div><div class="dbd-legend"><span><i style="background:#5b9cf6"></i>Pass rate</span><span><i style="background:#cb2026"></i>League rate for that spot</span></div></section>' +
       '<section class="dbd-chart"><h4>Shotgun vs under center, by down</h4><p class="dbd-read" id="dbd-read2"></p><div class="dbd-ch" id="dbd-c2"></div><div class="dbd-legend"><span><i style="background:#5b9cf6"></i>Shotgun pass rate</span><span><i style="background:#f0b429"></i>Under center pass rate</span></div></section>' +
       '<section class="dbd-chart"><h4>Cumulative EPA, game by game</h4><p class="dbd-read" id="dbd-read3"></p><div class="dbd-ch" id="dbd-c3"></div><div class="dbd-legend"><span><i style="background:#121417"></i>Cumulative EPA</span><span>Rules mark the start of each game</span></div></section>' +
@@ -56,9 +56,9 @@
       '<section class="dbd-chart wide"><h4>Pass rate by quarter and game state</h4><p class="dbd-read" id="dbd-read5"></p><div class="dbd-heat" id="dbd-c5"></div></section>' +
       '</div></section>' +
       '<div class="dbd-rail">' +
-      '<section class="dbd-panel dbd-detail"><div class="dbd-ph"><span class="dbd-lab"><b>Play detail</b></span><span class="dbd-badge"><span class="t-text-swap" id="dbd-detailmode">Best by EPA</span></span></div><div class="dbd-pb" id="dbd-detail"></div></section>' +
+      '<section class="dbd-panel dbd-detail"><div class="dbd-ph"><span class="dbd-lab"><b>Play detail</b></span><span class="dbd-badge"><span class="t-text-swap" id="dbd-detailmode">' + (DEF ? 'Best stop' : 'Best by EPA') + '</span></span></div><div class="dbd-pb" id="dbd-detail"></div></section>' +
       '</div></div>' +
-      '<section class="dbd-panel dbd-usagep"><div class="dbd-ph"><span class="dbd-lab"><b>Who gets the ball</b></span><span class="dbd-badge">Click to filter</span></div><div class="dbd-tw"><table class="dbd-usage dbd-stat dbd-sortable" id="dbd-usage"></table></div></section>' +
+      '<section class="dbd-panel dbd-usagep"><div class="dbd-ph"><span class="dbd-lab"><b>' + (DEF ? 'Who got the ball against them' : 'Who gets the ball') + '</b></span><span class="dbd-badge">Click to filter</span></div><div class="dbd-tw"><table class="dbd-usage dbd-stat dbd-sortable" id="dbd-usage"></table></div></section>' +
       '<div class="dbd-tt" id="dbd-tt" role="tooltip"></div>';
 
     var st = { games: new Set(), down: '', type: '', zone: '', sg: '', q: '', pl: '', sel: null, selAuto: true };
@@ -66,7 +66,7 @@
     var color = function (p) { return p.td ? COL.td : (p.k === 'sack' || p.k === 'int') ? COL.bad : p.k === 'inc' ? COL.inc : p.pt === 'run' ? COL.run : COL.pass; };
     var label = function (p) { return { run: 'Run', comp: 'Completion', inc: 'Incomplete', int: 'Interception', sack: 'Sack', scramble: 'Scramble' }[p.k] || p.k; };
     var ord = function (n) { return ['', '1st', '2nd', '3rd', '4th'][n] || n; };
-    var yardText = function (yl) { return yl == 50 ? '50' : yl > 50 ? TEAM + ' ' + (100 - yl) : 'OPP ' + yl; };
+    var yardText = function (yl) { return yl == 50 ? '50' : DEF ? (yl > 50 ? 'OPP ' + (100 - yl) : TEAM + ' ' + yl) : (yl > 50 ? TEAM + ' ' + (100 - yl) : 'OPP ' + yl); };  /* on defense the offense's own half is the opponent's */
 
     /* filters as sliding segmented controls */
     function seg(id, key, opts) {
@@ -75,7 +75,7 @@
       el.onclick = function (e) { var b = e.target.closest('button'); if (!b) return; st[key] = b.dataset.v; el.querySelectorAll('button').forEach(function (x) { x.setAttribute('aria-selected', x === b ? 'true' : 'false'); }); slidePill(el, b, true); render(); };
       requestAnimationFrame(function () { slidePill(el, el.querySelector('[aria-selected="true"]'), false); });
     }
-    var SEGS = [['#f-down', 'down', [['', 'All'], ['1', '1st'], ['2', '2nd'], ['3', '3rd'], ['4', '4th']]], ['#f-type', 'type', [['', 'All'], ['pass', 'Pass'], ['run', 'Run']]], ['#f-zone', 'zone', [['', 'All'], ['own', 'Own half'], ['opp', 'Opp half'], ['rz', 'Red zone']]], ['#f-sg', 'sg', [['', 'All'], ['1', 'Shotgun'], ['0', 'Under center']]]];
+    var SEGS = [['#f-down', 'down', [['', 'All'], ['1', '1st'], ['2', '2nd'], ['3', '3rd'], ['4', '4th']]], ['#f-type', 'type', [['', 'All'], ['pass', 'Pass'], ['run', 'Run']]], ['#f-zone', 'zone', [['', 'All'], ['own', DEF ? 'Their half' : 'Own half'], ['opp', DEF ? 'Our half' : 'Opp half'], ['rz', 'Red zone']]], ['#f-sg', 'sg', [['', 'All'], ['1', 'Shotgun'], ['0', 'Under center']]]];
     SEGS.forEach(function (a) { seg(a[0], a[1], a[2]); });
     window.addEventListener('resize', function () { host.querySelectorAll('.t-tabs').forEach(function (b) { slidePill(b, b.querySelector('[aria-selected="true"]'), false); }); });
 
@@ -107,7 +107,7 @@
       var epa = F.reduce(function (a, p) { return a + (p.epa || 0); }, 0) / (n || 1), succ = F.filter(function (p) { return p.succ; }).length / (n || 1);
       var yds = F.reduce(function (a, p) { return a + (p.yds || 0); }, 0), tds = F.filter(function (p) { return p.td; }).length, fd = F.filter(function (p) { return p.fd; }).length;
       var expl = F.filter(function (p) { return (p.pt === 'pass' && p.yds >= 20) || (p.pt === 'run' && p.yds >= 10); }).length;
-      var t = [['Plays', String(n), pass + ' pass · ' + (n - pass) + ' run', ''], ['Pass rate', n ? Math.round(pass / n * 100) + '%' : '-', 'league ' + Math.round(PASSRATE * 100) + '%', ''], ['EPA / play', n ? sign(epa) : '-', 'above 0 beats expectation', epa >= 0 ? 'pos' : 'neg'], ['Success rate', n ? Math.round(succ * 100) + '%' : '-', 'good offenses top 45%', ''], ['Yards / play', n ? fmt(yds / n) : '-', yds + ' total yards', ''], ['Explosive', String(expl), '20+ pass · 10+ run', ''], ['1st downs / TDs', fd + ' / ' + tds, 'by play', '']];
+      var t = [['Plays', String(n), pass + ' pass · ' + (n - pass) + ' run', ''], ['Pass rate', n ? Math.round(pass / n * 100) + '%' : '-', 'league ' + Math.round(PASSRATE * 100) + '%', ''], [DEF ? 'EPA allowed / play' : 'EPA / play', n ? sign(epa) : '-', DEF ? 'below 0 is a stop' : 'above 0 beats expectation', (epa >= 0) !== DEF ? 'pos' : 'neg'], [DEF ? 'Success allowed' : 'Success rate', n ? Math.round(succ * 100) + '%' : '-', DEF ? 'good defenses hold under 40%' : 'good offenses top 45%', ''], ['Yards / play', n ? fmt(yds / n) : '-', yds + ' total yards', ''], ['Explosive', String(expl), '20+ pass · 10+ run', ''], ['1st downs / TDs', fd + ' / ' + tds, 'by play', '']];
       var box = $('#dbd-tiles');
       if (!box.children.length) box.innerHTML = t.map(function (x) { return '<div class="dbd-tile"><div class="l">' + x[0] + '</div><div class="v"><span class="t-digit-group"></span></div><div class="s"></div></div>'; }).join('');
       Array.prototype.forEach.call(box.children, function (tile, i) {
@@ -128,7 +128,7 @@
       g += '<rect x="0" y="0" width="' + EZ + '" height="' + H + '" fill="' + (C.accent || '#121417') + '" fill-opacity=".35"/><rect x="' + (Wd - EZ) + '" y="0" width="' + EZ + '" height="' + H + '" fill="rgba(0,0,0,.18)"/>';
       for (var i = 0; i <= 100; i += 10) g += '<line x1="' + x(i) + '" x2="' + x(i) + '" y1="0" y2="' + H + '" stroke="' + FL + '" stroke-width="' + (i === 50 ? 2 : 1) + '"/>';
       for (i = 10; i < 100; i += 10) { var lab = i <= 50 ? i : 100 - i; g += '<text x="' + x(i) + '" y="' + (H - 4) + '" fill="' + FI + '" font-size="10" text-anchor="middle">' + lab + '</text>'; }
-      g += '<text x="' + (EZ / 2) + '" y="' + (H / 2) + '" fill="' + FI + '" font-size="11" text-anchor="middle" transform="rotate(-90 ' + (EZ / 2) + ' ' + (H / 2) + ')">' + TEAM + ' GOAL</text><text x="' + (Wd - EZ / 2) + '" y="' + (H / 2) + '" fill="' + FI + '" font-size="11" text-anchor="middle" transform="rotate(90 ' + (Wd - EZ / 2) + ' ' + (H / 2) + ')">OPPONENT END ZONE</text>';
+      g += '<text x="' + (EZ / 2) + '" y="' + (H / 2) + '" fill="' + FI + '" font-size="11" text-anchor="middle" transform="rotate(-90 ' + (EZ / 2) + ' ' + (H / 2) + ')">' + (DEF ? 'OFFENSE' : TEAM) + ' GOAL</text><text x="' + (Wd - EZ / 2) + '" y="' + (H / 2) + '" fill="' + FI + '" font-size="11" text-anchor="middle" transform="rotate(90 ' + (Wd - EZ / 2) + ' ' + (H / 2) + ')">' + (DEF ? TEAM + ' END ZONE' : 'OPPONENT END ZONE') + '</text>';
       rows.forEach(function (r) {
         if (r.hdr) { var h = r.hdr; g += '<text x="' + (EZ + 6) + '" y="' + (r.y + 15) + '" fill="#fff" font-size="12" font-weight="600">WEEK ' + h.week + ' ' + (h.home ? 'VS' : 'AT') + ' ' + h.opp + '  ·  ' + (h.pf > h.pa ? 'W' : 'L') + ' ' + h.pf + '-' + h.pa + '</text>'; return; }
         var p = r.p, los = 100 - p.yl, cy = r.y + RH / 2, end = (p.k === 'inc' || p.k === 'int') ? los + (p.air == null ? 0 : p.air) : los + (p.yds == null ? 0 : p.yds);
@@ -175,7 +175,7 @@
       var row = function (n, a, conv) { var ps = a.filter(function (p) { return p.pt === 'pass'; }).length, e = a.reduce(function (s, p) { return s + (p.epa || 0); }, 0); return '<tr><td>' + n + '</td><td>' + a.length + '</td><td><span class="dbd-bar" style="width:' + (a.length ? ps / a.length * 50 : 0) + 'px"></span>' + (a.length ? Math.round(ps / a.length * 100) + '%' : '-') + '</td><td>' + (a.length ? Math.round(a.filter(function (p) { return p.succ; }).length / a.length * 100) + '%' : '-') + '</td><td class="' + (e >= 0 ? 'pos' : 'neg') + '">' + (a.length ? sign(e / a.length) : '-') + '</td>' + (conv !== undefined ? '<td>' + conv + '</td>' : '') + '</tr>'; };
       var dd = B.map(function (b) { var a = F.filter(b[1]); return row(b[0], a, (b[0].indexOf('3rd') === 0 || b[0].indexOf('4th') === 0) && a.length ? Math.round(a.filter(function (p) { return p.fd || p.td; }).length / a.length * 100) + '%' : ''); }).join('');
       var qs = [1, 2, 3, 4].map(function (q) { return row('Q' + q, F.filter(function (p) { return p.q == q; })); }).join('');
-      var sit = [['Leading', function (p) { return p.sd > 0; }], ['Tied', function (p) { return p.sd == 0; }], ['Trailing', function (p) { return p.sd < 0; }]].map(function (s) { return row(s[0], F.filter(s[1])); }).join('');
+      var sit = [[DEF ? 'Offense leads' : 'Leading', function (p) { return p.sd > 0; }], ['Tied', function (p) { return p.sd == 0; }], [DEF ? 'Offense trails' : 'Trailing', function (p) { return p.sd < 0; }]].map(function (s) { return row(s[0], F.filter(s[1])); }).join('');
       $('#dbd-tend').innerHTML = '<h4>Down and distance</h4><div class="dbd-tw" style="padding:0 var(--dbd-edge,14px)"><table class="dbd-sortable"><tr><th>Situation</th><th>Plays</th><th>Pass rate</th><th>Success</th><th>EPA/play</th><th>Converted</th></tr>' + dd + '</table></div><div class="dbd-sprays"><div><h4>By quarter</h4><table class="dbd-sortable"><tr><th>Qtr</th><th>Plays</th><th>Pass</th><th>Success</th><th>EPA</th></tr>' + qs + '</table></div><div><h4>By game score</h4><table class="dbd-sortable"><tr><th>When</th><th>Plays</th><th>Pass</th><th>Success</th><th>EPA</th></tr>' + sit + '</table></div></div>';
     }
 
@@ -221,8 +221,8 @@
       var h3 = $('#dbd-c3'), o3 = overlays(h3);
       CH.c3 = new Chartist.LineChart(h3, { series: [{ name: 'season', data: pts }] }, { showPoint: false, showArea: true, lineSmooth: Chartist.Interpolation.step(), axisX: { type: Chartist.AutoScaleAxis, onlyInteger: true, low: 0, labelInterpolationFnc: function (v) { return v % 50 === 0 ? v : null; } }, axisY: { labelInterpolationFnc: function (v) { return (v > 0 ? '+' : '') + v; } }, chartPadding: { right: 16, top: 16 } })
         .on('created', function (ctx) { var r = ctx.chartRect; bounds.forEach(function (b) { o3.add('dbd-ch-rule', '<span>Wk ' + b.g.week + ' ' + esc(b.g.opp) + '</span>', r.x1 + ctx.axisX.projectValue(b.x), r.y2, r.height()); }); o3.flush(); });
-      var sg3 = function (v) { return (v > 0 ? '+' : '') + v.toFixed(1); }, bestG = perGame.reduce(function (m, e) { return e.v > m.v ? e : m; }), worstG = perGame.reduce(function (m, e) { return e.v < m.v ? e : m; });
-      setRead(3, 'EPA runs to ' + sg3(cum) + ' over ' + idx + ' snaps. Best game: ' + at(bestG.g) + ' (' + sg3(bestG.v) + ').' + (perGame.length > 1 ? ' Worst: ' + at(worstG.g) + ' (' + sg3(worstG.v) + ').' : '') + ' Climbs are drives that worked. Flat or falling stretches went nowhere.');
+      var sg3 = function (v) { return (v > 0 ? '+' : '') + v.toFixed(1); }, bestG = perGame.reduce(function (m, e) { return (DEF ? e.v < m.v : e.v > m.v) ? e : m; }), worstG = perGame.reduce(function (m, e) { return (DEF ? e.v > m.v : e.v < m.v) ? e : m; });  /* on defense the best game allowed the least */
+      setRead(3, (DEF ? 'EPA allowed runs to ' : 'EPA runs to ') + sg3(cum) + ' over ' + idx + ' snaps. Best game: ' + at(bestG.g) + ' (' + sg3(bestG.v) + ').' + (perGame.length > 1 ? ' Worst: ' + at(worstG.g) + ' (' + sg3(worstG.v) + ').' : '') + (DEF ? ' Climbs are drives that worked against them; flat or falling stretches are stops.' : ' Climbs are drives that worked. Flat or falling stretches went nowhere.'));
 
       /* 4. receivers: targets vs average depth of target, dot size = targets, color = position */
       var tg = {}, carries = {};
@@ -239,12 +239,12 @@
       } else { h4.innerHTML = ''; setRead(4, 'Not enough targets in this slice to plot receivers.'); }
 
       /* 5. heat grid: quarter by game state, tinted by distance from the league rate in that same spot */
-      var states = [['Leading', 'lead', function (p) { return p.sd > 0; }], ['Tied', 'tied', function (p) { return p.sd == 0; }], ['Trailing', 'trail', function (p) { return p.sd < 0; }]];
+      var states = [[DEF ? 'Offense leads' : 'Leading', 'lead', function (p) { return p.sd > 0; }], ['Tied', 'tied', function (p) { return p.sd == 0; }], [DEF ? 'Offense trails' : 'Trailing', 'trail', function (p) { return p.sd < 0; }]];  /* score states stay the offense's on defense, so the league rates still compare */
       var h = '<div class="h l">State</div>' + downs.map(function (q) { return '<div class="h">Q' + q + '</div>'; }).join('');
       states.forEach(function (s) { h += '<div class="h l">' + s[0] + '</div>' + downs.map(function (q) { var a = F.filter(function (p) { return s[2](p) && p.q == q; }); if (a.length < 6) return '<div class="c few"><b>' + a.length + '</b><span>too few</span></div>'; var v = pct(a), lg = lgRate('state', s[1], String(q)), col = v >= lg ? 'var(--dbd-ch-pass)' : 'var(--dbd-ch-run)', mix = Math.min(70, Math.round(Math.abs(v - lg) / 0.3 * 70)); return '<div class="c" style="background:color-mix(in srgb,' + col + ' ' + mix + '%,var(--dbd-panel))"><b>' + pr(v) + '</b><span>' + a.length + ' plays</span></div>'; }).join(''); });
       $('#dbd-c5').innerHTML = h;
       var lead = F.filter(states[0][2]), trail = F.filter(states[2][2]);
-      setRead(5, 'Blue means more passing than the league in that spot, amber means more running. Leading, the ' + nick + ' pass ' + (lead.length ? pr(pct(lead)) : '-') + ' of the time. Trailing, ' + (trail.length ? pr(pct(trail)) : '-') + '. Cells with fewer than 6 plays are grayed out.');
+      setRead(5, 'Blue means more passing than the league in that spot, amber means more running. ' + (DEF ? 'Offenses leading against the ' + nick + ' pass ' + (lead.length ? pr(pct(lead)) : '-') + ' of the time; trailing, ' : 'Leading, the ' + nick + ' pass ' + (lead.length ? pr(pct(lead)) : '-') + ' of the time. Trailing, ') + (trail.length ? pr(pct(trail)) : '-') + '. Cells with fewer than 6 plays are grayed out.');
     }
 
     function usage(F) {
@@ -258,14 +258,14 @@
 
     function detail(F) {
       var p = st.sel == null ? null : P[st.sel];
-      if (p == null || F.indexOf(p) < 0) { p = F.slice().sort(function (a, b) { return (b.epa == null ? -9 : b.epa) - (a.epa == null ? -9 : a.epa); })[0]; st.sel = p ? p.i : null; st.selAuto = true; }
-      swapText($('#dbd-detailmode'), st.selAuto ? 'Best by EPA' : 'Clicked');
+      if (p == null || F.indexOf(p) < 0) { p = F.slice().sort(function (a, b) { var x = a.epa == null ? (DEF ? 9 : -9) : a.epa, y = b.epa == null ? (DEF ? 9 : -9) : b.epa; return DEF ? x - y : y - x; })[0];  /* on defense the best play is the stop: the lowest EPA allowed */ st.sel = p ? p.i : null; st.selAuto = true; }
+      swapText($('#dbd-detailmode'), st.selAuto ? (DEF ? 'Best stop' : 'Best by EPA') : 'Clicked');
       if (!p) { $('#dbd-detail').innerHTML = '<p class="dbd-note" style="padding:0">No plays match these filters.</p>'; return; }
       var g = gIndex[p.g] || {}, pills = ['<span class="dbd-pill">' + label(p) + '</span>'];
       if (p.td) pills.push('<span class="dbd-pill good">Touchdown</span>'); else if (p.fd) pills.push('<span class="dbd-pill good">First down</span>');
       pills.push('<span class="dbd-pill ' + (p.succ ? 'good' : 'bad') + '">' + (p.succ ? 'Successful' : 'Unsuccessful') + '</span>'); if (p.sg) pills.push('<span class="dbd-pill">Shotgun</span>');
       $('#dbd-detail').innerHTML = '<h3>Week ' + g.week + ' ' + (g.home ? 'vs' : 'at') + ' ' + g.opp + ' · Q' + p.q + ' ' + esc(p.t) + '</h3><h2>' + ord(p.dn) + ' &amp; ' + p.togo + ' at ' + yardText(p.yl) + '</h2><div class="meta">' + pills.join('') + '</div><p class="dbd-desc">' + esc(p.desc) + '</p>' +
-        '<dl class="dbd-kv"><dt>Yards</dt><dd>' + (p.yds == null ? 0 : p.yds) + '</dd>' + (p.air != null ? '<dt>Air yards</dt><dd>' + p.air + (p.yac != null ? ' + ' + p.yac + ' after catch' : '') + '</dd>' : '') + (p.loc ? '<dt>Direction</dt><dd>' + p.loc + (p.gap ? ' ' + p.gap : '') + (p.len ? ' · ' + p.len : '') + '</dd>' : '') + '<dt>EPA</dt><dd class="' + ((p.epa || 0) >= 0 ? 'pos' : 'neg') + '">' + sign(p.epa || 0) + '</dd><dt>Score</dt><dd>' + (p.sd > 0 ? 'Up ' + p.sd : p.sd < 0 ? 'Down ' + (-p.sd) : 'Tied') + '</dd></dl>';
+        '<dl class="dbd-kv"><dt>Yards</dt><dd>' + (p.yds == null ? 0 : p.yds) + '</dd>' + (p.air != null ? '<dt>Air yards</dt><dd>' + p.air + (p.yac != null ? ' + ' + p.yac + ' after catch' : '') + '</dd>' : '') + (p.loc ? '<dt>Direction</dt><dd>' + p.loc + (p.gap ? ' ' + p.gap : '') + (p.len ? ' · ' + p.len : '') + '</dd>' : '') + '<dt>EPA</dt><dd class="' + ((p.epa || 0) >= 0 ? 'pos' : 'neg') + '">' + sign(p.epa || 0) + '</dd><dt>Score</dt><dd>' + (p.sd > 0 ? (DEF ? 'Offense up ' : 'Up ') + p.sd : p.sd < 0 ? (DEF ? 'Offense down ' : 'Down ') + (-p.sd) : 'Tied') + '</dd></dl>';
     }
 
     var tt = $('#dbd-tt');

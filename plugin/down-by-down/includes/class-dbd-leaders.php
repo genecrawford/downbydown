@@ -8,7 +8,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 class DBD_Leaders {
 	const TOP    = 10;
-	const GROUPS = array( 'fan' => 'Fantasy', 'wr' => 'Wide receivers', 'te' => 'Tight ends', 'rb' => 'Backs', 'qb' => 'Quarterbacks' );
+	const GROUPS = array( 'fan' => 'Fantasy', 'wr' => 'Wide receivers', 'te' => 'Tight ends', 'rb' => 'Backs', 'qb' => 'Quarterbacks', 'def' => 'Defenses' );
 	/* wide receivers and tight ends rank as separate positions, the way fantasy leagues do (SCOPE §38). leaders.json has a wr and a te
 	   group from 1.14.0's build; an older file has only the combined rec group, read here filtered by position. */
 	const SPLIT  = array( 'wr' => array( 'rec', 'WR' ), 'te' => array( 'rec', 'TE' ) );
@@ -103,9 +103,27 @@ class DBD_Leaders {
 		return '<div class="ld-grid">' . $cards . '</div>';
 	}
 
+	/** The Defenses tab (SCOPE §39): the 32 defenses on each Scorecard stat, the top ten, linking to each defense's tab. */
+	public static function defenses() {
+		$cards = '';
+		foreach ( DBD_Defense::SC as $d ) {
+			list( $k, $lab, $sub, $kind ) = $d; $rows = DBD_Defense::board( $k ); if ( ! $rows ) { continue; }
+			$rk = self::ranks( array_map( function ( $r ) { return array( $r[0], $r[1] ); }, $rows ) ); $li = '';
+			foreach ( array_slice( $rows, 0, self::TOP ) as $i => $r ) { $t = DBD_Data::team( $r[0] ); $li .= '<li><span class="rk">' . esc_html( self::rk( $rk[ $i ] ) ) . '</span><span class="who">' . DBD_Marks::tile( $r[0], 24 ) . '<span class="nm"><a href="' . esc_url( DBD_Router::url( array( 'team' => $r[0], 'side' => 'def' ) ) ) . '">' . esc_html( ( $t['nick'] ?? $r[0] ) ) . '</a><small>' . esc_html( $r[0] . ' · ' . DBD_Data::record_text( $r[0] ) ) . '</small></span></span><b class="v">' . esc_html( DBD_Defense::fmt( $kind, $r[1] ) ) . '</b></li>'; }
+			$cards .= self::card( $lab, $sub, '<ol class="ld-list">' . $li . '</ol>', DBD_Router::url( array( 'view' => 'leaders', 'b' => 'def.' . $k ) ), 'Full board · all 32' );
+		}
+		return $cards ? '<div class="ld-grid">' . $cards . '</div>' : '<div class="dbd-empty"><h2>No defense boards yet</h2><p>They fill in with the next nightly data build.</p></div>';
+	}
+
 	/** One full board: every row above the floor, ranked; the filters (position, usage) run in leaders.js and renumber. */
 	public static function board( $key ) {
 		$parts = explode( '.', $key ); $f = self::file();
+		if ( ( $parts[0] ?? '' ) === 'def' ) {  /* SCOPE §39: a defense board, all 32 teams */
+			$def = null; foreach ( DBD_Defense::SC as $d ) { if ( $d[0] === ( $parts[1] ?? '' ) ) { $def = $d; } } if ( ! $def ) { return null; }
+			$rows = DBD_Defense::board( $def[0] ); $rk = self::ranks( $rows ); $tb = '';
+			foreach ( $rows as $i => $r ) { $t = DBD_Data::team( $r[0] ); $tb .= '<tr><td class="rk">' . esc_html( self::rk( $rk[ $i ] ) ) . '</td><td><span class="who">' . DBD_Marks::tile( $r[0], 28 ) . '<span class="nm"><a href="' . esc_url( DBD_Router::url( array( 'team' => $r[0], 'side' => 'def' ) ) ) . '">' . esc_html( $t['nick'] ?? $r[0] ) . '</a><small>' . esc_html( $r[0] . ' · ' . DBD_Data::record_text( $r[0] ) ) . '</small></span></span></td><td>' . esc_html( DBD_Defense::fmt( $def[3], $r[1] ) ) . '</td><td>' . esc_html( DBD_Data::record_text( $r[0] ) ) . '</td></tr>'; }
+			return array( 'title' => $def[1] . ' · defenses', 'sub' => $def[2] !== '' ? $def[2] : 'every defense', 'group' => 'def', 'filters' => '', 'body' => '<div class="dbd-tw"><table class="dbd-stat ld-full"><thead><tr><th>Rank</th><th>Defense</th><th>' . esc_html( $def[1] ) . '</th><th>Record</th></tr></thead><tbody>' . ( $tb ?: '<tr><td colspan="4" class="dbd-note">No defense data yet.</td></tr>' ) . '</tbody></table></div>' );
+		}
 		if ( ( $parts[0] ?? '' ) === 'fan' ) {
 			$k = implode( '.', array_slice( $parts, 1 ) ); $lab = self::FAN[ $k ] ?? null; if ( ! $lab ) { return null; }
 			$tables = '';

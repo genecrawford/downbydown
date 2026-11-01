@@ -78,7 +78,7 @@ class DBD_Router {
 			$r['view'] = 'leaders'; $g = strtolower( self::q( 'g' ) ); $b = self::q( 'b' );
 			if ( $g === 'rec' ) { $g = 'wr'; }  /* 1.13.0's combined tab */
 			$r['lgroup'] = isset( DBD_Leaders::GROUPS[ $g ] ) ? $g : 'fan';
-			$r['lboard'] = preg_match( '/^[a-z]{2,3}\.[A-Za-z0-9]{1,8}(\.[A-Za-z0-9]{1,8})?$/', $b ) ? $b : '';
+			$r['lboard'] = preg_match( '/^[a-z]{2,3}\.[A-Za-z0-9_]{1,10}(\.[A-Za-z0-9_]{1,10})?$/', $b ) ? $b : '';
 		} elseif ( self::q( 'myteam' ) !== '' || $view === 'myteam' ) {  /* My team (SCOPE §36): the team is the address; an empty one restores from the device in myteam.js */
 			$r['view'] = 'myteam'; $r['myteam'] = DBD_MyTeam::parse( self::q( 'myteam' ) );
 		} elseif ( $view === 'players' ) {
@@ -92,6 +92,7 @@ class DBD_Router {
 		} elseif ( $team !== '' ) {
 			$r['view'] = isset( $teams[ $team ] ) ? 'team' : 'notfound';
 			$r['team'] = $team;
+			$r['tside'] = self::q( 'side' ) === 'def' ? 'def' : 'off';  /* SCOPE §39: the team's defense tab */
 		} elseif ( $game !== '' ) {
 			$g = preg_match( '/^\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}$/', $game ) ? DBD_Data::game( $game ) : null;
 			$r['view'] = $g ? 'game' : 'notfound';
@@ -143,6 +144,7 @@ class DBD_Router {
 		switch ( $r['view'] ?? 'hub' ) {
 			case 'team':
 				$t = DBD_Data::team( $r['team'] );
+				if ( ( $r['tside'] ?? 'off' ) === 'def' ) { return array( $t['nick'] . ' defense', "How the {$t['name']} defense plays in $season: EPA and success allowed, pressure and blitz rate, where offenses find room by zone, run lane and position, situations, and every defender's season." ); }
 				return array( $t['nick'] . ' offense play explorer', "Every {$t['name']} offensive snap of the $season season, drawn on the field. Filter by down, play type, field zone, formation, quarter and player." );
 			case 'game':
 				$g = $r['game']; $O = $r['side'] === 'away' ? $g['away'] : $g['home']; $D = $r['side'] === 'away' ? $g['home'] : $g['away'];
@@ -188,7 +190,7 @@ class DBD_Router {
 	public static function head() {
 		list( $t, $d ) = self::seo();
 		$r = self::$route; $args = array();
-		if ( $r['view'] === 'team' ) { $args = array( 'team' => $r['team'] ); }
+		if ( $r['view'] === 'team' ) { $args = array( 'team' => $r['team'] ); if ( ( $r['tside'] ?? 'off' ) === 'def' ) { $args['side'] = 'def'; } }
 		if ( $r['view'] === 'game' ) { $args = array( 'game' => $r['game']['id'] ); if ( $r['side'] === 'home' ) { $args['side'] = 'home'; } }
 		if ( $r['view'] === 'matchups' ) { $args = array( 'view' => 'matchups' ); if ( $r['week'] !== DBD_Data::current_week() ) { $args['week'] = $r['week']; } }
 		if ( $r['view'] === 'teams' ) { $args = array( 'view' => 'teams' ); }
@@ -227,7 +229,8 @@ class DBD_Router {
 		wp_enqueue_style( 'dbd-transitions', DBD_URL . 'assets/transitions.css', array( 'dbd' ), DBD_VERSION );
 		wp_enqueue_script( 'dbd-site', DBD_URL . 'assets/dbd-site.js', array(), DBD_VERSION, true );
 		if ( $r['view'] === 'team' ) {
-			$t = DBD_Data::team( $r['team'] ); $rel = 'plays/' . $r['team'] . '.json';
+			$def = ( $r['tside'] ?? 'off' ) === 'def'; $t = DBD_Data::team( $r['team'] ); $rel = $def ? 'plays/def/' . $r['team'] . '.json' : 'plays/' . $r['team'] . '.json';  /* SCOPE §39: the explorer on the plays the team defended */
+			if ( $def ) { wp_enqueue_script( 'dbd-defense', DBD_URL . 'assets/defense.js', array(), DBD_VERSION, true ); }
 			wp_enqueue_script( 'dbd-marks', DBD_URL . 'assets/marks.js', array(), DBD_VERSION, true );
 			wp_enqueue_style( 'dbd-chartist', DBD_URL . 'assets/vendor/chartist.css', array( 'dbd' ), '1.3.0' );
 			wp_enqueue_script( 'dbd-chartist', DBD_URL . 'assets/vendor/chartist.umd.js', array(), '1.3.0', true );
@@ -243,6 +246,7 @@ class DBD_Router {
 				'through'   => DBD_Data::through_week(),
 				'accent'    => DBD_Marks::accent( $t ),
 				'base'      => self::url(),
+				'side'      => $def ? 'def' : 'off',
 			) );
 		}
 		if ( $r['view'] === 'player' ) {

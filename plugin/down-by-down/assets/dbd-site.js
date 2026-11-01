@@ -47,6 +47,7 @@
     set(fx, false);
     root.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('.dbd-fxseg [data-fxset]'); if (!b) return; e.preventDefault(); set(b.getAttribute('data-fxset'), true); });
     var again = function () { root.querySelectorAll('.dbd-fxseg').forEach(pill); };
+    root.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('.dbd-btabs')) setTimeout(again, 30); });  /* a switch in a tab that was hidden is measured when its tab opens (SCOPE §39) */
     window.addEventListener('load', again); window.addEventListener('resize', again); setTimeout(again, 60);
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(again);
   })();
