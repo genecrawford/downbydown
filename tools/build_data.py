@@ -1079,7 +1079,7 @@ if have_pbp:
         x_['rz_td'] = sum(1 for v in rz if v[0] == 'Touchdown') / len(rz) if rz else None; x_['rz_n'] = len(rz)
         tk = [p for p in DP if p['defteam'] == t and (DI_(p['interception']) == 1 or DI_(p['fumble_lost']) == 1)]
         x_['take'] = len(tk); x_['int'] = sum(1 for p in tk if DI_(p['interception']) == 1); x_['fum'] = x_['take'] - x_['int']
-        pen = [p for p in DP if DI_(p.get('penalty')) == 1 and p.get('penalty_team') == t]
+        pen = [p for p in DP if DI_(p.get('penalty')) == 1 and p.get('penalty_team') == t and p['defteam'] == t]  # its own penalties while defending, not its offense's (Greptile)
         x_['pen'] = len(pen); x_['pen_yds'] = sum(DI_(p.get('penalty_yards')) for p in pen); x_['pen_fd'] = sum(1 for p in pen if DI_(p.get('first_down_penalty')) == 1)
         gl = [g for g in _fin.itertuples() if t in (g.home_team, g.away_team)]
         x_['g'] = len(gl); x_['pa'] = sum(int(g.away_score if g.home_team == t else g.home_score) for g in gl)
@@ -1162,6 +1162,7 @@ if have_pbp:
         for o_, pl_ in team_plays.items():
             if o_ == t: continue
             drows += [[r_[k_] for k_ in keys] for r_ in pl_ if r_['g'] in gids]
+        drows.sort(key=lambda r_: int(str(r_[0]).split('_')[1]))  # schedule order; the sort is stable, so each game keeps its play order (Greptile)
         own = json.load(open(f'{out}/plays/{t}.json'))
         json.dump(dict(season=season, team=t, side='def', byes=own.get('byes', []), games=own.get('games', []), keys=keys, plays=drows), open(f'{out}/plays/def/{t}.json', 'w'), separators=(',', ':'))
     print('defense:', len(DTEAMS), 'teams; best', min(DTEAMS, key=lambda t: D_RANK[t]['epa']), round(DD[min(DTEAMS, key=lambda t: D_RANK[t]['epa'])]['all']['epa'], 3))
