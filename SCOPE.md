@@ -1355,3 +1355,56 @@ Murray and Jefferson match the mock at 1440, 660 and 375; no empty block under t
 Gene's sign-off note: make the tags significantly larger or more visually interesting. Each tag becomes a small card: an arrow in a circle for which end of the league he sits at (filled in the team color at the top, outlined at the bottom), the tag in 16px display type, and the stat behind it underneath ("Scrambles 10% · 91st pctl"). The third-down and red-zone tags compare him with his own overall share, not the league, so they take ↗/↘ in a dashed circle instead. On phones each tag card is full width.
 
 Size: S. Status: signed off 2026-11-01 and built as 1.11.1.
+
+## 36. My team (scoped and mocked 2026-11-01, `mockup-v13/`)
+
+Roadmap 2 slice 7 (Gene's): "Here is my lineup; show me everything about it." A new page that lays out the players someone follows as a fantasy lineup, with this week's matchup, status, snap trend and fantasy pace for each, and one click to the player page or a comparison. The mock is built from this season's data through Week 8 inside the live 1.11.1 shell: a sample team of 14 (`myteam.html`), the empty page (`myteam-empty.html`), and the new button on Justin Jefferson's page (`player-button.html`).
+
+### What the reader sees
+
+- **Add a player**: a search box (name, team or number) with suggestions as you type, the same matching as the Players index. The Fantasy scoring switch sits beside it, and Copy link and Clear at the right. A team holds up to 20 players.
+- **This week**: a read and four numbers for the best lineup. The sample: "Your best lineup this week starts 7 players who average 145.8 half-PPR points a week together. Isaiah Likely is on bye and DeVonta Smith is ruled out, so the lineup works around them." The numbers: starters' points a week, on bye, ruled out, soft matchups (of 7).
+- **Lineup**: QB, RB, RB, WR, WR, TE and FLEX, then the bench. Each row, in the player's team color down the left edge:
+  - **Player**: headshot, name (to the player page), team and position, and the injury report line when there is one ("Full · Shoulder", "Out · Hamstring", "DNP · rest"). Bye and Out flags on the right of the name.
+  - **Week 8**: the opponent with its logo and kickoff in your time, and the opponent's rank in points allowed to his position ("3rd-fewest", green for a soft matchup, red for a tough one). A game already played shows "Final · 18.4 pts"; a bye says Bye.
+  - **Snaps**: his last six weeks as a sparkline and his latest share.
+  - **Points a game**: in the chosen format, with the position rank, and his last three games with ▲ or ▼ when they run two points above or below his average.
+  - **Actions**: to the player page, and remove.
+- **Compare links** in the lineup header: "Compare your quarterbacks", "your backs", "your receivers", each opening Compare with your top three at that group.
+- **On phones** each row becomes a card: slot on the left, player on top, the matchup below, snaps and points on the last line. No sideways scroll at 375.
+- **The empty page**: a short explanation, the search box, and a link to a sample team.
+- **Player pages** gain a third button in the side card, under Compare and Share card: "+ My team", which becomes "✓ On My team" when he is on it.
+
+### How the lineup is chosen
+
+Each slot takes your highest scorer by points a game in the chosen format, skipping players on bye this week and players ruled out (Out or Doubtful) on the injury report. FLEX takes the best remaining back, receiver or tight end. Everyone else is on the bench, sorted the same way. A player whose game this week is already final still starts, with his points shown.
+
+### Saving and sharing
+
+- The team lives in the address bar: `?myteam=id,id,…` (player ids). That is the share link and the page the server renders, so a shared link opens the same team on any device.
+- It is also saved on the device (`localStorage`, key `dbd-myteam`). Opening `?view=myteam` with nothing in the address restores the saved team.
+- The "+ My team" button on a player page adds to or removes from the saved team without leaving the page.
+- The page is marked noindex: it is personal.
+
+### Data
+
+Nothing new. Everything comes from files the site already has: the Players index (points a game, ranks, status, snap share), the player files (weekly lines and snaps for the sparkline and the last three), the schedule (opponent, kickoff, finals, byes) and `fantasy.json` (points allowed and ranks).
+
+### Plugin
+
+The router (`myteam` parameter and `?view=myteam`), a new `myteam.php` view, a small `DBD_MyTeam` helper for the lineup and the read, `myteam.js` (search, add, remove, copy link, restore from the device), the "+ My team" button in `player.php` and `player.js`, the CSS, and the view harness (the build check renders the sample team from fresh data).
+
+### Left out
+
+- **Choosing your own starters.** The lineup is the best one by points a game; a later pass could let you tap a bench player to start him.
+- **Other lineup shapes** (two QBs, a second FLEX, kickers and defenses). One standard lineup for now.
+- **Projections.** Points a game is what happened, not a forecast, as in §34.
+- **Accounts or syncing between devices.** The link is the way to move a team.
+
+### Acceptance
+
+The sample team renders as mocked: Allen at QB, Gibbs and Walker at RB, Lamb and Nacua at WR, McBride at TE and Robinson at FLEX in half PPR, starters 145.8 a week, Likely on bye and Smith out; a shared `?myteam=` link opens the same team; no overflow at 375.
+
+Built with one addition: opening a shared `?myteam=` link that differs from the team saved on the device shows that team with a bar ("This is a shared team"), and the saved team is kept until the reader chooses Save this as my team, so a friend's link never overwrites yours.
+
+Size: M to L. Status: signed off 2026-11-01 and built as 1.12.0.

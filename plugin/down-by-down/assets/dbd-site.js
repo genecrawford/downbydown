@@ -51,6 +51,22 @@
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(again);
   })();
 
+  /* My team (SCOPE §36): the player page button adds him to, or takes him off, the team saved on this device */
+  root.querySelectorAll('.dbd-mtbtn[data-id]').forEach(function (b) {
+    var KEY = 'dbd-myteam', MAX = +(b.dataset.max || 20), id = b.dataset.id;
+    var read = function () { try { var v = JSON.parse(localStorage.getItem(KEY) || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; } };
+    var set = function (on) { b.setAttribute('aria-pressed', on ? 'true' : 'false'); };
+    set(read().indexOf(id) >= 0);
+    b.addEventListener('click', function () {
+      var l = read(), i = l.indexOf(id);
+      if (i >= 0) l.splice(i, 1);
+      else if (l.length >= MAX) { b.title = 'My team holds ' + MAX + ' players: remove one first'; return; }
+      else l.push(id);
+      try { if (l.length) localStorage.setItem(KEY, JSON.stringify(l)); else localStorage.removeItem(KEY); } catch (e) { return; }
+      set(i < 0);
+    });
+  });
+
   /* tabbed panels (SCOPE §31, site-wide since 1.9.0): every pane is in the page; a tab shows one and slides the pill. Charts and
      segmented controls inside re-measure on resize. The pill is measured again once the page and its fonts have loaded, since a
      tab measured before the webfont arrives is narrower than it ends up. */

@@ -11,6 +11,8 @@ on:
       - 'plugin/down-by-down/includes/views/teamplayers.php'
       - 'plugin/down-by-down/includes/class-dbd-lineup.php'
       - 'plugin/down-by-down/includes/class-dbd-fantasy.php'
+      - 'plugin/down-by-down/includes/class-dbd-myteam.php'
+      - 'plugin/down-by-down/includes/views/myteam.php'
       - 'plugin/down-by-down/includes/views/players.php'
       - 'plugin/down-by-down/includes/views/matchups.php'
       - 'plugin/down-by-down/includes/views/compare.php'
@@ -190,6 +192,10 @@ jobs:
           if [ -n "$UP" ]; then grep -q 'class="dbd-panel dbd-fxm"' pages/matchups.html || { echo "no fantasy matchups on the Matchups page"; exit 1; }; fi
           CMP=$(python3 -c "import json;i=json.load(open('/tmp/out/players/index.json'))['players'];w=[r['id'] for r in sorted((r for r in i if r.get('fpos')=='WR' and r.get('fr') and r['fr'][1]),key=lambda r:r['fr'][1])[:2]];print(','.join(w))")
           php tools/view_harness.php /tmp/out compare "$CMP" && grep -q 'class="dbd-panel dbd-fx dbd-cfx"' "pages/compare-$CMP.html" || { echo "no fantasy panel on compare $CMP"; exit 1; }
+          php tools/view_harness.php /tmp/out myteam "" && grep -q 'class="mt-sample"' pages/myteam.html || { echo "no sample link on the empty My team page"; exit 1; }
+          MT=$(grep -o 'myteam=[0-9,-]*' pages/myteam.html | head -1 | cut -d= -f2)
+          php tools/view_harness.php /tmp/out myteam "$MT" && [ "$(grep -o 'class="mt-row' "pages/myteam-$MT.html" | wc -l)" -ge 21 ] || { echo "the sample team did not fill the lineup in all three formats"; exit 1; }
+          grep -q 'class="dbd-mtbtn"' pages/player-00-0036322.html || { echo "no My team button on Jefferson"; exit 1; }
       - uses: actions/upload-artifact@v4
         with:
           name: pages-fresh-data
