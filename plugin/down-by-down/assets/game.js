@@ -2,7 +2,7 @@
 (function () {
   document.querySelectorAll('.dbd-wpc[data-wp]').forEach(function (box) {
     var D = JSON.parse(box.getAttribute('data-wp')), S = D.s, area = box.querySelector('.area'), cur = area.querySelector('.cur'), rd = area.querySelector('.read');
-    var clock = function (el) { if (el >= 3600 && D.e > 3600) { var r = 600 - (el - 3600); return 'OT ' + Math.floor(r / 60) + ':' + ('0' + Math.round(r % 60)).slice(-2); } var q = Math.min(4, Math.floor(el / 900) + 1), r2 = 900 * q - el; return 'Q' + q + ' ' + Math.floor(r2 / 60) + ':' + ('0' + Math.round(r2 % 60)).slice(-2); };
+    var clock = function (el) { if (el >= 3600 && D.e > 3600) { var r = Math.max(0, 600 - (el - 3600)); return 'OT ' + Math.floor(r / 60) + ':' + ('0' + Math.round(r % 60)).slice(-2); } var q = Math.min(4, Math.floor(el / 900) + 1), r2 = 900 * q - el; return 'Q' + q + ' ' + Math.floor(r2 / 60) + ':' + ('0' + Math.round(r2 % 60)).slice(-2); };
     var show = function (cx) {
       var r = area.getBoundingClientRect(), f = Math.max(0, Math.min(1, (cx - r.left) / r.width)), el = f * D.e, i = 0;
       while (i < S.length - 1 && S[i + 1][0] <= el) i++;

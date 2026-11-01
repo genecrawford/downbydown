@@ -45,14 +45,14 @@ echo '</div>';
 $WP = $final ? DBD_Data::win_prob( $g ) : null;
 if ( $WP && ! empty( $WP['s'] ) ) {
 	$wS = $WP['s']; $wOT = ! empty( $WP['ot'] ); $wFin = (int) $WP['fin']; $wRfin = $wOT ? 500 : $wFin; $wOts = (array) ( $WP['otsc'] ?? array() );
-	$wEnd = $wOT ? ( $wFin === 500 ? 4200 : max( 3660, ( $wOts ? (int) end( $wOts )[0] : 3600 ) + 60 ) ) : 3600;
+	$wEnd = $wOT ? ( $wFin === 500 ? 4200 : min( 4200, max( 3660, ( $wOts ? (int) end( $wOts )[0] : 3600 ) + 60 ) ) ) : 3600;  /* overtime is ten minutes at most */
 	$wHt = DBD_Data::team( $HOME ); $wAt = DBD_Data::team( $AWAY ); $wCh = DBD_Marks::accent( $wHt ); $wCa = DBD_Marks::accent( $wAt );
 	$wHs = (int) ( $g['home_score'] ?? 0 ); $wAs = (int) ( $g['away_score'] ?? 0 );
 	$wWin = $wFin === 1000 ? $HOME : ( $wFin === 0 ? $AWAY : null ); $wLose = $wWin ? ( $wWin === $HOME ? $AWAY : $HOME ) : null;
 	$wFor = function ( $team, $v ) use ( $HOME ) { return $team === $HOME ? (int) $v : 1000 - (int) $v; };  /* a home chance, read for either team */
 	$wPct = function ( $v ) { return round( $v / 10 ) . '%'; };
 	$wNick = function ( $a ) { return DBD_Data::team( $a )['nick'] ?? $a; };
-	$wClock = function ( $el ) use ( $wEnd ) { if ( $el >= 3600 && $wEnd > 3600 ) { $r = 600 - ( $el - 3600 ); return 'OT ' . floor( $r / 60 ) . ':' . sprintf( '%02d', $r % 60 ); } $q = min( 4, (int) floor( $el / 900 ) + 1 ); $r = 900 * $q - $el; return 'Q' . $q . ' ' . floor( $r / 60 ) . ':' . sprintf( '%02d', $r % 60 ); };
+	$wClock = function ( $el ) use ( $wEnd ) { if ( $el >= 3600 && $wEnd > 3600 ) { $r = max( 0, 600 - ( $el - 3600 ) ); return 'OT ' . floor( $r / 60 ) . ':' . sprintf( '%02d', $r % 60 ); } $q = min( 4, (int) floor( $el / 900 ) + 1 ); $r = 900 * $q - $el; return 'Q' . $q . ' ' . floor( $r / 60 ) . ':' . sprintf( '%02d', $r % 60 ); };
 	$wX = function ( $el ) use ( $wEnd ) { return round( $el / $wEnd * 100, 2 ); }; $wY = function ( $v ) { return round( ( 1000 - $v ) / 10, 2 ); };
 	$wAfter = function ( $i ) use ( $wS, $wRfin ) { return isset( $wS[ $i + 1 ] ) ? (int) $wS[ $i + 1 ][1] : $wRfin; };
 	$wScore = function ( $x, $team ) use ( $HOME ) { $m = $team === $HOME ? $x[2] : $x[3]; $o = $team === $HOME ? $x[3] : $x[2]; return $m === $o ? 'tied ' . $m . "\u{2060}–\u{2060}" . $o : ( $m < $o ? 'down ' : 'up ' ) . max( $m, $o ) . "\u{2060}–\u{2060}" . min( $m, $o ); };
