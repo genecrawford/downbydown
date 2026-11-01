@@ -32,6 +32,7 @@ Not affiliated with the NFL or any team. No team logos are used; team marks are 
 == Changelog ==
 
 = Next release =
+* Fix: the team picker's "Pick up where you left off" box doubled the name ("New York GiantsGiants"): it read both the full and the phone-size name from the standings link.
 * Fix: on phones the red DNP tag in Who he's faced covered the opponent label ("VS MIA"). It now sits on the cell's top border.
 
 = 1.5.0 =
