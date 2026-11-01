@@ -29,35 +29,48 @@
     var keep = bar.querySelector('.mt-keep'); if (keep) keep.addEventListener('click', function () { save(ids); stored = ids.slice(); shared = false; bar.remove(); });
   }
 
-  /* search: name, team or number, best scorers first, players already on the team left out */
+  /* search: name, team or number, best scorers first, players already on the team left out. The main box takes any position;
+     an empty slot's box (opened by its +) takes only the positions that slot holds. */
   var src = document.getElementById('mt-index'), ALL = []; try { ALL = JSON.parse(src ? src.textContent : '[]'); } catch (e) {}
-  var q = document.getElementById('mt-q'), list = document.getElementById('mt-sug'), hits = [], cur = -1;
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
-  function draw() {
-    var n = (q.value || '').trim().toLowerCase(); cur = -1;
-    if (!n) { hits = []; list.hidden = true; list.innerHTML = ''; return; }
-    hits = ALL.filter(function (p) { return ids.indexOf(p.id) < 0 && (p.name.toLowerCase().indexOf(n) >= 0 || (p.team || '').toLowerCase() === n || String(p.num) === n); })
-      .sort(function (a, b) { return (b.fp || 0) - (a.fp || 0); }).slice(0, 8);
-    list.innerHTML = hits.length ? hits.map(function (p, i) { return '<li role="option" id="mt-o' + i + '" data-i="' + i + '">' + (window.dbdMark ? window.dbdMark(p.team, 20) : '') + '<b>' + esc(p.name) + '</b><small>' + esc(p.team + ' · ' + p.pos + (p.fp != null ? ' · ' + p.fp.toFixed(1) + ' half-PPR' : '')) + '</small></li>'; }).join('') : '<li class="none">No players match</li>';
-    list.hidden = false;
-  }
-  function pick(i) {
-    var p = hits[i]; if (!p) return;
-    if (ids.length >= C.max) { q.value = ''; list.innerHTML = '<li class="none">My team holds ' + C.max + ' players: remove one first</li>'; list.hidden = false; return; }
-    go(ids.concat([p.id]));
-  }
-  function mark() { list.querySelectorAll('li[data-i]').forEach(function (li) { var on = +li.dataset.i === cur; li.classList.toggle('on', on); if (on) q.setAttribute('aria-activedescendant', li.id); }); }
-  if (q && list) {
+  var uid = 0;
+  function wire(q, list, posOk, onEmptyBlur) {
+    var hits = [], cur = -1, pre = 'mt-o' + (uid++) + '-';
+    function draw() {
+      var n = (q.value || '').trim().toLowerCase(); cur = -1;
+      if (!n) { hits = []; list.hidden = true; list.innerHTML = ''; return; }
+      hits = ALL.filter(function (p) { return ids.indexOf(p.id) < 0 && (!posOk || posOk.indexOf(p.pos) >= 0) && (p.name.toLowerCase().indexOf(n) >= 0 || (p.team || '').toLowerCase() === n || String(p.num) === n); })
+        .sort(function (a, b) { return (b.fp || 0) - (a.fp || 0); }).slice(0, 8);
+      list.innerHTML = hits.length ? hits.map(function (p, i) { return '<li role="option" id="' + pre + i + '" data-i="' + i + '">' + (window.dbdMark ? window.dbdMark(p.team, 20) : '') + '<b>' + esc(p.name) + '</b><small>' + esc(p.team + ' · ' + p.pos + (p.fp != null ? ' · ' + p.fp.toFixed(1) + ' half-PPR' : '')) + '</small></li>'; }).join('') : '<li class="none">No players match</li>';
+      list.hidden = false;
+    }
+    function pick(i) {
+      var p = hits[i]; if (!p) return;
+      if (ids.length >= C.max) { q.value = ''; hits = []; list.innerHTML = '<li class="none">My team holds ' + C.max + ' players: remove one first</li>'; list.hidden = false; return; }
+      go(ids.concat([p.id]));
+    }
+    function mark() { list.querySelectorAll('li[data-i]').forEach(function (li) { var on = +li.dataset.i === cur; li.classList.toggle('on', on); if (on) q.setAttribute('aria-activedescendant', li.id); }); }
     q.addEventListener('input', draw);
     q.addEventListener('keydown', function (e) {
       if (e.key === 'ArrowDown' && hits.length) { cur = Math.min(hits.length - 1, cur + 1); mark(); e.preventDefault(); }
       else if (e.key === 'ArrowUp' && hits.length) { cur = Math.max(0, cur - 1); mark(); e.preventDefault(); }
       else if (e.key === 'Enter') { e.preventDefault(); if (!list.hidden && hits.length) pick(cur < 0 ? 0 : cur); }  /* nothing shown, nothing added */
-      else if (e.key === 'Escape') { list.hidden = true; }
+      else if (e.key === 'Escape') { list.hidden = true; if (onEmptyBlur) { q.value = ''; onEmptyBlur(true); } }
     });
     list.addEventListener('mousedown', function (e) { var li = e.target.closest('li[data-i]'); if (li) { e.preventDefault(); pick(+li.dataset.i); } });
-    q.addEventListener('blur', function () { setTimeout(function () { list.hidden = true; }, 150); });
+    q.addEventListener('blur', function () { setTimeout(function () { list.hidden = true; if (onEmptyBlur && !q.value.trim()) onEmptyBlur(); }, 150); });
   }
+  var q = document.getElementById('mt-q'), list = document.getElementById('mt-sug');
+  if (q && list) wire(q, list, null, null);
+
+  /* empty slots (SCOPE §36 addendum): the + opens that slot's search in the row; Escape, or leaving it empty, puts the + back */
+  root.querySelectorAll('.mt-row.empty[data-pos]').forEach(function (row) {
+    var btn = row.querySelector('.mt-slotadd'), lab = row.querySelector('.mt-slot > .m'), box = row.querySelector('.mt-slotq'), inp = row.querySelector('.mt-slotin'), sug = box && box.querySelector('.mt-sug');
+    if (!btn || !box || !inp || !sug) return;
+    var close = function (refocus) { if (box.hidden) return; box.hidden = true; btn.hidden = false; if (lab) lab.hidden = false; btn.setAttribute('aria-expanded', 'false'); row.classList.remove('open'); if (refocus) btn.focus(); };  /* Escape hands focus back to the + (Greptile, PR #41) */
+    wire(inp, sug, row.dataset.pos.split(','), close);
+    btn.addEventListener('click', function () { btn.hidden = true; if (lab) lab.hidden = true; box.hidden = false; btn.setAttribute('aria-expanded', 'true'); row.classList.add('open'); inp.focus(); });
+  });
 
   /* remove, copy, clear */
   root.addEventListener('click', function (e) {

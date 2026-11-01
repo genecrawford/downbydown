@@ -98,7 +98,7 @@ $rows = array_values( array_filter( $idx, function ( $p ) use ( $team, $pos, $q 
 } ) );
 /* every player lists (Gene, 2026-10-31: no top-60 cap); the sort is snap share */
 $lab = $q !== '' ? '<b>Search</b> · ' . esc_html( $q ) . ' · all teams' : ( $team ? '<b>Roster usage</b> · sorted by snap share' : '<b>Every player</b> · ' . count( $rows ) . ' by snap share' );
-echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab" id="dbd-plab">' . $lab . '</span><span class="dbd-badge">Click a row</span></div><div class="dbd-tw"><table class="dbd-plist dbd-stat dbd-sortable" id="dbd-plist"><thead><tr><th data-sort="name">Player</th><th data-sort="team" class="dbd-t2">Team</th><th data-sort="pos">Pos</th><th data-sort="snap" class="dbd-t2">Snap %</th><th data-sort="use">Tgt / Att</th><th data-sort="rec" class="dbd-t2">Rec</th><th data-sort="car" class="dbd-t2">Car</th><th data-sort="yds">Yds</th><th data-sort="td">TD</th><th data-sort="epa">EPA</th><th data-sort="fp" class="dbd-pfph">Fpts/g</th><th data-sort="st" class="dbd-t3">Status</th></tr></thead><tbody>';
+echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab" id="dbd-plab">' . $lab . '</span><span class="dbd-badge">Click a row</span></div><div class="dbd-tw"><table class="dbd-plist dbd-stat dbd-sortable" id="dbd-plist"><thead><tr><th data-sort="name">Player</th><th data-sort="team" class="dbd-t2">Team</th><th data-sort="pos">Pos</th><th data-sort="snap" class="dbd-t2">Snap %</th><th data-sort="use">Tgt / Att</th><th data-sort="rec" class="dbd-t2">Rec</th><th data-sort="car" class="dbd-t2">Car</th><th data-sort="yds">Yds</th><th data-sort="td">TD</th><th data-sort="epa">EPA</th><th data-sort="fp" class="dbd-pfph">Fpts/g</th><th data-sort="st" class="dbd-t3">Status</th><th class="dbd-pmt"><span class="dbd-sr">My team</span></th></tr></thead><tbody>';
 ob_start();
 foreach ( $rows as $p ) {
 	$href = DBD_Router::url( array( 'player' => $p['id'] ) ); $st = (string) ( $p['st'] ?? '' );
@@ -109,10 +109,11 @@ foreach ( $rows as $p ) {
 	$use = $p['pos'] === 'QB' ? ( $p['att'] ?? 0 ) : $p['tgt'];
 	echo '<td>' . ( $use ?: '' ) . '</td><td>' . ( $p['rec'] ?: '' ) . '</td><td>' . ( $p['car'] ?: '' ) . '</td><td>' . (int) $p['yds'] . '</td><td>' . ( $p['td'] ?: '' ) . '</td><td class="' . ( $p['epa'] >= 0 ? 'pos' : 'neg' ) . '">' . ( $p['epa'] > 0 ? '+' : '' ) . number_format( (float) $p['epa'], 1 ) . '</td>';
 	echo DBD_Fantasy::index_cell( $p );
-	echo '<td>' . ( $st !== '' ? '<span class="dbd-st' . $cls . '">' . esc_html( $lbl . ( ! empty( $p['what'] ) ? ' · ' . $p['what'] : '' ) ) . '</span>' : '' ) . '</td></tr>';
+	echo '<td>' . ( $st !== '' ? '<span class="dbd-st' . $cls . '">' . esc_html( $lbl . ( ! empty( $p['what'] ) ? ' · ' . $p['what'] : '' ) ) . '</span>' : '' ) . '</td>';
+	echo '<td class="dbd-pmt"><button class="dbd-mtadd" type="button" data-mtid="' . esc_attr( $p['id'] ) . '" data-mtname="' . esc_attr( $p['name'] ) . '" aria-pressed="false" aria-label="' . esc_attr( 'Add ' . $p['name'] . ' to My team' ) . '"><span class="off" aria-hidden="true">+</span><span class="on" aria-hidden="true">✓</span></button></td></tr>';  /* SCOPE §36: dbd-site.js toggles it */
 }
-if ( ! $rows ) { echo '<tr><td colspan="12" class="dbd-note">No players match.</td></tr>'; }
-echo DBD_Router::tierize( ob_get_clean(), array( null, 'dbd-t2', null, 'dbd-t2', null, 'dbd-t2', 'dbd-t2', null, null, null, null, 'dbd-t3' ) );
-echo '</tbody></table></div><p class="dbd-note">Snap share is the season average of offensive snaps played. Status is the latest practice or game report; blank means no listing. Quarterbacks show pass attempts in the Tgt / Att column. Search matches name, number, team abbreviation or college across every team. Fpts/g is fantasy points a game in the scoring you pick, with the rank at his position among players with enough games. Click a column heading to sort.</p></section>';
+if ( ! $rows ) { echo '<tr><td colspan="13" class="dbd-note">No players match.</td></tr>'; }
+echo DBD_Router::tierize( ob_get_clean(), array( null, 'dbd-t2', null, 'dbd-t2', null, 'dbd-t2', 'dbd-t2', null, null, null, null, 'dbd-t3', null ) );
+echo '</tbody></table></div><p class="dbd-note">Snap share is the season average of offensive snaps played. Status is the latest practice or game report; blank means no listing. Quarterbacks show pass attempts in the Tgt / Att column. Search matches name, number, team abbreviation or college across every team. Fpts/g is fantasy points a game in the scoring you pick, with the rank at his position among players with enough games. The + at the end of a row adds him to My team. Click a column heading to sort.</p></section>';
 echo '</main>';
 echo '<script type="application/json" id="dbd-pindex">' . wp_json_encode( $idx ) . '</script>';

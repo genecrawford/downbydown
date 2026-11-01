@@ -373,7 +373,7 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 .dbd .dbd-plist{width:100%;border-collapse:collapse}
 .dbd .dbd-plist th{font:700 11px var(--dbd-display);text-transform:uppercase;letter-spacing:.14em;color:var(--dbd-muted);text-align:right;padding:6px 6px;border-bottom:1px solid var(--dbd-line);white-space:nowrap}
 .dbd .dbd-plist td{padding:4px 6px;border-top:1px solid var(--dbd-line);text-align:right;font:500 12px var(--dbd-mono);vertical-align:middle;white-space:nowrap}
-.dbd .dbd-plist th:first-child,.dbd .dbd-plist td:first-child,.dbd .dbd-plist th:nth-child(2),.dbd .dbd-plist td:nth-child(2),.dbd .dbd-plist th:nth-child(3),.dbd .dbd-plist td:nth-child(3),.dbd .dbd-plist th:last-child,.dbd .dbd-plist td:last-child{text-align:left}
+.dbd .dbd-plist th:first-child,.dbd .dbd-plist td:first-child,.dbd .dbd-plist th:nth-child(2),.dbd .dbd-plist td:nth-child(2),.dbd .dbd-plist th:nth-child(3),.dbd .dbd-plist td:nth-child(3),.dbd .dbd-plist th:nth-last-child(2),.dbd .dbd-plist td:nth-last-child(2){text-align:left}
 .dbd .dbd-plist td.dbd-nm{font:500 13px var(--dbd-body)}
 .dbd .dbd-plist .dbd-nmi{display:flex;align-items:center;gap:10px}
 .dbd .dbd-plist .dbd-nmi a{text-decoration:none;color:var(--dbd-ink)}.dbd .dbd-plist .dbd-nmi a:hover{text-decoration:underline;text-underline-offset:3px}
@@ -1327,3 +1327,20 @@ html:not([data-fx]) .dbd [data-fx="half"],html[data-fx="std"] .dbd [data-fx="std
 .dbd .dbd-hcard .dbd-mtbtn[aria-pressed="true"]+.dbd-mtopen{display:block}.dbd .dbd-hcard .dbd-mtopen:hover{color:var(--dbd-red)}
 .dbd .mt-shared{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;padding:12px var(--dbd-edge);border-color:var(--dbd-red)}
 .dbd .mt-shared p{margin:0;font:400 14px/1.5 var(--dbd-body);color:var(--dbd-ink-2)}.dbd .mt-shared p b{color:var(--dbd-ink)}.dbd .mt-shared span{display:flex;gap:8px}
+/* My team on the Players index: a round + at the end of each row, a green check once he is on the team */
+.dbd .dbd-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.dbd th.dbd-pmt,.dbd td.dbd-pmt,.dbd .dbd-plist th.dbd-pmt,.dbd .dbd-plist td.dbd-pmt{width:44px;text-align:right;position:sticky;right:0;z-index:1;background:var(--dbd-panel);box-shadow:-8px 0 8px -8px rgba(22,30,54,.18)}  /* pinned to the right edge, so it stays in reach when the table scrolls sideways on a phone */
+.dbd .dbd-mtadd{display:inline-grid;place-items:center;width:28px;height:28px;padding:0;border-radius:50%;border:1px solid var(--dbd-line-2);background:var(--dbd-panel);color:var(--dbd-ink-2);font:600 15px/1 var(--dbd-body);cursor:pointer;transition:border-color .15s,background-color .15s,color .15s}
+.dbd .dbd-mtadd:hover,.dbd .dbd-mtadd:focus-visible{border-color:var(--dbd-red);color:var(--dbd-red)}
+.dbd .dbd-mtadd .on{display:none}.dbd .dbd-mtadd[aria-pressed="true"] .on{display:inline}.dbd .dbd-mtadd[aria-pressed="true"] .off{display:none}
+.dbd .dbd-mtadd[aria-pressed="true"]{border-color:var(--dbd-good);background:rgba(30,127,74,.1);color:var(--dbd-good)}
+@media (prefers-reduced-motion:reduce){.dbd .dbd-mtadd{transition:none}}
+/* My team empty slots: a round + that opens a search in the row (SCOPE §36 addendum) */
+.dbd .mt-row.empty .who{grid-column:2/-1}
+.dbd .mt-row.empty .mt-slot{gap:10px}
+.dbd .mt-slotadd{display:grid;place-items:center;flex:0 0 36px;width:36px;height:36px;padding:0;border-radius:50%;border:1.5px dashed var(--dbd-line-2);background:transparent;color:var(--dbd-ink-2);font:500 20px/1 var(--dbd-body);cursor:pointer}
+.dbd .mt-slotadd:hover,.dbd .mt-slotadd:focus-visible{border-color:var(--dbd-red);border-style:solid;color:var(--dbd-red)}
+.dbd .mt-slotq{position:relative;flex:1 1 auto;max-width:420px}.dbd .mt-slotq .dbd-srch{width:100%}
+.dbd .mt-row.open{z-index:5}
+.dbd .mt-slotadd[hidden],.dbd .mt-slot>.m[hidden],.dbd .mt-slotq[hidden]{display:none}
+.dbd .mt-row.empty::before{background:var(--dbd-line-2)}

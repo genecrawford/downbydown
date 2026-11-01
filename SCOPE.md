@@ -1408,3 +1408,7 @@ The sample team renders as mocked: Allen at QB, Gibbs and Walker at RB, Lamb and
 Built with one addition: opening a shared `?myteam=` link that differs from the team saved on the device shows that team with a bar ("This is a shared team"), and the saved team is kept until the reader chooses Save this as my team, so a friend's link never overwrites yours.
 
 Size: M to L. Status: signed off 2026-11-01 and built as 1.12.0.
+
+Addendum (Gene, 2026-11-01, after 1.12.0 went live): a My team button by each player on the Players index. Built as 1.12.1: a round + at the end of every row, a green check once he is on the team, pinned to the right edge so it stays in reach when the table scrolls sideways on a phone. The player page button and the row buttons share one delegated handler in `dbd-site.js` (`[data-mtid]`), and `players.js` re-marks redrawn rows.
+
+Second addendum (Gene, 2026-11-01): "beside each empty slot, put a text search box so I can add a player, but first show a + icon and have that open up the search field in-line." Built in 1.12.1: an empty slot shows a dashed round + and "Empty: add a TE"; the + opens a search box in the row, limited to the slot's positions (FLEX: RB, WR, TE), with the same keyboard and mouse handling as the main search (one `wire()` function in `myteam.js` serves both). Escape, or leaving the box empty, puts the + back. The empty page now shows the empty lineup under Start your team. The left nav link is Gene's to add in the Divi Text module: `<li><a href="/?view=myteam">My team</a></li>`.

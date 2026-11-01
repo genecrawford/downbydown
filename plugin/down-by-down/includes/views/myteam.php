@@ -14,6 +14,7 @@ if ( ! $rows ) {
 	$sample = DBD_Router::url( array( 'myteam' => implode( ',', DBD_MyTeam::sample() ) ) );
 	echo '<section class="dbd-panel mt-empty"><div class="mt-e"><h2>Start your team</h2><p>Add players by name below, or with the <b>+ My team</b> button on any player page. Your team is saved on this device, and the address bar is a link you can send or open on your phone.</p>' . $search;
 	echo '<p class="m">Or try it with a <a href="' . esc_url( $sample ) . '" class="mt-sample">sample team</a>: this season\'s points-a-game leaders at each slot.</p></div></section>';
+	echo '<section class="dbd-panel mt-board"><div class="dbd-ph"><span class="dbd-lab"><b>Lineup</b> · QB, 2 RB, 2 WR, TE, FLEX, then the bench</span></div>' . DBD_MyTeam::board( array(), 1 ) . '</section>';  /* the empty lineup: every slot has its own + */
 } else {
 	echo '<section class="dbd-panel mt-add"><div class="mt-addrow">' . $search . '<div class="dbd-fg"><span>Fantasy scoring</span>' . DBD_Fantasy::seg() . '</div><div class="mt-acts"><button class="dbd-cbtn" type="button" id="mt-copy">Copy link</button><button class="dbd-cbtn" type="button" id="mt-clear">Clear</button></div></div></section>';
 	echo '<section class="dbd-panel mt-sum"><div class="dbd-ph"><span class="dbd-lab"><b>This week</b> · Week ' . $cw . ', your starters</span><span class="dbd-badge">best lineup by points a game</span></div>';

@@ -117,9 +117,18 @@ class DBD_MyTeam {
 		return $h . '</span>';
 	}
 
+	/** An empty slot (SCOPE §36 addendum): a + that opens a search in the row, limited to the positions the slot takes. */
+	public static function empty_row( $lab ) {
+		$ok = array(); foreach ( self::SLOTS as $sl ) { if ( $sl[0] === $lab ) { $ok = $sl[1]; break; } } if ( ! $ok ) { $ok = array( $lab ); }
+		$what = $lab === 'FLEX' ? 'a back, receiver or tight end' : 'a ' . $lab;
+		return '<div class="mt-row empty" data-pos="' . esc_attr( implode( ',', $ok ) ) . '"><span class="slot">' . esc_html( $lab ) . '</span><span class="who mt-slot">'
+			. '<button class="mt-slotadd" type="button" aria-expanded="false" aria-label="' . esc_attr( 'Add ' . $what ) . '">+</button><span class="m">Empty: add ' . esc_html( $what ) . '</span>'
+			. '<span class="mt-slotq" hidden><input class="dbd-srch mt-slotin" type="search" placeholder="' . esc_attr( 'Add ' . $what . ': name or team' ) . '" autocomplete="off" aria-label="' . esc_attr( 'Add ' . $what ) . '"><ul class="mt-sug" role="listbox" hidden></ul></span></span></div>';
+	}
+
 	/** One lineup row. $lab is the slot (QB, FLEX) or, on the bench, his position. */
 	public static function row( $lab, $r, $i, $bench = false ) {
-		if ( ! $r ) { return '<div class="mt-row empty"><span class="slot">' . esc_html( $lab ) . '</span><span class="who"><span class="m">Empty: add ' . ( $lab === 'FLEX' ? 'a back, receiver or tight end' : 'a ' . esc_html( $lab ) ) . '</span></span></div>'; }
+		if ( ! $r ) { return self::empty_row( $lab ); }
 		$rec = DBD_Data::player_record( $r['team'], $r['id'] ) ?: array(); $t = DBD_Data::team( $r['team'] ); $av = self::avail( $r ); $href = DBD_Router::url( array( 'player' => $r['id'] ) );
 		$flag = $av === 'bye' ? '<i class="fl bye">Bye</i>' : ( $av === 'out' ? '<i class="fl out">Out</i>' : '' );
 		return '<div class="mt-row' . ( $bench ? ' bench' : '' ) . ( in_array( $av, array( 'bye', 'out' ), true ) ? ' ' . $av : '' ) . '" style="--dbd-team:' . esc_attr( DBD_Marks::accent( $t ) ) . '">'
