@@ -222,7 +222,10 @@ jobs:
           php tools/view_harness.php /tmp/out myteam "$MT" && python3 -c "import sys;s=open('pages/myteam-$MT.html').read();n=s.count('class=\"mt-row')-s.count('class=\"mt-row empty');print(n,'filled rows');sys.exit(0 if n>=36 else 1)" || { echo "the sample team did not fill the lineup and bench in all three formats"; exit 1; }
           grep -q 'class="dbd-mtbtn"' pages/player-00-0036322.html || { echo "no My team button on Jefferson"; exit 1; }
           php tools/view_harness.php /tmp/out leaders "" && [ "$(grep -o 'class="dbd-panel ld-card"' pages/leaders.html | wc -l)" -eq 7 ] || { echo "the fantasy tab does not have seven boards"; exit 1; }
-          php tools/view_harness.php /tmp/out leaders rec && [ "$(grep -o 'class="dbd-panel ld-card"' pages/leaders-rec.html | wc -l)" -eq 16 ] || { echo "the receivers tab does not have sixteen boards"; exit 1; }
+          php tools/view_harness.php /tmp/out leaders wr && [ "$(grep -o 'class="dbd-panel ld-card"' pages/leaders-wr.html | wc -l)" -eq 16 ] || { echo "the wide receivers tab does not have sixteen boards"; exit 1; }
+          php tools/view_harness.php /tmp/out leaders te && [ "$(grep -o 'class="dbd-panel ld-card"' pages/leaders-te.html | wc -l)" -eq 16 ] || { echo "the tight ends tab does not have sixteen boards"; exit 1; }
+          for P in wr te; do python3 -c "import re,sys;P=sys.argv[1].upper();s=open('pages/leaders-'+sys.argv[1]+'.html').read();got=re.findall(r'<small>[A-Z]{2,3} · ([A-Z]{2})</small>',s);bad=[p for p in got if p!=P];print(P,'tab:',len(got),'players listed');sys.exit(1 if (bad or len(got)<50) else 0)" $P || { echo "the $P tab lists other positions or too few players"; exit 1; }; done
+          php tools/view_harness.php /tmp/out leaders te.g.tshare && grep -q 'ld-full' pages/leaders-te.g.tshare.html || { echo "no full TE board"; exit 1; }
           php tools/view_harness.php /tmp/out leaders qb && grep -q 'ld-card' pages/leaders-qb.html || { echo "no quarterback boards"; exit 1; }
           php tools/view_harness.php /tmp/out leaders rec.g.drop && grep -q 'data-low="1"' pages/leaders-rec.g.drop.html || { echo "the drop rate board is not marked lower-is-better"; exit 1; }
           php tools/view_harness.php /tmp/out leaders fan.ppg.WR && grep -q 'ld-full' pages/leaders-fan.ppg.WR.html || { echo "no full WR fantasy board"; exit 1; }

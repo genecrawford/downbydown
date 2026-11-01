@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.13.0
+Stable tag: 1.13.1
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,10 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.13.1 =
+* A new version syncs on its own about two minutes after it is installed, so data files it newly knows about arrive without pressing Sync now. The sync the nightly data build triggers can run while the old version is still installed, and hosts can keep running the old code for a minute after an upload; this covers both. Settings shows whether the installed version has synced.
+* Leaders: wide receivers and tight ends are separate tabs, each ranked only against its own position, the way fantasy leagues treat them. Their full boards (wr.g.tshare, te.fp.deep) rank within the position; 1.13.0's combined receivers links open the wide receivers boards.
 
 = 1.13.0 =
 * Leaders (SCOPE §37): a new page, ?view=leaders, with a board for every Scorecard stat, every Playstyle trait and the fantasy numbers. Four tabs: Fantasy (points a game at each position, season points, boom weeks, highest floor, in the format you pick), Receivers and tight ends (with an All / WR / TE switch), Backs and Quarterbacks. Each board shows the top ten and links to the full ranked list, which filters by position and minimum usage and renumbers as you go. Lower-is-better stats rank lowest first.

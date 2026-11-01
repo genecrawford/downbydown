@@ -37,7 +37,8 @@ jobs:
           php tools/view_harness.php data compare 00-0036322,00-0039075
           php tools/view_harness.php data myteam
           php tools/view_harness.php data leaders
-          php tools/view_harness.php data leaders rec
+          php tools/view_harness.php data leaders wr
+          php tools/view_harness.php data leaders te.g.tshare
           php tools/view_harness.php data leaders rec.g.tshare
           php tools/view_harness.php data myteam 00-0034857,00-0039139,00-0038542,00-0036322,00-0039075,00-0037744,00-0036358,00-0037838
       - name: Render share cards

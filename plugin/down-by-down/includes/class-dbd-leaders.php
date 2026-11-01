@@ -8,14 +8,20 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 class DBD_Leaders {
 	const TOP    = 10;
-	const GROUPS = array( 'fan' => 'Fantasy', 'rec' => 'Receivers and tight ends', 'rb' => 'Backs', 'qb' => 'Quarterbacks' );
+	const GROUPS = array( 'fan' => 'Fantasy', 'wr' => 'Wide receivers', 'te' => 'Tight ends', 'rb' => 'Backs', 'qb' => 'Quarterbacks' );
+	/* wide receivers and tight ends share a data group (rec) but rank as separate positions, the way fantasy leagues do (Gene, 2026-11-01) */
+	const SPLIT  = array( 'wr' => array( 'rec', 'WR', 'wide receivers' ), 'te' => array( 'rec', 'TE', 'tight ends' ) );
+	public static function data_group( $g ) { return self::SPLIT[ $g ][0] ?? $g; }
+	public static function pos_of( $g ) { return self::SPLIT[ $g ][1] ?? null; }
+	public static function pool( $g ) { return self::SPLIT[ $g ][2] ?? DBD_Grades::pool_label( $g ); }
 	const STEPS  = array( 'rec' => array( 15, 10, 5 ), 'rb' => array( 30, 20, 10 ), 'qb' => array( 50, 35, 20 ) );  /* the qualified pool, then two lower steps */
 	const UNIT   = array( 'rec' => 'targets', 'rb' => 'touches', 'qb' => 'attempts' );
 	const FAN    = array( 'ppg.QB' => array( 'Points a game', 'quarterbacks with enough games' ), 'ppg.RB' => array( 'Points a game', 'running backs with enough games' ), 'ppg.WR' => array( 'Points a game', 'wide receivers with enough games' ), 'ppg.TE' => array( 'Points a game', 'tight ends with enough games' ),
 		'tot' => array( 'Season points', 'every position' ), 'boom' => array( 'Boom weeks', 'every position' ), 'lo' => array( 'Highest floor', 'his 20th-percentile game, 3+ games' ) );
 
 	public static function file() { return DBD_Data::get( 'players/leaders.json' ) ?: array(); }
-	public static function steps( $g ) { $s = self::STEPS[ $g ]; $q = (int) ( self::file()['min'][ $g ] ?? $s[0] ); $s[0] = $q; return $s; }
+	public static function steps( $g ) { $g = self::data_group( $g ); $s = self::STEPS[ $g ]; $q = (int) ( self::file()['min'][ $g ] ?? $s[0] ); $s[0] = $q; return $s; }
+	public static function unit( $g ) { return self::UNIT[ self::data_group( $g ) ]; }
 
 	/** [label, sub, kind, lower is better] for a group metric. */
 	public static function def( $g, $src, $k ) {
@@ -65,26 +71,19 @@ class DBD_Leaders {
 		return '<section class="dbd-panel ld-card"><div class="ld-h"><b>' . esc_html( $title ) . '</b>' . ( $sub !== '' ? '<small>' . esc_html( $sub ) . '</small>' : '' ) . '</div>' . $body . '<a class="ld-all" href="' . esc_url( $href ) . '">' . esc_html( $foot ) . ' →</a></section>';
 	}
 
-	/** A group tab: Scorecard boards, then Playstyle boards; receivers get All / WR / TE lists in each card. */
+	/** A position tab: Scorecard boards, then Playstyle boards, ranked within that position (wr and te are the receiver group split by position). */
 	public static function group( $g ) {
-		$pos = $g === 'rec' ? array( '' => 'All', 'WR' => 'WR', 'TE' => 'TE' ) : array( '' => 'All' );
-		$q = self::steps( $g )[0]; $h = '';
-		foreach ( array( 'g' => array( 'How good', 'the Scorecard stats, among ' . DBD_Grades::pool_label( $g ) . ' with ' . $q . '+ ' . self::UNIT[ $g ] ), 'fp' => array( 'How he\'s used', 'the Playstyle traits, same pool' ) ) as $src => $band ) {
-			$defs = $src === 'fp' ? DBD_Grades::fp_defs( $g ) : DBD_Grades::defs( $g ); $cards = '';
+		$dg = self::data_group( $g ); $only = self::pos_of( $g ); $q = self::steps( $g )[0]; $h = '';
+		foreach ( array( 'g' => array( 'How good', 'the Scorecard stats, among ' . self::pool( $g ) . ' with ' . $q . '+ ' . self::unit( $g ) ), 'fp' => array( 'How he\'s used', 'the Playstyle traits, same pool' ) ) as $src => $band ) {
+			$defs = $src === 'fp' ? DBD_Grades::fp_defs( $dg ) : DBD_Grades::defs( $dg ); $cards = '';
 			foreach ( $defs as $d ) {
-				$k = $d[0]; $df = self::def( $g, $src, $k ); $body = ''; $nAll = 0;
-				foreach ( $pos as $pk => $pl ) {
-					$rows = self::rows( $g, $src, $k, null, $pk ?: null ); if ( $pk === '' ) { $nAll = count( $rows ); }
-					$body .= '<div data-lpos="' . ( $pk ?: 'all' ) . '">' . self::list_html( $rows, function ( $r ) use ( $src, $df ) { return self::fmt( $src, $df[2], $r[1] ); } ) . '</div>';
-				}
-				$sub = self::sub( $df );
-				$cards .= self::card( $df[0], $sub, $body, DBD_Router::url( array( 'view' => 'leaders', 'b' => "$g.$src.$k" ) ), 'Full board · ' . $nAll . ' qualified' );
+				$k = $d[0]; $df = self::def( $dg, $src, $k ); $rows = self::rows( $dg, $src, $k, null, $only );
+				$body = self::list_html( $rows, function ( $r ) use ( $src, $df ) { return self::fmt( $src, $df[2], $r[1] ); } );
+				$cards .= self::card( $df[0], self::sub( $df ), $body, DBD_Router::url( array( 'view' => 'leaders', 'b' => "$g.$src.$k" ) ), 'Full board · ' . count( $rows ) . ' qualified' );
 			}
 			$h .= '<section class="dbd-band ld-band"><h2 class="dbd-bandh">' . esc_html( $band[0] ) . '<span>' . esc_html( $band[1] ) . '</span></h2><div class="ld-grid">' . $cards . '</div></section>';
 		}
-		$seg = '';
-		if ( count( $pos ) > 1 ) { $seg = '<div class="dbd-fg ld-posf"><span>Position</span><div class="dbd-seg t-tabs ld-pos" role="tablist"><span class="t-tabs-pill" aria-hidden="true"></span>'; foreach ( $pos as $pk => $pl ) { $seg .= '<button class="t-tab" type="button" role="tab" data-lpos="' . ( $pk ?: 'all' ) . '" aria-selected="' . ( $pk ? 'false' : 'true' ) . '">' . $pl . '</button>'; } $seg .= '</div></div>'; }
-		return array( $seg, '<div class="dbd-ld" data-pos="all">' . $h . '</div>' );
+		return array( '', '<div class="dbd-ld">' . $h . '</div>' );
 	}
 
 	/** The fantasy tab: points a game by position, season points, boom weeks, highest floor; every format, shown by the switch. */
@@ -116,19 +115,20 @@ class DBD_Leaders {
 			return array( 'title' => $lab[0] . ( strpos( $k, 'ppg.' ) === 0 ? ' · ' . substr( $k, 4 ) : '' ), 'sub' => $lab[1], 'group' => 'fan', 'filters' => '<div class="dbd-fg"><span>Fantasy scoring</span>' . DBD_Fantasy::seg() . '</div>', 'body' => $tables );
 		}
 		list( $g, $src, $k ) = array_pad( $parts, 3, '' );
-		if ( ! isset( self::STEPS[ $g ] ) || ! in_array( $src, array( 'g', 'fp' ), true ) ) { return null; }
-		$df = self::def( $g, $src, $k ); if ( ! $df ) { return null; }
-		$steps = self::steps( $g ); $rows = self::rows( $g, $src, $k, min( $steps ) ); $P = (array) ( $f['players'] ?? array() );
+		if ( $g === 'rec' ) { $g = 'wr'; }  /* 1.13.0 links (rec.*) open the wide receivers board */
+		$dg = self::data_group( $g ); $only = self::pos_of( $g );
+		if ( ! isset( self::STEPS[ $dg ] ) || ! in_array( $src, array( 'g', 'fp' ), true ) ) { return null; }
+		$df = self::def( $dg, $src, $k ); if ( ! $df ) { return null; }
+		$steps = self::steps( $g ); $rows = self::rows( $dg, $src, $k, min( $steps ), $only ); $P = (array) ( $f['players'] ?? array() );
 		$q = $steps[0]; $qrows = array_values( array_filter( $rows, function ( $r ) use ( $q ) { return (int) $r[2] >= $q; } ) ); $rk = self::ranks( $qrows ); $ri = 0; $tb = '';
 		foreach ( $rows as $r ) {
 			$in = (int) $r[2] >= $q; $lab = $in ? self::rk( $rk[ $ri++ ] ) : '';
 			$tb .= '<tr data-use="' . (int) $r[2] . '" data-pos="' . esc_attr( $P[ $r[0] ][2] ?? '' ) . '" data-v="' . esc_attr( (string) $r[1] ) . '"' . ( $in ? '' : ' hidden' ) . '><td class="rk">' . esc_html( $lab ) . '</td><td>' . self::who( $r[0], 28 ) . '</td><td>' . esc_html( self::fmt( $src, $df[2], $r[1] ) ) . '</td><td>' . (int) $r[2] . '</td></tr>';
 		}
-		$fl = '<div class="dbd-fg"><label for="ld-min">Minimum ' . esc_html( self::UNIT[ $g ] ) . '</label><select id="ld-min" class="ld-min">';
+		$fl = '<div class="dbd-fg"><label for="ld-min">Minimum ' . esc_html( self::unit( $g ) ) . '</label><select id="ld-min" class="ld-min">';
 		foreach ( $steps as $i => $s ) { $fl .= '<option value="' . (int) $s . '"' . ( $i ? '' : ' selected' ) . '>' . (int) $s . '+' . ( $i ? '' : ' (qualified)' ) . '</option>'; }
 		$fl .= '</select></div>';
-		if ( $g === 'rec' ) { $fl = '<div class="dbd-fg"><span>Position</span><div class="dbd-seg t-tabs ld-bpos" role="tablist"><span class="t-tabs-pill" aria-hidden="true"></span><button class="t-tab" type="button" role="tab" data-lpos="" aria-selected="true">All</button><button class="t-tab" type="button" role="tab" data-lpos="WR" aria-selected="false">WR</button><button class="t-tab" type="button" role="tab" data-lpos="TE" aria-selected="false">TE</button></div></div>' . $fl; }
-		$body = '<div class="dbd-tw"><table class="dbd-stat ld-full" data-low="' . ( $df[3] ? 1 : 0 ) . '"><thead><tr><th>Rank</th><th>Player</th><th>' . esc_html( $df[0] ) . '</th><th>' . esc_html( ucfirst( self::UNIT[ $g ] ) ) . '</th></tr></thead><tbody>' . ( $tb ?: '<tr><td colspan="4" class="dbd-note">Nobody qualifies yet.</td></tr>' ) . '</tbody></table></div>';
-		return array( 'title' => $df[0], 'sub' => self::sub( $df ) ?: DBD_Grades::pool_label( $g ), 'group' => $g, 'filters' => $fl, 'body' => $body, 'count' => count( $qrows ) );
+		$body = '<div class="dbd-tw"><table class="dbd-stat ld-full" data-low="' . ( $df[3] ? 1 : 0 ) . '"><thead><tr><th>Rank</th><th>Player</th><th>' . esc_html( $df[0] ) . '</th><th>' . esc_html( ucfirst( self::unit( $g ) ) ) . '</th></tr></thead><tbody>' . ( $tb ?: '<tr><td colspan="4" class="dbd-note">Nobody qualifies yet.</td></tr>' ) . '</tbody></table></div>';
+		return array( 'title' => $df[0] . ( $only ? ' · ' . $only : '' ), 'sub' => self::sub( $df ) ?: self::pool( $g ), 'group' => $g, 'filters' => $fl, 'body' => $body, 'count' => count( $qrows ) );
 	}
 }
