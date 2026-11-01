@@ -28,6 +28,7 @@ Writes:
                        grid: the league's share and EPA per depth-by-direction cell, for throws and for targets
   metrics.json    offense/defense metrics per team, league averages, ranks, through_week
   schedule.json   {season, current_week, weeks: {"1": [games], ...}} with status per game
+  wp/w{N}.json    win probability for each final game that week: regulation series, overtime scores, top swings, turning point, low point (SCOPE §30)
   manifest.json   {season, week, through_week, built_at, files: {path: sha1}}
 
 Runs nightly in GitHub Actions during the season; the WordPress plugin pulls what changed.
@@ -563,6 +564,67 @@ for r in sched.sort_values(['week', 'gameday', 'gametime']).itertuples():
              stadium=c(r.stadium), game_type=r.game_type, status='final' if not (isinstance(r.home_score, float) and math.isnan(r.home_score)) else 'upcoming')
     weeks.setdefault(str(int(r.week)), []).append(g)
 json.dump(dict(season=season, current_week=week, through_week=through_week, weeks=weeks), open(f'{out}/schedule.json', 'w'), separators=(',', ':'))
+
+# ---------------------------------------------------------------- win probability (SCOPE §30): wp/w{N}.json, one file per week of final games
+# nflverse's spread-adjusted home win probability before every snap. Its model does not hold together under the current overtime rules,
+# so the series covers regulation only (a game tied after sixty minutes ends regulation at 50%) and overtime keeps its scoring plays.
+# Each point carries the score going into the snap: nflverse's running totals include the play's own points.
+import re as _re
+def wp_clean(d):
+    d = _re.sub(r'^\(\s*\d*:\d+\)\s*', '', str(d))
+    d = _re.sub(r'\((?:No Huddle, )?Shotgun\)\s*|\(No Huddle\)\s*', '', d)
+    d = _re.sub(r'[^.]*reported in as eligible\.\s*', '', d)
+    d = _re.sub(r",\s*Center-[\w.'-]+(?:,\s*Holder-[\w.'-]+)?", '', d)   # snapper and holder credits
+    d = _re.sub(r'\b\d{1,2}-(?=[A-Z])', '', d)                            # jersey numbers: 4-J.Elliott -> J.Elliott
+    d = _re.sub(r'\s+', ' ', d).strip()
+    return d if len(d) <= 150 else d[:147].rsplit(' ', 1)[0] + '…'
+def wp_game(g):
+    """One final game's record, or None when the play-by-play has no win probability for it."""
+    s = []; meta = []; sc = (0, 0); ots = []; ot = False; reg_end = (0, 0); home_t = g.iloc[0].home_team; away_t = g.iloc[0].away_team
+    for r in g.itertuples(index=False):  # the file's own order; timeouts and quarter ends are not snaps and would take the next snap's swing
+        if not isinstance(r.play_type, str): continue
+        hw = _fv(getattr(r, 'vegas_home_wp', None)); gs = _fv(r.game_seconds_remaining); q = int(_num(r.qtr))
+        cur = (int(_num(r.total_home_score)), int(_num(r.total_away_score)))
+        if q <= 4:
+            if hw is not None and gs is not None:
+                s.append([int(round(3600 - gs)), int(round(hw * 1000)), sc[0], sc[1]]); meta.append(r)
+            reg_end = cur
+        else:
+            base = sc if ot else reg_end
+            if cur != base:  # the scoring team is whichever total rose, so a pick-six or a safety is credited to the defense
+                ots.append([int(round(3600 + 600 - (gs or 0))), home_t if cur[0] > base[0] else away_t, wp_clean(r.desc), cur[0], cur[1]])
+            ot = True
+        sc = cur
+    if len(s) < 20: return None
+    hs, as_ = sc
+    fin = 1000 if hs > as_ else (0 if hs < as_ else 500); rfin = 500 if ot else fin
+    after = [x[1] for x in s[1:]] + [rfin]
+    plays = [dict(i=i, d=a - x[1]) for i, (x, a) in enumerate(zip(s, after))]
+    win = 'home' if fin == 1000 else ('away' if fin == 0 else None)
+    wv = (lambda v: v) if win == 'home' else (lambda v: 1000 - v)
+    tp = lo = None
+    if win:
+        lo = min(range(len(s)), key=lambda k: wv(s[k][1]))
+        if not ot:
+            for p in plays:
+                if wv(s[p['i']][1]) <= 500 < wv(after[p['i']]): tp = p['i']
+    seq = [v for v in [x[1] for x in s] + [rfin] if v != 500]  # even odds favor no one: 490 -> 500 -> 510 is one change, 490 -> 500 -> 490 none
+    top = sorted(plays, key=lambda p: -abs(p['d']))[:5]
+    pl = lambda i: [i, after[i] - s[i][1], meta[i].posteam if isinstance(meta[i].posteam, str) else None, wp_clean(meta[i].desc)]
+    return dict(pre=s[0][1], spread=c(getattr(g.iloc[0], 'spread_line', None)), s=s, fin=fin, ot=ot, reg=list(reg_end), otsc=ots,
+                top=[pl(p['i']) for p in top], tp=pl(tp) if tp is not None else None, lo=lo,
+                flips=sum(1 for u, v in zip(seq, seq[1:]) if (u - 500) * (v - 500) < 0))
+os.makedirs(f'{out}/wp', exist_ok=True)
+if have_pbp and 'vegas_home_wp' in df.columns:
+    _w = df[df.season_type == 'REG'] if 'season_type' in df.columns else df
+    final_ids = {g['id'] for gl in weeks.values() for g in gl if g['status'] == 'final'}
+    byweek = {}
+    for gid, g in _w[_w.game_id.isin(final_ids)].groupby('game_id'):
+        rec = wp_game(g)
+        if rec: byweek.setdefault(int(g.week.iloc[0]), {})[gid] = rec
+    for wk, games in byweek.items():
+        json.dump(dict(season=season, week=wk, games=games), open(f'{out}/wp/w{wk}.json', 'w'), separators=(',', ':'))
+    print('win probability:', sum(len(v) for v in byweek.values()), 'games in', len(byweek), 'weeks')
 
 # ---------------------------------------------------------------- movers (SCOPE §22): who moved in the last full week, against his own season
 MV_FLOOR = {'snaps': 12.0, 'targets': 6.0, 'epa': 4.0}; MV_MING = 2; MV_PER = 5; MV_DEBUT = 25; MV_START = 50; MV_PRIOR = 30

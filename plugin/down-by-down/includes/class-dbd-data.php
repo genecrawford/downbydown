@@ -134,6 +134,12 @@ class DBD_Data {
 	}
 
 	/** The game a team played in a week, or null (bye). */
+	/** A final game's win probability record (SCOPE §30), from wp/w{week}.json; null before the file exists or for a game not yet final. */
+	public static function win_prob( $game ) {
+		$f = self::get( 'wp/w' . (int) ( $game['week'] ?? 0 ) . '.json' );
+		return $f['games'][ $game['id'] ?? '' ] ?? null;
+	}
+
 	public static function team_game( $abbr, $week ) {
 		foreach ( self::week_games( $week ) as $g ) { if ( $g['home'] === $abbr || $g['away'] === $abbr ) { return $g; } }
 		return null;

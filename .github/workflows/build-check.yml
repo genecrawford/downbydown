@@ -7,6 +7,7 @@ on:
       - 'tools/build_data.py'
       - 'tools/view_harness.php'
       - 'plugin/down-by-down/includes/views/player.php'
+      - 'plugin/down-by-down/includes/views/game.php'
       - '.github/workflows/build-data.yml'
       - '.github/workflows/build-check.yml'
   workflow_dispatch:
@@ -65,15 +66,38 @@ jobs:
           print(n, 'qualifiers checked; largest other', worst, '; league grid cells', {k: len(v) for k, v in lg.get('grid', {}).items()})
           if bad: print('\n'.join(bad)); sys.exit(1)
           PY
+      - name: Check the win probability files (SCOPE §30)
+        run: |
+          python3 - <<'PY'
+          import json, glob, sys
+          bad = []; n = 0; ot = 0
+          for f in sorted(glob.glob('/tmp/out/wp/w*.json')):
+              for gid, g in json.load(open(f))['games'].items():
+                  n += 1; s = g['s']; end = 500 if g['ot'] else g['fin']; ot += bool(g['ot'])
+                  if s[0][1] != g['pre']: bad.append(f'{gid}: series does not start at the kickoff chance')
+                  if g['fin'] not in (0, 500, 1000): bad.append(f'{gid}: result {g["fin"]}')
+                  if any(x[0] > 3600 for x in s): bad.append(f'{gid}: an overtime point in the series')
+                  sw = sorted(abs((s[i + 1][1] if i + 1 < len(s) else end) - s[i][1]) for i in range(len(s)))[-5:]
+                  if sorted(abs(t[1]) for t in g['top']) != sw: bad.append(f'{gid}: top swings are not the five largest')
+                  if gid in ('2026_04_LA_PHI', '2026_02_IND_KC', '2026_05_NYG_WAS'):
+                      print(gid, 'pre', g['pre'], 'flips', g['flips'], 'lo', g['lo'] is not None and s[g['lo']], 'tp', g['tp'] and g['tp'][3][:60], 'ot scores', len(g['otsc']), 'biggest', g['top'][0][1])
+          print(n, 'final games,', ot, 'went to overtime')
+          sch = json.load(open('/tmp/out/schedule.json'))
+          finals = {g['id'] for gl in sch['weeks'].values() for g in gl if g['status'] == 'final' and g.get('game_type', 'REG') == 'REG'}
+          have = {gid for f in glob.glob('/tmp/out/wp/w*.json') for gid in json.load(open(f))['games']}
+          if finals - have: bad.append('final games with no win probability: ' + ', '.join(sorted(finals - have)))
+          if bad: print('\n'.join(bad)); sys.exit(1)
+          PY
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
           coverage: none
-      - name: Render player pages from the fresh data (a QB, a receiver, a back, a non-qualifier)
+      - name: Render pages from the fresh data (a QB, a receiver, a back, a non-qualifier; a regulation game, an overtime game, a tie)
         run: |
           set -e
           export DBD_HARNESS_HTML=pages
           for id in 00-0034857 00-0036322 00-0033293 00-0036259; do php tools/view_harness.php /tmp/out player $id; done
+          for gm in 2026_04_LA_PHI 2026_02_IND_KC 2026_05_NYG_WAS; do php tools/view_harness.php /tmp/out game $gm; grep -q 'class="dbd-panel dbd-wp"' "pages/game-$gm.html" || { echo "no win probability panel on $gm"; exit 1; }; done
       - uses: actions/upload-artifact@v4
         with:
           name: pages-fresh-data

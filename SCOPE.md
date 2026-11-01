@@ -1068,3 +1068,55 @@ Size: M. Status: signed off 2026-11-01 and built as 1.5.0.
 - **Ranks** come from the site's own pool (the players Where he ranks grades), so a few ranks differ from the mock's play-count pool: Allen's success rate is T-12th (mock 13th), Jefferson's T-67th (mock 73rd). Review fix: spikes count as attempts in ANY/A, as Pro Football Reference counts them. The acceptance numbers hold: Allen +72.5, 2nd of 38; ANY/A 7.83, 5th (he has no spikes); passing +53.0 and rushing +19.5. Jefferson +22.3, 17th of 136.
 - **Data:** `ep` = {u, sr, any (QBs), tot, sec: [[section, weekly total, other, [[part, EPA, per play, percentile]]]], rk, pc, gr: {cell: [n, EPA per play, completions]}}; `trk` = {tile key: [rank, tie]}; `injw` = {week: [designation, injury]}; league.json `grid` = {qb, tgt: {cell: [share, EPA per play]}}.
 
+
+## 30. Game page, win probability (scoped and mocked 2026-11-01, `mockup-v7/`)
+
+Roadmap 2, slice 4. The game page is a matchup preview even after the final whistle: takeaways, head to head and pass zones, all season-to-date. Nothing on it says what happened in the game. This slice adds **How it played out** to every final game, above the takeaways, on both sides of the matchup (away offense and home offense). The mock is the live 1.5.0 page for two real games with the panel added and outlined: **Rams at Eagles, Week 4** (`wp-la-phi.html`, a comeback from 5%) and **Colts at Chiefs, Week 2** (`wp-ind-kc.html`, tied after regulation, won in overtime). Every number is this season's nflverse play-by-play.
+
+### What the reader sees
+
+| Part | What it shows | Rams at Eagles | Colts at Chiefs |
+|---|---|---|---|
+| **The read** | Two or three generated sentences: who won and from how low, the favorite at kickoff if the favorite lost, the turning point, the biggest single swing; for an overtime game, how overtime was won | "The Rams won 24–20 from as low as 5% (Q4 7:31, down 20–10). The game turned for good at Q4 2:26: M.Stafford pass short right to T.Higbee… (44% → 52%). The biggest single swing came at Q2 11:02, 13 points for the Eagles." | "The Chiefs won 33–30; their low point in regulation was 38% at Q4 1:24. Tied 27–27 after regulation, they won it in overtime at OT 0:01: H.Butker 40 yard field goal is GOOD…" |
+| **Four chips** | At kickoff (the favorite and the line), the winner's low point (clock and score), swings past 50% (how many times the favorite changed), the biggest swing (points and clock) | LA 65% · 5% · 8 · 13 pts | KC 73% · 38% · 6 · 19 pts |
+| **The chart** | The home team's chance across the game, home on top, away below, each side filled in its team color; quarter lines; a hollow dot at every score; numbered dots for the five biggest swings; a red ring on the turning point; an arrow on the winner's low point. Hover or drag for a readout (clock, the favorite's chance, the score). The SVG stretches to the box and every label and marker is HTML placed in percent, so it reads the same at 1440 and 375 | the line climbs to PHI 95% in the fourth, then drops to the floor | the line ends at 50% at the end of regulation; overtime is a hatched band with its three scores (KC, IND, KC) and the result dot |
+| **The plays that swung it** | The five biggest swings by size: clock, team, the play (nflverse's description, cleaned of jersey numbers, formation tags and snapper credits), the chance before and after for the team it helped, a bar in that team's color. The turning point is marked, and added as a sixth row when it is not in the five | a 56-yard field goal leads; the Higbee catch is the starred sixth row | the Thornton 45-yard catch leads; the Rice catch at Q4 0:03 (time ran out at the 23) is second |
+
+Takeaways keep their place and gain a clearer label, "from the season numbers, not this game alone". Upcoming games show no panel. The data is nightly, so a game appears once it is final.
+
+### Definitions
+
+- **Win probability** is nflverse's spread-adjusted model (`vegas_home_wp`): it starts from the betting line and updates before every snap with the score, the clock, down, distance, field position and timeouts. The chart and the readout use the home side; everything the reader sees is phrased for the team it favors.
+- **A swing** is the change in one team's chance across a play, in percentage points: nflverse's WPA, which is the next snap's chance minus this one's. The build takes it from the series so the last play of regulation swings to the result (or to 50% in a tied game). Big moments are not always big swings: the Rams' two fourth-quarter touchdowns moved them only 2 and 7 points, because the drives that set them up had already done the work, which is why the turning point is its own marker.
+- **The turning point** is the play after which the winner never fell to 50% or below again. A team that led the whole way has none, and the read says it was favored throughout.
+- **The low point** is the winner's lowest chance before any snap.
+- **The score** at each point is the score going into the snap. nflverse's running totals include the play's own points, which would put a field goal's three points on the snap before it.
+
+### Overtime
+
+nflverse's model does not hold together under the current overtime rules, which give both teams the ball. In Colts at Chiefs it puts Kansas City at 10% before a 31-yard field goal on the opening possession, and at 34% just after Indianapolis tied it with Kansas City receiving in sudden death. Both versions of the model (with and without the line) agree, so it is the model, not our reading. Nine of this season's 108 games have gone to overtime. So:
+
+- Win probability covers **regulation only**. A game tied after sixty minutes ends regulation at 50%.
+- Overtime is a hatched band on the chart with each scoring play marked, and the result dot at the end. The read names the overtime score that won it.
+- The low point, the swings, the swings-past-50% count and the turning point are computed on regulation plays. An overtime game has no turning point.
+- **A tie** (Giants at Commanders, Week 5, 27–27) has no winner: the read says so and names each team's high point, and the low-point chip becomes "closest to winning".
+
+### Data and rendering
+
+- **Build** (`tools/build_data.py`): one file per week, `wp/w{N}.json`, holding each final game: the kickoff chance and the line; the regulation series as [elapsed seconds, home chance in tenths of a percent, home score, away score], one point per snap (about 175 a game); the overtime scoring plays; the five biggest swings and the turning point with their cleaned descriptions; the low point. About 4 KB a game and 60 KB a week. Play files do not change.
+- **Sync:** the allowlist gains `wp/w{N}.json`, so 1.6.0 must be live before the files can arrive; until then the panel is simply absent.
+- **Build check:** every final game has a series that starts at the kickoff chance and ends at 0, 50 or 100% (the result, or a tie at the end of regulation), and the five swings are the five largest in the series.
+- **Plugin** (1.6.0): `game.php` (the panel, for final games), a small `game.js` for the scrubber (about 40 lines), the CSS, the takeaways label, and view-harness renders of a regulation game, an overtime game and the tie. The two merged next-release fixes ride along (the DNP tag and the doubled team name).
+
+### Left out
+
+- **Live win probability during games:** the data is nightly.
+- **Win probability on the player page** (a player's WPA, his biggest plays): a natural follow-on, but WPA belongs with the leaders and week-in-review slices.
+- **A per-game list on the matchups week page with sparklines:** that is Week in review (slice 10).
+- **Player game lines:** that is the box score, slice 5.
+
+### Acceptance (measured on the built page)
+
+Rams at Eagles: LA 65% at kickoff, low 5% at Q4 7:31 down 20–10, 8 swings past 50%, turning point at Q4 2:26 (44% → 52%), biggest swing 13 points at Q2 11:02. Colts at Chiefs: KC 73% at kickoff, regulation ends at 50%, overtime shows three scores, 6 swings past 50%, biggest swing 19 points at Q3 10:38. No text under 11px; no horizontal scroll at 375; the panel checked at 1440, 1024, 768 and 375.
+
+Size: M. Status: signed off 2026-11-01 and built as 1.6.0. Build note: timeout and quarter-end rows are not snaps and are left out of the series (otherwise a timeout takes the next snap's swing), and the series keeps the file's own order.

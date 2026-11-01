@@ -28,6 +28,7 @@ jobs:
           php tools/view_harness.php data player 00-0034857
           php tools/view_harness.php data players
           php tools/view_harness.php data team MIN
+          php tools/view_harness.php data game 2026_04_LA_PHI
           php tools/view_harness.php data hub
       - name: Render share cards
         run: |
