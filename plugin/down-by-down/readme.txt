@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.12.1
+Stable tag: 1.13.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,11 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.13.0 =
+* Leaders (SCOPE §37): a new page, ?view=leaders, with a board for every Scorecard stat, every Playstyle trait and the fantasy numbers. Four tabs: Fantasy (points a game at each position, season points, boom weeks, highest floor, in the format you pick), Receivers and tight ends (with an All / WR / TE switch), Backs and Quarterbacks. Each board shows the top ten and links to the full ranked list, which filters by position and minimum usage and renumbers as you go. Lower-is-better stats rank lowest first.
+* The build writes players/leaders.json, and the sync pulls it.
+* My team links use an encoded comma, so adding or removing a player no longer takes WordPress's extra redirect.
 
 = 1.12.1 =
 * The Players index adds a My team button at the end of every row: a round + that becomes a green check once he is on your team. It stays pinned to the right edge when the table scrolls sideways on a phone, and it works on rows the filters redraw.

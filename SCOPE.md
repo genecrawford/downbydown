@@ -1412,3 +1412,38 @@ Size: M to L. Status: signed off 2026-11-01 and built as 1.12.0.
 Addendum (Gene, 2026-11-01, after 1.12.0 went live): a My team button by each player on the Players index. Built as 1.12.1: a round + at the end of every row, a green check once he is on the team, pinned to the right edge so it stays in reach when the table scrolls sideways on a phone. The player page button and the row buttons share one delegated handler in `dbd-site.js` (`[data-mtid]`), and `players.js` re-marks redrawn rows.
 
 Second addendum (Gene, 2026-11-01): "beside each empty slot, put a text search box so I can add a player, but first show a + icon and have that open up the search field in-line." Built in 1.12.1: an empty slot shows a dashed round + and "Empty: add a TE"; the + opens a search box in the row, limited to the slot's positions (FLEX: RB, WR, TE), with the same keyboard and mouse handling as the main search (one `wire()` function in `myteam.js` serves both). Escape, or leaving the box empty, puts the + back. The empty page now shows the empty lineup under Start your team. The left nav link is Gene's to add in the Divi Text module: `<li><a href="/?view=myteam">My team</a></li>`.
+
+## 37. Leaders (scoped 2026-11-01; Gene: "scope and build", so no separate mock)
+
+Roadmap 2 slice 8. Who leads the league in what this site measures? A new page, `?view=leaders`, with a board for every Scorecard stat, every Playstyle trait and the fantasy numbers, each one click from a full ranked list with position and minimum-usage filters.
+
+### What the reader sees
+
+- **Four tabs**: Fantasy (the default), Receivers and tight ends, Backs, Quarterbacks. Each tab is its own address (`?view=leaders&g=rec`), so it can be linked and shared.
+- **Fantasy**: the Standard / Half PPR / PPR switch (remembered, §34), then boards for points a game at QB, RB, WR and TE, season points, boom weeks and highest floor (his 20th-percentile game). Points-a-game boards count players with enough games, the same pool the position ranks use.
+- **Receivers, backs and quarterbacks**: two bands that match the player page. "How good" has one board per Scorecard stat (eight per group); "How he's used" has one per Playstyle trait (eight per group). The receivers tab has an All / WR / TE switch.
+- **Each board** is a card with the top ten: rank (ties shown as T-), headshot, name to the player page, team, and the value in the same format as the player page. Lower-is-better stats (drop rate, sack rate, INT rate) rank lowest first and say so. A footer links to the full board.
+- **The full board** (`?view=leaders&b=rec.g.tshare`): every player at or above a usage floor, ranked, with team, position, the value and his usage (targets, touches or attempts). Filters: position (receivers: All / WR / TE) and minimum usage. The default is the qualified pool the grades use (15 targets, 30 touches, 50 attempts), with two lower steps (10 and 5 targets; 20 and 10 touches; 35 and 20 attempts). Ranks renumber as the filters change. Fantasy full boards list every qualified player at the position in all three formats.
+- **On phones** the boards stack in one column and the full board fits 375 without sideways scroll.
+
+### Data
+
+- The build writes **`players/leaders.json`**: for each group, every player above the usage floor with each Scorecard metric and Playstyle trait value, his usage and whether he qualifies; for fantasy, each format's points a game by position (qualified), season points, boom weeks and floor; and a small players table (name, team, position, number, photo). About 150 KB.
+- Labels, formats and lower-is-better flags come from the plugin's existing definitions, so the board names match the player page exactly.
+- The sync allowlist gains `players/leaders.json`; press Sync now after uploading.
+
+### Plugin
+
+`DBD_Leaders` (boards, cards, full board), a `leaders.php` view, the router (`view=leaders`, `g=`, `b=`), `leaders.js` (position switch, usage filter, renumbering), the CSS, the view harness and both CI checks. Also in this release: My team links use an encoded comma (`%2C`), so adding or removing a player no longer takes WordPress's extra redirect.
+
+### Left out
+
+- Defense leaders (that is the defensive half, slice 9).
+- Win probability added (WPA) and best plays (week in review, slice 10).
+- Past seasons (the season archive, slice 14).
+
+### Acceptance
+
+Fantasy tab in half PPR: Josh Allen leads QBs at 26.8, Jahmyr Gibbs RBs at 25.8, Jaxon Smith-Njigba WRs at 23.9, Brock Bowers TEs at 15.7 (through Week 8). Receivers, target share: the leader's value matches his Scorecard. Drop rate ranks lowest first. The full board's usage filter changes the count and renumbers. No overflow at 375.
+
+Size: M. Status: built as 1.13.0.

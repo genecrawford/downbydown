@@ -32,6 +32,7 @@ Writes:
   lineups.json    each team's starters from its latest depth chart, offense, defense and special teams, with jerseys and defenders' season lines (SCOPE §32)
   box/w{N}.json   each final game's box score: offense lines with snap share, defense sacks and interceptions, kicking (SCOPE §32)
   series.json     every scheduled pair's series since 1999 and every team's record broken down (SCOPE §33)
+  players/leaders.json  every Scorecard metric and Playstyle trait by group above a usage floor, and the fantasy boards (SCOPE §37)
   fantasy.json    points allowed by each defense to QB/RB/WR/TE in standard, half and PPR, with ranks, the starter line and boom/bust lines (SCOPE §34);
                   player files gain fan (per-format totals, range, booms, busts, ranks), index rows fp/fr/fpos
   manifest.json   {season, week, through_week, built_at, files: {path: sha1}}
@@ -627,6 +628,48 @@ for ps_ in FX_POS:
 json.dump(clean(dict(season=season, through=through_week, fmt=list(FX_FMT), allow=fx_allow, rank=fx_arank, g={d: len(fx_gm[d]) for d in fx_allow}, start=fx_start,
                      boom={k: list(v) for k, v in FX_BOOM.items()}, bust={k: list(v) for k, v in FX_BUST.items()}, slot=FX_START)), open(f'{out}/fantasy.json', 'w'), separators=(',', ':'))
 print('fantasy:', len(fx_sum), 'players,', len(fx_allow), 'defenses')
+
+# ---- leaders (SCOPE §37): every Scorecard metric and Playstyle trait by group, and the fantasy boards, for the Leaders page.
+# Rows are [id, value, usage, qualified]; the plugin sorts (lower-is-better stats ascending) and labels them from its own definitions.
+LD_FLOOR = {'rec': 5, 'rb': 10, 'qb': 20}   # usage floor for the lowest filter step: targets, touches, attempts
+ld_players, ld_groups = {}, {g: {'g': defaultdict(list), 'fp': defaultdict(list)} for g in LD_FLOOR}
+for p in allp:
+    gr = p.get('grades')
+    if not gr or gr.get('grp') not in LD_FLOOR: continue
+    g = gr['grp']; S_ = (lambda ws: (lambda k: sum(_num(x.get(k)) for x in ws)))(p['weeks'])
+    use = int(S_('targets')) if g == 'rec' else (int(S_('carries') + S_('targets')) if g == 'rb' else int(S_('attempts')))
+    if use < LD_FLOOR[g]: continue
+    ld_players[p['id']] = [p['name'], fx_team.get(p['id']), p['pos'], p['num'], p['photo']]
+    q_ = 1 if gr.get('q') else 0
+    for k, v in (gr.get('m') or {}).items():
+        if v is not None: ld_groups[g]['g'][k].append([p['id'], round(v, 4), use, q_])
+    for k, v in (p.get('fp') or {}).items():
+        if k in ('n', 'share') or v is None: continue
+        ld_groups[g]['fp'][k].append([p['id'], round(v, 4), use, q_])
+for g in ld_groups:
+    for src in ('g', 'fp'):
+        for k in ld_groups[g][src]: ld_groups[g][src][k].sort(key=lambda r: -r[1])
+ld_fan = {}
+fan_p = [p for p in allp if p.get('fan')]
+for i_, fm in enumerate(FX_FMT):
+    b = {}
+    for ps_ in FX_POS:
+        rows = [p for p in fan_p if p['fan']['pos'] == ps_ and p['fan']['rk'][fm]['ppg']]
+        rows.sort(key=lambda p: p['fan']['rk'][fm]['ppg'])
+        b['ppg.' + ps_] = [[p['id'], p['fan']['s'][fm]['ppg'], p['fan']['s'][fm]['g'], p['fan']['rk'][fm]['ppg']] for p in rows]
+    b['tot'] = [[p['id'], p['fan']['s'][fm]['tot'], p['fan']['s'][fm]['g']] for p in sorted(fan_p, key=lambda p: -p['fan']['s'][fm]['tot'])]
+    b['boom'] = [[p['id'], p['fan']['s'][fm]['boom'], p['fan']['s'][fm]['g']] for p in sorted(fan_p, key=lambda p: (-p['fan']['s'][fm]['boom'], -p['fan']['s'][fm]['ppg'])) if p['fan']['s'][fm]['boom']]
+    b['lo'] = [[p['id'], p['fan']['s'][fm]['lo'], p['fan']['s'][fm]['g']] for p in sorted((p for p in fan_p if p['fan']['rk'][fm]['ppg'] and p['fan']['s'][fm]['g'] >= 3), key=lambda p: -p['fan']['s'][fm]['lo'])]
+    ld_fan[fm] = b
+for fm in ld_fan:
+    for k, rows in ld_fan[fm].items():
+        for r in rows:
+            if r[0] not in ld_players:
+                p = next(x for x in fan_p if x['id'] == r[0])
+                ld_players[r[0]] = [p['name'], fx_team.get(p['id']), p['pos'], p['num'], p['photo']]
+json.dump(clean(dict(season=season, through=through_week, min=MINQ, floor=LD_FLOOR, players=ld_players,
+                     groups={g: {'g': dict(v['g']), 'fp': dict(v['fp'])} for g, v in ld_groups.items()}, fan=ld_fan)), open(f'{out}/players/leaders.json', 'w'), separators=(',', ':'))
+print('leaders:', len(ld_players), 'players,', {g: len(v['g'].get(next(iter(v['g']), ''), [])) for g, v in ld_groups.items()})
 
 for t, pl in team_players.items():
     json.dump(clean(dict(season=season, team=t, through=through_week, players=pl)), open(f'{out}/players/{t}.json', 'w'), separators=(',', ':'))

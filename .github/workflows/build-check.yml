@@ -13,6 +13,8 @@ on:
       - 'plugin/down-by-down/includes/class-dbd-fantasy.php'
       - 'plugin/down-by-down/includes/class-dbd-myteam.php'
       - 'plugin/down-by-down/includes/views/myteam.php'
+      - 'plugin/down-by-down/includes/class-dbd-leaders.php'
+      - 'plugin/down-by-down/includes/views/leaders.php'
       - 'plugin/down-by-down/includes/views/players.php'
       - 'plugin/down-by-down/includes/views/matchups.php'
       - 'plugin/down-by-down/includes/views/compare.php'
@@ -57,7 +59,7 @@ jobs:
           python3 - <<'PY'
           import json, glob, os, sys
           bad = []; worst = (0, None); n = 0
-          for f in glob.glob('/tmp/out/players/*.json'):
+          for f in glob.glob('/tmp/out/players/[A-Z]*.json'):  # team files only (index, league, movers and leaders sit beside them)
               if os.path.basename(f) in ('index.json', 'league.json', 'movers.json'): continue
               for p in json.load(open(f))['players']:
                   ep = p.get('ep')
@@ -170,6 +172,28 @@ jobs:
           if n < 300: bad.append(f'only {n} players have a fantasy block')
           if bad: print('\n'.join(bad[:40])); sys.exit(1)
           PY
+      - name: Check the leaders file (SCOPE §37)
+        run: |
+          python3 - <<'PY'
+          import json, sys
+          L = json.load(open('/tmp/out/players/leaders.json')); bad = []
+          want = {'rec': ['tshare', 'adot', 'yacpc', 'catch', 'epat', 'fdpt', 'drop', 'ypg'], 'rb': ['ypc', 'repc', 'btpt', 'expl', 'tpg', 'tgtshare', 'ypt'], 'qb': ['epadb', 'cpoe', 'sack', 'ypa', 'tdr', 'intr', 'adot', 'rushepa']}
+          for g, ks in want.items():
+              for k in ks:
+                  rows = L['groups'][g]['g'].get(k) or []
+                  if not any(r[3] for r in rows): bad.append(f'{g}.{k}: no qualified rows')
+                  if any(r[0] not in L['players'] for r in rows): bad.append(f'{g}.{k}: a row with no player entry')
+              if not L['groups'][g]['fp']: bad.append(f'{g}: no Playstyle boards')
+          idx = {r['id']: r for r in json.load(open('/tmp/out/players/index.json'))['players']}
+          for pos in ('QB', 'RB', 'WR', 'TE'):
+              top = L['fan']['half'].get('ppg.' + pos) or []
+              if not top: bad.append(f'fan ppg.{pos}: empty'); continue
+              t = top[0]; print(pos, 'half-PPR leader:', L['players'][t[0]][0], t[1])
+              if idx.get(t[0], {}).get('fr', [0, 0, 0])[1] != 1: bad.append(f'fan ppg.{pos}: leader is not rank 1 in the index')
+          rec = sorted((r for r in L['groups']['rec']['g']['tshare'] if r[3]), key=lambda r: -r[1])[0]; print('target share leader:', L['players'][rec[0]][0], rec[1])
+          print(len(L['players']), 'players in leaders.json')
+          if bad: print('\n'.join(bad)); sys.exit(1)
+          PY
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
@@ -197,6 +221,11 @@ jobs:
           echo "sample team: $MT"
           php tools/view_harness.php /tmp/out myteam "$MT" && python3 -c "import sys;s=open('pages/myteam-$MT.html').read();n=s.count('class=\"mt-row')-s.count('class=\"mt-row empty');print(n,'filled rows');sys.exit(0 if n>=36 else 1)" || { echo "the sample team did not fill the lineup and bench in all three formats"; exit 1; }
           grep -q 'class="dbd-mtbtn"' pages/player-00-0036322.html || { echo "no My team button on Jefferson"; exit 1; }
+          php tools/view_harness.php /tmp/out leaders "" && [ "$(grep -o 'class="dbd-panel ld-card"' pages/leaders.html | wc -l)" -eq 7 ] || { echo "the fantasy tab does not have seven boards"; exit 1; }
+          php tools/view_harness.php /tmp/out leaders rec && [ "$(grep -o 'class="dbd-panel ld-card"' pages/leaders-rec.html | wc -l)" -eq 16 ] || { echo "the receivers tab does not have sixteen boards"; exit 1; }
+          php tools/view_harness.php /tmp/out leaders qb && grep -q 'ld-card' pages/leaders-qb.html || { echo "no quarterback boards"; exit 1; }
+          php tools/view_harness.php /tmp/out leaders rec.g.drop && grep -q 'data-low="1"' pages/leaders-rec.g.drop.html || { echo "the drop rate board is not marked lower-is-better"; exit 1; }
+          php tools/view_harness.php /tmp/out leaders fan.ppg.WR && grep -q 'ld-full' pages/leaders-fan.ppg.WR.html || { echo "no full WR fantasy board"; exit 1; }
       - uses: actions/upload-artifact@v4
         with:
           name: pages-fresh-data
