@@ -264,6 +264,7 @@ class DBD_Router {
 			wp_enqueue_script( 'dbd-compare', DBD_URL . 'assets/compare.js', array( 'dbd-marks', 'dbd-chartist' ), DBD_VERSION, true );
 			wp_localize_script( 'dbd-compare', 'DBD_CMP', array( 'base' => self::url(), 'group' => $r['cgroup'], 'players' => $pl, 'files' => $files, 'teams' => DBD_Data::teams(), 'heads' => DBD_Data::headshots(), 'series' => $series, 'labels' => $labels, 'yds' => array( 'rec' => 'Receiving yards', 'rb' => 'Scrimmage yards', 'qb' => 'Passing yards' )[ $r['cgroup'] ] ?? 'Yards' ) );
 		}
+		if ( $r['view'] === 'game' ) { wp_enqueue_script( 'dbd-game', DBD_URL . 'assets/game.js', array(), DBD_VERSION, true ); }  /* the win probability scrubber */
 		if ( $r['view'] === 'players' ) {
 			wp_enqueue_script( 'dbd-marks', DBD_URL . 'assets/marks.js', array(), DBD_VERSION, true );
 			wp_enqueue_script( 'dbd-players', DBD_URL . 'assets/players.js', array( 'dbd-marks' ), DBD_VERSION, true );

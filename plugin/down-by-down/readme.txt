@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.5.0
+Stable tag: 1.6.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -31,7 +31,11 @@ Not affiliated with the NFL or any team. No team logos are used; team marks are 
 
 == Changelog ==
 
-= Next release =
+= 1.6.0 =
+* Win probability on the game page (SCOPE §30). Every final game gains How it played out: a generated read (who won and from how low, the turning point, the biggest swing), four numbers (the favorite at kickoff, the winner's low point, swings past 50%, the biggest swing), a chart of each side's chance across the game with every score, the five biggest swings, the turning point and the low point marked (hover or drag for the clock, the chance and the score), and the plays that swung it.
+* Overtime: nflverse's model does not hold together under the current overtime rules, so the chart covers regulation (a tied game ends regulation at 50%) and overtime shows its scoring plays and the result.
+* Takeaways on a final game are labeled as season numbers, not this game alone.
+* The build writes wp/w{N}.json per week, and the sync pulls it.
 * Fix: the team picker's "Pick up where you left off" box doubled the name ("New York GiantsGiants"): it read both the full and the phone-size name from the standings link.
 * Fix: on phones the red DNP tag in Who he's faced covered the opponent label ("VS MIA"). It now sits on the cell's top border.
 
