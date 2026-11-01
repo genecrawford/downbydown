@@ -1382,10 +1382,10 @@ html:not([data-fx]) .dbd [data-fx="half"],html[data-fx="std"] .dbd [data-fx="std
 .dbd .ld-full tr[hidden]{display:none}
 
 /* ===== the defensive half (SCOPE §39) ===== */
-/* the offense / defense switch under the title: two links, the current one filled */
-.dbd .dbd-side{display:inline-flex;gap:2px;margin-top:14px;padding:3px;border-radius:var(--dbd-r);background:var(--dbd-panel-2);border:1px solid var(--dbd-line)}
-.dbd .dbd-side a{padding:7px 18px;border-radius:calc(var(--dbd-r) - 2px);font:700 12px var(--dbd-display);letter-spacing:.14em;text-transform:uppercase;color:var(--dbd-ink-2);text-decoration:none}
-.dbd .dbd-side a:hover{color:var(--dbd-red)}.dbd .dbd-side a[aria-current="page"]{background:var(--dbd-red);color:#fff}
+/* the offense / defense switch under the title: two links, the current one filled. Not .dbd-side: the site's Divi sidebar column uses that class */
+.dbd .dbd-sideswitch{display:inline-flex;gap:2px;margin-top:14px;padding:3px;border-radius:var(--dbd-r);background:var(--dbd-panel-2);border:1px solid var(--dbd-line)}
+.dbd .dbd-sideswitch a{padding:7px 18px;border-radius:calc(var(--dbd-r) - 2px);font:700 12px var(--dbd-display);letter-spacing:.14em;text-transform:uppercase;color:var(--dbd-ink-2);text-decoration:none}
+.dbd .dbd-sideswitch a:hover{color:var(--dbd-red)}.dbd .dbd-sideswitch a[aria-current="page"]{background:var(--dbd-red);color:#fff}
 /* game by game: a diverging track per game, the offense's usual as a ring, what they allowed as a dot */
 .dbd .gwl{padding:6px var(--dbd-edge) 8px}
 .dbd .gw{display:grid;grid-template-columns:52px 120px 78px minmax(0,1fr) 92px;gap:10px;align-items:center;padding:7px 0;border-top:1px solid var(--dbd-line)}

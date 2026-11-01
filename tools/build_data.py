@@ -242,7 +242,22 @@ if 'week' in _rw.columns:
     _rw = _rw.sort_values('week').drop_duplicates('gsis_id', keep='last')
 stats = pd.read_csv(env('DBD_STATS'), low_memory=False) if env('DBD_STATS') else pd.DataFrame()
 if len(stats) and 'season_type' in stats.columns: stats = stats[stats.season_type == 'REG']
+# a build mid-Sunday can find games in the weekly stats that the play-by-play file doesn't have yet: keep only the games pbp has,
+# so totals, game logs and fantasy agree with the plays (and the EPA split's parts add up to its totals)
+if len(stats) and have_pbp and {'week', 'team'} <= set(stats.columns):
+    _g = df[['week', 'home_team', 'away_team']].drop_duplicates()
+    _have = set(zip(_g.week, _g.home_team)) | set(zip(_g.week, _g.away_team))
+    _keep = [(w, t) in _have for w, t in zip(stats.week, stats.team)]
+    if not all(_keep): print('stats: dropped', len(_keep) - sum(_keep), 'player rows from games not yet in the play-by-play')
+    stats = stats[_keep]
+# the team-weeks the weekly stats have published. nflverse's weekly file can also trail play-by-play by a day: the EPA split's parts
+# and the snap-only zero-point weeks use only these games, so a game the stats haven't caught up on is not half-counted
+ST_TW = set(zip(stats.week.astype(int), stats.team)) if len(stats) and {'week', 'team'} <= set(stats.columns) else None
 snaps = pd.read_csv(env('DBD_SNAPS'), low_memory=False) if env('DBD_SNAPS') else pd.DataFrame()
+if len(snaps) and have_pbp and {'week', 'team'} <= set(snaps.columns):
+    _g = df[['week', 'home_team', 'away_team']].drop_duplicates()
+    _have = set(zip(_g.week, _g.home_team)) | set(zip(_g.week, _g.away_team))
+    snaps = snaps[[(w, t) in _have for w, t in zip(snaps.week, snaps.team)]]
 pfr = pd.read_csv(env('DBD_PFR'), low_memory=False) if env('DBD_PFR') else pd.DataFrame()
 inj = pd.read_csv(env('DBD_INJ'), low_memory=False) if env('DBD_INJ') else pd.DataFrame()
 depth = pd.read_csv(env('DBD_DEPTH'), low_memory=False, usecols=['dt', 'team', 'gsis_id', 'pos_grp', 'pos_abb', 'pos_rank']) if env('DBD_DEPTH') else pd.DataFrame()
@@ -429,6 +444,7 @@ LGQ = defaultdict(lambda: [0, 0.0]); LGR = defaultdict(lambda: [0, 0.0])
 if have_pbp:
     _e = df[df.play_type.isin(['pass', 'run', 'qb_kneel', 'qb_spike'])]
     if 'season_type' in _e.columns: _e = _e[_e.season_type == 'REG']
+    if ST_TW is not None: _e = _e[[(int(w), t) in ST_TW for w, t in zip(_e.week, _e.posteam)]]  # parts and totals cover the same games
     for r in _e.itertuples(index=False):
         e0 = _fv(r.epa) or 0.0; qe = _fv(getattr(r, 'qb_epa', None)); qe = e0 if qe is None else qe
         s0 = 1.0 if _fv(r.success) == 1 else 0.0; scr = _fv(r.qb_scramble) == 1
@@ -600,6 +616,7 @@ for p in allp:
         wk_ = int(wk_)
         if sp_ and wk_ not in have and wk_ <= fx_reg:
             tm_ = p['snapteam'].get(str(wk_)) or fx_team[p['id']]  # a week played for another team (trade) carries that team
+            if ST_TW is not None and (wk_, tm_) not in ST_TW: continue  # the stats haven't published that game yet: not a zero, just not counted
             fx_by[p['id']].append(dict(w=wk_, opp=fx_opp.get((tm_, wk_)), pts=(0.0, 0.0, 0.0))); fx_pos[p['id']] = ps_
             p.setdefault('fx0', []).append(wk_)  # the player page draws these weeks as zero-point games, not misses
 fx_sum = {}
