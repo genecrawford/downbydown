@@ -1072,3 +1072,6 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
   .dbd .dbd-btabs .t-tab{flex:none}
   .dbd .dbd-score2 table+table thead{display:none}
 }
+/* a pane inside a tabbed band: the tab names it, so its own title hides; the sub-label and badge stay */
+.dbd .dbd-pane>.dbd-ph .dbd-lab>b{display:none}
+.dbd .dbd-pane>.dbd-ph .dbd-lab .sub{font:500 13px var(--dbd-body);text-transform:none;letter-spacing:0;color:var(--dbd-muted)}

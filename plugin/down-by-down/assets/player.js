@@ -49,6 +49,25 @@
     });
   });
 
+  /* tabbed bands (SCOPE §31): every pane is in the page; a tab shows one and slides the pill. Charts and segmented controls inside re-measure on resize. */
+  root.querySelectorAll('.dbd-tabbed').forEach(function (box) {
+    var bar = box.querySelector('.dbd-btabs'); if (!bar) return;
+    var pill = function (b, anim) { var pl = bar.querySelector('.t-tabs-pill'); if (!pl || !b) return; if (!anim) pl.style.transition = 'none'; pl.style.transform = 'translateX(' + b.offsetLeft + 'px)'; pl.style.width = b.offsetWidth + 'px'; if (!anim) { void pl.offsetWidth; pl.style.transition = ''; } };
+    bar.addEventListener('click', function (e) {
+      var b = e.target.closest('.t-tab'); if (!b) return;
+      bar.querySelectorAll('.t-tab').forEach(function (x) { x.setAttribute('aria-selected', x === b ? 'true' : 'false'); });
+      box.querySelectorAll(':scope > .dbd-pane').forEach(function (p) { p.hidden = p.getAttribute('data-pane') !== b.getAttribute('data-pane'); });
+      pill(b, true); if (b.scrollIntoView && bar.scrollWidth > bar.clientWidth) b.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      window.dispatchEvent(new Event('resize'));
+    });
+    requestAnimationFrame(function () { pill(bar.querySelector('[aria-selected="true"]'), false); });
+    window.addEventListener('resize', function () { pill(bar.querySelector('[aria-selected="true"]'), false); });
+  });
+
+  /* the connection: core columns first, the rest behind a button */
+  var cxp = root.querySelector('#dbd-cx');
+  if (cxp) { var cxb = document.createElement('button'); cxb.type = 'button'; cxb.className = 'dbd-cx-more'; cxb.textContent = 'All columns'; cxb.addEventListener('click', function () { cxp.classList.toggle('is-all'); cxb.textContent = cxp.classList.contains('is-all') ? 'Core columns' : 'All columns'; }); var cxh = cxp.querySelector('.dbd-ph'); if (cxh) cxh.appendChild(cxb); }
+
   fetch(C.dataUrl, { credentials: 'omit' }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(boot)
     .catch(function (err) { $('#dbd-pmap').innerHTML = '<p class="dbd-note">Could not load the plays (' + esc(err.message || err) + ').</p>'; $('#dbd-mapn').textContent = ''; });
 
