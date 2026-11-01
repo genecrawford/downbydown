@@ -88,7 +88,7 @@ class DBD_Defense {
 	private static function short( $a, $D, $L, $nick ) {
 		$al = (array) $D['all']; $R = (array) $D['rank']; $st = (array) ( $D['style'] ?? array() ); $teams = DBD_Data::teams(); $li = array();
 		$top = (int) ( $R['epa'] ?? 0 );
-		$li[] = array( 'How good', ( $top === 1 ? 'The league\'s best defense: ' : '' ) . '<b>' . self::sgn( $al['epa'] ) . '</b> EPA a play allowed, <b>' . self::ord( $top ) . '</b> of 32' . ( $D['adj'] !== null ? ', and <b>' . self::sgn( abs( $D['adj'] ) ) . '</b> ' . ( $D['adj'] < 0 ? 'below' : 'above' ) . ' what the offenses they faced usually manage (' . self::ord( $R['adj'] ?? 0 ) . ').' : '.' ), '#df-good' );
+		$li[] = array( 'How good', ( $top === 1 ? 'The league\'s best defense: ' : '' ) . '<b>' . self::sgn( $al['epa'] ) . '</b> EPA a play allowed, <b>' . self::ord( $top ) . '</b> of 32' . ( $D['adj'] !== null ? ', and <b>' . number_format( abs( $D['adj'] ), 2 ) . '</b> ' . ( $D['adj'] < 0 ? 'below' : 'above' ) . ' what the offenses they faced usually manage (' . self::ord( $R['adj'] ?? 0 ) . ').' : '.' ), '#df-good' );
 		if ( isset( $st['blitz'] ) && $st['blitz'] !== null ) { $br = self::rank_of( $L['style']['blitz'] ?? array(), $st['blitz'], true );
 			$li[] = array( 'How they play', 'They blitz on <b>' . self::pct( $st['blitz'] ) . '</b> of dropbacks, the <b>' . self::ord( $br ) . '</b>-most in the league' . ( $D['press'] !== null ? ', and get pressure on <b>' . self::pct( $D['press'] ) . '</b>.' : '.' ), '#df-play' ); }
 		/* where offenses find room: the weaker phase, then its worst spot */
