@@ -1627,3 +1627,44 @@ No new data: the week files, movers, leaders, fantasy and metrics files are all 
 The Week 8 hub matches the mock: the week band with the Cardinals line, the Raiders–Jets lead changes and Kirk Cousins; three still-to-play cards (Chiefs at Broncos, Patriots at Dolphins, Bears at Seahawks) with their edges and fantasy lines; Movers with McCarthy +69; fantasy leaders with Josh Allen 26.8; the playoff picture with the seeds above and the Patriots ½ game back; Divisions tab unchanged. No horizontal scroll at 375; no text under 11px; checked at 1440 and 375.
 
 Size: M. Status: signed off 2026-11-01 and built as 1.17.0. Build note: the sidebar's Teams link (`/#dbd-teams`) now lands on the standings band rather than inside the hidden Divisions tab.
+
+## 42. Compare, finished (scoped and mocked 2026-11-01, `mockup-v17/`)
+
+Roadmap 2, slice 12. Compare was built at 1.3 and has fallen behind the player page: the playstyle bars, the trend lines and the career view were all deferred (§21, §23, §24), and the EPA breakdown (§29) and this week's matchup (§25) came after it. This slice brings each to compare, side by side, in the three slot colors. The mock is the live 1.17.0 compare page for **Justin Jefferson, Ja'Marr Chase and Puka Nacua** with five sections added and outlined (`mockup-v17/compare.html`). Every number is the site's published data. In the mock the play-map panels are blank only because a local file can't fetch the site's play files.
+
+### What's new, and where it goes
+
+| Section | Place | What it shows | Mock |
+|---|---|---|---|
+| **This week** | Under Who | Each player's next game (week, day, kickoff) and the defense at his position: where it ranks in half-PPR points allowed, green when soft (1st to 8th), red when tough (25th to 32nd) | Jefferson vs the Bills (allow the most WR points); Chase at the Falcons (12th-most); Nacua at the Commanders (7th-most) |
+| **Playstyle** | After Where they rank | The eight traits as the rank rows already draw them: one league bar per trait with a marker per player and a dashed median, then each player's share and percentile. Above them, each player's up to three most extreme traits as the player page's tag cards | Jefferson ▲ Play-action target; Chase ▲ Red-zone guy; Nacua ▲ Third-down guy, ▲ Yards after the catch |
+| **Where the EPA comes from** | Before Where the ball finds them | One read naming who gains most in the air, after the catch and who gives the most back; a diverging bar per player on one scale (gains right, losses left, a color per part); a table of each part's total, rate per target and percentile, best rate green | Chase +21.7 in the air; Nacua +30.5 after the catch; Chase −12.2 on incompletions |
+| **The shape of their seasons** | Before Floor and ceiling | The player page's four trend metrics as small multiples: each player's trailing-three-game line in his color, single games as faint dots, over the league's middle half and median. Under each, each player's latest value | Targets: Nacua 13.7 a game over his last three |
+| **Careers** | After Season stats | Yards a game season by season, one line per player, this season's dot hollow; then a row per player: seasons, games, catches, yards, TD, yards a game, best season, and this season against his career rate | Jefferson 8,782 yards in 99 games; Chase's best 2024 (1,708); Nacua's 2026 at 97.0, above his career rate |
+
+### By position
+
+Quarterbacks and backs get the same five sections with their own metrics: the player page's trait sets, EPA parts (quarterbacks: air, after the catch, incompletions, interceptions, sacks, scrambles, runs; backs: runs and receiving), trend metrics (dropbacks, pass yards, EPA a dropback, CPOE; touches, scrimmage yards, EPA a touch, targets) and career yards a game (passing; scrimmage). Tight ends compare with tight ends against the tight-end pool (§38).
+
+### Rules
+
+- **Pools:** percentiles are among qualifying players at the position, as on the player pages; a player short of the qualifier shows his values with "–" for the percentile.
+- **Trend lines** pool rates over the three games (EPA a target is three games' EPA over three games' targets), as the player page does.
+- **Careers** are regular season only, from each player's career file; the current season is marked with an asterisk and the week it runs through.
+- **The charts** draw lines in SVG and put dots and labels in HTML placed by percent (as the game page's win probability does), so text stays 11px or larger at every width.
+
+### Data and plugin (1.18.0)
+
+No new data: player files carry `fp`, `ep` and the weekly lines; `league.json` carries the trait pools and per-game quartiles; career files are per team (up to three are read). The plugin adds the five sections to `compare.php` through a small `DBD_Compare` helper (rows, bars, charts), CSS, and harness checks for a receiver trio and a quarterback pair.
+
+### Left out
+
+- **A league-average ghost line** in the trend and career charts.
+- **Comparing across seasons** (this year's player against last year's).
+- **Comparing defenses.**
+
+### Acceptance
+
+The receiver trio matches the mock: the three next games and defense ranks above; the Playstyle rows with the tags above; the EPA read, bars and table (Chase +23.9 total, Jefferson +22.3, Nacua +11.7); four trend charts; the career chart and table. A quarterback pair renders all five sections with quarterback metrics. No horizontal scroll at 375; no text under 11px; checked at 1440 and 375.
+
+Size: M. Status: signed off 2026-11-01 and built as 1.18.0.

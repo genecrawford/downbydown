@@ -44,6 +44,9 @@ if ( $n ) { echo '<div class="dbd-ckey" aria-label="Who is which color"><span cl
 
 if ( ! $n ) { echo '<div class="dbd-empty"><h2>Nobody picked yet</h2><p>Add a player above, or open any player page and hit Compare. Your recent comparisons, if any, are listed above.</p></div></main>'; return; }
 
+/* ---- this week (SCOPE §42): each one's next game and the defense at his position */
+echo DBD_Compare::this_week( $P );
+
 /* ---- where they rank */
 if ( $gi ) {
 	echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Where they rank</b> · among ' . $N . ' ' . esc_html( $pool ) . ' with ' . esc_html( $gi['min'] ) . '+</span><span class="dbd-badge">League percentiles</span></div>';
@@ -62,6 +65,9 @@ if ( $gi ) {
 	}
 	echo '</div><p class="dbd-note">Each bar is the league pool; the markers are the players. Right is better, the dashed line is the median. The best value in each row is marked green.</p></section>';
 }
+
+/* ---- playstyle, side by side (SCOPE §42) */
+if ( $grp ) { echo DBD_Compare::playstyle( $P, $grp ); }
 
 /* ---- graphics (SCOPE §17 addendum): radar and floor-and-ceiling from the player files; the rest from compare.js */
 $DEFS = $grp ? DBD_Grades::defs( $grp ) : array();
@@ -90,6 +96,9 @@ if ( $gi ) {
 echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Where he wins</b> · EPA per ' . ( $grp === 'qb' ? 'throw' : 'target' ) . ' by lane and depth</span><span class="dbd-badge">Same scale across</span></div>' . $legend() . '<div class="dbd-cheat" id="dbd-cheat">' . implode( '', array_map( function ( $x, $i ) { return '<div><h5><i style="background:' . $x['c'] . '"></i>' . esc_html( $x['row']['name'] ) . '</h5><div class="grid" id="dbd-cheat-' . $i . '"><div class="dbd-skel"><span class="dbd-note">Loading…</span></div></div></div>'; }, $P, array_keys( $P ) ) ) . '</div><p class="dbd-note">Green cells turn targets into points, red cells lose them. Cells with one target are left grey.</p></section>';
 echo '</div>';
 
+/* ---- where the EPA comes from, side by side (SCOPE §42) */
+if ( $grp ) { echo DBD_Compare::epa( $P, $grp ); }
+
 /* ---- field maps (JS) */
 echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Where the ball finds them</b> · same scale, same field</span><span class="dbd-badge" id="dbd-cmapn">loading plays</span></div><div class="dbd-cmaps">';
 foreach ( $P as $i => $x ) { echo '<div><h4><i style="background:' . $x['c'] . '"></i>' . esc_html( $x['row']['name'] ) . ' <span class="n" id="dbd-cmapc-' . $i . '"></span></h4><div id="dbd-cmap-' . $i . '"><div class="dbd-skel"><span class="dbd-note">Loading…</span></div></div></div>'; }
@@ -104,6 +113,9 @@ echo '</div><div class="dbd-cgrid">';
 echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>The race</b> · cumulative yards</span><span class="dbd-badge">Flat steps are byes</span></div>' . $legend() . '<div class="dbd-pb"><div class="dbd-cch ct-chart" id="dbd-crace"></div></div></section>';
 echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Week by week</b> · grouped</span><span class="dbd-badge">Same Sunday, side by side</span></div>' . $legend() . '<div class="dbd-pb"><div class="dbd-cch ct-chart" id="dbd-cweek"></div></div></section>';
 echo '</div>';
+
+/* ---- the shape of their seasons (SCOPE §42) */
+if ( $grp ) { echo DBD_Compare::trends( $P, $grp ); }
 
 /* ---- floor and ceiling (PHP): boom, solid or dud against the pool's game weeks */
 $maxW = max( 1, (int) DBD_Data::through_week() ); $qw = $gi['week'] ?? null;
@@ -175,7 +187,11 @@ if ( $gi ) {
 		echo '</tr>';
 	}
 }
-echo '</tbody></table></div></section></main>';
+echo '</tbody></table></div></section>';
+
+/* ---- careers (SCOPE §42) */
+if ( $grp ) { echo DBD_Compare::careers( $P, $grp ); }
+echo '</main>';
 
 /* same-group index for the slot search */
 $idx = array_values( array_filter( DBD_Data::player_index(), function ( $o ) use ( $grp, $ids ) { return DBD_Grades::pool_of( $o['pos'] ) === $grp && ! in_array( $o['id'], $ids, true ); } ) );
