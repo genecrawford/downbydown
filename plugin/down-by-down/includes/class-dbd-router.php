@@ -68,19 +68,25 @@ class DBD_Router {
 		self::$P = DBD_Urls::parse( $path ); $r = self::route(); self::$P = null; return $r;
 	}
 
-	/** An old query-string link: 301 to its path, keeping parameters the route doesn't use (utm_*, fbclid). */
-	private static function redirect_old() {
-		if ( ! DBD_Urls::on() || ( $_SERVER['REQUEST_METHOD'] ?? 'GET' ) !== 'GET' ) { return; }
+	/** An old query-string link: 301 to its path (redirect_target()). */
+	public static function redirect_old() {
+		$to = self::redirect_target(); if ( $to === null ) { return; }
+		wp_safe_redirect( $to, 301, 'Down by Down' ); exit;
+	}
+
+	/** Where an old query-string request belongs: its path, keeping the parameters the route doesn't use (utm_*, fbclid). Null when it stays. */
+	public static function redirect_target() {
+		if ( ! DBD_Urls::on() || ( $_SERVER['REQUEST_METHOD'] ?? 'GET' ) !== 'GET' ) { return null; }
 		$keys = array( 'team', 'game', 'player', 'compare', 'view', 'myteam' );
-		if ( ! array_intersect( $keys, array_keys( $_GET ) ) ) { return; }
-		$r = self::$route; if ( in_array( $r['view'], array( 'notfound', 'nodata' ), true ) ) { return; }
+		if ( ! array_intersect( $keys, array_keys( $_GET ) ) ) { return null; }
+		$r = self::$route; if ( in_array( $r['view'], array( 'notfound', 'nodata' ), true ) ) { return null; }
 		$to = self::url( self::args_of( $r, true ) );
 		$used = array_merge( DBD_Urls::ROUTE_KEYS, array( 'myteam', 'pt', 'pos', 'q', 'b' ) );
 		$keep = array(); foreach ( $_GET as $k => $v ) { if ( ! in_array( $k, $used, true ) && is_string( $v ) ) { $keep[ $k ] = sanitize_text_field( wp_unslash( $v ) ); } }
 		if ( $keep ) { $to = add_query_arg( array_map( 'rawurlencode', $keep ), $to ); }
 		$here = wp_parse_url( (string) ( $_SERVER['REQUEST_URI'] ?? '/' ), PHP_URL_PATH ); $there = wp_parse_url( $to, PHP_URL_PATH );
-		if ( ! $there || untrailingslashit( (string) $here ) === untrailingslashit( (string) $there ) ) { return; }  /* no path for it: stay */
-		wp_safe_redirect( $to, 301, 'Down by Down' ); exit;
+		if ( ! $there || untrailingslashit( (string) $here ) === untrailingslashit( (string) $there ) ) { return null; }  /* no path for it: stay */
+		return $to;
 	}
 
 	public static function route() {

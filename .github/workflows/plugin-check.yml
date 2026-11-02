@@ -84,6 +84,16 @@ jobs:
           export DBD_HARNESS_PRETTY=1
           # every old link to a path and back to the same route
           php tools/view_harness.php data urls
+          # old links answer 301 to their path, keeping the filters and tracking a path doesn't carry
+          chk() { got="$(php tools/view_harness.php data redirect "$1")"; echo "$1 -> $got"; [ "$got" = "$2" ] || { echo "  expected: $2"; exit 1; }; }
+          chk '/?player=00-0036322&utm_source=x' 'redirect 301 https://example.test/player/justin-jefferson/?utm_source=x'
+          chk '/?team=MIN&side=def' 'redirect 301 https://example.test/team/min/defense/'
+          chk '/?view=players&pt=MIN&pos=WR&q=jeff' 'redirect 301 https://example.test/players/?pt=MIN&pos=WR&q=jeff'
+          chk '/?view=leaders&b=wr.tsh' 'redirect 301 https://example.test/leaders/?b=wr.tsh'
+          chk '/?myteam=00-0036322,00-0036900' 'redirect 301 https://example.test/my-team/?myteam=00-0036322%2C00-0036900'
+          chk '/?game=2026_08_MIN_DET&side=home&fbclid=abc' 'redirect 301 https://example.test/game/2026-week-8-vikings-at-lions/lions/?fbclid=abc'
+          chk '/?player=99-9999999' 'stays (0 warnings)'
+          chk '/?card=00-0036322' 'stays (0 warnings)'
           # paths render as their pages, and their links are paths too (share cards excepted)
           export DBD_HARNESS_HTML=pathpages
           for p in /team/min/ /team/min/defense/ /team/min/players/ /player/justin-jefferson/ /player/josh-allen/ /compare/justin-jefferson/jamarr-chase/ /players/ /leaders/ /leaders/rb/ /week/ /matchups/ /teams/ /my-team/ /player/no-such-player/ /team/zzz/ /; do

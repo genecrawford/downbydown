@@ -102,6 +102,15 @@ if ( $view === 'card' ) {
 	exit( $sz[0] === 1200 && $sz[1] === 630 && ! $warnings ? 0 : 5 );
 }
 
+/* ---- an old link's redirect (SCOPE §43): php tools/view_harness.php data redirect '/?player=…&utm_source=x' prints "redirect 301 <to>" or "stays" */
+if ( $view === 'redirect' ) {
+	function wp_safe_redirect( $to, $status = 302 ) { echo "redirect $status $to\n"; return true; }
+	$rp = new ReflectionProperty( 'DBD_Router', 'page_url' ); $rp->setAccessible( true ); $rp->setValue( null, 'https://example.test/' );
+	$u = parse_url( $arg ); parse_str( $u['query'] ?? '', $_GET ); $_SERVER['REQUEST_URI'] = $arg; $_SERVER['REQUEST_METHOD'] = 'GET';
+	DBD_Router::$route = DBD_Router::route(); DBD_Router::redirect_old();
+	echo "stays ($warnings warnings)\n"; exit( $warnings ? 1 : 0 );
+}
+
 /* ---- route the request the way the page would */
 $_GET = array();
 if ( $view === 'path' ) {  /* a readable path, routed the way a request for it would be */

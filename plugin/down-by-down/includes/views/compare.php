@@ -195,4 +195,4 @@ echo '</main>';
 
 /* same-group index for the slot search */
 $idx = array_values( array_filter( DBD_Data::player_index(), function ( $o ) use ( $grp, $ids ) { return DBD_Grades::pool_of( $o['pos'] ) === $grp && ! in_array( $o['id'], $ids, true ); } ) );
-echo '<script type="application/json" id="dbd-cindex">' . wp_json_encode( array_map( function ( $o ) { return array( 'id' => $o['id'], 'name' => $o['name'], 'team' => $o['team'], 'pos' => $o['pos'], 'num' => $o['num'], 'snap' => $o['snap'] ); }, $idx ) ) . '</script>';
+echo '<script type="application/json" id="dbd-cindex">' . wp_json_encode( array_map( function ( $o ) { return array( 'id' => $o['id'], 'name' => $o['name'], 'team' => $o['team'], 'pos' => $o['pos'], 'num' => $o['num'], 'snap' => $o['snap'], 'slug' => DBD_Urls::player_slug( $o['id'] ) ); }, $idx ) ) . '</script>';

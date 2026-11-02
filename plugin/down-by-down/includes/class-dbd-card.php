@@ -159,11 +159,15 @@ class DBD_Card {
 		return null;
 	}
 
-	/** The cache file's name: the subject, the season, the data week and the plugin version, plus the schedule's version for games and pages (a final changes them) and -l with logos. */
+	/** The stamp every cached card carries: season, data week, plugin version and the data build, so a late box score or a final redraws it (Greptile, PR #53). */
+	public static function stamp() {
+		$m = DBD_Data::manifest();
+		return '-' . (int) DBD_Data::season() . '-' . (int) DBD_Data::through_week() . '-' . DBD_VERSION . '-' . substr( md5( (string) ( $m['built_at'] ?? '' ) . '|' . (string) DBD_Data::file_version( 'schedule.json' ) ), 0, 6 );
+	}
+
+	/** The cache file's name: the subject, the stamp, and -l with logos. */
 	public static function file_name( $key ) {
-		$tag = '-' . (int) DBD_Data::season() . '-' . (int) DBD_Data::through_week() . '-' . DBD_VERSION;
-		$h = preg_match( '/^\d{2}-\d{7}$/', $key ) ? '' : '-' . substr( md5( (string) DBD_Data::file_version( 'schedule.json' ) ), 0, 6 );
-		return $key . $tag . $h . ( DBD_Data::logos() ? '-l' : '' ) . '.png';
+		return $key . self::stamp() . ( DBD_Data::logos() ? '-l' : '' ) . '.png';
 	}
 
 	public static function dir() { $up = wp_upload_dir(); return trailingslashit( $up['basedir'] ) . 'down-by-down/cards'; }
@@ -215,15 +219,14 @@ class DBD_Card {
 		return $b;
 	}
 
-	/** After a sync: delete every cached card that isn't for this season, data week, plugin version and schedule, and any older than 14 days. Returns [count, bytes]. */
+	/** After a sync: delete every cached card without the current stamp, and any older than 14 days. Returns [count, bytes]. */
 	public static function prune( $all = false ) {
 		$dir = self::dir(); if ( ! is_dir( $dir ) ) { return array( 0, 0 ); }
-		$tag = '-' . (int) DBD_Data::season() . '-' . (int) DBD_Data::through_week() . '-' . DBD_VERSION; $h = '-' . substr( md5( (string) DBD_Data::file_version( 'schedule.json' ) ), 0, 6 );
-		$n = 0; $bytes = 0; $old = time() - 14 * DAY_IN_SECONDS;
+		$tag = self::stamp(); $n = 0; $bytes = 0; $old = time() - 14 * DAY_IN_SECONDS;
 		foreach ( array_merge( (array) glob( $dir . '/*.png' ), (array) glob( $dir . '/.*.tmp' ) ) as $f ) {
 			if ( ! is_file( $f ) ) { continue; }
-			$b = basename( $f ); $player = (bool) preg_match( '/^\d{2}-\d{7}-/', $b );
-			$keep = ! $all && substr( $b, -4 ) === '.png' && strpos( $b, $tag ) !== false && ( $player || strpos( $b, $h ) !== false ) && filemtime( $f ) >= $old;
+			$b = basename( $f );
+			$keep = ! $all && substr( $b, -4 ) === '.png' && strpos( $b, $tag ) !== false && filemtime( $f ) >= $old;
 			if ( substr( $b, -4 ) === '.tmp' ) { $keep = filemtime( $f ) > time() - HOUR_IN_SECONDS; }
 			if ( $keep ) { continue; }
 			$sz = (int) filesize( $f ); if ( @unlink( $f ) ) { $n++; $bytes += $sz; }
@@ -273,8 +276,20 @@ class DBD_Card {
 			$s['as'] = (int) $g['away_score']; $s['hs'] = (int) $g['home_score']; $s['win'] = $s['as'] > $s['hs'] ? $a : ( $s['hs'] > $s['as'] ? $h : '' );
 			$W = DBD_Week::file( $wk ); $wg = null; foreach ( (array) ( $W['games'] ?? array() ) as $x ) { if ( ( $x['id'] ?? '' ) === $g['id'] ) { $wg = $x; } }
 			$s['ot'] = ! empty( $wg['ot'] ); $s['tags'] = array_map( function ( $t ) { return array( $t[0], $t[1] ); }, (array) ( $wg['tags'] ?? array() ) );
-			$s['spark'] = ! empty( $wg['spark'] ) && $s['win'] ? array_map( 'intval', $wg['spark'] ) : array();  /* the winner's win probability, per mille */
-			$s['big'] = $wg['big'] ?? null; $s['low'] = $s['spark'] ? min( $s['spark'] ) / 10 : null;
+			/* the winner's win probability play by play (wp/w{N}.json: [seconds, home per mille, …]) on a game clock, and the single play that
+			   moved it most, the same play the week in review names (kneels left out); the marker sits on that play */
+			$s['wp'] = array(); $s['mark'] = null; $wp = DBD_Data::win_prob( $g );
+			if ( $s['win'] && $wp && ! empty( $wp['s'] ) ) {
+				$hw = $s['win'] === $h;
+				foreach ( $wp['s'] as $p ) { $v = (int) $p[1]; $s['wp'][] = array( min( 1, max( 0, (float) $p[0] / 3600 ) ), $hw ? $v : 1000 - $v ); }
+				if ( ! empty( $wp['ot'] ) ) { $s['wp'][] = array( 1, 1000 ); }  /* overtime: the winner's line closes at the right edge */
+				$big = null; foreach ( (array) ( $wp['top'] ?? array() ) as $x ) { if ( strpos( (string) ( $x[3] ?? '' ), ' kneels ' ) !== false ) { continue; } if ( ! $big || abs( $x[1] ) > abs( $big[1] ) ) { $big = $x; } }
+				if ( $big && isset( $wp['s'][ (int) $big[0] ], $s['wp'][ (int) $big[0] ] ) ) {
+					$t = (int) $wp['s'][ (int) $big[0] ][0]; $q = min( 4, intdiv( $t, 900 ) + 1 ); $rem = max( 0, 900 * $q - $t );
+					$s['mark'] = array( 'x' => $s['wp'][ (int) $big[0] ][0], 'y' => $s['wp'][ (int) $big[0] ][1], 'clock' => ( $t >= 3600 ? 'OT' : 'Q' . $q . ' ' . intdiv( $rem, 60 ) . ':' . sprintf( '%02d', $rem % 60 ) ), 'team' => $big[1] > 0 ? $h : $a, 'pct' => (int) round( abs( $big[1] ) / 10 ) );
+				}
+			}
+			$s['low'] = $s['wp'] ? min( array_column( $s['wp'], 1 ) ) / 10 : null;
 			$s['leaders'] = array(); $B = DBD_Data::box( $g );
 			if ( $B && ! empty( $B['keys'] ) ) {
 				$ix = array_flip( $B['keys'] ); $rows = array();
@@ -482,20 +497,22 @@ class DBD_Card {
 			$px0 = 694; $px1 = 1140; $py0 = 150; $py1 = 330; $yv = function ( $v ) use ( $py0, $py1 ) { return $py1 - ( $v / 1000 ) * ( $py1 - $py0 ); };
 			foreach ( array( array( '100%', $py0 ), array( '50%', ( $py0 + $py1 ) / 2 ), array( '0%', $py1 ) ) as $ax ) { ( $K['txt'] )( $F['mono'], 11, 686, $ax[1] + 4, $K['muted'], $ax[0], 'right' ); }
 			for ( $x = $px0; $x < $px1; $x += 8 ) { ( $K['rect'] )( $x, ( $py0 + $py1 ) / 2, 4, 1, $K['line2'] ); }
-			$sp = $s['spark']; $n = count( $sp );
+			$sp = $s['wp']; $n = count( $sp );
 			if ( $n > 1 ) {
 				$wc = ( $K['col'] )( $wn['c1'] ); $fill = ( $K['mix'] )( $wn['c1'], 0.08, self::PANEL ); $S = $K['S']; $im = $K['im'];
-				$pts = array(); foreach ( $sp as $i => $v ) { $pts[] = array( $px0 + ( $px1 - $px0 ) * $i / ( $n - 1 ), $yv( $v ) ); }
+				$pts = array(); foreach ( $sp as $p ) { $pts[] = array( $px0 + ( $px1 - $px0 ) * $p[0], $yv( $p[1] ) ); }
 				$poly = array(); foreach ( $pts as $p ) { $poly[] = (int) round( $p[0] * $S ); $poly[] = (int) round( $p[1] * $S ); } $poly[] = (int) round( $px1 * $S ); $poly[] = (int) round( $py1 * $S ); $poly[] = (int) round( $px0 * $S ); $poly[] = (int) round( $py1 * $S );
 				imagefilledpolygon( $im, $poly, $fill );
 				imagesetthickness( $im, (int) round( 3.5 * $S ) ); for ( $i = 1; $i < $n; $i++ ) { imageline( $im, (int) round( $pts[ $i - 1 ][0] * $S ), (int) round( $pts[ $i - 1 ][1] * $S ), (int) round( $pts[ $i ][0] * $S ), (int) round( $pts[ $i ][1] * $S ), $wc ); } imagesetthickness( $im, 1 );
-				$j = 1; for ( $i = 2; $i < $n; $i++ ) { if ( abs( $sp[ $i ] - $sp[ $i - 1 ] ) > abs( $sp[ $j ] - $sp[ $j - 1 ] ) ) { $j = $i; } }
-				$dx = $pts[ $j ][0]; $dy = $pts[ $j ][1];
-				imagefilledellipse( $im, (int) round( $dx * $S ), (int) round( $dy * $S ), 22 * $S, 22 * $S, $K['panel'] ); imagefilledellipse( $im, (int) round( $dx * $S ), (int) round( $dy * $S ), 15 * $S, 15 * $S, $wc );
-				if ( $s['big'] ) { $lab = $s['big'][1] . ' · ' . self::nick( $s['big'][2] ?? '' ) . ' +' . (int) $s['big'][0] . '%'; $lw = ( $K['tw'] )( $F['mono2'], 13, $lab ) + 14; $lx = min( max( $dx - $lw / 2, $px0 ), $px1 - $lw ); $ly = max( $dy - 40, 138 );
-					( $K['rect'] )( $lx, $ly, $lw, 24, $K['ink'] ); ( $K['txt'] )( $F['mono2'], 13, $lx + 7, $ly + 17, ( $K['col'] )( '#ffffff' ), $lab ); }
+				$mk = $s['mark'];
+				if ( $mk ) {
+					$dx = $px0 + ( $px1 - $px0 ) * $mk['x']; $dy = $yv( $mk['y'] ); $mc = ( $K['col'] )( DBD_Data::team( $mk['team'] )['c1'] ?? $wn['c1'] );
+					imagefilledellipse( $im, (int) round( $dx * $S ), (int) round( $dy * $S ), 22 * $S, 22 * $S, $K['panel'] ); imagefilledellipse( $im, (int) round( $dx * $S ), (int) round( $dy * $S ), 15 * $S, 15 * $S, $mc );
+					$lab = $mk['clock'] . ' · ' . self::nick( $mk['team'] ) . ' +' . $mk['pct'] . '%'; $lw = ( $K['tw'] )( $F['mono2'], 13, $lab ) + 14; $lx = min( max( $dx - $lw / 2, $px0 ), $px1 - $lw ); $ly = $dy - 40 >= 138 ? $dy - 40 : $dy + 16;
+					( $K['rect'] )( $lx, $ly, $lw, 24, $K['ink'] ); ( $K['txt'] )( $F['mono2'], 13, $lx + 7, $ly + 17, ( $K['col'] )( '#ffffff' ), $lab );
+				}
 			}
-			if ( $s['low'] !== null && $win ) { $cap = $wn['nick'] . ' were down to ' . round( $s['low'] ) . '%' . ( $s['big'] ? ' · biggest swing ' . $s['big'][1] . ', ' . self::nick( $s['big'][2] ?? '' ) . ' +' . (int) $s['big'][0] . '%' : '' ); ( $K['txt'] )( $F['body'], 15, 648, 372, $K['ink2'], $cap ); }
+			if ( $s['low'] !== null && $win ) { $mk = $s['mark']; $cap = $wn['nick'] . ' were down to ' . max( 1, round( $s['low'] ) ) . '%' . ( $mk ? ' · biggest swing ' . $mk['clock'] . ', ' . self::nick( $mk['team'] ) . ' +' . $mk['pct'] . '%' : '' ); ( $K['txt'] )( $F['body'], 15, 648, 372, $K['ink2'], $cap ); }
 			$tw3 = ( 1112 - 24 ) / 3;
 			foreach ( array_slice( $s['leaders'], 0, 3 ) as $i => $ld ) { ( $K['tile'] )( 44 + $i * ( $tw3 + 12 ), 440, $tw3, 120, $ld[0], strtoupper( $ld[2] ), $ld[3], 'disp2', 30, array( $ld[1], $L[ $ld[1] ] ?? null ) ); }
 			( $K['foot'] )( 'Data: nflverse · win probability from the play-by-play' );

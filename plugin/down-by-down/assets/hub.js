@@ -17,7 +17,7 @@
     if (!/^https:\/\/[^"'<>\s]+$/.test(src)) return tile;
     return '<span class="dbd-head" style="width:24px;height:24px">' + tile + '<img src="' + esc(src) + '" alt="" width="24" height="24" loading="lazy" referrerpolicy="no-referrer" style="background:' + esc(t.c1 || '#161e36') + '" onerror="this.remove()"></span>';
   };
-  fetch(C.mini, { credentials: 'omit' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (M) {
+  fetch(C.mini, { credentials: 'omit' }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(function (M) {
     if (!M) return;
     var rows = ids.filter(function (id) { return M[id]; }).slice(0, C.max || 20).map(function (id) {
       var p = M[id], o = (C.opp || {})[p[1]];

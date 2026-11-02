@@ -12,15 +12,15 @@
   };
   window.dbdUrl = function (args) {
     var C = window.DBD_URLS; if (!C || !C.base) return null;
-    var S = C.slugs || {}, a = {}, k, path = '', names = args.names || {};
-    for (k in args) { if (k !== 'name' && k !== 'slug' && k !== 'names' && args[k] !== undefined && args[k] !== null && args[k] !== '') a[k] = args[k]; }
+    var S = C.slugs || {}, a = {}, k, path = '', given = args.slugs || {};
+    for (k in args) { if (k !== 'name' && k !== 'slug' && k !== 'slugs' && args[k] !== undefined && args[k] !== null && args[k] !== '') a[k] = args[k]; }
     var slug = function (id, name, given) { return given || S[id] || (name ? window.dbdSlug(name) : ''); };
     if (Array.isArray(a.compare)) a.compare = a.compare.join(',');
     if (Array.isArray(a.myteam)) a.myteam = a.myteam.join(',');
     if (C.pretty) {
       if (a.player) { var s1 = slug(a.player, args.name, args.slug); if (s1) { path = 'player/' + s1 + '/'; delete a.player; } }
       else if (a.compare !== undefined) {
-        var ids = String(a.compare).split(',').filter(function (x) { return x && x !== 'none'; }), ss = ids.map(function (id) { return slug(id, names[id]); });
+        var ids = String(a.compare).split(',').filter(function (x) { return x && x !== 'none'; }), ss = ids.map(function (id) { return given[id] || S[id] || ''; });  /* known slugs only; otherwise the id link, which the server redirects */
         if (ss.every(Boolean)) { path = 'compare/' + (ss.length ? ss.join('/') + '/' : ''); delete a.compare; }
       }
       else if (a.view === 'players' && !a.team) { path = 'players/'; delete a.view; }
