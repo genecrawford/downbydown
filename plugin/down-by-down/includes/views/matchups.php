@@ -22,7 +22,7 @@ foreach ( DBD_Data::weeks() as $w ) {
 echo '</div></nav>';
 
 $state = $finals === count( $games ) && $games ? 'all final' : ( $finals ? "$finals final" : 'all upcoming' );
-echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>' . esc_html( $label ) . '</b> · ' . count( $games ) . ' games · ' . esc_html( $state ) . '</span><span>Lines and totals from nflverse. Kickoffs in your local time.</span></div>';
+echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>' . esc_html( $label ) . '</b> · ' . count( $games ) . ( count( $games ) === 1 ? ' game · ' : ' games · ' ) . esc_html( $state ) . '</span><span>Lines and totals from nflverse. Kickoffs in your local time.</span></div>';
 include DBD_PATH . 'includes/views/partials/slate-table.php';
 if ( $finals ) { echo '<p class="dbd-note wk-link"><a href="' . esc_url( DBD_Router::url( array( 'view' => 'week', 'week' => $week ) ) ) . '">' . esc_html( $label ) . ' in review →</a> every game\'s swings, the biggest plays, the best offenses, defenses and players' . ( $finals < count( $games ) ? ' so far' : '' ) . '.</p>'; }  /* SCOPE §40 */
 echo '</section>';

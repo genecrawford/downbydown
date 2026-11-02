@@ -562,7 +562,7 @@ class DBD_Card {
 
 	public static function draw_team( $s, $assets ) {
 		$K = self::kit( $assets ); if ( ! $K ) { return null; } $F = $K['F']; $L = $assets['logos'];
-		( $K['brand'] )( $s['season'] . ' season · through week ' . $s['through'], array( array( $s['abbr'], $L[ $s['abbr'] ] ?? null ) ), $s['c1'] );
+		( $K['brand'] )( $s['season'] . ' season · ' . ( DBD_Data::archived() || DBD_Season::super_bowl() ? 'final' : 'through week ' . $s['through'] ), array( array( $s['abbr'], $L[ $s['abbr'] ] ?? null ) ), $s['c1'] );
 		( $K['box'] )( 44, 106, 160, 160 ); ( $K['mark'] )( 58, 120, 132, $s['abbr'], $L[ $s['abbr'] ] ?? null );
 		( $K['spaced'] )( $F['disp'], 14, 228, 146, $K['muted'], strtoupper( $s['kicker'] ), 0.2 );
 		$px = min( ( $K['fit'] )( $F['hero'], 46, strtoupper( $s['city'] ), 372 ), ( $K['fit'] )( $F['hero'], 46, strtoupper( $s['nick'] ), 372 ) );
@@ -581,7 +581,7 @@ class DBD_Card {
 
 	public static function draw_page( $s, $assets ) {
 		$K = self::kit( $assets ); if ( ! $K ) { return null; } $F = $K['F'];
-		( $K['brand'] )( $s['season'] . ' season · through week ' . $s['through'], array(), self::RED );
+		( $K['brand'] )( $s['season'] . ' season · ' . ( DBD_Data::archived() || DBD_Season::super_bowl() ? 'final' : 'through week ' . $s['through'] ), array(), self::RED );
 		( $K['spaced'] )( $F['disp'], 14, 44, 124, $K['red'], strtoupper( $s['kicker'] ), 0.2 );
 		$lines = $s['title']; $n = count( $lines ); $px = $n >= 3 ? 56 : 72;
 		foreach ( $lines as $l ) { $px = min( $px, ( $K['fit'] )( $F['hero'], $px, strtoupper( ltrim( $l, '!' ) ), 610 ) ); }
