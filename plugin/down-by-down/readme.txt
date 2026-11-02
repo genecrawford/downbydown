@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.18.1
+Stable tag: 1.19.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,13 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.19.0 =
+* Readable URLs: /team/min/, /player/justin-jefferson/, /game/2026-week-8-vikings-at-lions/ and the rest. The old ?team= and ?player= links redirect to them. A Readable URLs setting turns them off; plain-permalink sites keep query strings.
+* Share cards for every page: a game card (before kickoff, then the final with win probability and the leaders), a team card, and a page card for the hub, the week in review and the index pages.
+* Old share cards are deleted after each sync; a Share cards box in admin shows the cache and clears it.
+* Skeletons in the shape of what is loading, cross-faded into the content, on the team explorer, the player map, compare and the hub's My team card.
+* The game log remembers Default, Advanced or Traditional. On a phone, head to head, the defense's player tables and situations, and a quarterback's career no longer scroll sideways.
 
 = 1.18.1 =
 * A final whose weekly player stats nflverse hasn't posted yet now reads "Stats not posted yet" on the player page, the fantasy strip and the My team card, instead of "Did not play".

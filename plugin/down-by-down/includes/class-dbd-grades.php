@@ -121,7 +121,7 @@ class DBD_Grades {
 				array( 'Y/R^2', 'ypr', 'f1', false ), array( 'Yds/g^2', 'ypg', 'f1', false ), array( 'EPA/tgt^3', 'epat', 'sgn', false ) ),
 			'rb'  => array( array( 'Season', 'season', 's', false ), array( 'Team', 'team', 's', false ), array( 'G', 'g', 'n', false ), array( 'Car', 'carries', 'n', true ), array( 'Yds', 'rushing_yards', 'n', true ), array( 'YPC^2', 'ypc', 'f1', false ), array( 'TD', 'td', 'n', true ),
 				array( 'Tgt^2', 'targets', 'n', false ), array( 'Rec', 'receptions', 'n', true ), array( 'Rec yds^2', 'receiving_yards', 'n', true ), array( 'EPA/touch^3', 'epatch', 'sgn', false ) ),
-			'qb'  => array( array( 'Season', 'season', 's', false ), array( 'Team', 'team', 's', false ), array( 'G', 'g', 'n', false ), array( 'Cmp/Att', 'cmpatt', 's', false ), array( 'Pct^2', 'pct', 'pct', false ), array( 'Yds', 'passing_yards', 'n', true ), array( 'TD', 'passing_tds', 'n', true ),
+			'qb'  => array( array( 'Season', 'season', 's', false ), array( 'Team', 'team', 's', false ), array( 'G', 'g', 'n', false ), array( 'Cmp/Att^3', 'cmpatt', 's', false ), array( 'Pct^2', 'pct', 'pct', false ), array( 'Yds', 'passing_yards', 'n', true ), array( 'TD', 'passing_tds', 'n', true ),
 				array( 'INT^2', 'passing_interceptions', 'n', false ), array( 'Y/A^2', 'ypa', 'f1', false ), array( 'Rating', 'rating', 'f1', false ), array( 'EPA/db^3', 'epadb', 'sgn', false ) ),
 		);
 		return $d[ $grp ] ?? array();

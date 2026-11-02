@@ -9,6 +9,9 @@ class DBD_Data {
 
 	private static $cache = array();
 
+	/** Forget every decoded file: a sync just replaced them. */
+	public static function flush() { self::$cache = array(); }
+
 	/** Absolute path of the data folder (created on demand). */
 	public static function dir() {
 		$u   = wp_upload_dir();

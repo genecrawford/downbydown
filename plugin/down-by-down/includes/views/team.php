@@ -22,8 +22,8 @@ if ( ! $through ) {
 	echo '<div class="dbd-empty"><h2>No defense data yet</h2><p>The defense tab fills in with the next nightly data build.</p></div>';
 } elseif ( $def ) {
 	echo DBD_Defense::page( $a, $D );
-	echo '<section class="dbd-band" id="df-snaps"><h2 class="dbd-bandh">Every snap they defended<span>the play explorer, on offenses\' plays against them</span></h2><div id="dbd-explorer" data-team="' . esc_attr( $a ) . '" data-side="def"><div class="dbd-skel"><span class="dbd-note">Loading every snap…</span></div></div></section>';
+	echo '<section class="dbd-band" id="df-snaps"><h2 class="dbd-bandh">Every snap they defended<span>the play explorer, on offenses\' plays against them</span></h2><div id="dbd-explorer" data-team="' . esc_attr( $a ) . '" data-side="def">' . DBD_Marks::skel( 'explorer', 'Loading every snap' ) . '</div></section>';
 } else {
-	echo '<div id="dbd-explorer" data-team="' . esc_attr( $a ) . '"><div class="dbd-skel"><span class="dbd-note">Loading every snap…</span></div></div>';
+	echo '<div id="dbd-explorer" data-team="' . esc_attr( $a ) . '">' . DBD_Marks::skel( 'explorer', 'Loading every snap' ) . '</div>';
 }
 echo '</main>';

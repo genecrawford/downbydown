@@ -1,0 +1,34 @@
+<!doctype html><html class="no-js"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>%TITLE%</title>
+<link href="https://fonts.googleapis.com/css2?family=Tourney:wght@800&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/dbd.css"><link rel="stylesheet" href="assets/transitions.css"><link rel="stylesheet" href="assets/m18.css">
+</head><body class="dbd-app">
+<div class="mk-bar"><b>Mock · polish release (SCOPE §43)</b><span>A review page for 1.19.0: the URL table, the new share cards drawn from the published data, link previews, the skeleton reveal on Jefferson's real target map, remembered choices and the admin boxes. Team logos are hotlinked from the same CDN the site uses.</span></div>
+<div class="entry-content">%ROOT%</div>
+<script>
+(function () {
+  /* scale each 1200 x 630 card to its box */
+  var fit = function () { document.querySelectorAll('.cv:not(.img)').forEach(function (v) { var c = v.querySelector('.card'); if (c) c.style.setProperty('--k', v.clientWidth / 1200); }); };
+  fit(); if (window.ResizeObserver) { var ro = new ResizeObserver(fit); document.querySelectorAll('.cv').forEach(function (v) { ro.observe(v); }); } else { window.addEventListener('resize', fit); }
+  document.querySelectorAll('.m-card').forEach(function (f) { f.addEventListener('click', function () { f.classList.toggle('full'); setTimeout(fit, 0); }); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+
+  /* the skeleton reveal: pulse while "loading", then cross-fade (transitions.dev 14); "today" shows Loading... then jumps */
+  var sk = document.getElementById('m-sk'), skel = sk.querySelector('.t-skel-skeleton'), HOLD = 1600, timer;
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function run(mode) {
+    clearTimeout(timer); sk.dataset.mode = mode;
+    sk.classList.add('is-resetting'); sk.classList.remove('is-revealed', 'is-done'); skel.classList.remove('is-pulsing'); void sk.offsetWidth; sk.classList.remove('is-resetting');
+    if (mode === 'new') skel.classList.add('is-pulsing');
+    timer = setTimeout(function () { sk.classList.add(mode === 'new' ? 'is-revealed' : 'is-done'); skel.classList.remove('is-pulsing'); }, HOLD);
+  }
+  document.querySelectorAll('[data-run]').forEach(function (b) { b.addEventListener('click', function () { document.querySelectorAll('[data-run]').forEach(function (x) { x.classList.toggle('on', x === b); }); run(b.dataset.run); }); });
+  run('new');
+
+  /* remembered scoring format */
+  var KEY = 'dbd-mock-fmt', get = function () { try { return localStorage.getItem(KEY) || 'half'; } catch (e) { return 'half'; } };
+  function paint(f) { document.querySelectorAll('.m-fmt button').forEach(function (b) { b.classList.toggle('on', b.dataset.f === f); b.setAttribute('aria-pressed', b.dataset.f === f); }); }
+  document.querySelectorAll('.m-fmt button').forEach(function (b) { b.addEventListener('click', function () { try { localStorage.setItem(KEY, b.dataset.f); } catch (e) {} paint(b.dataset.f); }); });
+  paint(get());
+})();
+</script>
+</body></html>

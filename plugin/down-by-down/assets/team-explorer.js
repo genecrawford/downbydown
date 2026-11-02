@@ -253,7 +253,7 @@
       var a = Object.keys(m).map(function (k) { return m[k]; }).sort(function (x, y) { return (y.tg + y.car) - (x.tg + x.car); }).slice(0, 12);
       $('#dbd-usage').innerHTML = '<tr><th>Player</th><th>Tgt</th><th>Rec</th><th>Car</th><th>Yds</th><th>RZ</th><th>EPA</th></tr>' + a.map(function (u) { return '<tr class="clk' + (st.pl === u.n ? ' on' : '') + '" data-pl="' + esc(u.n) + '"><td>' + (u.id && C.base ? '<a class="dbd-plink" href="' + esc(playerUrl(u.id)) + '" title="Open the player page">' + esc(u.n) + '</a>' : esc(u.n)) + '</td><td>' + (u.tg || '') + '</td><td>' + (u.rec || '') + '</td><td>' + (u.car || '') + '</td><td>' + u.yds + '</td><td>' + (u.rz || '') + '</td><td class="' + (u.epa >= 0 ? 'pos' : 'neg') + '">' + fmt(u.epa, 1) + '</td></tr>'; }).join('') + (a.length ? '' : '<tr><td colspan="7">No plays match.</td></tr>');
     }
-    function playerUrl(id) { return C.base + (C.base.indexOf('?') >= 0 ? '&' : '?') + 'player=' + encodeURIComponent(id); }
+    function playerUrl(id) { var pu = window.dbdUrl && window.dbdUrl({ player: id }); if (pu) return pu; return C.base + (C.base.indexOf('?') >= 0 ? '&' : '?') + 'player=' + encodeURIComponent(id); }
     $('#dbd-usage').onclick = function (e) { if (e.target.closest('a')) return; var r = e.target.closest('tr[data-pl]'); if (!r) return; st.pl = st.pl === r.dataset.pl ? '' : r.dataset.pl; $('#f-pl').value = st.pl; render(); };
 
     function detail(F) {

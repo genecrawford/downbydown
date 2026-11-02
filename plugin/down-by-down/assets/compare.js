@@ -8,7 +8,8 @@
   var $ = function (s) { return root.querySelector(s); };
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   var ids = C.players.map(function (p) { return p.id; });
-  var url = function (list) { return C.base + (C.base.indexOf('?') >= 0 ? '&' : '?') + 'compare=' + encodeURIComponent(list.join(',')); };
+  var cnames = {}; C.players.forEach(function (p) { cnames[p.id] = p.name; });
+  var url = function (list, more) { var pu = window.dbdUrl && window.dbdUrl({ compare: list, names: Object.assign({}, cnames, more || {}) }); if (pu) return pu; return C.base + (C.base.indexOf('?') >= 0 ? '&' : '?') + 'compare=' + encodeURIComponent(list.join(',')); };
   var f1 = function (v) { return isFinite(v) ? (+v).toFixed(1) : '-'; };
 
   /* the tray: whoever is on this page is what Compare buttons elsewhere build on, keyed by position group so a
@@ -47,7 +48,7 @@
     var render = function () {
       var q = inp.value.trim().toLowerCase(); if (!q) { list.hidden = true; list.innerHTML = ''; return; }
       var hits = IDX.filter(function (p) { return p.name.toLowerCase().indexOf(q) >= 0 || (p.team || '').toLowerCase() === q || String(p.num) === q; }).slice(0, 8);
-      list.innerHTML = hits.length ? hits.map(function (p) { return '<li><a href="' + esc(url(ids.concat([p.id]))) + '">' + window.dbdPlayer(p.team, p.num, 24, null, false) + '<b>' + esc(p.name) + '</b><small>' + esc(p.pos + ' · ' + p.team + ' · ' + (p.snap | 0) + '% snaps') + '</small></a></li>'; }).join('') : '<li class="none">No one by that name in this group.</li>';
+      list.innerHTML = hits.length ? hits.map(function (p) { return '<li><a href="' + esc(url(ids.concat([p.id]), (function () { var m = {}; m[p.id] = p.name; return m; })())) + '">' + window.dbdPlayer(p.team, p.num, 24, null, false) + '<b>' + esc(p.name) + '</b><small>' + esc(p.pos + ' · ' + p.team + ' · ' + (p.snap | 0) + '% snaps') + '</small></a></li>'; }).join('') : '<li class="none">No one by that name in this group.</li>';
       list.hidden = false;
     };
     var tm; inp.addEventListener('input', function () { clearTimeout(tm); tm = setTimeout(render, 100); });
@@ -140,7 +141,7 @@
         host.innerHTML = g;
       });
     })();
-  }).catch(function (err) { $('#dbd-cmapn').textContent = 'could not load the plays'; root.querySelectorAll('.dbd-cmaps .dbd-skel').forEach(function (k) { k.innerHTML = '<span class="dbd-note">' + esc(err.message || err) + '</span>'; }); });
+  }).catch(function (err) { $('#dbd-cmapn').textContent = 'could not load the plays'; root.querySelectorAll('.dbd-skel').forEach(function (k) { k.innerHTML = '<span class="dbd-note">' + esc(err.message || err) + '</span>'; }); });
 
   function hash(i) { return (i * 2654435761 % 4294967296) / 4294967296; }
   function passmap(D, minA, maxA) {

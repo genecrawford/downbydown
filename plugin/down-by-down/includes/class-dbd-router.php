@@ -10,6 +10,9 @@
  *   /?view=players[&team=MIN&pos=WR&q=jeff]  players index (1.2.0)
  *   /?player=00-0036322    player page (1.2.0)
  *   /?compare=id,id[,id]   compare two or three players of one position group (1.3.1)
+ *
+ * Since 1.19.0 these are paths (/team/min/, /player/justin-jefferson/, …; DBD_Urls). The query strings still work and
+ * answer with a 301 to the path.
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
@@ -18,6 +21,7 @@ class DBD_Router {
 	public static $active = false;   // true when the current singular page carries the shortcode
 	public static $route  = null;    // array: view, team, game, side, week, title, description
 	private static $page_url = '';
+	private static $P = null;        // the values a readable path carries (DBD_Urls::parse), null on a query-string request
 
 	public static function init() {
 		add_shortcode( 'down_by_down', array( __CLASS__, 'shortcode' ) );
@@ -26,6 +30,7 @@ class DBD_Router {
 		add_action( 'wp', array( __CLASS__, 'detect' ) );
 		add_filter( 'theme_page_templates', array( __CLASS__, 'page_templates' ) );
 		add_filter( 'template_include', array( __CLASS__, 'template_include' ), 99 );
+		DBD_Urls::init();
 	}
 
 	/* ------------------------------------------------------------------ routing */
@@ -36,8 +41,12 @@ class DBD_Router {
 		if ( ! $post || ! has_shortcode( (string) $post->post_content, 'down_by_down' ) && ! has_shortcode( (string) $post->post_content, 'play_explorer' ) ) { return; }
 		self::$active   = true;
 		self::$page_url = get_permalink( $post );
+		if ( (int) get_option( DBD_Urls::OPT_PAGE ) !== (int) $post->ID && $post->post_status === 'publish' ) { update_option( DBD_Urls::OPT_PAGE, (int) $post->ID ); }
+		$path = (string) get_query_var( 'dbd_path' );
+		if ( $path !== '' ) { self::$P = DBD_Urls::parse( $path ); }
 		self::$route    = self::route();
 		if ( self::q( 'card' ) !== '' ) { DBD_Card::serve( self::q( 'card' ) ); }  /* the share card PNG (SCOPE §26); serve() exits */
+		if ( $path === '' ) { self::redirect_old(); }
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'assets' ) );
 		add_filter( 'body_class', array( __CLASS__, 'body_class' ) );
 		add_filter( 'document_title_parts', array( __CLASS__, 'title' ) );
@@ -47,12 +56,37 @@ class DBD_Router {
 	}
 
 	private static function q( $key ) {
+		if ( self::$P !== null ) {  /* a path decides the route; the query string only adds the filters a path doesn't carry */
+			if ( isset( self::$P[ $key ] ) ) { return (string) self::$P[ $key ]; }
+			if ( in_array( $key, DBD_Urls::ROUTE_KEYS, true ) ) { return ''; }
+		}
 		return isset( $_GET[ $key ] ) ? sanitize_text_field( wp_unslash( $_GET[ $key ] ) ) : '';
+	}
+
+	/** Route a path the way a request for it would (the view harness and the URL checks use this). */
+	public static function route_path( $path ) {
+		self::$P = DBD_Urls::parse( $path ); $r = self::route(); self::$P = null; return $r;
+	}
+
+	/** An old query-string link: 301 to its path, keeping parameters the route doesn't use (utm_*, fbclid). */
+	private static function redirect_old() {
+		if ( ! DBD_Urls::on() || ( $_SERVER['REQUEST_METHOD'] ?? 'GET' ) !== 'GET' ) { return; }
+		$keys = array( 'team', 'game', 'player', 'compare', 'view', 'myteam' );
+		if ( ! array_intersect( $keys, array_keys( $_GET ) ) ) { return; }
+		$r = self::$route; if ( in_array( $r['view'], array( 'notfound', 'nodata' ), true ) ) { return; }
+		$to = self::url( self::args_of( $r, true ) );
+		$used = array_merge( DBD_Urls::ROUTE_KEYS, array( 'myteam', 'pt', 'pos', 'q', 'b' ) );
+		$keep = array(); foreach ( $_GET as $k => $v ) { if ( ! in_array( $k, $used, true ) && is_string( $v ) ) { $keep[ $k ] = sanitize_text_field( wp_unslash( $v ) ); } }
+		if ( $keep ) { $to = add_query_arg( array_map( 'rawurlencode', $keep ), $to ); }
+		$here = wp_parse_url( (string) ( $_SERVER['REQUEST_URI'] ?? '/' ), PHP_URL_PATH ); $there = wp_parse_url( $to, PHP_URL_PATH );
+		if ( ! $there || untrailingslashit( (string) $here ) === untrailingslashit( (string) $there ) ) { return; }  /* no path for it: stay */
+		wp_safe_redirect( $to, 301, 'Down by Down' ); exit;
 	}
 
 	public static function route() {
 		$r = array( 'view' => 'hub', 'team' => '', 'game' => null, 'side' => 'away', 'week' => DBD_Data::current_week() );
 		if ( ! DBD_Data::has_data() ) { $r['view'] = 'nodata'; return $r; }
+		if ( isset( self::$P['__nf'] ) ) { $r['view'] = 'notfound'; return $r; }  /* a path nothing answers to */
 		$teams = DBD_Data::teams();
 		$team  = strtoupper( self::q( 'team' ) );
 		$game  = self::q( 'game' );
@@ -130,8 +164,32 @@ class DBD_Router {
 	}
 
 	public static function url( $args = array() ) {
-		$base = self::$page_url ?: home_url( '/' );
+		$base = self::base();
+		if ( $args && DBD_Urls::on() ) { $u = DBD_Urls::build( $base, $args ); if ( $u !== null ) { return $u; } }
 		return $args ? add_query_arg( array_map( 'rawurlencode', $args ), $base ) : $base;
+	}
+
+	/** The app page's URL: the page being served, else the page that holds the shortcode (the sitemap and cards run outside it). */
+	public static function base() {
+		if ( self::$page_url ) { return self::$page_url; }
+		return class_exists( 'DBD_Seo' ) && class_exists( 'WP_Query' ) ? DBD_Seo::app_url() : home_url( '/' );
+	}
+
+	/** The link arguments of a route: the canonical page ($full false) or everything the request carried ($full true, for the redirect). */
+	public static function args_of( $r, $full = false ) {
+		$args = array();
+		if ( $r['view'] === 'team' ) { $args = array( 'team' => $r['team'] ); if ( ( $r['tside'] ?? 'off' ) === 'def' ) { $args['side'] = 'def'; } }
+		if ( $r['view'] === 'game' ) { $args = array( 'game' => $r['game']['id'] ); if ( $r['side'] === 'home' ) { $args['side'] = 'home'; } }
+		if ( $r['view'] === 'matchups' ) { $args = array( 'view' => 'matchups' ); if ( $r['week'] !== DBD_Data::current_week() ) { $args['week'] = $r['week']; } }
+		if ( $r['view'] === 'teams' ) { $args = array( 'view' => 'teams' ); }
+		if ( $r['view'] === 'myteam' ) { $args = ( $full && self::q( 'myteam' ) !== '' ) ? array( 'myteam' => self::q( 'myteam' ) ) : array( 'view' => 'myteam' ); }
+		if ( $r['view'] === 'week' ) { $args = array( 'view' => 'week', 'week' => $r['week'] ); }
+		if ( $r['view'] === 'leaders' ) { $args = array( 'view' => 'leaders' ); if ( $r['lboard'] !== '' ) { $args['b'] = $r['lboard']; } elseif ( $r['lgroup'] !== 'fan' ) { $args['g'] = $r['lgroup']; } }
+		if ( $r['view'] === 'player' ) { $args = array( 'player' => $r['player']['id'] ); }
+		if ( $r['view'] === 'players' ) { $args = array( 'view' => 'players' ); if ( $r['pteam'] ) { $args['pt'] = $r['pteam']; } if ( $r['pos'] ) { $args['pos'] = $r['pos']; } if ( $full && $r['q'] !== '' ) { $args['q'] = $r['q']; } }
+		if ( $r['view'] === 'teamplayers' ) { $args = array( 'view' => 'players', 'team' => $r['pteam'] ); }
+		if ( $r['view'] === 'compare' ) { $ids = array_map( function ( $p ) { return $p['id']; }, $r['compare'] ); if ( ! $full ) { sort( $ids ); } $args = $ids ? array( 'compare' => implode( ',', $ids ) ) : ( $full ? array( 'compare' => 'none' ) : array( 'view' => 'players' ) ); }
+		return $args;
 	}
 
 	public static function body_class( $classes ) {
@@ -196,25 +254,15 @@ class DBD_Router {
 
 	public static function head() {
 		list( $t, $d ) = self::seo();
-		$r = self::$route; $args = array();
-		if ( $r['view'] === 'team' ) { $args = array( 'team' => $r['team'] ); if ( ( $r['tside'] ?? 'off' ) === 'def' ) { $args['side'] = 'def'; } }
-		if ( $r['view'] === 'game' ) { $args = array( 'game' => $r['game']['id'] ); if ( $r['side'] === 'home' ) { $args['side'] = 'home'; } }
-		if ( $r['view'] === 'matchups' ) { $args = array( 'view' => 'matchups' ); if ( $r['week'] !== DBD_Data::current_week() ) { $args['week'] = $r['week']; } }
-		if ( $r['view'] === 'teams' ) { $args = array( 'view' => 'teams' ); }
-		if ( $r['view'] === 'myteam' ) { $args = array( 'view' => 'myteam' ); }
-		if ( $r['view'] === 'week' ) { $args = array( 'view' => 'week', 'week' => $r['week'] ); }
-		if ( $r['view'] === 'leaders' ) { $args = array( 'view' => 'leaders' ); if ( $r['lboard'] !== '' ) { $args['b'] = $r['lboard']; } elseif ( $r['lgroup'] !== 'fan' ) { $args['g'] = $r['lgroup']; } }
-		if ( $r['view'] === 'player' ) { $args = array( 'player' => $r['player']['id'] ); }
-		if ( $r['view'] === 'players' ) { $args = array( 'view' => 'players' ); if ( $r['pteam'] ) { $args['pt'] = $r['pteam']; } if ( $r['pos'] ) { $args['pos'] = $r['pos']; } }
-		if ( $r['view'] === 'teamplayers' ) { $args = array( 'view' => 'players', 'team' => $r['pteam'] ); }
-		if ( $r['view'] === 'compare' ) { $ids = array_map( function ( $p ) { return $p['id']; }, $r['compare'] ); sort( $ids ); $args = $ids ? array( 'compare' => implode( ',', $ids ) ) : array( 'view' => 'players' ); }
-		$url = self::url( $args );
+		$r = self::$route;
+		$url = self::url( self::args_of( $r ) );
 		echo "\n" . '<meta name="description" content="' . esc_attr( $d ) . '">' . "\n";
 		echo '<link rel="canonical" href="' . esc_url( $url ) . '">' . "\n";
 		echo '<meta property="og:title" content="' . esc_attr( $t . ' | Down by Down' ) . '">' . "\n";
 		echo '<meta property="og:description" content="' . esc_attr( $d ) . '">' . "\n";
-		if ( $r['view'] === 'player' && ! empty( $r['player']['id'] ) && DBD_Card::available() ) {  /* the share card (SCOPE §26) */
-			$img = DBD_Card::url( $r['player']['id'] );
+		$ck = DBD_Card::available() ? DBD_Card::key_for( $r ) : null;
+		if ( $ck && DBD_Card::valid( $ck ) ) {  /* the share card: the player's (SCOPE §26), or since 1.19.0 the game's, the team's or the page's (§43) */
+			$img = DBD_Card::url( $ck );
 			echo '<meta property="og:image" content="' . esc_url( $img ) . '">' . "\n" . '<meta property="og:image:width" content="1200">' . "\n" . '<meta property="og:image:height" content="630">' . "\n";
 			echo '<meta name="twitter:card" content="summary_large_image">' . "\n" . '<meta name="twitter:image" content="' . esc_url( $img ) . '">' . "\n";
 		}
@@ -236,6 +284,13 @@ class DBD_Router {
 		wp_enqueue_style( 'dbd', DBD_URL . 'assets/dbd.css', array( 'dbd-fonts' ), DBD_VERSION );
 		wp_enqueue_style( 'dbd-transitions', DBD_URL . 'assets/transitions.css', array( 'dbd' ), DBD_VERSION );
 		wp_enqueue_script( 'dbd-site', DBD_URL . 'assets/dbd-site.js', array(), DBD_VERSION, true );
+		/* links the scripts draw (dbdUrl() in dbd-site.js, SCOPE §43): the paths' base, and the slugs of the players this page links to */
+		$ids = array();
+		if ( in_array( $r['view'], array( 'team', 'teamplayers' ), true ) || $r['view'] === 'player' ) { foreach ( DBD_Data::team_players( $r['view'] === 'teamplayers' ? $r['pteam'] : $r['team'] ) as $x ) { if ( ! empty( $x['id'] ) ) { $ids[] = $x['id']; } } }
+		if ( $r['view'] === 'compare' ) { foreach ( $r['compare'] as $x ) { $ids[] = $x['id']; } }
+		if ( $r['view'] === 'myteam' ) { foreach ( $r['myteam'] as $x ) { $ids[] = $x['id']; } }
+		$slugs = DBD_Urls::on() && $ids ? array_intersect_key( DBD_Urls::players()['id'], array_flip( $ids ) ) : array();
+		wp_add_inline_script( 'dbd-site', 'window.DBD_URLS=' . wp_json_encode( DBD_Urls::js_config( self::url(), $slugs ) ) . ';', 'before' );
 		if ( $r['view'] === 'team' ) {
 			$def = ( $r['tside'] ?? 'off' ) === 'def'; $t = DBD_Data::team( $r['team'] ); $rel = $def ? 'plays/def/' . $r['team'] . '.json' : 'plays/' . $r['team'] . '.json';  /* SCOPE §39: the explorer on the plays the team defended */
 			if ( $def ) { wp_enqueue_script( 'dbd-defense', DBD_URL . 'assets/defense.js', array(), DBD_VERSION, true ); }

@@ -1668,3 +1668,154 @@ No new data: player files carry `fp`, `ep` and the weekly lines; `league.json` c
 The receiver trio matches the mock: the three next games and defense ranks above; the Playstyle rows with the tags above; the EPA read, bars and table (Chase +23.9 total, Jefferson +22.3, Nacua +11.7); four trend charts; the career chart and table. A quarterback pair renders all five sections with quarterback metrics. No horizontal scroll at 375; no text under 11px; checked at 1440 and 375.
 
 Size: M. Status: signed off 2026-11-01 and built as 1.18.0.
+
+## 43. Polish release (scoped and mocked 2026-11-02, `mockup-v18/`)
+
+Roadmap 2, slice 13. The roadmap row named five pieces. The admin menu already shipped (Down by Down has had its own sidebar entry since 1.0.3), so four remain. Three small things that earlier sections parked for "later polish" join them. The mock is one review page, `mockup-v18/polish.html`, built from the site's published data:
+- the URL table
+- four share cards drawn at 1200 × 630
+- a link preview
+- the skeleton reveal, running
+- the admin boxes
+
+### 1. Readable URLs
+
+Every app page gets a path. The old query-string links keep working forever: each one answers with a 301 to its new path, so links already shared, indexed or saved in My team still land.
+
+| Page | Today | Readable |
+|---|---|---|
+| Hub | `/` | `/` |
+| Team, offense | `/?team=MIN` | `/team/min/` |
+| Team, defense | `/?team=MIN&side=def` | `/team/min/defense/` |
+| Team's players | `/?view=players&team=MIN` | `/team/min/players/` |
+| Game (away offense) | `/?game=2026_08_MIN_DET` | `/game/2026-week-8-vikings-at-lions/` |
+| Game (home offense) | `…&side=home` | `/game/2026-week-8-vikings-at-lions/lions/` |
+| Player | `/?player=00-0036322` | `/player/justin-jefferson/` |
+| Compare | `/?compare=a,b,c` | `/compare/justin-jefferson/jamarr-chase/puka-nacua/` |
+| Players index | `/?view=players` (filters stay as `?pt=&pos=`) | `/players/` |
+| Leaders | `/?view=leaders&g=rec` | `/leaders/` and `/leaders/rec/` (a single board keeps `?b=`) |
+| Week in review | `/?view=week&week=8` | `/week/8/` |
+| Matchups | `/?view=matchups&week=8` | `/matchups/` and `/matchups/week-8/` |
+| Teams | `/?view=teams` | `/teams/` |
+| My team | `/?view=myteam&myteam=…` | `/my-team/` (a shared lineup keeps `?myteam=`) |
+| Share card | `/?card=00-0036322` | stays `?card=` (now also `team-MIN`, `game-2026_08_MIN_DET`, `page-hub`): some hosts serve any `.png` path as a static file before WordPress sees it, and nobody reads an image's address |
+
+**Rules**
+- **Player slugs** are the name, lowercased, with punctuation dropped (`jamarr-chase`, `amon-ra-st-brown`). The build writes them into `players/index.json` and `players/mini.json` so PHP and JavaScript agree.
+  - Two current players with the same slug both take the position and the last four digits of the id (`mike-williams-wr-1234`). Today no two of the 576 collide.
+  - A slug that no longer exists (a retirement, a name change) falls back to the players search for that name. It never shows a blank page.
+- **Game slugs** carry the season, the week and both nicknames, so the season archive (roadmap 14) needs nothing new for games. Team and player paths carry no season. The archive will add a season segment in front (`/2025/team/min/`), and today's paths mean "this season".
+- **Routing.** WordPress rewrite rules point each path at the page that holds the shortcode, which is the front page on this site. The router reads the path's values as it reads the query string today.
+  - WordPress's own canonical redirect is switched off for these paths. Otherwise it would bounce `/team/min/` back to `/`.
+  - The rules are refreshed when the plugin updates, when the setting changes, and when the permalink structure changes.
+- **One link builder.** `DBD_Router::url()` already builds all 73 links in PHP, and it learns the paths. About a dozen links built in JavaScript (players, hub, My team, compare, player, team explorer) get a shared `dbdUrl()` helper. The page passes it the patterns, and it reads the slug from `mini.json`.
+- **Canonical, `og:url` and the sitemap** use the readable path.
+- **A plain-permalink site** keeps today's query strings. The setting says why, and nothing else changes.
+- **Admin:** a **Readable URLs** checkbox under Settings, on by default. Turning it off restores today's links.
+
+### 2. Share cards for games, teams and every other page
+
+Today only player pages carry an `og:image`. A shared game, team or hub link shows no picture in iMessage, Slack, X or Facebook. Three new cards, drawn the same way as the player card (GD, 1200 × 630, the bundled fonts, cached under uploads):
+
+- **Game card, before kickoff.**
+  - The brand bar splits into both teams' colors.
+  - Both teams with logos and records, "at", the kickoff, the line, the total and the stadium.
+  - The two matchup edges: each offense's EPA-a-play rank against the other defense's, as the rank bars on the player card.
+  - A takeaway for each offense across the bottom ("Bears with the ball", then the home side), the top card of the same takeaways the hub and game page show.
+- **Game card, final.**
+  - The score, with the winner in ink and the loser muted.
+  - The win-probability line across the game, with the biggest swing marked.
+  - Three leader tiles: passing, rushing and receiving, from the box score.
+  - The card changes once the game goes final: its cache name carries the status and the score.
+- **Team card.**
+  - Logo, full name, record and division place.
+  - Four tiles: offense EPA a play and its rank, defense EPA a play and its rank, point differential, next game.
+  - A ranks column like the player card's, four offense rows over four defense rows: EPA a play, success rate, explosive rate, red-zone TD rate. A defense rank of 1st means it allows the least.
+- **Page card** for every other view (hub, matchups, teams, players, leaders, week in review, my team):
+  - The brand mark, the page's title ("Week 8 in review", "Leaders", "Every snap, drawn on the field") and three tiles.
+  - The field beside them carries data: the week page lists the week's scores, and every other page draws every pass of the current week on the field (796 throws in Week 8).
+  - The season and the week it runs through.
+  - One template, so no page shares without a picture.
+
+Compare keeps sharing its first player's card, and the canonical stays noindex. Team logos on the cards follow the Team logos setting. With logos off, they use the drawn tiles, as the player card does.
+
+### 3. Cleaning up old card images
+
+Every card is cached as `{subject}-{season}-{week}-{version}.png`, so each data week and each plugin release leaves the previous set behind. After every sync, the plugin deletes any card whose name doesn't carry the current season, week and version, and any card older than 14 days. A **Share cards** box in admin shows how many are cached and their total size, with a **Clear card cache** button.
+
+### 4. The skeleton reveal
+
+Five places draw after a fetch: the team explorer, the defense explorer, the player field map and depth bars, the compare maps, and the hub's My team card (the My team page itself renders on the server). Each shows a centered "Loading…" today and then jumps.
+
+**The change**
+- Each gets a skeleton the shape of what's coming:
+  - a field with faint yard lines and a few dots for the maps
+  - three header bars and eight row bars for the tables
+  - the lineup slots for My team
+- The skeleton pulses gently while the fetch runs. On arrival it cross-fades to the content with a 2px blur (transitions.dev 14), in the same box, so nothing shifts.
+
+**Rules**
+- A failed fetch replaces the skeleton with the existing error line.
+- Reduced motion gets no pulse and an instant swap.
+- The 1.4-second settle rule still applies, so a throttled tab never sits on a skeleton.
+
+### 5. Parked polish items
+
+- **Your table view sticks.** The game log's view (Default, Advanced or Traditional) is remembered in the browser, across player pages and visits. The fantasy format was already remembered site-wide (since §34), so nothing changes there. With nothing saved, everything stays as it is today.
+- **The last tables that scroll sideways on a phone** fold at 375. Measured at 375 on the live site before the build (the first pass of this scope guessed two of them wrong):
+
+  | Table | Content width in a 341px box | The fold |
+  |---|---|---|
+  | Game head to head | 465px | the "favors" bar moves under the stat's name; the middle column goes |
+  | Team defense, The front (and the linebacker and secondary tables) | 514px | the player and his first three numbers; names wrap |
+  | Team defense, Situations | 377px | the league column goes (the difference stays) |
+  | Quarterback career | 358px | Cmp/Att goes (Yds, TD and rating stay) |
+
+  The connection table on a quarterback's page (473px) keeps scrolling, as §28 decided: its rows are the point. The tab bars and the week strip scroll on purpose and stay as they are.
+- **The drive chart's stacked phone layout** (parked in §5) is dropped: the game page no longer has a drive chart.
+
+### Data and plugin (1.19.0)
+
+**Build**
+- `slug` on each player in `players/index.json` and `players/mini.json`.
+
+**Plugin**
+- **Routing:** rewrite rules, the path parser and `url()` in `DBD_Router`, and `dbdUrl()` in `marks.js` for the other scripts.
+- **Cards:** `DBD_Card` learns `team`, `game` and `page` specs beside `player`, with one shared brand bar and footer, and the card harness renders all four.
+- **Card cleanup:** pruning runs in `DBD_Sync` after a sync.
+- **Admin:** the two new boxes.
+- **Skeletons:** markup in the five views, plus the transitions.dev 14 CSS and a small JS hook.
+- **Remembered choices:** `localStorage` in `dbd-site.js`.
+- **Phone tables:** tier classes on the three tables.
+
+**CI**
+- The plugin check renders each path through the harness, with a request path shim.
+- It checks:
+  - every old query URL maps to its path, and every path maps back to the same route
+  - the four cards render with no warnings
+  - pages carry an `og:image`
+  - the three tables have no column wider than the phone box at 375
+
+### Left out
+
+- **A week card** with the week's movers on it. The week page uses the page card.
+- **Readable paths for players-index filters and single leaders boards.** They stay as query strings.
+- **Choosing your own starters** on My team (§36).
+- **Season-prefixed paths.** They come with the season archive (roadmap 14).
+
+### Acceptance
+
+- **Old links:** `/?player=00-0036322` answers 301 to `/player/justin-jefferson/`, which renders Jefferson. Every row of the URL table does the same, both ways.
+- **Previews:** sharing a game link shows the game card, which flips from preview to final when the game ends. A team link shows the team card, and the hub shows the page card.
+- **Card cleanup:** after a sync, the cards folder holds only the current week's cards.
+- **Skeletons:**
+  - the team explorer, player map, compare maps and My team show a skeleton, not "Loading…"
+  - with reduced motion on, the swap is instant
+- **Remembered choices:** a format picked on one player page is the format on the next.
+- **Phone layout:**
+  - no table on the game, team-defense or quarterback page scrolls at 375
+  - no horizontal page scroll anywhere
+  - nothing under 11px
+- Checked at 1440 and 375.
+
+Size: M (each piece S). Status: signed off 2026-11-02 ("Build it") and built as 1.19.0. As built: card addresses stay `?card=`; the URL logic lives in `DBD_Urls` (`class-dbd-urls.php`); the new cards share a drawing kit in `DBD_Card` and render through one `render()` the live route and the CI harness both call; the view harness gained `path`, `urls` and `card` modes.

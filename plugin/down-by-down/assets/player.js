@@ -17,7 +17,7 @@
     var grp = C.pos === 'QB' ? 'qb' : (C.pos === 'RB' || C.pos === 'FB') ? 'rb' : C.pos === 'TE' ? 'te' : 'wr', tray = [];
     try { var t = JSON.parse(localStorage.getItem('dbd-cmp') || 'null'); if (t && t.ids && t.grp === grp) tray = t.ids; } catch (e) {}  /* another group's tray is ignored: this page starts fresh */
     tray = tray.filter(function (x) { return x && x !== cb.dataset.id; }).slice(-2);
-    if (tray.length) { cb.href = cb.dataset.base + (cb.dataset.base.indexOf('?') >= 0 ? '&' : '?') + 'compare=' + encodeURIComponent(tray.concat([cb.dataset.id]).join(',')); cb.textContent = 'Compare with ' + tray.length + ' picked'; }
+    if (tray.length) { cb.href = (window.dbdUrl && window.dbdUrl({ compare: tray.concat([cb.dataset.id]) })) || cb.dataset.base + (cb.dataset.base.indexOf('?') >= 0 ? '&' : '?') + 'compare=' + encodeURIComponent(tray.concat([cb.dataset.id]).join(',')); cb.textContent = 'Compare with ' + tray.length + ' picked'; }
     cb.addEventListener('click', function () { try { localStorage.setItem('dbd-cmp', JSON.stringify({ grp: grp, ids: tray.concat([cb.dataset.id]) })); } catch (e) {} });
   }
 
@@ -25,7 +25,11 @@
   var gv = root.querySelector('.dbd-gview');
   if (gv) {
     var gpill = function (b, anim) { var pl = gv.querySelector('.t-tabs-pill'); if (!pl || !b) return; var go = function () { pl.style.transform = 'translateX(' + b.offsetLeft + 'px)'; pl.style.width = b.offsetWidth + 'px'; }; if (anim) { go(); return; } var prev = pl.style.transition; pl.style.transition = 'none'; go(); void pl.offsetWidth; pl.style.transition = prev; };
-    gv.addEventListener('click', function (e) { var b = e.target.closest('.t-tab'); if (!b) return; gv.querySelectorAll('.t-tab').forEach(function (x) { x.setAttribute('aria-selected', x === b ? 'true' : 'false'); }); root.querySelectorAll('[data-view]').forEach(function (t) { t.hidden = t.dataset.view !== b.dataset.v; }); gpill(b, true); });
+    var gshow = function (b) { gv.querySelectorAll('.t-tab').forEach(function (x) { x.setAttribute('aria-selected', x === b ? 'true' : 'false'); }); root.querySelectorAll('[data-view]').forEach(function (t) { t.hidden = t.dataset.view !== b.dataset.v; }); };
+    gv.addEventListener('click', function (e) { var b = e.target.closest('.t-tab'); if (!b) return; gshow(b); gpill(b, true); try { localStorage.setItem('dbd-glv', b.dataset.v); } catch (e2) {} });
+    /* the view picked last time, on any player page (SCOPE §43) */
+    var glv = null; try { glv = localStorage.getItem('dbd-glv'); } catch (e3) {}
+    if (glv) { gv.querySelectorAll('.t-tab').forEach(function (x) { if (x.dataset.v === glv) gshow(x); }); }
     requestAnimationFrame(function () { gpill(gv.querySelector('[aria-selected="true"]'), false); });
     window.addEventListener('resize', function () { gpill(gv.querySelector('[aria-selected="true"]'), false); });
   }
@@ -56,7 +60,7 @@
   if (cxp) { var cxb = document.createElement('button'); cxb.type = 'button'; cxb.className = 'dbd-cx-more'; cxb.textContent = 'All columns'; cxb.addEventListener('click', function () { cxp.classList.toggle('is-all'); cxb.textContent = cxp.classList.contains('is-all') ? 'Core columns' : 'All columns'; }); var cxh = cxp.querySelector('.dbd-ph'); if (cxh) cxh.appendChild(cxb); }
 
   fetch(C.dataUrl, { credentials: 'omit' }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(boot)
-    .catch(function (err) { $('#dbd-pmap').innerHTML = '<p class="dbd-note">Could not load the plays (' + esc(err.message || err) + ').</p>'; $('#dbd-mapn').textContent = ''; });
+    .catch(function (err) { $('#dbd-pmap').innerHTML = '<p class="dbd-note">Could not load the plays (' + esc(err.message || err) + ').</p>'; $('#dbd-mapn').textContent = ''; var bd = $('#dbd-bands'); if (bd) bd.innerHTML = ''; });
 
   function boot(RAW) {
     var K = RAW.keys, P = RAW.plays.map(function (r, i) { var o = { i: i }; K.forEach(function (k, j) { o[k] = r[j]; }); return o; }), G = RAW.games || [], gIdx = {};
@@ -162,7 +166,7 @@
       var rtd = function (p) { return p.k === 'comp' && !!p.td && !/FUMBLE/i.test(p.desc || ''); };  /* td is the play's flag; a catch-and-fumble returned for a score is not a receiving touchdown */
       if (!mineT.length) return;
       var R = C.roster || {}, who = isQB ? 'receiver' : 'passer', whos = isQB ? 'receivers' : 'passers', iso = null;
-      var purl = function (id) { return C.base + (C.base.indexOf('?') >= 0 ? '&' : '?') + 'player=' + encodeURIComponent(id); };
+      var purl = function (id) { var pu = window.dbdUrl && window.dbdUrl({ player: id, name: (C.roster && C.roster[id] && C.roster[id].name) || '' }); if (pu) return pu; return C.base + (C.base.indexOf('?') >= 0 ? '&' : '?') + 'player=' + encodeURIComponent(id); };
       var sum = function (a, f) { return a.reduce(function (s, p) { return s + (f(p) || 0); }, 0); };
       var line = function (a) {
         var c = a.filter(function (p) { return p.k === 'comp'; }), air = a.filter(function (p) { return p.air != null; }), third = a.filter(function (p) { return p.dn == 3; }), rz = a.filter(function (p) { return p.yl <= 20; });

@@ -285,6 +285,18 @@ jobs:
         with:
           php-version: '8.2'
           coverage: none
+      - name: Check the player slugs (SCOPE §43)
+        run: |
+          python3 - <<'PY'
+          import json, sys
+          idx = json.load(open('/tmp/out/players/index.json'))['players']; mini = json.load(open('/tmp/out/players/mini.json'))
+          sl = {p['id']: p.get('slug') for p in idx}
+          bad = [k for k, v in sl.items() if not v]
+          dup = len(set(sl.values())) != len(sl)
+          short = [k for k, v in mini.items() if len(v) < 6 or v[5] != sl.get(k)]
+          print(len(sl), 'players with slugs; e.g.', list(sl.values())[:6])
+          if bad or dup or short: print('missing', bad[:5], 'duplicates', dup, 'mini rows without the slug', short[:5]); sys.exit(1)
+          PY
       - name: Render pages from the fresh data (a QB, a receiver, a back, a non-qualifier; a regulation game, an overtime game, a tie)
         run: |
           set -e

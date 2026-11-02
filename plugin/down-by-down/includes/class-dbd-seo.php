@@ -28,8 +28,7 @@ class DBD_Seo {
 
 	/** Every app URL: hub, matchups index per week, team picker, 32 team pages, every game (both sides). */
 	public static function urls() {
-		$base = self::app_url();
-		$u    = function ( $args = array() ) use ( $base ) { return $args ? add_query_arg( array_map( 'rawurlencode', $args ), $base ) : $base; };
+		$u    = function ( $args = array() ) { return DBD_Router::url( $args ); };  /* readable paths when the site uses them (SCOPE §43) */
 		$list = array( array( 'loc' => $u(), 'changefreq' => 'daily', 'priority' => 1.0 ), array( 'loc' => $u( array( 'view' => 'teams' ) ), 'changefreq' => 'daily' ), array( 'loc' => $u( array( 'view' => 'matchups' ) ), 'changefreq' => 'daily' ) );
 		foreach ( DBD_Data::weeks() as $w ) { $list[] = array( 'loc' => $u( array( 'view' => 'matchups', 'week' => $w ) ), 'changefreq' => 'weekly' ); }
 		foreach ( array_keys( DBD_Data::teams() ) as $a ) { $list[] = array( 'loc' => $u( array( 'team' => $a ) ), 'changefreq' => 'daily', 'priority' => 0.8 ); }

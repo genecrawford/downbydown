@@ -11,6 +11,15 @@ add_action( 'admin_init', function () {
 	register_setting( 'dbd', DBD_Sync::OPT_SOURCE, array( 'type' => 'string', 'sanitize_callback' => 'esc_url_raw', 'default' => DBD_DEFAULT_SOURCE ) );
 	register_setting( 'dbd', 'dbd_headshots', array( 'type' => 'boolean', 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => false ) );
 	register_setting( 'dbd', 'dbd_logos', array( 'type' => 'boolean', 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => false ) );
+	register_setting( 'dbd', DBD_Urls::OPT, array( 'type' => 'boolean', 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => true ) );  /* readable URLs (SCOPE §43) */
+} );
+
+add_action( 'admin_post_dbd_clear_cards', function () {
+	check_admin_referer( 'dbd_clear_cards' );
+	if ( ! current_user_can( 'manage_options' ) ) { wp_die( 'No.' ); }
+	$r = DBD_Card::prune( true );
+	wp_safe_redirect( add_query_arg( array( 'page' => 'down-by-down', 'cleared' => (int) $r[0] ), admin_url( 'admin.php' ) ) );
+	exit;
 } );
 
 add_action( 'admin_post_dbd_sync_now', function () {
@@ -40,6 +49,9 @@ function dbd_settings_page() {
 		<h1>Down by Down</h1>
 		<?php if ( isset( $_GET['synced'] ) ) : ?>
 			<div class="notice notice-<?php echo $_GET['synced'] ? 'success' : 'error'; ?>"><p><?php echo $_GET['synced'] ? 'Synced.' : 'Sync failed. See the log below.'; ?></p></div>
+		<?php endif; ?>
+		<?php if ( isset( $_GET['cleared'] ) ) : ?>
+			<div class="notice notice-success"><p><?php echo esc_html( (int) $_GET['cleared'] . ' cached cards cleared. They are drawn again the next time a page is shared.' ); ?></p></div>
 		<?php endif; ?>
 		<?php if ( isset( $_GET['token'] ) ) : ?>
 			<div class="notice notice-warning"><p>New token generated. Update the <code>DBD_SYNC_TOKEN</code> secret in the GitHub repo or the nightly push will stop working.</p></div>
@@ -77,9 +89,23 @@ function dbd_settings_page() {
 				<tr><th scope="row">Team logos</th>
 					<td><label><input type="checkbox" name="dbd_logos" value="1" <?php checked( DBD_Data::logos() ); ?>> Show NFL team logos in place of the drawn team tiles</label>
 					<p class="description">Off by default. The logos are hotlinked from the ESPN image CDN using the URLs nflverse publishes; they are league and team property and not licensed to this site. When on, each logo loads lazily over the drawn tile, which stays if a logo fails to load. Run Sync now once after turning this on if the team data predates 1.4.0.</p></td></tr>
+				<tr><th scope="row">Readable URLs</th>
+					<td><?php $plain = ! get_option( 'permalink_structure' ); ?><label><input type="checkbox" name="<?php echo esc_attr( DBD_Urls::OPT ); ?>" value="1" <?php checked( (bool) get_option( DBD_Urls::OPT, true ) ); ?>> Use paths like <code>/team/min/</code> and <code>/player/justin-jefferson/</code></label>
+					<p class="description">On by default. Old <code>?team=</code> and <code>?player=</code> links keep working: they redirect to the new paths. Turn this off to go back to query strings.
+					<?php if ( $plain ) : ?><strong>This site uses plain permalinks, so the app keeps query strings.</strong> Choose any other structure under Settings › Permalinks to use paths.<?php else : ?>Permalinks: <?php echo esc_html( get_option( 'permalink_structure' ) ); ?>, so paths work here<?php echo DBD_Urls::page_id() ? '' : ', once a page holds <code>[down_by_down]</code>'; ?>.<?php endif; ?></p></td></tr>
 			</table>
 			<?php submit_button( 'Save' ); ?>
 		</form>
+
+		<h2>Share cards</h2>
+		<?php list( $cn, $cb ) = DBD_Card::stats(); $cp = get_option( 'dbd_card_prune' ); ?>
+		<table class="widefat striped" style="max-width:720px"><tbody>
+			<tr><td style="width:160px">Cached</td><td><?php echo esc_html( number_format( $cn ) . ' card' . ( $cn === 1 ? '' : 's' ) . ', ' . size_format( $cb, 1 ) ); ?></td></tr>
+			<tr><td>Kept</td><td>This data week's cards for <?php echo esc_html( DBD_VERSION ); ?> only. After each sync, cards from earlier weeks or versions, and any older than 14 days, are deleted.</td></tr>
+			<tr><td>Last cleanup</td><td><?php echo is_array( $cp ) ? esc_html( get_date_from_gmt( gmdate( 'Y-m-d H:i:s', (int) $cp['time'] ), 'M j, g:i A' ) . ': removed ' . number_format( (int) $cp['n'] ) . ' card' . ( (int) $cp['n'] === 1 ? '' : 's' ) . ' (' . size_format( (int) $cp['bytes'], 1 ) . ')' ) : 'not yet'; ?></td></tr>
+		</tbody></table>
+		<p><form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" onsubmit="return confirm('Clear every cached card? Each is drawn again the next time its page is shared.');">
+			<?php wp_nonce_field( 'dbd_clear_cards' ); ?><input type="hidden" name="action" value="dbd_clear_cards"><button class="button">Clear card cache</button></form></p>
 
 		<h2>Push from GitHub</h2>
 		<p>After each nightly build the GitHub Action calls this site so new data lands within a minute. In the repo, set a variable <code>DBD_SITE_URL</code> and a secret <code>DBD_SYNC_TOKEN</code>:</p>
@@ -93,7 +119,11 @@ function dbd_settings_page() {
 
 		<h2>Using it in the theme</h2>
 		<ul style="list-style:disc;padding-left:20px;max-width:720px">
+			<?php if ( DBD_Urls::on() ) : ?>
+			<li>Put <code>[down_by_down]</code> on one page. That page becomes the app: the hub at its URL, <code>team/min/</code> for a team (<code>team/min/defense/</code>, <code>team/min/players/</code>), <code>game/2026-week-8-vikings-at-lions/</code> for a matchup, <code>player/justin-jefferson/</code> for a player, <code>compare/a/b/</code> to compare players, and <code>matchups/</code>, <code>teams/</code>, <code>players/</code>, <code>leaders/</code>, <code>week/8/</code> and <code>my-team/</code>. Link the sidebar menu to these; the old <code>?team=</code> style links redirect to them.</li>
+			<?php else : ?>
 			<li>Put <code>[down_by_down]</code> on one page. That page becomes the app: the hub at its URL, <code>?team=MIN</code> for a team, <code>?game=…</code> for a matchup, <code>?view=matchups</code>, <code>?view=teams</code> and <code>?view=players</code> for the index views, <code>?player=…</code> for a player, <code>?compare=id,id</code> to compare players.</li>
+			<?php endif; ?>
 			<li>The app renders only the content column. Build the sidebar in your theme (Divi Theme Builder) and link its menu to the URLs above.</li>
 			<li>Body classes tell your CSS which view is showing: <code>dbd-view-hub</code>, <code>dbd-view-team</code>, <code>dbd-view-game</code>, <code>dbd-view-matchups</code>, <code>dbd-view-teams</code>, <code>dbd-view-players</code>, <code>dbd-view-player</code>, <code>dbd-view-compare</code>.</li>
 			<li><code>[dbd_count games]</code> and <code>[dbd_count teams]</code> print the small numbers for menu items.</li>
