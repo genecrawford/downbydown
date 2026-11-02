@@ -985,7 +985,7 @@ def mover_rows(mv_week):
             prior = [w for w in played if w < mv_week]
             wrow = wk.get(mv_week); tm_wk = (wrow or {}).get('team') or p['snapteam'].get(str(mv_week)) or t
             opp = (wrow or {}).get('opponent_team') or next((g['away'] if g['home'] == tm_wk else g['home'] for g in weeks.get(str(mv_week), []) if tm_wk in (g['home'], g['away'])), None)
-            base = dict(id=p['id'], name=p['name'], team=t, pos=p['pos'], num=p['num'], photo=p['photo'], g=len(prior), opp=opp)
+            base = dict(id=p['id'], name=p['name'], team=tm_wk, pos=p['pos'], num=p['num'], photo=p['photo'], g=len(prior), opp=opp)  # the team he played for that week (a traded player's earlier weeks keep the old team)
             def val(kind, w):
                 r = wk.get(w)
                 if kind == 'snaps': return sn.get(w)

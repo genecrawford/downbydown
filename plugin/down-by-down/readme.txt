@@ -35,6 +35,8 @@ Not affiliated with the NFL or any team. No team logos are used; team marks are 
 * The week in review (SCOPE §40): a new page, ?view=week&week=N, for every week with a final game. The short version (upset, comeback, wildest game, best offense and defense, player of the week), a scoreboard card per game with its win-probability line and tags, the week's biggest swings and best plays by EPA, every offense and defense against its usual, the best players by position and the fantasy leaders, and that week's movers. The matchups page links to it.
 * Data: week/w{N}.json per week, with each complete week's movers kept; the sync allowlist gains week/w{N}.
 * The movers panel is shared between the Players page and the week in review; its rows now get their team accent color.
+* Compare: the week-by-week tables and the receivers' season totals came back. Since 1.14.0 the Scorecard loop reused the variable that picks which stats a pool shows, so those panels rendered empty.
+* Movers keep the team a player played for that week, so a traded player's earlier weeks show the old team.
 
 = 1.15.2 =
 * Box scores for games nflverse's weekly stats haven't posted yet (they can trail a day) are counted from the play-by-play instead of showing empty with "no sacks or interceptions". The note under the box says which source it used; the weekly lines replace them with the next build.
