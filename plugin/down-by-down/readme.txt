@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.17.0
+Stable tag: 1.17.1
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,9 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.17.1 =
+* The hub's My team card script always loads. Right after an update the player list it reads may not have synced yet; a page cached in that window (Cloudflare keeps it ten minutes) left the card on "Build my team" even with a team saved.
 
 = 1.17.0 =
 * The hub refresh (SCOPE §41): under the score strip, the week so far (three lines and the biggest swings, linking to the week in review), a card for every game still to play (line, offense and defense ranks, the biggest edge, the softest fantasy matchup), a players row (movers, fantasy leaders with the format switch, and your My team lineup with this week's opponents), and a Playoff picture tab beside the division standings.
