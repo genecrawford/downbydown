@@ -69,6 +69,13 @@ jobs:
           dl "ftn_charting/ftn_charting_${S}.csv"       ftn.csv     DBD_FTN
           ls -la in
 
+      - name: Set last season aside (SCOPE §44)
+        env:
+          S: ${{ steps.season.outputs.season }}
+        run: |
+          # the first build of a new season moves the finished one, playoffs and all, to data/archive/{season}/
+          python3 tools/archive.py freeze data "$S"
+
       - name: Build data
         run: |
           mkdir -p data

@@ -142,7 +142,7 @@ class DBD_Card {
 
 	/** Card keys: a player id, team-MIN, game-2026_08_MIN_DET, page-hub / page-week-8 / page-leaders … */
 	public static function valid( $key ) {
-		return (bool) preg_match( '/^(\d{2}-\d{7}|team-[A-Z]{2,3}|game-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}|page-(hub|matchups|teams|players|leaders|myteam|week-\d{1,2}))$/', (string) $key );
+		return (bool) preg_match( '/^(\d{2}-\d{7}|team-[A-Z]{2,3}|game-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}|page-(hub|season|matchups|teams|players|leaders|myteam|week-\d{1,2}))$/', (string) $key );
 	}
 
 	/** The card a route shares: the player's, the team's, the game's, the first compared player's, or the page card. */
@@ -154,7 +154,7 @@ class DBD_Card {
 			case 'teamplayers': return 'team-' . $r['pteam'];
 			case 'game': return 'game-' . $r['game']['id'];
 			case 'week': return 'page-week-' . (int) $r['week'];
-			case 'hub': case 'matchups': case 'teams': case 'players': case 'leaders': case 'myteam': return 'page-' . $r['view'];
+			case 'hub': case 'season': case 'matchups': case 'teams': case 'players': case 'leaders': case 'myteam': return 'page-' . $r['view'];
 		}
 		return null;
 	}
@@ -222,11 +222,15 @@ class DBD_Card {
 	/** After a sync: delete every cached card without the current stamp, and any older than 14 days. Returns [count, bytes]. */
 	public static function prune( $all = false ) {
 		$dir = self::dir(); if ( ! is_dir( $dir ) ) { return array( 0, 0 ); }
-		$tag = self::stamp(); $n = 0; $bytes = 0; $old = time() - 14 * DAY_IN_SECONDS;
+		/* the stamps worth keeping: this season's, and each archived season's (their data doesn't change, so their cards keep until a new plugin version) */
+		$was = DBD_Data::archived() ? DBD_Data::season() : null; $tags = array( self::stamp() );
+		foreach ( DBD_Data::archived_seasons() as $s ) { DBD_Data::use_season( $s ); $tags[] = self::stamp(); }
+		DBD_Data::use_season( $was ); $n = 0; $bytes = 0; $old = time() - 14 * DAY_IN_SECONDS;
 		foreach ( array_merge( (array) glob( $dir . '/*.png' ), (array) glob( $dir . '/.*.tmp' ) ) as $f ) {
 			if ( ! is_file( $f ) ) { continue; }
 			$b = basename( $f );
-			$keep = ! $all && substr( $b, -4 ) === '.png' && strpos( $b, $tag ) !== false && filemtime( $f ) >= $old;
+			$arch = false; $cur = strpos( $b, $tags[0] ) !== false; foreach ( array_slice( $tags, 1 ) as $t ) { if ( strpos( $b, $t ) !== false ) { $arch = true; } }
+			$keep = ! $all && substr( $b, -4 ) === '.png' && ( $arch || ( $cur && filemtime( $f ) >= $old ) );
 			if ( substr( $b, -4 ) === '.tmp' ) { $keep = filemtime( $f ) > time() - HOUR_IN_SECONDS; }
 			if ( $keep ) { continue; }
 			$sz = (int) filesize( $f ); if ( @unlink( $f ) ) { $n++; $bytes += $sz; }
@@ -364,6 +368,22 @@ class DBD_Card {
 				$board[] = array( $g['away'], (int) $g['a'], $g['home'], (int) $g['h'], ! empty( $g['ot'] ) ? 'OT' : 'Final', $g['win'] ?? '' );
 			}
 			$s['board'] = $board; $s['big'] = (string) $wk;
+			return $s;
+		}
+		if ( $k === 'season' ) {  /* the season page (SCOPE §44): the champion and the best units in the tiles, the playoffs on the field */
+			$sb = DBD_Season::super_bowl(); $nk = function ( $t ) use ( $T ) { return $T[ $t ]['nick'] ?? $t; };
+			$s['kicker'] = $season . ' season · final'; $s['title'] = array( (string) $season, '!season' ); $s['big'] = '';
+			$s['tiles'] = array();
+			if ( $sb ) { $w = $sb['home_score'] > $sb['away_score'] ? $sb['home'] : $sb['away']; $l = $w === $sb['home'] ? $sb['away'] : $sb['home'];
+				$s['tiles'][] = array( 'Champion', $w, $nk( $w ) . ' ' . max( $sb['home_score'], $sb['away_score'] ) . ', ' . $nk( $l ) . ' ' . min( $sb['home_score'], $sb['away_score'] ) ); }
+			$s['tiles'][] = array( 'Best offense', $to ?: '–', $to ? $fx( $m['off'][ $to ]['epa'] ?? 0 ) . ' EPA a play' : '' );
+			$s['tiles'][] = array( 'Best defense', $td ?: '–', $td ? $fx( $m['defense'][ $td ]['epa'] ?? 0 ) . ' allowed' : '' );
+			$board = array(); $order = array( 'WC' => 1, 'DIV' => 2, 'CON' => 3, 'SB' => 4 ); $gl = array();
+			foreach ( ( DBD_Data::schedule()['weeks'] ?? array() ) as $wg ) { foreach ( (array) $wg as $g ) { if ( isset( $order[ $g['game_type'] ?? '' ] ) && DBD_Router::is_final( $g ) ) { $gl[] = $g; } } }
+			usort( $gl, function ( $a, $b ) use ( $order ) { return $order[ $a['game_type'] ] <=> $order[ $b['game_type'] ]; } );
+			$lab = array( 'WC' => 'Wild Card', 'DIV' => 'Divisional', 'CON' => 'Conference', 'SB' => 'Super Bowl' );
+			foreach ( $gl as $g ) { $w = $g['home_score'] > $g['away_score'] ? $g['home'] : $g['away']; $board[] = array( $g['away'], (int) $g['away_score'], $g['home'], (int) $g['home_score'], $lab[ $g['game_type'] ], $w ); }
+			$s['board'] = $board ?: null;
 			return $s;
 		}
 		if ( ! isset( $titles[ $k ] ) ) { return null; }
@@ -542,7 +562,7 @@ class DBD_Card {
 
 	public static function draw_team( $s, $assets ) {
 		$K = self::kit( $assets ); if ( ! $K ) { return null; } $F = $K['F']; $L = $assets['logos'];
-		( $K['brand'] )( $s['season'] . ' season · through week ' . $s['through'], array( array( $s['abbr'], $L[ $s['abbr'] ] ?? null ) ), $s['c1'] );
+		( $K['brand'] )( $s['season'] . ' season · ' . ( DBD_Data::archived() || DBD_Season::super_bowl() ? 'final' : 'through week ' . $s['through'] ), array( array( $s['abbr'], $L[ $s['abbr'] ] ?? null ) ), $s['c1'] );
 		( $K['box'] )( 44, 106, 160, 160 ); ( $K['mark'] )( 58, 120, 132, $s['abbr'], $L[ $s['abbr'] ] ?? null );
 		( $K['spaced'] )( $F['disp'], 14, 228, 146, $K['muted'], strtoupper( $s['kicker'] ), 0.2 );
 		$px = min( ( $K['fit'] )( $F['hero'], 46, strtoupper( $s['city'] ), 372 ), ( $K['fit'] )( $F['hero'], 46, strtoupper( $s['nick'] ), 372 ) );
@@ -561,7 +581,7 @@ class DBD_Card {
 
 	public static function draw_page( $s, $assets ) {
 		$K = self::kit( $assets ); if ( ! $K ) { return null; } $F = $K['F'];
-		( $K['brand'] )( $s['season'] . ' season · through week ' . $s['through'], array(), self::RED );
+		( $K['brand'] )( $s['season'] . ' season · ' . ( DBD_Data::archived() || DBD_Season::super_bowl() ? 'final' : 'through week ' . $s['through'] ), array(), self::RED );
 		( $K['spaced'] )( $F['disp'], 14, 44, 124, $K['red'], strtoupper( $s['kicker'] ), 0.2 );
 		$lines = $s['title']; $n = count( $lines ); $px = $n >= 3 ? 56 : 72;
 		foreach ( $lines as $l ) { $px = min( $px, ( $K['fit'] )( $F['hero'], $px, strtoupper( ltrim( $l, '!' ) ), 610 ) ); }

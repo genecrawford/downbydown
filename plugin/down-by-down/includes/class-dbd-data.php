@@ -8,12 +8,47 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 class DBD_Data {
 
 	private static $cache = array();
+	private static $season = null;     // an archived season being shown (SCOPE §44), or null for the current one
+	private static $buckets = array(); // each season's decoded files, kept while another season is showing
 
 	/** Forget every decoded file: a sync just replaced them. */
-	public static function flush() { self::$cache = array(); }
+	public static function flush() { self::$cache = array(); self::$buckets = array(); if ( class_exists( 'DBD_Urls' ) ) { DBD_Urls::reset(); } }
 
-	/** Absolute path of the data folder (created on demand). */
-	public static function dir() {
+	/* ------------------------------------------------------------------ seasons (SCOPE §44) */
+
+	/** Show an archived season ( null, 0 or the current season: the current one ). Returns the archived season now showing, or null. */
+	public static function use_season( $s ) {
+		$s = (int) $s; $want = ( $s && $s !== self::current_season() && in_array( $s, self::archived_seasons(), true ) ) ? $s : null;
+		if ( $want === self::$season ) { return self::$season; }
+		self::$buckets[ (int) self::$season ] = self::$cache;
+		self::$season = $want; self::$cache = self::$buckets[ (int) $want ] ?? array();
+		if ( class_exists( 'DBD_Urls' ) ) { DBD_Urls::reset(); }
+		return self::$season;
+	}
+
+	/** True while a past season is showing. */
+	public static function archived() { return self::$season !== null; }
+
+	/** The current season's manifest, whatever season is showing. */
+	public static function root_manifest() {
+		$k = '__root'; if ( ! isset( self::$buckets['__root'] ) ) { $p = self::root_dir() . '/manifest.json'; $j = is_readable( $p ) ? json_decode( (string) file_get_contents( $p ), true ) : null; self::$buckets['__root'] = is_array( $j ) ? $j : array(); }
+		return self::$buckets['__root'];
+	}
+
+	public static function current_season() { $m = self::root_manifest(); return (int) ( $m['season'] ?? 0 ); }
+
+	/** Archived seasons this site holds: listed in the current manifest and synced (newest first). */
+	public static function archived_seasons() {
+		$out = array();
+		foreach ( array_keys( (array) ( self::root_manifest()['archive'] ?? array() ) ) as $s ) { if ( is_readable( self::root_dir() . '/archive/' . (int) $s . '/manifest.json' ) ) { $out[] = (int) $s; } }
+		rsort( $out ); return $out;
+	}
+
+	/** Every season the site can show, the current one first. */
+	public static function seasons() { $c = self::current_season(); return array_values( array_unique( array_merge( $c ? array( $c ) : array(), self::archived_seasons() ) ) ); }
+
+	/** The data folder for the current season (the sync writes here; archives sit under archive/{season}/). */
+	public static function root_dir() {
 		$u   = wp_upload_dir();
 		$dir = trailingslashit( $u['basedir'] ) . 'down-by-down';
 		if ( ! is_dir( $dir ) ) {
@@ -24,10 +59,13 @@ class DBD_Data {
 		return $dir;
 	}
 
-	/** Public URL of the data folder (the explorer fetches play files from here). */
+	/** Absolute path of the data folder of the season showing. */
+	public static function dir() { return self::root_dir() . ( self::$season ? '/archive/' . self::$season : '' ); }
+
+	/** Public URL of the data folder of the season showing (the explorer fetches play files from here). */
 	public static function url() {
 		$u = wp_upload_dir();
-		return trailingslashit( $u['baseurl'] ) . 'down-by-down';
+		return trailingslashit( $u['baseurl'] ) . 'down-by-down' . ( self::$season ? '/archive/' . self::$season : '' );
 	}
 
 	/** Decode one file, e.g. 'teams.json' or 'plays/MIN.json'. Returns an array or null. */

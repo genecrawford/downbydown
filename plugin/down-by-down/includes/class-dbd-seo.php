@@ -87,7 +87,13 @@ class DBD_Sitemap_Provider extends WP_Sitemaps_Provider {
 	}
 	public function get_url_list( $page_num, $object_subtype = '' ) {
 		if ( $page_num > 1 || ! DBD_Data::has_data() ) { return array(); }
-		return DBD_Seo::urls();
+		$list = DBD_Seo::urls();
+		foreach ( DBD_Data::archived_seasons() as $s ) {  /* archived seasons (SCOPE §44): real pages that don't change, listed at lower priority */
+			DBD_Data::use_season( $s );
+			foreach ( DBD_Seo::urls() as $u ) { if ( strpos( $u['loc'], 'side=home' ) !== false || strpos( $u['loc'], '/game/' ) === false && isset( $u['priority'] ) && $u['priority'] < 0.6 ) { continue; } $u['priority'] = round( ( $u['priority'] ?? 0.5 ) * 0.5, 2 ); $u['changefreq'] = 'yearly'; $list[] = $u; }
+		}
+		DBD_Data::use_season( null );
+		return $list;
 	}
 	public function get_max_num_pages( $object_subtype = '' ) {
 		return 1;

@@ -1819,3 +1819,106 @@ Five places draw after a fetch: the team explorer, the defense explorer, the pla
 - Checked at 1440 and 375.
 
 Size: M (each piece S). Status: signed off 2026-11-02 ("Build it") and built as 1.19.0. As built: card addresses stay `?card=`; the URL logic lives in `DBD_Urls` (`class-dbd-urls.php`); the new cards share a drawing kit in `DBD_Card` and render through one `render()` the live route and the CI harness both call; the view harness gained `path`, `urls` and `card` modes.
+
+## 44. Season archive (scoped and mocked 2026-11-02, `mockup-v19/`)
+
+Roadmap 2, slice 14: "Next September, where did 2026 go?" Today there is one season.
+- The build names the season from the date: it switches to the new year on March 1.
+- It writes every file into the one `data/` folder.
+- The first 2027 build next September would replace all of 2026; it would survive only in git history.
+
+This slice keeps each finished season whole and browsable. It also backfills last season, so the archive has something in it now and gets tested on a real, finished season, playoffs included. The mock is `mockup-v19/archive.html`. It shows the season switcher, the archive banner and the 2025 season page, built from nflverse's real 2025 results and player stats.
+
+### What the reader sees
+
+- **A season switcher in the top bar**, beside the crumbs: "2026 ▾" lists every season the site has, the current one first. Picking another keeps you on the same page in that season:
+  - the same team, the same game week, the same leaders board
+  - the same player if he played that year, otherwise that season's players index
+- **An archive banner** on every page of a past season: "2025 season · final" on the left, "Back to 2026" on the right. Nothing else about the page looks different, so the archive reads as the same site.
+- **The season page** (`/2025/`, an archived season's hub), from top to bottom:
+  - the champion: the Super Bowl score, with both teams' marks
+  - the playoffs round by round (Wild Card, Divisional, Conference, Super Bowl), each game linking to its game page
+  - final standings by division, with the playoff seeds marked
+  - the season's leaders: passing, rushing and receiving yards, total touchdowns, and the best offense and defense by EPA a play
+  - every week in review in one strip, weeks 1 to 18 and the four playoff rounds
+- **The current season at its end.** Once the Super Bowl is final, the hub shows this season page for the current season until the next season's first build. February to September then reads as a finished season, not a frozen week 22.
+- **Everything else is the same page.** Archived team, player, game, compare, leaders, matchups and week-in-review pages are the current pages, reading that season's files.
+
+### What turns off in a past season
+
+These parts are about now. A past season hides them rather than showing stale answers:
+- My team, and the hub's My team card
+- "This week" and next-game cards (player, compare, team)
+- the injury report and depth chart labels on player pages
+- "Still to play", kickoff times and the stats-pending note
+- the fantasy "this week" line
+
+### Addresses
+
+| Page | Current season | A past season |
+|---|---|---|
+| Season page | `/` | `/2025/` |
+| Team | `/team/min/` | `/2025/team/min/` (and `/defense/`, `/players/`) |
+| Player | `/player/justin-jefferson/` | `/2025/player/justin-jefferson/` |
+| Game | `/game/2026-week-8-vikings-at-lions/` | `/game/2025-week-8-…/`: the slug already names its season, so game links never change |
+| Leaders, players, teams, matchups, week in review | `/leaders/`, `/week/8/` … | `/2025/leaders/`, `/2025/week/8/` … |
+| Query-string sites | `?team=MIN` | `?team=MIN&season=2025` |
+| Share card | `?card=team-MIN` | `?card=team-MIN&season=2025` |
+
+When 2027 begins, the unprefixed paths become 2027 and 2026 moves under `/2026/`, as §43 planned: a path without a season means "this season". Game links stay put because their slug names the season. A player missing from a season's index gets that season's players search, as an unknown slug does today.
+
+### Data
+
+- **Layout:**
+  - `data/` stays the current season, untouched, so the nightly build, the sync and every current URL work as now.
+  - A finished season lives in `data/archive/{season}/`, in the same layout, minus `players/career/`. Careers already span every season (22 MB of the 36 MB). An archived page reads the current career files and highlights its own season's row.
+- **The root manifest** gains `archive: {"2025": "<hash of that season's manifest>"}`, so the site knows which seasons exist and when one changed.
+- **Size:** one season is about 14 MB in the repo and in the site's uploads.
+- **Freezing a season automatically.** Before the nightly build writes season S, it checks the season in `data/manifest.json`. If that is an earlier season and `data/archive/{that season}/` doesn't exist yet, it first copies `data/` there, minus careers and the archive folder. 2026 therefore freezes itself the first time the 2027 build runs, playoffs included (they finish in February, while 2026 is still the current season). Nobody has to remember.
+- **Building a past season on demand.** A new **Build an archived season** workflow (manual, one input: the season):
+  - downloads that season's nflverse files, the same nine the nightly build uses
+  - runs the same `build_data.py` into `data/archive/{season}/`, drops the career files, writes the season's manifest and records it in the root manifest
+  - commits, then tells the site to sync
+- **Backfill: 2025 in this release.** 2022 to 2024 can follow one click each. nflverse has all nine inputs for 2022 to 2025; FTN charting, behind the play-action and motion stats, starts in 2022.
+- **Playoffs.** Archived seasons keep the postseason weeks the schedule already carries (19 to 22) as game pages, week-in-review pages and the season page's bracket. Season stats, grades and leaders stay regular season, as now.
+
+### Plugin (2.0.0)
+
+The data layer gains a season context. Every reader goes through `DBD_Data::get()`, so one switch covers the views.
+- **Data:** `DBD_Data::use_season( $s )` points reads at `archive/{s}/`, except career files, which stay at the root. `DBD_Data::archived()` says whether a past season is showing. `DBD_Data::seasons()` lists the current season and every archived one.
+- **Routing:** the router takes a leading `/{season}/` segment, or `?season=` on query-string sites, and a game slug's season. `url()` writes the season into every link while a past season is showing, so you stay in that season as you click around.
+- **Sync:** it pulls an archived season's files when the root manifest lists a season it lacks or whose hash changed: once, then never again unless that season is rebuilt.
+- **Live parts:** the hub, player, compare and team views check `archived()` for the parts listed above.
+- **Cards:** the key carries the season. An archived card is drawn once and kept: pruning spares any archived season's cards unless the plugin version changes.
+- **Search engines:** the sitemap lists archived seasons' pages at lower priority. Archived pages carry their own canonical paths and stay indexable, since they are real content that doesn't change.
+- **Admin:** a **Seasons** box lists the current season and each archived one, with files, size and when each was built, and links to the GitHub workflow that builds another.
+- **CI:**
+  - the harness renders every view in an archived season, from a 2025 build in the build check
+  - checks that live parts are absent there
+  - checks that the season switcher keeps you on the same page
+  - extends the URL round trip to archived paths
+
+**Why 2.0.0:** every link can now carry a season, and the data folder has a second layout. Nothing breaks for a site that never archives, but it is the largest structural change since 1.0.
+
+### Left out
+
+- **Comparing across seasons** (2025 Jefferson against 2026 Jefferson). Compare stays within one season.
+- **Seasons before 2022.** The build could make them, but without FTN charting several player-page panels would be empty. Revisit if wanted.
+- **Preseason.**
+- **Per-season career pages.**
+
+### Acceptance
+
+- **2025 is browsable:** `/2025/` shows the Seahawks' 29-13 Super Bowl win over the Patriots, the bracket, the standings and the leaders. Its team, player, game, leaders and week-in-review pages render with no live parts.
+- **The switcher:** on the Vikings' 2026 page, picking 2025 opens the Vikings' 2025 page, and the reverse also works.
+- **Old season links:** `/game/2025-week-…/` opens the 2025 game without a season prefix.
+- **The freeze:** a dry run of the rollover step on a copy of the repo moves the current season into `archive/` and leaves `data/` ready for the next one.
+- **No regressions:** nothing changes on current-season pages, apart from the switcher.
+- Checked at 1440 and 375.
+
+Size: L. Status: signed off 2026-11-02 ("Build it") and built as 2.0.0. As built:
+- **Career files go into the archive after all.** The 22 MB `data/career/` is only the build's cache and never syncs. The per-player career files the pages read are about 1 MB a season, so each archived season keeps its own (its careers run through that season) and the plugin needs no special case. Only the build cache stays out.
+- **One script does the archive work.** `tools/archive.py` freezes, places and indexes, used by the nightly build, the new workflow and CI.
+- **The data layer swaps per-season caches** instead of flushing them.
+- **The season page has its own share card:** the champion and the best units in the tiles, the playoff scores on the field.
+- **My team is always the current season,** even under `/2025/my-team/`.

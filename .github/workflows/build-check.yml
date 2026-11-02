@@ -22,6 +22,13 @@ on:
       - 'plugin/down-by-down/includes/views/compare.php'
       - '.github/workflows/build-data.yml'
       - '.github/workflows/build-check.yml'
+      - '.github/workflows/build-archive.yml'
+      - 'tools/archive.py'
+      - 'plugin/down-by-down/includes/class-dbd-season.php'
+      - 'plugin/down-by-down/includes/class-dbd-data.php'
+      - 'plugin/down-by-down/includes/class-dbd-urls.php'
+      - 'plugin/down-by-down/includes/class-dbd-router.php'
+      - 'plugin/down-by-down/includes/class-dbd-card.php'
   workflow_dispatch:
 jobs:
   build:
@@ -346,3 +353,82 @@ jobs:
         with:
           name: pages-fresh-data
           path: pages/
+      - name: Build 2025 and set it in the archive (SCOPE §44)
+        run: |
+          set -e
+          # the same nine inputs and the same build as the "Build an archived season" workflow, placed by tools/archive.py
+          S=2025; mkdir -p in25
+          g() { curl -sSL -f -o "in25/$2" "https://github.com/nflverse/nflverse-data/releases/download/$1"; }
+          g "rosters/roster_${S}.csv" roster.csv
+          g "pbp/play_by_play_${S}.csv.gz" pbp.csv.gz
+          g "stats_player/stats_player_week_${S}.csv" stats.csv
+          g "snap_counts/snap_counts_${S}.csv" snaps.csv
+          g "pfr_advstats/advstats_week_rec_${S}.csv" pfr.csv
+          g "pfr_advstats/advstats_week_def_${S}.csv" pfrd.csv
+          g "injuries/injuries_${S}.csv" inj.csv
+          g "depth_charts/depth_charts_${S}.csv" depth.csv
+          g "ftn_charting/ftn_charting_${S}.csv" ftn.csv
+          mkdir -p /tmp/b25 && cp -R /tmp/out/career /tmp/b25/career
+          DBD_STATS=in25/stats.csv DBD_SNAPS=in25/snaps.csv DBD_PFR=in25/pfr.csv DBD_PFRD=in25/pfrd.csv DBD_INJ=in25/inj.csv DBD_DEPTH=in25/depth.csv DBD_FTN=in25/ftn.csv \
+            python3 tools/build_data.py in25/pbp.csv.gz in25/roster.csv in/games.csv in/teams.csv /tmp/b25
+          python3 tools/archive.py place /tmp/b25 /tmp/out
+          python3 - <<'PY'
+          import json, os, sys
+          root = json.load(open('/tmp/out/manifest.json')); a = json.load(open('/tmp/out/archive/2025/manifest.json'))
+          s = json.load(open('/tmp/out/archive/2025/schedule.json'))
+          sb = [g for w in s['weeks'].values() for g in w if g.get('game_type') == 'SB']
+          weeks = sorted(int(f[1:-5]) for f in os.listdir('/tmp/out/archive/2025/week'))
+          print('root lists', root.get('archive'), '| 2025:', len(a['files']), 'files, season', a['season'], '| Super Bowl', [(g['away'], g['away_score'], g['home'], g['home_score']) for g in sb], '| week files', weeks)
+          bad = []
+          if '2025' not in (root.get('archive') or {}): bad.append('root manifest does not list 2025')
+          if os.path.exists('/tmp/out/archive/2025/career'): bad.append('the career cache went into the archive')
+          if any(k.startswith(('career/', 'archive/')) for k in a['files']): bad.append('the 2025 manifest lists cache or archive files')
+          if any(k.startswith('archive/') for k in root['files']): bad.append('the current manifest lists archive files')
+          if not sb or sb[0]['status'] != 'final': bad.append('no final Super Bowl in 2025')
+          if bad: print('\n'.join(bad)); sys.exit(1)
+          PY
+      - name: Render the archived season (SCOPE §44)
+        run: |
+          set -e
+          export DBD_HARNESS_PRETTY=1 DBD_HARNESS_HTML=archpages
+          php tools/view_harness.php /tmp/out urls
+          SB=$(python3 -c "import json;s=json.load(open('/tmp/out/archive/2025/schedule.json'));T=json.load(open('/tmp/out/archive/2025/teams.json'));import re;sl=lambda x:re.sub(r'[^a-z0-9]+','-',x.lower()).strip('-');g=[g for w in s['weeks'].values() for g in w if g.get('game_type')=='SB'][0];print('2025-week-%d-%s-at-%s'%(g['week'],sl(T[g['away']]['nick']),sl(T[g['home']]['nick'])))")
+          echo "Super Bowl path: /game/$SB/"
+          for p in /2025/ /2025/team/min/ /2025/team/min/defense/ /2025/team/min/players/ /2025/player/matthew-stafford/ /2025/player/justin-jefferson/ /2025/leaders/ /2025/leaders/rb/ /2025/matchups/ /2025/week/18/ /2025/teams/ /2025/players/ /2025/compare/matthew-stafford/jared-goff/ "/game/$SB/" /2025/my-team/; do
+            php tools/view_harness.php /tmp/out path "$p" >>/tmp/arch.log 2>&1 || { cat /tmp/arch.log; echo "path $p failed"; exit 1; }
+          done
+          cat /tmp/arch.log
+          if grep -E "^  warning:|FATAL" /tmp/arch.log; then exit 1; fi
+          grep -q "route season" /tmp/arch.log || { echo "/2025/ is not the season page"; exit 1; }
+          F=archpages/season-2025.html
+          for m in 'class="dbd-panel dbd-champ"' 'class="dbd-bracket"' 'class="dbd-sdivs"' 'class="dbd-slds"' 'class="dbd-swks"' 'class="dbd-arch"' 'class="dbd-season"' 'Seahawks'; do grep -q "$m" "$F" || { echo "the 2025 season page is missing $m"; exit 1; }; done
+          for f in archpages/team-2025_team_min.html archpages/player-2025_player_matthew-stafford.html archpages/leaders-2025_leaders.html; do grep -q 'class="dbd-arch"' "$f" || { echo "$f has no archive banner"; exit 1; }; done
+          P=archpages/player-2025_player_matthew-stafford.html
+          if grep -qE 'dbd-mtbtn|No injury listing|>This week<' "$P"; then echo "a live part shows on an archived player page"; exit 1; fi
+          grep -q 'href="https://example.test/2025/player/' archpages/teamplayers-2025_team_min_players.html || { echo "archived links lose their season"; exit 1; }
+          grep -q "rendered myteam" /tmp/arch.log || { echo "/2025/my-team/ should be this season's My team"; exit 1; }
+          if grep -q 'class="dbd-arch"' archpages/myteam-2025_my-team.html; then echo "My team should not be archived"; exit 1; fi
+          mkdir -p archcards
+          SBID=$(python3 -c "import json;s=json.load(open('/tmp/out/archive/2025/schedule.json'));print([g for w in s['weeks'].values() for g in w if g.get('game_type')=='SB'][0]['id'])")
+          export DBD_HARNESS_SEASON=2025 DBD_HARNESS_MEDIA=1 DBD_HARNESS_LOGOS=1
+          php tools/view_harness.php /tmp/out card page-season archcards/card-2025-season.png
+          php tools/view_harness.php /tmp/out card team-SEA archcards/card-2025-team.png
+          php tools/view_harness.php /tmp/out card "game-$SBID" archcards/card-2025-super-bowl.png
+      - name: Dry-run the season rollover (SCOPE §44)
+        run: |
+          set -e
+          rm -rf /tmp/roll && cp -r /tmp/out /tmp/roll
+          CUR=$(python3 -c "import json;print(json.load(open('/tmp/roll/manifest.json'))['season'])")
+          python3 tools/archive.py freeze /tmp/roll $((CUR+1))
+          test -f "/tmp/roll/archive/$CUR/schedule.json" || { echo "$CUR was not archived"; exit 1; }
+          test -f /tmp/roll/archive/2025/schedule.json || { echo "2025 was lost"; exit 1; }
+          test -d /tmp/roll/career || { echo "the career cache was removed"; exit 1; }
+          if [ -e /tmp/roll/schedule.json ] || [ -e /tmp/roll/plays ]; then echo "last season's files were left in data/"; exit 1; fi
+          echo "rollover ok: $CUR archived, 2025 kept, data/ clear for $((CUR+1))"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: archive-2025
+          path: |
+            archpages/
+            archcards/

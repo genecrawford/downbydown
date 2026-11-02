@@ -1403,11 +1403,17 @@ print('week in review:', len(_wk_done), 'weeks', _wk_done[-3:])
 
 # ---------------------------------------------------------------- manifest
 files = {}
-for root, _, names in os.walk(out):
+for root, dirs_, names in os.walk(out):
+    if os.path.abspath(root) == os.path.abspath(out): dirs_[:] = [x for x in dirs_ if x != 'archive']  # archived seasons keep their own manifests (SCOPE §44)
     for n in sorted(names):
         if n == 'manifest.json' or not n.endswith('.json'): continue
         p = os.path.join(root, n); rel = os.path.relpath(p, out).replace(os.sep, '/')
         files[rel] = hashlib.sha1(open(p, 'rb').read()).hexdigest()
-json.dump(dict(season=season, week=week, through_week=through_week, built_at=datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'), files=files),
+# the archived seasons the site can sync, each with its manifest's hash (tools/archive.py writes them)
+archive_ = {}
+if os.path.isdir(f'{out}/archive'):
+    for s_ in sorted(os.listdir(f'{out}/archive')):
+        if s_.isdigit() and os.path.exists(f'{out}/archive/{s_}/manifest.json'): archive_[s_] = hashlib.sha1(open(f'{out}/archive/{s_}/manifest.json', 'rb').read()).hexdigest()
+json.dump(dict(season=season, week=week, through_week=through_week, built_at=datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'), files=files, archive=archive_),
           open(f'{out}/manifest.json', 'w'), indent=1)
 print('ok', len(T), 'teams, season', season, 'week', week, 'through', through_week, 'pbp' if have_pbp else 'no pbp yet')

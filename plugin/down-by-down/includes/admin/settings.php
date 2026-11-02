@@ -107,6 +107,16 @@ function dbd_settings_page() {
 		<p><form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" onsubmit="return confirm('Clear every cached card? Each is drawn again the next time its page is shared.');">
 			<?php wp_nonce_field( 'dbd_clear_cards' ); ?><input type="hidden" name="action" value="dbd_clear_cards"><button class="button">Clear card cache</button></form></p>
 
+		<h2>Seasons</h2>
+		<?php $cs = DBD_Data::current_season(); $am = (array) ( DBD_Data::root_manifest()['archive'] ?? array() ); $ah = (array) get_option( DBD_Sync::OPT_ARCH, array() ); ?>
+		<table class="widefat striped" style="max-width:720px"><thead><tr><th>Season</th><th>State</th><th>Files</th><th>Built</th></tr></thead><tbody>
+			<tr><td><?php echo (int) $cs; ?></td><td>current</td><td><?php echo count( DBD_Data::root_manifest()['files'] ?? array() ); ?></td><td><?php echo esc_html( DBD_Data::root_manifest()['built_at'] ?? '' ); ?></td></tr>
+			<?php foreach ( $am as $s => $h ) : $mf = DBD_Data::root_dir() . '/archive/' . (int) $s . '/manifest.json'; $mj = is_readable( $mf ) ? json_decode( (string) file_get_contents( $mf ), true ) : null; ?>
+			<tr><td><?php echo (int) $s; ?></td><td><?php echo $mj && ( $ah[ $s ] ?? '' ) === $h ? 'archived' : 'syncing'; ?></td><td><?php echo $mj ? count( $mj['files'] ?? array() ) : '–'; ?></td><td><?php echo esc_html( $mj['built_at'] ?? '' ); ?></td></tr>
+			<?php endforeach; ?>
+		</tbody></table>
+		<p class="description">A finished season is set aside automatically when the next one's first build runs. To add an earlier season (2022 or later), run <b>Build an archived season</b> in the repo's GitHub Actions with that year; the site pulls it on the next sync, a minute or so at a time.</p>
+
 		<h2>Push from GitHub</h2>
 		<p>After each nightly build the GitHub Action calls this site so new data lands within a minute. In the repo, set a variable <code>DBD_SITE_URL</code> and a secret <code>DBD_SYNC_TOKEN</code>:</p>
 		<table class="widefat striped" style="max-width:720px"><tbody>
@@ -138,7 +148,7 @@ function dbd_settings_page() {
 			<?php foreach ( $log as $row ) : ?>
 				<tr><td><?php echo esc_html( $row['time'] ); ?></td><td><?php echo esc_html( $row['trigger'] ); ?></td>
 					<td><?php echo $row['ok'] ? 'ok' : '<span style="color:#b32d2e">' . esc_html( $row['error'] ?: 'failed' ) . '</span>'; ?></td>
-					<td><?php echo esc_html( $row['changed'] ? count( $row['changed'] ) . ' files' : 'nothing' ); ?></td><td><?php echo esc_html( $row['seconds'] ); ?></td></tr>
+					<td><?php echo esc_html( ( $row['changed'] ? count( $row['changed'] ) . ' files' : 'nothing' ) . ( ! empty( $row['archive'] ) ? ' · archive ' . $row['archive'] : '' ) ); ?></td><td><?php echo esc_html( $row['seconds'] ); ?></td></tr>
 			<?php endforeach; ?>
 			</tbody>
 		</table>
