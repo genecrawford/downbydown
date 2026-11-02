@@ -95,7 +95,8 @@ jobs:
           grep -q "rendered players player_no-such-player.*route players" /tmp/paths.log
           grep -q "route notfound" /tmp/paths.log
           if grep -lE 'href="[^"]*\?(player|team|game|view)=' pathpages/*.html; then echo "a query-string link survived on the pages above"; grep -ohE 'href="[^"]*\?(player|team|game|view)=[^"]*"' pathpages/*.html | sort | uniq -c | head; exit 1; fi
-          grep -q 'href="https://example.test/player/' pathpages/team-team_min.html
+          grep -q 'href="https://example.test/player/' pathpages/teamplayers-team_min_players.html
+          grep -q 'href="https://example.test/game/' pathpages/matchups-matchups.html
       - uses: actions/upload-artifact@v4
         with:
           name: path-pages
