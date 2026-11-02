@@ -309,7 +309,7 @@ class DBD_Card {
 			array( 'Defense', $fx( $m['defense'][ $t ]['epa'] ?? null ), 'allowed · ' . ( $rd( 'epa' ) ? DBD_Grades::ordinal( $rd( 'epa' ) ) : '–' ) ),
 			array( 'Point diff', ( ( $pd[ $t ] ?? 0 ) > 0 ? '+' : '' ) . (int) ( $pd[ $t ] ?? 0 ), 'in ' . ( $rec[0] + $rec[1] + $rec[2] ) . ' games' ),
 		);
-		if ( $next ) { $d = null; try { $d = new DateTime( $next['date'] . ' 12:00' ); } catch ( Exception $e ) {} $tiles[] = array( 'Next', $next['home'] === $t ? $next['away'] : $next['home'], ( $next['home'] === $t ? 'home' : 'away' ) . ( $d ? ' · ' . $d->format( 'D M j' ) : '' ) ); }
+		if ( $next ) { $d = null; try { $d = new DateTime( $next['date'] . ' 12:00' ); } catch ( Exception $e ) {} $tiles[] = array( 'Next', $next['home'] === $t ? $next['away'] : $next['home'], ( $next['home'] === $t ? 'home' : 'away' ) . ( $d ? ' · ' . $d->format( 'M j' ) : '' ) ); }
 		else { $tiles[] = array( 'Next', '–', 'season over' ); }
 		$keys = array( 'epa' => 'EPA a play', 'sr' => 'Success rate', 'expl' => 'Explosive plays', 'rz_td' => 'Red-zone TDs' );
 		$off = array(); $def = array(); foreach ( $keys as $k => $lab ) { $off[] = array( $lab, $ro( $k ) ); $def[] = array( $lab, $rd( $k ) ); }
@@ -450,6 +450,8 @@ class DBD_Card {
 		return $K;
 	}
 
+	private static function nick( $t ) { $x = DBD_Data::team( (string) $t ); return $x['nick'] ?? (string) $t; }
+
 	/** One team row on a game card: mark, nickname, record line, score. */
 	private static function team_row( $K, $y, $t, $bin, $score, $state ) {
 		$F = $K['F']; $c = $state === 'lose' ? $K['faded'] : $K['ink'];
@@ -464,7 +466,7 @@ class DBD_Card {
 	public static function draw_game( $s, $assets ) {
 		$K = self::kit( $assets ); if ( ! $K ) { return null; } $F = $K['F']; $L = $assets['logos'];
 		$a = $s['away']; $h = $s['home'];
-		$meta = $s['season'] . ' · week ' . $s['week'] . ' · ' . ( $s['final'] ? 'final' . ( ! empty( $s['ot'] ) ? ' / OT' : '' ) : ( $s['when'] ?? '' ) );
+		$meta = $s['season'] . ' · week ' . $s['week'] . ' · ' . ( $s['final'] ? 'final' . ( ! empty( $s['ot'] ) ? ' / OT' : '' ) : 'preview' );
 		( $K['brand'] )( $meta, array( array( $a['abbr'], $L[ $a['abbr'] ] ?? null ), array( $h['abbr'], $L[ $h['abbr'] ] ?? null ) ), array( $a['c1'], $h['c1'] ) );
 		if ( $s['final'] ) {
 			$kick = 'Week ' . $s['week'] . ( $s['stadium'] !== '' ? ' · ' . $s['stadium'] : '' ) . ( $s['line'] !== '' ? ' · ' . $s['line'] : '' );
@@ -490,10 +492,10 @@ class DBD_Card {
 				$j = 1; for ( $i = 2; $i < $n; $i++ ) { if ( abs( $sp[ $i ] - $sp[ $i - 1 ] ) > abs( $sp[ $j ] - $sp[ $j - 1 ] ) ) { $j = $i; } }
 				$dx = $pts[ $j ][0]; $dy = $pts[ $j ][1];
 				imagefilledellipse( $im, (int) round( $dx * $S ), (int) round( $dy * $S ), 22 * $S, 22 * $S, $K['panel'] ); imagefilledellipse( $im, (int) round( $dx * $S ), (int) round( $dy * $S ), 15 * $S, 15 * $S, $wc );
-				if ( $s['big'] ) { $lab = $s['big'][1] . ' · +' . (int) $s['big'][0] . '%'; $lw = ( $K['tw'] )( $F['mono2'], 13, $lab ) + 14; $lx = min( max( $dx - $lw / 2, $px0 ), $px1 - $lw ); $ly = max( $dy - 40, 138 );
+				if ( $s['big'] ) { $lab = $s['big'][1] . ' · ' . self::nick( $s['big'][2] ?? '' ) . ' +' . (int) $s['big'][0] . '%'; $lw = ( $K['tw'] )( $F['mono2'], 13, $lab ) + 14; $lx = min( max( $dx - $lw / 2, $px0 ), $px1 - $lw ); $ly = max( $dy - 40, 138 );
 					( $K['rect'] )( $lx, $ly, $lw, 24, $K['ink'] ); ( $K['txt'] )( $F['mono2'], 13, $lx + 7, $ly + 17, ( $K['col'] )( '#ffffff' ), $lab ); }
 			}
-			if ( $s['low'] !== null && $win ) { $cap = $wn['nick'] . ' were down to ' . round( $s['low'] ) . '%' . ( $s['big'] ? ' · biggest swing ' . $s['big'][1] . ', +' . (int) $s['big'][0] . '%' : '' ); ( $K['txt'] )( $F['body'], 15, 648, 372, $K['ink2'], $cap ); }
+			if ( $s['low'] !== null && $win ) { $cap = $wn['nick'] . ' were down to ' . round( $s['low'] ) . '%' . ( $s['big'] ? ' · biggest swing ' . $s['big'][1] . ', ' . self::nick( $s['big'][2] ?? '' ) . ' +' . (int) $s['big'][0] . '%' : '' ); ( $K['txt'] )( $F['body'], 15, 648, 372, $K['ink2'], $cap ); }
 			$tw3 = ( 1112 - 24 ) / 3;
 			foreach ( array_slice( $s['leaders'], 0, 3 ) as $i => $ld ) { ( $K['tile'] )( 44 + $i * ( $tw3 + 12 ), 440, $tw3, 120, $ld[0], strtoupper( $ld[2] ), $ld[3], 'disp2', 30, array( $ld[1], $L[ $ld[1] ] ?? null ) ); }
 			( $K['foot'] )( 'Data: nflverse · win probability from the play-by-play' );
@@ -546,16 +548,16 @@ class DBD_Card {
 		( $K['spaced'] )( $F['disp'], 14, 44, 124, $K['red'], strtoupper( $s['kicker'] ), 0.2 );
 		$lines = $s['title']; $n = count( $lines ); $px = $n >= 3 ? 56 : 72;
 		foreach ( $lines as $l ) { $px = min( $px, ( $K['fit'] )( $F['hero'], $px, strtoupper( ltrim( $l, '!' ) ), 610 ) ); }
-		$y = 132 + $px * 0.92;
-		foreach ( $lines as $l ) { $red = $l[0] === '!'; ( $K['txt'] )( $F['hero'], $px, 44, $y, $red ? $K['red'] : $K['ink'], strtoupper( ltrim( $l, '!' ) ) ); $y += $px * 1.0; }
-		if ( $s['say'] !== '' ) { foreach ( array_slice( ( $K['wrap'] )( $F['body'], 18, $s['say'], 600 ), 0, 2 ) as $j => $l ) { ( $K['txt'] )( $F['body'], 18, 44, $y + 14 + $j * 26, $K['ink2'], $l ); } }
+		$y = 132 + $px * 0.92; $last = $y;
+		foreach ( $lines as $l ) { $red = $l[0] === '!'; ( $K['txt'] )( $F['hero'], $px, 44, $y, $red ? $K['red'] : $K['ink'], strtoupper( ltrim( $l, '!' ) ) ); $last = $y; $y += $px * 1.0; }
+		if ( $s['say'] !== '' ) { foreach ( array_slice( ( $K['wrap'] )( $F['body'], 18, $s['say'], 600 ), 0, 2 ) as $j => $l ) { ( $K['txt'] )( $F['body'], 18, 44, $last + 48 + $j * 26, $K['ink2'], $l ); } }
 		$tw3 = ( 610 - 24 ) / 3;
 		foreach ( $s['tiles'] as $i => $t ) { ( $K['tile'] )( 44 + $i * ( $tw3 + 12 ), 430, $tw3, 120, $t[0], $t[1], $t[2], 'hero', 34 ); }
 		/* the field */
 		$fx = 700; $fy = 100; $fw = 456; $fh = 458; $green = ( $K['col'] )( '#2c4a35' );
 		( $K['rect'] )( $fx, $fy, $fw, $fh, $green );
 		for ( $i = 1; $i < 10; $i++ ) { ( $K['rect'] )( $fx, $fy + $fh * $i / 10, $fw, $i === 5 ? 2 : 1, ( $K['mix'] )( '#ffffff', $i === 5 ? 0.26 : 0.15, '#2c4a35' ) ); }
-		if ( $s['big'] !== '' ) { $bp = strlen( $s['big'] ) <= 2 ? 300 : 150; ( $K['txt'] )( $F['hero'], $bp, $fx + $fw - 22, $fy + $fh + 10, ( $K['mix'] )( '#ffffff', 0.12, '#2c4a35' ), $s['big'], 'right' ); }
+		if ( $s['big'] !== '' ) { $bp = strlen( $s['big'] ) <= 2 ? 300 : 150; ( $K['txt'] )( $F['hero'], $bp, $fx + $fw - 22, $fy + $fh + 10, ( $K['mix'] )( '#ffffff', 0.07, '#2c4a35' ), $s['big'], 'right' ); }
 		if ( $s['board'] ) {
 			$rows = $s['board']; $n = count( $rows ); $step = ( $fh - 32 ) / max( 1, $n ); $w = ( $K['col'] )( '#ffffff' ); $dim = ( $K['mix'] )( '#ffffff', 0.62, '#2c4a35' ); $dim2 = ( $K['mix'] )( '#ffffff', 0.5, '#2c4a35' ); $gold = ( $K['col'] )( '#ffd166' );
 			foreach ( $rows as $i => $r ) { $y = $fy + 16 + $step * $i + $step * 0.68;
