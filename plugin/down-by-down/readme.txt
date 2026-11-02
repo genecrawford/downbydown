@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.0.0
+Stable tag: 2.0.1
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,9 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.0.1 =
+* Playoff games and weeks are titled by round (Wild Card, Divisional, Conference, Super Bowl) instead of Week 19 to 22.
 
 = 2.0.0 =
 * The season archive: a finished season stays browsable at /2025/ (or ?season=2025), every page reading that season's files, with a season switcher in the top bar and an archive banner. Live parts (My team, this week, injury and depth labels) stay with the current season.

@@ -268,9 +268,9 @@ class DBD_Router {
 			case 'game':
 				$g = $r['game']; $O = $r['side'] === 'away' ? $g['away'] : $g['home']; $D = $r['side'] === 'away' ? $g['home'] : $g['away'];
 				$o = DBD_Data::team( $O )['nick']; $d = DBD_Data::team( $D )['nick'];
-				return array( "$o offense vs $d defense, Week {$g['week']}", "How the $o offense matches up against the $d defense: EPA, success rate, explosive plays, third downs, red zone and where the ball goes, with the biggest edge and the risk." );
+				return array( "$o offense vs $d defense, " . self::week_label( $g['week'] ), "How the $o offense matches up against the $d defense: EPA, success rate, explosive plays, third downs, red zone and where the ball goes, with the biggest edge and the risk." );
 			case 'matchups':
-				return array( "Week {$r['week']} matchups", "Every game of the $season NFL season with lines, totals, scores and a matchup read for each one." );
+				return array( self::week_label( $r['week'] ) . " matchups", "Every game of the $season NFL season with lines, totals, scores and a matchup read for each one." );
 			case 'teams':
 				return array( 'Pick a team', "All 32 NFL offenses ranked by EPA per play, each with a play explorer showing every snap of the $season season." );
 			case 'player':
