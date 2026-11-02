@@ -16,8 +16,10 @@ class DBD_Seo {
 		wp_register_sitemap_provider( 'downbydown', new DBD_Sitemap_Provider() );
 	}
 
-	/** The page that carries the shortcode, found once and cached for a day. */
+	/** The page that carries the shortcode: the remembered app page (DBD_Urls), else a search cached for a day. */
 	public static function app_url() {
+		$id = class_exists( 'DBD_Urls' ) ? DBD_Urls::page_id() : 0;  /* follows the app when it moves to its own page (/hub/) (SCOPE §45) */
+		if ( $id ) { return get_permalink( $id ); }
 		$url = get_transient( 'dbd_app_url' );
 		if ( $url ) { return $url; }
 		$q = new WP_Query( array( 'post_type' => 'page', 'post_status' => 'publish', 'posts_per_page' => 1, 's' => '[down_by_down', 'fields' => 'ids', 'no_found_rows' => true ) );

@@ -37,9 +37,9 @@ class DBD_Router {
 	/* ------------------------------------------------------------------ routing */
 
 	public static function detect() {
-		if ( ! is_singular() ) { return; }
+		if ( ! is_singular() ) { if ( is_front_page() ) { self::front(); } return; }
 		$post = get_queried_object();
-		if ( ! $post || ! has_shortcode( (string) $post->post_content, 'down_by_down' ) && ! has_shortcode( (string) $post->post_content, 'play_explorer' ) ) { return; }
+		if ( ! $post || ! has_shortcode( (string) $post->post_content, 'down_by_down' ) && ! has_shortcode( (string) $post->post_content, 'play_explorer' ) ) { if ( is_front_page() ) { self::front(); } return; }
 		self::$active   = true;
 		self::$page_url = get_permalink( $post );
 		if ( (int) get_option( DBD_Urls::OPT_PAGE ) !== (int) $post->ID && $post->post_status === 'publish' ) { update_option( DBD_Urls::OPT_PAGE, (int) $post->ID ); }
@@ -50,12 +50,28 @@ class DBD_Router {
 		self::$route    = self::route();
 		if ( self::q( 'card' ) !== '' ) { DBD_Card::serve( self::q( 'card' ) ); }  /* the share card PNG (SCOPE §26); serve() exits */
 		if ( $path === '' ) { self::redirect_old(); }
+		if ( $path !== '' || $sv !== '' ) { self::redirect_prefixed(); }  /* /hub/team/min/ -> /team/min/ */
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'assets' ) );
 		add_filter( 'body_class', array( __CLASS__, 'body_class' ) );
 		add_filter( 'document_title_parts', array( __CLASS__, 'title' ) );
 		add_filter( 'pre_get_document_title', array( __CLASS__, 'title_string' ), 20 );
 		add_action( 'wp_head', array( __CLASS__, 'head' ), 2 );
 		remove_action( 'wp_head', 'rel_canonical' );
+	}
+
+	/**
+	 * The front page when the app lives on its own page (/hub/): an old /?team=MIN link answers with a 301 to its path, and an
+	 * old /?card= share image is still served, since cards shared before the move point at the site root. A bare / is the home.
+	 */
+	public static function front() {
+		$keys = array( 'card', 'team', 'game', 'player', 'compare', 'view', 'myteam', 'season' );
+		if ( ! array_intersect( $keys, array_keys( $_GET ) ) || ! DBD_Data::has_data() ) { return; }
+		self::$P = null;
+		self::apply_season( DBD_Urls::season_of( '', '', $_GET ), self::my_team_query() );
+		self::$route = self::route();
+		if ( self::q( 'card' ) !== '' ) { DBD_Card::serve( self::q( 'card' ) ); }  /* serve() exits */
+		self::redirect_old();
+		self::$route = null; DBD_Data::use_season( null );  /* nothing to send: the home renders as itself */
 	}
 
 	private static function q( $key ) {
@@ -121,6 +137,29 @@ class DBD_Router {
 		$here = wp_parse_url( (string) ( $_SERVER['REQUEST_URI'] ?? '/' ), PHP_URL_PATH ); $there = wp_parse_url( $to, PHP_URL_PATH );
 		if ( ! $there || untrailingslashit( (string) $here ) === untrailingslashit( (string) $there ) ) { return null; }  /* no path for it: stay */
 		return $to;
+	}
+
+	/**
+	 * With root paths on and the app on its own page, a page-prefixed request (/hub/team/min/, /hub/2025/: the links 2.0.1 drew while the
+	 * app sat on /hub/) answers with a 301 to the same page at the root, keeping the query string. Exits when it redirects.
+	 */
+	public static function redirect_prefixed() {
+		$to = self::prefixed_target(); if ( $to === null ) { return; }
+		wp_safe_redirect( $to, 301, 'Down by Down' ); exit;
+	}
+
+	public static function prefixed_target() {
+		if ( ! DBD_Urls::on() || DBD_Urls::prefix() !== '' || ( $_SERVER['REQUEST_METHOD'] ?? 'GET' ) !== 'GET' ) { return null; }
+		$own = DBD_Urls::page_path(); if ( $own === '' || ! self::$route || in_array( self::$route['view'], array( 'notfound', 'nodata' ), true ) ) { return null; }
+		$here = (string) wp_parse_url( (string) ( $_SERVER['REQUEST_URI'] ?? '/' ), PHP_URL_PATH );
+		$home = trim( (string) wp_parse_url( home_url( '/' ), PHP_URL_PATH ), '/' );
+		$rel = ltrim( $here, '/' ); if ( $home !== '' && strpos( $rel, $home . '/' ) === 0 ) { $rel = substr( $rel, strlen( $home ) + 1 ); }
+		if ( strpos( trailingslashit( $rel ), $own ) !== 0 || trailingslashit( $rel ) === $own ) { return null; }  /* not prefixed, or the hub itself */
+		$to = self::url( self::args_of( self::$route, true ) );
+		parse_str( (string) wp_parse_url( $to, PHP_URL_QUERY ), $has );
+		$keep = array(); foreach ( $_GET as $k => $v ) { if ( is_string( $v ) && ! isset( $has[ $k ] ) && ! in_array( $k, DBD_Urls::ROUTE_KEYS, true ) ) { $keep[ $k ] = sanitize_text_field( wp_unslash( $v ) ); } }
+		if ( $keep ) { $to = add_query_arg( array_map( 'rawurlencode', $keep ), $to ); }
+		return untrailingslashit( (string) wp_parse_url( $to, PHP_URL_PATH ) ) === untrailingslashit( $here ) ? null : $to;
 	}
 
 	public static function route() {
@@ -205,7 +244,7 @@ class DBD_Router {
 	}
 
 	public static function url( $args = array() ) {
-		$base = self::base();
+		$base = self::base( (bool) $args || DBD_Data::archived() );  /* the hub is the app page's address; every other view is a path */
 		/* a past season (SCOPE §44): its links carry it, as a /2025/ prefix or ?season=; My team is always this season's, a game's slug names its own */
 		if ( DBD_Data::archived() && ! isset( $args['myteam'] ) && ( $args['view'] ?? '' ) !== 'myteam' ) {
 			$s = DBD_Data::season();
@@ -216,9 +255,15 @@ class DBD_Router {
 		return $args ? add_query_arg( array_map( 'rawurlencode', $args ), $base ) : $base;
 	}
 
-	/** The app page's URL: the page being served, else the page that holds the shortcode (the sitemap and cards run outside it). */
-	public static function base() {
+	/**
+	 * The base of an app link. $paths: a view other than the hub, which with readable URLs starts where paths start (the site root
+	 * since 2.1.0, wherever the app page is). Otherwise the app page's URL: the page being served, else the page that holds the
+	 * shortcode (the sitemap, the cards and the home's blocks run outside it).
+	 */
+	public static function base( $paths = false ) {
+		if ( $paths && DBD_Urls::on() ) { return DBD_Urls::path_base(); }
 		if ( self::$page_url ) { return self::$page_url; }
+		$id = DBD_Urls::page_id(); if ( $id ) { return get_permalink( $id ); }  /* the remembered app page (cards and the sitemap run outside it) */
 		return class_exists( 'DBD_Seo' ) && class_exists( 'WP_Query' ) ? DBD_Seo::app_url() : home_url( '/' );
 	}
 
@@ -347,7 +392,8 @@ class DBD_Router {
 		if ( $r['view'] === 'compare' ) { foreach ( $r['compare'] as $x ) { $ids[] = $x['id']; } }
 		if ( $r['view'] === 'myteam' ) { foreach ( $r['myteam'] as $x ) { $ids[] = $x['id']; } }
 		$slugs = DBD_Urls::on() && $ids ? array_intersect_key( DBD_Urls::players()['id'], array_flip( $ids ) ) : array();
-		wp_add_inline_script( 'dbd-site', 'window.DBD_URLS=' . wp_json_encode( DBD_Urls::js_config( self::url(), $slugs ) ) . ';', 'before' );
+		$jsbase = DBD_Urls::on() && ! DBD_Data::archived() ? DBD_Urls::path_base() : self::url();  /* where the scripts' paths start: the root, or a past season's /2025/ */
+		wp_add_inline_script( 'dbd-site', 'window.DBD_URLS=' . wp_json_encode( DBD_Urls::js_config( $jsbase, $slugs ) ) . ';', 'before' );
 		if ( $r['view'] === 'team' ) {
 			$def = ( $r['tside'] ?? 'off' ) === 'def'; $t = DBD_Data::team( $r['team'] ); $rel = $def ? 'plays/def/' . $r['team'] . '.json' : 'plays/' . $r['team'] . '.json';  /* SCOPE §39: the explorer on the plays the team defended */
 			if ( $def ) { wp_enqueue_script( 'dbd-defense', DBD_URL . 'assets/defense.js', array(), DBD_VERSION, true ); }

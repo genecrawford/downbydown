@@ -12,6 +12,7 @@ add_action( 'admin_init', function () {
 	register_setting( 'dbd', 'dbd_headshots', array( 'type' => 'boolean', 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => false ) );
 	register_setting( 'dbd', 'dbd_logos', array( 'type' => 'boolean', 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => false ) );
 	register_setting( 'dbd', DBD_Urls::OPT, array( 'type' => 'boolean', 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => true ) );  /* readable URLs (SCOPE §43) */
+	register_setting( 'dbd', DBD_Urls::OPT_ROOT, array( 'type' => 'boolean', 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => true ) );  /* app paths at the root while the app sits on its own page */
 } );
 
 add_action( 'admin_post_dbd_clear_cards', function () {
@@ -93,6 +94,14 @@ function dbd_settings_page() {
 					<td><?php $plain = ! get_option( 'permalink_structure' ); ?><label><input type="checkbox" name="<?php echo esc_attr( DBD_Urls::OPT ); ?>" value="1" <?php checked( (bool) get_option( DBD_Urls::OPT, true ) ); ?>> Use paths like <code>/team/min/</code> and <code>/player/justin-jefferson/</code></label>
 					<p class="description">On by default. Old <code>?team=</code> and <code>?player=</code> links keep working: they redirect to the new paths. Turn this off to go back to query strings.
 					<?php if ( $plain ) : ?><strong>This site uses plain permalinks, so the app keeps query strings.</strong> Choose any other structure under Settings › Permalinks to use paths.<?php else : ?>Permalinks: <?php echo esc_html( get_option( 'permalink_structure' ) ); ?>, so paths work here<?php echo DBD_Urls::page_id() ? '' : ', once a page holds <code>[down_by_down]</code>'; ?>.<?php endif; ?></p></td></tr>
+				<tr><th scope="row">Paths at the site root</th>
+					<td><label><input type="checkbox" name="<?php echo esc_attr( DBD_Urls::OPT_ROOT ); ?>" value="1" <?php checked( DBD_Urls::root() ); ?>> Keep <code>/team/min/</code>, <code>/player/…/</code> and <code>/2025/</code> at the root when the app page isn't the front page</label>
+					<p class="description"><?php
+					$aid = DBD_Urls::page_id();
+					if ( ! $aid ) { echo 'No page holds <code>[down_by_down]</code> yet.'; }
+					elseif ( DBD_Urls::is_front() ) { echo 'The app is the front page, so its paths are at the root either way.'; }
+					else { echo 'The app page is <a href="' . esc_url( get_permalink( $aid ) ) . '">' . esc_html( get_permalink( $aid ) ) . '</a>: the hub lives there. ' . ( DBD_Urls::on() ? 'Test a path: <a href="' . esc_url( DBD_Router::url( array( 'team' => 'MIN' ) ) ) . '">' . esc_html( DBD_Router::url( array( 'team' => 'MIN' ) ) ) . '</a>.' : '' ) . ' Leave this on so links shared before the move keep working; a real page named teams, players, leaders, week or matchups would be hidden behind the app\'s paths. Only one page should hold <code>[down_by_down]</code>.'; }
+					?></p></td></tr>
 			</table>
 			<?php submit_button( 'Save' ); ?>
 		</form>
