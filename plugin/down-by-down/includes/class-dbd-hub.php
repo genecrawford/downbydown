@@ -25,13 +25,15 @@ class DBD_Hub {
 		$cb = $won; usort( $cb, function ( $a, $b ) { return $a['low'] <=> $b['low']; } ); $cbg = $cb[0] ?? null;
 		$wd = $fin; usort( $wd, function ( $a, $b ) { return array( $b['lc'] ?? 0, $b['drama'] ?? 0 ) <=> array( $a['lc'] ?? 0, $a['drama'] ?? 0 ); } );
 		$lines = array();
-		if ( $upg && $cbg && $upg['id'] === $cbg['id'] ) {  /* one game was both: say it once, and make room for the wildest */
+		$far = $cbg && $cbg['low'] < 300;  /* a comeback is a winner who fell below 30%, as the week page says it */
+		if ( $upg && $far && $upg['id'] === $cbg['id'] ) {  /* one game was both: say it once, and make room for the wildest */
 			$lines[] = array( 'Upset', '<b>' . esc_html( self::nick( $upg['win'] ) ) . '</b> over the ' . esc_html( self::nick( $loser( $upg ) ) ) . ', ' . $score( $upg ) . ': a ' . round( $upg['pre_w'] / 10 ) . '% underdog at kickoff, and down to ' . max( 1, round( $upg['low'] / 10 ) ) . '% before winning.', $upg['id'] );
 			$wg = null; foreach ( $wd as $g ) { if ( $g['id'] !== $upg['id'] ) { $wg = $g; break; } }
 			if ( $wg ) { $lc = (int) ( $wg['lc'] ?? 0 ); $lines[] = array( 'Wildest', '<b>' . esc_html( self::nick( $wg['away'] ) . ' at ' . self::nick( $wg['home'] ) ) . '</b>: the lead changed hands ' . $lc . ' time' . ( $lc === 1 ? '' : 's' ) . '; ' . ( ! empty( $wg['win'] ) ? 'the ' . esc_html( self::nick( $wg['win'] ) ) . ' won ' . $score( $wg ) . '.' : 'it ended tied.' ), $wg['id'] ); }
 		} else {
 			if ( $upg ) { $lines[] = array( 'Upset', '<b>' . esc_html( self::nick( $upg['win'] ) ) . '</b> over the ' . esc_html( self::nick( $loser( $upg ) ) ) . ', ' . $score( $upg ) . ', as a ' . round( $upg['pre_w'] / 10 ) . '% underdog.', $upg['id'] ); }
-			if ( $cbg ) { $lines[] = array( 'Comeback', '<b>' . esc_html( self::nick( $cbg['win'] ) ) . '</b> back from ' . max( 1, round( $cbg['low'] / 10 ) ) . '% against the ' . esc_html( self::nick( $loser( $cbg ) ) ) . ', ' . $score( $cbg ) . '.', $cbg['id'] ); }
+			if ( $far ) { $lines[] = array( 'Comeback', '<b>' . esc_html( self::nick( $cbg['win'] ) ) . '</b> back from ' . max( 1, round( $cbg['low'] / 10 ) ) . '% against the ' . esc_html( self::nick( $loser( $cbg ) ) ) . ', ' . $score( $cbg ) . '.', $cbg['id'] ); }
+			elseif ( $cbg ) { $lines[] = array( 'Comeback', 'Nobody came back from far: the lowest any winner fell was ' . round( $cbg['low'] / 10 ) . '% (the ' . esc_html( self::nick( $cbg['win'] ) ) . ').', $cbg['id'] ); }
 		}
 		$star = null; foreach ( (array) ( $W['players'] ?? array() ) as $rows ) { foreach ( (array) $rows as $r ) { if ( ! $star || $r['e'] > $star['e'] ) { $star = $r; } } }
 		if ( $star ) { $lines[] = array( 'Player', '<b>' . esc_html( $star['n'] ) . '</b> (' . esc_html( $star['t'] . ' ' . $star['pos'] ) . '): ' . ( $star['e'] > 0 ? '+' : '' ) . number_format( (float) $star['e'], 1 ) . ' EPA, ' . esc_html( $star['x'] ) . '.', null ); }
@@ -109,8 +111,8 @@ class DBD_Hub {
 				$li = '';
 				foreach ( array( 'QB', 'RB', 'WR', 'TE' ) as $pos ) {
 					foreach ( array_slice( (array) ( $L['fan'][ $fm ][ 'ppg.' . $pos ] ?? array() ), 0, 2 ) as $r ) {
-						$p = DBD_Data::player( $r[0] ); if ( ! $p ) { continue; }
-						$li .= '<li><span class="rk">' . $pos . '</span><span class="who">' . DBD_Marks::player( $p['team'], $p['num'] ?? '', 24, $p['photo'] ?? null ) . '<span class="nm"><a href="' . esc_url( DBD_Router::url( array( 'player' => $r[0] ) ) ) . '">' . esc_html( $p['name'] ) . '</a><small>' . esc_html( $p['team'] . ' · ' . (int) $r[2] . ' games' ) . '</small></span></span><b class="v">' . number_format( (float) $r[1], 1 ) . '</b></li>';
+						$p = $L['players'][ $r[0] ] ?? null; if ( ! $p ) { continue; }  /* [name, team, pos, num, photo], the leaders file's own map */
+						$li .= '<li><span class="rk">' . $pos . '</span><span class="who">' . ( $p[1] ? DBD_Marks::player( $p[1], $p[3] ?? '', 24, $p[4] ?? null ) : '' ) . '<span class="nm"><a href="' . esc_url( DBD_Router::url( array( 'player' => $r[0] ) ) ) . '">' . esc_html( $p[0] ) . '</a><small>' . esc_html( ( $p[1] ?: '–' ) . ' · ' . (int) $r[2] . ' games' ) . '</small></span></span><b class="v">' . number_format( (float) $r[1], 1 ) . '</b></li>';
 					}
 				}
 				$fx .= '<div data-fx="' . esc_attr( $fm ) . '"><ol class="ld-list hb-fxl">' . ( $li ?: '<li class="none">No leaders yet.</li>' ) . '</ol></div>';
