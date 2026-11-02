@@ -111,6 +111,54 @@ jobs:
         with:
           name: path-pages
           path: pathpages/
+      - name: The marketing home (SCOPE §45)
+        run: |
+          set -e
+          export DBD_HARNESS_MEDIA=1 DBD_HARNESS_HTML=homepages
+          # every block renders from repo data with no warnings, then the whole home on one page for review
+          for b in hero-map games counts down yards week-highlights matchup player-card movers fantasy leaders teams newsletter-preview faq; do
+            php tools/view_harness.php data block "$b"
+          done
+          php tools/view_harness.php data block leaders 'boards=ppr'
+          php tools/view_harness.php data block hero-map 'player=00-0036322'
+          php tools/view_harness.php data block down 'down=1&dist=Goal&spot=Opp 6'
+          php tools/view_harness.php data home
+          grep -q 'application/ld+json' homepages/home.html
+          grep -q '"@type":"FAQPage"' homepages/home.html
+          # the week-in-review feed is RSS with an item per finished week
+          php tools/view_harness.php data feed > feed.xml
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          r = ET.parse('feed.xml').getroot(); items = r.findall('./channel/item')
+          assert r.tag == 'rss' and items, 'the feed has no items'
+          for i in items:
+              for t in ('title', 'link', 'guid', 'pubDate', 'description'):
+                  assert (i.findtext(t) or '').strip(), 'an item has no ' + t
+          print(len(items), 'feed items; newest:', items[0].findtext('title'), '|', items[0].findtext('pubDate'))
+          PY
+          cp feed.xml homepages/
+          # the app on /this-week/, paths at the root: every link round-trips, and old links on the front page land
+          export DBD_HARNESS_PRETTY=1 DBD_HARNESS_ROOT=1
+          php tools/view_harness.php data urls
+          chk() { got="$(php tools/view_harness.php data redirect "$1")"; echo "$1 -> $got"; [ "$got" = "$2" ] || { echo "  expected: $2"; exit 1; }; }
+          chk '/?team=MIN' 'redirect 301 https://example.test/team/min/'
+          chk '/?player=00-0036322&utm_source=x' 'redirect 301 https://example.test/player/justin-jefferson/?utm_source=x'
+          chk '/?game=2026_08_MIN_DET&side=home' 'redirect 301 https://example.test/game/2026-week-8-vikings-at-lions/lions/'
+          chk '/?view=leaders&b=wr.tsh' 'redirect 301 https://example.test/leaders/?b=wr.tsh'
+          chk '/?season=2025' 'redirect 301 https://example.test/2025/'
+          chk '/' 'stays (0 warnings)'
+          chk '/?utm_source=x' 'stays (0 warnings)'
+          chk '/?player=99-9999999' 'stays (0 warnings)'
+          # the blocks' links are root paths, and only the hub link names /this-week/
+          DBD_HARNESS_HTML=homeroot php tools/view_harness.php data home
+          if grep -oE 'href="[^"]*\?(player|team|game|view)=' homeroot/home.html; then echo "a query-string app link on the home"; exit 1; fi
+          if grep -oE 'href="https://example.test/this-week/[a-z]' homeroot/home.html; then echo "a path under /this-week/ on the home"; exit 1; fi
+          grep -q 'href="https://example.test/team/min/"' homeroot/home.html
+          grep -q 'href="https://example.test/player/' homeroot/home.html
+      - uses: actions/upload-artifact@v4
+        with:
+          name: home
+          path: homepages/
       - name: Render pages for review (headshots and logos on, the theme's table rule on)
         run: |
           set -e

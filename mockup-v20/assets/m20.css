@@ -1,0 +1,326 @@
+:root{--ink:#121417;--ink2:#3b4255;--muted:#5d616a;--bg:#f4f1ea;--bg2:#ebe6da;--panel:#fffdf8;--line:rgba(22,30,54,.12);--line2:rgba(22,30,54,.22);--red:#cb2026;--navy:#161e36;--navy2:#0f1529;--good:#1e7f4a;--bad:#b4261f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.55 "IBM Plex Sans",system-ui,sans-serif}
+a{color:inherit}
+.mk-bar{position:sticky;top:0;z-index:60;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;padding:8px 16px;background:#fff7d6;border-bottom:1px solid #e6d58a;font:500 13px "IBM Plex Sans",sans-serif;color:#3b4255}
+.mk-bar b{font-weight:600;color:#121417}.mk-bar label{margin-left:12px}
+@media (max-width:700px){.mk-bar{position:static}}
+.blk{display:inline-block;padding:1px 6px;border:1px dashed var(--red);border-radius:3px;font:600 10.5px "IBM Plex Mono",monospace;color:var(--red);letter-spacing:0;text-transform:none;white-space:nowrap;background:rgba(255,255,255,.6)}
+.blkw{margin:10px 0 0}.blkw.c{text-align:center}
+.no-blk .blk,.no-blk .blkw{display:none}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:13px 22px;border:2px solid var(--ink);border-radius:6px;font:700 15px "Barlow Condensed",sans-serif;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;color:var(--ink);background:transparent;cursor:pointer}
+.btn.pri{background:var(--red);border-color:var(--red);color:#fff}
+.btn.sm{padding:8px 14px;font-size:13px}
+.btn.ghost{border-color:rgba(255,255,255,.7);color:#fff}
+.btn.inv{background:#fff;border-color:#fff;color:var(--red)}
+.kick{margin:0 0 10px;font:700 13px "Barlow Condensed",sans-serif;letter-spacing:.2em;text-transform:uppercase;color:var(--red)}
+.lg{object-fit:contain;vertical-align:middle;flex:none}
+.hd{border-radius:50%;object-fit:cover;object-position:top;background:var(--bg2);flex:none;display:inline-block}
+h2{margin:0 0 12px;font:800 clamp(30px,3.6vw,48px)/1.02 "Tourney",sans-serif;text-transform:uppercase}
+
+header.site{display:flex;align-items:center;gap:24px;padding:14px clamp(16px,4vw,48px);background:var(--navy2);color:#fff}
+header.site .brand img{filter:invert(1) hue-rotate(180deg) brightness(1.4)}
+header.site nav{display:flex;gap:20px;flex:1;font:600 15px "Barlow Condensed",sans-serif;letter-spacing:.1em;text-transform:uppercase}
+header.site nav a{text-decoration:none;cursor:pointer;opacity:.85}
+@media (max-width:820px){header.site nav{display:none}header.site .btn{margin-left:auto}}
+
+/* hero: navy, field lines, the map, the scoreboard */
+.h-hero-wrap{background:var(--navy) repeating-linear-gradient(90deg,transparent 0 calc(10% - 1px),rgba(255,255,255,.05) calc(10% - 1px) 10%);color:#fff;padding-bottom:28px;position:relative;overflow:hidden}
+.h-hero-wrap::after{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;background:linear-gradient(90deg,var(--red) 0 60%,#fff 60% 62%,var(--red) 62%)}
+.h-hero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:clamp(24px,4vw,64px);align-items:center;max-width:1240px;margin:0 auto;padding:clamp(36px,6vw,84px) clamp(16px,4vw,48px) clamp(28px,4vw,48px)}
+.h-hero .kick{color:#ff8a8f}
+.h-hero h1{margin:0;font:800 clamp(40px,6.2vw,86px)/.96 "Tourney",sans-serif;text-transform:uppercase}
+.h-hero h1 span{color:#ff4a50;display:block}
+.h-hero .lede{margin:22px 0 28px;font-size:clamp(17px,1.5vw,20px);line-height:1.55;color:#d9d6cc;max-width:36em}
+.ctas{display:flex;flex-wrap:wrap;gap:12px}
+.ticks{list-style:none;display:flex;flex-wrap:wrap;gap:8px 22px;margin:26px 0 0;padding:0;font:600 14px "Barlow Condensed",sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#d9d6cc}
+.ticks li::before{content:"✓ ";color:#4fd18b}
+.h-map{margin:0;background:var(--panel);color:var(--ink);border-radius:12px;padding:16px;box-shadow:0 24px 60px rgba(0,0,0,.35)}
+.h-map figcaption{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+.h-map .who{display:flex;align-items:center;gap:10px}
+.h-map .who b{display:block;font:800 20px "Tourney",sans-serif;text-transform:uppercase}
+.h-map .who small{display:block;font:500 12px "IBM Plex Sans";color:var(--muted)}
+.h-map figcaption em{font:700 11px "Barlow Condensed",sans-serif;font-style:normal;letter-spacing:.14em;text-transform:uppercase;color:var(--red)}
+.h-map .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:0 0 10px}
+.h-map .stats span{background:var(--bg);border-radius:6px;padding:6px 8px;font:500 11px "IBM Plex Sans";color:var(--muted);text-align:center}
+.h-map .stats b{display:block;font:800 22px/1.1 "Tourney",sans-serif;color:var(--ink)}
+.h-map .leg{margin:10px 0 0;font:500 12px "IBM Plex Sans";color:var(--muted);display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px}
+.h-map .leg i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:-6px}
+.h-map .leg a{margin-left:auto;font-weight:600;color:var(--ink);cursor:pointer}
+.h-score{display:flex;gap:8px;overflow-x:auto;max-width:1240px;margin:0 auto;padding:4px clamp(16px,4vw,48px) 6px;scrollbar-width:thin}
+.h-score-l{flex:none;align-self:center;font:700 13px "Barlow Condensed",sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#ff8a8f;writing-mode:vertical-rl;transform:rotate(180deg)}
+.h-score .sc{flex:none;width:118px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:8px;padding:6px 8px;text-decoration:none;color:#cfccc2;cursor:pointer}
+.h-score .sc:hover{background:rgba(255,255,255,.12)}
+.h-score .r{display:flex;align-items:center;gap:6px;font:600 13px "IBM Plex Sans"}
+.h-score .r b{flex:1;font:700 14px "Barlow Condensed",sans-serif;letter-spacing:.06em}
+.h-score .r em{font:600 13px "IBM Plex Mono",monospace;font-style:normal}
+.h-score .r.w{color:#fff}
+.h-score .st{display:block;margin-top:2px;font:600 10.5px "IBM Plex Mono",monospace;color:#9ea3b0}
+.h-score .live{border-color:#ff8a8f}.h-score .up{color:#ffd166}
+@media (max-width:900px){.h-hero{grid-template-columns:minmax(0,1fr)}.h-map{transform:none}}
+
+/* the numbers */
+.h-nums{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;max-width:1240px;margin:0 auto;padding:clamp(28px,4vw,44px) clamp(16px,4vw,48px)}
+.h-nums div{padding:0 18px;border-left:3px solid var(--red)}
+.h-nums b{display:block;font:800 clamp(28px,3.4vw,46px)/1 "Tourney",sans-serif}
+.h-nums span{display:block;margin-top:6px;font:500 14px "IBM Plex Sans";color:var(--ink2)}
+.h-nums .blkw{grid-column:1/-1}
+@media (max-width:900px){.h-nums{grid-template-columns:repeat(2,minmax(0,1fr));gap:22px 0}}
+
+.h-wrap{max-width:1240px;margin:0 auto;padding:0 clamp(16px,4vw,48px)}
+.h-sec-h{display:flex;flex-wrap:wrap;align-items:flex-end;gap:6px 20px;margin-bottom:22px}
+.h-sec-h .kick{flex-basis:100%;margin:0}
+.h-sec-h h2{margin:0}
+.h-sec-h .more{margin-left:auto;font:700 14px "Barlow Condensed",sans-serif;letter-spacing:.12em;text-transform:uppercase;text-decoration:underline;text-underline-offset:4px;cursor:pointer}
+
+/* week in one minute */
+.h-week{padding:clamp(40px,6vw,72px) 0;border-top:1px solid var(--line2)}
+.h-week-g{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.wk{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px;position:relative;box-shadow:0 6px 18px rgba(22,30,54,.06)}
+.wk>i{display:block;margin-bottom:12px;font:700 12px "Barlow Condensed",sans-serif;font-style:normal;letter-spacing:.16em;text-transform:uppercase;color:var(--red)}
+.wk .lg{position:absolute;right:16px;top:14px}
+.wk h3{margin:0 0 10px;font:600 18px/1.35 "IBM Plex Sans";padding-right:44px}
+.wk p{margin:0;font:500 14px "IBM Plex Sans";color:var(--ink2)}
+.wk p b{font:800 18px "Tourney",sans-serif;color:var(--good)}
+.wk.play{border-top:5px solid var(--red)}.wk.swing{border-top:5px solid var(--navy)}.wk.ups{border-top:5px solid var(--good)}
+.wk ul{list-style:none;margin:0 0 14px;padding:0}
+.wk li{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+.wk li small{margin-left:auto;font:600 12px "IBM Plex Mono",monospace;color:var(--red)}
+.wk .wild span{display:block;font:700 12px "Barlow Condensed",sans-serif;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.wk .wild b{font:600 14px "IBM Plex Sans";color:var(--ink)}
+@media (max-width:900px){.h-week-g{grid-template-columns:minmax(0,1fr)}}
+
+/* features */
+.h-feat{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:clamp(24px,4vw,64px);align-items:center;padding:clamp(48px,7vw,88px) 0;border-top:1px solid var(--line2)}
+.h-feat.flip .txt{order:2}
+.h-feat.tint{background:var(--bg2);border:0;padding-left:clamp(16px,calc((100vw - 1240px)/2 + 48px),9999px);padding-right:clamp(16px,calc((100vw - 1240px)/2 + 48px),9999px)}
+.h-feat .num{margin:0 0 6px;font:800 40px "Tourney",sans-serif;color:var(--line2);-webkit-text-stroke:1px var(--ink2);color:transparent}
+.h-feat .txt>p:not(.num):not(.kick){font-size:17px;color:var(--ink2);margin:0 0 14px;max-width:32em}
+.pts{list-style:none;margin:0 0 24px;padding:0}
+.pts li{padding:7px 0 7px 28px;position:relative;font:500 15px "IBM Plex Sans";border-bottom:1px solid var(--line)}
+.pts li::before{content:"";position:absolute;left:0;top:13px;width:14px;height:3px;background:var(--red)}
+.h-live{min-width:0;display:grid;gap:14px}
+.h-live .card{width:100%;border-radius:8px;border:1px solid var(--line2);box-shadow:0 14px 34px rgba(22,30,54,.14);display:block}
+.k{margin:0 0 10px;font:700 12px "Barlow Condensed",sans-serif;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.h-gotw{background:var(--panel);border:1px solid var(--line);border-top:5px solid var(--red);border-radius:12px;padding:18px 20px;box-shadow:0 14px 34px rgba(22,30,54,.10)}
+.h-gotw .mt{display:flex;align-items:center;justify-content:space-around;gap:10px;padding:6px 0 12px;border-bottom:1px solid var(--line)}
+.h-gotw .mt>span{display:flex;flex-direction:column;align-items:center;gap:4px}
+.h-gotw .mt b{font:800 24px "Tourney",sans-serif;text-transform:uppercase}
+.h-gotw .mt small{font:600 12px "IBM Plex Mono",monospace;color:var(--muted)}
+.h-gotw .mt em{font:700 14px "Barlow Condensed",sans-serif;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-style:normal}
+.h-gotw .ln{margin:10px 0;text-align:center;font:600 13px "IBM Plex Mono",monospace;color:var(--ink2)}
+.h-gotw .say{margin:0 0 12px;font-size:16px;line-height:1.5;border-left:4px solid var(--red);padding-left:12px}
+.h-gotw .say i{display:block;font:700 12px "Barlow Condensed",sans-serif;font-style:normal;letter-spacing:.16em;text-transform:uppercase;color:var(--red)}
+.h-gotw .mini{font:700 13px "Barlow Condensed",sans-serif;letter-spacing:.12em;text-transform:uppercase;text-decoration:underline;text-underline-offset:4px;cursor:pointer}
+.h-h2h{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 18px}
+.h-h2h .hh{display:flex;align-items:center;gap:8px;margin-bottom:8px;font:700 15px "Barlow Condensed",sans-serif;letter-spacing:.06em;text-transform:uppercase}
+.h-h2h .hh span{flex:1;text-align:center;color:var(--muted);font-size:12px;letter-spacing:.2em}
+.h-h2h .hr{display:grid;grid-template-columns:72px minmax(0,1fr) 72px;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--line)}
+.h-h2h .o,.h-h2h .d{font:600 14px "IBM Plex Mono",monospace;display:flex;flex-direction:column;line-height:1.15}
+.h-h2h .d{text-align:right}
+.h-h2h small{font:600 11px "IBM Plex Mono",monospace;color:var(--muted)}
+.h-h2h .lab{text-align:center;font:500 13px "IBM Plex Sans";color:var(--ink2)}
+.h-h2h .bar{display:block;position:relative;height:8px;margin-top:4px;background:var(--bg2);border-radius:4px}
+.h-h2h .bar::before{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--line2)}
+.h-h2h .bar i{position:absolute;top:0;bottom:0;border-radius:4px}
+.h-h2h .bar i.o{right:50%;background:var(--to)}.h-h2h .bar i.d{left:50%;background:var(--td)}
+.h-rise,.h-ppr{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 18px}
+.h-rise ul,.h-ppr ol{list-style:none;margin:0;padding:0}
+.h-rise li,.h-ppr li{display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--line)}
+.h-rise li>span,.h-ppr li>span:not(.n){flex:1;min-width:0}
+.h-rise b,.h-ppr b{display:block;font:600 14px "IBM Plex Sans"}
+.h-rise small,.h-ppr small{display:block;font:500 12px "IBM Plex Sans";color:var(--muted)}
+.h-rise em{font:600 13px "IBM Plex Mono",monospace;font-style:normal;color:var(--muted);white-space:nowrap}
+.h-rise em strong{color:var(--good);font-size:15px}.h-rise em i{font-style:normal}
+.h-ppr .n,.lb .n{width:18px;font:800 16px "Tourney",sans-serif;color:var(--muted)}
+.h-ppr em,.lb em{font:800 18px "Tourney",sans-serif;font-style:normal}
+.h-soft{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.h-soft .s{display:flex;gap:12px;align-items:center;background:var(--panel);border:1px solid var(--line);border-left:5px solid var(--good);border-radius:10px;padding:14px}
+.h-soft i{display:block;font:700 12px "Barlow Condensed",sans-serif;font-style:normal;letter-spacing:.16em;color:var(--good)}
+.h-soft b{display:block;font:800 20px "Tourney",sans-serif;text-transform:uppercase}
+.h-soft small{display:block;font:500 12px "IBM Plex Sans";color:var(--muted);line-height:1.35}
+@media (max-width:900px){.h-feat{grid-template-columns:minmax(0,1fr)}.h-feat.flip .txt{order:0}}
+@media (max-width:480px){.h-soft{grid-template-columns:minmax(0,1fr)}}
+
+/* leaders */
+.h-leaders{padding:clamp(48px,7vw,88px) 0;border-top:1px solid var(--line2)}
+.h-lbs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.lb{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;box-shadow:0 6px 18px rgba(22,30,54,.06)}
+.lb h3{margin:0;font:800 22px "Tourney",sans-serif;text-transform:uppercase}
+.lb .sub{margin:2px 0 10px;font:500 13px "IBM Plex Sans";color:var(--muted)}
+.lb ol{list-style:none;margin:0;padding:0}
+.lb li{display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--line)}
+.lb li:first-child{background:linear-gradient(90deg,rgba(203,32,38,.08),transparent);margin:0 -8px;padding:9px 8px;border-radius:6px;border:0}
+.lb li>span:not(.n){flex:1;min-width:0}
+.lb b{display:block;font:600 14px "IBM Plex Sans";white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lb small{display:block;font:500 12px "IBM Plex Sans";color:var(--muted)}
+@media (max-width:900px){.h-lbs{grid-template-columns:minmax(0,1fr)}}
+
+/* teams */
+.h-teams-s{padding:clamp(48px,7vw,88px) 0;border-top:1px solid var(--line2)}
+.h-divs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.dv{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}
+.dv h4{margin:0 0 6px;font:700 12px "Barlow Condensed",sans-serif;letter-spacing:.16em;text-transform:uppercase;color:var(--red)}
+.dv a{display:flex;align-items:center;gap:10px;padding:7px 8px;margin:0 -4px;border-radius:6px;text-decoration:none;cursor:pointer;border-left:4px solid var(--c)}
+.dv a:hover{background:var(--bg)}
+.dv a span{flex:1;font:700 16px "Barlow Condensed",sans-serif;letter-spacing:.06em;text-transform:uppercase}
+.dv a em{font:600 12px "IBM Plex Mono",monospace;font-style:normal;color:var(--muted)}
+@media (max-width:1000px){.h-divs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.h-divs{grid-template-columns:minmax(0,1fr)}}
+
+/* newsletter */
+.h-news{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(24px,4vw,64px);align-items:center;padding:clamp(48px,7vw,88px) max(clamp(16px,4vw,48px),calc((100vw - 1240px)/2 + 48px));background:var(--navy);color:#fff}
+.h-news .kick{color:#ff8a8f}.h-news .txt>p{font-size:17px;color:#d9d6cc}
+.optin{display:flex;gap:8px;margin:20px 0 10px}
+.optin input{flex:1;min-width:0;padding:14px;border:0;border-radius:6px;font:500 16px "IBM Plex Sans"}
+.optin button{padding:12px 20px;border:0;border-radius:6px;background:var(--red);color:#fff;font:700 15px "Barlow Condensed",sans-serif;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
+.fine{font:500 12px "IBM Plex Mono",monospace!important;color:#9ea3b0!important}
+.h-mail{background:#fff;color:var(--ink);border-radius:12px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.35)}
+.h-mail .mh{display:flex;flex-direction:column;gap:2px;padding:12px 16px;background:#f2f2f4;border-bottom:1px solid #e1e1e6;font:400 13px -apple-system,system-ui,sans-serif;color:#555}
+.h-mail .mh b{color:#111}
+.h-mail .mb{padding:18px 20px}
+.h-mail .mk{margin:0;font:700 12px "Barlow Condensed",sans-serif;letter-spacing:.16em;text-transform:uppercase;color:var(--red)}
+.h-mail h4{margin:4px 0 12px;font:800 22px "Tourney",sans-serif;text-transform:uppercase}
+.h-mail p{margin:0 0 10px;font-size:14px;color:var(--ink2)}
+.h-mail .mbtn{display:inline-block;margin-top:6px;padding:9px 16px;background:var(--red);color:#fff;border-radius:6px;font:700 13px "Barlow Condensed",sans-serif;letter-spacing:.1em;text-transform:uppercase}
+@media (max-width:900px){.h-news{grid-template-columns:minmax(0,1fr)}.optin{flex-direction:column}.h-mail{transform:none}}
+
+/* faq, close, footer */
+.h-faq{padding:clamp(48px,7vw,88px) 0}
+.h-faq .qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 40px}
+.h-faq details{border-bottom:1px solid var(--line2);padding:16px 0}
+.h-faq summary{cursor:pointer;font:700 20px "Barlow Condensed",sans-serif;letter-spacing:.04em;list-style:none;display:flex;justify-content:space-between;gap:10px}
+.h-faq summary::-webkit-details-marker{display:none}
+.h-faq summary::after{content:"+";font:800 20px "Tourney";color:var(--red)}.h-faq details[open] summary::after{content:"–"}
+.h-faq details p{margin:10px 0 0;color:var(--ink2)}
+@media (max-width:800px){.h-faq .qa{grid-template-columns:minmax(0,1fr)}}
+.h-close{text-align:center;padding:clamp(56px,8vw,100px) clamp(16px,4vw,48px);background:var(--red) repeating-linear-gradient(90deg,transparent 0 calc(10% - 1px),rgba(255,255,255,.08) calc(10% - 1px) 10%);color:#fff}
+.h-close h2{font-size:clamp(30px,4.4vw,60px)}.h-close p{margin:0 0 22px;font-size:18px;color:#ffe2e3}
+.h-close .ctas{justify-content:center}
+footer.site{display:flex;flex-wrap:wrap;gap:12px 28px;align-items:center;padding:28px clamp(16px,4vw,48px);background:var(--navy2);color:#9ea3b0;font-size:14px}
+footer.site img{filter:invert(1) hue-rotate(180deg) brightness(1.4)}
+footer.site p{margin:0;flex:1;min-width:240px}footer.site nav{display:flex;gap:16px}footer.site nav a{text-decoration:none;cursor:pointer;color:#d9d6cc}
+
+/* third pass: light throughout (no navy bands), no scoreboard strip */
+header.site{background:var(--bg);color:var(--ink);border-bottom:1px solid var(--line2)}
+header.site .brand img,footer.site img{filter:none}
+header.site nav a{opacity:1}
+.h-hero-wrap{background:var(--bg) repeating-linear-gradient(90deg,transparent 0 calc(10% - 1px),rgba(22,30,54,.045) calc(10% - 1px) 10%);color:var(--ink);padding-bottom:0;border-bottom:1px solid var(--line2)}
+.h-hero-wrap::after{display:none}
+.h-hero .kick{color:var(--red)}
+.h-hero h1{color:var(--ink)}
+.h-hero h1 span{color:var(--red)}
+.h-hero .lede{color:var(--ink2)}
+.h-hero .btn.ghost{border-color:var(--ink);color:var(--ink)}
+.ticks{color:var(--ink2)}
+.ticks li::before{color:var(--good)}
+.h-map{box-shadow:0 18px 44px rgba(22,30,54,.16);border:1px solid var(--line)}
+.h-news{background:var(--bg2);color:var(--ink)}
+.h-news .kick{color:var(--red)}
+.h-news .txt>p{color:var(--ink2)}
+.h-news .optin input{border:2px solid var(--ink)}
+.h-news .fine{color:var(--muted)!important}
+.h-mail{box-shadow:0 18px 44px rgba(22,30,54,.16);border:1px solid var(--line)}
+.h-close .btn.ghost{border-color:rgba(255,255,255,.8);color:#fff}
+footer.site{background:var(--bg2);color:var(--muted);border-top:1px solid var(--line2)}
+footer.site nav a{color:var(--ink)}
+
+/* fourth pass: turf hero, game grid (Gene's pick) */
+/* hero: turf (the field, with yard lines and hash marks) */
+.hv-turf .h-hero-wrap{background:
+  repeating-linear-gradient(90deg,transparent 0 calc(10% - 2px),rgba(255,255,255,.16) calc(10% - 2px) 10%),
+  repeating-linear-gradient(90deg,transparent 0 calc(2% - 1px),rgba(255,255,255,.07) calc(2% - 1px) 2%) 0 0/100% 14px no-repeat,
+  repeating-linear-gradient(90deg,transparent 0 calc(2% - 1px),rgba(255,255,255,.07) calc(2% - 1px) 2%) 0 100%/100% 14px no-repeat,
+  linear-gradient(180deg,#2f5139,#284531);color:#fff;border-bottom:6px solid #fff}
+.hv-turf .h-hero .kick{color:#ffd9a8}
+.hv-turf .h-hero h1{color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.18)}
+.hv-turf .h-hero h1 span{color:#fff;-webkit-text-stroke:0;background:linear-gradient(transparent 78%,var(--red) 78% 92%,transparent 92%);display:inline}
+.hv-turf .h-hero .lede{color:#e3eadf}
+.hv-turf .h-hero .btn.ghost{border-color:#fff;color:#fff}
+.hv-turf .ticks{color:#e3eadf}.hv-turf .ticks li::before{color:#ffd9a8}
+
+/* games under the hero */
+.h-games{max-width:1240px;margin:0 auto;padding:0 clamp(16px,4vw,48px) 28px}
+.h-games-h{display:flex;align-items:baseline;gap:12px;margin-bottom:10px;padding-top:4px;border-top:1px solid rgba(255,255,255,.25)}
+.h-games-h b{font:700 14px "Barlow Condensed",sans-serif;letter-spacing:.16em;text-transform:uppercase;padding-top:10px}
+.h-games-h span{font:500 13px "IBM Plex Sans";opacity:.8}
+.h-games-h a{margin-left:auto;font:700 13px "Barlow Condensed",sans-serif;letter-spacing:.12em;text-transform:uppercase;text-decoration:underline;text-underline-offset:4px;cursor:pointer}
+.h-games-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
+.h-games-g .sc{width:auto;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 9px;color:var(--muted);text-decoration:none;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.12)}
+.h-games-g .sc:hover{border-color:var(--ink)}
+.h-games-g .r{display:flex;align-items:center;gap:6px}
+.h-games-g .r b{flex:1;font:700 14px "Barlow Condensed",sans-serif;letter-spacing:.06em}
+.h-games-g .r em{font:600 13px "IBM Plex Mono",monospace;font-style:normal}
+.h-games-g .r.w{color:var(--ink)}
+.h-games-g .st{display:block;margin-top:3px;font:600 10.5px "IBM Plex Mono",monospace;color:var(--red)}
+.h-games-g .live{border-color:var(--red)}.h-games-g .up{color:var(--ink2)}
+@media (max-width:1100px){.h-games-g{grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media (max-width:700px){.h-games-g{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.hv-turf .blkw .blk,.hv-red .blkw .blk{background:rgba(255,255,255,.85)}
+/* phone: heading on one line, sub line below; grid shows the first eight (games still to play lead) */
+.h-games-h b,.h-games-h a{white-space:nowrap}
+@media (max-width:700px){
+.h-games-h{flex-wrap:wrap;row-gap:0}
+.h-games-h span{order:3;flex:1 1 100%;padding-bottom:4px}
+.h-games-g .sc:nth-child(n+9){display:none}
+}
+
+/* fifth pass: straight on; sixth pass: no drive tracker */
+.hd-row{display:flex;align-items:center;gap:24px;padding:12px clamp(16px,4vw,48px)}
+header.site{display:block;padding:0}
+
+/* the down marker, one per section */
+.dm{display:flex;align-items:center;gap:10px;width:max-content;margin:0 0 14px}
+.h-sec-h .dm{flex-basis:100%;margin-bottom:4px}
+.dm-b{display:flex;align-items:flex-start;justify-content:center;width:48px;height:48px;padding-top:4px;border-radius:7px;background:var(--red);color:#fff;box-shadow:0 3px 0 #8f1419}
+.dm-b b{font:800 32px/1 "Tourney",sans-serif}
+.dm-b sup{font:700 13px "Barlow Condensed",sans-serif;letter-spacing:.04em;text-transform:uppercase;margin-top:2px}
+.dm-t b{display:block;font:700 26px/1 "Barlow Condensed",sans-serif;letter-spacing:.04em;text-transform:uppercase}
+.dm-t small{display:block;margin-top:3px;font:600 11px "IBM Plex Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.h-feat .num{display:none}
+
+/* painted field numbers on the hero's yard lines */
+.h-yards{position:relative;height:clamp(44px,5.6vw,76px);margin:clamp(-8px,-1vw,0px) 0 6px;pointer-events:none}
+.h-yards span{position:absolute;top:0;display:flex;align-items:center;transform:translateX(-50%);font:800 clamp(26px,3.8vw,56px)/1 "Tourney",sans-serif;color:rgba(255,255,255,.26)}
+.h-yards i{width:clamp(8px,1.1vw,16px)}
+.h-yards em{position:absolute;top:50%;font-size:.32em;font-style:normal;transform:translateY(-50%)}
+.h-yards em.l{right:calc(100% + 4px)}.h-yards em.r{left:calc(100% + 4px)}
+@media (max-width:700px){.h-yards span{font-size:17px}.h-yards em{display:none}.h-yards i{width:4px}}
+
+/* game grid: the next game flagged */
+.h-games-g .sc{position:relative}
+.h-games-g .nx{position:absolute;top:-8px;right:8px;padding:1px 6px;border-radius:3px;background:var(--red);color:#fff;font:700 10px/1.5 "Barlow Condensed",sans-serif;font-style:normal;letter-spacing:.14em;text-transform:uppercase}
+
+/* the numbers sit on a row of hash marks */
+.h-nums{background:repeating-linear-gradient(90deg,var(--line2) 0 1px,transparent 1px 2%) center top/calc(100% - 2*clamp(16px,4vw,48px)) 10px no-repeat}
+
+/* the close is the end zone */
+.h-close{position:relative;overflow:hidden;background:repeating-linear-gradient(135deg,rgba(255,255,255,.08) 0 24px,transparent 24px 48px),var(--red)}
+.h-close>*:not(.ez){position:relative;z-index:1}
+.h-close .ez{position:absolute;left:0;right:0;top:50%;margin:0;transform:translateY(-50%);text-align:center;white-space:nowrap;font:800 clamp(56px,11.5vw,190px)/1 "Tourney",sans-serif;text-transform:uppercase;color:transparent;-webkit-text-stroke:2px rgba(255,255,255,.2);pointer-events:none}
+.h-close .ez i{font-style:normal;font-size:.5em;vertical-align:.3em;margin:0 .1em}
+.h-close .td{display:inline-block;margin:0 0 16px;padding:5px 14px;border-radius:5px;background:#fff;color:var(--red);font:800 15px "Tourney",sans-serif;letter-spacing:.12em;text-transform:uppercase;box-shadow:0 3px 0 #8f1419}
+
+/* sixth pass: flat and plain, like the app (no soft shadows, no colored card caps, no highlight gradients, no eyebrows) */
+.h-map,.h-mail,.wk,.h-gotw,.lb,.h-live .card,.h-games-g .sc{box-shadow:none}
+.h-map{border:0}
+.wk.play,.wk.swing,.wk.ups,.h-gotw{border-top:1px solid var(--line)}
+.wk>i,.h-gotw .k,.k{color:var(--muted)}
+.lb li:first-child{background:none;margin:0;padding:7px 0;border-radius:0}
+.dm-b{box-shadow:none}
+.h-close .td{box-shadow:none}
+.h-sec-h .dm{margin-bottom:8px}
+.h-feat .txt h2{margin-top:2px}
+.h-hero .lede{margin-top:20px}
+.h-games-g .nx{top:-7px}
+/* the counts: one plain line closing the hero */
+.h-count-w{padding-bottom:22px}
+.h-count{margin:0;padding-top:12px;border-top:1px solid rgba(255,255,255,.25);font:500 14px "IBM Plex Sans";color:#e3eadf}
+.h-count b{font:600 14px "IBM Plex Mono",monospace;color:#fff}
+.h-count .blk{margin-left:8px}
+@media (max-width:700px){.blk{white-space:normal}}
+/* no left color bars on cards, rows or quotes */
+.h-soft .s{border-left:1px solid var(--line)}
+.dv a{border-left:0}
+.h-gotw .say{border-left:0;padding-left:0}
+.h-nums div{border-left:0}

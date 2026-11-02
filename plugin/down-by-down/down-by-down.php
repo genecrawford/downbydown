@@ -3,7 +3,7 @@
  * Plugin Name: Down by Down
  * Plugin URI:  https://downbydown.com
  * Description: How every NFL offense actually plays, drawn on the field from public play-by-play. Put [down_by_down] on a page and that page becomes the app.
- * Version:     2.0.1
+ * Version:     2.1.0
  * Author:      Period Three
  * Author URI:  https://period-three.com
  * License:     GPL-2.0-or-later
@@ -14,7 +14,7 @@
 
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-define( 'DBD_VERSION', '2.0.1' );
+define( 'DBD_VERSION', '2.1.0' );
 define( 'DBD_FILE', __FILE__ );
 define( 'DBD_PATH', plugin_dir_path( __FILE__ ) );
 define( 'DBD_URL', plugin_dir_url( __FILE__ ) );
@@ -39,6 +39,7 @@ require_once DBD_PATH . 'includes/class-dbd-card.php';
 require_once DBD_PATH . 'includes/class-dbd-urls.php';
 require_once DBD_PATH . 'includes/class-dbd-router.php';
 require_once DBD_PATH . 'includes/class-dbd-seo.php';
+require_once DBD_PATH . 'includes/class-dbd-home.php';
 if ( is_admin() ) {
 	require_once DBD_PATH . 'includes/admin/settings.php';
 }
@@ -57,4 +58,5 @@ add_action( 'plugins_loaded', function () {
 	DBD_Sync::init();
 	DBD_Router::init();
 	DBD_Seo::init();
+	DBD_Home::init();
 } );

@@ -964,7 +964,7 @@ Ours has what theirs does not: every position, the play-level field map, the con
 | 12 | **Compare, finished** | Compare | The deferred overlays: career lines, fingerprint bars, trend lines | Nothing new | S to M |
 | 13 | **Polish release** | Everywhere | Pretty URLs with per-matchup Open Graph images, the top-level admin menu, team and game cards, pruning old card PNGs, the skeleton reveal | Nothing new | S each |
 | 14 | **Season archive** | Everywhere | Next September, where did 2026 go? Data per season, a season switch | Build and data layout; before the 2027 season | L |
-| 15 | **nfelo layer (1.4.0)** | Hub, game | The model's numbers beside ours | greerreNFL's OK | M |
+| 15 | **nfelo layer** (shelved 2026-11-02) | Hub, game | The model's numbers beside ours | greerreNFL's OK; shelved by Gene, not pending | M |
 
 **Foundations ride along:** the view harness learns the game, compare and matchups views; the nightly build gains a sanity step; the 22 MB of career caches is the known cost of the backfill.
 
@@ -1922,3 +1922,148 @@ Size: L. Status: signed off 2026-11-02 ("Build it") and built as 2.0.0. As built
 - **The data layer swaps per-season caches** instead of flushing them.
 - **The season page has its own share card:** the champion and the best units in the tiles, the playoff scores on the field.
 - **My team is always the current season,** even under `/2025/my-team/`.
+
+## 45. A marketing home page (scoped and mocked 2026-11-02, `mockup-v20/`)
+
+After the roadmap (Gene, 2026-11-02): "explore a more marketing focused home page", with three jobs:
+1. new visitors understand the site and click in
+2. it ranks in search
+3. it collects newsletter sign-ups
+
+Today `/` is the hub. It opens straight into this week's slate, standings and My team, which suits someone who already knows the site. Someone arriving from a shared card or a search result gets a tagline and then a wall of data.
+
+The mock is `mockup-v20/home.html`, drawn from the site's published data: every number, map, card and takeaway on it is real.
+
+### The shape
+
+- **`/` becomes a marketing home that Gene builds in Divi.** It's the site's front door, and his design to own.
+- **The hub moves to `/this-week/`,** a new page that holds `[down_by_down]`. It is the same hub, at a name that says what it is.
+- **Every app path stays at the site root.** `/team/min/`, `/player/justin-jefferson/`, `/2025/` and the rest keep working exactly as now, though the app no longer lives on the front page (see Plugin).
+- **The plugin supplies live blocks** for the Divi page: shortcodes that draw real, current data, so every claim on the page is proved by this week's numbers, not a screenshot. The page is never out of date.
+
+### The page, top to bottom (second pass, 2026-11-02)
+
+Gene's notes on the first pass:
+- make it less minimal
+- drop the play-explorer section, the share-card strip and "every season kept"
+
+This pass gives the page weight: two live pieces in each section, real players' faces throughout, and a red closing band. A third pass the same day (Gene: no dark blue backgrounds, no scrolling list) made the page light throughout, in the site's own palette, and removed the scoreboard strip. A fourth pass (Gene: try something different, not just remove things) puts options back in their place, switchable in the mock's top bar:
+
+- **Hero background:** *Turf* (field green with yard lines, hash marks and white type; the headline's "drawn on the field" underlined in red), *Red* (the brand red with chalk and ink type), or *Paper* (the light third pass). In Divi this is the hero section's background, so Gene can change it any time; the plugin's blocks sit on any of the three.
+- **Games under the hero:** *Game grid* (every game of the week as a small score tile in a seven-wide grid, games still to play first; a phone shows the first eight with "Every matchup") or *Three that mattered* (three big cards: the game of the week, the upset, the wildest finish, each with one line of why). Both replace the old scrolling strip and sit still.
+
+**Fifth pass (Gene's pick: Turf + Game grid; nothing tilted).** The map card and the email preview sit straight. The page now reads as one drive down the field:
+
+- **Down markers.** Each section header carries a sideline down marker: this week 1st & 10 · Own 25, matchups 2nd & 2 · Own 33, players 1st & 10 · Own 41, fantasy 2nd & 1 · Midfield, leaders 1st & 10 · Opp 38, teams 2nd & 3 · Opp 31, newsletter 1st & 10 · Opp 17, questions 1st & Goal · Opp 6. In Divi it's a small Code module (or `[dbd_block type="down" down="1" dist="10" spot="Own 25"]`); the markers are decoration, not data.
+- **The drive tracker.** A thin turf strip under the sticky header with both end zones; a ball moves to each section's spot as you scroll and scores at the close. It's about 20 lines of JS shipped as `[dbd_block type="drive"]`, which reads `data-yd` from the sections. Reduced motion turns off the slide.
+- **Painted field numbers.** The hero's yard lines carry 10 through 50 and back, with direction arrows, just above the game grid.
+- **The game grid flags the next game** with a red NEXT tag.
+- **The close is the end zone.** Red with painted stripes, a hollow DOWN × DOWN wordmark and a TOUCHDOWN marker over the closing line.
+
+**Sixth pass (Gene: lose the slider, drop what looks like a stock template).** The drive tracker is gone, and the header no longer sticks. Also removed:
+
+- the eyebrow labels over every heading (the down marker is the label)
+- the hero's tag line and its ✓ No account / No ads / No picks row ("Free, no account, updated three times a day" now ends the lede)
+- the dash-bullet lists in the three feature sections
+- arrows on links and buttons
+- soft drop shadows, colored card caps and the highlighted first leader row; cards are flat with 1px rules, like the app
+
+The numbers band is now one plain line closing the hero ("14,784 snaps charted this season · 120 games · 576 players · 32 offenses and defenses"), still `[dbd_block type="counts"]`.
+
+**The page as approved (sixth pass, built in 2.1.0):**
+
+1. **Hero, a `dbd-turf` section:**
+   - the H1 "Every NFL snap, drawn on the field." with "drawn on the field." underlined in red (`<span class="dbd-u">`)
+   - the lede ending "Free, no account, updated three times a day.", then **See this week** and **Pick your team**
+   - beside it, `hero-map`
+   - under them, a full-width row of `yards`, then `games` and `counts`
+2. **What happened this week** (1st & 10 · Own 25): `week-highlights`, with "The full week in review" linking to `[dbd_url to="week"]`.
+3. **Every matchup, read for you** (2nd & 2 · Own 33): copy and a button on the left, `matchup` on the right.
+4. **Every player, in context** (1st & 10 · Own 41, tinted): `player-card` and `movers`.
+5. **Fantasy with the why** (2nd & 1 · Midfield): `fantasy` over `leaders boards="ppr"`.
+6. **Who is actually good** (1st & 10 · Opp 38): `leaders`.
+7. **Start with your team** (2nd & 3 · Opp 31): `teams`.
+8. **The week in review, every Tuesday** (1st & 10 · Opp 17): Divi's Email Optin beside `newsletter-preview`.
+9. **Questions** (1st & Goal · Opp 6): `faq`.
+10. **The close, a `dbd-endzone` section:** a TOUCHDOWN marker, "Every snap of the season, on one field." and the two buttons.
+
+Each section header is a `down` block over a Divi heading. There are no eyebrow labels, tick rows, arrows or shadows.
+
+### The live blocks (shortcodes)
+
+| Shortcode | Draws |
+|---|---|
+| `[dbd_block type="hero-map"]` | the week's most-targeted player (or `player="…"`): photo, line, target map, link. The play file loads behind a skeleton. |
+| `[dbd_block type="games"]` | this week's games as score tiles, games still to play first, the next one flagged (the featured option was dropped with Gene's pick) |
+| `[dbd_block type="down" down="…" dist="…" spot="…"]` | a section's down marker (decoration) |
+| `[dbd_block type="counts"]` | one line: snaps charted, games, players, offenses and defenses |
+| `[dbd_block type="yards"]` | the painted field numbers for a `dbd-turf` section (decoration) |
+| `[dbd_block type="faq"]` | the six questions, with their FAQPage data |
+| `[dbd_block type="week-highlights"]` | the play of the week, the swing of the week, the upsets and the wildest game, from the latest week in review |
+| `[dbd_block type="matchup"]` | the game of the week card and its four-row head to head |
+| `[dbd_block type="player-card" player="…"]` | a player's share card image (default: the week's top mover) |
+| `[dbd_block type="movers"]` | the four biggest target-share risers |
+| `[dbd_block type="fantasy"]` | the softest defense at each position (half PPR) |
+| `[dbd_block type="leaders" boards="…"]` | top-five boards; `ppr` and `wr.tshare,wr.epat,qb.epadb` as mocked |
+| `[dbd_block type="teams"]` | the 32 teams by division with records |
+| `[dbd_block type="newsletter-preview"]` | the email preview written from the latest week in review |
+| `[dbd_url to="hub|teams|players|myteam|matchups|leaders|week|season"]` | the right link for a Divi button |
+
+**How the blocks behave**
+- Each block carries the site's styles, and only the scripts it needs load on the page.
+- The blocks pick their own subjects each week from the data, so the page changes as the season does.
+- A block whose data is missing renders nothing.
+
+### Newsletter
+
+- **Collecting addresses is Divi's Email Optin module,** which connects to Mailchimp, Brevo, Kit and others. The plugin stores no email addresses.
+- **The weekly email** can then write itself. The plugin adds an RSS feed of the week in review, `/feed/week-in-review/`: one item per finished week, with the headline, the upsets and comebacks, the top play, the card image and a link. Providers with RSS-to-email campaigns (Mailchimp's RSS campaigns, Kit's RSS automation) can send each new item to the list automatically every Tuesday.
+- **The provider is Gene's choice.** If it's Brevo, which he already uses, its RSS support needs checking before relying on it.
+
+### Search
+
+- **The home page:**
+  - its title and description come from the plugin, the way app pages already get theirs: "Down by Down: every NFL snap, drawn on the field | Free NFL charts, matchups and fantasy"
+  - one H1, real body copy in each section
+  - `WebSite` and `Organization` structured data
+  - the FAQ marked up as `FAQPage`
+- **Linking:** the 32-team grid and the section buttons link deep into the app, which the sitemap already lists.
+- **The hub at `/this-week/`** keeps its own title and canonical, and the sitemap lists it.
+- **Keywords the copy targets,** phrased for readers: NFL play-by-play charts, target maps, EPA by team, fantasy matchups, free NFL stats.
+
+### Plugin (2.1.0)
+
+- **App paths at the site root.** A setting, on by default once the app page isn't the front page, keeps the rewrite rules and `url()` at the root, so app links don't change.
+  - The hub's own link becomes the app page's address (`/this-week/`).
+  - A season's page stays `/2025/`.
+- **Old hub links.** `/?team=MIN`-style links on the new home redirect to their app paths, as they do now. A bare `/` is the marketing home.
+- **The blocks:** `[dbd_block]` and `[dbd_url]` as above, plus their styles. Each block reuses the pieces the app already draws: the field map, the takeaway card, share cards, team marks.
+- **The feed:** the week-in-review RSS feed, built from `week/w{N}.json`.
+- **Home page head tags:** the title, description, canonical and JSON-LD for the front page when it isn't the app page.
+- **CI:** the harness renders each block from repo data, the feed validates as RSS, and the URL round trip runs with the app on a non-front page.
+
+### Who does what, in order
+
+1. **Ship 2.1.0.** With the app still on the front page nothing changes, so it is safe to upload first.
+2. **Gene creates the page** "This week" (`/this-week/`) with `[down_by_down]`, and moves the sidebar layout to it.
+3. **Gene builds the home page in Divi** on the current Home page, replacing the shortcode, using the blocks, Email Optin and `[dbd_url]` buttons. The mock is the reference; the design is his.
+4. **Check the root-paths setting** and that `/team/min/` still opens the team. The admin shows a test link.
+5. **Sidebar menu:** "Slate" points to `/this-week/`.
+
+### Left out
+
+- **A blog or articles section.** The FAQ and the feed cover search for now.
+- **Accounts or paid tiers.**
+- **Sending the newsletter from WordPress.** The provider does it.
+- **A/B testing the hero.**
+
+### Acceptance
+
+- **The home:** `/` is the marketing home, and every block on it shows this week's real data with no console errors.
+- **The hub:** `/this-week/` is the hub.
+- **Old addresses:** `/team/min/`, `/player/justin-jefferson/`, `/2025/` and every old `/?team=` link still land where they did.
+- **The feed:** `/feed/week-in-review/` lists the finished weeks.
+- **Search:** the home page has its title, description, JSON-LD and FAQ markup.
+- **Layout:** no horizontal scroll at 375.
+
+Size: M (plugin), plus Gene's Divi build. Status: scoped and mocked 2026-11-02 over six passes; Gene signed off ("Build it") the same day; built as 2.1.0. Gene's Divi steps are in `divi/home-build.md`.
