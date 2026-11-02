@@ -58,7 +58,7 @@
 .hb-gm.up .st{color:var(--ink2)}
 .hb-gm .nx{position:absolute;top:-7px;right:8px;padding:1px 6px;border-radius:3px;background:var(--red);color:#fff;font:700 10px/1.5 "Barlow Condensed",sans-serif;font-style:normal;letter-spacing:.14em;text-transform:uppercase}
 @media (max-width:1100px){.hb-games-g{grid-template-columns:repeat(5,minmax(0,1fr))}}
-@media (max-width:700px){.hb-games-h{flex-wrap:wrap;row-gap:0}.hb-games-h span{order:3;flex:1 1 100%;padding-bottom:4px}.hb-games-g{grid-template-columns:repeat(2,minmax(0,1fr))}.hb-gm:nth-child(n+9){display:none}}
+@media (max-width:700px){.hb-games-h{flex-wrap:wrap;row-gap:0}.hb-games-h span{order:3;flex:1 1 100%;padding-bottom:4px}.hb-games-g{grid-template-columns:repeat(2,minmax(0,1fr))}.dbd-hb.dbd-hb .hb-gm:nth-child(n+9){display:none}}
 
 /* counts */
 .dbd-hb.hb-counts p{font:500 14px "IBM Plex Sans";padding-top:12px;border-top:1px solid rgba(127,127,127,.35)}
