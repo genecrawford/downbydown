@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.19.1
+Stable tag: 1.19.2
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,9 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.19.2 =
+* On a phone the play explorer's situation tables drop their bars and the success column, and a player's Teammates names wrap, so neither scrolls sideways.
 
 = 1.19.1 =
 * The skeleton cross-fade runs (1.19.0 threw a script error before it), and the defense's Situations table fits a phone.
