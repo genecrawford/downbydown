@@ -39,7 +39,7 @@ function get_transient( $k ) { return false; }
 function set_transient( $k, $v, $e = 0 ) { return true; }
 function home_url( $p = '' ) { return 'https://example.test' . $p; }
 function get_permalink( $p = null ) { return 'https://example.test/app/'; }
-function add_query_arg( $args, $url = '' ) { if ( ! is_array( $args ) ) { return $url; } $q = http_build_query( $args ); return $url . ( $q ? ( strpos( $url, '?' ) === false ? '?' : '&' ) . $q : '' ); }
+function add_query_arg( $args, $url = '' ) { if ( ! is_array( $args ) ) { return $url; } $q = implode( '&', array_map( function ( $k, $v ) { return $k . '=' . $v; }, array_keys( $args ), $args ) ); return $url . ( $q ? ( strpos( $url, '?' ) === false ? '?' : '&' ) . $q : '' ); }  /* like WordPress: values go in as given (the plugin encodes them first) */
 function sanitize_text_field( $s ) { return trim( strip_tags( (string) $s ) ); }
 function wp_unslash( $s ) { return $s; }
 function wp_date( $f, $ts = null, $tz = null ) { $d = new DateTime( '@' . ( $ts ?? time() ) ); $d->setTimezone( $tz ?: new DateTimeZone( 'UTC' ) ); return $d->format( $f ); }  /* UTC by default, like a site left on GMT: the page must pass Eastern itself */
