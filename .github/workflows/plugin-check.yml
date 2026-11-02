@@ -90,6 +90,34 @@ jobs:
             for m in 'class="dbd-cslots cw-next"' '<b>Playstyle</b>' '<b>Where the EPA comes from</b>' '<b>The shape of their seasons</b>' '<b>Careers</b>'; do grep -q "$m" "pages/compare-$set.html" || { echo "compare $set is missing $m"; exit 1; }; done
           done
           php tools/card_harness.php data 00-0036322 pages/card-logo.png
+      - name: A final whose player stats aren't posted yet reads as pending, not a miss
+        run: |
+          set -e
+          # nflverse posts weekly player stats hours after the play-by-play, so a Sunday-night final can sit in the
+          # schedule with no player lines. Strip Minnesota's latest week from a copy of the data and render Jefferson.
+          rm -rf /tmp/pend && cp -r data /tmp/pend
+          W=$(python3 - <<'PY'
+          import json
+          f = '/tmp/pend/players/MIN.json'; d = json.load(open(f))
+          W = max(int(w['week']) for p in d['players'] for w in p.get('weeks', []))
+          for p in d['players']:
+              p['weeks'] = [w for w in p.get('weeks', []) if int(w['week']) != W]
+              if p.get('snaps'): p['snaps'].pop(str(W), None)
+              if p.get('fx0'): p['fx0'] = [x for x in p['fx0'] if int(x) != W]
+          json.dump(d, open(f, 'w'))
+          print(W)
+          PY
+          )
+          echo "stripped Minnesota's week $W"
+          export DBD_HARNESS_HTML=/tmp/pendpages
+          php tools/view_harness.php /tmp/pend player 00-0036322 2>&1 | tee /tmp/pend.log
+          grep -q ", 0 warnings" /tmp/pend.log
+          P=/tmp/pendpages/player-00-0036322.html
+          grep -q "<tr class=\"dbd-gx wait\"><td>$W</td>" "$P" || { echo "game log has no pending row for week $W"; exit 1; }
+          grep -q "Week $W, stats not posted yet" "$P" || { echo "fantasy strip has no pending week $W"; exit 1; }
+          if grep -q "<tr class=\"dbd-gx dnp\"><td>$W</td>" "$P"; then echo "week $W still reads as did not play"; exit 1; fi
+          # with the real data the same week is a game, not pending
+          if grep -q "dbd-gx wait" pages/player-00-0036322.html; then echo "real data shows a pending week"; exit 1; fi
       - uses: actions/upload-artifact@v4
         with:
           name: pages
