@@ -157,7 +157,7 @@ if ( $view === 'block' || $view === 'page' ) {
 			$n = 0; $html = preg_replace_callback( '/\[dbd_block\s+([^\]]*)\]/', function ( $m ) use ( &$n ) { $n++; preg_match_all( '/(\w+)="([^"]*)"/', $m[1], $kv, PREG_SET_ORDER ); $a = array(); foreach ( $kv as $p ) { $a[ strtolower( $p[1] ) ] = $p[2]; } return DBD_Blocks::render( strtolower( $a['type'] ?? '' ), $a ); }, $src );
 			$name = 'page-' . basename( $arg, '.html' );
 			echo "page $arg: $n blocks, " . strlen( $html ) . " bytes, $warnings warnings\n";
-			if ( strpos( $html, '[dbd_block' ) !== false || strpos( $html, 'class="dbd-hb' ) === false ) { fwrite( STDERR, "page $arg: a block did not render\n" ); exit( 3 ); }
+			if ( preg_match( '/\[dbd_block\s/', $html ) || strpos( $html, 'class="dbd-hb' ) === false ) { fwrite( STDERR, "page $arg: a block did not render\n" ); exit( 3 ); }
 		}
 	} catch ( Throwable $e ) { fwrite( STDERR, "FATAL in $view $arg: " . get_class( $e ) . ': ' . $e->getMessage() . ' at ' . basename( $e->getFile() ) . ':' . $e->getLine() . "\n" ); exit( 1 ); }
 	$dir = getenv( 'DBD_HARNESS_HTML' );
