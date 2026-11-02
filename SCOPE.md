@@ -1586,3 +1586,44 @@ The router (`view=week`, `week`), `views/week.php` and a `DBD_Week` class (short
 Week 7 matches the mock: 14 of 14 final, 632 points, 4 comebacks, 4 upsets, biggest swing 22 points; Giants over Texans as a 22% underdog; Bengals back from 14%; best offense Bengals +0.33; Joe Burrow +19.4 EPA; Movers panel present. Week 8 in progress shows "9 of 14 final", upcoming games with kickoff times, the play-by-play note and asterisked fantasy points, and no Movers. The order switch works; no horizontal scroll at 375; no text under 11px; checked at 1440 and 375.
 
 Size: M. Status: signed off 2026-11-01 and built as 1.16.0. Build note: the movers code became a function of the week, so each complete week's file keeps its own movers; the Players page and the week page share one movers panel (`DBD_Week::movers`).
+
+## 41. Hub refresh (scoped and mocked 2026-11-01, `mockup-v16/`)
+
+Roadmap 2, slice 11. The hub answers **what should I look at today?** It's the front door, and today it shows the game of the week, the score strip and the division tables, with nothing about players, fantasy, movers, the week in review or the playoff race. Everything built since 1.4 lives one click deeper. This slice brings the best of it to the front, from data the site already publishes. The mock is the live 1.16.0 hub with the new bands added and outlined: `mockup-v16/hub.html` (My team empty) and `hub-team.html` (a saved team), on Week 8 with 10 of 14 games final.
+
+### What stays
+
+The hero, the game of the week and the score strip, unchanged, then the link to the full slate.
+
+### What's new, in order
+
+| Band | What it shows | Week 8 (mock) |
+|---|---|---|
+| **The week so far** (or **Last week** once the week is complete and the next has no final) | From `week/w{N}.json`: three lines of the short version (upset, comeback, player; when one game was both the upset and the comeback it is said once and the wildest game takes the slot), the three biggest swings, and a link to the week in review | Cardinals over the Cowboys 33–30, a 23% underdog down to 2%; Raiders at Jets, five lead changes; Kirk Cousins +18.4 EPA |
+| **Still to play** | A card for every game left this week except the game of the week: kickoff (local time), line and total; each team's record and its offense and defense rank (EPA a play); the game's **biggest edge**, the same read the game page leads with, naming which offense it favors; one **fantasy** line, the softest position matchup in the game in half-PPR points allowed; a link to the matchup. Early in the week, when every game is still to play, the six with the biggest edges show, with a link to the full slate | Chiefs at Broncos "Run it at them"; Patriots at Dolphins "Throw it"; Bears at Seahawks "Wideouts feast" |
+| **Players** | Three cards: **Movers** (the latest complete week's four biggest climbs and four biggest drops in snap share, linking to the full panel), **Fantasy leaders** (points a game, the top two at each position, with the site's Standard, Half PPR and PPR switch, linking to Leaders), and **My team**: with a saved team, each player with this week's opponent (or "bye", or "final"), linking to My team; without one, a short pitch and a Build my team button | J.J. McCarthy +69 points of snaps; Josh Allen 26.8 a game |
+| **Standings** | Two tabs. **Playoff picture** (new, the default): per conference, seeds 1 to 7 if the season ended today (the four division leaders, then the three best records left) with record and point differential, then "In the hunt" (teams within one game of the 7th seed, with how far back), then the rest on one line. **Divisions**: today's tables, unchanged | AFC: Bills, Chiefs, Steelers, Jaguars, Bengals, Broncos, Browns; Patriots ½ game back |
+
+### Rules
+
+- **Seeding** goes by record, then point differential. The NFL's own tiebreakers (head to head, division record, conference record, strength of victory) are not applied; the note under the tab says so, and that a tie on record can land the other way. Ties count as half a win.
+- **Games back** from the 7th seed: (wins behind plus losses ahead) over two, in halves.
+- **The week band** uses the current week when it has a final game, otherwise the week before.
+- **My team** reads the saved team from this device (`dbd-myteam`, as My team does). The hub ships a small map of the skill players' names, teams and positions (about 20 KB, only when a team is saved: it's loaded by the card's script, not inlined) so the card can draw the lineup without the full player index.
+
+### Data and plugin (1.17.0)
+
+No new data: the week files, movers, leaders, fantasy and metrics files are all published. The plugin gains `DBD_Hub` (week band, game cards, players row, playoff picture), a small JSON file for the My team card (`players/mini.json`, written by the build: `{id: [name, team, pos, num]}` for every indexed player), `hub.js` for the My team card, CSS, and a harness render of the hub in both build and plugin checks. Sync allowlist gains `players/mini`.
+
+### Left out
+
+- **The NFL's full tiebreakers**, and clinching or elimination marks: worth doing properly later, alongside the season archive.
+- **Live scores during games:** the data is nightly.
+- **Injury news on the hub:** the player pages carry each week's report.
+- **Personalising the game cards to My team's players:** the card shows the lineup; the deeper view is My team.
+
+### Acceptance
+
+The Week 8 hub matches the mock: the week band with the Cardinals line, the Raiders–Jets lead changes and Kirk Cousins; three still-to-play cards (Chiefs at Broncos, Patriots at Dolphins, Bears at Seahawks) with their edges and fantasy lines; Movers with McCarthy +69; fantasy leaders with Josh Allen 26.8; the playoff picture with the seeds above and the Patriots ½ game back; Divisions tab unchanged. No horizontal scroll at 375; no text under 11px; checked at 1440 and 375.
+
+Size: M. Status: signed off 2026-11-01 and built as 1.17.0. Build note: the sidebar's Teams link (`/#dbd-teams`) now lands on the standings band rather than inside the hidden Divisions tab.

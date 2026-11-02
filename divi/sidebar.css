@@ -3,7 +3,9 @@
    Give the sidebar column the CSS class "dbd-side" (column settings › Advanced › CSS ID & Classes).
    Markup expected inside the column: an Image module with the logo, then a Text module with
    <h2>Group</h2><ul><li><a href="…">Item</a></li></ul> blocks, optionally a <p class="dbd-foot"> at the end.
-   Hub anchors are /#dbd-slate and /#dbd-teams (every id the plugin prints starts with dbd-). */
+   Hub anchors are /#dbd-slate and /#dbd-teams (every id the plugin prints starts with dbd-).
+   Revised 2026-11-01 (1.16.0): the current-page highlight covers every page, desktop and phone, including
+   Week in review, My team, Leaders, a team's players and Compare. Every link needs its leading slash (/?view=players). */
 
 /* ---- the column ---- */
 .dbd-side{
@@ -81,6 +83,10 @@ body.dbd-view-team .dbd-side a[href="/?view=teams"],
 body.dbd-view-players .dbd-side a[href="/?view=players"],
 body.dbd-view-player .dbd-side a[href="/?view=players"],
 body.dbd-view-compare .dbd-side a[href="/?view=players"],
+body.dbd-view-teamplayers .dbd-side a[href="/?view=players"],
+body.dbd-view-week .dbd-side a[href="/?view=week"],
+body.dbd-view-myteam .dbd-side a[href="/?view=myteam"],
+body.dbd-view-leaders .dbd-side a[href="/?view=leaders"],
 .dbd-side a[aria-current="page"]{
   background:#f6f3ec;color:#121417;
 }
@@ -90,6 +96,13 @@ body.dbd-view-matchups .dbd-side a[href="/?view=matchups"]::before,
 body.dbd-view-game .dbd-side a[href="/?view=matchups"]::before,
 body.dbd-view-teams .dbd-side a[href="/?view=teams"]::before,
 body.dbd-view-team .dbd-side a[href="/?view=teams"]::before,
+body.dbd-view-players .dbd-side a[href="/?view=players"]::before,
+body.dbd-view-player .dbd-side a[href="/?view=players"]::before,
+body.dbd-view-teamplayers .dbd-side a[href="/?view=players"]::before,
+body.dbd-view-compare .dbd-side a[href="/?view=players"]::before,
+body.dbd-view-week .dbd-side a[href="/?view=week"]::before,
+body.dbd-view-myteam .dbd-side a[href="/?view=myteam"]::before,
+body.dbd-view-leaders .dbd-side a[href="/?view=leaders"]::before,
 .dbd-side a[aria-current="page"]::before{background:#cb2026}
 
 /* ---- foot note: a <p class="dbd-foot"> at the end of the Text module ---- */
@@ -141,5 +154,12 @@ body.et_divi_theme{background:#f4f1ea}
   body.dbd-view-game .dbd-side a[href="/?view=matchups"],
   body.dbd-view-teams .dbd-side a[href="/?view=teams"],
   body.dbd-view-team .dbd-side a[href="/?view=teams"],
+  body.dbd-view-players .dbd-side a[href="/?view=players"],
+  body.dbd-view-player .dbd-side a[href="/?view=players"],
+  body.dbd-view-teamplayers .dbd-side a[href="/?view=players"],
+  body.dbd-view-compare .dbd-side a[href="/?view=players"],
+  body.dbd-view-week .dbd-side a[href="/?view=week"],
+  body.dbd-view-myteam .dbd-side a[href="/?view=myteam"],
+  body.dbd-view-leaders .dbd-side a[href="/?view=leaders"],
   .dbd-side a[aria-current="page"]{background:#121417;color:#fff;border-color:#121417}
 }

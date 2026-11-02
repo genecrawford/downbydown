@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.16.0
+Stable tag: 1.17.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,10 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 1.17.0 =
+* The hub refresh (SCOPE §41): under the score strip, the week so far (three lines and the biggest swings, linking to the week in review), a card for every game still to play (line, offense and defense ranks, the biggest edge, the softest fantasy matchup), a players row (movers, fantasy leaders with the format switch, and your My team lineup with this week's opponents), and a Playoff picture tab beside the division standings.
+* Data: players/mini.json (name, team, position, number and photo for each indexed player) for the My team card; the sync allowlist gains it.
 
 = 1.16.0 =
 * The week in review (SCOPE §40): a new page, ?view=week&week=N, for every week with a final game. The short version (upset, comeback, wildest game, best offense and defense, player of the week), a scoreboard card per game with its win-probability line and tags, the week's biggest swings and best plays by EPA, every offense and defense against its usual, the best players by position and the fantasy leaders, and that week's movers. The matchups page links to it.

@@ -22,6 +22,7 @@ Writes:
   players/{ABBR}.json  roster rows for QB/RB/FB/WR/TE with weekly stat lines, snap share, PFR extras, injury line, depth slot, grades, fp (playstyle traits),
                        ep (EPA split, success, ANY/A, depth-by-direction grid), trk (hero tile ranks), injw (report designation per week)
   players/index.json   one row per player league-wide for the Players index and search
+  players/mini.json    id -> name, team, position, number, photo id, for the hub's My team card
   career/{year}.json  season totals for every player, one file per finished season (built once, kept)
   players/career/{ABBR}.json  each rostered player's season rows, oldest first, this season last
   players/movers.json  who moved in the last full week: snap share, target share and EPA against his own season, new faces
@@ -709,6 +710,10 @@ for t, pl in team_players.items():
 
 index_rows.sort(key=lambda x: (-x['snap'], -x['tgt'] - x['car'] - x['att']))
 json.dump(clean(dict(season=season, through=through_week, players=index_rows)), open(f'{out}/players/index.json', 'w'), separators=(',', ':'))
+# the hub's My team card (SCOPE §41): every indexed player as [name, team, pos, number, photo], the photo trimmed to its id after nflverse's usual prefix
+_PH = 'https://static.www.nfl.com/image/upload/f_auto,q_auto/league/'
+json.dump({r['id']: [r['name'], r['team'], r['pos'], r.get('num'), (r.get('photo') or '')[len(_PH):] if str(r.get('photo') or '').startswith(_PH) else (r.get('photo') or '')]
+           for r in index_rows}, open(f'{out}/players/mini.json', 'w'), separators=(',', ':'))
 
 # ---------------------------------------------------------------- schedule: every week of the season
 weeks = {}
