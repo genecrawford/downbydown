@@ -34,6 +34,7 @@ Not affiliated with the NFL or any team. No team logos are used; team marks are 
 = 2.0.2 =
 * The app can live on its own page (for example /hub/) while its pages keep their addresses at the site root: /team/min/, /player/justin-jefferson/, /2025/. The front page is then free for a custom home. A setting, on by default.
 * Links that carry the app page's address (/hub/team/min/) forward to the root address. Old /?team= links and /?card= share images on the front page still land.
+* The app page is the page last saved with [down_by_down]. Visiting a page no longer changes it, so two pages holding the shortcode can't flip the site's addresses back and forth.
 
 = 2.0.1 =
 * Playoff games and weeks are titled by round (Wild Card, Divisional, Conference, Super Bowl) instead of Week 19 to 22.

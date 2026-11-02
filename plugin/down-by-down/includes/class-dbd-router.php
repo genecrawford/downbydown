@@ -42,7 +42,9 @@ class DBD_Router {
 		if ( ! $post || ! has_shortcode( (string) $post->post_content, 'down_by_down' ) && ! has_shortcode( (string) $post->post_content, 'play_explorer' ) ) { if ( is_front_page() ) { self::front(); } return; }
 		self::$active   = true;
 		self::$page_url = get_permalink( $post );
-		if ( (int) get_option( DBD_Urls::OPT_PAGE ) !== (int) $post->ID && $post->post_status === 'publish' ) { update_option( DBD_Urls::OPT_PAGE, (int) $post->ID ); }
+		/* the app page is the one last saved with the shortcode (DBD_Urls::init); a visit only fills it in when none is known, so two pages
+		   holding the shortcode can't flip the site's paths back and forth */
+		if ( ! DBD_Urls::page_id() && $post->post_status === 'publish' ) { update_option( DBD_Urls::OPT_PAGE, (int) $post->ID ); }
 		$path = (string) get_query_var( 'dbd_path' ); $sv = (string) get_query_var( 'dbd_season' );
 		self::apply_season( DBD_Urls::season_of( $sv, $path, $_GET ), $path === '' ? self::my_team_query() : strpos( $path, 'my-team' ) === 0 );
 		if ( $path !== '' ) { self::$P = DBD_Urls::parse( $path ); } elseif ( $sv !== '' ) { self::$P = array(); }  /* /2025/: that season's page */
