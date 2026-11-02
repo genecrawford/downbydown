@@ -111,6 +111,30 @@ jobs:
         with:
           name: path-pages
           path: pathpages/
+      - name: The app on its own page, paths at the root (2.0.2)
+        run: |
+          set -e
+          export DBD_HARNESS_PRETTY=1 DBD_HARNESS_ROOT=1
+          # every link round-trips with the app on /hub/: the hub is /hub/, every other page a root path
+          php tools/view_harness.php data urls
+          chk() { got="$(php tools/view_harness.php data redirect "$1")"; echo "$1 -> $got"; [ "$got" = "$2" ] || { echo "  expected: $2"; exit 1; }; }
+          # old query links on the front page land on root paths; a plain visit to the home stays
+          chk '/?team=MIN' 'redirect 301 https://example.test/team/min/'
+          chk '/?player=00-0036322&utm_source=x' 'redirect 301 https://example.test/player/justin-jefferson/?utm_source=x'
+          chk '/?game=2026_08_MIN_DET&side=home' 'redirect 301 https://example.test/game/2026-week-8-vikings-at-lions/lions/'
+          chk '/?season=2025' 'redirect 301 https://example.test/2025/'
+          chk '/' 'stays (0 warnings)'
+          chk '/?utm_source=x' 'stays (0 warnings)'
+          chk '/?player=99-9999999' 'stays (0 warnings)'
+          chk '/?season=1999&team=MIN' 'stays (0 warnings)'
+          # links that carry the app page's address (2.0.1 drew these while the app sat on /hub/) forward to the root
+          chk '/hub/team/min/' 'redirect 301 https://example.test/team/min/'
+          chk '/hub/team/min/defense/?fbclid=abc' 'redirect 301 https://example.test/team/min/defense/?fbclid=abc'
+          chk '/hub/player/justin-jefferson/' 'redirect 301 https://example.test/player/justin-jefferson/'
+          chk '/hub/players/?pt=MIN&pos=WR' 'redirect 301 https://example.test/players/?pt=MIN&pos=WR'
+          chk '/hub/2025/team/min/' 'redirect 301 https://example.test/2025/team/min/'
+          chk '/hub/2025/' 'redirect 301 https://example.test/2025/'
+          chk '/hub/team/zzz/' 'stays (0 warnings)'
       - name: Render pages for review (headshots and logos on, the theme's table rule on)
         run: |
           set -e

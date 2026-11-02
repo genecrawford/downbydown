@@ -4,6 +4,7 @@
  * WordPress functions the plugin calls. Catches the fatal that a live page would hide behind "critical error".
  *   php tools/view_harness.php <data dir> <view> [arg]
  *   views: player <gsis id> | players | team <ABBR> | hub | game <game id> | teamplayers <ABBR> | matchups | teams | compare <id,id> | myteam [id,id,…] | leaders [g or board key] | defense <ABBR> | week [N]
+ *   DBD_HARNESS_ROOT=1: the app page is /hub/, not the front page, with paths at the root
  */
 if ( php_sapi_name() !== 'cli' ) { exit( 1 ); }
 list( , $data, $view, $arg ) = $argv + array( null, 'data', 'player', '00-0036322' );
@@ -28,7 +29,7 @@ function untrailingslashit( $s ) { return rtrim( $s, '/\\' ); }
 function wp_mkdir_p( $d ) { return is_dir( $d ) || @mkdir( $d, 0777, true ); }
 function wp_upload_dir() { global $tmp; return array( 'basedir' => $tmp, 'baseurl' => 'https://example.test/uploads' ); }
 function get_option( $k, $d = false ) { if ( $k === 'dbd_headshots' || $k === 'dbd_logos' ) { return (bool) getenv( 'DBD_HARNESS_MEDIA' ); }
-	if ( getenv( 'DBD_HARNESS_PRETTY' ) ) { if ( $k === 'permalink_structure' ) { return '/%postname%/'; } if ( $k === 'dbd_app_page' || $k === 'page_on_front' ) { return 10; } if ( $k === 'show_on_front' ) { return 'page'; } }  /* readable URLs (SCOPE §43) */
+	if ( getenv( 'DBD_HARNESS_PRETTY' ) ) { if ( $k === 'permalink_structure' ) { return '/%postname%/'; } if ( $k === 'dbd_app_page' ) { return 10; } if ( $k === 'page_on_front' ) { return getenv( 'DBD_HARNESS_ROOT' ) ? 5 : 10; } if ( $k === 'show_on_front' ) { return 'page'; } }  /* readable URLs (SCOPE §43) */
 	return $d; }
 function wp_parse_url( $u, $c = -1 ) { return parse_url( $u, $c ); }
 function get_query_var( $k ) { return ''; }
@@ -38,7 +39,8 @@ function update_option( $k, $v ) { return true; }
 function get_transient( $k ) { return false; }
 function set_transient( $k, $v, $e = 0 ) { return true; }
 function home_url( $p = '' ) { return 'https://example.test' . $p; }
-function get_permalink( $p = null ) { return 'https://example.test/app/'; }
+function get_permalink( $p = null ) { return getenv( 'DBD_HARNESS_ROOT' ) ? 'https://example.test/hub/' : 'https://example.test/app/'; }
+function is_front_page() { return false; }
 function add_query_arg( $args, $url = '' ) { if ( ! is_array( $args ) ) { return $url; } $q = implode( '&', array_map( function ( $k, $v ) { return $k . '=' . $v; }, array_keys( $args ), $args ) ); return $url . ( $q ? ( strpos( $url, '?' ) === false ? '?' : '&' ) . $q : '' ); }  /* like WordPress: values go in as given (the plugin encodes them first) */
 function sanitize_text_field( $s ) { return trim( strip_tags( (string) $s ) ); }
 function wp_unslash( $s ) { return $s; }
@@ -62,7 +64,8 @@ foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class
 
 /* ---- readable URLs (SCOPE §43): every old link to a path and back to the same route */
 if ( $view === 'urls' ) {
-	$rp = new ReflectionProperty( 'DBD_Router', 'page_url' ); $rp->setAccessible( true ); $rp->setValue( null, 'https://example.test/' );
+	$hub = getenv( 'DBD_HARNESS_ROOT' ) ? 'https://example.test/hub/' : 'https://example.test/';
+	$rp = new ReflectionProperty( 'DBD_Router', 'page_url' ); $rp->setAccessible( true ); $rp->setValue( null, $hub );
 	if ( ! DBD_Urls::on() ) { fwrite( STDERR, "readable URLs are off: set DBD_HARNESS_PRETTY=1\n" ); exit( 2 ); }
 	$cases = array( array(), array( 'view' => 'players' ), array( 'view' => 'players', 'pos' => 'WR', 'pt' => 'MIN' ), array( 'view' => 'teams' ), array( 'view' => 'myteam' ), array( 'myteam' => '00-0036322,00-0036900' ), array( 'compare' => 'none' ),
 		array( 'view' => 'leaders' ), array( 'view' => 'leaders', 'b' => 'wr.tsh' ), array( 'view' => 'matchups' ), array( 'view' => 'week' ), array( 'compare' => '00-0036322,00-0036900,00-0039075' ) );
@@ -77,6 +80,8 @@ if ( $view === 'urls' ) {
 	foreach ( $cases as $args ) {
 		$_GET = $args; $want = $key( DBD_Router::route() );
 		$u = DBD_Router::url( $args ); $pq = parse_url( $u ); $path = substr( $pq['path'] ?? '/', 1 );
+		if ( ! $args && $u !== $hub ) { $bad++; fwrite( STDERR, "the hub is $u, not $hub\n" ); }
+		if ( $u === $hub ) { $path = ''; }  /* the hub is the app page itself */
 		parse_str( $pq['query'] ?? '', $rest );
 		if ( array_intersect( array_keys( $rest ), array( 'team', 'game', 'player', 'compare', 'view' ) ) ) { $bad++; fwrite( STDERR, "no path for " . json_encode( $args ) . ": $u\n" ); continue; }
 		if ( isset( $seen[ $u ] ) && $seen[ $u ] !== $want ) { $bad++; fwrite( STDERR, "two routes share $u\n" ); }
@@ -105,7 +110,7 @@ if ( $view === 'urls' ) {
 	}
 	DBD_Data::use_season( null );
 	foreach ( array( 'team/zzz/', 'game/1999-week-1-a-at-b/', 'player/nobody-at-all/', 'week/x/', 'teams/extra/', '1999/team/min/' ) as $odd ) { $_GET = array(); $r = DBD_Router::route_path( $odd ); echo "  $odd -> " . $r['view'] . ( $r['view'] === 'players' ? ' (search "' . $r['q'] . '")' : '' ) . "\n"; }
-	echo "urls: " . count( $cases ) . " links, $paths paths, $bad problems, $warnings warnings\n";
+	echo "urls" . ( getenv( 'DBD_HARNESS_ROOT' ) ? ' (app on /hub/, paths at the root)' : '' ) . ": " . count( $cases ) . " links, $paths paths, $bad problems, $warnings warnings\n";
 	foreach ( array( array( 'player' => '00-0036322' ), array( 'game' => '2026_08_MIN_DET', 'side' => 'home' ), array( 'team' => 'MIN', 'side' => 'def' ), array( 'view' => 'players', 'team' => 'MIN' ), array( 'view' => 'leaders', 'g' => 'rb' ), array( 'compare' => '00-0036322,00-0036900' ), array( 'view' => 'players', 'pt' => 'MIN', 'q' => 'jeff' ) ) as $ex ) { echo '  ' . json_encode( $ex ) . ' -> ' . DBD_Router::url( $ex ) . "\n"; }
 	exit( $bad || $warnings ? 1 : 0 );
 }
@@ -130,7 +135,12 @@ if ( $view === 'redirect' ) {
 	function wp_safe_redirect( $to, $status = 302 ) { echo "redirect $status $to\n"; return true; }
 	$rp = new ReflectionProperty( 'DBD_Router', 'page_url' ); $rp->setAccessible( true ); $rp->setValue( null, 'https://example.test/' );
 	$u = parse_url( $arg ); parse_str( $u['query'] ?? '', $_GET ); $_SERVER['REQUEST_URI'] = $arg; $_SERVER['REQUEST_METHOD'] = 'GET';
-	DBD_Router::$route = DBD_Router::route(); DBD_Router::redirect_old();
+	$ap = (string) ( $u['path'] ?? '/' );
+	if ( getenv( 'DBD_HARNESS_ROOT' ) && $ap !== '/' ) {  /* a path request on the app page: /hub/team/min/ forwards to the root */
+		$rp->setValue( null, 'https://example.test/hub/' );
+		DBD_Router::$route = DBD_Router::route_path( preg_replace( '#^/hub/#', '', $ap ) ); DBD_Router::redirect_prefixed();  /* route_path() applies a /2025/ season itself */
+	} elseif ( getenv( 'DBD_HARNESS_ROOT' ) ) { $rp->setValue( null, '' ); DBD_Router::front(); }  /* the front page answers old links */
+	else { DBD_Router::$route = DBD_Router::route(); DBD_Router::redirect_old(); }
 	echo "stays ($warnings warnings)\n"; exit( $warnings ? 1 : 0 );
 }
 

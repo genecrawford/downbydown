@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.0.1
+Stable tag: 2.0.3
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,14 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.0.3 =
+* An old front-page link naming a season the site doesn't hold (/?season=1999&team=MIN) stays on the home page instead of forwarding to this season's page.
+
+= 2.0.2 =
+* The app can live on its own page (for example /hub/) while its pages keep their addresses at the site root: /team/min/, /player/justin-jefferson/, /2025/. The front page is then free for a custom home. A setting, on by default.
+* Links that carry the app page's address (/hub/team/min/) forward to the root address. Old /?team= links and /?card= share images on the front page still land.
+* The app page is the page last saved with [down_by_down]. Visiting a page no longer changes it, so two pages holding the shortcode can't flip the site's addresses back and forth.
 
 = 2.0.1 =
 * Playoff games and weeks are titled by round (Wild Card, Divisional, Conference, Super Bowl) instead of Week 19 to 22.
