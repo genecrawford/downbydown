@@ -1,0 +1,61 @@
+/* Down by Down: live blocks for theme-built pages ([dbd_block], class-dbd-blocks.php). Flat like the app: 1px rules, no shadows.
+   Cards and tiles carry their own light surface; the games heading and the counts line take the surrounding text color, so they sit
+   on any background (the home's green hero included). Divi's list and paragraph rules are reset with a doubled class. */
+.dbd-hb{--ink:#121417;--ink2:#3b4255;--muted:#5d616a;--bg:#f4f1ea;--panel:#fffdf8;--line:rgba(22,30,54,.12);--red:#cb2026;
+  font:400 16px/1.5 "IBM Plex Sans",system-ui,sans-serif;min-width:0}
+.dbd-hb.dbd-hb *{box-sizing:border-box}
+.dbd-hb.dbd-hb p{margin:0;padding:0}
+.dbd-hb.dbd-hb a{text-decoration:none}
+.dbd-hb .dbd-mk{display:block}
+.dbd-hb .dbd-lgw{position:relative;display:inline-block;flex:none}
+.dbd-hb .dbd-lgw .dbd-mk{position:absolute;inset:0}
+.dbd-hb .dbd-lgw .dbd-logo{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;transform:scale(var(--lgs,1))}
+.dbd-hb .dbd-head{position:relative;display:inline-block;flex:none;border-radius:50%;overflow:hidden}
+.dbd-hb .dbd-head .dbd-mk{border-radius:50%}
+.dbd-hb .dbd-head img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top}
+
+/* hero-map: the week's most-targeted player */
+.dbd-hb.hb-hero-map{background:var(--panel);color:var(--ink);border-radius:12px;padding:16px}
+.hb-hero-map a{color:inherit}
+.hb-hero-map a:hover{text-decoration:underline;text-underline-offset:3px}
+.hb-who{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.hb-who b{display:block;font:800 20px/1.1 "Tourney",sans-serif;text-transform:uppercase}
+.hb-who small{display:block;font:500 12px "IBM Plex Sans",sans-serif;color:var(--muted)}
+.hb-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:0 0 10px}
+.hb-stats span{background:var(--bg);border-radius:6px;padding:6px 8px;font:500 11px "IBM Plex Sans",sans-serif;color:var(--muted);text-align:center}
+.hb-stats b{display:block;font:800 22px/1.1 "Tourney",sans-serif;color:var(--ink)}
+.hb-field{display:block;width:100%;height:auto;background:#2c4a35;border-radius:8px}
+.hb-field text{font-family:"IBM Plex Sans",sans-serif}
+.dbd-hb .hb-leg{margin:10px 0 0;font:500 12px "IBM Plex Sans",sans-serif;color:var(--muted);display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px}
+.hb-leg i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:-6px}
+.hb-leg i.c{background:#5b9cf6}.hb-leg i.n{background:#9a96a6}.hb-leg i.t{background:#4fd18b}
+.dbd-hb .hb-leg a{margin-left:auto;font-weight:600;color:var(--ink)}
+
+/* games: this week's score tiles */
+.dbd-hb.hb-games{color:inherit}
+.hb-games-h{display:flex;align-items:baseline;gap:12px;margin-bottom:10px;padding-top:12px;border-top:1px solid currentColor;border-top-color:color-mix(in srgb,currentColor 30%,transparent)}
+.hb-games-h b{font:700 14px "Barlow Condensed",sans-serif;letter-spacing:.16em;text-transform:uppercase;white-space:nowrap}
+.hb-games-h span{font:500 13px "IBM Plex Sans",sans-serif;opacity:.8}
+.dbd-hb .hb-games-h a{margin-left:auto;color:inherit;font:700 13px "Barlow Condensed",sans-serif;letter-spacing:.12em;text-transform:uppercase;text-decoration:underline;text-underline-offset:4px;white-space:nowrap}
+.hb-games-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
+.dbd-hb.dbd-hb .hb-gm{position:relative;display:block;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 9px;color:var(--muted)}
+.dbd-hb.dbd-hb .hb-gm:hover{border-color:var(--ink)}
+.dbd-hb.dbd-hb .hb-gm.up{border-color:var(--red)}
+.hb-gm .r{display:flex;align-items:center;gap:6px}
+.hb-gm .r b{flex:1;font:700 14px "Barlow Condensed",sans-serif;letter-spacing:.06em}
+.hb-gm .r em{font:600 13px "IBM Plex Mono",monospace;font-style:normal}
+.hb-gm .r.w{color:var(--ink)}
+.hb-gm .st{display:block;margin-top:3px;font:600 10.5px "IBM Plex Mono",monospace;color:var(--red)}
+.hb-gm.up .st{color:var(--ink2)}
+.hb-gm .nx{position:absolute;top:-7px;right:8px;padding:1px 6px;border-radius:3px;background:var(--red);color:#fff;font:700 10px/1.5 "Barlow Condensed",sans-serif;font-style:normal;letter-spacing:.14em;text-transform:uppercase}
+@media (max-width:1100px){.hb-games-g{grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media (max-width:700px){
+  .hb-games-h{flex-wrap:wrap;row-gap:0}.hb-games-h span{order:3;flex:1 1 100%;padding-bottom:4px}
+  .hb-games-g{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .dbd-hb.dbd-hb .hb-gm:nth-child(n+9){display:none}  /* a phone shows the first eight; "Every matchup" has the rest */
+}
+
+/* counts: one plain line */
+.dbd-hb.hb-counts{color:inherit}
+.dbd-hb.hb-counts p{font:500 14px "IBM Plex Sans",sans-serif;padding-top:12px;border-top:1px solid currentColor;border-top-color:color-mix(in srgb,currentColor 30%,transparent);opacity:.92}
+.hb-counts b{font:600 14px "IBM Plex Mono",monospace}
