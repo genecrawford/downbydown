@@ -260,7 +260,9 @@ if len(snaps) and have_pbp and {'week', 'team'} <= set(snaps.columns):
     _have = set(zip(_g.week, _g.home_team)) | set(zip(_g.week, _g.away_team))
     snaps = snaps[[(w, t) in _have for w, t in zip(snaps.week, snaps.team)]]
 # snap counts can land before the weekly stats too. Hold them back until the team's stat lines are out, as the zero-point weeks
-# are, so a game whose stats are pending never reads as a zero line where he played without touching the ball
+# are, so a game whose stats are pending never reads as a zero line where he played without touching the ball.
+# Offensive player lines only: defense keeps the full counts (snaps_all)
+snaps_all = snaps  # the defense build reads every posted snap count: its shares divide by every final game
 if len(snaps) and ST_TW is not None and {'week', 'team'} <= set(snaps.columns):
     _n = len(snaps); snaps = snaps[[(int(w), t) in ST_TW for w, t in zip(snaps.week, snaps.team)]]
     if len(snaps) < _n: print('snaps: held back', _n - len(snaps), 'rows from games the weekly stats have not posted yet')
@@ -1198,7 +1200,7 @@ if have_pbp:
     if len(PFRD) and 'game_type' in PFRD.columns: PFRD = PFRD[PFRD.game_type == 'REG']
     _pfrid = {r_.gsis_id: r_.pfr_id for r_ in _r.itertuples() if isinstance(getattr(r_, 'pfr_id', None), str)}
     _ros = {r_.gsis_id: r_ for r_ in _r.itertuples()}
-    _sn = snaps[snaps.game_type == 'REG'] if len(snaps) and 'game_type' in snaps.columns else snaps
+    _sn = snaps_all[snaps_all.game_type == 'REG'] if len(snaps_all) and 'game_type' in snaps_all.columns else snaps_all
     for t in DTEAMS:
         x_ = DD[t]; pf_t = PFRD[PFRD.team == t] if len(PFRD) else PFRD
         x_['pressures'] = int(pf_t.def_pressures.fillna(0).sum()) if len(pf_t) else None
