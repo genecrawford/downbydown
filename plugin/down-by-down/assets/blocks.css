@@ -68,7 +68,7 @@
 .hb-wk>.mk{position:absolute;right:16px;top:14px}
 .dbd-hb.dbd-hb .hb-wk h3{margin:0 0 10px;padding:0 44px 0 0;font:600 18px/1.35 "IBM Plex Sans",sans-serif;color:var(--ink);text-transform:none;letter-spacing:0}
 .dbd-hb .hb-wk p{font:500 14px/1.45 "IBM Plex Sans",sans-serif;color:var(--ink2)}
-.hb-wk p b{font:800 18px "Tourney",sans-serif;color:#1e7f4a}
+.hb-wk>p>b{font:800 18px "Tourney",sans-serif;color:#1e7f4a}  /* the EPA and the swing, not the wildest game's line */
 .dbd-hb.dbd-hb .hb-wk ul{list-style:none;margin:0;padding:0}
 .dbd-hb.dbd-hb .hb-wk li{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin:0;padding:8px 0;border-bottom:1px solid var(--line);font:400 14px "IBM Plex Sans",sans-serif;list-style:none}
 .dbd-hb.dbd-hb .hb-wk li::before{content:none}
@@ -78,6 +78,6 @@
 .dbd-hb .hb-wk .wild{margin-top:14px}
 .hb-wk .wild span{display:block;margin-bottom:4px;font:700 12px "Barlow Condensed",sans-serif;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
 .dbd-hb.dbd-hb .hb-wk .wild a{color:var(--ink);font:400 14px "IBM Plex Sans",sans-serif}
-.hb-wk .wild b{font-weight:600}
+.dbd-hb .hb-wk .wild b{font:600 14px "IBM Plex Sans",sans-serif;color:var(--ink)}
 .dbd-hb .hb-wk a:hover b,.dbd-hb a.hb-wk:hover h3{text-decoration:underline;text-underline-offset:3px}
 @media (max-width:900px){.dbd-hb.hb-week-highlights{grid-template-columns:minmax(0,1fr)}}
