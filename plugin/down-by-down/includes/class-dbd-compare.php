@@ -151,7 +151,7 @@ class DBD_Compare {
 	public static function trends( $P, $grp ) {
 		$defs = DBD_Grades::trend_defs( $grp ); if ( ! $defs ) { return ''; }
 		/* a game is a weekly stat line, or a zero line where he took snaps without one (the player page and the league bands count those too) */
-		$games = function ( $x ) { $wk = array(); foreach ( (array) ( $x['rec']['weeks'] ?? array() ) as $w ) { $wk[ (int) $w['week'] ] = $w; } foreach ( (array) ( $x['rec']['snaps'] ?? array() ) as $k => $sn ) { if ( $sn && ! isset( $wk[ (int) $k ] ) ) { $wk[ (int) $k ] = array( 'week' => (int) $k ); } } ksort( $wk ); return $wk; };
+		$games = function ( $x ) { $wk = array(); foreach ( (array) ( $x['rec']['weeks'] ?? array() ) as $w ) { $wk[ (int) $w['week'] ] = $w; } foreach ( (array) ( $x['rec']['snaps'] ?? array() ) as $k => $sn ) { if ( $sn && ! isset( $wk[ (int) $k ] ) && DBD_Data::stats_posted( $x['rec']['snapteam'][ (string) $k ] ?? ( $x['row']['team'] ?? '' ), (int) $k ) ) { $wk[ (int) $k ] = array( 'week' => (int) $k ); } } ksort( $wk ); return $wk; };
 		$nw = 0; foreach ( $P as $x ) { foreach ( array_keys( $games( $x ) ) as $w ) { $nw = max( $nw, (int) $w ); } }
 		if ( $nw < 2 ) { return ''; }
 		$WIN = DBD_Grades::TREND_WIN; $charts = ''; $any = false;

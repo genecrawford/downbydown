@@ -136,7 +136,8 @@ class DBD_Data {
 	/**
 	 * Whether the weekly player stats for a team's game that week are in yet. nflverse posts them a few hours
 	 * after the play-by-play, so on a Sunday night a final can sit in the schedule with no player lines. A week
-	 * counts as posted once any player on the team has a stat line or snap count for it; with no player files
+	 * counts as posted once any player on the team has a weekly stat line for it. Snap counts don't count: they
+	 * can arrive first, and a snaps-only week before the stats are out is not yet a zero. With no player files
 	 * at all it reads as posted, so nothing changes on a site without the player layer.
 	 */
 	public static function stats_posted( $abbr, $week ) {
@@ -147,7 +148,6 @@ class DBD_Data {
 				$set = array();
 				foreach ( $f['players'] as $p ) {
 					foreach ( (array) ( $p['weeks'] ?? array() ) as $w ) { if ( ( $w['team'] ?? $abbr ) === $abbr ) { $set[ (int) $w['week'] ] = true; } }
-					foreach ( array_keys( (array) ( $p['snaps'] ?? array() ) ) as $wk ) { if ( ( $p['snapteam'][ (string) $wk ] ?? $abbr ) === $abbr ) { $set[ (int) $wk ] = true; } }
 				}
 			}
 			self::$cache[ $k ] = $set;

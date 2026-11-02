@@ -10,7 +10,7 @@ $p = DBD_Data::player_record( $a, $row['id'] );
 if ( ! $p ) { include DBD_PATH . 'includes/views/notfound.php'; return; }
 $season = DBD_Data::season(); $through = DBD_Data::through_week();
 $W = $p['weeks'] ?? array();
-$played = array_unique( array_merge( array_map( function ( $w ) { return (int) $w['week']; }, $W ), array_map( 'intval', array_keys( $p['snaps'] ?? array() ) ) ) ); $ng = count( $played ); $gp = max( 1, $ng );
+$played = array_unique( array_merge( array_map( function ( $w ) { return (int) $w['week']; }, $W ), array_filter( array_map( 'intval', array_keys( $p['snaps'] ?? array() ) ), function ( $wk ) use ( $p, $a ) { return DBD_Data::stats_posted( $p['snapteam'][ (string) $wk ] ?? $a, $wk ); } ) ) );  /* a snaps-only week is a zero line once his team's stats are out; before that it is pending, not a game */ $ng = count( $played ); $gp = max( 1, $ng );
 $traded = ! empty( $p['snapteam'] ) || (bool) array_filter( $W, function ( $w ) use ( $a ) { return ! empty( $w['team'] ) && $w['team'] !== $a; } );
 /* game-log rows: every played week, a zero line where he took snaps but never touched the ball */
 sort( $played );
