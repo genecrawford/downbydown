@@ -20,12 +20,15 @@ class DBD_Urls {
 	private static $on = null; private static $page = null; private static $players = null; private static $games = null;
 
 	public static function init() {
-		add_filter( 'query_vars', function ( $v ) { $v[] = 'dbd_path'; return $v; } );
+		add_filter( 'query_vars', function ( $v ) { $v[] = 'dbd_path'; $v[] = 'dbd_season'; return $v; } );
 		add_action( 'init', array( __CLASS__, 'rules' ), 20 );
 		/* the app is usually the front page: without this, WordPress sends /team/min/ back to / */
-		add_filter( 'redirect_canonical', function ( $to ) { return get_query_var( 'dbd_path' ) ? false : $to; } );
+		add_filter( 'redirect_canonical', function ( $to ) { return ( get_query_var( 'dbd_path' ) || get_query_var( 'dbd_season' ) ) ? false : $to; } );
 		add_action( 'save_post_page', function ( $id, $post ) { if ( $post && $post->post_status === 'publish' && self::holds_app( $post ) ) { update_option( self::OPT_PAGE, (int) $id ); } }, 10, 2 );
 	}
+
+	/** Forget the slug maps: the season showing changed (DBD_Data::use_season). */
+	public static function reset() { self::$players = null; self::$games = null; }
 
 	/** Paths are on when the site has pretty permalinks, the setting is on and the app page is known. */
 	public static function on() {
@@ -64,7 +67,13 @@ class DBD_Urls {
 	/** The rewrite rule, and a flush whenever the version, the setting, the page or the permalink structure changed. */
 	public static function rules() {
 		$on = self::on(); $id = self::page_id(); $pre = $on ? self::prefix() : '';
-		if ( $on ) { add_rewrite_rule( '^' . preg_quote( $pre, '#' ) . '(' . self::BASES . ')(?:/(.*?))?/?$', 'index.php?page_id=' . $id . '&dbd_path=$matches[1]/$matches[2]', 'top' ); }
+		if ( $on ) {
+			$q = preg_quote( $pre, '#' );
+			/* a past season (SCOPE §44): /2025/ is its season page, /2025/team/min/ and the rest its pages */
+			add_rewrite_rule( '^' . $q . '((?:19|20)\d\d)/(' . self::BASES . ')(?:/(.*?))?/?$', 'index.php?page_id=' . $id . '&dbd_season=$matches[1]&dbd_path=$matches[2]/$matches[3]', 'top' );
+			add_rewrite_rule( '^' . $q . '((?:19|20)\d\d)/?$', 'index.php?page_id=' . $id . '&dbd_season=$matches[1]', 'top' );
+			add_rewrite_rule( '^' . $q . '(' . self::BASES . ')(?:/(.*?))?/?$', 'index.php?page_id=' . $id . '&dbd_path=$matches[1]/$matches[2]', 'top' );
+		}
 		$sig = md5( implode( '|', array( DBD_VERSION, $on ? 1 : 0, $id, $pre, (string) get_option( 'permalink_structure' ) ) ) );
 		if ( get_option( self::OPT_SIG ) !== $sig ) { flush_rewrite_rules( false ); update_option( self::OPT_SIG, $sig ); }
 	}
@@ -111,6 +120,22 @@ class DBD_Urls {
 	}
 
 	/* ------------------------------------------------------------------ path <-> route values */
+
+	/** A leading season segment: '2025/team/min/' -> array( 2025, 'team/min/' ); none -> array( 0, $path ). */
+	public static function split_season( $path ) {
+		$p = ltrim( (string) $path, '/' );
+		return preg_match( '#^((?:19|20)\d\d)(?:/|$)(.*)$#', $p, $m ) ? array( (int) $m[1], $m[2] ) : array( 0, $p );
+	}
+
+	/** The season a request names: the path's prefix, ?season=, or a game's id or slug (a game link never changes season). */
+	public static function season_of( $season_var, $path, $get ) {
+		if ( (int) $season_var ) { return (int) $season_var; }
+		list( $s ) = self::split_season( $path ); if ( $s ) { return $s; }
+		if ( ! empty( $get['season'] ) && preg_match( '/^\d{4}$/', (string) $get['season'] ) ) { return (int) $get['season']; }
+		if ( preg_match( '#^/?game/((?:19|20)\d\d)-week-#', (string) $path, $m ) ) { return (int) $m[1]; }
+		if ( ! empty( $get['game'] ) && preg_match( '/^((?:19|20)\d\d)_/', (string) $get['game'], $m ) ) { return (int) $m[1]; }
+		return 0;
+	}
 
 	/** A path (without the app page's prefix) to the values the router reads. Anything it can't place is array( '__nf' => 1 ). */
 	public static function parse( $path ) {

@@ -45,7 +45,7 @@ if ( $n ) { echo '<div class="dbd-ckey" aria-label="Who is which color"><span cl
 if ( ! $n ) { echo '<div class="dbd-empty"><h2>Nobody picked yet</h2><p>Add a player above, or open any player page and hit Compare. Your recent comparisons, if any, are listed above.</p></div></main>'; return; }
 
 /* ---- this week (SCOPE §42): each one's next game and the defense at his position */
-echo DBD_Compare::this_week( $P );
+if ( ! DBD_Data::archived() ) { echo DBD_Compare::this_week( $P ); }  /* a past season has no this week (SCOPE §44) */
 
 /* ---- where they rank */
 if ( $gi ) {

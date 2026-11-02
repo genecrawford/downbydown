@@ -28,7 +28,9 @@ $gpool = DBD_Grades::in_use( $p['grades']['pool'] ?? DBD_Grades::pool_of( $p['po
 $snapAvg = ! empty( $p['snaps'] ) ? array_sum( $p['snaps'] ) / count( $p['snaps'] ) : 0;
 $parts = explode( ' ', $p['name'], 2 ); $first = $parts[0]; $last = $parts[1] ?? '';
 $ord = function ( $n ) { $s = array( 'th', 'st', 'nd', 'rd' ); $v = $n % 100; return $n . ( $s[ ( $v - 20 ) % 10 ] ?? $s[ $v ] ?? $s[0] ); };
-$depth = ! empty( $p['depth'] ) ? $p['depth']['slot'] . $p['depth']['rank'] : '';
+$arch = DBD_Data::archived();  /* a past season (SCOPE §44): no depth chart, injury report, This week or My team */
+$depth = ! $arch && ! empty( $p['depth'] ) ? $p['depth']['slot'] . $p['depth']['rank'] : '';
+if ( $arch ) { $p['inj'] = null; }
 $st = $p['inj']['status'] ?? ''; $icls = preg_match( '/out|did not/i', $st ) ? 'bad' : ( preg_match( '/limited|questionable|doubtful/i', $st ) ? '' : 'good' );
 $CRF = DBD_Data::get( 'players/career/' . $a . '.json' ); $CR = $CRF['players'][ $p['id'] ] ?? array();  /* career rows (SCOPE §24), empty on an older data file */
 $turl = DBD_Router::url( array( 'team' => $a ) ); $purl = DBD_Router::url( array( 'view' => 'players' ) ); $tpurl = DBD_Router::url( array( 'view' => 'players', 'team' => $a ) );
@@ -42,13 +44,13 @@ echo '<p class="dbd-kicker t-stagger-line t-stagger-line--1">' . esc_html( "$sea
 echo '<h1 class="t-stagger-line t-stagger-line--2 withmark">' . DBD_Marks::jersey( $a, $p['num'], 58 ) . '<span>' . esc_html( $first ) . ' <em>' . esc_html( $last ) . '</em></span></h1>';
 $bio = array_filter( array( $p['age'] ? 'Age ' . (int) $p['age'] : '', $p['ht'] ?: '', $p['wt'] ? (int) $p['wt'] . ' lb' : '', $p['col'] ?: '', $p['draft'] ?: '' ) );
 echo '<p class="dbd-sub t-stagger-line t-stagger-line--3">' . esc_html( implode( ' · ', $bio ) ) . '.' . ( $depth ? ' Listed <b>' . esc_html( $depth ) . '</b> on the ' . esc_html( $p['depth']['grp'] ) . ' depth chart.' : '' ) . ' Snap share <b>' . round( $snapAvg ) . '%</b> across ' . $ng . ' ' . ( $ng === 1 ? 'game' : 'games' ) . '.</p>';
-echo '<div class="dbd-pills">' . ( $p['inj'] ? '<span class="dbd-pill ' . $icls . '">Week ' . (int) $p['inj']['week'] . ' report · ' . esc_html( $p['inj']['what'] ) . ' · ' . esc_html( str_ireplace( ' in practice', '', $st ) ) . '</span>' : '<span class="dbd-pill good">No injury listing</span>' ) . ( $depth ? '<span class="dbd-pill">' . esc_html( $depth ) . '</span>' : '' ) . '<a class="dbd-pill" href="' . esc_url( $tpurl ) . '">' . esc_html( $t['nick'] ) . ' players</a></div>';
+echo '<div class="dbd-pills">' . ( $arch ? '' : ( $p['inj'] ? '<span class="dbd-pill ' . $icls . '">Week ' . (int) $p['inj']['week'] . ' report · ' . esc_html( $p['inj']['what'] ) . ' · ' . esc_html( str_ireplace( ' in practice', '', $st ) ) . '</span>' : '<span class="dbd-pill good">No injury listing</span>' ) ) . ( $depth ? '<span class="dbd-pill">' . esc_html( $depth ) . '</span>' : '' ) . '<a class="dbd-pill" href="' . esc_url( $tpurl ) . '">' . esc_html( $t['nick'] ) . ' players</a></div>';
 $sug = DBD_Grades::suggest( $row, 3 ); $cmp = function ( $ids ) { return DBD_Router::url( array( 'compare' => implode( ',', $ids ) ) ); };
 /* the side card (SCOPE §35): the team with his snap share, two equal actions, then players like him as a list */
 echo '</div>' . DBD_Marks::hero_photo( $a, $p['photo'] ?? null ) . '<div class="dbd-hdr dbd-hcard"><a class="dbd-pn-link" href="' . esc_url( $turl ) . '">' . DBD_Marks::pennant( $a, 40 ) . '<span class="t"><b>' . esc_html( $t['nick'] ) . ' offense</b><small id="dbd-psnaps">' . ( $p['snaps'] ? round( $snapAvg ) . '% of snaps' : 'no snap data' ) . '</small></span></a>';
 echo '<div class="acts"><a class="dbd-cmp-btn" id="dbd-cmp-btn" href="' . esc_url( $cmp( array( $p['id'] ) ) ) . '" data-id="' . esc_attr( $p['id'] ) . '" data-base="' . esc_url( DBD_Router::url() ) . '">Compare</a>'
 	. ( DBD_Card::available() ? '<a class="dbd-share" href="' . esc_url( DBD_Card::url( $p['id'] ) ) . '" target="_blank" rel="noopener" data-share-title="' . esc_attr( $p['name'] . ' | Down by Down' ) . '" data-tip="' . esc_attr( 'A 1200 × 630 image of this page for social' ) . '"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v13"/></svg>Share card</a>' : '' ) . '</div>';
-echo '<button class="dbd-mtbtn" type="button" data-mtid="' . esc_attr( $p['id'] ) . '" data-mtname="' . esc_attr( $p['name'] ) . '" aria-pressed="false"><span class="off">+ My team</span><span class="on">✓ On My team</span></button><a class="dbd-mtopen" href="' . esc_url( DBD_Router::url( array( 'view' => 'myteam' ) ) ) . '">Open My team →</a>';  /* SCOPE §36: dbd-site.js reads and writes the saved team */
+if ( ! $arch ) echo '<button class="dbd-mtbtn" type="button" data-mtid="' . esc_attr( $p['id'] ) . '" data-mtname="' . esc_attr( $p['name'] ) . '" aria-pressed="false"><span class="off">+ My team</span><span class="on">✓ On My team</span></button><a class="dbd-mtopen" href="' . esc_url( DBD_Router::url( array( 'view' => 'myteam' ) ) ) . '">Open My team →</a>';  /* SCOPE §36: dbd-site.js reads and writes the saved team */
 if ( $sug ) { echo '<div class="dbd-cmp-sug"><span>Players like him</span>' . implode( '', array_map( function ( $o ) use ( $cmp, $p ) { return '<a class="r" href="' . esc_url( $cmp( array( $p['id'], $o['id'] ) ) ) . '" title="' . esc_attr( 'Compare with ' . $o['name'] ) . '">' . DBD_Marks::tile( $o['team'], 16 ) . '<b>' . esc_html( $o['name'] ) . '</b><i>Compare →</i></a>'; }, $sug ) ) . '</div>'; }
 echo '</div></div>';
 
@@ -631,7 +633,7 @@ if ( $hasDef && $myRows && $games ) {
 
 
 $facedHtml = ob_get_clean();
-echo $tabbed( array( array( 'This week', $weekHtml ), array( 'Game log', $logHtml ), array( 'The trend', $trendHtml ), array( 'Defenses faced', $facedHtml ) ) ) . '</section>';
+echo $tabbed( array_values( array_filter( array( $arch ? null : array( 'This week', $weekHtml ), array( 'Game log', $logHtml ), array( 'The trend', $trendHtml ), array( 'Defenses faced', $facedHtml ) ) ) ) ) . '</section>';
 
 /* ---- career (SCOPE §24): season by season from players/career/{TEAM}.json, regular season only */
 if ( $CR ) {
@@ -730,7 +732,7 @@ $short = array_filter( array(
 	array( 'Fantasy', $fxShort ?? '', '#dbd-fantasy' ),
 	array( 'How he\'s used', ! empty( $fsay[0] ) ? $first( $fsay[0] ) : '', '#dbd-used' ),
 	array( 'Lately', $first( $shortLately ?? '' ), '#dbd-weeks' ),
-	array( 'This week', isset( $twSay ) ? $first( $twSay ) : '', '#dbd-weeks' ),
+	array( 'This week', ! $arch && isset( $twSay ) ? $first( $twSay ) : '', '#dbd-weeks' ),
 ), function ( $x ) { return $x[1] !== ''; } );
 if ( $short ) {
 	echo '<section class="dbd-panel dbd-short"><div class="dbd-ph"><span class="dbd-lab"><b>The short version</b></span></div><ul>';

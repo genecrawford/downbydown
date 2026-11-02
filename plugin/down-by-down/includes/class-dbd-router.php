@@ -22,6 +22,7 @@ class DBD_Router {
 	public static $route  = null;    // array: view, team, game, side, week, title, description
 	private static $page_url = '';
 	private static $P = null;        // the values a readable path carries (DBD_Urls::parse), null on a query-string request
+	private static $nf = false;      // a season the site doesn't have (SCOPE §44)
 
 	public static function init() {
 		add_shortcode( 'down_by_down', array( __CLASS__, 'shortcode' ) );
@@ -42,8 +43,10 @@ class DBD_Router {
 		self::$active   = true;
 		self::$page_url = get_permalink( $post );
 		if ( (int) get_option( DBD_Urls::OPT_PAGE ) !== (int) $post->ID && $post->post_status === 'publish' ) { update_option( DBD_Urls::OPT_PAGE, (int) $post->ID ); }
-		$path = (string) get_query_var( 'dbd_path' );
-		if ( $path !== '' ) { self::$P = DBD_Urls::parse( $path ); }
+		$path = (string) get_query_var( 'dbd_path' ); $sv = (string) get_query_var( 'dbd_season' );
+		self::apply_season( DBD_Urls::season_of( $sv, $path, $_GET ), $path === '' ? self::my_team_query() : strpos( $path, 'my-team' ) === 0 );
+		if ( $path !== '' ) { self::$P = DBD_Urls::parse( $path ); } elseif ( $sv !== '' ) { self::$P = array(); }  /* /2025/: that season's page */
+		if ( self::$nf ) { self::$P = array( '__nf' => 1 ); }
 		self::$route    = self::route();
 		if ( self::q( 'card' ) !== '' ) { DBD_Card::serve( self::q( 'card' ) ); }  /* the share card PNG (SCOPE §26); serve() exits */
 		if ( $path === '' ) { self::redirect_old(); }
@@ -63,9 +66,39 @@ class DBD_Router {
 		return isset( $_GET[ $key ] ) ? sanitize_text_field( wp_unslash( $_GET[ $key ] ) ) : '';
 	}
 
-	/** Route a path the way a request for it would (the view harness and the URL checks use this). */
+	/** Route a path the way a request for it would (the view harness and the URL checks use this). A leading /2025/ shows that season. */
 	public static function route_path( $path ) {
-		self::$P = DBD_Urls::parse( $path ); $r = self::route(); self::$P = null; return $r;
+		list( $s, $rest ) = DBD_Urls::split_season( $path );
+		self::apply_season( DBD_Urls::season_of( $s, $rest, array() ), strpos( $rest, 'my-team' ) === 0 );
+		self::$P = self::$nf ? array( '__nf' => 1 ) : DBD_Urls::parse( $rest ); $r = self::route(); self::$P = null; return $r;
+	}
+
+	/** Show the season a request names (SCOPE §44). My team is always this season's; a season the site doesn't hold is not found. */
+	public static function apply_season( $s, $myteam = false ) {
+		self::$nf = false; $s = (int) $s;
+		if ( ! $s || $myteam ) { DBD_Data::use_season( null ); return; }
+		if ( $s === DBD_Data::current_season() ) { DBD_Data::use_season( null ); return; }
+		if ( ! DBD_Data::use_season( $s ) ) { self::$nf = true; }
+	}
+
+	private static function my_team_query() { return isset( $_GET['myteam'] ) || ( isset( $_GET['view'] ) && $_GET['view'] === 'myteam' ); }
+
+	/** The same page in another season: the same team, week or board; the same player if he played that year, else that season's players search; a game's week. */
+	public static function season_url( $s ) {
+		$r = self::$route; $was = DBD_Data::archived() ? DBD_Data::season() : null; $s = (int) $s;
+		$args = self::args_of( $r );
+		$target = $s === DBD_Data::current_season() ? null : $s;
+		DBD_Data::use_season( $target );
+		switch ( $r['view'] ) {
+			case 'player': if ( ! DBD_Data::player( $r['player']['id'] ) ) { $args = array( 'view' => 'players', 'q' => $r['player']['name'] ); } break;
+			case 'compare': foreach ( $r['compare'] as $p ) { if ( ! DBD_Data::player( $p['id'] ) ) { $args = array( 'view' => 'players' ); break; } } break;
+			case 'game': $args = array( 'view' => 'matchups', 'week' => (int) $r['game']['week'] ); break;
+			case 'week': case 'matchups': if ( ! empty( $args['week'] ) && ! in_array( (int) $args['week'], $r['view'] === 'week' ? DBD_Week::weeks() : DBD_Data::weeks(), true ) ) { unset( $args['week'] ); } break;
+			case 'myteam': case 'notfound': case 'nodata': $args = array(); break;
+		}
+		$u = self::url( $args );
+		DBD_Data::use_season( $was );
+		return $u;
 	}
 
 	/** An old query-string link: 301 to its path (redirect_target()). */
@@ -77,11 +110,11 @@ class DBD_Router {
 	/** Where an old query-string request belongs: its path, keeping the parameters the route doesn't use (utm_*, fbclid). Null when it stays. */
 	public static function redirect_target() {
 		if ( ! DBD_Urls::on() || ( $_SERVER['REQUEST_METHOD'] ?? 'GET' ) !== 'GET' ) { return null; }
-		$keys = array( 'team', 'game', 'player', 'compare', 'view', 'myteam' );
+		$keys = array( 'team', 'game', 'player', 'compare', 'view', 'myteam', 'season' );
 		if ( ! array_intersect( $keys, array_keys( $_GET ) ) ) { return null; }
 		$r = self::$route; if ( in_array( $r['view'], array( 'notfound', 'nodata' ), true ) ) { return null; }
 		$to = self::url( self::args_of( $r, true ) );
-		$used = array_merge( DBD_Urls::ROUTE_KEYS, array( 'myteam', 'pt', 'pos', 'q', 'b' ) );
+		$used = array_merge( DBD_Urls::ROUTE_KEYS, array( 'myteam', 'pt', 'pos', 'q', 'b', 'season' ) );
 		$keep = array(); foreach ( $_GET as $k => $v ) { if ( ! in_array( $k, $used, true ) && is_string( $v ) ) { $keep[ $k ] = sanitize_text_field( wp_unslash( $v ) ); } }
 		if ( $keep ) { $to = add_query_arg( array_map( 'rawurlencode', $keep ), $to ); }
 		$here = wp_parse_url( (string) ( $_SERVER['REQUEST_URI'] ?? '/' ), PHP_URL_PATH ); $there = wp_parse_url( $to, PHP_URL_PATH );
@@ -148,6 +181,7 @@ class DBD_Router {
 		} elseif ( $view === 'teams' ) {
 			$r['view'] = 'teams';
 		}
+		if ( $r['view'] === 'hub' && DBD_Season::show() ) { $r['view'] = 'season'; }  /* SCOPE §44: a past season, or this one after the Super Bowl */
 		return $r;
 	}
 
@@ -171,6 +205,12 @@ class DBD_Router {
 
 	public static function url( $args = array() ) {
 		$base = self::base();
+		/* a past season (SCOPE §44): its links carry it, as a /2025/ prefix or ?season=; My team is always this season's, a game's slug names its own */
+		if ( DBD_Data::archived() && ! isset( $args['myteam'] ) && ( $args['view'] ?? '' ) !== 'myteam' ) {
+			$s = DBD_Data::season();
+			if ( isset( $args['card'] ) || ! DBD_Urls::on() ) { $args['season'] = $s; }
+			elseif ( ! isset( $args['game'] ) ) { $base = trailingslashit( $base ) . $s . '/'; }
+		}
 		if ( $args && DBD_Urls::on() ) { $u = DBD_Urls::build( $base, $args ); if ( $u !== null ) { return $u; } }
 		return $args ? add_query_arg( array_map( 'rawurlencode', $args ), $base ) : $base;
 	}
@@ -207,9 +247,19 @@ class DBD_Router {
 	/* ------------------------------------------------------------------ SEO */
 
 	/** Title and description for the current route. */
+	/** Title and description; a past season's pages say which season (SCOPE §44). */
 	public static function seo() {
+		list( $t, $d ) = self::seo_base();
+		if ( DBD_Data::archived() && ( self::$route['view'] ?? '' ) !== 'season' && strpos( $t, (string) DBD_Data::season() ) === false ) { $t .= ' · ' . DBD_Data::season(); }
+		return array( $t, $d );
+	}
+
+	private static function seo_base() {
 		$r = self::$route; $site = 'Down by Down'; $season = DBD_Data::season();
 		switch ( $r['view'] ?? 'hub' ) {
+			case 'season':
+				$sb = DBD_Season::super_bowl(); $T = DBD_Data::teams(); $w = $sb ? ( $sb['home_score'] > $sb['away_score'] ? $sb['home'] : $sb['away'] ) : null;
+				return array( "The $season NFL season", "How the $season NFL season ended" . ( $w ? ': the ' . ( $T[ $w ]['name'] ?? $w ) . ' won the Super Bowl' : '' ) . '. The playoffs, final standings, who led, and every team, player and week, kept as it finished.' );
 			case 'team':
 				$t = DBD_Data::team( $r['team'] );
 				if ( ( $r['tside'] ?? 'off' ) === 'def' ) { return array( $t['nick'] . ' defense', "How the {$t['name']} defense plays in $season: EPA and success allowed, pressure and blitz rate, where offenses find room by zone, run lane and position, situations, and every defender's season." ); }
@@ -389,7 +439,7 @@ class DBD_Router {
 		$file = DBD_PATH . 'includes/views/' . $r['view'] . '.php';
 		if ( ! file_exists( $file ) ) { $file = DBD_PATH . 'includes/views/notfound.php'; }
 		ob_start();
-		echo '<div class="dbd dbd-view-' . esc_attr( $r['view'] ) . '">';  // dbd-view-* so it can never collide with component classes like .dbd-teams or .dbd-game
+		echo '<div class="dbd dbd-view-' . esc_attr( $r['view'] ) . ( DBD_Data::archived() ? ' dbd-archived' : '' ) . '">';  // dbd-view-* so it can never collide with component classes like .dbd-teams or .dbd-game
 		include $file;
 		echo '</div>';
 		return ob_get_clean();
@@ -405,12 +455,27 @@ class DBD_Router {
 	/* ------------------------------------------------------------------ view helpers */
 
 	/** The top bar: breadcrumb trail plus the Updated stamp. $crumbs = array( 'label' => url|null ) */
+	/** The season switcher (SCOPE §44): every season the site holds, each link the same page in that season. Nothing with one season. */
+	public static function switcher() {
+		$all = DBD_Data::seasons(); if ( count( $all ) < 2 || ! self::$route ) { return ''; }
+		$now = (int) DBD_Data::season(); $cur = DBD_Data::current_season(); $items = '';
+		foreach ( $all as $s ) {
+			$sub = $s === $cur ? 'this season' : 'final';
+			$items .= '<a href="' . esc_url( self::season_url( $s ) ) . '"' . ( $s === $now ? ' aria-current="true" class="on"' : '' ) . '><b>' . (int) $s . '</b><small>' . esc_html( $sub ) . '</small></a>';
+		}
+		return '<details class="dbd-season"><summary aria-label="Season">' . $now . ' <span aria-hidden="true">▾</span></summary><div class="dbd-season-menu">' . $items . '</div></details>';
+	}
+
 	public static function topbar( $crumbs ) {
 		$out = '<div class="dbd-top"><div class="dbd-crumb"><a href="' . esc_url( self::url() ) . '" class="dbd-brand">DOWN X DOWN</a>';
 		foreach ( $crumbs as $label => $href ) {
 			$out .= ' <span>›</span> ' . ( $href ? '<a href="' . esc_url( $href ) . '">' . esc_html( $label ) . '</a>' : '<b>' . esc_html( $label ) . '</b>' );
 		}
-		$out .= '</div><div class="dbd-r"><span class="dbd-upd">' . esc_html( DBD_Data::updated_text() ) . '</span></div></div>';
+		$out .= '</div><div class="dbd-r"><span class="dbd-upd">' . esc_html( DBD_Data::archived() ? 'Season over · final' : DBD_Data::updated_text() ) . '</span>' . self::switcher() . '</div></div>';
+		if ( DBD_Data::archived() ) {  /* SCOPE §44: the archive banner */
+			$cur = DBD_Data::current_season();
+			$out .= '<div class="dbd-arch"><span><b>' . (int) DBD_Data::season() . ' season · final</b> Every snap of the ' . (int) DBD_Data::season() . ' season, kept as it ended.</span><a href="' . esc_url( self::season_url( $cur ) ) . '">Back to ' . (int) $cur . ' →</a></div>';
+		}
 		return $out;
 	}
 

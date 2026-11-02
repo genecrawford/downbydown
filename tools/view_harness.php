@@ -58,7 +58,7 @@ function wp_schedule_single_event() {} function wp_next_scheduled() { return fal
 
 /* ---- the plugin, minus the bootstrap and admin. The SEO class extends a WordPress sitemap base class; an empty stand-in lets it load. */
 if ( ! class_exists( 'WP_Sitemaps_Provider' ) ) { class WP_Sitemaps_Provider { public $name = ''; public $object_type = ''; } }
-foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-defense', 'class-dbd-week', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-sync', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
+foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-defense', 'class-dbd-week', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-sync', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
 
 /* ---- readable URLs (SCOPE §43): every old link to a path and back to the same route */
 if ( $view === 'urls' ) {
@@ -84,11 +84,34 @@ if ( $view === 'urls' ) {
 		$_GET = $rest; $got = $path === '' ? $key( DBD_Router::route() ) : $key( DBD_Router::route_path( $path ) ); $paths += $path !== '';
 		if ( $got !== $want ) { $bad++; fwrite( STDERR, "round trip differs for " . json_encode( $args ) . " via $u\n  want $want\n  got  $got\n" ); }
 	}
-	foreach ( array( 'team/zzz/', 'game/1999-week-1-a-at-b/', 'player/nobody-at-all/', 'week/x/', 'teams/extra/' ) as $odd ) { $_GET = array(); $r = DBD_Router::route_path( $odd ); echo "  $odd -> " . $r['view'] . ( $r['view'] === 'players' ? ' (search "' . $r['q'] . '")' : '' ) . "\n"; }
+	/* archived seasons (SCOPE §44): the same round trip with the season in every link, and the switcher's same-page links */
+	foreach ( DBD_Data::archived_seasons() as $as ) {
+		DBD_Data::use_season( $as ); $ac = array( array(), array( 'view' => 'leaders', 'g' => 'rb' ), array( 'view' => 'teams' ), array( 'view' => 'players' ), array( 'view' => 'matchups' ) );
+		foreach ( array_keys( DBD_Data::teams() ) as $t ) { $ac[] = array( 'team' => $t ); $ac[] = array( 'team' => $t, 'side' => 'def' ); }
+		foreach ( ( DBD_Data::schedule()['weeks'] ?? array() ) as $gl ) { foreach ( $gl as $g ) { $ac[] = array( 'game' => $g['id'] ); } }
+		foreach ( array_slice( DBD_Data::player_index(), 0, 150 ) as $p ) { $ac[] = array( 'player' => $p['id'] ); }
+		foreach ( DBD_Week::weeks() as $w ) { $ac[] = array( 'view' => 'week', 'week' => $w ); }
+		$an = 0;
+		foreach ( $ac as $args ) {
+			DBD_Data::use_season( $as ); $_GET = $args; $want = $key( DBD_Router::route() ); $u = DBD_Router::url( $args ); $pq = parse_url( $u ); parse_str( $pq['query'] ?? '', $rest );
+			if ( ! isset( $args['game'] ) && strpos( (string) ( $pq['path'] ?? '' ), '/' . $as . '/' ) !== 0 ) { $bad++; fwrite( STDERR, "$as link without its season: " . json_encode( $args ) . " -> $u\n" ); continue; }
+			$_GET = $rest; $got = $key( DBD_Router::route_path( substr( $pq['path'], 1 ) ) ); $an++;
+			if ( $got !== $want || DBD_Data::season() !== $as ) { $bad++; fwrite( STDERR, "$as round trip differs for " . json_encode( $args ) . " via $u\n  want $want\n  got  $got\n" ); }
+		}
+		DBD_Data::use_season( $as ); $_GET = array( 'team' => 'MIN' ); DBD_Router::$route = DBD_Router::route();
+		echo "  $as: $an archived links round-trip; switcher from its Vikings page: " . DBD_Router::season_url( DBD_Data::current_season() ) . "\n";
+		DBD_Data::use_season( null ); $_GET = array( 'team' => 'MIN' ); DBD_Router::$route = DBD_Router::route();
+		echo "  " . DBD_Data::current_season() . " Vikings page to $as: " . DBD_Router::season_url( $as ) . "\n";
+	}
+	DBD_Data::use_season( null );
+	foreach ( array( 'team/zzz/', 'game/1999-week-1-a-at-b/', 'player/nobody-at-all/', 'week/x/', 'teams/extra/', '1999/team/min/' ) as $odd ) { $_GET = array(); $r = DBD_Router::route_path( $odd ); echo "  $odd -> " . $r['view'] . ( $r['view'] === 'players' ? ' (search "' . $r['q'] . '")' : '' ) . "\n"; }
 	echo "urls: " . count( $cases ) . " links, $paths paths, $bad problems, $warnings warnings\n";
 	foreach ( array( array( 'player' => '00-0036322' ), array( 'game' => '2026_08_MIN_DET', 'side' => 'home' ), array( 'team' => 'MIN', 'side' => 'def' ), array( 'view' => 'players', 'team' => 'MIN' ), array( 'view' => 'leaders', 'g' => 'rb' ), array( 'compare' => '00-0036322,00-0036900' ), array( 'view' => 'players', 'pt' => 'MIN', 'q' => 'jeff' ) ) as $ex ) { echo '  ' . json_encode( $ex ) . ' -> ' . DBD_Router::url( $ex ) . "\n"; }
 	exit( $bad || $warnings ? 1 : 0 );
 }
+
+/* ---- an archived season (SCOPE §44): DBD_HARNESS_SEASON=2025 shows that season for the card and view modes */
+if ( getenv( 'DBD_HARNESS_SEASON' ) ) { if ( ! DBD_Data::use_season( (int) getenv( 'DBD_HARNESS_SEASON' ) ) ) { fwrite( STDERR, 'no archived season ' . getenv( 'DBD_HARNESS_SEASON' ) . "\n" ); exit( 2 ); } }
 
 /* ---- a share card (SCOPE §26, §43): php tools/view_harness.php data card <key> <out.png>. Logos and photos only with DBD_HARNESS_LOGOS. */
 if ( $view === 'card' ) {
