@@ -974,7 +974,7 @@ print('series:', len(_pairs), 'pairs since', int(_sg.season.min()) if len(_sg) e
 MV_FLOOR = {'snaps': 12.0, 'targets': 6.0, 'epa': 4.0}; MV_MING = 2; MV_PER = 5; MV_DEBUT = 25; MV_START = 50; MV_PRIOR = 30
 done = [int(w) for w, gl in weeks.items() if gl and all(g['status'] == 'final' for g in gl)]
 mv_week = max(done) if done else None
-def mover_rows():
+def mover_rows(mv_week):
     rows = []; played_n = 0
     for t, pl in team_players.items():
         for p in pl:
@@ -1009,12 +1009,16 @@ def mover_rows():
                 series = [(None if w not in played else val(k, w)) for w in range(1, mv_week + 1)]
                 rows.append((k, dict(base, before=round(before, 1), now=round(now, 1), delta=round(delta, 1), s=[None if v is None else round(v, 1) for v in series])))
     return rows, played_n
-if mv_week:
-    mrows, mv_n = mover_rows()
-    movers = dict(season=season, week=mv_week, n=mv_n, faces=[r for k, r in mrows if k == 'face'])
+def movers_for(w):
+    """The movers of week w (SCOPE §22), against each player's games before it; the week in review (§40) keeps every complete week's."""
+    mrows, mv_n = mover_rows(w)
+    m = dict(season=season, week=w, n=mv_n, faces=[r for k, r in mrows if k == 'face'])
     for k in MV_FLOOR:
         rs = [r for kk, r in mrows if kk == k]
-        movers[k] = dict(up=sorted([r for r in rs if r['delta'] > 0], key=lambda r: -r['delta'])[:MV_PER], down=sorted([r for r in rs if r['delta'] < 0], key=lambda r: r['delta'])[:MV_PER])
+        m[k] = dict(up=sorted([r for r in rs if r['delta'] > 0], key=lambda r: -r['delta'])[:MV_PER], down=sorted([r for r in rs if r['delta'] < 0], key=lambda r: r['delta'])[:MV_PER])
+    return m
+if mv_week:
+    movers = movers_for(mv_week)
     json.dump(clean(movers), open(f'{out}/players/movers.json', 'w'), separators=(',', ':'))
 
 # ---------------------------------------------------------------- career (SCOPE §24): season totals per player, regular season only
@@ -1241,6 +1245,136 @@ if have_pbp:
         own = json.load(open(f'{out}/plays/{t}.json'))
         json.dump(dict(season=season, team=t, side='def', byes=own.get('byes', []), games=own.get('games', []), keys=keys, plays=drows), open(f'{out}/plays/def/{t}.json', 'w'), separators=(',', ':'))
     print('defense:', len(DTEAMS), 'teams; best', min(DTEAMS, key=lambda t: D_RANK[t]['epa']), round(DD[min(DTEAMS, key=lambda t: D_RANK[t]['epa'])]['all']['epa'], 3))
+
+# ---------------------------------------------------------------- the week in review (SCOPE §40): week/w{N}.json, one file per week with a final game
+# Read back from the files this build has already written (schedule, wp, box, plays and player files), so the page shows the same numbers
+# as the game pages, box scores and player pages. A complete week also keeps its movers, so past weeks still have theirs.
+import glob
+os.makedirs(f'{out}/week', exist_ok=True)
+def _wk_clock(el):  # regulation seconds elapsed -> "Q4 2:26"
+    q = min(4, el // 900 + 1); r = 900 * q - el; return f'Q{q} {r // 60}:{r % 60:02d}'
+def _wk_desc(d):
+    d = wp_clean(d); d = _re.sub(r'\s*\([^)]*\)', '', d); d = _re.sub(r'\s+', ' ', d).strip()
+    return d if len(d) <= 120 else d[:117].rsplit(' ', 1)[0] + '…'
+def _wk_t(t):  # "00:03" -> "0:03", "12:06" stays
+    t = str(t or ''); return t[1:] if t.startswith('0') and len(t) > 4 else t
+_wkP = {}
+for f_ in glob.glob(f'{out}/plays/[A-Z]*.json'):
+    _wkP[os.path.basename(f_)[:-5]] = json.load(open(f_))
+_wkIdx = {p_['id']: p_ for p_ in json.load(open(f'{out}/players/index.json'))['players']} if os.path.exists(f'{out}/players/index.json') else {}
+_wkPl = {t_: pl_ for t_, pl_ in team_players.items()}
+# every team's EPA a play by week, offense, from the play files (scrambles and sacks included, as the explorer counts them)
+_wkSeason = {}
+for t_, P_ in _wkP.items():
+    K_ = {k: i for i, k in enumerate(P_['keys'])}; wk_of = {g_['id']: g_['week'] for g_ in P_['games']}
+    for row in P_['plays']:
+        e_ = row[K_['epa']]
+        if e_ is None: continue
+        ss = _wkSeason.setdefault(t_, {}).setdefault(wk_of.get(row[K_['g']]), [0, 0.0, 0]); ss[0] += 1; ss[1] += e_; ss[2] += row[K_['succ']] or 0
+_wk_done = []
+for wk_s, gl_ in sorted(weeks.items(), key=lambda x: int(x[0])):
+    N = int(wk_s)
+    if not any(g_['status'] == 'final' for g_ in gl_): continue
+    WP_ = json.load(open(f'{out}/wp/w{N}.json'))['games'] if os.path.exists(f'{out}/wp/w{N}.json') else {}
+    BX_ = json.load(open(f'{out}/box/w{N}.json')) if os.path.exists(f'{out}/box/w{N}.json') else {'keys': [], 'games': {}}
+    opp_ = {}
+    for g_ in gl_: opp_[g_['away']] = g_['home']; opp_[g_['home']] = g_['away']
+    G_ = []; swings_ = []
+    for g_ in gl_:
+        r_ = dict(id=g_['id'], away=g_['away'], home=g_['home'], day=g_.get('day'), date=g_.get('date'), time=g_.get('time'), spread=g_.get('spread'), status=g_['status'], a=g_.get('away_score'), h=g_.get('home_score'))
+        w_ = WP_.get(g_['id'])
+        if g_['status'] == 'final' and w_ and w_.get('s'):
+            s_ = w_['s']; hw = (r_['h'] or 0) > (r_['a'] or 0); tie = r_['h'] == r_['a']; win = None if tie else (g_['home'] if hw else g_['away'])
+            ch = (lambda x: x) if hw else (lambda x: 1000 - x)
+            pre_w = None if tie else ch(int(w_['pre'])); low = None if tie else min(ch(p_[1]) for p_ in s_)
+            step = max(1, len(s_) // 40); sp = [s_[i][1] for i in range(0, len(s_), step)] + [s_[-1][1] if not w_['ot'] else 500]
+            if not tie and not hw: sp = [1000 - x for x in sp]  # drawn from the winner's side
+            lead = 0; lc = 0
+            for p_ in s_:
+                d_ = (p_[2] > p_[3]) - (p_[2] < p_[3])
+                if d_ and lead and d_ != lead: lc += 1
+                if d_: lead = d_
+            top_ = [x for x in (w_.get('top') or []) if ' kneels ' not in x[3]]  # regulation ending tied moves the model to 50% on the kneel; not a play that swung it
+            big = max(top_, key=lambda x: abs(x[1])) if top_ else None
+            tags = []
+            if win and pre_w < 500: tags.append(['upset', f'Upset · {round(pre_w / 10)}% at kickoff'])
+            if win and low < 250: tags.append(['comeback', f'Comeback from {max(1, round(low / 10))}%'])
+            if w_['ot']: tags.append(['ot', 'Overtime'])
+            if win and low > 500 and not w_['ot']: tags.append(['wire', 'Led all the way'])
+            if tie: tags.append(['tie', 'Tie'])
+            r_.update(win=win, pre=int(w_['pre']), pre_w=pre_w, low=low, flips=w_.get('flips', 0), lc=lc, ot=bool(w_['ot']), tags=tags, spark=sp,
+                      big=[round(abs(big[1]) / 10), _wk_clock(s_[big[0]][0]), g_['home'] if big[1] > 0 else g_['away']] if big else None,
+                      drama=(1000 - (low if low is not None else 500)) + 120 * lc + 30 * w_.get('flips', 0) + (200 if w_['ot'] else 0))
+            for x in top_:
+                helped = g_['home'] if x[1] > 0 else g_['away']; before = s_[x[0]][1]
+                swings_.append(dict(g=g_['id'], t=helped, c=_wk_clock(s_[x[0]][0]), d=x[3], v=round(abs(x[1]) / 10, 1), ba=round((before if helped == g_['home'] else 1000 - before) / 10)))
+        G_.append(r_)
+    swings_.sort(key=lambda x: -x['v'])
+    fin_ids = {g_['id'] for g_ in gl_ if g_['status'] == 'final'}
+    # ---- the best plays by EPA
+    ep_ = []
+    for t_, P_ in _wkP.items():
+        K_ = {k: i for i, k in enumerate(P_['keys'])}
+        for row in P_['plays']:
+            if row[K_['g']] not in fin_ids or row[K_['epa']] is None: continue
+            ep_.append((row[K_['epa']], t_, row))
+    ep_.sort(key=lambda x: -x[0]); plays_ = []
+    for e_, t_, row in ep_[:10]:
+        K_ = {k: i for i, k in enumerate(_wkP[t_]['keys'])}
+        plays_.append(dict(t=t_, o=opp_.get(t_), g=row[K_['g']], c=f"Q{row[K_['q']]} {_wk_t(row[K_['t']])}", e=round(e_, 2), d=_wk_desc(row[K_['desc']]), pid=row[K_['pid']], pl=row[K_['pl']]))
+    # ---- every offense and defense that played, against its usual
+    teams_ = []
+    for t_, wks in _wkSeason.items():
+        if N not in wks or t_ not in opp_: continue
+        g_ = next((x for x in G_ if t_ in (x['away'], x['home']) and x['status'] == 'final'), None)
+        if not g_: continue
+        n_, e_, sc_ = wks[N]; rest = [v for w2, v in wks.items() if w2 != N]; rn = sum(v[0] for v in rest); re_ = sum(v[1] for v in rest)
+        o_ = opp_[t_]; dn, de = (_wkSeason.get(o_, {}).get(N) or [0, 0.0, 0])[:2]
+        orest = []  # what offenses managed against this defense in its other games
+        for t2, P2 in _wkP.items():
+            for gm in P2['games']:
+                if gm['opp'] == t_ and gm['week'] != N and gm['week'] in _wkSeason.get(t2, {}): orest.append(_wkSeason[t2][gm['week']])
+        on, oe = sum(v[0] for v in orest), sum(v[1] for v in orest)
+        pf, pa = (g_['h'], g_['a']) if g_['home'] == t_ else (g_['a'], g_['h'])
+        teams_.append(dict(t=t_, o=o_, home=g_['home'] == t_, pf=pf, pa=pa, n=n_, epa=round(e_ / n_, 3), sr=round(sc_ / n_, 3), usual=round(re_ / rn, 3) if rn else None,
+                           depa=round(de / dn, 3) if dn else None, dusual=round(oe / on, 3) if on else None))
+    # ---- the players: lines from the box file (weekly stats, or the play-by-play when they lag), fantasy from the weekly lines
+    bk = {x: i for i, x in enumerate(BX_['keys'])}; lines_ = []; pbp_g = set()
+    for gid, gb in BX_['games'].items():
+        for sd in ('away', 'home'):
+            tb = gb[sd]; tm = tb['team']
+            if tb.get('src') == 'pbp': pbp_g.add(gid)
+            for L in tb['off']:
+                v = lambda x: (L[bk[x]] or 0) if x in bk else 0
+                ip = _wkIdx.get(L[bk['id']]) or {}
+                ps = ip.get('pos') or L[bk['pos']]; ps = 'RB' if ps == 'FB' else ps
+                if ps not in ('QB', 'RB', 'WR', 'TE'): continue
+                pe, ru, rc = v('passing_epa'), v('rushing_epa'), v('receiving_epa')
+                tot = pe + ru if ps == 'QB' else (ru + rc if ps == 'RB' else rc)
+                if ps == 'QB': txt = f"{v('completions')}/{v('attempts')}, {v('passing_yards')} yds" + (f", {v('passing_tds')} TD" if v('passing_tds') else '') + (f", {v('passing_interceptions')} INT" if v('passing_interceptions') else '') + (f" · {v('carries')}-{v('rushing_yards')} rush" if v('carries') >= 3 else '')
+                elif ps == 'RB': txt = f"{v('carries')} car, {v('rushing_yards')} yds" + (f", {v('rushing_tds')} TD" if v('rushing_tds') else '') + (f" · {v('receptions')}-{v('receiving_yards')} rec" if v('receptions') else '')
+                else: txt = f"{v('receptions')}/{v('targets')}, {v('receiving_yards')} yds" + (f", {v('receiving_tds')} TD" if v('receiving_tds') else '')
+                fstd = v('passing_yards') / 25 + 4 * v('passing_tds') - 2 * v('passing_interceptions') + (v('rushing_yards') + v('receiving_yards')) / 10 + 6 * (v('rushing_tds') + v('receiving_tds'))
+                lines_.append(dict(id=L[bk['id']], n=ip.get('name') or L[bk['name']], t=tm, o=opp_.get(tm), pos=ps, num=ip.get('num'), ph=ip.get('photo'), e=round(tot, 1), x=txt,
+                                   src=tb.get('src', 'stats'), f=[round(fstd, 1), round(fstd + v('receptions') / 2, 1), round(fstd + v('receptions'), 1)]))
+    fan_ = {}
+    for t_, pl_ in _wkPl.items():
+        for p_ in pl_:
+            if p_['pos'] not in ('QB', 'RB', 'WR', 'TE', 'FB'): continue
+            for w2 in p_['weeks']:
+                if int(w2.get('week') or 0) != N: continue
+                std, ppr = _num(w2.get('fantasy_points')), _num(w2.get('fantasy_points_ppr')); tm = w2.get('team') or t_
+                fan_[p_['id']] = dict(id=p_['id'], n=p_['name'], t=tm, o=opp_.get(tm), pos='RB' if p_['pos'] == 'FB' else p_['pos'], num=p_['num'], ph=p_['photo'], f=[round(std, 1), round((std + ppr) / 2, 1), round(ppr, 1)])
+    for l_ in lines_:  # a game the weekly stats haven't posted: points from the box line, no fumbles or two-point tries until they do
+        if l_['src'] == 'pbp' and l_['id'] not in fan_: fan_[l_['id']] = dict(id=l_['id'], n=l_['n'], t=l_['t'], o=l_['o'], pos=l_['pos'], num=l_['num'], ph=l_['ph'], f=l_['f'], est=1)
+    fx_ = {fm: sorted(fan_.values(), key=lambda r: -r['f'][i])[:16] for i, fm in enumerate(('std', 'half', 'ppr'))}
+    pl_top = {ps: [{k: l_[k] for k in ('id', 'n', 't', 'o', 'pos', 'num', 'ph', 'e', 'x')} for l_ in sorted([l_ for l_ in lines_ if l_['pos'] == ps], key=lambda r: -r['e'])[:8]] for ps in ('QB', 'RB', 'WR', 'TE')}
+    nfin = len(fin_ids); complete = nfin == len(gl_)
+    played_t = {g_['away'] for g_ in gl_} | {g_['home'] for g_ in gl_}
+    rec = dict(season=season, week=N, n=len(gl_), fin=nfin, complete=complete, byes=sorted(set(T) - played_t), games=G_, swings=swings_[:10], plays=plays_, teams=teams_,
+               players=pl_top, fx=fx_, pbp=sorted(pbp_g), movers=movers_for(N) if complete else None)
+    json.dump(clean(rec), open(f'{out}/week/w{N}.json', 'w'), separators=(',', ':')); _wk_done.append(N)
+print('week in review:', len(_wk_done), 'weeks', _wk_done[-3:])
 
 # ---------------------------------------------------------------- manifest
 files = {}

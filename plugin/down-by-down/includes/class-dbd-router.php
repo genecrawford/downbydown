@@ -79,6 +79,10 @@ class DBD_Router {
 			if ( $g === 'rec' ) { $g = 'wr'; }  /* 1.13.0's combined tab */
 			$r['lgroup'] = isset( DBD_Leaders::GROUPS[ $g ] ) ? $g : 'fan';
 			$r['lboard'] = preg_match( '/^[a-z]{2,3}\.[A-Za-z0-9_]{1,10}(\.[A-Za-z0-9_]{1,10})?$/', $b ) ? $b : '';
+		} elseif ( $view === 'week' ) {  /* the week in review (SCOPE §40): a week with a final game, the latest by default */
+			$r['view'] = 'week'; $ok = DBD_Week::weeks();
+			$r['week'] = ( $week && in_array( $week, $ok, true ) ) ? $week : DBD_Week::default_week();
+			if ( ! $r['week'] ) { $r['week'] = DBD_Data::current_week(); }
 		} elseif ( self::q( 'myteam' ) !== '' || $view === 'myteam' ) {  /* My team (SCOPE §36): the team is the address; an empty one restores from the device in myteam.js */
 			$r['view'] = 'myteam'; $r['myteam'] = DBD_MyTeam::parse( self::q( 'myteam' ) );
 		} elseif ( $view === 'players' ) {
@@ -167,6 +171,9 @@ class DBD_Router {
 			case 'leaders':
 				if ( $r['lboard'] !== '' && ( $B = DBD_Leaders::board( $r['lboard'] ) ) ) { return array( $B['title'] . ' leaders', "Every NFL player ranked by {$B['title']} in $season" . ( $B['sub'] !== '' ? " ({$B['sub']})" : '' ) . ', with position and minimum-usage filters.' ); }
 				return array( ( DBD_Leaders::GROUPS[ $r['lgroup'] ] ?? 'League' ) . ' leaders', "Who leads the NFL in $season: fantasy points by position, target share, EPA, yards after the catch, sack rate and every other stat on Down by Down, the top ten on each board." );
+			case 'week':
+				$wl = DBD_Router::week_label( $r['week'] );
+				return array( "$wl in review", "What happened in $wl of the $season NFL season: every game's win-probability swings, the biggest plays by WPA and EPA, the best offenses, defenses and players, fantasy leaders and the week's movers." );
 			case 'myteam':
 				return array( 'My team', 'Your fantasy lineup on one page: this week\'s matchup, injury status, snap trend and points a game for every player you follow.' );
 			case 'notfound':
@@ -195,6 +202,7 @@ class DBD_Router {
 		if ( $r['view'] === 'matchups' ) { $args = array( 'view' => 'matchups' ); if ( $r['week'] !== DBD_Data::current_week() ) { $args['week'] = $r['week']; } }
 		if ( $r['view'] === 'teams' ) { $args = array( 'view' => 'teams' ); }
 		if ( $r['view'] === 'myteam' ) { $args = array( 'view' => 'myteam' ); }
+		if ( $r['view'] === 'week' ) { $args = array( 'view' => 'week', 'week' => $r['week'] ); }
 		if ( $r['view'] === 'leaders' ) { $args = array( 'view' => 'leaders' ); if ( $r['lboard'] !== '' ) { $args['b'] = $r['lboard']; } elseif ( $r['lgroup'] !== 'fan' ) { $args['g'] = $r['lgroup']; } }
 		if ( $r['view'] === 'player' ) { $args = array( 'player' => $r['player']['id'] ); }
 		if ( $r['view'] === 'players' ) { $args = array( 'view' => 'players' ); if ( $r['pteam'] ) { $args['pt'] = $r['pteam']; } if ( $r['pos'] ) { $args['pos'] = $r['pos']; } }
@@ -288,6 +296,7 @@ class DBD_Router {
 			wp_localize_script( 'dbd-compare', 'DBD_CMP', array( 'base' => self::url(), 'group' => $r['cgroup'], 'players' => $pl, 'files' => $files, 'teams' => DBD_Data::teams(), 'heads' => DBD_Data::headshots(), 'series' => $series, 'labels' => $labels, 'yds' => array( 'rec' => 'Receiving yards', 'rb' => 'Scrimmage yards', 'qb' => 'Passing yards' )[ DBD_Grades::kind( $r['cgroup'] ) ] ?? 'Yards' ) );
 		}
 		if ( $r['view'] === 'leaders' ) { wp_enqueue_script( 'dbd-leaders', DBD_URL . 'assets/leaders.js', array(), DBD_VERSION, true ); }
+		if ( $r['view'] === 'week' ) { wp_enqueue_script( 'dbd-week', DBD_URL . 'assets/week.js', array(), DBD_VERSION, true ); }
 		if ( $r['view'] === 'myteam' ) {
 			wp_enqueue_script( 'dbd-marks', DBD_URL . 'assets/marks.js', array(), DBD_VERSION, true );
 			wp_enqueue_script( 'dbd-myteam', DBD_URL . 'assets/myteam.js', array( 'dbd-marks' ), DBD_VERSION, true );

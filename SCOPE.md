@@ -1538,3 +1538,51 @@ The router (`side=def` on a team), `team.php` (the switch, and the defense view 
 The Vikings' tab matches the mock: EPA allowed −0.19 a play, 1st; blitz rate 71%, 1st-most; pressure rate 39%, 1st; yards a carry 4.0, 15th, and 8.6 off left tackle; held 6 of 6 offenses below their usual; CPOE allowed −10.0, 1st; Dallas Turner 25 pressures; Isaiah Rodgers a 49.2 passer rating on 23 targets. The switch moves between offense and defense; the explorer runs on the defended plays; no overflow at 375 and no text under 11px.
 
 Size: L (one release). Status: signed off 2026-11-01 and built as 1.15.0.
+
+## 40. Week in review (scoped and mocked 2026-11-01, `mockup-v15/`)
+
+Roadmap 2, slice 10. A new page, `?view=week&week=N`, that answers **what happened this week?** in one place. Today the answer is scattered: the scoreboard is on the matchups page, each game's swings are on its own game page, movers sit on the Players page, and nothing ranks the week's plays, offenses or players. The mock is two real weeks built from the site's own published data (`mockup-v15/week-7.html`, a finished week; `week-8.html`, a week with five games still to play) inside the live 1.15.2 shell.
+
+### What the reader sees
+
+| Part | What it shows | Week 7 (mock) |
+|---|---|---|
+| **Title and week picker** | "Week 7 in review", the dates, the byes, a badge with how many games are final. The site's existing week tabs list every week with a final game; a week with games still to play carries a red dot | Oct 22 to Oct 26 · 14 games · byes BUF, JAX, LAC, WAS · 14 of 14 final |
+| **The short version** | Six lines in the takeaways voice, each linking to its game or section: the **upset** (the longest odds a winner overcame at kickoff), the **comeback** (the lowest a winner fell), the **wildest** game (most lead changes), the **best offense** and **best defense** by EPA a play against their usual, and the **player** of the week by EPA. A week in progress says "so far" | Giants beat the Texans as a 22% underdog; Bengals came back from 14% against the Ravens; Joe Burrow +19.4 EPA |
+| **The games** | Six chips (games final, overtime, comebacks, upsets, points, biggest swing), then a card per game: the score with the winner bold, a small win-probability line drawn from the winner's side (above the dashed middle in the winner's color they were favored, below it in grey they were behind), the biggest swing and its clock, and tags: **Upset · 22% at kickoff**, **Comeback from 14%**, **Overtime**, **Led all the way**, **Tie**. Hover shows the kickoff favorite, lead changes and the swing; a click opens the game page. A switch orders the cards by kickoff or by drama. Games not yet played show the kickoff time and the line | 632 points, 4 comebacks, 4 upsets, biggest swing 22 |
+| **The plays** | Two ranked lists side by side. **The biggest swings**: the ten largest win-probability swings of the week (from each game's top five), with the team it helped, the clock, the matchup, the cleaned description, the points and "before → after" with a bar in the team's color. **The best plays by EPA**: the ten biggest single-snap EPA plays, with the player linking to his page | Swings led by D.Watson to H.Fannin at Q4 0:28 (+22); EPA led by D.Maye to R.Stevenson for 48 yards (+6.5) |
+| **Teams** | A tabbed panel, Offenses and Defenses: every team that played, ranked by EPA a play this week (allowed, for defenses), with the result, a diverging bar, and "vs usual" against the same team's average in its other games | Bengals +0.33 (+0.25 vs usual), Cowboys +0.32, Dolphins +0.28 |
+| **Players** | Leaders-style cards: the top eight quarterbacks, backs, wide receivers and tight ends by EPA (passing plus rushing for quarterbacks, rushing plus receiving for backs, receiving for the rest), each with his line ("22/30, 292 yds, 4 TD"); and the week's top fantasy scorers with the site's Standard, Half and PPR switch | Burrow, Malik Willis, Sam Darnold; Tony Pollard 35.0 half PPR (three touchdowns on a negative-EPA day) |
+| **Movers** | The Players page's Movers panel, for this week. A week with games still to play says movers appear once every game is final | the live Week 7 panel |
+
+### Rules
+
+- **The default week** is the most recent week with a final game, so Sunday night shows Sunday. While games remain, the badge reads "9 of 14 final", the short version says "so far", and movers wait for the last game.
+- **Upset:** the winner was under 50% at kickoff (nflverse's spread-adjusted model). **Comeback:** the winner fell below 25% at some point in regulation. **Led all the way:** the winner never fell to 50% or below and there was no overtime. **Lead changes** count the score changing hands, not the model crossing 50%.
+- **Swings** come from each game's top five on the game page, so they are the same numbers. A kneel-down that ends a tied regulation is left out (the model moving to 50% is not a play that swung it).
+- **"Vs usual"** compares this week with the team's average in its other games this season, as the defense tab does.
+- **Lines and fantasy** come from the box score file. When nflverse's weekly stats trail the play-by-play (as on Sunday nights), lines are counted from the plays (1.15.2) and those games' fantasy points carry an asterisk: they leave out fumbles and two-point tries until the stats arrive, usually by the next morning. A note says how many games this applies to.
+
+### Data
+
+- **Build:** one file per week with a final game, **`week/w{N}.json`** (about 25 KB): the games (score, tags, the winner-side line sampled to about 40 points, kickoff chance, low point, lead changes, biggest swing), the top ten swings, the top ten EPA plays, every team's offense and defense EPA a play with their usual, the top eight per position by EPA with their lines, the top sixteen fantasy scorers per format, and whether the week is complete. The movers for each complete week are computed by the movers rule and stored in the same file, so past weeks keep theirs.
+- **Sync:** the allowlist gains `week/w\d{1,2}`. 1.16.0 must be live before the files arrive (the auto-sync after update handles it).
+- **Build check:** every week with a final game has a file; each file's games match the schedule; swings and plays are sorted and capped at ten; every team that played appears once in teams; Week 7 renders from fresh data with no empty section.
+
+### Plugin (1.16.0)
+
+The router (`view=week`, `week`), `views/week.php` and a `DBD_Week` class (short version, scoreboard, plays, teams, players, movers), a small `week.js` for the order switch (pane tabs, tooltips and the fantasy switch already live in dbd-site.js), the CSS, SEO ("Week 7 in review" title and description, indexable, canonical with the week), the view harness and CI render. Links in: the matchups page gets "Week N in review" for any week with a final game (the game page's breadcrumb already links to its week). **Gene's sidebar:** a "Week in review" link (`/?view=week`) under Explore.
+
+### Left out
+
+- **Live in-game updates:** the data is nightly.
+- **The share cards** the roadmap row mentioned: the cards are season cards; a week card is a polish-release idea.
+- **Defensive players of the week** (sacks, takeaways): the weekly defensive stats are there, a follow-on.
+- **Injuries of the week:** needs last week's report kept by the build.
+- **A hub card:** that is the hub refresh, slice 11.
+
+### Acceptance
+
+Week 7 matches the mock: 14 of 14 final, 632 points, 4 comebacks, 4 upsets, biggest swing 22 points; Giants over Texans as a 22% underdog; Bengals back from 14%; best offense Bengals +0.33; Joe Burrow +19.4 EPA; Movers panel present. Week 8 in progress shows "9 of 14 final", upcoming games with kickoff times, the play-by-play note and asterisked fantasy points, and no Movers. The order switch works; no horizontal scroll at 375; no text under 11px; checked at 1440 and 375.
+
+Size: M. Status: signed off 2026-11-01 and built as 1.16.0. Build note: the movers code became a function of the week, so each complete week's file keeps its own movers; the Players page and the week page share one movers panel (`DBD_Week::movers`).
