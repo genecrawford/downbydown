@@ -85,6 +85,10 @@ jobs:
           php tools/view_harness.php data player 00-0033293
           php tools/view_harness.php data players
           php tools/view_harness.php data hub
+          for set in 00-0036322,00-0036900,00-0039075 00-0034857,00-0033106 00-0039139,00-0038542; do
+            php tools/view_harness.php data compare "$set"
+            for m in 'class="dbd-cslots cw-next"' '<b>Playstyle</b>' '<b>Where the EPA comes from</b>' '<b>The shape of their seasons</b>' '<b>Careers</b>'; do grep -q "$m" "pages/compare-$set.html" || { echo "compare $set is missing $m"; exit 1; }; done
+          done
           php tools/card_harness.php data 00-0036322 pages/card-logo.png
       - uses: actions/upload-artifact@v4
         with:
