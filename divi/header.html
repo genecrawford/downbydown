@@ -1,23 +1,26 @@
 <style>
-/* Down x Down header: the logo and the main menu on one strip of field. Paste this whole block into one Divi Code module.
-   Chalk lettering, a white sideline along the bottom with hash marks above it, and a red first-down line under the link
-   you're on or hovering. The doubled class beats Divi's own list and link rules. */
-.et_pb_section:has(.dxd-head),.et_pb_row:has(.dxd-head),.et_pb_column:has(.dxd-head){padding:0!important;margin:0!important;background:#213a29!important}
+/* Down x Down header: the logo and the main menu on a near-black bar over the field. Paste this whole block into one Divi
+   Code or Text module. Chalk lettering, a white sideline along the bottom with hash marks above it, and a red first-down line
+   under the link you're on or hovering. The doubled class beats Divi's own list and link rules. */
+.et_pb_section:has(.dxd-head),.et_pb_row:has(.dxd-head),.et_pb_column:has(.dxd-head){padding:0!important;margin:0!important;background:#0f1311!important}
 .et_pb_row:has(.dxd-head){width:100%!important;max-width:none!important}
-.dxd-head{--dxd-red:#cb2026;position:relative;background:#213a29;font-family:"Barlow Condensed","Arial Narrow",sans-serif;border-bottom:2px solid rgba(255,255,255,.9)}
+.et_pb_module:has(.dxd-head){align-items:stretch!important}  /* Divi centers a module's content, which would shrink the bar to its contents */
+.et_pb_text_inner:has(.dxd-head),.et_pb_code_inner:has(.dxd-head){width:100%!important;max-width:none!important}
+.dxd-head{--dxd-red:#cb2026;position:relative;width:100%;background:#0f1311;font-family:"Barlow Condensed","Arial Narrow",sans-serif;border-bottom:2px solid rgba(255,255,255,.9);-webkit-font-smoothing:auto;-moz-osx-font-smoothing:auto}
 .dxd-head::after{content:"";position:absolute;left:0;right:0;bottom:0;height:7px;pointer-events:none;
   background:repeating-linear-gradient(90deg,rgba(255,255,255,.28) 0 1px,transparent 1px 2%)}
 .dxd-head .dxd-bar{display:flex;align-items:center;gap:clamp(16px,3vw,40px);max-width:1240px;margin:0 auto;padding:0 clamp(16px,4vw,48px)}
 .dxd-head.dxd-head .dxd-home{display:block;flex:none;padding:12px 0 14px;line-height:0}
-.dxd-head .dxd-logo{display:block;width:clamp(150px,15vw,200px);height:auto}
+.dxd-head .dxd-logo{display:block;width:clamp(150px,13vw,180px);height:auto}
+.dxd-head nav{flex:1;min-width:0}
 .dxd-logo .lg-word{fill:#fff}
 .dxd-logo .lg-x,.dxd-logo .lg-flame{fill:#cb2026}
 .dxd-logo .lg-ball{fill:#fff}
 .dxd-head.dxd-head ul{display:flex;flex-wrap:wrap;justify-content:flex-end;flex:1;margin:0;padding:0;list-style:none}
 .dxd-head.dxd-head li{margin:0;padding:0;list-style:none}
 .dxd-head.dxd-head li::before{content:none}
-.dxd-head.dxd-head nav a{position:relative;display:block;padding:24px clamp(8px,1vw,15px) 27px;color:#fff;opacity:.82;font-size:15px;font-weight:700;line-height:1;letter-spacing:.12em;text-transform:uppercase;text-decoration:none;white-space:nowrap;transition:opacity .15s}
-.dxd-head.dxd-head nav a::after{content:"";position:absolute;left:clamp(8px,1vw,15px);right:clamp(8px,1vw,15px);bottom:15px;height:3px;background:var(--dxd-red);transform:scaleX(0);transform-origin:left center;transition:transform .2s ease-out}
+.dxd-head.dxd-head nav a{position:relative;display:block;padding:24px clamp(8px,.85vw,12px) 27px;color:#fff;opacity:.82;font-size:15px;font-weight:700;line-height:1;letter-spacing:.12em;text-transform:uppercase;text-decoration:none;white-space:nowrap;transition:opacity .15s}
+.dxd-head.dxd-head nav a::after{content:"";position:absolute;left:clamp(8px,.85vw,12px);right:clamp(8px,.85vw,12px);bottom:15px;height:3px;background:var(--dxd-red);transform:scaleX(0);transform-origin:left center;transition:transform .2s ease-out}
 .dxd-head.dxd-head nav a:hover,.dxd-head.dxd-head nav a:focus-visible,.dxd-head.dxd-head nav a[aria-current="page"]{opacity:1}
 .dxd-head.dxd-head nav a:hover::after,.dxd-head.dxd-head nav a:focus-visible::after,.dxd-head.dxd-head nav a[aria-current="page"]::after{transform:scaleX(1)}
 .dxd-head.dxd-head a:focus-visible{outline:2px solid #fff;outline-offset:-4px;border-radius:4px}
