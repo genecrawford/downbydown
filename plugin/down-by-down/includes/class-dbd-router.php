@@ -297,7 +297,7 @@ class DBD_Router {
 		}
 		if ( $r['view'] === 'leaders' ) { wp_enqueue_script( 'dbd-leaders', DBD_URL . 'assets/leaders.js', array(), DBD_VERSION, true ); }
 		if ( $r['view'] === 'week' ) { wp_enqueue_script( 'dbd-week', DBD_URL . 'assets/week.js', array(), DBD_VERSION, true ); }
-		if ( $r['view'] === 'hub' && DBD_Data::get( 'players/mini.json' ) !== null ) {  /* SCOPE §41: the My team card */
+		if ( $r['view'] === 'hub' ) {  /* SCOPE §41: the My team card. Always loaded: right after an update the player list may not have synced yet, and a cached page without the script would keep the card empty; hub.js does nothing if the list is missing */
 			wp_enqueue_script( 'dbd-marks', DBD_URL . 'assets/marks.js', array(), DBD_VERSION, true );
 			wp_enqueue_script( 'dbd-hub', DBD_URL . 'assets/hub.js', array( 'dbd-marks' ), DBD_VERSION, true );
 			$wk = DBD_Data::current_week();
