@@ -190,25 +190,25 @@ class DBD_Defense {
 		$fxc = function ( $pos ) use ( $a ) { $h = ''; foreach ( DBD_Fantasy::FMT as $fm ) { $al = DBD_Fantasy::allowed( $a, $pos, $fm ); $h .= '<span data-fx="' . $fm . '">' . ( $al ? DBD_Fantasy::num( $al[0] ) . '<small>' . esc_html( DBD_Fantasy::most( $al[1], $al[2] ) ) . '</small>' : '–' ) . '</span>'; } return $h; };
 		foreach ( array( array( 'WR', 'Wide receivers' ), array( 'TE', 'Tight ends' ), array( 'RB', 'Backs, receiving' ) ) as $p ) {
 			$e = $dm[ $p[0] . '_epa' ] ?? null;
-			$rows .= '<tr><td class="n">' . $p[1] . '</td><td>' . self::f1( $dm[ $p[0] . '_tgt_pg' ] ?? null ) . '<small>' . self::ord( $dr[ $p[0] . '_tgt_pg' ] ?? 0 ) . '</small></td><td>' . self::f1( $dm[ $p[0] . '_yds_pg' ] ?? null ) . '<small>' . self::ord( $dr[ $p[0] . '_yds_pg' ] ?? 0 ) . '</small></td>'
+			$rows .= '<tr><td class="n">' . $p[1] . '</td><td class="dbd-t3">' . self::f1( $dm[ $p[0] . '_tgt_pg' ] ?? null ) . '<small>' . self::ord( $dr[ $p[0] . '_tgt_pg' ] ?? 0 ) . '</small></td><td>' . self::f1( $dm[ $p[0] . '_yds_pg' ] ?? null ) . '<small>' . self::ord( $dr[ $p[0] . '_yds_pg' ] ?? 0 ) . '</small></td>'
 				. '<td class="' . ( $e !== null && $e < 0 ? 'pos' : 'neg' ) . '">' . self::sgn( $e ) . '<small>' . self::ord( $dr[ $p[0] . '_epa' ] ?? 0 ) . '-toughest</small></td><td class="fx">' . $fxc( $p[0] ) . '</td></tr>';
 		}
-		$rows .= '<tr><td class="n">Quarterbacks</td><td>–</td><td>–</td><td>–</td><td class="fx">' . $fxc( 'QB' ) . '</td></tr>';
+		$rows .= '<tr><td class="n">Quarterbacks</td><td class="dbd-t3">–</td><td>–</td><td>–</td><td class="fx">' . $fxc( 'QB' ) . '</td></tr>';
 		$who = '';
-		foreach ( (array) $D['who'] as $w ) { $who .= '<tr><td class="n">' . self::tile_logo( $w[2] ) . '<a href="' . esc_url( DBD_Router::url( array( 'player' => $w[0] ) ) ) . '">' . esc_html( $w[1] ) . '</a></td><td>' . esc_html( $w[2] ) . '</td><td>' . (int) $w[5] . '</td><td>' . (int) $w[3] . '</td><td>' . ( (int) $w[6] ?: '' ) . '</td><td class="' . ( $w[4] > 0 ? 'pos' : 'neg' ) . '">' . self::sgn( $w[4], 1 ) . '</td></tr>'; }
+		foreach ( (array) $D['who'] as $w ) { $who .= '<tr><td class="n">' . self::tile_logo( $w[2] ) . '<a href="' . esc_url( DBD_Router::url( array( 'player' => $w[0] ) ) ) . '">' . esc_html( $w[1] ) . '</a></td><td class="dbd-t3">' . esc_html( $w[2] ) . '</td><td>' . (int) $w[5] . '</td><td>' . (int) $w[3] . '</td><td class="dbd-t3">' . ( (int) $w[6] ?: '' ) . '</td><td class="' . ( $w[4] > 0 ? 'pos' : 'neg' ) . '">' . self::sgn( $w[4], 1 ) . '</td></tr>'; }
 		return '<section class="dbd-panel dbd-pane" data-pane="' . $i . '" hidden><div class="dbd-ph"><span class="dbd-lab"><b>By position</b><span class="sub">what each position does against them, the ranks the player pages quote</span></span>' . DBD_Fantasy::seg() . '</div>'
-			. '<div class="dbd-tw"><table class="dbd-stat dbd-dpos"><thead><tr><th>Position</th><th>Targets a game</th><th>Yards a game</th><th>EPA per target</th><th>Fantasy points allowed</th></tr></thead><tbody>' . $rows . '</tbody></table></div>'
-			. ( $who ? '<h4 class="dbd-h4">Who hurt them most</h4><div class="dbd-tw"><table class="dbd-stat dbd-dwho"><thead><tr><th>Player</th><th>Team</th><th>Touches</th><th>Yards</th><th>TD</th><th>EPA</th></tr></thead><tbody>' . $who . '</tbody></table></div>' : '' )
+			. '<div class="dbd-tw"><table class="dbd-stat dbd-dpos"><thead><tr><th>Position</th><th class="dbd-t3">Targets a game</th><th>Yards a game</th><th>EPA per target</th><th>Fantasy points allowed</th></tr></thead><tbody>' . $rows . '</tbody></table></div>'
+			. ( $who ? '<h4 class="dbd-h4">Who hurt them most</h4><div class="dbd-tw"><table class="dbd-stat dbd-dwho"><thead><tr><th>Player</th><th class="dbd-t3">Team</th><th>Touches</th><th>Yards</th><th class="dbd-t3">TD</th><th>EPA</th></tr></thead><tbody>' . $who . '</tbody></table></div>' : '' )
 			. '<p class="dbd-note">Targets, yards and EPA per target by the receiver\'s position, ranked 1st for the toughest defense: the same numbers a receiver\'s This week panel quotes against this defense. Fantasy points allowed follow the scoring switch. Who hurt them ranks every opposing player by EPA on his targets and carries against this defense.</p></section>';
 	}
 
 	private static function situations( $D, $L, $i ) {
 		$S = (array) $D['sit']; $LS = (array) ( $L['lg']['sit'] ?? array() );
 		$row = function ( $lab, $k, $conv ) use ( $S, $LS ) {
-			$v = $S[ $k ] ?? array( 0, null ); $l = $LS[ $k ] ?? array( 0, null ); if ( $v[1] === null || $l[1] === null ) { return '<tr><td class="n">' . $lab . '</td><td>' . (int) $v[0] . '</td><td>–</td><td>–</td><td></td></tr>'; }
+			$v = $S[ $k ] ?? array( 0, null ); $l = $LS[ $k ] ?? array( 0, null ); if ( $v[1] === null || $l[1] === null ) { return '<tr><td class="n">' . $lab . '</td><td>' . (int) $v[0] . '</td><td>–</td><td class="dbd-t3">–</td><td></td></tr>'; }
 			$good = $v[1] < $l[1];
 			$diff = $conv ? ( $good ? '−' : '+' ) . abs( round( ( $v[1] - $l[1] ) * 100 ) ) . ' pts' : self::sgn( $v[1] - $l[1] );
-			return '<tr><td class="n">' . $lab . '</td><td>' . (int) $v[0] . '</td><td>' . ( $conv ? self::pct( $v[1] ) : self::sgn( $v[1] ) ) . '</td><td>' . ( $conv ? self::pct( $l[1] ) : self::sgn( $l[1] ) ) . '</td><td class="' . ( $good ? 'pos' : 'neg' ) . '">' . $diff . '</td></tr>';
+			return '<tr><td class="n">' . $lab . '</td><td>' . (int) $v[0] . '</td><td>' . ( $conv ? self::pct( $v[1] ) : self::sgn( $v[1] ) ) . '</td><td class="dbd-t3">' . ( $conv ? self::pct( $l[1] ) : self::sgn( $l[1] ) ) . '</td><td class="' . ( $good ? 'pos' : 'neg' ) . '">' . $diff . '</td></tr>';
 		};
 		$rows = $row( '1st down', 'd1', false ) . $row( '2nd down', 'd2', false ) . $row( '3rd down', 'd3', false ) . $row( '3rd and 1 to 3', '3s', true ) . $row( '3rd and 4 to 6', '3m', true ) . $row( '3rd and 7+', '3l', true )
 			. $row( 'Red zone', 'rz', false ) . $row( 'Two-minute drill', '2m', false ) . $row( 'When they lead', 'lead', false ) . $row( 'One-score game', 'close', false ) . $row( 'When they trail by 9+', 'trail', false );
@@ -220,7 +220,7 @@ class DBD_Defense {
 		if ( $cv ) { asort( $cv ); $b3 = array_key_first( $cv ); $say .= ( $cv[ $b3 ] < 0 ? 'Their biggest third-down edge is <b>' . $n3[ $b3 ] . '</b>: offenses convert ' . self::pct( $S[ $b3 ][1] ) . ' against a league ' . self::pct( $LS[ $b3 ][1] ) . '. ' : 'Third downs go the offense\'s way: even ' . $n3[ $b3 ] . ' converts at ' . self::pct( $S[ $b3 ][1] ) . ' (league ' . self::pct( $LS[ $b3 ][1] ) . '). ' ); }
 		if ( $ep ) { asort( $ep ); $be = array_key_first( $ep ); $we = array_key_last( $ep ); $say .= 'They are stingiest in <b>' . $lab[ $be ] . '</b> (' . self::sgn( $S[ $be ][1] ) . ' a play, league ' . self::sgn( $LS[ $be ][1] ) . ') and weakest in ' . $lab[ $we ] . ' (' . self::sgn( $S[ $we ][1] ) . ', league ' . self::sgn( $LS[ $we ][1] ) . ').'; }
 		return '<section class="dbd-panel dbd-pane" data-pane="' . $i . '" hidden><div class="dbd-ph"><span class="dbd-lab"><b>Situations</b><span class="sub">by down, third-down distance, field zone, clock and score</span></span></div>'
-			. '<p class="dbd-ep-say">' . $say . '</p><div class="dbd-tw"><table class="dbd-stat dbd-dsit"><thead><tr><th>Situation</th><th>Plays</th><th>Allowed</th><th>League</th><th>Difference</th></tr></thead><tbody>' . $rows . '</tbody></table></div>'
+			. '<p class="dbd-ep-say">' . $say . '</p><div class="dbd-tw"><table class="dbd-stat dbd-dsit"><thead><tr><th>Situation</th><th>Plays</th><th>Allowed</th><th class="dbd-t3">League</th><th>Difference</th></tr></thead><tbody>' . $rows . '</tbody></table></div>'
 			. '<p class="dbd-note">EPA a play allowed, or for third downs the share converted (a first down or a touchdown). Green is better than the league for the defense. Score states are from the defense\'s side.</p></section>';
 	}
 
@@ -261,8 +261,10 @@ class DBD_Defense {
 		$z = function ( $v ) { return $v ? ( is_float( $v ) ? rtrim( rtrim( number_format( $v, 1 ), '0' ), '.' ) : (string) $v ) : ''; };
 		$jt = function ( $num ) use ( $t ) { return '<span class="dbd-jt" style="background:' . esc_attr( DBD_Marks::accent( $t ) ) . '">' . esc_html( (string) ( $num ?? '' ) ) . '</span>'; };
 		$tbl = function ( $rows, $cols ) use ( $jt ) {
-			$th = ''; foreach ( $cols as $c ) { $th .= '<th>' . $c[0] . '</th>'; }
-			$tb = ''; foreach ( $rows as $r ) { $tb .= '<tr><td class="n">' . $jt( $r['num'] ) . '<b>' . esc_html( $r['name'] ) . '</b><small>' . esc_html( $r['pos'] ) . '</small></td>'; foreach ( array_slice( $cols, 1 ) as $c ) { $tb .= '<td>' . $c[1]( $r ) . '</td>'; } $tb .= '</tr>'; }
+			/* on a phone the player and his first three numbers; the rest fold (SCOPE §43) */
+			$t3 = function ( $i ) { return $i >= 4 ? ' class="dbd-t3"' : ''; };
+			$th = ''; foreach ( $cols as $i => $c ) { $th .= '<th' . $t3( $i ) . '>' . $c[0] . '</th>'; }
+			$tb = ''; foreach ( $rows as $r ) { $tb .= '<tr><td class="n">' . $jt( $r['num'] ) . '<b>' . esc_html( $r['name'] ) . '</b><small>' . esc_html( $r['pos'] ) . '</small></td>'; foreach ( array_slice( $cols, 1 ) as $i => $c ) { $tb .= '<td' . $t3( $i + 1 ) . '>' . $c[1]( $r ) . '</td>'; } $tb .= '</tr>'; }
 			return '<div class="dbd-tw"><table class="dbd-stat dbd-ddef"><thead><tr>' . $th . '</tr></thead><tbody>' . $tb . '</tbody></table></div>';
 		};
 		$snap = function ( $r ) { return (int) $r['snap'] . '%'; }; $rate = function ( $r ) { return $r['rate'] !== null ? number_format( $r['rate'], 1 ) : ''; };

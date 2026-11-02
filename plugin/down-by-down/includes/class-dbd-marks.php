@@ -125,4 +125,24 @@ class DBD_Marks {
 			(int) round( $height * 1.6 ), (int) $height, esc_attr( $t['name'] ), esc_attr( $c1 ), esc_attr( $c2 ), $fs, esc_attr( self::ink( $c1, $c2 ) ), esc_html( $abbr )
 		);
 	}
+
+	/**
+	 * A skeleton in the shape of what is loading (SCOPE §43): 'field' (a play map), 'bands' (the depth bars), 'explorer' (the team
+	 * play explorer), 'rows' (a list), 'chart' (a block). It pulses until the panel's script replaces it, and dbd-site.js then
+	 * cross-fades the two (transitions.dev 14). Screen readers hear "Loading…".
+	 */
+	public static function skel( $kind = 'field', $label = 'Loading' ) {
+		$field = '<span class="sk sk-f">' . str_repeat( '<i></i>', 5 ) . '<b style="left:22%;top:40%"></b><b style="left:64%;top:30%"></b><b style="left:80%;top:58%"></b><b style="left:35%;top:70%"></b><b style="left:52%;top:52%"></b><b style="left:18%;top:62%"></b></span>';
+		$bar = function ( $w, $cls = '' ) { return '<span class="sk sk-bar' . ( $cls ? ' ' . $cls : '' ) . '" style="width:' . (int) $w . '%"></span>'; };
+		switch ( $kind ) {
+			case 'bands': $in = '<span class="sk-bands">'; foreach ( array( 55, 80, 100, 35 ) as $w ) { $in .= $bar( 90 ) . $bar( $w, 'tall' ) . $bar( 80 ); } $in .= '</span>'; break;
+			case 'explorer':
+				$rows = ''; foreach ( array( 92, 76, 84, 60, 88, 70, 80, 64 ) as $w ) { $rows .= $bar( $w ); }
+				$in = '<span class="sk-ex"><span class="tb">' . str_repeat( '<span class="sk sk-pill"></span>', 4 ) . '</span><span class="bd">' . $field . '<span class="sk-col">' . $rows . '</span></span></span>'; break;
+			case 'rows': $in = '<span class="sk-rows">'; foreach ( array( 70, 55, 82, 64 ) as $w ) { $in .= '<span class="sk-row"><span class="sk c"></span>' . $bar( $w ) . $bar( 100 ) . '</span>'; } $in .= '</span>'; break;
+			case 'chart': $in = '<span class="sk sk-chart"></span>'; break;
+			default: $in = $field;
+		}
+		return '<div class="dbd-skel sk-' . esc_attr( $kind ) . '" role="status"><span class="dbd-vh">' . esc_html( $label ) . '…</span>' . $in . '</div>';
+	}
 }

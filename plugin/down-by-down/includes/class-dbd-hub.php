@@ -121,7 +121,7 @@ class DBD_Hub {
 		}
 		/* My team: the empty card; hub.js swaps in the saved lineup from this device */
 		$cards .= '<section class="dbd-panel ld-card hb-mt" id="hb-mt"><div class="ld-h"><b>My team</b><small class="hb-mts">your lineup, kept on this device</small></div>'
-			. '<div class="hb-mte"><p>Pick your players once and see them together every week: this week\'s matchup, status, snap trend and points pace.</p><a class="dbd-cta" href="' . esc_url( DBD_Router::url( array( 'view' => 'myteam' ) ) ) . '">Build my team</a></div></section>';
+			. DBD_Marks::skel( 'rows', 'Loading your team' ) . '<div class="hb-mte"><p>Pick your players once and see them together every week: this week\'s matchup, status, snap trend and points pace.</p><a class="dbd-cta" href="' . esc_url( DBD_Router::url( array( 'view' => 'myteam' ) ) ) . '">Build my team</a></div></section>';
 		return '<section class="dbd-band" id="hb-players"><h2 class="dbd-bandh">Players<span>whose role moved, who leads, and your team</span></h2><div class="ld-grid hb-players">' . $cards . '</div></section>';
 	}
 

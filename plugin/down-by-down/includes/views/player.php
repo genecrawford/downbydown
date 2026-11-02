@@ -364,7 +364,7 @@ $usedP[] = array( 'Depth by direction', ob_get_clean() );
 ob_start();
 /* ---- field map + depth bands (JS) */
 echo '<section class="dbd-panel" id="dbd-pmap-panel"><div class="dbd-ph"><span class="dbd-lab"><b id="dbd-maplab">' . ( $grp === 'qb' ? 'Where he throws' : ( $grp === 'rb' ? 'Where he runs' : 'Where the ball finds him' ) ) . '</b> · from the play file</span><span class="dbd-badge" id="dbd-mapn">loading</span></div>';
-echo '<div class="dbd-sprays"><div><h4 id="dbd-map1h">On the field</h4><div id="dbd-pmap"><div class="dbd-skel"><span class="dbd-note">Loading every snap…</span></div></div></div><div><h4>By depth of target</h4><div class="dbd-bands" id="dbd-bands"></div><p class="dbd-note" id="dbd-bandnote" style="padding:8px 0 0"></p></div></div>';
+echo '<div class="dbd-sprays"><div><h4 id="dbd-map1h">On the field</h4><div id="dbd-pmap">' . DBD_Marks::skel( 'field', 'Loading every snap' ) . '</div></div><div><h4>By depth of target</h4><div class="dbd-bands" id="dbd-bands">' . DBD_Marks::skel( 'bands' ) . '</div><p class="dbd-note" id="dbd-bandnote" style="padding:8px 0 0"></p></div></div>';
 echo '<div class="dbd-legend" id="dbd-pleg"></div><p class="dbd-note" id="dbd-mapnote"></p></section>';
 
 $usedP[] = array( 'On the field', ob_get_clean() );

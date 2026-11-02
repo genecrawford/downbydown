@@ -229,8 +229,9 @@ foreach ( DBD_Metrics::rows() as $group => $keys ) {
 	foreach ( $keys as $key => $lbl ) {
 		list( $ov, $or ) = DBD_Metrics::off( $O, $key ); list( $dv, $dr ) = DBD_Metrics::def( $D, $key );
 		$s = DBD_Metrics::score( $or, $dr ); $w = round( abs( $s - 0.5 ) * 200 ) / 2;
-		echo '<tr><td>' . esc_html( $lbl ) . '</td><td class="v">' . esc_html( DBD_Metrics::fmt( $key, $ov ) ) . DBD_Metrics::rank_badge( $or ) . '</td>';
-		echo '<td class="divcell"><div class="dbd-diverge" style="--to:' . esc_attr( $to ) . ';--td:' . esc_attr( $td ) . '"><i class="' . ( $s >= 0.5 ? 'o' : 'd' ) . '" style="width:' . $w . '%"></i></div></td>';
+		$bar = '<div class="dbd-diverge" style="--to:' . esc_attr( $to ) . ';--td:' . esc_attr( $td ) . '"><i class="' . ( $s >= 0.5 ? 'o' : 'd' ) . '" style="width:' . $w . '%"></i></div>';
+		echo '<tr><td>' . esc_html( $lbl ) . '<span class="dbd-h2hm">' . $bar . '</span></td><td class="v">' . esc_html( DBD_Metrics::fmt( $key, $ov ) ) . DBD_Metrics::rank_badge( $or ) . '</td>';
+		echo '<td class="divcell">' . $bar . '</td>';
 		echo '<td class="v">' . esc_html( DBD_Metrics::fmt( $key, $dv ) ) . DBD_Metrics::rank_badge( $dr ) . '</td><td class="lg">' . esc_html( DBD_Metrics::fmt( $key, DBD_Metrics::league( $key ) ) ) . '</td></tr>';
 	}
 }

@@ -101,14 +101,14 @@ if ( $grp ) { echo DBD_Compare::epa( $P, $grp ); }
 
 /* ---- field maps (JS) */
 echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Where the ball finds them</b> · same scale, same field</span><span class="dbd-badge" id="dbd-cmapn">loading plays</span></div><div class="dbd-cmaps">';
-foreach ( $P as $i => $x ) { echo '<div><h4><i style="background:' . $x['c'] . '"></i>' . esc_html( $x['row']['name'] ) . ' <span class="n" id="dbd-cmapc-' . $i . '"></span></h4><div id="dbd-cmap-' . $i . '"><div class="dbd-skel"><span class="dbd-note">Loading…</span></div></div></div>'; }
+foreach ( $P as $i => $x ) { echo '<div><h4><i style="background:' . $x['c'] . '"></i>' . esc_html( $x['row']['name'] ) . ' <span class="n" id="dbd-cmapc-' . $i . '"></span></h4><div id="dbd-cmap-' . $i . '">' . DBD_Marks::skel( 'field' ) . '</div></div>'; }
 echo '</div><div class="dbd-legend" id="dbd-cmapleg"></div><p class="dbd-note">' . ( $grp === 'rb' ? 'Designed carries by gap, from each team\'s play file.' : 'Targets placed by air yards and side of the field, from each team\'s play file.' ) . '</p></section>';
 
 /* ---- one field + depth butterfly (JS), the race + grouped weeks (JS, Chartist) */
 $two = array_slice( $P, 0, 2 );
 echo '<div class="dbd-cgrid">';
-echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>On one field</b> · ' . ( $grp === 'qb' ? 'every throw' : 'every target' ) . ', same field</span><span class="dbd-badge">Filled is caught, a ring is not</span></div>' . $legend() . '<div class="dbd-pb" id="dbd-cfield"><div class="dbd-skel"><span class="dbd-note">Loading…</span></div></div></section>';
-echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Depth butterfly</b> · ' . esc_html( implode( ' and ', array_map( function ( $x ) { return $x['rec']['short'] ?? $x['row']['name']; }, $two ) ) ) . '</span><span class="dbd-badge">Solid is caught</span></div><div class="dbd-pb" id="dbd-cbfly"><div class="dbd-skel"><span class="dbd-note">Loading…</span></div></div><p class="dbd-note">' . ( $n > 2 ? 'The first two slots, back to back.' : 'Back to back by depth band.' ) . ' The widest band is where the offense goes to him; the gap between solid and faded is where it misses.</p></section>';
+echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>On one field</b> · ' . ( $grp === 'qb' ? 'every throw' : 'every target' ) . ', same field</span><span class="dbd-badge">Filled is caught, a ring is not</span></div>' . $legend() . '<div class="dbd-pb" id="dbd-cfield">' . DBD_Marks::skel( 'field' ) . '</div></section>';
+echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Depth butterfly</b> · ' . esc_html( implode( ' and ', array_map( function ( $x ) { return $x['rec']['short'] ?? $x['row']['name']; }, $two ) ) ) . '</span><span class="dbd-badge">Solid is caught</span></div><div class="dbd-pb" id="dbd-cbfly">' . DBD_Marks::skel( 'chart' ) . '</div><p class="dbd-note">' . ( $n > 2 ? 'The first two slots, back to back.' : 'Back to back by depth band.' ) . ' The widest band is where the offense goes to him; the gap between solid and faded is where it misses.</p></section>';
 echo '</div><div class="dbd-cgrid">';
 echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>The race</b> · cumulative yards</span><span class="dbd-badge">Flat steps are byes</span></div>' . $legend() . '<div class="dbd-pb"><div class="dbd-cch ct-chart" id="dbd-crace"></div></div></section>';
 echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Week by week</b> · grouped</span><span class="dbd-badge">Same Sunday, side by side</span></div>' . $legend() . '<div class="dbd-pb"><div class="dbd-cch ct-chart" id="dbd-cweek"></div></div></section>';
@@ -195,4 +195,4 @@ echo '</main>';
 
 /* same-group index for the slot search */
 $idx = array_values( array_filter( DBD_Data::player_index(), function ( $o ) use ( $grp, $ids ) { return DBD_Grades::pool_of( $o['pos'] ) === $grp && ! in_array( $o['id'], $ids, true ); } ) );
-echo '<script type="application/json" id="dbd-cindex">' . wp_json_encode( array_map( function ( $o ) { return array( 'id' => $o['id'], 'name' => $o['name'], 'team' => $o['team'], 'pos' => $o['pos'], 'num' => $o['num'], 'snap' => $o['snap'] ); }, $idx ) ) . '</script>';
+echo '<script type="application/json" id="dbd-cindex">' . wp_json_encode( array_map( function ( $o ) { return array( 'id' => $o['id'], 'name' => $o['name'], 'team' => $o['team'], 'pos' => $o['pos'], 'num' => $o['num'], 'snap' => $o['snap'], 'slug' => DBD_Urls::player_slug( $o['id'] ) ); }, $idx ) ) . '</script>';

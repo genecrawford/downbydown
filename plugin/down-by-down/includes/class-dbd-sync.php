@@ -125,6 +125,7 @@ class DBD_Sync {
 			$out['ok'] = true;
 			update_option( self::OPT_VER, DBD_VERSION );  /* autoloaded: init() reads it on every request */
 			self::recompute_stats();
+			if ( class_exists( 'DBD_Card' ) ) { DBD_Data::flush(); DBD_Card::prune(); }  /* the cards for earlier weeks and versions go (SCOPE §43) */
 		}
 		return self::finish( $out, $start );
 	}

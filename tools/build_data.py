@@ -716,10 +716,23 @@ for t, pl in team_players.items():
     json.dump(clean(dict(season=season, team=t, through=through_week, players=pl)), open(f'{out}/players/{t}.json', 'w'), separators=(',', ':'))
 
 index_rows.sort(key=lambda x: (-x['snap'], -x['tgt'] - x['car'] - x['att']))
+# readable URLs (SCOPE §43): /player/{slug}/. The name lowercased, accents, apostrophes and periods dropped, other runs of punctuation
+# a hyphen. Two players with the same slug both take their position and the last four digits of the id. DBD_Data::slugify() and
+# dbdSlug() in dbd-site.js follow the same rule, so a link drawn before this file syncs still lands.
+import unicodedata, re
+def slugify(name):
+    s = unicodedata.normalize('NFKD', str(name or '')).encode('ascii', 'ignore').decode().lower()
+    s = re.sub(r"['’.]", '', s)
+    return re.sub(r'[^a-z0-9]+', '-', s).strip('-') or 'player'
+_sc = {}
+for r_ in index_rows: _sc[slugify(r_['name'])] = _sc.get(slugify(r_['name']), 0) + 1
+for r_ in index_rows:
+    s_ = slugify(r_['name']); r_['slug'] = s_ if _sc[s_] == 1 else f"{s_}-{str(r_['pos']).lower()}-{r_['id'][-4:]}"
+print('player slugs:', len(index_rows), 'with', sum(1 for v in _sc.values() if v > 1), 'shared names')
 json.dump(clean(dict(season=season, through=through_week, players=index_rows)), open(f'{out}/players/index.json', 'w'), separators=(',', ':'))
-# the hub's My team card (SCOPE §41): every indexed player as [name, team, pos, number, photo], the photo trimmed to its id after nflverse's usual prefix
+# the hub's My team card (SCOPE §41): every indexed player as [name, team, pos, number, photo, slug], the photo trimmed to its id after nflverse's usual prefix
 _PH = 'https://static.www.nfl.com/image/upload/f_auto,q_auto/league/'
-json.dump({r['id']: [r['name'], r['team'], r['pos'], r.get('num'), (r.get('photo') or '')[len(_PH):] if str(r.get('photo') or '').startswith(_PH) else (r.get('photo') or '')]
+json.dump({r['id']: [r['name'], r['team'], r['pos'], r.get('num'), (r.get('photo') or '')[len(_PH):] if str(r.get('photo') or '').startswith(_PH) else (r.get('photo') or ''), r['slug']]
            for r in index_rows}, open(f'{out}/players/mini.json', 'w'), separators=(',', ':'))
 
 # ---------------------------------------------------------------- schedule: every week of the season

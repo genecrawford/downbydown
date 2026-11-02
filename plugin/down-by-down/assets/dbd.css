@@ -258,7 +258,8 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 /* ---- team explorer ---- */
 .dbd #dbd-explorer{display:flex;flex-direction:column;gap:18px;min-width:0}
 .dbd .dbd-anchor{display:block;height:0;margin:0;padding:0}
-.dbd .dbd-skel{padding:40px;text-align:center}
+.dbd .dbd-skel{padding:var(--dbd-s3) 0;display:grid;gap:10px}
+.dbd .dbd-skel>.dbd-note{padding:26px 0;text-align:center}
 .dbd .dbd-gstrip{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;scrollbar-width:thin}
 .dbd .dbd-game{all:unset;cursor:pointer;flex:0 0 auto;display:flex;flex-direction:column;gap:3px;padding:8px 12px;min-width:104px;background:var(--dbd-panel);border:1px solid var(--dbd-line);border-radius:var(--dbd-r);font-family:var(--dbd-body);color:var(--dbd-ink);transition:border-color .12s,background .12s}
 .dbd .dbd-game:hover{border-color:var(--dbd-line-2);background:var(--dbd-panel-2)}
@@ -1611,3 +1612,45 @@ html:not([data-fx]) .dbd [data-fx="half"],html[data-fx="std"] .dbd [data-fx="std
 .dbd .cw-ch .xl{position:relative;height:18px;margin-top:4px}
 .dbd .cw-ch .xl span{position:absolute;transform:translateX(-50%);font:500 11px var(--dbd-body);color:var(--dbd-muted);white-space:nowrap}
 .dbd .cw-ch .xl span:first-child{transform:none}.dbd .cw-ch .xl span:last-child{transform:translateX(-100%)}
+
+/* ---- skeletons (SCOPE §43, transitions.dev 14): the shape of what is loading, pulsing until its script replaces it; dbd-site.js then
+   lays the skeleton over the new content and cross-fades the two with a 2px blur */
+.dbd .dbd-vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.dbd .dbd-skel .sk{display:block;background:var(--dbd-bg-2);border-radius:4px;animation:dbd-skp 1.1s ease-in-out infinite}
+@keyframes dbd-skp{0%,100%{opacity:1}50%{opacity:.5}}
+.dbd .dbd-skel .sk-f{aspect-ratio:360/420;width:100%;position:relative;overflow:hidden}
+.dbd .dbd-skel .sk-f i{position:absolute;left:9%;right:3%;height:2px;background:rgba(22,30,54,.06)}
+.dbd .dbd-skel .sk-f i:nth-child(1){top:17%}.dbd .dbd-skel .sk-f i:nth-child(2){top:33%}.dbd .dbd-skel .sk-f i:nth-child(3){top:50%}.dbd .dbd-skel .sk-f i:nth-child(4){top:67%}.dbd .dbd-skel .sk-f i:nth-child(5){top:83%}
+.dbd .dbd-skel .sk-f b{position:absolute;width:12px;height:12px;border-radius:50%;background:rgba(22,30,54,.09)}
+.dbd .dbd-skel .sk-bar{height:11px}
+.dbd .dbd-skel .sk-bar.tall{height:14px}
+.dbd .dbd-skel .sk-bands{display:grid;grid-template-columns:92px minmax(0,1fr) 112px;gap:12px 10px;align-items:center}
+.dbd .dbd-skel .sk-ex{display:grid;gap:14px}
+.dbd .dbd-skel .sk-ex .tb{display:flex;flex-wrap:wrap;gap:8px}
+.dbd .dbd-skel .sk-pill{width:96px;height:28px}
+.dbd .dbd-skel .sk-ex .bd{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px;align-items:start}
+.dbd .dbd-skel .sk-col{display:grid;gap:12px;padding-top:6px}
+.dbd .dbd-skel .sk-rows{display:grid;gap:12px}
+.dbd .dbd-skel .sk-row{display:grid;grid-template-columns:24px minmax(0,1fr) 54px;gap:10px;align-items:center}
+.dbd .dbd-skel .sk-row .c{width:24px;height:24px;border-radius:50%}
+.dbd .dbd-skel .sk-chart{height:220px}
+.dbd .dbd-skhost{position:relative}
+.dbd .dbd-skout{position:absolute!important;left:0;right:0;top:0;z-index:2;pointer-events:none;background:var(--dbd-panel);transition:opacity 400ms ease-in-out,filter 400ms ease-in-out}
+.dbd .dbd-skout.go{opacity:0;filter:blur(2px)}
+.dbd .dbd-skin{opacity:0;filter:blur(2px)}
+.dbd .dbd-skin.go{opacity:1;filter:blur(0);transition:opacity 400ms ease-in-out,filter 400ms ease-in-out}
+.dbd .hb-mt:not(.is-loading)>.dbd-skel:not(.dbd-skout){display:none}
+.dbd .hb-mt.is-loading .hb-mte{display:none}
+.dbd .hb-mt>.dbd-skel{padding:var(--dbd-s3) var(--dbd-s3) 0}
+@container dbd (max-width:640px){.dbd .dbd-skel .sk-ex .bd{grid-template-columns:minmax(0,1fr)}.dbd .dbd-skel .sk-col{display:none}}
+@media (prefers-reduced-motion:reduce){.dbd .dbd-skel .sk{animation:none}.dbd .dbd-skout,.dbd .dbd-skin,.dbd .dbd-skin.go{transition:none!important;filter:none!important}}
+
+/* ---- the last phone scrollers (SCOPE §43): head to head moves its favors bar under the stat; the defense tables fold columns and wrap names */
+.dbd .dbd-h2hm{display:none}
+@container (max-width:560px){
+  .dbd .dbd-h2h td.divcell,.dbd .dbd-h2h thead th.c{display:none}
+  .dbd .dbd-h2hm{display:block;margin-top:6px}
+  .dbd .dbd-h2h td:first-child{white-space:normal;min-width:110px}
+  .dbd .dbd-ddef td.n{white-space:normal}
+  .dbd .dbd-ddef td.n b{line-height:1.25}
+}

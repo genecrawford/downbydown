@@ -2,6 +2,35 @@
    Local kickoff times, clickable rows, the title reveal, the softened strip hover, and the team picker's
    "pick up where you left off" box. No dependencies. */
 (function () {
+  /* readable URLs (SCOPE §43): the links scripts draw, as paths when the site uses them. The page passes the base and the slugs of
+     the players it links to (window.DBD_URLS); a player without one gets the slug from his name, by the build's rule. Returns null
+     when the page carries no config (an older cached page), so callers keep their query-string link. */
+  window.dbdSlug = function (name) {
+    var s = String(name || ''); try { s = s.normalize('NFKD').replace(/[\u0300-\u036f]/g, ''); } catch (e) {}
+    s = s.toLowerCase().replace(/['\u2019.]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    return s || 'player';
+  };
+  window.dbdUrl = function (args) {
+    var C = window.DBD_URLS; if (!C || !C.base) return null;
+    var S = C.slugs || {}, a = {}, k, path = '', given = args.slugs || {};
+    for (k in args) { if (k !== 'name' && k !== 'slug' && k !== 'slugs' && args[k] !== undefined && args[k] !== null && args[k] !== '') a[k] = args[k]; }
+    var slug = function (id, name, given) { return given || S[id] || (name ? window.dbdSlug(name) : ''); };
+    if (Array.isArray(a.compare)) a.compare = a.compare.join(',');
+    if (Array.isArray(a.myteam)) a.myteam = a.myteam.join(',');
+    if (C.pretty) {
+      if (a.player) { var s1 = slug(a.player, args.name, args.slug); if (s1) { path = 'player/' + s1 + '/'; delete a.player; } }
+      else if (a.compare !== undefined) {
+        var ids = String(a.compare).split(',').filter(function (x) { return x && x !== 'none'; }), ss = ids.map(function (id) { return given[id] || S[id] || ''; });  /* known slugs only; otherwise the id link, which the server redirects */
+        if (ss.every(Boolean)) { path = 'compare/' + (ss.length ? ss.join('/') + '/' : ''); delete a.compare; }
+      }
+      else if (a.view === 'players' && !a.team) { path = 'players/'; delete a.view; }
+      else if (a.view === 'myteam' || a.myteam !== undefined) { path = 'my-team/'; delete a.view; }
+    }
+    var q = Object.keys(a).map(function (x) { return encodeURIComponent(x) + '=' + encodeURIComponent(a[x]); }).join('&');
+    var u = C.base + path;
+    return q ? u + (u.indexOf('?') < 0 ? '?' : '&') + q : u;
+  };
+
   var root = document.querySelector('.dbd');
   if (!root) return;
 
@@ -176,7 +205,7 @@
     if (abbr && pen) {
       try {
         var marks = JSON.parse(pen.textContent || '{}');
-        var row = root.querySelector('.dbd-stand tr[data-href*="team=' + abbr + '"] .dbd-nm a');
+        var row = root.querySelector('.dbd-stand tr[data-href*="team=' + abbr + '"] .dbd-nm a, .dbd-stand tr[data-href*="/team/' + abbr.toLowerCase() + '/"] .dbd-nm a');
         /* the standings link carries the full name and the phone's short name; the box shows the full one */
         if (marks[abbr] && row) {
           var a = document.createElement('a');
@@ -216,4 +245,26 @@
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', label); else label();
   var t; window.addEventListener('resize', function () { clearTimeout(t); t = setTimeout(label, 150); });
+
+  /* skeletons (SCOPE §43, transitions.dev 14): when a panel's script replaces its skeleton, lay the skeleton back over the new
+     content and cross-fade the two with a 2px blur, in the same box. Reduced motion, or no MutationObserver: the plain swap. */
+  var still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (window.MutationObserver && !still) {
+    root.querySelectorAll('.dbd-skel').forEach(function (sk) {
+      var host = sk.parentNode; if (!host) return;
+      var h = sk.offsetHeight;
+      var mo = new MutationObserver(function (list) {
+        var gone = !sk.isConnected || list.some(function (m) { return Array.prototype.indexOf.call(m.removedNodes, sk) >= 0; });
+        if (!gone) return;
+        mo.disconnect();
+        var added = []; list.forEach(function (m) { Array.prototype.forEach.call(m.addedNodes, function (n) { if (n.nodeType === 1) added.push(n); }); });
+        host.classList.add('dbd-skhost'); sk.classList.add('dbd-skout'); if (h) sk.style.height = h + 'px'; host.insertBefore(sk, host.firstChild);
+        added.forEach(function (n) { n.classList.add('dbd-skin'); });
+        void host.offsetWidth;
+        setTimeout(function () { sk.classList.add('go'); added.forEach(function (n) { n.classList.add('go'); }); }, 20);
+        setTimeout(function () { if (sk.parentNode) sk.parentNode.removeChild(sk); added.forEach(function (n) { n.classList.remove('dbd-skin', 'go'); }); host.classList.remove('dbd-skhost'); }, 470);
+      });
+      mo.observe(host, { childList: true });
+    });
+  }
 })();

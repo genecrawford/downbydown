@@ -52,10 +52,65 @@ jobs:
           php tools/card_harness.php data 00-0033293 card-rb.png
           php tools/card_harness.php data 00-0035228 card-qb.png
           php tools/card_harness.php data 00-0036259 card-ungraded.png
+          # the 1.19.0 cards (SCOPE §43): the latest final, the next game still to play, a team, the hub and the latest week in review,
+          # with logos and photos (as the live site has them) and once without, through the same render() the live route calls
+          read -r FIN PRE WK <<<"$(python3 - <<'PY'
+          import json, glob, re
+          s = json.load(open('data/schedule.json'))
+          gl = [g for w in sorted(s['weeks'], key=int) for g in s['weeks'][w]]
+          fin = [g['id'] for g in gl if g['status'] == 'final']; pre = [g['id'] for g in gl if g['status'] != 'final']
+          wk = max(int(re.findall(r'w(\d+)', f)[0]) for f in glob.glob('data/week/w*.json'))
+          print(fin[-1], pre[0] if pre else fin[0], wk)
+          PY
+          )"
+          echo "final $FIN, next $PRE, week $WK"
+          export DBD_HARNESS_MEDIA=1 DBD_HARNESS_LOGOS=1
+          php tools/view_harness.php data card "game-$FIN" card-game-final.png
+          php tools/view_harness.php data card "game-$PRE" card-game-next.png
+          php tools/view_harness.php data card team-MIN card-team.png
+          php tools/view_harness.php data card page-hub card-page-hub.png
+          php tools/view_harness.php data card "page-week-$WK" card-page-week.png
+          php tools/view_harness.php data card 00-0036322 card-player-render.png
+          DBD_HARNESS_LOGOS= DBD_HARNESS_MEDIA= php tools/view_harness.php data card team-DET card-team-nologos.png
+          DBD_HARNESS_LOGOS= DBD_HARNESS_MEDIA= php tools/view_harness.php data card "game-$FIN" card-game-nologos.png
+          for k in team-ZZZ game-2026_99_AAA_BBB page-nope; do if php tools/view_harness.php data card "$k" /tmp/x.png 2>/dev/null; then echo "card $k should not render"; exit 1; fi; done
       - uses: actions/upload-artifact@v4
         with:
           name: share-cards
           path: card-*.png
+      - name: Readable URLs (SCOPE §43)
+        run: |
+          set -e
+          export DBD_HARNESS_PRETTY=1
+          # every old link to a path and back to the same route
+          php tools/view_harness.php data urls
+          # old links answer 301 to their path, keeping the filters and tracking a path doesn't carry
+          chk() { got="$(php tools/view_harness.php data redirect "$1")"; echo "$1 -> $got"; [ "$got" = "$2" ] || { echo "  expected: $2"; exit 1; }; }
+          chk '/?player=00-0036322&utm_source=x' 'redirect 301 https://example.test/player/justin-jefferson/?utm_source=x'
+          chk '/?team=MIN&side=def' 'redirect 301 https://example.test/team/min/defense/'
+          chk '/?view=players&pt=MIN&pos=WR&q=jeff' 'redirect 301 https://example.test/players/?pt=MIN&pos=WR&q=jeff'
+          chk '/?view=leaders&b=wr.tsh' 'redirect 301 https://example.test/leaders/?b=wr.tsh'
+          chk '/?myteam=00-0036322,00-0036900' 'redirect 301 https://example.test/my-team/?myteam=00-0036322%2C00-0036900'
+          chk '/?game=2026_08_MIN_DET&side=home&fbclid=abc' 'redirect 301 https://example.test/game/2026-week-8-vikings-at-lions/lions/?fbclid=abc'
+          chk '/?player=99-9999999' 'stays (0 warnings)'
+          chk '/?card=00-0036322' 'stays (0 warnings)'
+          # paths render as their pages, and their links are paths too (share cards excepted)
+          export DBD_HARNESS_HTML=pathpages
+          for p in /team/min/ /team/min/defense/ /team/min/players/ /player/justin-jefferson/ /player/josh-allen/ /compare/justin-jefferson/jamarr-chase/ /players/ /leaders/ /leaders/rb/ /week/ /matchups/ /teams/ /my-team/ /player/no-such-player/ /team/zzz/ /; do
+            # a notfound page is short, and the harness flags short output; that one path may exit 3
+            php tools/view_harness.php data path "$p" >>/tmp/paths.log 2>&1 || [ "$p" = /team/zzz/ ] || { cat /tmp/paths.log; echo "path $p failed"; exit 1; }
+          done
+          cat /tmp/paths.log
+          if grep -E "^  warning:|FATAL" /tmp/paths.log; then exit 1; fi
+          grep -q "rendered players player_no-such-player.*route players" /tmp/paths.log
+          grep -q "route notfound" /tmp/paths.log
+          if grep -lE 'href="[^"]*\?(player|team|game|view)=' pathpages/*.html; then echo "a query-string link survived on the pages above"; grep -ohE 'href="[^"]*\?(player|team|game|view)=[^"]*"' pathpages/*.html | sort | uniq -c | head; exit 1; fi
+          grep -q 'href="https://example.test/player/' pathpages/teamplayers-team_min_players.html
+          grep -q 'href="https://example.test/game/' pathpages/matchups-matchups.html
+      - uses: actions/upload-artifact@v4
+        with:
+          name: path-pages
+          path: pathpages/
       - name: Render pages for review (headshots and logos on, the theme's table rule on)
         run: |
           set -e
