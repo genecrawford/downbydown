@@ -1652,5 +1652,6 @@ html:not([data-fx]) .dbd [data-fx="half"],html[data-fx="std"] .dbd [data-fx="std
   .dbd .dbd-h2hm{display:block;margin-top:6px}
   .dbd .dbd-h2h td:first-child{white-space:normal;min-width:110px}
   .dbd .dbd-ddef td.n{white-space:normal}
+  .dbd .dbd-dsit td.n{white-space:normal}
   .dbd .dbd-ddef td.n b{line-height:1.25}
 }
