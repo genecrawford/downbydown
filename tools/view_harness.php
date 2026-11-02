@@ -5,6 +5,7 @@
  *   php tools/view_harness.php <data dir> <view> [arg]
  *   views: player <gsis id> | players | team <ABBR> | hub | game <game id> | teamplayers <ABBR> | matchups | teams | compare <id,id> | myteam [id,id,…] | leaders [g or board key] | defense <ABBR> | week [N]
  *   DBD_HARNESS_ROOT=1: the app page is /hub/, not the front page, with paths at the root
+ *   live blocks (class-dbd-blocks.php): block <type> ['k=v&k=v' attributes] | page <html file> (a theme page with its [dbd_block] shortcodes drawn)
  */
 if ( php_sapi_name() !== 'cli' ) { exit( 1 ); }
 list( , $data, $view, $arg ) = $argv + array( null, 'data', 'player', '00-0036322' );
@@ -40,7 +41,7 @@ function get_transient( $k ) { return false; }
 function set_transient( $k, $v, $e = 0 ) { return true; }
 function home_url( $p = '' ) { return 'https://example.test' . $p; }
 function get_permalink( $p = null ) { return getenv( 'DBD_HARNESS_ROOT' ) ? 'https://example.test/hub/' : 'https://example.test/app/'; }
-function is_front_page() { return false; }
+function is_front_page() { return false; } function add_shortcode() {}
 function add_query_arg( $args, $url = '' ) { if ( ! is_array( $args ) ) { return $url; } $q = implode( '&', array_map( function ( $k, $v ) { return $k . '=' . $v; }, array_keys( $args ), $args ) ); return $url . ( $q ? ( strpos( $url, '?' ) === false ? '?' : '&' ) . $q : '' ); }  /* like WordPress: values go in as given (the plugin encodes them first) */
 function sanitize_text_field( $s ) { return trim( strip_tags( (string) $s ) ); }
 function wp_unslash( $s ) { return $s; }
@@ -60,7 +61,7 @@ function wp_schedule_single_event() {} function wp_next_scheduled() { return fal
 
 /* ---- the plugin, minus the bootstrap and admin. The SEO class extends a WordPress sitemap base class; an empty stand-in lets it load. */
 if ( ! class_exists( 'WP_Sitemaps_Provider' ) ) { class WP_Sitemaps_Provider { public $name = ''; public $object_type = ''; } }
-foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-defense', 'class-dbd-week', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-sync', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
+foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-defense', 'class-dbd-week', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-sync', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo', 'class-dbd-blocks' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
 
 /* ---- readable URLs (SCOPE §43): every old link to a path and back to the same route */
 if ( $view === 'urls' ) {
@@ -142,6 +143,31 @@ if ( $view === 'redirect' ) {
 	} elseif ( getenv( 'DBD_HARNESS_ROOT' ) ) { $rp->setValue( null, '' ); DBD_Router::front(); }  /* the front page answers old links */
 	else { DBD_Router::$route = DBD_Router::route(); DBD_Router::redirect_old(); }
 	echo "stays ($warnings warnings)\n"; exit( $warnings ? 1 : 0 );
+}
+
+/* ---- live blocks: one block, or a theme page (divi/home-hero.html) with its [dbd_block] shortcodes drawn, written to DBD_HARNESS_HTML */
+if ( $view === 'block' || $view === 'page' ) {
+	try {
+		if ( $view === 'block' ) {
+			parse_str( (string) ( $argv[4] ?? '' ), $atts ); $html = DBD_Blocks::render( $arg, $atts ); $name = 'block-' . $arg;
+			echo "block $arg: " . strlen( $html ) . " bytes, $warnings warnings\n";
+			if ( strlen( $html ) < ( $arg === 'counts' ? 100 : 600 ) ) { fwrite( STDERR, "block $arg: suspiciously short\n" ); exit( 3 ); }
+		} else {
+			$src = (string) @file_get_contents( $arg ); if ( $src === '' ) { fwrite( STDERR, "no page file $arg\n" ); exit( 2 ); }
+			$n = 0; $html = preg_replace_callback( '/\[dbd_block\s+([^\]]*)\]/', function ( $m ) use ( &$n ) { $n++; preg_match_all( '/(\w+)="([^"]*)"/', $m[1], $kv, PREG_SET_ORDER ); $a = array(); foreach ( $kv as $p ) { $a[ strtolower( $p[1] ) ] = $p[2]; } return DBD_Blocks::render( strtolower( $a['type'] ?? '' ), $a ); }, $src );
+			$name = 'page-' . basename( $arg, '.html' );
+			echo "page $arg: $n blocks, " . strlen( $html ) . " bytes, $warnings warnings\n";
+			if ( strpos( $html, '[dbd_block' ) !== false || strpos( $html, 'class="dbd-hb' ) === false ) { fwrite( STDERR, "page $arg: a block did not render\n" ); exit( 3 ); }
+		}
+	} catch ( Throwable $e ) { fwrite( STDERR, "FATAL in $view $arg: " . get_class( $e ) . ': ' . $e->getMessage() . ' at ' . basename( $e->getFile() ) . ':' . $e->getLine() . "\n" ); exit( 1 ); }
+	$dir = getenv( 'DBD_HARNESS_HTML' );
+	if ( $dir ) {
+		if ( ! is_dir( $dir . '/assets' ) ) { mkdir( $dir . '/assets', 0777, true ); } copy( DBD_PATH . 'assets/blocks.css', $dir . '/assets/blocks.css' );
+		$fonts = '<link href="https://fonts.googleapis.com/css2?family=Tourney:wght@800&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">';
+		$divi = '<style>body{margin:0;background:#f4f1ea}p{padding-bottom:1em}ul,ol{list-style:disc;padding:0 0 23px 1em}a{color:#2ea3f2}</style>';  /* stand-ins for Divi's own rules, which the blocks must hold up against */
+		file_put_contents( $dir . '/' . $name . '.html', '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' . $fonts . $divi . '<link rel="stylesheet" href="assets/blocks.css"></head><body>' . $html . '</body></html>' );
+	}
+	exit( $warnings ? 1 : 0 );
 }
 
 /* ---- route the request the way the page would */
