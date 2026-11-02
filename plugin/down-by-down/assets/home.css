@@ -47,9 +47,9 @@
 .hb-games-h span{font:500 13px "IBM Plex Sans";opacity:.8}
 .dbd-hb .hb-games-h a{margin-left:auto;font:700 13px "Barlow Condensed",sans-serif;letter-spacing:.12em;text-transform:uppercase;text-decoration:underline;text-underline-offset:4px;white-space:nowrap}
 .hb-games-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
-.dbd-hb .hb-gm{position:relative;display:block;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 9px;color:var(--muted)}
-.dbd-hb .hb-gm:hover{border-color:var(--ink)}
-.hb-gm.up{border-color:var(--red)}
+.dbd-hb.dbd-hb .hb-gm{position:relative;display:block;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 9px;color:var(--muted)}  /* doubled: on a dbd-turf section the reset's color:inherit would make the tile's text white */
+.dbd-hb.dbd-hb .hb-gm:hover{border-color:var(--ink)}
+.dbd-hb.dbd-hb .hb-gm.up{border-color:var(--red)}
 .hb-gm .r{display:flex;align-items:center;gap:6px}
 .hb-gm .r b{flex:1;font:700 14px "Barlow Condensed",sans-serif;letter-spacing:.06em}
 .hb-gm .r em{font:600 13px "IBM Plex Mono",monospace;font-style:normal}

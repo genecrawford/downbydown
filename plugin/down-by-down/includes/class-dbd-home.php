@@ -126,6 +126,8 @@ class DBD_Home {
 	private static function u( $args ) { return esc_url( DBD_Router::url( $args ) ); }
 	private static function wrap( $type, $inner ) { return $inner === '' ? '' : '<div class="dbd-hb hb-' . esc_attr( $type ) . '">' . $inner . '</div>'; }
 	private static function pct( $v ) { return round( (float) $v / 10 ); }
+	/** A play's description without the tacklers' brackets: "…, TOUCHDOWN [J.McMillian]." reads "…, TOUCHDOWN." */
+	private static function clean( $d ) { return trim( (string) preg_replace( '/\s*\[[^\]]*\]/', '', (string) $d ) ); }
 	private static function tags( $g ) { $o = array(); foreach ( (array) ( $g['tags'] ?? array() ) as $t ) { $o[ $t[0] ] = $t[1]; } return $o; }
 
 	/** The latest week with a final game, and the latest finished week, from the week-in-review files. */
@@ -271,7 +273,7 @@ class DBD_Home {
 		$h = '';
 		$tp = $W['plays'][0] ?? null;
 		if ( $tp ) {
-			$h .= '<a class="hb-wk" href="' . self::u( array( 'game' => $tp['g'] ) ) . '"><i>The play of the week</i>' . DBD_Marks::tile( $tp['t'], 40 ) . '<h3>' . esc_html( trim( preg_replace( '/\s*\[[^\]]*\]\s*/', ' ', (string) $tp['d'] ) ) ) . '</h3><p><b>' . ( $tp['e'] >= 0 ? '+' : '−' ) . number_format( abs( (float) $tp['e'] ), 2 ) . ' EPA</b> · ' . esc_html( self::nick( $tp['t'] ) . ' vs ' . self::nick( $tp['o'] ) . ', ' . $tp['c'] ) . '</p></a>';
+			$h .= '<a class="hb-wk" href="' . self::u( array( 'game' => $tp['g'] ) ) . '"><i>The play of the week</i>' . DBD_Marks::tile( $tp['t'], 40 ) . '<h3>' . esc_html( self::clean( $tp['d'] ) ) . '</h3><p><b>' . ( $tp['e'] >= 0 ? '+' : '−' ) . number_format( abs( (float) $tp['e'] ), 2 ) . ' EPA</b> · ' . esc_html( self::nick( $tp['t'] ) . ' vs ' . self::nick( $tp['o'] ) . ', ' . $tp['c'] ) . '</p></a>';
 		}
 		$sw = $W['swings'][0] ?? null;
 		if ( $sw ) {
@@ -279,7 +281,9 @@ class DBD_Home {
 		}
 		$fin = array_values( array_filter( (array) $W['games'], function ( $g ) { return ( $g['status'] ?? '' ) === 'final' && ! empty( $g['win'] ); } ) );
 		$ups = array_values( array_filter( $fin, function ( $g ) { return isset( self::tags( $g )['upset'] ); } ) ); usort( $ups, function ( $x, $y ) { return $x['pre_w'] <=> $y['pre_w']; } );
-		$wd = $fin; usort( $wd, function ( $x, $y ) { return array( $y['lc'] ?? 0, $y['drama'] ?? 0 ) <=> array( $x['lc'] ?? 0, $x['drama'] ?? 0 ); } ); $wild = $wd[0] ?? null;
+		$shown = array_slice( array_map( function ( $g ) { return $g['id']; }, $ups ), 0, 3 );  /* the wildest is another game when there is one */
+		$wd = array_values( array_filter( $fin, function ( $g ) use ( $shown ) { return ! in_array( $g['id'], $shown, true ); } ) ) ?: $fin;
+		usort( $wd, function ( $x, $y ) { return array( $y['lc'] ?? 0, $y['drama'] ?? 0 ) <=> array( $x['lc'] ?? 0, $x['drama'] ?? 0 ); } ); $wild = $wd[0] ?? null;
 		if ( $ups || $wild ) {
 			$li = '';
 			foreach ( array_slice( $ups, 0, 3 ) as $g ) { list( $w, $l, $ws, $ls ) = self::wl( $g ); $li .= '<li><a href="' . self::u( array( 'game' => $g['id'] ) ) . '">' . DBD_Marks::tile( $w, 22 ) . '<span><b>' . esc_html( self::nick( $w ) . ' ' . $ws ) . '</b>, ' . esc_html( self::nick( $l ) . ' ' . $ls ) . '</span></a><small>' . self::pct( $g['pre_w'] ) . '% at kickoff</small></li>'; }
@@ -442,7 +446,7 @@ class DBD_Home {
 		$pl = function ( $k, $one, $many ) { return $k . ' ' . ( $k === 1 ? $one : $many ); };
 		$lines = array();
 		$sw = $W['swings'][0] ?? null; if ( $sw ) { $lines[] = array( 'The swing', $sw['d'] . ' (' . self::nick( $sw['t'] ) . ', ' . $sw['c'] . ', +' . round( (float) $sw['v'] ) . '%)' ); }
-		$tp = $W['plays'][0] ?? null; if ( $tp ) { $lines[] = array( 'The play', trim( preg_replace( '/\s*\[[^\]]*\]\s*/', ' ', (string) $tp['d'] ) ) . ' (+' . number_format( (float) $tp['e'], 2 ) . ' EPA)' ); }
+		$tp = $W['plays'][0] ?? null; if ( $tp ) { $lines[] = array( 'The play', self::clean( $tp['d'] ) . ' (+' . number_format( (float) $tp['e'], 2 ) . ' EPA)' ); }
 		$ri = array_slice( (array) ( $W['movers']['targets']['up'] ?? array() ), 0, 3 );
 		if ( $ri ) { $lines[] = array( 'Rising', implode( ', ', array_map( function ( $m ) { return $m['name']; }, $ri ) ) . ( count( $ri ) === 1 ? ' saw his' : ' saw their' ) . ' target share jump' ); }
 		$dates = array_filter( array_map( function ( $g ) { return $g['date'] ?? ''; }, DBD_Data::week_games( $n ) ) ); sort( $dates );
