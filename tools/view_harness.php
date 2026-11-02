@@ -152,7 +152,7 @@ if ( $view === 'block' || $view === 'home' || $view === 'feed' ) {
 		if ( $view === 'block' ) {
 			parse_str( (string) ( $argv[4] ?? '' ), $atts ); $html = DBD_Home::render( $arg, $atts );
 			echo "block $arg: " . strlen( $html ) . " bytes, $warnings warnings\n";
-			$floor = in_array( $arg, array( 'down', 'yards', 'counts' ), true ) ? 100 : 600;
+			$floor = in_array( $arg, array( 'down', 'yards', 'counts', 'player-card' ), true ) ? 100 : 600;  /* player-card is one image */
 			if ( strlen( $html ) < $floor ) { fwrite( STDERR, "block $arg: suspiciously short (under $floor bytes)\n" ); exit( 3 ); }
 			$out = $html;
 		} else {
