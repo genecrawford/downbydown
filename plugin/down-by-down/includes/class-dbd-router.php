@@ -70,6 +70,7 @@ class DBD_Router {
 		if ( ! array_intersect( $keys, array_keys( $_GET ) ) || ! DBD_Data::has_data() ) { return; }
 		self::$P = null;
 		self::apply_season( DBD_Urls::season_of( '', '', $_GET ), self::my_team_query() );
+		if ( self::$nf ) { self::$nf = false; DBD_Data::use_season( null ); return; }  /* a season the site doesn't hold: stay home, never another year's page (Greptile, PR #59) */
 		self::$route = self::route();
 		if ( self::q( 'card' ) !== '' ) { DBD_Card::serve( self::q( 'card' ) ); }  /* serve() exits */
 		self::redirect_old();

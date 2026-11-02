@@ -126,6 +126,7 @@ jobs:
           chk '/' 'stays (0 warnings)'
           chk '/?utm_source=x' 'stays (0 warnings)'
           chk '/?player=99-9999999' 'stays (0 warnings)'
+          chk '/?season=1999&team=MIN' 'stays (0 warnings)'
           # links that carry the app page's address (2.0.1 drew these while the app sat on /hub/) forward to the root
           chk '/hub/team/min/' 'redirect 301 https://example.test/team/min/'
           chk '/hub/team/min/defense/?fbclid=abc' 'redirect 301 https://example.test/team/min/defense/?fbclid=abc'

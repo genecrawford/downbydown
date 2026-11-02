@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.0.2
+Stable tag: 2.0.3
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,9 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.0.3 =
+* An old front-page link naming a season the site doesn't hold (/?season=1999&team=MIN) stays on the home page instead of forwarding to this season's page.
 
 = 2.0.2 =
 * The app can live on its own page (for example /hub/) while its pages keep their addresses at the site root: /team/min/, /player/justin-jefferson/, /2025/. The front page is then free for a custom home. A setting, on by default.
