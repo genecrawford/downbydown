@@ -49,15 +49,15 @@ if ( $gi ) {
 	echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Where they rank</b> · among ' . $N . ' ' . esc_html( $pool ) . ' with ' . esc_html( $gi['min'] ) . '+</span><span class="dbd-badge">League percentiles</span></div>';
 	echo '<div class="dbd-cleg">' . implode( '', array_map( function ( $x ) { return '<span><i style="background:' . $x['c'] . '"></i>' . esc_html( $x['row']['name'] ) . '</span>'; }, $P ) ) . '</div><div class="dbd-cpct">';
 	foreach ( DBD_Grades::defs( $grp ) as $d ) {
-		list( $k, $lab, $sub, $kind ) = $d; $vals = array(); $bi = -1;
+		list( $k, $lab, $sub, $fk ) = $d; $vals = array(); $bi = -1;
 		foreach ( $P as $i => $x ) { $g = $x['rec']['grades'] ?? null; $vals[ $i ] = ( $g && ! empty( $g['q'] ) ) ? ( $g['m'][ $k ] ?? null ) : null; if ( $bi < 0 ? $vals[ $i ] !== null : $better( $k, $vals[ $i ], $vals[ $bi ] ) ) { $bi = $i; } }
 		echo '<div class="row"><div class="l">' . esc_html( $lab ) . ( $sub ? '<small>' . esc_html( $sub ) . '</small>' : '' ) . '</div><div class="bar">';
 		$med = DBD_Grades::median( $grp, $k ); $Nk = count( $gi['dist'][ $k ] ?? array() );  /* a metric's own pool: backs under five targets have no receiving EPA, so that pool is smaller */
 		foreach ( $P as $i => $x ) { $pc = DBD_Grades::pctile( $grp, $k, $vals[ $i ] ); if ( $pc === null ) { continue; } $rk = DBD_Grades::rank( $grp, $k, $vals[ $i ] );
-			$tip = '<b>' . esc_html( $x['row']['name'] ) . '</b><br>' . esc_html( $lab ) . ': <b>' . esc_html( DBD_Grades::fmt( $kind, $vals[ $i ] ) ) . '</b> · ' . esc_html( DBD_Grades::ordinal( $pc ) ) . ' percentile · ' . esc_html( DBD_Grades::ordinal( $rk ) ) . ' of ' . $Nk . '<br><span class="m">League median ' . esc_html( DBD_Grades::fmt( $kind, $med ) ) . ( $sub ? ' · ' . esc_html( $sub ) : '' ) . '</span>';
-			echo '<i style="--p:' . (int) $pc . ';--c:' . $x['c'] . '" data-slot="' . $i . '" data-tip="' . esc_attr( $tip ) . '" tabindex="0" role="img" aria-label="' . esc_attr( $x['row']['name'] . ', ' . $lab . ' ' . DBD_Grades::fmt( $kind, $vals[ $i ] ) . ', ' . DBD_Grades::ordinal( $pc ) . ' percentile' ) . '"></i>'; }
+			$tip = '<b>' . esc_html( $x['row']['name'] ) . '</b><br>' . esc_html( $lab ) . ': <b>' . esc_html( DBD_Grades::fmt( $fk, $vals[ $i ] ) ) . '</b> · ' . esc_html( DBD_Grades::ordinal( $pc ) ) . ' percentile · ' . esc_html( DBD_Grades::ordinal( $rk ) ) . ' of ' . $Nk . '<br><span class="m">League median ' . esc_html( DBD_Grades::fmt( $fk, $med ) ) . ( $sub ? ' · ' . esc_html( $sub ) : '' ) . '</span>';
+			echo '<i style="--p:' . (int) $pc . ';--c:' . $x['c'] . '" data-slot="' . $i . '" data-tip="' . esc_attr( $tip ) . '" tabindex="0" role="img" aria-label="' . esc_attr( $x['row']['name'] . ', ' . $lab . ' ' . DBD_Grades::fmt( $fk, $vals[ $i ] ) . ', ' . DBD_Grades::ordinal( $pc ) . ' percentile' ) . '"></i>'; }
 		echo '</div>';
-		foreach ( $P as $i => $x ) { $pc = DBD_Grades::pctile( $grp, $k, $vals[ $i ] ); echo '<div class="cv' . ( $i === $bi ? ' best' : '' ) . '" style="--c:' . $x['c'] . '" data-slot="' . $i . '">' . esc_html( DBD_Grades::fmt( $kind, $vals[ $i ] ) ) . '<small>' . ( $pc === null ? '-' : esc_html( DBD_Grades::ordinal( $pc ) ) ) . '</small></div>'; }
+		foreach ( $P as $i => $x ) { $pc = DBD_Grades::pctile( $grp, $k, $vals[ $i ] ); echo '<div class="cv' . ( $i === $bi ? ' best' : '' ) . '" style="--c:' . $x['c'] . '" data-slot="' . $i . '">' . esc_html( DBD_Grades::fmt( $fk, $vals[ $i ] ) ) . '<small>' . ( $pc === null ? '-' : esc_html( DBD_Grades::ordinal( $pc ) ) ) . '</small></div>'; }
 		echo '</div>';
 	}
 	echo '</div><p class="dbd-note">Each bar is the league pool; the markers are the players. Right is better, the dashed line is the median. The best value in each row is marked green.</p></section>';
@@ -168,10 +168,10 @@ foreach ( $base[0] as $ri => $b ) {
 }
 if ( $gi ) {
 	foreach ( DBD_Grades::defs( $grp ) as $d ) {
-		list( $k, $lab, $sub, $kind ) = $d; $vs = array(); $bi = -1;
+		list( $k, $lab, $sub, $fk ) = $d; $vs = array(); $bi = -1;
 		foreach ( $P as $i => $x ) { $g = $x['rec']['grades'] ?? null; $vs[ $i ] = ( $g && ! empty( $g['q'] ) ) ? ( $g['m'][ $k ] ?? null ) : null; if ( $bi < 0 ? $vs[ $i ] !== null : $better( $k, $vs[ $i ], $vs[ $bi ] ) ) { $bi = $i; } }
 		echo '<tr><td>' . esc_html( $lab ) . '</td>';
-		foreach ( $P as $i => $x ) { $rk = DBD_Grades::rank( $grp, $k, $vs[ $i ] ); echo '<td' . ( $i === $bi && $vs[ $i ] !== null ? ' class="b"' : '' ) . '>' . esc_html( DBD_Grades::fmt( $kind, $vs[ $i ] ) ) . ( $rk ? '<small>' . esc_html( DBD_Grades::ordinal( $rk ) ) . '</small>' : '' ) . '</td>'; }
+		foreach ( $P as $i => $x ) { $rk = DBD_Grades::rank( $grp, $k, $vs[ $i ] ); echo '<td' . ( $i === $bi && $vs[ $i ] !== null ? ' class="b"' : '' ) . '>' . esc_html( DBD_Grades::fmt( $fk, $vs[ $i ] ) ) . ( $rk ? '<small>' . esc_html( DBD_Grades::ordinal( $rk ) ) . '</small>' : '' ) . '</td>'; }
 		echo '</tr>';
 	}
 }

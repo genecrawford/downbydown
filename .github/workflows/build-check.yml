@@ -253,6 +253,34 @@ jobs:
           P = json.load(open('/tmp/out/plays/def/MIN.json')); print('Vikings defended', len(P['plays']), 'plays')
           if bad: print('\n'.join(bad[:30])); sys.exit(1)
           PY
+      - name: Check the week in review files (SCOPE §40)
+        run: |
+          python3 - <<'PY'
+          import json, glob, sys
+          bad = []
+          sch = json.load(open('/tmp/out/schedule.json'))
+          want = sorted(int(w) for w, gl in sch['weeks'].items() if any(g['status'] == 'final' for g in gl))
+          have = sorted(int(f.split('/w')[-1][:-5]) for f in glob.glob('/tmp/out/week/w*.json'))
+          if want != have: bad.append(f'week files {have} but weeks with a final game {want}')
+          for n in have:
+              W = json.load(open(f'/tmp/out/week/w{n}.json')); gl = sch['weeks'][str(n)]
+              if [g['id'] for g in W['games']] != [g['id'] for g in gl]: bad.append(f'week {n}: games differ from the schedule')
+              if W['fin'] != sum(g['status'] == 'final' for g in gl): bad.append(f'week {n}: final count')
+              for k, f in (('swings', 'v'), ('plays', 'e')):
+                  v = [x[f] for x in W[k]]
+                  if v != sorted(v, reverse=True) or len(v) > 10: bad.append(f'week {n}: {k} not sorted or over ten')
+              ts = [t['t'] for t in W['teams']]
+              if len(ts) != len(set(ts)): bad.append(f'week {n}: a team twice')
+              finals = {g['away'] for g in gl if g['status'] == 'final'} | {g['home'] for g in gl if g['status'] == 'final'}
+              if set(ts) - finals: bad.append(f'week {n}: teams that did not finish a game: {sorted(set(ts) - finals)}')
+              if W['complete'] and not W.get('movers'): bad.append(f'week {n}: complete but no movers')
+              if not W['complete'] and W.get('movers'): bad.append(f'week {n}: movers before the week is complete')
+              if any(' kneels ' in x['d'] for x in W['swings']): bad.append(f'week {n}: a kneel in the swings')
+          W = json.load(open(f'/tmp/out/week/w{have[-1]}.json')) if have else {}
+          if W: print('latest week', W['week'], W['fin'], 'of', W['n'], 'final; top swing', W['swings'][:1], '; QB1', W['players']['QB'][:1], '; play-by-play games', W['pbp'])
+          print(len(have), 'week files')
+          if bad: print('\n'.join(bad)); sys.exit(1)
+          PY
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
@@ -288,6 +316,10 @@ jobs:
           php tools/view_harness.php /tmp/out leaders "" && [ "$(grep -o 'class="dbd-panel ld-card"' pages/leaders.html | wc -l)" -eq 7 ] || { echo "the fantasy tab does not have seven boards"; exit 1; }
           php tools/view_harness.php /tmp/out leaders wr && [ "$(grep -o 'class="dbd-panel ld-card"' pages/leaders-wr.html | wc -l)" -eq 16 ] || { echo "the wide receivers tab does not have sixteen boards"; exit 1; }
           php tools/view_harness.php /tmp/out leaders te && [ "$(grep -o 'class="dbd-panel ld-card"' pages/leaders-te.html | wc -l)" -eq 16 ] || { echo "the tight ends tab does not have sixteen boards"; exit 1; }
+          php tools/view_harness.php /tmp/out week 7 && for m in 'class="dbd-panel dbd-short"' 'class="wk-g"' 'id="wk-plays"' 'class="wk-tr"' 'wk-fx' 'class="dbd-panel dbd-mv"'; do grep -q "$m" pages/week-7.html || { echo "week 7 in review is missing $m"; exit 1; }; done
+          php tools/view_harness.php /tmp/out week "" && grep -q 'wk-grid' pages/week.html || { echo "the default week in review has no scoreboard"; exit 1; }
+          grep -q 'in review →' pages/matchups.html || { echo "no week in review link on the Matchups page"; exit 1; }
+          php tools/view_harness.php /tmp/out players "" && grep -q 'class="dbd-panel dbd-mv"' pages/players.html || { echo "the Players page lost its movers panel"; exit 1; }
           for P in wr te; do python3 -c "import re,sys;P=sys.argv[1].upper();s=open('pages/leaders-'+sys.argv[1]+'.html').read();got=re.findall(r'<small>[A-Z]{2,3} · ([A-Z]{2})</small>',s);bad=[p for p in got if p!=P];print(P,'tab:',len(got),'players listed');sys.exit(1 if (bad or len(got)<50) else 0)" $P || { echo "the $P tab lists other positions or too few players"; exit 1; }; done
           php tools/view_harness.php /tmp/out leaders te.g.tshare && grep -q 'ld-full' pages/leaders-te.g.tshare.html || { echo "no full TE board"; exit 1; }
           php tools/view_harness.php /tmp/out leaders qb && grep -q 'ld-card' pages/leaders-qb.html || { echo "no quarterback boards"; exit 1; }
