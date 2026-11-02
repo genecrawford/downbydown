@@ -143,8 +143,13 @@ jobs:
           php tools/view_harness.php data block hero-map 'player=00-0036322'
           php tools/view_harness.php data block games
           php tools/view_harness.php data block counts
-          # the hero Gene pastes into Divi, with the plugin's blocks drawn in, for review
+          php tools/view_harness.php data block week-highlights
+          # the sections Gene pastes into Divi, with the plugin's blocks drawn in, for review
           php tools/view_harness.php data page divi/home-hero.html
+          php tools/view_harness.php data page divi/home-week.html
+          grep -q 'class="dbd-hb hb-week-highlights"' blockpages/page-home-week.html
+          grep -q 'The play of the week' blockpages/page-home-week.html
+          if grep -q 'TOUCHDOWN \[' blockpages/page-home-week.html; then echo "a tackler's bracket left in a play"; exit 1; fi
           # with the app on /hub/ and paths at the root, the blocks link to root paths
           DBD_HARNESS_PRETTY=1 DBD_HARNESS_ROOT=1 DBD_HARNESS_HTML=blockroot php tools/view_harness.php data page divi/home-hero.html
           if grep -oE 'href="[^"]*\?(player|team|game|view)=' blockroot/page-home-hero.html; then echo "a query-string app link in the hero"; exit 1; fi

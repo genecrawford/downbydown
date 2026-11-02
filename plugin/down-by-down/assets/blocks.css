@@ -59,3 +59,25 @@
 .dbd-hb.hb-counts{color:inherit}
 .dbd-hb.hb-counts p{font:500 14px "IBM Plex Sans",sans-serif;padding-top:12px;border-top:1px solid currentColor;border-top-color:color-mix(in srgb,currentColor 30%,transparent);opacity:.92}
 .hb-counts b{font:600 14px "IBM Plex Mono",monospace}
+
+/* week-highlights: the latest week in three cards */
+.dbd-hb.hb-week-highlights{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;color:var(--ink);-webkit-font-smoothing:auto;-moz-osx-font-smoothing:auto}
+.dbd-hb.dbd-hb .hb-wk{position:relative;display:block;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px;color:var(--ink)}
+.dbd-hb.dbd-hb a.hb-wk:hover{border-color:rgba(22,30,54,.35)}
+.hb-wk>i{display:block;margin:0 0 12px;padding-right:44px;font:700 12px "Barlow Condensed",sans-serif;font-style:normal;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.hb-wk>.mk{position:absolute;right:16px;top:14px}
+.dbd-hb.dbd-hb .hb-wk h3{margin:0 0 10px;padding:0 44px 0 0;font:600 18px/1.35 "IBM Plex Sans",sans-serif;color:var(--ink);text-transform:none;letter-spacing:0}
+.dbd-hb .hb-wk p{font:500 14px/1.45 "IBM Plex Sans",sans-serif;color:var(--ink2)}
+.hb-wk p b{font:800 18px "Tourney",sans-serif;color:#1e7f4a}
+.dbd-hb.dbd-hb .hb-wk ul{list-style:none;margin:0;padding:0}
+.dbd-hb.dbd-hb .hb-wk li{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin:0;padding:8px 0;border-bottom:1px solid var(--line);font:400 14px "IBM Plex Sans",sans-serif;list-style:none}
+.dbd-hb.dbd-hb .hb-wk li::before{content:none}
+.dbd-hb.dbd-hb .hb-wk li a{color:var(--ink)}
+.hb-wk li b{font-weight:600}
+.hb-wk li small{margin-left:auto;font:600 12px "IBM Plex Mono",monospace;color:var(--red)}
+.dbd-hb .hb-wk .wild{margin-top:14px}
+.hb-wk .wild span{display:block;margin-bottom:4px;font:700 12px "Barlow Condensed",sans-serif;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.dbd-hb.dbd-hb .hb-wk .wild a{color:var(--ink);font:400 14px "IBM Plex Sans",sans-serif}
+.hb-wk .wild b{font-weight:600}
+.dbd-hb .hb-wk a:hover b,.dbd-hb a.hb-wk:hover h3{text-decoration:underline;text-underline-offset:3px}
+@media (max-width:900px){.dbd-hb.hb-week-highlights{grid-template-columns:minmax(0,1fr)}}
