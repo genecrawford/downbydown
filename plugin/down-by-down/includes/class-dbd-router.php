@@ -87,6 +87,7 @@ class DBD_Router {
 	public static function season_url( $s ) {
 		$r = self::$route; $was = DBD_Data::archived() ? DBD_Data::season() : null; $s = (int) $s;
 		$args = self::args_of( $r );
+		if ( $r['view'] === 'matchups' ) { $args['week'] = (int) $r['week']; }  /* args_of() leaves out the current week; the other season may default elsewhere (Greptile, PR #56) */
 		$target = $s === DBD_Data::current_season() ? null : $s;
 		DBD_Data::use_season( $target );
 		switch ( $r['view'] ) {

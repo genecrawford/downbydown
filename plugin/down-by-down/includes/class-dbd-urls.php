@@ -223,6 +223,7 @@ class DBD_Urls {
 
 	/** What the scripts need to draw the same links (dbdUrl() in dbd-site.js). $slugs: id => slug for the players a page links to. */
 	public static function js_config( $base, $slugs = array() ) {
-		return array( 'base' => trailingslashit( $base ), 'pretty' => self::on(), 'slugs' => (object) $slugs );
+		/* a query-string base (?season=2025 on a plain-permalink site) keeps its query intact; dbdUrl() appends with & (Greptile, PR #56) */
+		return array( 'base' => strpos( (string) $base, '?' ) === false ? trailingslashit( $base ) : $base, 'pretty' => self::on(), 'slugs' => (object) $slugs );
 	}
 }

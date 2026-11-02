@@ -151,6 +151,7 @@ class DBD_Sync {
 			$res = wp_remote_get( $base . 'archive/' . $s . '/manifest.json', array( 'timeout' => 20, 'headers' => array( 'Cache-Control' => 'no-cache' ) ) );
 			if ( is_wp_error( $res ) || wp_remote_retrieve_response_code( $res ) !== 200 ) { return $s . ': no manifest'; }
 			$body = wp_remote_retrieve_body( $res ); $m = json_decode( $body, true ); if ( empty( $m['files'] ) ) { return $s . ': empty manifest'; }
+			if ( sha1( $body ) !== $hash ) { self::again(); return $s . ': manifest not the listed build yet'; }  /* a cached or older copy: try again shortly (Greptile, PR #56) */
 			$got = 0; $left = 0;
 			foreach ( $m['files'] as $rel => $fh ) {
 				if ( ! preg_match( self::ALLOW, $rel ) ) { continue; }
@@ -159,21 +160,25 @@ class DBD_Sync {
 				if ( microtime( true ) - $start > 40 ) { $left++; continue; }
 				$get = wp_remote_get( $base . 'archive/' . $s . '/' . $rel, array( 'timeout' => 30 ) );
 				if ( is_wp_error( $get ) || wp_remote_retrieve_response_code( $get ) !== 200 ) { $left++; continue; }
-				$b = wp_remote_retrieve_body( $get ); if ( json_decode( $b, true ) === null ) { $left++; continue; }
+				$b = wp_remote_retrieve_body( $get ); if ( sha1( $b ) !== $fh || json_decode( $b, true ) === null ) { $left++; continue; }  /* only the file the manifest names */
 				wp_mkdir_p( dirname( $path ) ); $tmp = $path . '.tmp';
 				if ( file_put_contents( $tmp, $b ) === false || ! rename( $tmp, $path ) ) { @unlink( $tmp ); $left++; continue; }
 				$got++;
 			}
 			if ( $left ) {  /* not done: the next run continues */
-				if ( ! wp_next_scheduled( self::HOOK_ARCH ) ) { wp_schedule_single_event( time() + 60, self::HOOK_ARCH ); }
+				self::again();
 				return $s . ': ' . $got . ' files, ' . $left . ' to go';
 			}
 			file_put_contents( $dir . '/manifest.json', $body );  /* last, as for the current season */
 			$have[ $s ] = $hash; update_option( self::OPT_ARCH, $have, false );
+			foreach ( $want as $s2 => $h2 ) { if ( ( $have[ (int) $s2 ] ?? '' ) !== $h2 ) { self::again(); break; } }  /* another season still to pull */
 			return $s . ': ' . $got . ' files, complete';
 		}
 		return '';
 	}
+
+	/** Run the archive pull again in a minute. */
+	private static function again() { if ( ! wp_next_scheduled( self::HOOK_ARCH ) ) { wp_schedule_single_event( time() + 60, self::HOOK_ARCH ); } }
 
 	private static function finish( $out, $start ) {
 		$out['seconds'] = round( microtime( true ) - $start, 1 );
