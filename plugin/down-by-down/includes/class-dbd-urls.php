@@ -14,6 +14,7 @@ class DBD_Urls {
 	const OPT      = 'dbd_pretty';        /* the admin setting, on by default */
 	const OPT_PAGE = 'dbd_app_page';      /* the page that holds the shortcode */
 	const OPT_SIG  = 'dbd_rewrite_sig';   /* what the rewrite rules were last flushed for */
+	const OPT_ROOT = 'dbd_root_paths';    /* SCOPE §45: app paths stay at the site root when the app page isn't the front page; on by default */
 	const BASES    = 'team|game|player|compare|players|leaders|week|matchups|teams|my-team';
 	const ROUTE_KEYS = array( 'team', 'game', 'player', 'compare', 'view', 'side', 'week', 'g' );  /* a path decides these; the query string can't override them */
 
@@ -54,10 +55,22 @@ class DBD_Urls {
 		return self::$page = $id;
 	}
 
-	/** The app page's path under home, with a trailing slash; empty when it is the front page. */
+	/** True when the app page is the site's front page. */
+	public static function is_front() {
+		$id = self::page_id();
+		return $id && get_option( 'show_on_front' ) === 'page' && (int) get_option( 'page_on_front' ) === $id;
+	}
+
+	/** App paths at the root (/team/min/) while the app page sits elsewhere (/this-week/): the setting, on by default (SCOPE §45). */
+	public static function root() { return (bool) get_option( self::OPT_ROOT, true ); }
+
+	/** Where app paths start: the site root, or the app page's own address when root paths are off. Trailing slash. */
+	public static function path_base() { return trailingslashit( home_url( '/' ) ) . self::prefix(); }
+
+	/** The app page's path under home, with a trailing slash; empty when it is the front page or paths sit at the root. */
 	public static function prefix() {
 		$id = self::page_id(); if ( ! $id ) { return ''; }
-		if ( get_option( 'show_on_front' ) === 'page' && (int) get_option( 'page_on_front' ) === $id ) { return ''; }
+		if ( self::is_front() || self::root() ) { return ''; }
 		$path = trim( (string) wp_parse_url( get_permalink( $id ), PHP_URL_PATH ), '/' );
 		$home = trim( (string) wp_parse_url( home_url( '/' ), PHP_URL_PATH ), '/' );
 		if ( $home !== '' && strpos( $path, $home ) === 0 ) { $path = trim( substr( $path, strlen( $home ) ), '/' ); }

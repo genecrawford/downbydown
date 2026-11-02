@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.0.1
+Stable tag: 2.1.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,12 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.1.0 =
+* The marketing home (SCOPE §45). `[dbd_block type="…"]` draws live blocks from this week's data on any page, for a front page built in Divi: the week's most-targeted player and his target map, this week's games, the site's counts, the week's highlights, the game of the week with its head to head, a share card, the target-share risers, the softest defenses for fantasy, leader boards, the 32 teams, the newsletter's email and the questions (with FAQPage data). Two decorations, a down marker and the painted field numbers, and two section classes, `dbd-turf` and `dbd-endzone`. `[dbd_url to="…"]` prints the app's links.
+* The app can live on its own page (`/this-week/`) while its paths stay at the site root: `/team/min/`, `/player/…/` and `/2025/` don't change. A setting, on by default. Old `/?team=` links and `/?card=` images on the front page still land.
+* The week in review as RSS at `/feed/week-in-review/`, one item per finished week, for RSS-to-email.
+* The front page's title, description, share image and WebSite / Organization data when the app isn't on it (skipped when an SEO plugin is active).
 
 = 2.0.1 =
 * Playoff games and weeks are titled by round (Wild Card, Divisional, Conference, Super Bowl) instead of Week 19 to 22.

@@ -12,6 +12,7 @@ add_action( 'admin_init', function () {
 	register_setting( 'dbd', 'dbd_headshots', array( 'type' => 'boolean', 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => false ) );
 	register_setting( 'dbd', 'dbd_logos', array( 'type' => 'boolean', 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => false ) );
 	register_setting( 'dbd', DBD_Urls::OPT, array( 'type' => 'boolean', 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => true ) );  /* readable URLs (SCOPE §43) */
+	register_setting( 'dbd', DBD_Urls::OPT_ROOT, array( 'type' => 'boolean', 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => true ) );  /* app paths at the root (SCOPE §45) */
 } );
 
 add_action( 'admin_post_dbd_clear_cards', function () {
@@ -93,6 +94,14 @@ function dbd_settings_page() {
 					<td><?php $plain = ! get_option( 'permalink_structure' ); ?><label><input type="checkbox" name="<?php echo esc_attr( DBD_Urls::OPT ); ?>" value="1" <?php checked( (bool) get_option( DBD_Urls::OPT, true ) ); ?>> Use paths like <code>/team/min/</code> and <code>/player/justin-jefferson/</code></label>
 					<p class="description">On by default. Old <code>?team=</code> and <code>?player=</code> links keep working: they redirect to the new paths. Turn this off to go back to query strings.
 					<?php if ( $plain ) : ?><strong>This site uses plain permalinks, so the app keeps query strings.</strong> Choose any other structure under Settings › Permalinks to use paths.<?php else : ?>Permalinks: <?php echo esc_html( get_option( 'permalink_structure' ) ); ?>, so paths work here<?php echo DBD_Urls::page_id() ? '' : ', once a page holds <code>[down_by_down]</code>'; ?>.<?php endif; ?></p></td></tr>
+				<tr><th scope="row">Paths at the site root</th>
+					<td><label><input type="checkbox" name="<?php echo esc_attr( DBD_Urls::OPT_ROOT ); ?>" value="1" <?php checked( DBD_Urls::root() ); ?>> Keep <code>/team/min/</code>, <code>/player/…/</code> and <code>/2025/</code> at the root when the app page isn't the front page</label>
+					<p class="description"><?php
+					$aid = DBD_Urls::page_id();
+					if ( ! $aid ) { echo 'No page holds <code>[down_by_down]</code> yet.'; }
+					elseif ( DBD_Urls::is_front() ) { echo 'The app is the front page, so its paths are at the root either way. Move <code>[down_by_down]</code> to its own page (for example <code>/this-week/</code>) to give the front page to a marketing home.'; }
+					else { echo 'The app page is <a href="' . esc_url( get_permalink( $aid ) ) . '">' . esc_html( get_permalink( $aid ) ) . '</a>: the hub lives there. ' . ( DBD_Urls::on() ? 'Test a path: <a href="' . esc_url( DBD_Router::url( array( 'team' => 'MIN' ) ) ) . '">' . esc_html( DBD_Router::url( array( 'team' => 'MIN' ) ) ) . '</a>. Old <code>/?team=</code> links on the front page redirect to their paths.' : '' ) . ' Leave this on so links shared before the move keep working; a real page named teams, players, leaders, week or matchups would be hidden behind the app\'s paths.'; }
+					?></p></td></tr>
 			</table>
 			<?php submit_button( 'Save' ); ?>
 		</form>
@@ -137,6 +146,8 @@ function dbd_settings_page() {
 			<li>The app renders only the content column. Build the sidebar in your theme (Divi Theme Builder) and link its menu to the URLs above.</li>
 			<li>Body classes tell your CSS which view is showing: <code>dbd-view-hub</code>, <code>dbd-view-team</code>, <code>dbd-view-game</code>, <code>dbd-view-matchups</code>, <code>dbd-view-teams</code>, <code>dbd-view-players</code>, <code>dbd-view-player</code>, <code>dbd-view-compare</code>.</li>
 			<li><code>[dbd_count games]</code> and <code>[dbd_count teams]</code> print the small numbers for menu items.</li>
+			<li><b>The marketing home (SCOPE §45).</b> On any page, <code>[dbd_block type="…"]</code> draws a live block from this week's data: <code>hero-map</code> (the week's most-targeted player; <code>player="00-0036322"</code> for one), <code>games</code>, <code>counts</code>, <code>week-highlights</code>, <code>matchup</code>, <code>player-card</code>, <code>movers</code>, <code>fantasy</code>, <code>leaders</code> (<code>boards="wr.tshare,wr.epat,qb.epadb"</code> or <code>boards="ppr"</code>), <code>teams</code>, <code>newsletter-preview</code> and <code>faq</code> (with its FAQPage data). Two are decoration: <code>down</code> (<code>down="1" dist="10" spot="Own 25"</code>) and <code>yards</code> (the painted field numbers). Add the CSS class <code>dbd-turf</code> to a Divi section for the field background, <code>dbd-endzone</code> for the red end zone. <code>[dbd_url to="hub|teams|players|myteam|matchups|leaders|week|season"]</code> prints a link.</li>
+			<li>The week in review as RSS, for RSS-to-email: <a href="<?php echo esc_url( get_feed_link( DBD_Home::FEED ) ); ?>"><?php echo esc_html( get_feed_link( DBD_Home::FEED ) ); ?></a>. One item per finished week.</li>
 			<li>Without a page-builder theme, assign the page template "Down by Down: app page (no theme header)".</li>
 		</ul>
 

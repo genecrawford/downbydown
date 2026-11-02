@@ -4,6 +4,8 @@
  * WordPress functions the plugin calls. Catches the fatal that a live page would hide behind "critical error".
  *   php tools/view_harness.php <data dir> <view> [arg]
  *   views: player <gsis id> | players | team <ABBR> | hub | game <game id> | teamplayers <ABBR> | matchups | teams | compare <id,id> | myteam [id,id,…] | leaders [g or board key] | defense <ABBR> | week [N]
+ *   the marketing home (SCOPE §45): block <type> ['k=v&k=v' attributes] | home (every block on one page) | feed (the week-in-review RSS)
+ *   DBD_HARNESS_ROOT=1: the app page is /this-week/, not the front page, with paths at the root
  */
 if ( php_sapi_name() !== 'cli' ) { exit( 1 ); }
 list( , $data, $view, $arg ) = $argv + array( null, 'data', 'player', '00-0036322' );
@@ -28,7 +30,7 @@ function untrailingslashit( $s ) { return rtrim( $s, '/\\' ); }
 function wp_mkdir_p( $d ) { return is_dir( $d ) || @mkdir( $d, 0777, true ); }
 function wp_upload_dir() { global $tmp; return array( 'basedir' => $tmp, 'baseurl' => 'https://example.test/uploads' ); }
 function get_option( $k, $d = false ) { if ( $k === 'dbd_headshots' || $k === 'dbd_logos' ) { return (bool) getenv( 'DBD_HARNESS_MEDIA' ); }
-	if ( getenv( 'DBD_HARNESS_PRETTY' ) ) { if ( $k === 'permalink_structure' ) { return '/%postname%/'; } if ( $k === 'dbd_app_page' || $k === 'page_on_front' ) { return 10; } if ( $k === 'show_on_front' ) { return 'page'; } }  /* readable URLs (SCOPE §43) */
+	if ( getenv( 'DBD_HARNESS_PRETTY' ) ) { if ( $k === 'permalink_structure' ) { return '/%postname%/'; } if ( $k === 'dbd_app_page' ) { return 10; } if ( $k === 'page_on_front' ) { return getenv( 'DBD_HARNESS_ROOT' ) ? 5 : 10; } if ( $k === 'show_on_front' ) { return 'page'; } }  /* readable URLs (SCOPE §43); ROOT: the app on /this-week/ (§45) */
 	return $d; }
 function wp_parse_url( $u, $c = -1 ) { return parse_url( $u, $c ); }
 function get_query_var( $k ) { return ''; }
@@ -38,7 +40,9 @@ function update_option( $k, $v ) { return true; }
 function get_transient( $k ) { return false; }
 function set_transient( $k, $v, $e = 0 ) { return true; }
 function home_url( $p = '' ) { return 'https://example.test' . $p; }
-function get_permalink( $p = null ) { return 'https://example.test/app/'; }
+function get_permalink( $p = null ) { return getenv( 'DBD_HARNESS_ROOT' ) ? 'https://example.test/this-week/' : 'https://example.test/app/'; }
+function get_feed_link( $f = '' ) { return 'https://example.test/feed/' . $f . '/'; }
+function add_shortcode() {} function add_feed() {} function is_front_page() { return false; }
 function add_query_arg( $args, $url = '' ) { if ( ! is_array( $args ) ) { return $url; } $q = implode( '&', array_map( function ( $k, $v ) { return $k . '=' . $v; }, array_keys( $args ), $args ) ); return $url . ( $q ? ( strpos( $url, '?' ) === false ? '?' : '&' ) . $q : '' ); }  /* like WordPress: values go in as given (the plugin encodes them first) */
 function sanitize_text_field( $s ) { return trim( strip_tags( (string) $s ) ); }
 function wp_unslash( $s ) { return $s; }
@@ -58,11 +62,12 @@ function wp_schedule_single_event() {} function wp_next_scheduled() { return fal
 
 /* ---- the plugin, minus the bootstrap and admin. The SEO class extends a WordPress sitemap base class; an empty stand-in lets it load. */
 if ( ! class_exists( 'WP_Sitemaps_Provider' ) ) { class WP_Sitemaps_Provider { public $name = ''; public $object_type = ''; } }
-foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-defense', 'class-dbd-week', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-sync', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
+foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-defense', 'class-dbd-week', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-sync', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo', 'class-dbd-home' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
 
 /* ---- readable URLs (SCOPE §43): every old link to a path and back to the same route */
 if ( $view === 'urls' ) {
-	$rp = new ReflectionProperty( 'DBD_Router', 'page_url' ); $rp->setAccessible( true ); $rp->setValue( null, 'https://example.test/' );
+	$hub = getenv( 'DBD_HARNESS_ROOT' ) ? 'https://example.test/this-week/' : 'https://example.test/';
+	$rp = new ReflectionProperty( 'DBD_Router', 'page_url' ); $rp->setAccessible( true ); $rp->setValue( null, $hub );
 	if ( ! DBD_Urls::on() ) { fwrite( STDERR, "readable URLs are off: set DBD_HARNESS_PRETTY=1\n" ); exit( 2 ); }
 	$cases = array( array(), array( 'view' => 'players' ), array( 'view' => 'players', 'pos' => 'WR', 'pt' => 'MIN' ), array( 'view' => 'teams' ), array( 'view' => 'myteam' ), array( 'myteam' => '00-0036322,00-0036900' ), array( 'compare' => 'none' ),
 		array( 'view' => 'leaders' ), array( 'view' => 'leaders', 'b' => 'wr.tsh' ), array( 'view' => 'matchups' ), array( 'view' => 'week' ), array( 'compare' => '00-0036322,00-0036900,00-0039075' ) );
@@ -77,6 +82,8 @@ if ( $view === 'urls' ) {
 	foreach ( $cases as $args ) {
 		$_GET = $args; $want = $key( DBD_Router::route() );
 		$u = DBD_Router::url( $args ); $pq = parse_url( $u ); $path = substr( $pq['path'] ?? '/', 1 );
+		if ( ! $args && $u !== $hub ) { $bad++; fwrite( STDERR, "the hub is $u, not $hub\n" ); }
+		if ( $u === $hub ) { $path = ''; }  /* the hub is the app page itself */
 		parse_str( $pq['query'] ?? '', $rest );
 		if ( array_intersect( array_keys( $rest ), array( 'team', 'game', 'player', 'compare', 'view' ) ) ) { $bad++; fwrite( STDERR, "no path for " . json_encode( $args ) . ": $u\n" ); continue; }
 		if ( isset( $seen[ $u ] ) && $seen[ $u ] !== $want ) { $bad++; fwrite( STDERR, "two routes share $u\n" ); }
@@ -105,7 +112,7 @@ if ( $view === 'urls' ) {
 	}
 	DBD_Data::use_season( null );
 	foreach ( array( 'team/zzz/', 'game/1999-week-1-a-at-b/', 'player/nobody-at-all/', 'week/x/', 'teams/extra/', '1999/team/min/' ) as $odd ) { $_GET = array(); $r = DBD_Router::route_path( $odd ); echo "  $odd -> " . $r['view'] . ( $r['view'] === 'players' ? ' (search "' . $r['q'] . '")' : '' ) . "\n"; }
-	echo "urls: " . count( $cases ) . " links, $paths paths, $bad problems, $warnings warnings\n";
+	echo "urls" . ( getenv( 'DBD_HARNESS_ROOT' ) ? ' (app on /this-week/, paths at the root)' : '' ) . ": " . count( $cases ) . " links, $paths paths, $bad problems, $warnings warnings\n";
 	foreach ( array( array( 'player' => '00-0036322' ), array( 'game' => '2026_08_MIN_DET', 'side' => 'home' ), array( 'team' => 'MIN', 'side' => 'def' ), array( 'view' => 'players', 'team' => 'MIN' ), array( 'view' => 'leaders', 'g' => 'rb' ), array( 'compare' => '00-0036322,00-0036900' ), array( 'view' => 'players', 'pt' => 'MIN', 'q' => 'jeff' ) ) as $ex ) { echo '  ' . json_encode( $ex ) . ' -> ' . DBD_Router::url( $ex ) . "\n"; }
 	exit( $bad || $warnings ? 1 : 0 );
 }
@@ -130,8 +137,50 @@ if ( $view === 'redirect' ) {
 	function wp_safe_redirect( $to, $status = 302 ) { echo "redirect $status $to\n"; return true; }
 	$rp = new ReflectionProperty( 'DBD_Router', 'page_url' ); $rp->setAccessible( true ); $rp->setValue( null, 'https://example.test/' );
 	$u = parse_url( $arg ); parse_str( $u['query'] ?? '', $_GET ); $_SERVER['REQUEST_URI'] = $arg; $_SERVER['REQUEST_METHOD'] = 'GET';
-	DBD_Router::$route = DBD_Router::route(); DBD_Router::redirect_old();
+	if ( getenv( 'DBD_HARNESS_ROOT' ) ) { $rp->setValue( null, '' ); DBD_Router::front(); }  /* the marketing home answers old links (SCOPE §45) */
+	else { DBD_Router::$route = DBD_Router::route(); DBD_Router::redirect_old(); }
 	echo "stays ($warnings warnings)\n"; exit( $warnings ? 1 : 0 );
+}
+
+/* ---- the marketing home (SCOPE §45): one block, every block on a page, or the feed */
+if ( $view === 'block' || $view === 'home' || $view === 'feed' ) {
+	if ( $view === 'feed' ) {
+		$x = DBD_Home::feed_xml(); echo $x; fwrite( STDERR, 'feed: ' . substr_count( $x, '<item>' ) . " items, $warnings warnings\n" ); exit( $warnings ? 1 : 0 );
+	}
+	$out = '';
+	try {
+		if ( $view === 'block' ) {
+			parse_str( (string) ( $argv[4] ?? '' ), $atts ); $html = DBD_Home::render( $arg, $atts );
+			echo "block $arg: " . strlen( $html ) . " bytes, $warnings warnings\n";
+			$floor = in_array( $arg, array( 'down', 'yards', 'counts' ), true ) ? 100 : 600;
+			if ( strlen( $html ) < $floor ) { fwrite( STDERR, "block $arg: suspiciously short (under $floor bytes)\n" ); exit( 3 ); }
+			$out = $html;
+		} else {
+			$b = function ( $t, $a = array() ) { return DBD_Home::render( $t, $a ); };
+			$sec = function ( $down, $dist, $spot, $title, $body, $cls = '' ) use ( $b ) { return '<section class="mk-sec ' . $cls . '"><div class="mk-in">' . $b( 'down', array( 'down' => $down, 'dist' => $dist, 'spot' => $spot ) ) . '<h2>' . $title . '</h2>' . $body . '</div></section>'; };
+			$out = '<section class="mk-hero dbd-turf"><div class="mk-in mk-2"><div><h1>Every NFL snap, <span class="dbd-u">drawn on the field.</span></h1><p>Down by Down charts every play of every game from public play-by-play. Free, no account, updated three times a day.</p></div>' . $b( 'hero-map' ) . '</div>' . $b( 'yards' ) . '<div class="mk-in">' . $b( 'games' ) . $b( 'counts' ) . '</div></section>'
+				. $sec( 1, '10', 'Own 25', 'What happened this week', $b( 'week-highlights' ) )
+				. $sec( 2, '2', 'Own 33', 'Every matchup, read for you', $b( 'matchup' ) )
+				. $sec( 1, '10', 'Own 41', 'Every player, in context', '<div class="mk-2">' . $b( 'player-card' ) . $b( 'movers' ) . '</div>' )
+				. $sec( 2, '1', 'Midfield', 'Fantasy with the why', '<div class="mk-2">' . $b( 'fantasy' ) . $b( 'leaders', array( 'boards' => 'ppr' ) ) . '</div>' )
+				. $sec( 1, '10', 'Opp 38', 'Who is actually good', $b( 'leaders' ) )
+				. $sec( 2, '3', 'Opp 31', 'Start with your team', $b( 'teams' ) )
+				. $sec( 1, '10', 'Opp 17', 'The week in review, every Tuesday', $b( 'newsletter-preview' ) )
+				. $sec( 1, 'Goal', 'Opp 6', 'Questions', $b( 'faq' ) )
+				. '<section class="mk-sec dbd-endzone"><div class="mk-in"><h2>Every snap of the season, on one field.</h2></div></section>';
+			echo "home: " . strlen( $out ) . " bytes, $warnings warnings\n";
+			foreach ( DBD_Home::TYPES as $t ) { if ( strpos( $out, 'hb-' . $t ) === false ) { fwrite( STDERR, "home: block $t rendered nothing\n" ); $warnings++; } }
+		}
+	} catch ( Throwable $e ) { fwrite( STDERR, "FATAL in $view $arg: " . get_class( $e ) . ': ' . $e->getMessage() . ' at ' . basename( $e->getFile() ) . ':' . $e->getLine() . "\n" ); exit( 1 ); }
+	$dir = getenv( 'DBD_HARNESS_HTML' );
+	if ( $dir ) {
+		if ( ! is_dir( $dir . '/assets' ) ) { mkdir( $dir . '/assets', 0777, true ); } copy( DBD_PATH . 'assets/home.css', $dir . '/assets/home.css' );
+		$fonts = '<link href="https://fonts.googleapis.com/css2?family=Tourney:wght@800&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">';
+		$css = '<style>body{margin:0;background:#f4f1ea;font-family:"IBM Plex Sans",sans-serif}.mk-in{max-width:1240px;margin:0 auto;padding:40px 24px}.mk-2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:40px;align-items:center}.mk-hero h1{font:800 clamp(40px,6vw,84px)/.96 Tourney,sans-serif;text-transform:uppercase;margin:0}.mk-sec h2,.mk-hero h2{font:800 clamp(30px,3.6vw,48px)/1.02 Tourney,sans-serif;text-transform:uppercase;margin:8px 0 22px}.mk-sec{border-top:1px solid rgba(22,30,54,.22)}.mk-hero .mk-in{padding-bottom:0}.mk-hero .mk-in+.mk-in,.mk-hero .hb-yards+.mk-in{padding-top:0}.dbd-endzone .mk-in{text-align:center;padding:80px 24px}@media(max-width:900px){.mk-2{grid-template-columns:minmax(0,1fr)}}ul ,ol{list-style:disc;padding:0 0 23px 1em}p{padding-bottom:1em}</style>';  /* the last two rules stand in for Divi\'s, which the blocks must override */
+		$name = $dir . '/' . ( $view === 'home' ? 'home' : 'block-' . $arg ) . '.html';
+		file_put_contents( $name, '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' . $fonts . $css . '<link rel="stylesheet" href="assets/home.css"></head><body>' . $out . '</body></html>' );
+	}
+	exit( $warnings ? 1 : 0 );
 }
 
 /* ---- route the request the way the page would */
