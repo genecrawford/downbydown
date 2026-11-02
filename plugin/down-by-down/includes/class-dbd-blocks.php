@@ -67,14 +67,15 @@ class DBD_Blocks {
 		if ( ! $hit ) { return ''; }
 		list( $pid, $team, $w ) = $hit; $wk = (int) $w['week'];
 		$p = DBD_Data::player( $pid ); if ( ! $p ) { return ''; }
-		$rows = array(); $pf = DBD_Data::get( 'plays/' . $team . '.json' ); $pre = sprintf( '%d_%02d_', DBD_Data::season(), $wk );
-		if ( $pf && ! empty( $pf['keys'] ) ) {
-			foreach ( (array) $pf['plays'] as $r ) {
-				if ( count( $r ) !== count( $pf['keys'] ) ) { continue; }
-				$r = array_combine( $pf['keys'], $r );
-				if ( strpos( (string) $r['g'], $pre ) === 0 && ( $r['pid'] ?? '' ) === $pid && ( $r['pt'] ?? '' ) === 'pass' ) { $rows[] = $r; }
-			}
+		/* the plays of the team he played for that week; no play file yet (a first sync still downloading) or no plays of his in it: no block (Greptile, PR #60) */
+		$pf = DBD_Data::get( 'plays/' . $team . '.json' ); if ( ! $pf || empty( $pf['keys'] ) ) { return ''; }
+		$rows = array(); $pre = sprintf( '%d_%02d_', DBD_Data::season(), $wk );
+		foreach ( (array) $pf['plays'] as $r ) {
+			if ( count( $r ) !== count( $pf['keys'] ) ) { continue; }
+			$r = array_combine( $pf['keys'], $r );
+			if ( strpos( (string) $r['g'], $pre ) === 0 && ( $r['pid'] ?? '' ) === $pid && ( $r['pt'] ?? '' ) === 'pass' ) { $rows[] = $r; }
 		}
+		if ( ! $rows ) { return ''; }
 		$lab = DBD_Router::week_label( $wk ); $sub = $p['pos'] . ' · ' . self::nick( $team ) . ' · ' . ( $auto ? 'most targets in ' . ( strpos( $lab, 'Week ' ) === 0 ? 'week ' . $wk : 'the ' . $lab ) : $lab );
 		$st = array( array( (int) $w['targets'], 'targets' ), array( (int) $w['receptions'], 'caught' ), array( (int) $w['receiving_yards'], 'yards' ), array( (int) $w['receiving_tds'], 'TD' ) );
 		$h = '<div class="hb-who">' . DBD_Marks::player( $team, $p['num'] ?? null, 46, $p['photo'] ?? null ) . '<span><b><a href="' . self::u( array( 'player' => $pid ) ) . '">' . esc_html( $p['name'] ) . '</a></b><small>' . esc_html( $sub ) . '</small></span></div>';
@@ -84,15 +85,18 @@ class DBD_Blocks {
 		return self::wrap( 'hero-map', $h );
 	}
 
-	/** [id, team, week row] of the player with the most targets in week $wk (yards break a tie). */
+	/**
+	 * [id, team, week row] of the player with the most targets in week $wk (yards break a tie). A traded player sits only in his new
+	 * team's file but keeps each earlier week under the team he played for, so the week's own team is the one that counts (Greptile, PR #60).
+	 */
 	private static function most_targeted( $wk ) {
 		$best = null; $bk = array( -1, -1 );
 		foreach ( array_keys( DBD_Data::teams() ) as $t ) {
 			foreach ( DBD_Data::team_players( $t ) as $p ) {
 				foreach ( (array) ( $p['weeks'] ?? array() ) as $w ) {
-					if ( (int) $w['week'] !== (int) $wk || ( $w['team'] ?? $t ) !== $t ) { continue; }
+					if ( (int) $w['week'] !== (int) $wk ) { continue; }
 					$k = array( (int) ( $w['targets'] ?? 0 ), (int) ( $w['receiving_yards'] ?? 0 ) );
-					if ( $k > $bk ) { $bk = $k; $best = array( $p['id'], $t, $w ); }
+					if ( $k > $bk ) { $bk = $k; $best = array( $p['id'], (string) ( $w['team'] ?? $t ), $w ); }
 				}
 			}
 		}
@@ -104,8 +108,8 @@ class DBD_Blocks {
 		$row = DBD_Data::player( $pid ); if ( ! $row ) { return null; }
 		$rec = DBD_Data::player_record( $row['team'], $pid ); if ( ! $rec ) { return null; }
 		$best = null;
-		foreach ( (array) ( $rec['weeks'] ?? array() ) as $w ) { if ( (int) $w['week'] <= (int) $wk && ( $w['team'] ?? $row['team'] ) === $row['team'] && ( ! $best || (int) $w['week'] > (int) $best['week'] ) ) { $best = $w; } }
-		return $best ? array( $pid, $row['team'], $best ) : null;
+		foreach ( (array) ( $rec['weeks'] ?? array() ) as $w ) { if ( (int) $w['week'] <= (int) $wk && ( ! $best || (int) $w['week'] > (int) $best['week'] ) ) { $best = $w; } }
+		return $best ? array( $pid, (string) ( $best['team'] ?? $row['team'] ), $best ) : null;  /* the team he played for that week, before or after a trade */
 	}
 
 	/** The target map: air yards up the field, left / middle / right across it. The spread inside a third is fixed per play, so it never moves. */
