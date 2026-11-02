@@ -99,9 +99,10 @@ class DBD_Compare {
 			$parts = array(); $t = 0.0;
 			foreach ( $ep['sec'] as $sec ) {
 				$t += (float) $sec[1];
+				$su = $qb ? 'dropback' : ( $sec[0] === 'rush' ? 'carry' : 'target' );  /* a back's runs are per carry and his catches per target; a quarterback's parts are per dropback */
 				foreach ( (array) $sec[3] as $q ) {
-					if ( isset( $parts[ $q[0] ] ) ) { $parts[ $q[0] ] = array( $parts[ $q[0] ][0] + (float) $q[1], null, null ); }  /* a part in two sections (a quarterback's two-point tries): the total only */
-					else { $parts[ $q[0] ] = array( (float) $q[1], isset( $q[2] ) ? (float) $q[2] : null, $q[3] ?? null ); }
+					if ( isset( $parts[ $q[0] ] ) ) { $parts[ $q[0] ] = array( $parts[ $q[0] ][0] + (float) $q[1], null, null, $su ); }  /* a part in two sections (a quarterback's two-point tries): the total only */
+					else { $parts[ $q[0] ] = array( (float) $q[1], isset( $q[2] ) ? (float) $q[2] : null, $q[3] ?? null, $su ); }
 				}
 			}
 			$S[ $i ] = $parts; $tot[ $i ] = $t; $u[ $i ] = (int) ( $ep['u'] ?? 0 );
@@ -124,7 +125,7 @@ class DBD_Compare {
 		foreach ( $keys as $k ) {
 			$best = -1; $bv = null; foreach ( $S as $i => $s ) { $r = $s[ $k ][1] ?? null; if ( $r !== null && ( $bv === null || $r > $bv ) ) { $bv = $r; $best = $i; } }
 			$tb .= '<tr><td class="n">' . esc_html( self::PARTS[ $k ][0] ) . '<small>' . esc_html( self::PARTS[ $k ][ $qb ? 2 : 1 ] ) . '</small></td>';
-			foreach ( $P as $i => $x ) { $v = $S[ $i ][ $k ] ?? null; $tb .= '<td' . ( $i === $best && count( $P ) > 1 ? ' class="b"' : '' ) . '>' . ( $v ? self::sgn( $v[0] ) . '<small>' . ( $v[1] !== null ? self::sgn( $v[1], 2 ) . ' a ' . $unit : '' ) . ( $v[2] !== null ? ' · ' . esc_html( DBD_Grades::ordinal( $v[2] ) ) : '' ) . '</small>' : '–' ) . '</td>'; }
+			foreach ( $P as $i => $x ) { $v = $S[ $i ][ $k ] ?? null; $tb .= '<td' . ( $i === $best && count( $P ) > 1 ? ' class="b"' : '' ) . '>' . ( $v ? self::sgn( $v[0] ) . '<small>' . ( $v[1] !== null ? self::sgn( $v[1], 2 ) . ' a ' . $v[3] : '' ) . ( $v[2] !== null ? ' · ' . esc_html( DBD_Grades::ordinal( $v[2] ) ) : '' ) . '</small>' : '–' ) . '</td>'; }
 			$tb .= '</tr>';
 		}
 		$tb .= '<tr class="tot"><td class="n">Total</td>'; foreach ( $P as $i => $x ) { $tb .= '<td>' . self::sgn( $tot[ $i ] ) . '<small>' . $u[ $i ] . ' ' . $unit . ( $u[ $i ] === 1 ? '' : ( $unit === 'touch' ? 'es' : 's' ) ) . '</small></td>'; } $tb .= '</tr>';
@@ -143,19 +144,21 @@ class DBD_Compare {
 		}
 		return '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Where the EPA comes from</b> · the season split by what happened on his plays</span><span class="dbd-badge">' . ( $qb ? 'Passing and rushing EPA' : ( $kind === 'rb' ? 'Rushing and receiving EPA' : 'Receiving EPA' ) ) . '</span></div>'
 			. ( $say ? '<p class="dbd-cx-say">' . $say . '</p>' : '' ) . '<div class="cw-ep">' . $bars . '</div>' . $leg . '<div class="dbd-tw"><table class="dbd-stat cw-ept"><thead><tr>' . $th . '</tr></thead><tbody>' . $tb . '</tbody></table></div>'
-			. '<p class="dbd-note">Every play is split by what happened: completions at the catch into air yards and yards after the catch (nflverse\'s air EPA), the cost of the ones that fell incomplete or were picked' . ( $qb ? ', sacks, scrambles and designed runs' : ( $kind === 'rb' ? ', and his designed runs' : '' ) ) . '. Bars share one scale, gains right of the line and losses left. The rate is per ' . $unit . ', with its percentile among the league\'s qualifying ' . esc_html( $plab ) . '; the best rate in each row is green.</p></section>';
+			. '<p class="dbd-note">Every play is split by what happened: completions at the catch into air yards and yards after the catch (nflverse\'s air EPA), the cost of the ones that fell incomplete or were picked' . ( $qb ? ', sacks, scrambles and designed runs' : ( $kind === 'rb' ? ', and his designed runs' : '' ) ) . '. Bars share one scale, gains right of the line and losses left. The rate is per ' . ( $kind === 'rb' ? 'carry for runs and per target for catches' : $unit ) . ', with its percentile among the league\'s qualifying ' . esc_html( $plab ) . '; the best rate in each row is green.</p></section>';
 	}
 
 	/* ------------------------------------------------------------ the shape of their seasons */
 	public static function trends( $P, $grp ) {
 		$defs = DBD_Grades::trend_defs( $grp ); if ( ! $defs ) { return ''; }
-		$nw = 0; foreach ( $P as $x ) { foreach ( (array) ( $x['rec']['weeks'] ?? array() ) as $w ) { $nw = max( $nw, (int) $w['week'] ); } }
+		/* a game is a weekly stat line, or a zero line where he took snaps without one (the player page and the league bands count those too) */
+		$games = function ( $x ) { $wk = array(); foreach ( (array) ( $x['rec']['weeks'] ?? array() ) as $w ) { $wk[ (int) $w['week'] ] = $w; } foreach ( (array) ( $x['rec']['snaps'] ?? array() ) as $k => $sn ) { if ( $sn && ! isset( $wk[ (int) $k ] ) ) { $wk[ (int) $k ] = array( 'week' => (int) $k ); } } ksort( $wk ); return $wk; };
+		$nw = 0; foreach ( $P as $x ) { foreach ( array_keys( $games( $x ) ) as $w ) { $nw = max( $nw, (int) $w ); } }
 		if ( $nw < 2 ) { return ''; }
 		$WIN = DBD_Grades::TREND_WIN; $charts = ''; $any = false;
 		foreach ( $defs as $d ) {
 			$q = DBD_Grades::trend_league( $grp, $d[0] ); $SER = array(); $vals = array();
 			foreach ( $P as $i => $x ) {
-				$wk = array(); foreach ( (array) ( $x['rec']['weeks'] ?? array() ) as $w ) { $wk[ (int) $w['week'] ] = $w; } ksort( $wk ); $played = array_keys( $wk );
+				$wk = $games( $x ); $played = array_keys( $wk );
 				$pts = array(); $faint = array();
 				foreach ( $played as $j => $w ) {
 					$num = 0.0; $den = 0.0; foreach ( array_slice( $played, max( 0, $j - $WIN + 1 ), min( $WIN, $j + 1 ) ) as $pw ) { list( $a, $b ) = DBD_Grades::trend_parts( $d, $wk[ $pw ] ); $num += $a; $den += $b; }
@@ -208,7 +211,8 @@ class DBD_Compare {
 			}
 			$SER[] = array( $x['c'], $pts, array() );
 		}
-		$xl = array(); foreach ( $seasons as $j => $s ) { $xl[] = array( $j, $s . ( $s === $season ? '*' : '' ) ); }
+		$every = (int) ceil( count( $seasons ) / 7 );  /* at most about seven year labels, so they never crowd on a phone; every season is still plotted */
+		$xl = array(); $last = count( $seasons ) - 1; foreach ( $seasons as $j => $s ) { if ( ( $j % $every === 0 && ( $every === 1 || $last - $j >= $every ) ) || $j === $last )  /* the last season always shows, and nothing crowds it */ { $xl[] = array( $j, $s . ( $s === $season ? '*' : '' ) ); } }
 		$ch = self::chart( $SER, 0, $hi, 0, max( 1, count( $seasons ) - 1 ), $xl, $yl, 210 );
 		$vh = $kind === 'qb' ? 'Att' : ( $kind === 'rb' ? 'Car' : 'Rec' );
 		$tb = '';
