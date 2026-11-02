@@ -1,5 +1,5 @@
 <?php
-/** The hub: title, Game of the Week, score strip, this week's slate, standings, about. */
+/** The hub: title, Game of the Week, score strip, the week so far, still to play, players, standings (SCOPE §41). */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 $week   = DBD_Data::current_week();
 $season = DBD_Data::season();
@@ -64,11 +64,19 @@ if ( $games ) {
 /* ---- slate: the cards above carry every game, its kickoff and its line; the full table with lines, totals and recap links lives on Matchups (SCOPE §31) */
 echo '<p class="dbd-slatelink"><a href="' . esc_url( DBD_Router::url( array( 'view' => 'matchups', 'week' => $week ) ) ) . '">The full slate: every line and total, and every week</a></p>';
 
-/* ---- standings */
-echo '<span id="teams" class="dbd-anchor"></span><div class="dbd-two" id="dbd-teams">';
+/* ---- the hub refresh (SCOPE §41): the week so far, the games still to play, the players row */
+echo DBD_Hub::week_band( $week );
+echo DBD_Hub::still_to_play( $week, $games, $gotw ? $gotw['id'] : '' );
+echo DBD_Hub::players_row( $week );
+
+/* ---- standings: the playoff picture and the divisions (SCOPE §41) */
+ob_start();
+echo '<div class="dbd-two">';
 foreach ( array( 'AFC', 'NFC' ) as $conf ) { include DBD_PATH . 'includes/views/partials/standings.php'; }
 echo '</div>';
 if ( ! $ranked ) { echo '<p class="dbd-note">Ranks appear after Week 1.</p>'; }
+$divisions = ob_get_clean();
+echo '<span id="teams" class="dbd-anchor"></span><span id="dbd-teams" class="dbd-anchor"></span>' . DBD_Hub::standings( $divisions );  /* the sidebar's Teams link lands on the band, not inside a hidden tab */
 
 /* The About copy lives on the site's own About page, not here. */
 echo '</main>';

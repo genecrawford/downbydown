@@ -297,6 +297,13 @@ class DBD_Router {
 		}
 		if ( $r['view'] === 'leaders' ) { wp_enqueue_script( 'dbd-leaders', DBD_URL . 'assets/leaders.js', array(), DBD_VERSION, true ); }
 		if ( $r['view'] === 'week' ) { wp_enqueue_script( 'dbd-week', DBD_URL . 'assets/week.js', array(), DBD_VERSION, true ); }
+		if ( $r['view'] === 'hub' && DBD_Data::get( 'players/mini.json' ) !== null ) {  /* SCOPE §41: the My team card */
+			wp_enqueue_script( 'dbd-marks', DBD_URL . 'assets/marks.js', array(), DBD_VERSION, true );
+			wp_enqueue_script( 'dbd-hub', DBD_URL . 'assets/hub.js', array( 'dbd-marks' ), DBD_VERSION, true );
+			$wk = DBD_Data::current_week();
+			wp_localize_script( 'dbd-hub', 'DBD_HUB', array( 'mini' => DBD_Data::url() . '/players/mini.json?v=' . DBD_Data::file_version( 'players/mini.json' ), 'teams' => DBD_Data::teams(), 'heads' => DBD_Data::headshots(),
+				'opp' => DBD_Hub::opponents( $wk ), 'week' => DBD_Router::week_label( $wk ), 'base' => self::url(), 'myteam' => self::url( array( 'view' => 'myteam' ) ), 'max' => DBD_MyTeam::MAX ) );
+		}
 		if ( $r['view'] === 'myteam' ) {
 			wp_enqueue_script( 'dbd-marks', DBD_URL . 'assets/marks.js', array(), DBD_VERSION, true );
 			wp_enqueue_script( 'dbd-myteam', DBD_URL . 'assets/myteam.js', array( 'dbd-marks' ), DBD_VERSION, true );

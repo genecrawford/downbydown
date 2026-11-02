@@ -319,6 +319,11 @@ jobs:
           php tools/view_harness.php /tmp/out week 7 && for m in 'class="dbd-panel dbd-short"' 'class="wk-g"' 'id="wk-plays"' 'class="wk-tr"' 'wk-fx' 'class="dbd-panel dbd-mv"'; do grep -q "$m" pages/week-7.html || { echo "week 7 in review is missing $m"; exit 1; }; done
           php tools/view_harness.php /tmp/out week "" && grep -q 'wk-grid' pages/week.html || { echo "the default week in review has no scoreboard"; exit 1; }
           grep -q 'in review →' pages/matchups.html || { echo "no week in review link on the Matchups page"; exit 1; }
+          php tools/view_harness.php /tmp/out hub "" && for m in 'id="hb-week"' 'id="hb-players"' 'id="hb-mt"' 'class="dbd-stand hb-pic"' 'data-pane="1"'; do grep -q "$m" pages/hub.html || { echo "the hub is missing $m"; exit 1; }; done
+          LEFT=$(python3 -c "import json;s=json.load(open('/tmp/out/schedule.json'));print(sum(g['status']!='final' for g in s['weeks'][str(s['current_week'])]))")
+          if [ "$LEFT" -gt 1 ]; then grep -q 'class="hb-g"' pages/hub.html || { echo "no still-to-play cards on the hub with $LEFT games left"; exit 1; }; fi
+          [ "$(grep -o 'class="dbd-stand hb-pic"' pages/hub.html | wc -l)" -eq 2 ] || { echo "the playoff picture does not have both conferences"; exit 1; }
+          python3 -c "import json,sys;m=json.load(open('/tmp/out/players/mini.json'));i=json.load(open('/tmp/out/players/index.json'))['players'];bad=[r['id'] for r in i if r['id'] not in m];print(len(m),'players in mini.json');sys.exit(1 if bad or any(len(v)!=5 for v in m.values()) else 0)" || { echo "players/mini.json does not cover the index"; exit 1; }
           php tools/view_harness.php /tmp/out players "" && grep -q 'class="dbd-panel dbd-mv"' pages/players.html || { echo "the Players page lost its movers panel"; exit 1; }
           for P in wr te; do python3 -c "import re,sys;P=sys.argv[1].upper();s=open('pages/leaders-'+sys.argv[1]+'.html').read();got=re.findall(r'<small>[A-Z]{2,3} · ([A-Z]{2})</small>',s);bad=[p for p in got if p!=P];print(P,'tab:',len(got),'players listed');sys.exit(1 if (bad or len(got)<50) else 0)" $P || { echo "the $P tab lists other positions or too few players"; exit 1; }; done
           php tools/view_harness.php /tmp/out leaders te.g.tshare && grep -q 'ld-full' pages/leaders-te.g.tshare.html || { echo "no full TE board"; exit 1; }

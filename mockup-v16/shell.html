@@ -1,0 +1,11 @@
+<!doctype html><html class="no-js"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>%TITLE%</title>
+<link href="https://fonts.googleapis.com/css2?family=Tourney:wght@800&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/dbd.css"><link rel="stylesheet" href="assets/transitions.css"><link rel="stylesheet" href="assets/m16.css">
+</head><body class="dbd-app">
+<div class="mk-bar"><b>Mock · the hub refresh</b><span>The live 1.16.0 hub with the new bands outlined. Every number is the site's published data. <a href="hub.html">My team empty</a> · <a href="hub-team.html">a saved team</a>.</span><label><input type="checkbox" id="mk-toggle" checked> Show outlines</label></div>
+<div class="entry-content">%ROOT%</div>
+<script src="assets/dbd-site.js"></script><script src="assets/marks.js"></script>
+<script>
+document.getElementById('mk-toggle').addEventListener('change',function(e){document.body.classList.toggle('mk-off',!e.target.checked);});
+</script>
+</body></html>
