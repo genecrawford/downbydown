@@ -116,6 +116,7 @@ class DBD_Urls {
 	public static function parse( $path ) {
 		$seg = array_values( array_filter( explode( '/', strtolower( trim( (string) $path, '/' ) ) ), 'strlen' ) );
 		$b = (string) array_shift( $seg ); $nf = array( '__nf' => 1 ); $n = count( $seg ); $T = DBD_Data::teams();
+		if ( $b === '' ) { return array(); }  /* the app page itself: the hub */
 		switch ( $b ) {
 			case 'team':
 				$t = strtoupper( $seg[0] ?? '' ); if ( ! isset( $T[ $t ] ) || $n > 2 ) { return $nf; }
