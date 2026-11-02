@@ -90,6 +90,38 @@ jobs:
             for m in 'class="dbd-cslots cw-next"' '<b>Playstyle</b>' '<b>Where the EPA comes from</b>' '<b>The shape of their seasons</b>' '<b>Careers</b>'; do grep -q "$m" "pages/compare-$set.html" || { echo "compare $set is missing $m"; exit 1; }; done
           done
           php tools/card_harness.php data 00-0036322 pages/card-logo.png
+      - name: A final whose player stats aren't posted yet reads as pending, not a miss
+        run: |
+          set -e
+          # nflverse posts weekly player stats hours after the play-by-play, and snap counts can land before them, so a
+          # Sunday-night final can sit in the schedule with no player lines. Strip Minnesota's latest week from two copies
+          # of the data, one without its snaps too and one keeping them, and render Jefferson from each.
+          for keep in nosnaps snaps; do
+            rm -rf /tmp/pend && cp -r data /tmp/pend
+            W=$(KEEP=$keep python3 - <<'PY'
+          import json, os
+          f = '/tmp/pend/players/MIN.json'; d = json.load(open(f))
+          W = max(int(w['week']) for p in d['players'] for w in p.get('weeks', []))
+          for p in d['players']:
+              p['weeks'] = [w for w in p.get('weeks', []) if int(w['week']) != W]
+              if p.get('fx0'): p['fx0'] = [x for x in p['fx0'] if int(x) != W]
+              if os.environ['KEEP'] == 'nosnaps' and p.get('snaps'): p['snaps'].pop(str(W), None)
+          json.dump(d, open(f, 'w'))
+          print(W)
+          PY
+            )
+            E=$(python3 -c "import json; d=json.load(open('data/players/MIN.json')); print(min(int(w['week']) for p in d['players'] if p['id']=='00-0036322' for w in p['weeks']))")
+            echo "stripped Minnesota's week $W ($keep); week $E stays a game"
+            rm -rf /tmp/pendpages; export DBD_HARNESS_HTML=/tmp/pendpages
+            php tools/view_harness.php /tmp/pend player 00-0036322 2>&1 | tee /tmp/pend.log
+            grep -q ", 0 warnings" /tmp/pend.log
+            P=/tmp/pendpages/player-00-0036322.html
+            grep -q "<tr class=\"dbd-gx wait\"><td>$W</td>" "$P" || { echo "$keep: game log has no pending row for week $W"; exit 1; }
+            grep -q "Week $W, stats not posted yet" "$P" || { echo "$keep: fantasy strip has no pending week $W"; exit 1; }
+            if grep -q "<tr class=\"dbd-gx dnp\"><td>$W</td>" "$P"; then echo "$keep: week $W still reads as did not play"; exit 1; fi
+            if grep -q "<tr><td>$W</td>" "$P"; then echo "$keep: week $W shows a game line before its stats are posted"; exit 1; fi
+            grep -q "<tr><td>$E</td>" "$P" || { echo "$keep: week $E is no longer a game"; exit 1; }
+          done
       - uses: actions/upload-artifact@v4
         with:
           name: pages

@@ -10,7 +10,7 @@ $p = DBD_Data::player_record( $a, $row['id'] );
 if ( ! $p ) { include DBD_PATH . 'includes/views/notfound.php'; return; }
 $season = DBD_Data::season(); $through = DBD_Data::through_week();
 $W = $p['weeks'] ?? array();
-$played = array_unique( array_merge( array_map( function ( $w ) { return (int) $w['week']; }, $W ), array_map( 'intval', array_keys( $p['snaps'] ?? array() ) ) ) ); $ng = count( $played ); $gp = max( 1, $ng );
+$played = array_unique( array_merge( array_map( function ( $w ) { return (int) $w['week']; }, $W ), array_filter( array_map( 'intval', array_keys( $p['snaps'] ?? array() ) ), function ( $wk ) use ( $p, $a ) { return DBD_Data::stats_posted( $p['snapteam'][ (string) $wk ] ?? $a, $wk ); } ) ) );  /* a snaps-only week is a zero line once his team's stats are out; before that it is pending, not a game */ $ng = count( $played ); $gp = max( 1, $ng );
 $traded = ! empty( $p['snapteam'] ) || (bool) array_filter( $W, function ( $w ) use ( $a ) { return ! empty( $w['team'] ) && $w['team'] !== $a; } );
 /* game-log rows: every played week, a zero line where he took snaps but never touched the ball */
 sort( $played );
@@ -411,7 +411,7 @@ if ( $L ) {
 		$tm = $teamAt[ $wk ];
 		if ( isset( $Lby[ $wk ] ) ) { $w = $Lby[ $wk ]; $gm = DBD_Data::team_game( $tm, $wk ); $opp = $w['opponent_team'] ?? $oppOf( $wk, $tm );
 			$rows[ $wk ] = array( 'kind' => 'game', 'w' => $w, 'tm' => $tm, 'opp' => (string) $opp, 'home' => $gm ? $gm['home'] === $tm : true, 'res' => $gm && isset( $gm['home_score'], $gm['away_score'] ) ? ( ( $gm['home'] === $tm ? $gm['home_score'] > $gm['away_score'] : $gm['away_score'] > $gm['home_score'] ) ? 'W' : ( $gm['home_score'] === $gm['away_score'] ? 'T' : 'L' ) ) . ' ' . (int) ( $gm['home'] === $tm ? $gm['home_score'] : $gm['away_score'] ) . '-' . (int) ( $gm['home'] === $tm ? $gm['away_score'] : $gm['home_score'] ) : '' ); }
-		elseif ( isset( $tmG[ $tm ][ $wk ] ) ) { $x = $tmG[ $tm ][ $wk ]; $rows[ $wk ] = array( 'kind' => $x['played'] ? 'dnp' : 'ahead', 'tm' => $tm, 'opp' => $x['opp'], 'home' => $x['home'] ); }
+		elseif ( isset( $tmG[ $tm ][ $wk ] ) ) { $x = $tmG[ $tm ][ $wk ]; $rows[ $wk ] = array( 'kind' => $x['played'] ? ( DBD_Data::stats_posted( $tm, $wk ) ? 'dnp' : 'wait' ) : 'ahead', 'tm' => $tm, 'opp' => $x['opp'], 'home' => $x['home'] ); }
 		else { $rows[ $wk ] = array( 'kind' => 'bye' ); }
 	}
 	$gxWeeks = $rows;
@@ -447,6 +447,7 @@ if ( $L ) {
 		foreach ( $rows as $wk => $r ) { $cx = $xw( $wk );
 			if ( $r['kind'] === 'bye' ) { $g .= '<line x1="' . $cx . '" x2="' . $cx . '" y1="' . ( $yv( 0 ) - 3 ) . '" y2="' . ( $yv( 0 ) + 3 ) . '" stroke="var(--dbd-muted)" stroke-dasharray="1 1"/>'; }
 			elseif ( $r['kind'] === 'dnp' ) { $g .= '<text x="' . $cx . '" y="' . ( $yv( 0 ) + 3 ) . '" font-size="10" fill="var(--dbd-bad)" text-anchor="middle" ' . $fo . ' tabindex="0" data-tip="' . esc_attr( '<b>Week ' . $wk . ' ' . ( $r['tm'] !== $a ? esc_html( $r['tm'] ) . ' ' : '' ) . ( $r['home'] ? 'vs' : 'at' ) . ' ' . esc_html( $teams[ $r['opp'] ]['nick'] ?? $r['opp'] ) . '</b><br>he did not play' ) . '">×</text>'; }
+			elseif ( $r['kind'] === 'wait' ) { $g .= '<text x="' . $cx . '" y="' . ( $yv( 0 ) + 3 ) . '" font-size="10" fill="var(--dbd-muted)" text-anchor="middle" ' . $fo . ' tabindex="0" data-tip="' . esc_attr( '<b>Week ' . $wk . ' ' . ( $r['tm'] !== $a ? esc_html( $r['tm'] ) . ' ' : '' ) . ( $r['home'] ? 'vs' : 'at' ) . ' ' . esc_html( $teams[ $r['opp'] ]['nick'] ?? $r['opp'] ) . '</b><br>stats not posted yet' ) . '">…</text>'; }
 			if ( $wk === $curWk ) { $g .= '<line x1="' . $cx . '" x2="' . $cx . '" y1="' . ( $Hh - $Bm + 2 ) . '" y2="' . ( $Hh - $Bm + 6 ) . '" stroke="var(--dbd-red)" stroke-width="2"/>'; }
 			if ( ( $wk - 1 ) % 3 === 0 ) { $g .= '<text x="' . $cx . '" y="' . ( $Hh - 3 ) . '" font-size="10" fill="var(--dbd-muted)" text-anchor="middle" ' . $fo . '>' . $wk . '</text>'; }
 		}
@@ -549,6 +550,7 @@ foreach ( $views as $name => $vd ) {
 		foreach ( $gxWeeks as $wk => $gr_ ) {
 			if ( $gr_['kind'] === 'game' ) { $body .= $gameRow( $gr_['w'] ); continue; }
 			if ( $gr_['kind'] === 'bye' ) { $tr = $gxTr( 'bye', $wk, 'Bye week', '', $gxNext ); if ( $gxNext ) { $gxLater .= $tr; } else { $body .= $tr; } continue; }  /* a bye still ahead waits in order with the games around it */
+			if ( $gr_['kind'] === 'wait' ) { $body .= $gxTr( 'wait', $wk, $res( $wk, $gr_['tm'] ), 'Stats not posted yet', false ); continue; }  /* a final whose player lines nflverse hasn't posted: not a miss */
 			if ( $gr_['kind'] === 'dnp' ) { $iw = $p['injw'][ (string) $wk ] ?? null; $body .= $gxTr( 'dnp', $wk, $res( $wk, $gr_['tm'] ), 'Did not play' . ( $iw && ! empty( $iw[0] ) ? ' · ' . esc_html( $iw[0] ) . ( ! empty( $iw[1] ) ? ' (' . esc_html( strtolower( $iw[1] ) ) . ')' : '' ) : '' ), false ); continue; }
 			$gm = DBD_Data::team_game( $gr_['tm'], $wk ); $when = '';
 			if ( $gm && ! empty( $gm['date'] ) ) { try { $when = wp_date( 'D M j', ( new DateTime( $gm['date'] . ' ' . ( $gm['time'] ?: '13:00' ), new DateTimeZone( 'America/New_York' ) ) )->getTimestamp(), new DateTimeZone( 'America/New_York' ) ); } catch ( Exception $ex ) { $when = ''; } }
@@ -590,9 +592,9 @@ if ( $hasDef && $myRows && $games ) {
 	for ( $wk = 1; $wk <= max( 18, $maxWk ); $wk++ ) {
 		$x = $byWk[ $wk ] ?? null;
 		if ( ! $x ) { $rib .= '<div class="c bye"><small>WK ' . $wk . '</small><b>—</b><i>bye</i></div>'; continue; }
-		$dnp = $x['played'] && empty( $x['his'] ); $away = ! empty( $x['tm'] ) && $x['tm'] !== $a ? esc_html( $x['tm'] ) . ' ' : '';
+		$wait = $x['played'] && empty( $x['his'] ) && ! DBD_Data::stats_posted( $a, $wk ); $dnp = $x['played'] && empty( $x['his'] ) && ! $wait; $away = ! empty( $x['tm'] ) && $x['tm'] !== $a ? esc_html( $x['tm'] ) . ' ' : '';
 		$rk = $drank( $x['opp'] ); $cls = DBD_Grades::defense_tier( $rk ) . ( $x['played'] ? ' done' : ' ahead' ) . ( $dnp ? ' dnp' : '' ) . ( $wk === $curWk ? ' now' : '' );
-		$rib .= '<div class="c ' . $cls . '" tabindex="0" data-tip="' . esc_attr( '<b>Week ' . $wk . ' ' . $away . ( $x['home'] ? 'vs' : 'at' ) . ' ' . esc_html( $teams[ $x['opp'] ]['nick'] ?? $x['opp'] ) . '</b>' . ( $dnp ? ' · he did not play' : '' ) . '<br>' . ( $rk ? $dtip( $x['opp'] ) : 'not ranked yet' ) ) . '"><small>' . $away . ( $x['home'] ? 'VS' : 'AT' ) . ' ' . esc_html( $x['opp'] ) . '</small><b>' . ( $rk ?: '–' ) . '</b><i>' . ( $rk ? $lab : '' ) . '</i></div>';
+		$rib .= '<div class="c ' . $cls . '" tabindex="0" data-tip="' . esc_attr( '<b>Week ' . $wk . ' ' . $away . ( $x['home'] ? 'vs' : 'at' ) . ' ' . esc_html( $teams[ $x['opp'] ]['nick'] ?? $x['opp'] ) . '</b>' . ( $dnp ? ' · he did not play' : ( $wait ? ' · stats not posted yet' : '' ) ) . '<br>' . ( $rk ? $dtip( $x['opp'] ) : 'not ranked yet' ) ) . '"><small>' . $away . ( $x['home'] ? 'VS' : 'AT' ) . ' ' . esc_html( $x['opp'] ) . '</small><b>' . ( $rk ?: '–' ) . '</b><i>' . ( $rk ? $lab : '' ) . '</i></div>';
 	}
 	echo '<h4>The slate · played solid, ahead dashed</h4><div class="dbd-ox-rib">' . $rib . '</div>';
 	echo '<div class="dbd-legend"><span><i class="sq" style="background:#161e36"></i>Top 10, tough</span><span><i class="sq" style="background:var(--dbd-line-2)"></i>11 to 22</span><span><i class="sq" style="background:rgba(30,127,74,.35)"></i>23 to 32, soft</span><span>Number is the defense\'s rank ' . $lab . ', season to date. Dashed cells are still to play; the red outline is this week.</span></div>';

@@ -66,7 +66,7 @@ class DBD_Fantasy {
 			}
 			if ( ! $g ) { $rows[ $wk ] = array( 'kind' => 'bye' ); continue; }
 			$fin = ( $g['status'] ?? '' ) === 'final' || isset( $g['home_score'] );
-			$rows[ $wk ] = array( 'kind' => $fin ? 'dnp' : 'ahead', 'opp' => $g['home'] === $tm ? $g['away'] : $g['home'] );
+			$rows[ $wk ] = array( 'kind' => $fin ? ( DBD_Data::stats_posted( $tm, $wk ) ? 'dnp' : 'wait' ) : 'ahead', 'opp' => $g['home'] === $tm ? $g['away'] : $g['home'] );
 		}
 		return $rows;
 	}
@@ -85,6 +85,8 @@ class DBD_Fantasy {
 				$cols .= '<span class="c' . $cl . '"><b style="height:' . $pc( $v ) . '" data-tip="' . esc_attr( $tip ) . '" tabindex="0" aria-label="' . esc_attr( 'Week ' . $wk . ', ' . self::num( $v ) . ' points' ) . '"></b>' . $lab . '</span>';
 			} elseif ( $r['kind'] === 'dnp' ) {
 				$cols .= '<span class="c dnp"><b data-tip="' . esc_attr( '<b>Week ' . $wk . ' vs ' . esc_html( $teams[ $r['opp'] ]['nick'] ?? $r['opp'] ) . '</b><br>he did not play' ) . '" tabindex="0" aria-label="' . esc_attr( 'Week ' . $wk . ', did not play' ) . '">×</b>' . $lab . '</span>';
+			} elseif ( $r['kind'] === 'wait' ) {
+				$cols .= '<span class="c next"><b data-tip="' . esc_attr( '<b>Week ' . $wk . ' vs ' . esc_html( $teams[ $r['opp'] ]['nick'] ?? $r['opp'] ) . '</b><br>stats not posted yet' ) . '" tabindex="0" aria-label="' . esc_attr( 'Week ' . $wk . ', stats not posted yet' ) . '"></b>' . $lab . '</span>';
 			} elseif ( $r['kind'] === 'bye' ) {
 				$cols .= '<span class="c bye"><b data-tip="' . esc_attr( '<b>Week ' . $wk . '</b><br>bye' ) . '" tabindex="0" aria-label="' . esc_attr( 'Week ' . $wk . ', bye' ) . '"></b>' . $lab . '</span>';
 			} else {

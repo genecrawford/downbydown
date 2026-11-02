@@ -84,7 +84,7 @@ class DBD_MyTeam {
 		$home = $g['home'] === $r['team']; $opp = $home ? $g['away'] : $g['home']; $at = $home ? 'vs' : 'at';
 		if ( self::is_final( $g ) ) {
 			$w = self::weeks( $rec, $i ); $v = $w[ $cw ] ?? null;
-			return '<span class="wk fin"><b>' . $at . ' ' . esc_html( $opp ) . '</b><small>Final · ' . ( $v === null ? 'did not play' : DBD_Fantasy::num( $v ) . ' pts' ) . '</small></span>';
+			return '<span class="wk fin"><b>' . $at . ' ' . esc_html( $opp ) . '</b><small>Final · ' . ( $v === null ? ( DBD_Data::stats_posted( $r['team'], $cw ) ? 'did not play' : 'stats not posted yet' ) : DBD_Fantasy::num( $v ) . ' pts' ) . '</small></span>';
 		}
 		$k = DBD_Data::kickoff( $g ); $al = isset( DBD_Fantasy::SLOT[ $pos ] ) ? DBD_Fantasy::allowed( $opp, $pos, $fm ) : null;
 		$chip = '';

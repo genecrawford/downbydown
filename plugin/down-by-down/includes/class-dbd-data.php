@@ -133,6 +133,28 @@ class DBD_Data {
 		return null;
 	}
 
+	/**
+	 * Whether the weekly player stats for a team's game that week are in yet. nflverse posts them a few hours
+	 * after the play-by-play, so on a Sunday night a final can sit in the schedule with no player lines. A week
+	 * counts as posted once any player on the team has a weekly stat line for it. Snap counts don't count: they
+	 * can arrive first, and a snaps-only week before the stats are out is not yet a zero. With no player files
+	 * at all it reads as posted, so nothing changes on a site without the player layer.
+	 */
+	public static function stats_posted( $abbr, $week ) {
+		$k = '__posted:' . $abbr;
+		if ( ! array_key_exists( $k, self::$cache ) ) {
+			$f = self::get( 'players/' . $abbr . '.json' ); $set = null;
+			if ( $f && ! empty( $f['players'] ) ) {
+				$set = array();
+				foreach ( $f['players'] as $p ) {
+					foreach ( (array) ( $p['weeks'] ?? array() ) as $w ) { if ( ( $w['team'] ?? $abbr ) === $abbr ) { $set[ (int) $w['week'] ] = true; } }
+				}
+			}
+			self::$cache[ $k ] = $set;
+		}
+		return self::$cache[ $k ] === null || isset( self::$cache[ $k ][ (int) $week ] );
+	}
+
 	/** The game a team played in a week, or null (bye). */
 	/** Each team's starters from its latest depth chart (SCOPE §32): offense, defense and special teams; empty before the file exists. */
 	public static function lineup( $abbr ) {
