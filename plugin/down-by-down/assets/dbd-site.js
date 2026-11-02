@@ -250,7 +250,7 @@
      content and cross-fade the two with a 2px blur, in the same box. Reduced motion, or no MutationObserver: the plain swap. */
   var still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (window.MutationObserver && !still) {
-    root.querySelectorAll('.dbd-skel').forEach(function (sk) {
+    document.querySelectorAll('.dbd .dbd-skel').forEach(function (sk) {  /* this block has no root of its own (1.19.0 threw here) */
       var host = sk.parentNode; if (!host) return;
       var h = sk.offsetHeight;
       var mo = new MutationObserver(function (list) {
