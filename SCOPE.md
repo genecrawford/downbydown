@@ -2329,6 +2329,12 @@ In one fetch on 2026-11-03, every team had stories in its team column, and the s
 - The offense and defense pages show the latest line and link to the panel.
 - Checked at 1440 and 375, with no horizontal scroll.
 
-Status: scoped and mocked 2026-11-03; all three decisions made 2026-11-03.
+Status: scoped and mocked 2026-11-03; all three decisions made 2026-11-03; fetch every 6 hours (Gene, same day); built as 2.9.0 (PR #72), with the queued fix from §48: the weekly post's scores table stacks below 760px.
+
+Build notes from review (Greptile, PR #72):
+- **The panel sits ahead of the empty-roster message** on the team players page, so news shows before a season has player data.
+- **Player names of any length match**, as whole words: unique first-and-last names from the players index ("Bo Nix", never "Bo Nixon").
+- **A story shows once on the panel.** The team column is stored first (deduped, balanced, capped at 20). A league story whose link or headline is in that stored column is left out, so a story cut by the cap doesn't take its league copy with it.
+- **Tests:** made-up feeds in `tools/fixtures/news/` run through the matching step in Plugin check, with the clock pinned, then the panel and the latest line are rendered from the result.
 
 Size: S to M.
