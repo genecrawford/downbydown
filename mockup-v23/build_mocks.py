@@ -11,6 +11,11 @@ HEAVY = "'Arial Black','Helvetica Neue',Arial,sans-serif"
 COND = "'Arial Narrow','Helvetica Neue',Arial,sans-serif"
 NOTE = ('<p style="max-width:640px;margin:0 auto 16px;font:13px/1.5 ' + SANS + ';color:#555">{}</p>')
 
+def no_tracking(h):
+    """The copied live pages lose the site's analytics, so opening a mock never counts as a visit."""
+    h = re.sub(r'<script[^>]*googletagmanager\.com[^>]*>\s*</script>', '', h)
+    return re.sub(r'<script[^>]*>(?:(?!</script>).)*?(?:gtag\(|dataLayer)(?:(?!</script>).)*</script>', '', h, flags=re.S)
+
 # ---------- the email (§48) ----------
 def email_body(c):
     """The post body with every style inline, laid out in tables: what the plugin would hand Brevo."""
@@ -127,7 +132,7 @@ note = ('<style>.dbd-joined{margin:0 0 22px;padding:12px 16px;border:1px solid r
         'font:400 16px/1.5 "IBM Plex Sans",system-ui,sans-serif;color:#121417}.dbd-joined b{font-weight:600}</style>'
         '<p class="dbd-joined"><b>You\'re in.</b> The next one arrives Tuesday morning. This is the latest, Week 8.</p>')
 ph = ph.replace('<div class="dbd-post">', note + '<div class="dbd-post">', 1)
-open('signup-landed.html', 'w').write(ph)
+open('signup-landed.html', 'w').write(no_tracking(ph))
 
 # ---------- team news (§49) ----------
 def age(ts):
@@ -174,7 +179,7 @@ tp = open('_tp-min.html').read()
 i = tp.find('<section class="dbd-panel dbd-roster">')
 tp = tp[:i] + panel('MIN', 'Vikings', 'vikings.com') + tp[i:]
 tp = tp.replace('</head>', NCSS + '</head>', 1)
-open('team-news-MIN.html', 'w').write(tp)
+open('team-news-MIN.html', 'w').write(no_tracking(tp))
 
 tm = open('_team-min.html').read()
 lt = NEWS['news']['MIN']['official'][0]
@@ -182,5 +187,5 @@ latest = (f'<p class="dbd-latest mock-new">Latest: <a href="{e(lt["url"])}" targ
           f'<span>{e(lt["src"])} · {age(lt["ts"])}</span> · <a href="team-news-MIN.html#news">All Vikings news</a></p>')
 tm = re.sub(r'(<p class="dbd-sub t-stagger-line t-stagger-line--3">.*?</p>)', lambda m: m.group(1) + latest, tm, count=1, flags=re.S)
 tm = tm.replace('</head>', NCSS + '</head>', 1)
-open('team-latest-MIN.html', 'w').write(tm)
+open('team-latest-MIN.html', 'w').write(no_tracking(tm))
 print('wrote email-week-8.html signup.html signup-landed.html team-news-MIN.html team-latest-MIN.html')

@@ -60,10 +60,10 @@ now = int(datetime.datetime.now(datetime.timezone.utc).timestamp()); WEEK = 7 * 
 P = json.load(open('data/players/index.json'))['players']
 names = {}
 for p in P: names.setdefault(p['name'], []).append(p)
-names = {n: v[0] for n, v in names.items() if len(v) == 1 and len(n) > 7}
+names = {n: v[0] for n, v in names.items() if len(v) == 1 and ' ' in n.strip()}  # unique first-and-last names of any length, as the plugin does
 COLLEGE = r'(?<!Nittany )(?<!Penn State )(?<!Baylor )(?<!Pitt )(?<!Florida )(?<!Louisville )(?<!Winnipeg )(?<!Boston College )(?<!Colorado State )(?<!St\. Louis )(?<!Texas Southern )'
 nick = {t: re.compile(COLLEGE + r'\b(' + re.escape(T[t]['nick']) + '|' + re.escape(T[t]['name']) + r')\b') for t in T}
-def players_in(title): return [{'name': n, 'slug': p['slug'], 'team': p['team']} for n, p in names.items() if n in title][:2]
+def players_in(title): return [{'name': n, 'slug': p['slug'], 'team': p['team']} for n, p in names.items() if n in title and re.search(r'(?<![\w])' + re.escape(n) + r'(?![\w])', title)][:2]
 news = {t: {'site': SITES[t], 'fan': FAN[t][1], 'official': [], 'league': []} for t in T}
 for t, x in team_raw.items():
     for it in items(x)[:30]:
