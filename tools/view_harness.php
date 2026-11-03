@@ -152,7 +152,7 @@ if ( $view === 'post' ) {
 	try { $doc = DBD_Post::compose( (int) $arg, null, getenv( 'DBD_HARNESS_AHEAD' ) !== '0' ); }
 	catch ( Throwable $e ) { fwrite( STDERR, "FATAL in post $arg: " . get_class( $e ) . ': ' . $e->getMessage() . ' at ' . basename( $e->getFile() ) . ':' . $e->getLine() . "\n" ); exit( 1 ); }
 	if ( ! $doc ) { echo "post $arg: none (the week isn't complete), $warnings warnings\n"; exit( $warnings ? 1 : 0 ); }
-	if ( getenv( 'DBD_HARNESS_OLD_SEASON' ) ) { $doc['html'] = DBD_Post::with_season( $doc['html'], (int) getenv( 'DBD_HARNESS_OLD_SEASON' ) ); }  /* how the post reads once its season is archived */
+	if ( getenv( 'DBD_HARNESS_OLD_SEASON' ) ) { $doc['html'] = DBD_Post::with_season( $doc['html'] . '<p class="gene">An added link: <a href="https://example.test/about/">About</a></p>', (int) getenv( 'DBD_HARNESS_OLD_SEASON' ) ); }  /* how the post reads once its season is archived */
 	echo "post $arg: " . $doc['title'] . ' · ' . strlen( $doc['html'] ) . " bytes, $warnings warnings\n";
 	if ( strlen( $doc['html'] ) < 3000 || $doc['excerpt'] === '' ) { fwrite( STDERR, "post $arg: suspiciously short\n" ); exit( 3 ); }
 	$dir = getenv( 'DBD_HARNESS_HTML' );

@@ -401,7 +401,7 @@ class DBD_Post {
 			if ( DBD_Urls::on() ) {
 				$b = DBD_Urls::path_base(); if ( strpos( $u, $b ) !== 0 ) { return $m[0]; }
 				$rest = substr( $u, strlen( $b ) );
-				if ( $rest === '' || preg_match( '#^(?:(?:19|20)\d\d/|game/)#', $rest ) ) { return $m[0]; }
+				if ( ! preg_match( '#^(?:team|player|players|leaders|week|matchups|teams)/#', $rest ) ) { return $m[0]; }  /* only the app's own pages (a game's link names its season; /about/ or a post Gene links stays as it is) */
 				$u = $b . $s . '/' . $rest;
 			} else {
 				if ( strpos( $u, (string) DBD_Router::base() ) !== 0 || strpos( $u, 'game=' ) !== false || strpos( $u, 'season=' ) !== false ) { return $m[0]; }
