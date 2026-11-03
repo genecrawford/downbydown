@@ -72,6 +72,8 @@ if ( $KR ) {
 	}
 	$body .= '</tbody>';
 }
+/* ---- team news (SCOPE §49), after the lineup */
+echo DBD_News::panel( $team );
 echo '<section class="dbd-panel dbd-roster"><div class="dbd-ph"><span class="dbd-lab"><b>The roster</b> · every skill player with a snap this season, and the kicker</span><span class="dbd-badge">' . count( $pl ) . ' players</span></div>';
 echo '<div class="dbd-tw"><table class="dbd-stat dbd-rost"><thead><tr><th>Player</th><th>Snap</th><th>Tgt/Att</th><th>Rec</th><th>Car</th><th>Yds</th><th>TD</th><th>EPA</th><th>Status</th></tr></thead>' . $body . '</table></div></section>';
 

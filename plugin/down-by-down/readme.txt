@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.8.0
+Stable tag: 2.9.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,13 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.9.0 =
+* Team news (SCOPE §49): each team's players page gets a news panel with the last 7 days of stories in two columns. One is the team's own site, its SB Nation blog and The Athletic. The other is around the league: ProFootballTalk, CBS Sports, ESPN, Yahoo Sports, Sporting News, NFL Trade Rumors and The Athletic. Each row is the headline (opening the article in a new tab), the source, the time and any player named, linked to his page. The Athletic's links say "Subscriber". The first five in each column hold no more than two from one source; "Show more" opens up to 20.
+* The offense and defense pages show the team's newest story in one line under the description, linking to the panel.
+* How it runs: every 6 hours, a background pass reads the 102 feeds 8 at a time. It keeps only the stories that belong to a team, matched by the team's name or a player the headline names. College teams that share a nickname are excluded, stories naming four or more teams go to none, and duplicates show once. It stores one small list per team that isn't autoloaded. Raw feeds are never stored, and a feed that fails keeps its last stories.
+* Down by Down › Team news: last and next fetch, any feed that failed or has nothing recent, a switch for each source, and Fetch news now. The first fetch runs about 90 seconds after the update.
+* The weekly post's scores table stacks below 760px wide instead of 560px, so it no longer squeezes in the post column on tablets.
 
 = 2.8.0 =
 * Kickers (SCOPE §47): every kicker gets a page at his player address, built from players/kickers.json: eight tiles ranked among qualifying kickers (a try for every game his team has played), the short version, a Scorecard, his makes by distance against an average kicker's from the same spots (a league curve fitted to 2023–2025), every try drawn on the field at the spot it was held (sideways on wide screens, upright on phones), the kicks that moved his team's win chance most, a game log with the conditions, and his career since 1999.

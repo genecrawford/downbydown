@@ -16,6 +16,17 @@ add_action( 'admin_init', function () {
 	register_setting( 'dbd', DBD_Seo::OPT_HOME_DESC, array( 'type' => 'string', 'sanitize_callback' => 'sanitize_textarea_field', 'default' => '' ) );  /* the home page's description (2.7.0) */
 	register_setting( 'dbd_posts', DBD_Post::OPT_ON, array( 'type' => 'boolean', 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => true ) );  /* the weekly post (SCOPE §46) */
 	register_setting( 'dbd_posts', DBD_Post::OPT_FORM, array( 'type' => 'string', 'sanitize_callback' => 'sanitize_text_field', 'default' => DBD_Post::FORM ) );
+	/* team news (SCOPE §49): the source groups switched on; an empty save switches every source off */
+	register_setting( 'dbd_news', DBD_News::OPT_SRC, array( 'type' => 'array', 'sanitize_callback' => function ( $v ) { return array_values( array_intersect( array_map( 'strval', (array) $v ), array_keys( DBD_News::groups() ) ) ); } ) );
+} );
+
+add_action( 'admin_post_dbd_news_now', function () {
+	check_admin_referer( 'dbd_news_now' );
+	if ( ! current_user_can( 'manage_options' ) ) { wp_die( 'No.' ); }
+	delete_transient( 'dbd_news_lock' );
+	DBD_News::run();
+	wp_safe_redirect( add_query_arg( array( 'page' => 'down-by-down', 'news' => 1 ), admin_url( 'admin.php' ) ) . '#dbd-news' );
+	exit;
 } );
 
 add_action( 'admin_post_dbd_clear_cards', function () {
@@ -69,6 +80,9 @@ function dbd_settings_page() {
 		<?php endif; ?>
 		<?php if ( isset( $_GET['written'] ) ) : ?>
 			<div class="notice notice-success"><p><?php $wn = (int) $_GET['written']; echo esc_html( $wn ? $wn . ' weekly post' . ( $wn === 1 ? '' : 's' ) . ' written.' : 'No new posts: every finished week already has one, or was deleted.' ); ?></p></div>
+		<?php endif; ?>
+		<?php if ( isset( $_GET['news'] ) ) : $ns = get_option( DBD_News::OPT_STATUS ); ?>
+			<div class="notice notice-success"><p><?php echo esc_html( is_array( $ns ) ? 'News fetched in ' . $ns['secs'] . ' seconds.' : 'News fetched.' ); ?></p></div>
 		<?php endif; ?>
 		<?php if ( isset( $_GET['token'] ) ) : ?>
 			<div class="notice notice-warning"><p>New token generated. Update the <code>DBD_SYNC_TOKEN</code> secret in the GitHub repo or the nightly push will stop working.</p></div>
@@ -157,6 +171,31 @@ function dbd_settings_page() {
 		<p><form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" onsubmit="return confirm('Write a post for each of the <?php echo (int) $missing; ?> finished week(s) without one? Each is dated the Tuesday after its week and publishes with that date.');">
 			<?php wp_nonce_field( 'dbd_write_past' ); ?><input type="hidden" name="action" value="dbd_write_past"><button class="button button-primary">Write past weeks (<?php echo (int) $missing; ?>)</button></form></p>
 		<?php endif; ?>
+
+		<h2 id="dbd-news">Team news</h2>
+		<p>Every 6 hours (about 12 and 6, morning and evening, Eastern) the site reads the news feeds below, keeps the last 7 days of stories that belong to a team, and shows them on each team's players page, with the newest one on its offense and defense pages. Headline, source and time only, linking out. A feed that fails keeps the stories it had last time.</p>
+		<?php
+		$ns = get_option( DBD_News::OPT_STATUS ); $nf = DBD_News::feeds(); $nnext = wp_next_scheduled( DBD_News::HOOK );
+		$nst = is_array( $ns ) ? (array) $ns['feeds'] : array(); $nok = count( array_filter( $nst, function ( $x ) { return ! empty( $x['ok'] ); } ) );
+		$nprob = array_filter( $nst, function ( $x ) { return empty( $x['ok'] ) || ! empty( $x['err'] ); } );
+		?>
+		<table class="widefat striped" style="max-width:720px"><tbody>
+			<tr><td style="width:160px">Last fetch</td><td><?php echo is_array( $ns ) ? esc_html( get_date_from_gmt( gmdate( 'Y-m-d H:i:s', (int) $ns['at'] ), 'M j, g:i A' ) . ': ' . $nok . ' of ' . count( $nst ) . ' feeds read in ' . $ns['secs'] . ' seconds' ) : 'not yet'; ?></td></tr>
+			<tr><td>Next fetch</td><td><?php echo $nnext ? esc_html( get_date_from_gmt( gmdate( 'Y-m-d H:i:s', $nnext ), 'M j, g:i A' ) ) : 'not scheduled'; ?></td></tr>
+			<tr><td>Feeds to check</td><td><?php if ( ! $nprob ) { echo is_array( $ns ) ? 'None: every feed answered with recent stories.' : '–'; } else { $li = array(); foreach ( $nprob as $k => $x ) { $li[] = '<a href="' . esc_url( $nf[ $k ][0] ?? '' ) . '">' . esc_html( ( $nf[ $k ][3] ?? $k ) . ( ! empty( $nf[ $k ][2] ) && ( $nf[ $k ][1] ?? '' ) !== 'site' ? ' (' . $nf[ $k ][2] . ')' : '' ) ) . '</a>: ' . esc_html( $x['err'] ?: 'failed' ) . ( empty( $x['ok'] ) && ! empty( $x['last'] ) ? esc_html( ', last read ' . get_date_from_gmt( gmdate( 'Y-m-d H:i:s', (int) $x['last'] ), 'M j' ) ) : '' ); } echo implode( '<br>', $li ); } ?></td></tr>
+		</tbody></table>
+		<form method="post" action="options.php">
+			<?php settings_fields( 'dbd_news' ); ?>
+			<table class="form-table" role="presentation">
+				<tr><th scope="row">Sources</th><td>
+				<?php foreach ( DBD_News::groups() as $g => $lab ) : ?>
+					<label style="display:block;margin:0 0 4px"><input type="checkbox" name="<?php echo esc_attr( DBD_News::OPT_SRC ); ?>[]" value="<?php echo esc_attr( $g ); ?>" <?php checked( DBD_News::on( $g ) ); ?>> <?php echo esc_html( $lab ); ?></label>
+				<?php endforeach; ?>
+				<p class="description">A source switched off is skipped from the next fetch on, and its stories leave the pages then. The Athletic's links are labelled "Subscriber". Switch everything off to hide the news.</p></td></tr>
+			</table>
+			<?php submit_button( 'Save' ); ?>
+		</form>
+		<p><form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><?php wp_nonce_field( 'dbd_news_now' ); ?><input type="hidden" name="action" value="dbd_news_now"><button class="button">Fetch news now</button></form></p>
 
 		<h2>Share cards</h2>
 		<?php list( $cn, $cb ) = DBD_Card::stats(); $cp = get_option( 'dbd_card_prune' ); ?>

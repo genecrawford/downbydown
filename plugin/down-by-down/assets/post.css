@@ -27,11 +27,14 @@
 .dbd-post-sign .wpforms-container{margin:0!important}
 .dbd-post-sign input[type=email],.dbd-post-sign input[type=text]{height:46px!important;border:1px solid rgba(22,30,54,.28)!important;border-radius:6px!important;box-shadow:none!important}
 .dbd-post-sign button[type=submit]{height:46px!important;padding:0 22px!important;background:#cb2026!important;border:0!important;border-radius:6px!important;color:#fff!important;font:700 15px "Barlow Condensed",sans-serif!important;letter-spacing:.1em!important;text-transform:uppercase}
-@media (max-width:560px){
+/* the scores stack below 760px: in the post column a two-cell row squeezed between about 480 and 700 ("Packers 27, Panthers" over "19") */
+@media (max-width:760px){
   .dbd-post .sc tr{display:block;border-top:1px solid var(--line)}
   .dbd-post.dbd-post .sc td{display:block;border:0;padding:8px 2px 2px}
   .dbd-post.dbd-post .sc td.tg{padding:0 2px 9px;text-align:left}
   .dbd-post.dbd-post .sc{border-bottom:1px solid var(--line)}
+}
+@media (max-width:560px){
   .dbd-post .pl tr{display:grid;grid-template-columns:48px minmax(0,1fr);border-top:1px solid var(--line)}
   .dbd-post.dbd-post .pl td{border:0;padding:8px 4px 2px}
   .dbd-post.dbd-post .pl td.ph{grid-row:span 2;padding-top:10px}

@@ -45,6 +45,54 @@ jobs:
           php tools/view_harness.php data week 7
           php tools/view_harness.php data leaders rec.g.tshare
           php tools/view_harness.php data myteam 00-0034857,00-0039139,00-0038542,00-0036322,00-0039075,00-0037744,00-0036358,00-0037838
+      - name: Team news (SCOPE §49)
+        run: |
+          set -e
+          # the matching step on made-up feeds (tools/fixtures/news), no network, with the clock pinned
+          export DBD_HARNESS_NOW=1793728800 DBD_HARNESS_NEWS=/tmp/news.json
+          php tools/view_harness.php data news tools/fixtures/news > /tmp/news-out.json
+          python3 - <<'PY'
+          import json
+          from collections import Counter
+          d = json.load(open('/tmp/news.json')); o = json.load(open('/tmp/news-out.json'))
+          def need(c, m):
+              if not c: raise SystemExit('team news: ' + m)
+          M = d['MIN']; T = [x['h'] for x in M['t']]; L = [x['h'] for x in M['l']]
+          need(len(T) == 7, f'the Vikings team column has {len(T)} stories, want 7: {T}')
+          need('A Story From Two Weeks Ago' not in T, 'a story older than 7 days was kept')
+          need('NFL Week 9 Power Rankings: You decide' not in T, 'an Athletic team-feed story naming no Viking was kept')
+          need('Justin Jefferson and the new shape of the offense' in T, 'an Athletic story naming a Vikings player was dropped')
+          top = M['t'][:5]; c = Counter(x['s'] for x in top)
+          need(max(c.values()) <= 2, f'more than two from one source in the first five: {c}')
+          need([x['ts'] for x in top] == sorted((x['ts'] for x in top), reverse=True), 'the first five are not newest first')
+          jj = next(x for x in M['t'] if x['h'].startswith('Justin Jefferson by'))
+          need(jj['w'] and jj['w'][0][0] == '00-0036322', 'the player a headline names is not linked')
+          need(all((x['x'] == 1) == (x['s'] == 'The Athletic') for x in M['t'] + M['l']), 'the Subscriber marks are wrong')
+          need(L == ['Vikings plan to start the backup in Week 9', 'Lions linebacker hurt in the win over the Vikings'], f'the Vikings league column is {L}')
+          need(all('Nittany' not in x['h'] for t in d for x in d[t]['l']), 'a college story matched an NFL team')
+          need(all('grades' not in x['h'] for t in d for x in d[t]['l']), 'a story naming four teams matched')
+          DT = [x['h'] for x in d['DET']['t']]
+          need('Pride Of Detroit film study from yesterday' in DT and 'Pride Of Detroit story from ten days ago' not in DT, f'a failed feed did not carry over just its recent stories: {DT}')
+          need(len(d['DET']['t']) == 7 and sum(x['s'] == 'Detroitlions.com' for x in d['DET']['t'][:5]) == 4, 'with too few sources the first five do not fill from the newest')
+          need(any(x['h'] == 'Cardinals stun Cowboys in overtime' and x['x'] == 1 for x in d['ARI']['l']), "The Athletic's league feed does not reach the Cardinals")
+          need(o['status']['fan:DET']['ok'] == 0 and o['status']['fan:DET']['err'] == 'HTTP 503', 'the failed feed is not reported')
+          print('team news:', len(T), 'Vikings team stories,', len(L), 'league; matching rules hold')
+          PY
+          # the panel and the latest line, drawn from those stored lists
+          export DBD_HARNESS_HTML=pages
+          php tools/view_harness.php data teamplayers MIN
+          for m in 'class="dbd-panel dbd-news" id="news"' '<b>Vikings news</b>' '<h3>Vikings.com, Daily Norseman and The Athletic</h3>' 'target="_blank" rel="nofollow noopener"' '<i>Subscriber</i>' '<li class="nw-more">' '>Show more</button>' 'class="nw-p"'; do
+            grep -qF "$m" pages/teamplayers-MIN.html || { echo "the Vikings news panel is missing $m"; exit 1; }
+          done
+          php tools/view_harness.php data team MIN
+          grep -qF '<p class="dbd-latest">Latest: <a href="https://example.test/vk/practice"' pages/team-MIN.html || { echo "no latest line on the offense page"; exit 1; }
+          php tools/view_harness.php data defense MIN
+          grep -qF 'class="dbd-latest"' pages/defense-MIN.html || { echo "no latest line on the defense page"; exit 1; }
+          DBD_HARNESS_NEWS=/tmp/none.json php tools/view_harness.php data teamplayers MIN
+          if grep -q 'dbd-news' pages/teamplayers-MIN.html; then echo "a news panel showed with nothing stored"; exit 1; fi
+          DBD_HARNESS_NEWS=/tmp/none.json php tools/view_harness.php data team MIN
+          if grep -q 'dbd-latest' pages/team-MIN.html; then echo "a latest line showed with nothing stored"; exit 1; fi
+          echo "team news renders"
       - name: Render share cards
         run: |
           set -e
