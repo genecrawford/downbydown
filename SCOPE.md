@@ -2132,4 +2132,19 @@ The build check validates:
 - The Leaders Kickers tab and the K fantasy board rank the same kickers as the pages.
 - Checked at 1440 and 375, with no horizontal scroll.
 
-Size: L. Status: scoped and mocked 2026-11-03, awaiting Gene's sign-off and the three decisions. It ships as 2.8.0 with the queued fixes: app pages centered under the header, and the News page's card images served whole instead of Divi's 400×250 crop.
+Size: L. Status: scoped and mocked 2026-11-03; signed off with the three recommended decisions the same day ("Yes, build it"); built as 2.8.0 (PR #70), together with the queued fixes: app pages centered under the header, and the News page's card images served whole instead of Divi's 400×250 crop.
+
+Build notes:
+- **Qualifier:** a try for every game his team has played gives 31 kickers through Week 8, the same 31 the mock's 8-try rule gave.
+- **Careers:** `data/career/k{year}.json` for 1999–2025 were prebuilt with `tools/kick_career.py` (standard library only) and committed, so neither the nightly build nor CI downloads 27 seasons. The build imports the same function for any missing year.
+- **Safe before the upload:** every data change is additive. `players/kickers.json` sits outside 2.7.0's sync allowlist. The new keys (`kk` in box scores, `b` in week swings, `roof` in the schedule) are ignored by 2.7.0, and K rows in the index and fantasy file show there as zero rows at worst.
+- **Share card:** the kicker card uses the player card's layout (four tiles and percentile bars) rather than a small kick chart. The layout already fits, and it keeps cards consistent.
+- **Compare:** a kicker compare is all PHP. The empty slot offers the three closest kickers (by distance asked and tries) instead of the search box, whose script expects skill-player files.
+- **Review (Greptile, PR #70, 3/5 then 5/5):**
+  - The page container uses `dbd-kk` (`dbd-kicker` is the label class above every title).
+  - A game he only kicked off in is still a game, as a zero-point week.
+  - The router accepts `pos=K`, and the Players index sorts kicker rows by the values shown.
+  - Percentiles compare at the pool's four decimal places.
+  - Four or more close kicks fan out instead of stacking.
+  - The phone chart grows to fit any 68+ yard try.
+- **Archived 2025:** it has no kicker file, so last season has no kicker pages until that season is rebuilt with the archive workflow.

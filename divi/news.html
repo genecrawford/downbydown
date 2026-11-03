@@ -1,0 +1,69 @@
+<style>
+/* Down x Down: the News page (/news/). Paste this whole file into one Divi Code module, above the Blog module, in the same
+   column. The heading is yours to edit here; the CSS restyles the Divi Blog module under it (grid layout, with featured
+   image, date, categories, excerpt and read more turned on). The newest post runs across the full width; the rest sit
+   three to a row. */
+.et_pb_row:has(.dxd-news){width:100%!important;max-width:1240px!important;padding-left:clamp(16px,4vw,48px)!important;padding-right:clamp(16px,4vw,48px)!important}  /* the header's 1240px column, with its side padding */
+.et_pb_column:has(.dxd-news){padding:0!important}
+.et_pb_module:has(.dxd-news){align-items:stretch!important}
+.et_pb_code_inner:has(.dxd-news){width:100%!important;max-width:none!important}
+.et_pb_section:has(.dxd-news){background:#f4f1ea!important}
+.dxd-news{color:#121417;font-family:"IBM Plex Sans",system-ui,sans-serif;-webkit-font-smoothing:auto;-moz-osx-font-smoothing:auto}  /* Divi's antialiased smoothing hollows Tourney */
+.dxd-news *{box-sizing:border-box}
+.dxd-news p:empty{display:none}
+.dxd-news .dxd-wrap{padding:clamp(36px,5vw,64px) 0 26px}
+/* the sideline down marker */
+.dxd-news .dxd-dm{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.dxd-news .dxd-dm .b{display:flex;align-items:flex-start;justify-content:center;width:48px;height:48px;padding-top:4px;border-radius:7px;background:#cb2026;color:#fff}
+.dxd-news .dxd-dm .b b{font:800 32px/1 "Tourney",sans-serif}
+.dxd-news .dxd-dm .b sup{margin-top:2px;font:700 13px "Barlow Condensed",sans-serif;text-transform:uppercase;vertical-align:baseline;top:0}
+.dxd-news .dxd-dm .t b{display:block;font:700 26px/1 "Barlow Condensed",sans-serif;letter-spacing:.04em;text-transform:uppercase}
+.dxd-news .dxd-dm .t small{display:block;margin-top:3px;font:600 11px "IBM Plex Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:#5d616a}
+.dxd-news h1{margin:0;padding:0;color:#121417;font:800 clamp(40px,5.4vw,72px)/.98 "Tourney",sans-serif;text-transform:uppercase}
+.dxd-news .dxd-lede{margin:14px 0 0;padding:0;max-width:40em;color:#3b4255;font-size:clamp(16px,1.4vw,18px);line-height:1.55}
+
+/* the Blog module */
+.et_pb_blog.et_pb_blog{--ink:#121417;--ink2:#3b4255;--muted:#5d616a;--line:rgba(22,30,54,.14);--red:#cb2026;padding-bottom:clamp(40px,6vw,72px)}
+.et_pb_blog .et_pb_blog_posts.et_grid_module{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:18px!important}
+.et_pb_blog.et_pb_blog article.et_pb_post{display:flex;flex-direction:column;margin:0!important;padding:0!important;background:#fffdf8!important;border:1px solid var(--line)!important;border-radius:6px!important;box-shadow:none!important;overflow:hidden;transition:border-color .15s}
+.et_pb_blog.et_pb_blog article.et_pb_post:hover{border-color:rgba(22,30,54,.34)!important}
+.et_pb_blog .et_pb_image_container{margin:0!important;border-bottom:1px solid var(--line)}
+.et_pb_blog .et_pb_image_container a{display:block;line-height:0}
+.et_pb_blog .et_pb_image_container img{display:block;width:100%;height:auto;aspect-ratio:1200/630;object-fit:cover;border-radius:0!important}
+.et_pb_blog .et_pb_image_container .et_overlay{display:none!important}  /* Divi's hover icon */
+.et_pb_blog.et_pb_blog .entry-title{order:2;margin:0!important;padding:0 20px!important;color:var(--ink)!important;font:700 23px/1.12 "Barlow Condensed","Arial Narrow",sans-serif!important;letter-spacing:.01em}
+.et_pb_blog.et_pb_blog .entry-title a{color:var(--ink)!important;text-decoration:none}
+.et_pb_blog.et_pb_blog article:hover .entry-title a{color:var(--red)!important}
+.et_pb_blog.et_pb_blog .post-meta{order:1;margin:0!important;padding:16px 20px 7px!important;color:var(--muted)!important;font:600 11px/1.3 "IBM Plex Mono",monospace!important;letter-spacing:.08em;text-transform:uppercase}
+.et_pb_blog.et_pb_blog .post-meta a{color:var(--red)!important;text-decoration:none}
+.et_pb_blog.et_pb_blog .post-meta a:hover{text-decoration:underline}
+.et_pb_blog.et_pb_blog .post-content{order:3;display:flex;flex-direction:column;flex:1;padding:10px 20px 18px!important}
+.et_pb_blog.et_pb_blog .post-content-inner{flex:1}
+.et_pb_blog.et_pb_blog .post-content-inner p{margin:0!important;padding:0!important;color:var(--ink2)!important;font:400 15px/1.55 "IBM Plex Sans",system-ui,sans-serif!important}
+.et_pb_blog.et_pb_blog .more-link{align-self:flex-start;margin-top:14px;color:var(--ink)!important;font:700 14px/1 "Barlow Condensed",sans-serif!important;letter-spacing:.12em;text-transform:uppercase;text-decoration:underline;text-underline-offset:4px}
+.et_pb_blog.et_pb_blog .more-link:hover{color:var(--red)!important}
+/* the newest post: across the full width, the card image on the left */
+@media (min-width:981px){
+  .et_pb_blog .et_grid_module article.et_pb_post:first-child{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);grid-template-rows:auto auto 1fr;column-gap:0}
+  .et_pb_blog .et_grid_module article.et_pb_post:first-child .et_pb_image_container{grid-column:1;grid-row:1/4;border-bottom:0;border-right:1px solid var(--line)}
+  .et_pb_blog .et_grid_module article.et_pb_post:first-child .post-meta{grid-column:2;grid-row:1;padding:clamp(22px,2.6vw,36px) clamp(22px,2.6vw,36px) 10px!important}
+  .et_pb_blog.et_pb_blog .et_grid_module article.et_pb_post:first-child .entry-title{grid-column:2;grid-row:2;padding:0 clamp(22px,2.6vw,36px)!important;font:800 clamp(26px,2.5vw,36px)/1.04 "Tourney",sans-serif!important;text-transform:uppercase;letter-spacing:0}
+  .et_pb_blog .et_grid_module article.et_pb_post:first-child .post-content{grid-column:2;grid-row:3;padding:14px clamp(22px,2.6vw,36px) clamp(22px,2.6vw,36px)!important}
+  .et_pb_blog.et_pb_blog .et_grid_module article.et_pb_post:first-child .post-content-inner p{font-size:17px!important}
+}
+/* older and newer posts */
+.et_pb_blog .pagination{display:flex;justify-content:space-between;margin-top:26px}
+.et_pb_blog .pagination:not(:has(a)){display:none}
+.et_pb_blog .pagination a{color:var(--ink)!important;font:700 14px "Barlow Condensed",sans-serif!important;letter-spacing:.12em;text-transform:uppercase;text-decoration:underline;text-underline-offset:4px}
+.et_pb_blog .pagination a:hover{color:var(--red)!important}
+@media (max-width:980px){.et_pb_blog .et_pb_blog_posts.et_grid_module{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media (max-width:640px){.et_pb_blog .et_pb_blog_posts.et_grid_module{grid-template-columns:minmax(0,1fr)!important;gap:14px!important}.et_pb_blog.et_pb_blog .entry-title{font-size:22px!important}}
+@media (prefers-reduced-motion:reduce){.et_pb_blog.et_pb_blog article.et_pb_post{transition:none}}
+</style>
+<section class="dxd-news">
+<div class="dxd-wrap">
+<span class="dxd-dm" aria-hidden="true"><span class="b"><b>1</b><sup>st</sup></span><span class="t"><b>&amp; 10</b><small>Own 25</small></span></span>
+<h1>News</h1>
+<p class="dxd-lede">Every NFL week in review, out the Tuesday morning after the games: the upsets, the swings, the best plays and players, fantasy and who is rising.</p>
+</div>
+</section>
