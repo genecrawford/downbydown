@@ -230,10 +230,7 @@ class DBD_News {
 			foreach ( $teams as $t ) { if ( self::names_team( $t, $s[0] ) ) { $ts[ $t ] = 1; } }
 			foreach ( $who as $q ) { if ( isset( $col[ $q[2] ] ) ) { $ts[ $q[2] ] = 1; } }
 			if ( ! $ts || count( $ts ) > 3 ) { continue; }
-			foreach ( array_keys( $ts ) as $t ) {
-				foreach ( $col[ $t ]['t'] as $o ) { if ( $o['u'] === $s[1] || preg_replace( '/\W+/u', '', strtolower( $o['h'] ) ) === $k ) { continue 2; } }  /* already in the team's own column, by link or headline (Greptile, PR #72) */
-				$col[ $t ]['l'][] = $item( $s, $key, $src, $who, $t );
-			}
+			foreach ( array_keys( $ts ) as $t ) { $col[ $t ]['l'][] = $item( $s, $key, $src, $who, $t ); }
 		}
 		/* a feed that failed this time keeps the stories it had */
 		foreach ( $teams as $t ) {
@@ -244,11 +241,16 @@ class DBD_News {
 		$stores = array();
 		foreach ( $teams as $t ) {
 			$stores[ $t ] = array( 'at' => $now );
-			$u = array();  /* shared by both columns: a story shows once on the panel */
-			foreach ( array( 't', 'l' ) as $c ) {
-				$list = array(); foreach ( $col[ $t ][ $c ] as $o ) { $k = preg_replace( '/\W+/u', '', strtolower( $o['h'] ) ); if ( isset( $u[ $o['u'] ] ) || isset( $u[ $k ] ) ) { continue; } $u[ $o['u'] ] = 1; $u[ $k ] = 1; $list[] = $o; }
-				$stores[ $t ][ $c ] = array_slice( self::balance( $list ), 0, self::CAP );
-			}
+			$key = function ( $o ) { return preg_replace( '/\W+/u', '', strtolower( $o['h'] ) ); };
+			$pick = function ( $items, $skip ) use ( $key ) {
+				$u = $skip; $list = array();
+				foreach ( $items as $o ) { $k = $key( $o ); if ( isset( $u[ $o['u'] ] ) || isset( $u[ $k ] ) ) { continue; } $u[ $o['u'] ] = 1; $u[ $k ] = 1; $list[] = $o; }
+				return array_slice( self::balance( $list ), 0, self::CAP );
+			};
+			$stores[ $t ]['t'] = $pick( $col[ $t ]['t'], array() );
+			/* a story shows once on the panel: a league story whose link or headline is in the team column as stored (after the cap) is left out (Greptile, PR #72) */
+			$in = array(); foreach ( $stores[ $t ]['t'] as $o ) { $in[ $o['u'] ] = 1; $in[ $key( $o ) ] = 1; }
+			$stores[ $t ]['l'] = $pick( $col[ $t ]['l'], $in );
 		}
 		return array( $stores, $status );
 	}
