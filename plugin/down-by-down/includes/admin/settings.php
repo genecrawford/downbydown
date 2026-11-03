@@ -146,7 +146,7 @@ function dbd_settings_page() {
 			<li>The app renders only the content column. Build the sidebar in your theme (Divi Theme Builder) and link its menu to the URLs above.</li>
 			<li>Body classes tell your CSS which view is showing: <code>dbd-view-hub</code>, <code>dbd-view-team</code>, <code>dbd-view-game</code>, <code>dbd-view-matchups</code>, <code>dbd-view-teams</code>, <code>dbd-view-players</code>, <code>dbd-view-player</code>, <code>dbd-view-compare</code>.</li>
 			<li><code>[dbd_count games]</code> and <code>[dbd_count teams]</code> print the small numbers for menu items.</li>
-			<li>Live blocks for a page you build in Divi: <code>[dbd_block type="hero-map"]</code> (the week's most-targeted player; <code>player="00-0036322"</code> pins one), <code>[dbd_block type="games"]</code> (this week's games), <code>[dbd_block type="counts"]</code> and <code>[dbd_block type="week-highlights"]</code> (the latest week in three cards). Each shows this week's data and updates with every sync.</li>
+			<li>Live blocks for a page you build in Divi: <code>[dbd_block type="hero-map"]</code> (the week's most-targeted player; <code>player="00-0036322"</code> pins one), <code>[dbd_block type="games"]</code> (this week's games), <code>[dbd_block type="counts"]</code>, <code>[dbd_block type="week-highlights"]</code> (the latest week in three cards) and <code>[dbd_block type="matchup"]</code> (the game of the week with its offense vs defense). Each shows this week's data and updates with every sync.</li>
 			<li>Without a page-builder theme, assign the page template "Down by Down: app page (no theme header)".</li>
 		</ul>
 

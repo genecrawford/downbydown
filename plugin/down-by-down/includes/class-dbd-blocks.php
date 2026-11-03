@@ -7,12 +7,13 @@
  *   games     this week's games as score tiles, games still to play first, the next one flagged
  *   counts    one line: snaps charted, games, players, offenses and defenses
  *   week-highlights  the latest week in review in three cards: the play of the week, the swing of the week, the upsets and the wildest game
+ *   matchup   the game of the week (picked the way the hub picks it) with its biggest edge, over a four-row offense vs defense
  * Styles: assets/blocks.css. The blocks inherit the surrounding text color for their headings and lines, so they sit on any background.
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 class DBD_Blocks {
-	const TYPES = array( 'hero-map', 'games', 'counts', 'week-highlights' );
+	const TYPES = array( 'hero-map', 'games', 'counts', 'week-highlights', 'matchup' );
 
 	public static function init() {
 		add_shortcode( 'dbd_block', array( __CLASS__, 'shortcode' ) );
@@ -207,5 +208,42 @@ class DBD_Blocks {
 			$h .= '<div class="hb-wk ups"><i>' . ( $ups ? 'Upsets' : 'No upsets' ) . '</i>' . $mk . ( $li ? '<ul>' . $li . '</ul>' : '' ) . $wl . '</div>';
 		}
 		return self::wrap( 'week-highlights', $h );
+	}
+
+	/**
+	 * The game of the week, picked the way the hub picks it (the open game with the biggest edge), over a four-row head to head of that
+	 * edge's offense against the defense. When every game of the current week is final, next week's games stand in.
+	 */
+	private static function b_matchup( $a ) {
+		if ( DBD_Data::through_week() < 1 ) { return ''; }
+		$cw = DBD_Data::current_week(); $gotw = null; $best = null;
+		foreach ( array( $cw, $cw + 1 ) as $wk ) {
+			foreach ( DBD_Data::week_games( $wk ) as $g ) {
+				if ( DBD_Router::is_final( $g ) ) { continue; }
+				$b = DBD_Takeaways::best_edge( $g['away'], $g['home'] );
+				if ( ! $best || $b['s'] > $best['s'] ) { $gotw = $g; $best = $b; }
+			}
+			if ( $gotw ) { break; }
+		}
+		if ( ! $gotw ) { return ''; }
+		$O = $best['O']; $D = $best['D']; $cards = DBD_Takeaways::cards( $O, $D ); $k = DBD_Data::kickoff( $gotw ); $d = strtotime( (string) ( $gotw['date'] ?? '' ) );
+		$kick = implode( ' · ', array_filter( array( 'Game of the week', trim( ( $d ? gmdate( 'l', $d ) . ' ' : '' ) . ( $k['et'] ?? '' ) ), (string) ( $gotw['stadium'] ?? '' ) ) ) );
+		$side = function ( $t ) { return '<span>' . DBD_Marks::tile( $t, 54 ) . '<b>' . esc_html( self::nick( $t ) ) . '</b><small>' . esc_html( DBD_Data::record_text( $t ) ) . '</small></span>'; };
+		$tot  = isset( $gotw['total'] ) && $gotw['total'] !== null && $gotw['total'] !== '' ? 'O/U ' . $gotw['total'] : '';
+		$line = array_filter( array( DBD_Router::line_text( $gotw ), $tot ) );
+		$h = '<div class="hb-gotw"><p class="k">' . esc_html( $kick ) . '</p><div class="mt">' . $side( $gotw['away'] ) . '<em>at</em>' . $side( $gotw['home'] ) . '</div>' . ( $line ? '<p class="ln">' . esc_html( implode( ' · ', $line ) ) . '</p>' : '' );
+		if ( $cards ) { $h .= '<p class="say"><i>' . esc_html( $cards[0][0] ) . '</i>' . esc_html( $cards[0][3] ) . '</p>'; }
+		$h .= '<a class="hb-link" href="' . self::u( array( 'game' => $gotw['id'], 'side' => $O === $gotw['home'] ? 'home' : 'away' ) ) . '">Open the matchup</a></div>';
+		/* each bar grows from the middle toward the side with the edge: lower rank is better on both sides, so a defense ranked
+		   above the offense pushes right, an offense ranked above the defense pushes left */
+		$rows = '';
+		foreach ( array( 'epa' => 'EPA a play', 'sr' => 'Success rate', 'expl' => 'Explosive plays', 'rz_td' => 'Red-zone TDs' ) as $mk => $lab ) {
+			list( $ov, $or ) = DBD_Metrics::off( $O, $mk ); list( $dv, $dr ) = DBD_Metrics::def( $D, $mk );
+			if ( ! $or || ! $dr ) { continue; }
+			$edge = (int) $dr - (int) $or; $w = min( 50, abs( $edge ) * 1.6 ); $c = DBD_Marks::accent( DBD_Data::team( $edge > 0 ? $O : $D ) );
+			$rows .= '<div class="hr"><span class="o">' . esc_html( DBD_Metrics::fmt( $mk, $ov ) ) . '<small>' . esc_html( DBD_Metrics::ordinal( $or ) ) . '</small></span><span class="lab">' . esc_html( $lab ) . '<span class="bar"><i class="' . ( $edge > 0 ? 'o' : 'd' ) . '" style="width:' . round( $w ) . '%;background:' . esc_attr( $c ) . '"></i></span></span><span class="d">' . esc_html( DBD_Metrics::fmt( $mk, $dv ) ) . '<small>' . esc_html( DBD_Metrics::ordinal( $dr ) ) . '</small></span></div>';
+		}
+		if ( $rows ) { $h .= '<div class="hb-h2h"><div class="hh">' . DBD_Marks::tile( $O, 26 ) . '<b>' . esc_html( self::nick( $O ) ) . ' offense</b><span>vs</span><b>' . esc_html( self::nick( $D ) ) . ' defense</b>' . DBD_Marks::tile( $D, 26 ) . '</div>' . $rows . '</div>'; }
+		return self::wrap( 'matchup', $h );
 	}
 }
