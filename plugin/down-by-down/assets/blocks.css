@@ -81,3 +81,31 @@
 .dbd-hb .hb-wk .wild b{font:600 14px "IBM Plex Sans",sans-serif;color:var(--ink)}
 .dbd-hb .hb-wk a:hover b,.dbd-hb a.hb-wk:hover h3{text-decoration:underline;text-underline-offset:3px}
 @media (max-width:900px){.dbd-hb.hb-week-highlights{grid-template-columns:minmax(0,1fr)}}
+
+/* matchup: the game of the week over its offense vs defense */
+.dbd-hb.hb-matchup{display:grid;gap:14px;color:var(--ink);-webkit-font-smoothing:auto;-moz-osx-font-smoothing:auto}
+.hb-gotw,.hb-h2h{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px}
+.dbd-hb .hb-gotw .k{font:600 11px "IBM Plex Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.hb-gotw .mt{display:flex;align-items:center;justify-content:space-around;gap:10px;padding:10px 0 12px;border-bottom:1px solid var(--line)}
+.hb-gotw .mt>span{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
+.hb-gotw .mt b{font:800 24px/1.1 "Tourney",sans-serif;text-transform:uppercase}
+.hb-gotw .mt small{font:600 12px "IBM Plex Mono",monospace;color:var(--muted)}
+.hb-gotw .mt em{font:700 14px "Barlow Condensed",sans-serif;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-style:normal}
+.dbd-hb .hb-gotw .ln{margin:10px 0;text-align:center;font:600 13px "IBM Plex Mono",monospace;color:var(--ink2)}
+.dbd-hb .hb-gotw .say{margin:0 0 14px;font-size:16px;line-height:1.5}
+.hb-gotw .say i{display:block;font:700 12px "Barlow Condensed",sans-serif;font-style:normal;letter-spacing:.16em;text-transform:uppercase;color:var(--red)}
+.dbd-hb.dbd-hb .hb-link{color:var(--ink);font:700 13px "Barlow Condensed",sans-serif;letter-spacing:.12em;text-transform:uppercase;text-decoration:underline;text-underline-offset:4px}
+.dbd-hb.dbd-hb .hb-link:hover{color:var(--red)}
+.hb-h2h{padding:14px 18px}
+.hb-h2h .hh{display:flex;align-items:center;gap:8px;margin-bottom:8px;font:700 15px "Barlow Condensed",sans-serif;letter-spacing:.06em;text-transform:uppercase}
+.hb-h2h .hh span{flex:1;text-align:center;color:var(--muted);font-size:12px;letter-spacing:.2em}
+.hb-h2h .hr{display:grid;grid-template-columns:72px minmax(0,1fr) 72px;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--line)}
+.hb-h2h .o,.hb-h2h .d{display:flex;flex-direction:column;font:600 14px/1.15 "IBM Plex Mono",monospace}
+.hb-h2h .d{text-align:right}
+.hb-h2h small{font:600 11px "IBM Plex Mono",monospace;color:var(--muted)}
+.hb-h2h .lab{text-align:center;font:500 13px "IBM Plex Sans",sans-serif;color:var(--ink2)}
+.hb-h2h .bar{display:block;position:relative;height:8px;margin-top:4px;background:#e9e3d6;border-radius:4px}
+.hb-h2h .bar::before{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:rgba(22,30,54,.25)}
+.hb-h2h .bar i{position:absolute;top:0;bottom:0;border-radius:4px}
+.hb-h2h .bar i.o{right:50%}.hb-h2h .bar i.d{left:50%}
+@media (max-width:480px){.hb-gotw{padding:16px}.hb-gotw .mt b{font-size:19px}.hb-h2h .hh b{font-size:13px}.hb-h2h .hr{grid-template-columns:58px minmax(0,1fr) 58px}}

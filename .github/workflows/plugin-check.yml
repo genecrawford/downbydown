@@ -135,7 +135,7 @@ jobs:
           chk '/hub/2025/team/min/' 'redirect 301 https://example.test/2025/team/min/'
           chk '/hub/2025/' 'redirect 301 https://example.test/2025/'
           chk '/hub/team/zzz/' 'stays (0 warnings)'
-      - name: Live blocks and the home hero (2.1.0)
+      - name: Live blocks and the home sections (2.1.0+)
         run: |
           set -e
           export DBD_HARNESS_MEDIA=1 DBD_HARNESS_HTML=blockpages
@@ -150,6 +150,11 @@ jobs:
           grep -q 'class="dbd-hb hb-week-highlights"' blockpages/page-home-week.html
           grep -q 'The play of the week' blockpages/page-home-week.html
           if grep -q 'TOUCHDOWN \[' blockpages/page-home-week.html; then echo "a tackler's bracket left in a play"; exit 1; fi
+          php tools/view_harness.php data block matchup
+          php tools/view_harness.php data page divi/home-matchup.html
+          grep -q 'class="dbd-hb hb-matchup"' blockpages/page-home-matchup.html
+          grep -q 'Open the matchup' blockpages/page-home-matchup.html
+          grep -q 'class="hb-h2h"' blockpages/page-home-matchup.html
           # with the app on /hub/ and paths at the root, the blocks link to root paths
           DBD_HARNESS_PRETTY=1 DBD_HARNESS_ROOT=1 DBD_HARNESS_HTML=blockroot php tools/view_harness.php data page divi/home-hero.html
           if grep -oE 'href="[^"]*\?(player|team|game|view)=' blockroot/page-home-hero.html; then echo "a query-string app link in the hero"; exit 1; fi

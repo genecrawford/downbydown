@@ -1,0 +1,35 @@
+<style>
+/* Down x Down home: the matchup section. Paste this whole file into one Divi Code module, in a section under "What happened this week".
+   The marker, heading, words and button are yours to edit here; the game card and the bars are the plugin's matchup block (2.3.0+). */
+.et_pb_column:has(.dxd-mu){padding:0!important}
+.et_pb_module:has(.dxd-mu){align-items:stretch!important}  /* Divi centers a module's content, which would shrink the section */
+.et_pb_text_inner:has(.dxd-mu),.et_pb_code_inner:has(.dxd-mu){width:100%!important;max-width:none!important}
+.dxd-mu{background:#f4f1ea;color:#121417;border-top:1px solid rgba(22,30,54,.22);font-family:"IBM Plex Sans",system-ui,sans-serif;-webkit-font-smoothing:auto;-moz-osx-font-smoothing:auto}  /* Divi's antialiased smoothing hollows Tourney */
+.dxd-mu *{box-sizing:border-box}
+.dxd-mu p:empty{display:none}
+.dxd-mu .dxd-wrap{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1fr);gap:clamp(28px,5vw,72px);align-items:center;max-width:1240px;margin:0 auto;padding:clamp(40px,6vw,72px) clamp(16px,4vw,48px)}
+/* the sideline down marker */
+.dxd-mu .dxd-dm{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.dxd-mu .dxd-dm .b{display:flex;align-items:flex-start;justify-content:center;width:48px;height:48px;padding-top:4px;border-radius:7px;background:#cb2026;color:#fff}
+.dxd-mu .dxd-dm .b b{font:800 32px/1 "Tourney",sans-serif}
+.dxd-mu .dxd-dm .b sup{margin-top:2px;font:700 13px "Barlow Condensed",sans-serif;text-transform:uppercase;vertical-align:baseline;top:0}
+.dxd-mu .dxd-dm .t b{display:block;font:700 26px/1 "Barlow Condensed",sans-serif;letter-spacing:.04em;text-transform:uppercase}
+.dxd-mu .dxd-dm .t small{display:block;margin-top:3px;font:600 11px "IBM Plex Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:#5d616a}
+.dxd-mu h2{margin:0;padding:0;color:#121417;font:800 clamp(30px,3.6vw,48px)/1.02 "Tourney",sans-serif;text-transform:uppercase}
+.dxd-mu h2 span{display:block}
+.dxd-mu .dxd-lede{margin:18px 0 26px;padding:0;max-width:34em;color:#3b4255;font-size:17px;line-height:1.6}
+.dxd-mu .dxd-btn{display:inline-flex;align-items:center;padding:13px 22px;border:2px solid #121417;border-radius:6px;background:transparent;color:#121417;font:700 15px "Barlow Condensed",sans-serif;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;transition:background-color .15s,color .15s}
+.dxd-mu .dxd-btn:hover{background:#121417;color:#fff}
+@media (max-width:900px){.dxd-mu .dxd-wrap{grid-template-columns:minmax(0,1fr)}}
+</style>
+<section class="dxd-mu">
+<div class="dxd-wrap">
+<div class="dxd-copy">
+<span class="dxd-dm" aria-hidden="true"><span class="b"><b>2</b><sup>nd</sup></span><span class="t"><b>&amp; 2</b><small>Own 33</small></span></span>
+<h2><span>Every matchup,</span> read for you</h2>
+<p class="dxd-lede">Every game puts one offense against the other defense, metric by metric. You get the biggest edge, the opening it can attack and what to watch, in plain sentences with the ranks behind them.</p>
+<a class="dxd-btn" href="https://downbydown.com/matchups/">This week's matchups</a>
+</div>
+<div class="dxd-card">[dbd_block type="matchup"]</div>
+</div>
+</section>
