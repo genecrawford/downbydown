@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.4.0
+Stable tag: 2.5.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,11 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.5.0 =
+* `[dbd_block type="fantasy"]`: the softest defense at each position (QB, RB, WR, TE), the most half-PPR points allowed a game, each linked to that defense.
+* `[dbd_block type="leaders"]`: season leader boards, qualified players only as on the Leaders page; `boards="wr.tshare,wr.epat,qb.epadb"` by default, `"ppr"` for the PPR points leaders, `top` 3 to 10 (default 5).
+* `[dbd_block type="teams"]`: all 32 teams by division, best record first, each linked to its page. All three for the home's fantasy, leaders and teams sections.
 
 = 2.4.0 =
 * `[dbd_block type="player-card"]`: a player's share card linked to his page, the week's biggest riser in target share by default (`player="id"` pins one).

@@ -161,6 +161,17 @@ jobs:
           php tools/view_harness.php data page divi/home-players.html
           grep -q 'class="dbd-hb hb-movers"' blockpages/page-home-players.html
           grep -q 'Rising in ' blockpages/page-home-players.html  # Week N, or a playoff round
+          php tools/view_harness.php data block fantasy
+          php tools/view_harness.php data block leaders
+          php tools/view_harness.php data block leaders 'boards=ppr'
+          php tools/view_harness.php data block teams
+          php tools/view_harness.php data page divi/home-fantasy.html
+          php tools/view_harness.php data page divi/home-leaders.html
+          php tools/view_harness.php data page divi/home-teams.html
+          [ "$(grep -o 'class="hb-soft"' blockpages/page-home-fantasy.html | wc -l)" -eq 4 ] || { echo "the fantasy block needs a defense at all four positions"; exit 1; }
+          grep -q '<h3>PPR points</h3>' blockpages/page-home-fantasy.html
+          [ "$(grep -o 'class="hb-board"' blockpages/page-home-leaders.html | wc -l)" -eq 3 ] || { echo "the leaders section needs its three boards"; exit 1; }
+          [ "$(grep -o 'class="hb-div"' blockpages/page-home-teams.html | wc -l)" -eq 8 ] || { echo "the teams block needs all eight divisions"; exit 1; }
           # with the app on /hub/ and paths at the root, the blocks link to root paths
           DBD_HARNESS_PRETTY=1 DBD_HARNESS_ROOT=1 DBD_HARNESS_HTML=blockroot php tools/view_harness.php data page divi/home-hero.html
           if grep -oE 'href="[^"]*\?(player|team|game|view)=' blockroot/page-home-hero.html; then echo "a query-string app link in the hero"; exit 1; fi
