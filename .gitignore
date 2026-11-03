@@ -10,3 +10,4 @@ Thumbs.db
 scratch/
 __pycache__/
 *.pyc
+mockup-v23/news.json
