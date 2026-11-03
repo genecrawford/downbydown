@@ -1,0 +1,47 @@
+<style>
+/* Down x Down home: Questions. Paste this whole file into one Divi Code module, in a section under the newsletter section.
+   All of it is yours to edit here, no plugin block. When you change a question or answer, change it in the script at the bottom too:
+   that copy is what Google reads for its FAQ results. */
+.et_pb_column:has(.dxd-fq){padding:0!important}
+.et_pb_module:has(.dxd-fq){align-items:stretch!important}  /* Divi centers a module's content, which would shrink the section */
+.et_pb_text_inner:has(.dxd-fq),.et_pb_code_inner:has(.dxd-fq){width:100%!important;max-width:none!important}
+.dxd-fq{background:#f4f1ea;color:#121417;border-top:1px solid rgba(22,30,54,.22);font-family:"IBM Plex Sans",system-ui,sans-serif;-webkit-font-smoothing:auto;-moz-osx-font-smoothing:auto}  /* Divi's antialiased smoothing hollows Tourney */
+.dxd-fq *{box-sizing:border-box}
+.dxd-fq p:empty{display:none}
+.dxd-fq .dxd-wrap{max-width:1240px;margin:0 auto;padding:clamp(40px,6vw,72px) clamp(16px,4vw,48px)}
+/* the sideline down marker */
+.dxd-fq .dxd-dm{display:flex;flex-basis:100%;align-items:center;gap:10px;margin-bottom:4px}
+.dxd-fq .dxd-dm .b{display:flex;align-items:flex-start;justify-content:center;width:48px;height:48px;padding-top:4px;border-radius:7px;background:#cb2026;color:#fff}
+.dxd-fq .dxd-dm .b b{font:800 32px/1 "Tourney",sans-serif}
+.dxd-fq .dxd-dm .b sup{margin-top:2px;font:700 13px "Barlow Condensed",sans-serif;text-transform:uppercase;vertical-align:baseline;top:0}
+.dxd-fq .dxd-dm .t b{display:block;font:700 26px/1 "Barlow Condensed",sans-serif;letter-spacing:.04em;text-transform:uppercase}
+.dxd-fq .dxd-dm .t small{display:block;margin-top:3px;font:600 11px "IBM Plex Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:#5d616a}
+.dxd-fq h2{margin:0;padding:0;color:#121417;font:800 clamp(30px,3.6vw,48px)/1.02 "Tourney",sans-serif;text-transform:uppercase}
+.dxd-fq .dxd-sec-h{margin-bottom:18px}
+.dxd-fq .dxd-qa{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 40px;align-items:start}
+.dxd-fq details{padding:16px 0;border-bottom:1px solid rgba(22,30,54,.22)}
+.dxd-fq summary{display:flex;justify-content:space-between;gap:12px;cursor:pointer;list-style:none;color:#121417;font:700 20px/1.25 "Barlow Condensed",sans-serif;letter-spacing:.04em}
+.dxd-fq summary::-webkit-details-marker{display:none}
+.dxd-fq summary::after{content:"+";flex:none;font:800 20px/1.1 "Tourney",sans-serif;color:#cb2026}
+.dxd-fq details[open] summary::after{content:"\2013"}
+.dxd-fq summary:focus-visible{outline:2px solid #121417;outline-offset:4px;border-radius:2px}
+.dxd-fq details p{margin:10px 0 0;padding:0;color:#3b4255;font-size:16px;line-height:1.6}
+@media (max-width:800px){.dxd-fq .dxd-qa{grid-template-columns:minmax(0,1fr)}}
+</style>
+<section class="dxd-fq">
+<div class="dxd-wrap">
+<div class="dxd-sec-h">
+<span class="dxd-dm" aria-hidden="true"><span class="b"><b>1</b><sup>st</sup></span><span class="t"><b>&amp; Goal</b><small>Opp 6</small></span></span>
+<h2>Questions</h2>
+</div>
+<div class="dxd-qa">
+<details open><summary>What is EPA?</summary><p>Expected points added: how much a play changed a team's expected score, given the down, distance and field position. A 6-yard gain on 3rd and 5 is worth more than on 3rd and 15. It is the fairest single number for comparing plays.</p></details>
+<details open><summary>Where does the data come from?</summary><p>Public play-by-play from nflverse, the open NFL data project, plus their weekly player stats, snap counts and injury reports. Nothing is scraped from paid services.</p></details>
+<details><summary>How often does it update?</summary><p>Three times a day during the season. Most games are charted within hours of the final whistle; player stat lines follow when nflverse posts them.</p></details>
+<details><summary>Is it free?</summary><p>Yes. No account, no paywall, no ads.</p></details>
+<details><summary>Do you make picks?</summary><p>No. Down by Down shows how teams and players actually play and how matchups line up. What you do with that is up to you.</p></details>
+<details><summary>Can I see past seasons?</summary><p>Yes. Every finished season is kept as it ended: its teams, players, games and the playoffs.</p></details>
+</div>
+</div>
+</section>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is EPA?", "acceptedAnswer": {"@type": "Answer", "text": "Expected points added: how much a play changed a team's expected score, given the down, distance and field position. A 6-yard gain on 3rd and 5 is worth more than on 3rd and 15. It is the fairest single number for comparing plays."}}, {"@type": "Question", "name": "Where does the data come from?", "acceptedAnswer": {"@type": "Answer", "text": "Public play-by-play from nflverse, the open NFL data project, plus their weekly player stats, snap counts and injury reports. Nothing is scraped from paid services."}}, {"@type": "Question", "name": "How often does it update?", "acceptedAnswer": {"@type": "Answer", "text": "Three times a day during the season. Most games are charted within hours of the final whistle; player stat lines follow when nflverse posts them."}}, {"@type": "Question", "name": "Is it free?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. No account, no paywall, no ads."}}, {"@type": "Question", "name": "Do you make picks?", "acceptedAnswer": {"@type": "Answer", "text": "No. Down by Down shows how teams and players actually play and how matchups line up. What you do with that is up to you."}}, {"@type": "Question", "name": "Can I see past seasons?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Every finished season is kept as it ended: its teams, players, games and the playoffs."}}]}</script>

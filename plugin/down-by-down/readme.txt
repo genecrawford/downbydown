@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.5.0
+Stable tag: 2.6.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,10 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.6.0 =
+* `[dbd_block type="newsletter-preview"]`: the latest finished week as the Tuesday email (subject, headline, the swing, the play, the risers, a button to the week in review), for the home's newsletter section.
+* Every block keeps something to show across a season's edges: the matchup block shows the last final game with its score once no game is left to play (the Super Bowl until the next opener); the leader boards step down to the Leaders page's lower minimums when too few players qualify early in a season; the player card and the risers fall back to the week's most-targeted players in a new season's first week, and never show last season's risers; the games line reads "final" on a one-game week.
 
 = 2.5.0 =
 * `[dbd_block type="fantasy"]`: the softest defense at each position (QB, RB, WR, TE), the most half-PPR points allowed a game, each linked to that defense.

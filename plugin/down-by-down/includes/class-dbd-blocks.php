@@ -13,12 +13,13 @@
  *   fantasy   the softest defense at each position (QB, RB, WR, TE): the most half-PPR points allowed a game
  *   leaders   season leader boards (boards="wr.tshare,wr.epat,qb.epadb" by default; "ppr" is the PPR points board; top="5", 3 to 10)
  *   teams     all 32 teams by division, best record first, each linked to its page
+ *   newsletter-preview  the latest finished week as the Tuesday email: subject, headline, the swing, the play, the risers
  * Styles: assets/blocks.css. The blocks inherit the surrounding text color for their headings and lines, so they sit on any background.
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 class DBD_Blocks {
-	const TYPES = array( 'hero-map', 'games', 'counts', 'week-highlights', 'matchup', 'player-card', 'movers', 'fantasy', 'leaders', 'teams' );
+	const TYPES = array( 'hero-map', 'games', 'counts', 'week-highlights', 'matchup', 'player-card', 'movers', 'fantasy', 'leaders', 'teams', 'newsletter-preview' );
 
 	public static function init() {
 		add_shortcode( 'dbd_block', array( __CLASS__, 'shortcode' ) );
@@ -105,19 +106,21 @@ class DBD_Blocks {
 	 * [id, team, week row] of the player with the most targets in week $wk (yards break a tie). A traded player sits only in his new
 	 * team's file but keeps each earlier week under the team he played for, so the week's own team is the one that counts (Greptile, PR #60).
 	 */
-	private static function most_targeted( $wk ) {
-		$best = null; $bk = array( -1, -1 );
+	/** The week's most-targeted players, most first (targets, then yards): [id, the team he played for, his week line] each. */
+	private static function top_targeted( $wk, $n = 1 ) {
+		$all = array();
 		foreach ( array_keys( DBD_Data::teams() ) as $t ) {
 			foreach ( DBD_Data::team_players( $t ) as $p ) {
 				foreach ( (array) ( $p['weeks'] ?? array() ) as $w ) {
-					if ( (int) $w['week'] !== (int) $wk ) { continue; }
-					$k = array( (int) ( $w['targets'] ?? 0 ), (int) ( $w['receiving_yards'] ?? 0 ) );
-					if ( $k > $bk ) { $bk = $k; $best = array( $p['id'], (string) ( $w['team'] ?? $t ), $w ); }
+					if ( (int) $w['week'] !== (int) $wk || (int) ( $w['targets'] ?? 0 ) < 1 ) { continue; }
+					$all[] = array( array( (int) $w['targets'], (int) ( $w['receiving_yards'] ?? 0 ) ), array( $p['id'], (string) ( $w['team'] ?? $t ), $w ) );
 				}
 			}
 		}
-		return $best && $bk[0] > 0 ? $best : null;
+		usort( $all, function ( $x, $y ) { return $y[0] <=> $x[0]; } );
+		return array_map( function ( $r ) { return $r[1]; }, array_slice( $all, 0, max( 1, (int) $n ) ) );
 	}
+	private static function most_targeted( $wk ) { return self::top_targeted( $wk, 1 )[0] ?? null; }
 
 	/** A named player's line in week $wk, or his latest week before it. */
 	private static function week_line( $pid, $wk ) {
@@ -167,7 +170,7 @@ class DBD_Blocks {
 			$tiles .= '<a class="hb-gm' . ( $f ? '' : ' up' ) . '" href="' . self::u( array( 'game' => $g['id'] ) ) . '">' . ( ! $f && $i === 0 ? '<i class="nx">Next</i>' : '' ) . $row( $g['away'], $g['away_score'] ?? null ) . $row( $g['home'], $g['home_score'] ?? null ) . '<span class="st">' . esc_html( $st ) . '</span></a>';
 		}
 		$nf = count( $done ); $no = count( $open );
-		$sum = $nf && $no ? $nf . ' final · ' . $no . ' to play' : ( $nf ? 'all ' . $nf . ' final' : count( $games ) . ' games' );
+		$sum = $nf && $no ? $nf . ' final · ' . $no . ' to play' : ( $nf ? ( $nf === 1 ? 'final' : 'all ' . $nf . ' final' ) : ( $no === 1 ? '1 game' : $no . ' games' ) );
 		return self::wrap( 'games', '<div class="hb-games-h"><b>' . esc_html( DBD_Router::week_label( $wk ) ) . '</b><span>' . esc_html( $sum ) . '</span><a href="' . self::u( array( 'view' => 'matchups' ) ) . '">Every matchup</a></div><div class="hb-games-g">' . $tiles . '</div>' );
 	}
 
@@ -230,15 +233,30 @@ class DBD_Blocks {
 			}
 			if ( $gotw ) { break; }
 		}
+		/* no game left to play (the Super Bowl is over, the new season hasn't started): the last week's final game stands in, with its score */
+		$done = false;
+		if ( ! $gotw ) {
+			$lw = DBD_Week::default_week();
+			foreach ( DBD_Data::week_games( $lw ) as $g ) {
+				if ( ! DBD_Router::is_final( $g ) ) { continue; }
+				$b = DBD_Takeaways::best_edge( $g['away'], $g['home'] );
+				if ( ! $best || $b['s'] > $best['s'] ) { $gotw = $g; $best = $b; }
+			}
+			$done = (bool) $gotw;
+		}
 		if ( ! $gotw ) { return ''; }
 		$O = $best['O']; $D = $best['D']; $cards = DBD_Takeaways::cards( $O, $D ); $k = DBD_Data::kickoff( $gotw ); $d = strtotime( (string) ( $gotw['date'] ?? '' ) );
-		$kick = implode( ' · ', array_filter( array( 'Game of the week', trim( ( $d ? gmdate( 'l', $d ) . ' ' : '' ) . ( $k['et'] ?? '' ) ), (string) ( $gotw['stadium'] ?? '' ) ) ) );
+		$kick = $done
+			? implode( ' · ', array_filter( array( DBD_Router::week_label( (int) ( $gotw['week'] ?? DBD_Week::default_week() ) ), 'Final', (string) ( $gotw['stadium'] ?? '' ) ) ) )
+			: implode( ' · ', array_filter( array( 'Game of the week', trim( ( $d ? gmdate( 'l', $d ) . ' ' : '' ) . ( $k['et'] ?? '' ) ), (string) ( $gotw['stadium'] ?? '' ) ) ) );
 		$side = function ( $t ) { return '<span>' . DBD_Marks::tile( $t, 54 ) . '<b>' . esc_html( self::nick( $t ) ) . '</b><small>' . esc_html( DBD_Data::record_text( $t ) ) . '</small></span>'; };
 		$tot  = isset( $gotw['total'] ) && $gotw['total'] !== null && $gotw['total'] !== '' ? 'O/U ' . $gotw['total'] : '';
-		$line = array_filter( array( DBD_Router::line_text( $gotw ), $tot ) );
+		$line = $done
+			? array( self::nick( $gotw['away'] ) . ' ' . (int) ( $gotw['away_score'] ?? 0 ) . ', ' . self::nick( $gotw['home'] ) . ' ' . (int) ( $gotw['home_score'] ?? 0 ) )
+			: array_filter( array( DBD_Router::line_text( $gotw ), $tot ) );
 		$h = '<div class="hb-gotw"><p class="k">' . esc_html( $kick ) . '</p><div class="mt">' . $side( $gotw['away'] ) . '<em>at</em>' . $side( $gotw['home'] ) . '</div>' . ( $line ? '<p class="ln">' . esc_html( implode( ' · ', $line ) ) . '</p>' : '' );
 		if ( $cards ) { $h .= '<p class="say"><i>' . esc_html( $cards[0][0] ) . '</i>' . esc_html( $cards[0][3] ) . '</p>'; }
-		$h .= '<a class="hb-link" href="' . self::u( array( 'game' => $gotw['id'], 'side' => $O === $gotw['home'] ? 'home' : 'away' ) ) . '">Open the matchup</a></div>';
+		$h .= '<a class="hb-link" href="' . self::u( array( 'game' => $gotw['id'], 'side' => $O === $gotw['home'] ? 'home' : 'away' ) ) . '">' . ( $done ? 'Open the game' : 'Open the matchup' ) . '</a></div>';
 		/* each bar grows from the middle toward the side with the edge: lower rank is better on both sides, so a defense ranked
 		   above the offense pushes right, an offense ranked above the defense pushes left */
 		$rows = '';
@@ -258,8 +276,20 @@ class DBD_Blocks {
 	/** The risers in target share from the Players page's movers file (the latest week with every game final), and that week. */
 	private static function movers() {
 		$mv = DBD_Data::get( 'players/movers.json' );
+		if ( (int) ( $mv['season'] ?? 0 ) !== DBD_Data::season() ) { return array( array(), 0 ); }  /* a new season's first week has none yet; last season's don't count */
 		$up = array_values( array_filter( (array) ( $mv['targets']['up'] ?? array() ), function ( $m ) { return ! empty( $m['id'] ) && DBD_Data::player( (string) $m['id'] ); } ) );
 		return array( $up, (int) ( $mv['week'] ?? 0 ) );
+	}
+
+	/** A new season's first week, before anyone has a week to rise from: the week's most-targeted players instead. */
+	private static function most_targets_list( $cnt ) {
+		$wk = DBD_Week::default_week(); if ( ! $wk ) { return ''; }
+		$li = '';
+		foreach ( self::top_targeted( $wk, $cnt ) as $r ) {
+			list( $pid, $team, $w ) = $r; $p = DBD_Data::player( $pid ); if ( ! $p ) { continue; }
+			$li .= '<li>' . DBD_Marks::player( $team, $p['num'] ?? null, 40, $p['photo'] ?? null ) . '<span><b><a href="' . self::u( array( 'player' => $pid ) ) . '">' . esc_html( $p['name'] ) . '</a></b><small>' . esc_html( ( $p['pos'] ?? '' ) . ' · ' . self::nick( $team ) ) . '</small></span><em><strong>' . (int) $w['targets'] . '</strong> targets</em></li>';
+		}
+		return $li === '' ? '' : self::wrap( 'movers', '<div class="hb-panel"><p class="k">' . esc_html( 'Most targets in ' . self::week_name( $wk ) ) . '</p><ul class="hb-list">' . $li . '</ul></div>' );
 	}
 
 	/** A player's share card (default: the week's biggest riser in target share), linked to his page. No card drawing on the host: no block. */
@@ -267,13 +297,15 @@ class DBD_Blocks {
 		if ( ! DBD_Card::available() ) { return ''; }
 		$pid = (string) ( $a['player'] ?? '' );
 		if ( $pid === '' ) { $pid = (string) ( self::movers()[0][0]['id'] ?? '' ); }
+		if ( $pid === '' ) { $hit = self::most_targeted( DBD_Week::default_week() ); $pid = $hit ? (string) $hit[0] : ''; }  /* no risers yet: the week's most-targeted player */
 		$p = $pid !== '' ? DBD_Data::player( $pid ) : null; if ( ! $p ) { return ''; }
 		return self::wrap( 'player-card', '<a href="' . self::u( array( 'player' => $pid ) ) . '"><img src="' . esc_url( DBD_Card::url( $pid ) ) . '" alt="' . esc_attr( $p['name'] . "'s share card" ) . '" width="1200" height="630" loading="lazy" decoding="async"></a>' );
 	}
 
 	/** The biggest jumps in target share in the latest finished week: his share before that week, and that week's. The data keeps five. */
 	private static function b_movers( $a ) {
-		list( $up, $wk ) = self::movers(); $up = array_slice( $up, 0, max( 1, min( 5, (int) ( $a['count'] ?? 4 ) ) ) ); if ( ! $up ) { return ''; }
+		$cnt = max( 1, min( 5, (int) ( $a['count'] ?? 4 ) ) ); list( $up, $wk ) = self::movers(); $up = array_slice( $up, 0, $cnt );
+		if ( ! $up ) { return self::most_targets_list( $cnt ); }
 		$li = '';
 		foreach ( $up as $m ) {
 			$li .= '<li>' . DBD_Marks::player( $m['team'], $m['num'] ?? null, 40, $m['photo'] ?? null ) . '<span><b><a href="' . self::u( array( 'player' => $m['id'] ) ) . '">' . esc_html( $m['name'] ) . '</a></b><small>' . esc_html( ( $m['pos'] ?? '' ) . ' · ' . self::nick( $m['team'] ) ) . '</small></span><em>' . round( (float) $m['before'] ) . '% <i aria-hidden="true">→</i><span class="screen-reader-text"> to </span> <strong>' . round( (float) $m['now'] ) . '%</strong></em></li>';
@@ -309,7 +341,11 @@ class DBD_Blocks {
 			} else {
 				$pp = explode( '.', $key ); if ( count( $pp ) !== 2 ) { continue; }
 				$g = DBD_Leaders::data_group( $pp[0] ); $df = DBD_Leaders::def( $g, 'g', $pp[1] ); if ( ! $df ) { continue; }
-				$rows = DBD_Leaders::rows( $g, 'g', $pp[1], null, DBD_Leaders::pos_of( $pp[0] ) ); $title = $df[0]; $sub = DBD_Leaders::sub( $df ) ?: DBD_Leaders::pool( $pp[0] );
+				/* the qualified pool first; early in a season, when too few qualify, the Leaders page's lower steps */
+				$st = DBD_Leaders::steps( $g );
+				foreach ( $st as $min ) { $rows = DBD_Leaders::rows( $g, 'g', $pp[1], $min, DBD_Leaders::pos_of( $pp[0] ) ); if ( count( $rows ) >= $top ) { break; } }
+				$title = $df[0]; $sub = DBD_Leaders::sub( $df ) ?: DBD_Leaders::pool( $pp[0] );
+				if ( $min < $st[0] ) { $sub .= ( $sub !== '' ? ', ' : '' ) . 'at least ' . $min . ' ' . DBD_Leaders::unit( $g ); }  /* a lower minimum says so, as the Leaders page does (Greptile, PR #65) */
 				$val = function ( $r ) use ( $df ) { return DBD_Leaders::fmt( 'g', $df[2], $r[1] ); };
 			}
 			$li = ''; $n = 0;
@@ -339,5 +375,42 @@ class DBD_Blocks {
 			}
 		}
 		return self::wrap( 'teams', $h );
+	}
+
+	/**
+	 * The latest finished week as the Tuesday email: a subject (the biggest upset, else the wildest game), a headline count of upsets,
+	 * comebacks and overtimes, the swing, the play and the risers, and a button to the week in review. No finished week yet: no block.
+	 */
+	private static function b_newsletter_preview( $a ) {
+		$n = 0; $W = null;
+		foreach ( array_reverse( DBD_Week::weeks() ) as $w ) { $f = DBD_Week::file( $w ); if ( $f && ! empty( $f['complete'] ) ) { $n = $w; $W = $f; break; } }
+		if ( ! $W ) { return ''; }
+		$lab = DBD_Router::week_label( $n );
+		$fin = array_values( array_filter( (array) $W['games'], function ( $g ) { return ( $g['status'] ?? '' ) === 'final'; } ) );
+		$nu = 0; $nc = 0; $no = 0; $up = null;
+		/* upsets, comebacks and overtimes come from each game's win probability, which can trail the score: count them only when every game has it (Greptile, PR #65) */
+		$known = $fin && count( array_filter( $fin, function ( $g ) { return isset( $g['pre'], $g['tags'] ); } ) ) === count( $fin );  /* pre, not pre_w: a tie has no winner's chance */
+		foreach ( $fin as $g ) {
+			$tg = self::tags( $g );
+			if ( isset( $tg['comeback'] ) ) { $nc++; }
+			if ( ! empty( $g['ot'] ) ) { $no++; }
+			if ( ! empty( $g['win'] ) && isset( $tg['upset'] ) ) { $nu++; if ( ! $up || $g['pre_w'] < $up['pre_w'] ) { $up = $g; } }
+		}
+		if ( $up ) { list( $w, $l ) = self::wl( $up ); $subject = $lab . ': ' . self::nick( $w ) . ' stun ' . self::nick( $l ) . ' from ' . self::pct( $up['pre_w'] ) . '%'; }
+		else {
+			$wd = $fin; usort( $wd, function ( $x, $y ) { return array( $y['lc'] ?? 0, $y['drama'] ?? 0 ) <=> array( $x['lc'] ?? 0, $x['drama'] ?? 0 ); } );
+			$subject = $wd && ! empty( $wd[0]['win'] ) ? $lab . ': ' . self::nick( $wd[0]['win'] ) . ' win the wildest game' : $lab . ' in review';
+		}
+		$pl = function ( $k, $one, $many ) { return $k . ' ' . ( $k === 1 ? $one : $many ); };
+		$head = $known ? $pl( $nu, 'upset', 'upsets' ) . ', ' . $pl( $nc, 'comeback', 'comebacks' ) . ', ' . $pl( $no, 'overtime', 'overtimes' ) : $pl( count( $fin ), 'game', 'games' ) . ', all final';
+		if ( ! $known && ! $up ) { $subject = $lab . ' in review'; }
+		$ps = '';
+		$sw = $W['swings'][0] ?? null;
+		if ( $sw ) { $ps .= '<p><b>The swing:</b> ' . esc_html( self::clean( $sw['d'] ) . ' (' . self::nick( $sw['t'] ) . ', ' . $sw['c'] . ', +' . round( (float) $sw['v'] ) . '%)' ) . '</p>'; }
+		$tp = $W['plays'][0] ?? null;
+		if ( $tp ) { $ps .= '<p><b>The play:</b> ' . esc_html( self::clean( $tp['d'] ) . ' (' . ( $tp['e'] >= 0 ? '+' : '−' ) . number_format( abs( (float) $tp['e'] ), 2 ) . ' EPA)' ) . '</p>'; }
+		$ri = array_slice( (array) ( $W['movers']['targets']['up'] ?? array() ), 0, 3 );
+		if ( $ri ) { $ps .= '<p><b>Rising:</b> ' . esc_html( implode( ', ', array_map( function ( $m ) { return $m['name']; }, $ri ) ) . ( count( $ri ) === 1 ? ' saw his' : ' saw their' ) . ' target share jump' ) . '</p>'; }
+		return self::wrap( 'newsletter-preview', '<div class="hb-mail"><div class="mh"><span>From: Down by Down</span><span>Subject: <b>' . esc_html( $subject ) . '</b></span></div><div class="mb"><p class="mk">' . esc_html( $lab ) . ' in review</p><h4>' . esc_html( $head ) . '</h4>' . $ps . '<a class="mbtn" href="' . self::u( array( 'view' => 'week', 'week' => (int) $n ) ) . '">Read the full week</a></div></div>' );
 	}
 }
