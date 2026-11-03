@@ -342,8 +342,10 @@ class DBD_Blocks {
 				$pp = explode( '.', $key ); if ( count( $pp ) !== 2 ) { continue; }
 				$g = DBD_Leaders::data_group( $pp[0] ); $df = DBD_Leaders::def( $g, 'g', $pp[1] ); if ( ! $df ) { continue; }
 				/* the qualified pool first; early in a season, when too few qualify, the Leaders page's lower steps */
-				foreach ( DBD_Leaders::steps( $g ) as $min ) { $rows = DBD_Leaders::rows( $g, 'g', $pp[1], $min, DBD_Leaders::pos_of( $pp[0] ) ); if ( count( $rows ) >= $top ) { break; } }
+				$st = DBD_Leaders::steps( $g );
+				foreach ( $st as $min ) { $rows = DBD_Leaders::rows( $g, 'g', $pp[1], $min, DBD_Leaders::pos_of( $pp[0] ) ); if ( count( $rows ) >= $top ) { break; } }
 				$title = $df[0]; $sub = DBD_Leaders::sub( $df ) ?: DBD_Leaders::pool( $pp[0] );
+				if ( $min < $st[0] ) { $sub .= ( $sub !== '' ? ', ' : '' ) . 'at least ' . $min . ' ' . DBD_Leaders::unit( $g ); }  /* a lower minimum says so, as the Leaders page does (Greptile, PR #65) */
 				$val = function ( $r ) use ( $df ) { return DBD_Leaders::fmt( 'g', $df[2], $r[1] ); };
 			}
 			$li = ''; $n = 0;
@@ -386,6 +388,8 @@ class DBD_Blocks {
 		$lab = DBD_Router::week_label( $n );
 		$fin = array_values( array_filter( (array) $W['games'], function ( $g ) { return ( $g['status'] ?? '' ) === 'final'; } ) );
 		$nu = 0; $nc = 0; $no = 0; $up = null;
+		/* upsets, comebacks and overtimes come from each game's win probability, which can trail the score: count them only when every game has it (Greptile, PR #65) */
+		$known = $fin && count( array_filter( $fin, function ( $g ) { return isset( $g['pre_w'], $g['tags'] ); } ) ) === count( $fin );
 		foreach ( $fin as $g ) {
 			$tg = self::tags( $g );
 			if ( isset( $tg['comeback'] ) ) { $nc++; }
@@ -398,7 +402,8 @@ class DBD_Blocks {
 			$subject = $wd && ! empty( $wd[0]['win'] ) ? $lab . ': ' . self::nick( $wd[0]['win'] ) . ' win the wildest game' : $lab . ' in review';
 		}
 		$pl = function ( $k, $one, $many ) { return $k . ' ' . ( $k === 1 ? $one : $many ); };
-		$head = $pl( $nu, 'upset', 'upsets' ) . ', ' . $pl( $nc, 'comeback', 'comebacks' ) . ', ' . $pl( $no, 'overtime', 'overtimes' );
+		$head = $known ? $pl( $nu, 'upset', 'upsets' ) . ', ' . $pl( $nc, 'comeback', 'comebacks' ) . ', ' . $pl( $no, 'overtime', 'overtimes' ) : $pl( count( $fin ), 'game', 'games' ) . ', all final';
+		if ( ! $known && ! $up ) { $subject = $lab . ' in review'; }
 		$ps = '';
 		$sw = $W['swings'][0] ?? null;
 		if ( $sw ) { $ps .= '<p><b>The swing:</b> ' . esc_html( self::clean( $sw['d'] ) . ' (' . self::nick( $sw['t'] ) . ', ' . $sw['c'] . ', +' . round( (float) $sw['v'] ) . '%)' ) . '</p>'; }
