@@ -226,6 +226,12 @@ jobs:
           # a week still in progress has no post yet
           open_wk="$(python3 -c "import json,glob,re; o=[re.search(r'w(\\d+)', f).group(1) for f in glob.glob('data/week/w*.json') if not json.load(open(f)).get('complete')]; print(o[0] if o else '')")"
           if [ -n "$open_wk" ]; then php tools/view_harness.php data post "$open_wk" | grep -q 'none'; fi
+          # once its season is archived, a post's links carry the season; a game's link already names it
+          DBD_HARNESS_PRETTY=1 DBD_HARNESS_ROOT=1 DBD_HARNESS_OLD_SEASON=2026 DBD_HARNESS_HTML=oldposts php tools/view_harness.php data post 7
+          grep -q 'href="https://example.test/2026/team/' oldposts/post-w7.html
+          grep -q 'href="https://example.test/2026/week/7/"' oldposts/post-w7.html
+          grep -q 'href="https://example.test/game/2026-week-7-' oldposts/post-w7.html
+          if grep -q 'href="https://example.test/team/' oldposts/post-w7.html; then echo "a link without its season"; exit 1; fi
           # the sitemap lists the week pages and the leaders (2.7.0)
           DBD_HARNESS_PRETTY=1 DBD_HARNESS_ROOT=1 php tools/view_harness.php data sitemap > sitemap.txt
           grep -qx 'https://example.test/week/7/' sitemap.txt

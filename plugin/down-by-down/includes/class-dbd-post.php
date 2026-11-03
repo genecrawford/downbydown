@@ -25,6 +25,7 @@ class DBD_Post {
 	const FORM     = '[wpforms id="63" title="false"]';
 
 	public static function init() {
+		add_filter( 'the_content', array( __CLASS__, 'relink' ), 9 );
 		add_filter( 'the_content', array( __CLASS__, 'signup' ), 20 );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'assets' ) );
 		add_action( 'wp_head', array( __CLASS__, 'head' ), 3 );
@@ -83,15 +84,26 @@ class DBD_Post {
 	 */
 	public static function write( $n, $backfill ) {
 		$W = DBD_Week::file( $n ); if ( ! $W || empty( $W['complete'] ) ) { return 'not ready'; }
+		/* one writer per week at a time: a webhook sync and "Write past weeks" can run together (Greptile, PR #67). add_option is a
+		   single insert on a unique name, so only one of them gets the lock; a lock left by a crashed run expires after five minutes */
+		$lock = 'dbd_post_lock_' . DBD_Data::season() . '_' . (int) $n;
+		if ( ! add_option( $lock, time(), '', false ) ) {
+			if ( time() - (int) get_option( $lock, 0 ) < 300 ) { return 'busy'; }
+			update_option( $lock, time(), false );
+		}
+		try { return self::write_locked( (int) $n, $W, $backfill ); } finally { delete_option( $lock ); }
+	}
+
+	private static function write_locked( $n, $W, $backfill ) {
 		$known = isset( self::map()[ (int) $n ] ); $p = self::post_for( $n );
 		if ( $known && ( ! $p || $p->post_status === 'trash' ) ) { return 'deleted'; }
 		$doc = self::compose( $n, $W, ! $backfill ); if ( ! $doc ) { return 'not ready'; }
 		if ( $p ) {
 			if ( ! in_array( $p->post_status, array( 'future', 'draft' ), true ) || self::edited( $p ) ) { return 'kept'; }
-			if ( md5( $doc['html'] ) === get_post_meta( $p->ID, '_dbd_src', true ) ) { return 'kept'; }  /* same numbers as last time */
+			if ( md5( $doc['title'] . "\x1f" . $doc['html'] . "\x1f" . $doc['excerpt'] ) === get_post_meta( $p->ID, '_dbd_src', true ) ) { return 'kept'; }  /* same numbers as last time */
 			$r = wp_update_post( array( 'ID' => $p->ID, 'post_title' => $doc['title'], 'post_content' => $doc['html'], 'post_excerpt' => $doc['excerpt'] ), true );
 			if ( is_wp_error( $r ) ) { return $r->get_error_message(); }
-			self::stamp( $p->ID, $doc['html'] );
+			self::stamp( $p->ID, $doc['title'] . "\x1f" . $doc['html'] . "\x1f" . $doc['excerpt'] );
 			return 'refreshed';
 		}
 		$gmt = self::tuesday( $n ); $now = time();  /* dated the Tuesday after its week: scheduled when that's ahead, published (with that date) when it has passed */
@@ -109,18 +121,19 @@ class DBD_Post {
 		), true );
 		if ( is_wp_error( $id ) ) { return $id->get_error_message(); }
 		self::remember( $n, $id );
-		self::stamp( $id, $doc['html'] );
+		self::stamp( $id, $doc['title'] . "\x1f" . $doc['html'] . "\x1f" . $doc['excerpt'] );
 		self::thumbnail( $id, $n, $doc['title'] );
 		return 'new';
 	}
 
-	/** Remember the content as saved (WordPress may tidy the markup on save), so an edit is anything that differs from it. */
+	/** Remember the post as saved (WordPress may tidy the markup on save): an edit to its title, body or excerpt is anything that differs. */
 	private static function stamp( $id, $src ) {
 		$p = get_post( $id ); if ( ! $p ) { return; }
-		update_post_meta( $id, self::M_HASH, md5( (string) $p->post_content ) );
+		update_post_meta( $id, self::M_HASH, self::sig( $p ) );
 		update_post_meta( $id, '_dbd_src', md5( (string) $src ) );
 	}
-	private static function edited( $p ) { $h = (string) get_post_meta( $p->ID, self::M_HASH, true ); return $h !== '' && $h !== md5( (string) $p->post_content ); }
+	private static function sig( $p ) { return md5( (string) $p->post_title . "\x1f" . (string) $p->post_content . "\x1f" . (string) $p->post_excerpt ); }
+	private static function edited( $p ) { $h = (string) get_post_meta( $p->ID, self::M_HASH, true ); return $h !== '' && $h !== self::sig( $p ); }
 
 	/** The Tuesday after the week's last game, 8:00 AM Eastern, as a Unix time. */
 	public static function tuesday( $n ) {
@@ -173,9 +186,12 @@ class DBD_Post {
 	private static function epa( $v ) { return ( $v < 0 ? '−' : '+' ) . number_format( abs( (float) $v ), 2 ); }
 	private static function poss( $nick ) { return $nick . '’'; }  /* every NFL nickname is plural: the Browns’ chance */
 
+	/** The winner from the final score ('' for a tie). The win-probability fields (win, tags) can lag the score or be missing in the playoffs. */
+	private static function winner( $g ) { $a = (int) ( $g['a'] ?? 0 ); $h = (int) ( $g['h'] ?? 0 ); return $a > $h ? $g['away'] : ( $h > $a ? $g['home'] : '' ); }
+
 	/** Winner, loser, winner's score, loser's score; a tie keeps away then home. */
 	private static function wl( $g ) {
-		$w = (string) ( $g['win'] ?? '' ); $a = (int) ( $g['a'] ?? 0 ); $h = (int) ( $g['h'] ?? 0 );
+		$w = self::winner( $g ); $a = (int) ( $g['a'] ?? 0 ); $h = (int) ( $g['h'] ?? 0 );
 		if ( $w === '' ) { return array( $g['away'], $g['home'], $a, $h ); }
 		return $w === $g['away'] ? array( $g['away'], $g['home'], $a, $h ) : array( $g['home'], $g['away'], $h, $a );
 	}
@@ -207,11 +223,12 @@ class DBD_Post {
 	public static function compose( $n, $W = null, $ahead = true ) {
 		$W = $W ?: DBD_Week::file( $n ); if ( ! $W || empty( $W['complete'] ) || empty( $W['games'] ) ) { return null; }
 		$n = (int) $n; $lab = DBD_Router::week_label( $n ); $games = (array) $W['games'];
-		$won = array_values( array_filter( $games, function ( $g ) { return ! empty( $g['win'] ); } ) );
+		$won = array_values( array_filter( $games, function ( $g ) { return self::winner( $g ) !== ''; } ) );
 		$ups = array_values( array_filter( $won, function ( $g ) { return isset( self::tags( $g )['upset'] ); } ) );
 		$cbs = array_values( array_filter( $won, function ( $g ) { return isset( self::tags( $g )['comeback'] ); } ) );
 		$ots = array_values( array_filter( $games, function ( $g ) { return ! empty( $g['ot'] ); } ) );
-		$ties = array_values( array_filter( $games, function ( $g ) { return empty( $g['win'] ); } ) );
+		$ties = array_values( array_filter( $games, function ( $g ) { return self::winner( $g ) === ''; } ) );
+		$ups = array_values( array_filter( $ups, function ( $g ) { return isset( $g['pre_w'] ); } ) ); $cbs = array_values( array_filter( $cbs, function ( $g ) { return isset( $g['low'] ); } ) );
 		usort( $ups, function ( $x, $y ) { return $x['pre_w'] <=> $y['pre_w']; } );
 		usort( $cbs, function ( $x, $y ) { return $x['low'] <=> $y['low']; } );
 		$wild = $won; usort( $wild, function ( $x, $y ) { return array( $y['lc'] ?? 0, $y['drama'] ?? 0 ) <=> array( $x['lc'] ?? 0, $x['drama'] ?? 0 ); } );
@@ -220,7 +237,7 @@ class DBD_Post {
 
 		/* title */
 		if ( $up ) { list( $w, $l ) = self::wl( $up ); $title = $lab . ' in review: ' . self::nick( $w ) . ' stun ' . self::nick( $l ) . ' from ' . DBD_Data::pct( $up['pre_w'] ) . '%'; }
-		elseif ( $wd && ( $wd['lc'] ?? 0 ) >= 2 ) { $title = $lab . ' in review: ' . self::nick( $wd['win'] ) . ' win the wildest game'; }
+		elseif ( $wd && ( $wd['lc'] ?? 0 ) >= 2 ) { $title = $lab . ' in review: ' . self::nick( self::winner( $wd ) ) . ' win the wildest game'; }
 		else { $title = $lab . ' in review'; }
 
 		/* the opening: the counts, the season context when it stands out, the week's best story */
@@ -251,7 +268,7 @@ class DBD_Post {
 		$byd = $games; usort( $byd, function ( $x, $y ) { return ( $y['drama'] ?? 0 ) <=> ( $x['drama'] ?? 0 ); } );
 		$rows = '';
 		foreach ( $byd as $g ) {
-			list( $w, $l, $ws, $ls ) = self::wl( $g ); $tg = self::tags( $g ); $tie = empty( $g['win'] );
+			list( $w, $l, $ws, $ls ) = self::wl( $g ); $tg = self::tags( $g ); $tie = self::winner( $g ) === '';
 			$note = $tie ? 'Tie' : implode( ' · ', array_filter( array( $tg['upset'] ?? '', $tg['comeback'] ?? '', isset( $tg['ot'] ) || ! empty( $g['ot'] ) ? 'Overtime' : '' ) ) );
 			if ( $note === '' && isset( $tg['wire'] ) ) { $note = 'Led all the way'; }
 			$rows .= '<tr><td><a href="' . self::u( array( 'game' => $g['id'] ) ) . '">' . self::logo( $w ) . ( $tie ? esc_html( self::nick( $w ) ) : '<b>' . esc_html( self::nick( $w ) ) . '</b>' ) . ' ' . $ws . ', ' . esc_html( self::nick( $l ) ) . ' ' . $ls . '</a></td><td class="tg">' . esc_html( $note ) . '</td></tr>';
@@ -264,7 +281,7 @@ class DBD_Post {
 		$sw = $W['swings'][0] ?? null;
 		if ( $sw && isset( $gid[ $sw['g'] ] ) ) {
 			$g = $gid[ $sw['g'] ]; $t = $sw['t']; $o = $t === $g['away'] ? $g['home'] : $g['away']; list( , , $ws, $ls ) = self::wl( $g );
-			$res = empty( $g['win'] ) ? ', and the game ended in a tie.' : ( $g['win'] === $t ? ', and they won ' . $ws . '-' . $ls . '.' : ', but they lost ' . $ws . '-' . $ls . '.' );
+			$gw = self::winner( $g ); $res = $gw === '' ? ', and the game ended in a tie.' : ( $gw === $t ? ', and they won ' . $ws . '-' . $ls . '.' : ', but they lost ' . $ws . '-' . $ls . '.' );
 			$ck = self::clock( $sw['c'] );
 			$ps .= '<p>' . ( $v ? 'The biggest swing of the week' : 'The week’s biggest swing' ) . ' came in the ' . esc_html( self::poss( self::nick( $t ) ) ) . ' game against the ' . esc_html( self::nick( $o ) ) . ( $ck !== '' ? ', ' . $ck : '' ) . ': ' . esc_html( self::clean( $sw['d'] ) )
 				. ' It moved the ' . esc_html( self::poss( self::nick( $t ) ) ) . ' chance of winning by ' . (int) round( (float) $sw['v'] ) . ' points' . $res . ' ' . self::a( array( 'game' => $sw['g'] ), 'Open the game' ) . '</p>';
@@ -333,8 +350,8 @@ class DBD_Post {
 			$max = 0;
 			foreach ( $others as $f ) {
 				$g = (array) $f['games'];
-				$k = $what === 'upsets' ? count( array_filter( $g, function ( $x ) { return ! empty( $x['win'] ) && isset( self::tags( $x )['upset'] ); } ) )
-					: ( $what === 'comebacks' ? count( array_filter( $g, function ( $x ) { return ! empty( $x['win'] ) && isset( self::tags( $x )['comeback'] ); } ) ) : count( array_filter( $g, function ( $x ) { return ! empty( $x['ot'] ); } ) ) );
+				$k = $what === 'upsets' ? count( array_filter( $g, function ( $x ) { return self::winner( $x ) !== '' && isset( self::tags( $x )['upset'] ); } ) )
+					: ( $what === 'comebacks' ? count( array_filter( $g, function ( $x ) { return self::winner( $x ) !== '' && isset( self::tags( $x )['comeback'] ); } ) ) : count( array_filter( $g, function ( $x ) { return ! empty( $x['ot'] ); } ) ) );
 				$max = max( $max, $k );
 			}
 			if ( $c > $max ) { return 'No week this season has had more ' . $what . '.'; }
@@ -362,6 +379,36 @@ class DBD_Post {
 
 	private static function ours() {
 		return is_singular( 'post' ) && has_term( self::CAT, 'category', get_queried_object_id() );
+	}
+
+	/**
+	 * A post keeps the app's plain links (/team/min/), which are the canonical pages while its season is current. Once that season is
+	 * archived, its links are shown with the season (/2026/team/min/), so an old write-up opens its own season's pages, on the site
+	 * and in the feed. A game's link already names its season.
+	 */
+	public static function relink( $content ) {
+		$id = get_the_ID(); if ( ! $id ) { return $content; }
+		$s = (int) get_post_meta( $id, self::M_SEASON, true );
+		if ( ! $s || $s === DBD_Data::current_season() || strpos( (string) $content, 'dbd-post' ) === false ) { return $content; }
+		return self::with_season( (string) $content, $s );
+	}
+
+	/** Every app link in $html given season $s: a /2026/ prefix with readable URLs, ?season=2026 without. */
+	public static function with_season( $html, $s ) {
+		$s = (int) $s;
+		return (string) preg_replace_callback( '/href="([^"]+)"/', function ( $m ) use ( $s ) {
+			$u = html_entity_decode( $m[1], ENT_QUOTES );
+			if ( DBD_Urls::on() ) {
+				$b = DBD_Urls::path_base(); if ( strpos( $u, $b ) !== 0 ) { return $m[0]; }
+				$rest = substr( $u, strlen( $b ) );
+				if ( $rest === '' || preg_match( '#^(?:(?:19|20)\d\d/|game/)#', $rest ) ) { return $m[0]; }
+				$u = $b . $s . '/' . $rest;
+			} else {
+				if ( strpos( $u, (string) DBD_Router::base() ) !== 0 || strpos( $u, 'game=' ) !== false || strpos( $u, 'season=' ) !== false ) { return $m[0]; }
+				$u = add_query_arg( 'season', $s, $u );
+			}
+			return 'href="' . esc_url( $u ) . '"';
+		}, $html );
 	}
 
 	/** Under each weekly post on the website (not in the feed the email reads): the signup form. */
