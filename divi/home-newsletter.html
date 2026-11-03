@@ -1,0 +1,47 @@
+<style>
+/* Down x Down home: the newsletter section. Paste this whole file into one Divi Code module, in a section under the teams section.
+   The marker, heading, words and your WPForms signup are yours to edit here; the email on the right is the plugin's newsletter-preview block
+   (2.6.0+), the latest finished week as the Tuesday email. */
+.et_pb_column:has(.dxd-nl){padding:0!important}
+.et_pb_module:has(.dxd-nl){align-items:stretch!important}  /* Divi centers a module's content, which would shrink the section */
+.et_pb_text_inner:has(.dxd-nl),.et_pb_code_inner:has(.dxd-nl){width:100%!important;max-width:none!important}
+.dxd-nl{background:#f4f1ea;color:#121417;border-top:1px solid rgba(22,30,54,.22);font-family:"IBM Plex Sans",system-ui,sans-serif;-webkit-font-smoothing:auto;-moz-osx-font-smoothing:auto}  /* Divi's antialiased smoothing hollows Tourney */
+.dxd-nl *{box-sizing:border-box}
+.dxd-nl p:empty{display:none}
+.dxd-nl .dxd-wrap{max-width:1240px;margin:0 auto;padding:clamp(40px,6vw,72px) clamp(16px,4vw,48px)}
+/* the sideline down marker */
+.dxd-nl .dxd-dm{display:flex;flex-basis:100%;align-items:center;gap:10px;margin-bottom:4px}
+.dxd-nl .dxd-dm .b{display:flex;align-items:flex-start;justify-content:center;width:48px;height:48px;padding-top:4px;border-radius:7px;background:#cb2026;color:#fff}
+.dxd-nl .dxd-dm .b b{font:800 32px/1 "Tourney",sans-serif}
+.dxd-nl .dxd-dm .b sup{margin-top:2px;font:700 13px "Barlow Condensed",sans-serif;text-transform:uppercase;vertical-align:baseline;top:0}
+.dxd-nl .dxd-dm .t b{display:block;font:700 26px/1 "Barlow Condensed",sans-serif;letter-spacing:.04em;text-transform:uppercase}
+.dxd-nl .dxd-dm .t small{display:block;margin-top:3px;font:600 11px "IBM Plex Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:#5d616a}
+.dxd-nl h2{margin:0;padding:0;color:#121417;font:800 clamp(30px,3.6vw,48px)/1.02 "Tourney",sans-serif;text-transform:uppercase}
+.dxd-nl .dxd-two{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:clamp(28px,5vw,64px);align-items:center}
+.dxd-nl .dxd-dm{margin-bottom:12px}
+.dxd-nl .dxd-lede{margin:18px 0 22px;padding:0;max-width:32em;color:#3b4255;font-size:17px;line-height:1.6}
+/* your WPForms signup, in the site's type: square-ish fields with a 1px rule, a red button */
+.dxd-nl .wpforms-container{--wpforms-field-border-radius:6px;--wpforms-field-border-color:rgba(22,30,54,.28);--wpforms-field-background-color:#fffdf8;--wpforms-field-text-color:#121417;--wpforms-label-color:#121417;--wpforms-button-background-color:#cb2026;--wpforms-button-text-color:#fff;--wpforms-button-border-radius:6px;margin:0!important;max-width:460px}
+.dxd-nl .wpforms-container .wpforms-field{padding:0 0 12px!important}
+.dxd-nl .wpforms-container .wpforms-field-label{margin:0 0 6px!important;color:#121417!important;font:700 14px "Barlow Condensed",sans-serif!important;letter-spacing:.1em!important;text-transform:uppercase}
+.dxd-nl .wpforms-container input[type=email],.dxd-nl .wpforms-container input[type=text]{width:100%!important;max-width:none!important;height:48px!important;padding:0 14px!important;background:#fffdf8!important;border:1px solid rgba(22,30,54,.28)!important;border-radius:6px!important;box-shadow:none!important;color:#121417!important;font:400 16px "IBM Plex Sans",sans-serif!important}
+.dxd-nl .wpforms-container input:focus{border-color:#121417!important;outline:2px solid rgba(203,32,38,.25)!important;outline-offset:1px}
+.dxd-nl .wpforms-container .wpforms-submit-container{padding:4px 0 0!important}
+.dxd-nl .wpforms-container button[type=submit]{height:48px!important;padding:0 24px!important;background:#cb2026!important;border:0!important;border-radius:6px!important;box-shadow:none!important;color:#fff!important;font:700 15px "Barlow Condensed",sans-serif!important;letter-spacing:.1em!important;text-transform:uppercase}
+.dxd-nl .wpforms-container button[type=submit]:hover{background:#a8181d!important}
+.dxd-nl .wpforms-confirmation-container-full{margin:0!important;padding:14px 16px!important;background:#fffdf8!important;border:1px solid rgba(22,30,54,.2)!important;border-radius:6px!important;color:#121417!important}
+@media (max-width:900px){.dxd-nl .dxd-two{grid-template-columns:minmax(0,1fr)}}
+</style>
+<section class="dxd-nl">
+<div class="dxd-wrap">
+<div class="dxd-two">
+<div class="dxd-copy">
+<span class="dxd-dm" aria-hidden="true"><span class="b"><b>1</b><sup>st</sup></span><span class="t"><b>&amp; 10</b><small>Opp 17</small></span></span>
+<h2>The week in review, every Tuesday</h2>
+<p class="dxd-lede">One email after every week: the upsets, the swing that turned a game, the best play and the players whose roles are growing, with a link to the full week. Free, and nothing else in your inbox.</p>
+[wpforms id="63" title="false"]
+</div>
+<div class="dxd-mail">[dbd_block type="newsletter-preview"]</div>
+</div>
+</div>
+</section>
