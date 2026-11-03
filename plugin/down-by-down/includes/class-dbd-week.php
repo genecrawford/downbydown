@@ -167,15 +167,16 @@ class DBD_Week {
 	private static function plays( $W ) {
 		$sw = ''; foreach ( (array) ( $W['swings'] ?? array() ) as $i => $x ) {
 			$g = DBD_Data::game( $x['g'] ); $m = $g ? $g['away'] . ' at ' . $g['home'] : ''; $c = DBD_Data::team( $x['t'] )['c1'] ?? '#6b6f78'; $c = preg_match( '/^#[0-9a-fA-F]{6}$/', $c ) ? $c : '#6b6f78';
-			$sw .= '<li><span class="rk">' . ( $i + 1 ) . '</span><span class="wk-pd"><span class="wk-pm">' . self::mk( $x['t'], 16 ) . '<b>' . esc_html( self::nick( $x['t'] ) ) . '</b> · ' . esc_html( $x['c'] ) . ( $m ? ' · <a href="' . esc_url( self::game_url( $x['g'] ) ) . '">' . esc_html( $m ) . '</a>' : '' ) . '</span><span class="wk-pt">' . esc_html( $x['d'] ) . '</span></span>'
-				. '<span class="wk-pv"><b>+' . round( $x['v'] ) . '</b><small>' . (int) $x['ba'] . '% → ' . min( 100, (int) round( $x['ba'] + $x['v'] ) ) . '%</small><i style="--w:' . min( 100, round( $x['v'] * 1.6 ) ) . '%;background:' . $c . '"></i></span></li>'; }
+			$ball = ! empty( $x['b'] ) ? $x['b'] : $x['t'];  /* SCOPE §47: the team with the ball leads the line; the value names the team it helped */
+			$sw .= '<li><span class="rk">' . ( $i + 1 ) . '</span><span class="wk-pd"><span class="wk-pm">' . self::mk( $ball, 16 ) . '<b>' . esc_html( self::nick( $ball ) ) . '</b> · ' . esc_html( $x['c'] ) . ( $m ? ' · <a href="' . esc_url( self::game_url( $x['g'] ) ) . '">' . esc_html( $m ) . '</a>' : '' ) . '</span><span class="wk-pt">' . DBD_Kicker::link_desc( $x['d'], $ball ) . '</span></span>'
+				. '<span class="wk-pv"><b>+' . round( $x['v'] ) . '</b><small>' . esc_html( $x['t'] ) . ' ' . (int) $x['ba'] . '% → ' . min( 100, (int) round( $x['ba'] + $x['v'] ) ) . '%</small><i style="--w:' . min( 100, round( $x['v'] * 1.6 ) ) . '%;background:' . $c . '"></i></span></li>'; }
 		$ep = ''; foreach ( (array) ( $W['plays'] ?? array() ) as $i => $x ) {
 			$p = ! empty( $x['pid'] ) ? DBD_Data::player( $x['pid'] ) : null; $who = $p ? '<a href="' . esc_url( DBD_Router::url( array( 'player' => $x['pid'] ) ) ) . '">' . esc_html( $p['name'] ) . '</a>' : esc_html( (string) ( $x['pl'] ?? '' ) );
 			$ep .= '<li><span class="rk">' . ( $i + 1 ) . '</span><span class="wk-pd"><span class="wk-pm">' . self::mk( $x['t'], 16 ) . '<b>' . esc_html( self::nick( $x['t'] ) ) . '</b> · ' . esc_html( $x['c'] ) . ' · <a href="' . esc_url( self::game_url( $x['g'] ) ) . '">vs ' . esc_html( (string) $x['o'] ) . '</a>' . ( $who !== '' ? ' · ' . $who : '' ) . '</span><span class="wk-pt">' . esc_html( $x['d'] ) . '</span></span>'
 				. '<span class="wk-pv"><b>+' . number_format( (float) $x['e'], 1 ) . '</b><small>EPA</small></span></li>'; }
 		if ( ! $sw && ! $ep ) { return ''; }
 		return '<section class="dbd-band" id="wk-plays"><h2 class="dbd-bandh">The plays<span>the ones that moved games, and the ones that moved the ball</span></h2><div class="wk-2">'
-			. '<section class="dbd-panel ld-card"><div class="ld-h"><b>The biggest swings</b><small>points of win probability, for the team they helped</small></div><ol class="ld-list wk-pl">' . ( $sw ?: '<li class="none">No final games with win probability yet.</li>' ) . '</ol></section>'
+			. '<section class="dbd-panel ld-card"><div class="ld-h"><b>The biggest swings</b><small>the team with the ball, and the points of win probability for the team the play helped</small></div><ol class="ld-list wk-pl">' . ( $sw ?: '<li class="none">No final games with win probability yet.</li>' ) . '</ol></section>'
 			. '<section class="dbd-panel ld-card"><div class="ld-h"><b>The best plays by EPA</b><small>expected points added on one snap</small></div><ol class="ld-list wk-pl">' . $ep . '</ol></section></div></section>';
 	}
 

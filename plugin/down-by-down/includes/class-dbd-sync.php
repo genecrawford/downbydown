@@ -19,7 +19,7 @@ class DBD_Sync {
 	const AFTER      = 120;
 	const OPT_ARCH   = 'dbd_archive_hashes';  /* each archived season's manifest hash as last synced (SCOPE §44) */
 	/* the files the site takes from the repo, the same list for the current season and an archived one */
-	const ALLOW = '#^(plays/[A-Z]{2,3}|players/(?:[A-Z]{2,3}|index|mini|league|movers|leaders|career/[A-Z]{2,3})|wp/w\d{1,2}|box/w\d{1,2}|defense/(?:[A-Z]{2,3}|league)|plays/def/[A-Z]{2,3}|week/w\d{1,2}|lineups|series|fantasy|teams|metrics|schedule)\.json$#';                   /* seconds after an update: hosts can keep serving the old compiled code for a minute or so */
+	const ALLOW = '#^(plays/[A-Z]{2,3}|players/(?:[A-Z]{2,3}|index|mini|league|movers|leaders|kickers|career/[A-Z]{2,3})|wp/w\d{1,2}|box/w\d{1,2}|defense/(?:[A-Z]{2,3}|league)|plays/def/[A-Z]{2,3}|week/w\d{1,2}|lineups|series|fantasy|teams|metrics|schedule)\.json$#';                   /* seconds after an update: hosts can keep serving the old compiled code for a minute or so */
 
 	public static function init() {
 		add_action( self::HOOK, array( __CLASS__, 'sync' ) );

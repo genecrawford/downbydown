@@ -34,7 +34,7 @@ echo DBD_Week::movers( $MV );  /* SCOPE §22; the panel is shared with the week 
 echo '<section class="dbd-panel"><div class="dbd-toolbar dbd-ptools dbd-pbar"><div class="dbd-prow">';
 echo '<div class="dbd-fg dbd-fq"><label for="dbd-pq">Search</label><input class="dbd-srch" id="dbd-pq" type="search" value="' . esc_attr( $q ) . '" placeholder="Name, number or college" autocomplete="off"></div>';
 echo '<div class="dbd-fg"><span>Position</span><div class="dbd-seg t-tabs" id="dbd-pos" role="tablist"><span class="t-tabs-pill" aria-hidden="true"></span>';
-foreach ( array( '' => 'All', 'QB' => 'QB', 'RB' => 'RB', 'WR' => 'WR', 'TE' => 'TE' ) as $k => $lab ) {
+foreach ( array( '' => 'All', 'QB' => 'QB', 'RB' => 'RB', 'WR' => 'WR', 'TE' => 'TE', 'K' => 'K' ) as $k => $lab ) {
 	echo '<a class="t-tab" role="tab" href="' . esc_url( $purl( array_filter( array( 'pt' => $team, 'pos' => $k ) ) ) ) . '" data-v="' . esc_attr( $k ) . '" aria-selected="' . ( $pos === $k ? 'true' : 'false' ) . '">' . $lab . '</a>';
 }
 echo '</div></div>';
@@ -62,15 +62,20 @@ foreach ( $rows as $p ) {
 	$cls  = preg_match( '/out|did not/i', $st ) ? ' o' : ( preg_match( '/questionable|limited|doubtful/i', $st ) ? ' q' : '' );
 	$lbl  = preg_match( '/did not/i', $st ) ? 'DNP' : ( preg_match( '/limited/i', $st ) ? 'Limited' : ( preg_match( '/full/i', $st ) ? 'Full' : $st ) );
 	echo '<tr class="dbd-trow" data-href="' . esc_url( $href ) . '"><td class="dbd-nm"><span class="dbd-nmi">' . DBD_Marks::player( $p['team'], $p['num'], 34, $p['photo'] ?? null ) . '<a href="' . esc_url( $href ) . '">' . esc_html( $p['name'] ) . '</a>' . ( ! empty( $p['slot'] ) ? '<small>' . esc_html( $p['slot'] ) . '</small>' : '' ) . ( $st !== '' ? '<i class="dbd-stdot' . $cls . '" data-tip="' . esc_attr( $lbl . ( ! empty( $p['what'] ) ? ' · ' . $p['what'] : '' ) ) . '" tabindex="0" aria-label="' . esc_attr( $lbl ) . '"></i>' : '' ) . '</span></td>';
-	echo '<td class="dbd-ptm">' . DBD_Marks::tile( $p['team'], 20 ) . '</td><td class="dbd-ppos">' . esc_html( $p['pos'] ) . '</td><td class="dbd-psnap"><span class="dbd-sb"><i style="--w:' . (int) $p['snap'] . '%"></i></span>' . (int) $p['snap'] . '%</td>';
-	$use = $p['pos'] === 'QB' ? ( $p['att'] ?? 0 ) : $p['tgt'];
-	echo '<td>' . ( $use ?: '' ) . '</td><td>' . ( $p['rec'] ?: '' ) . '</td><td>' . ( $p['car'] ?: '' ) . '</td><td>' . (int) $p['yds'] . '</td><td>' . ( $p['td'] ?: '' ) . '</td><td class="' . ( $p['epa'] >= 0 ? 'pos' : 'neg' ) . '">' . ( $p['epa'] > 0 ? '+' : '' ) . number_format( (float) $p['epa'], 1 ) . '</td>';
+	echo '<td class="dbd-ptm">' . DBD_Marks::tile( $p['team'], 20 ) . '</td><td class="dbd-ppos">' . esc_html( $p['pos'] ) . '</td>';
+	if ( $p['pos'] === 'K' ) {  /* a kicker (SCOPE §47): his field goals in the Tgt / Att column, his points in Yds; players.js draws the same */
+		echo '<td class="dbd-psnap">–</td><td>' . (int) ( $p['fgm'] ?? 0 ) . '/' . (int) ( $p['fga'] ?? 0 ) . ' FG</td><td></td><td></td><td>' . (int) ( $p['kpts'] ?? 0 ) . ' pts</td><td></td><td></td>';
+	} else {
+		echo '<td class="dbd-psnap"><span class="dbd-sb"><i style="--w:' . (int) $p['snap'] . '%"></i></span>' . (int) $p['snap'] . '%</td>';
+		$use = $p['pos'] === 'QB' ? ( $p['att'] ?? 0 ) : $p['tgt'];
+		echo '<td>' . ( $use ?: '' ) . '</td><td>' . ( $p['rec'] ?: '' ) . '</td><td>' . ( $p['car'] ?: '' ) . '</td><td>' . (int) $p['yds'] . '</td><td>' . ( $p['td'] ?: '' ) . '</td><td class="' . ( $p['epa'] >= 0 ? 'pos' : 'neg' ) . '">' . ( $p['epa'] > 0 ? '+' : '' ) . number_format( (float) $p['epa'], 1 ) . '</td>';
+	}
 	echo DBD_Fantasy::index_cell( $p );
 	echo '<td>' . ( $st !== '' ? '<span class="dbd-st' . $cls . '">' . esc_html( $lbl . ( ! empty( $p['what'] ) ? ' · ' . $p['what'] : '' ) ) . '</span>' : '' ) . '</td>';
 	echo '<td class="dbd-pmt"><button class="dbd-mtadd" type="button" data-mtid="' . esc_attr( $p['id'] ) . '" data-mtname="' . esc_attr( $p['name'] ) . '" aria-pressed="false" aria-label="' . esc_attr( 'Add ' . $p['name'] . ' to My team' ) . '"><span class="off" aria-hidden="true">+</span><span class="on" aria-hidden="true">✓</span></button></td></tr>';  /* SCOPE §36: dbd-site.js toggles it */
 }
 if ( ! $rows ) { echo '<tr><td colspan="13" class="dbd-note">No players match.</td></tr>'; }
 echo DBD_Router::tierize( ob_get_clean(), array( null, 'dbd-t2', null, 'dbd-t2', null, 'dbd-t2', 'dbd-t2', null, null, null, null, 'dbd-t3', null ) );
-echo '</tbody></table></div><p class="dbd-note">Snap share is the season average of offensive snaps played. Status is the latest practice or game report; blank means no listing. Quarterbacks show pass attempts in the Tgt / Att column. Search matches name, number, team abbreviation or college across every team. Fpts/g is fantasy points a game in the scoring you pick, with the rank at his position among players with enough games. The + at the end of a row adds him to My team. Click a column heading to sort.</p></section>';
+echo '</tbody></table></div><p class="dbd-note">Snap share is the season average of offensive snaps played. Status is the latest practice or game report; blank means no listing. Quarterbacks show pass attempts in the Tgt / Att column, kickers their field goals made and tried. Search matches name, number, team abbreviation or college across every team. Fpts/g is fantasy points a game in the scoring you pick, with the rank at his position among players with enough games. The + at the end of a row adds him to My team. Click a column heading to sort.</p></section>';
 echo '</main>';
 echo '<script type="application/json" id="dbd-pindex">' . wp_json_encode( $idx ) . '</script>';

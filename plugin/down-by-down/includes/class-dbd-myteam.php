@@ -8,7 +8,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 class DBD_MyTeam {
 	const MAX   = 20;
-	const SLOTS = array( array( 'QB', array( 'QB' ) ), array( 'RB', array( 'RB' ) ), array( 'RB', array( 'RB' ) ), array( 'WR', array( 'WR' ) ), array( 'WR', array( 'WR' ) ), array( 'TE', array( 'TE' ) ), array( 'FLEX', array( 'RB', 'WR', 'TE' ) ) );
+	const SLOTS = array( array( 'QB', array( 'QB' ) ), array( 'RB', array( 'RB' ) ), array( 'RB', array( 'RB' ) ), array( 'WR', array( 'WR' ) ), array( 'WR', array( 'WR' ) ), array( 'TE', array( 'TE' ) ), array( 'FLEX', array( 'RB', 'WR', 'TE' ) ), array( 'K', array( 'K' ) ) );  /* K: SCOPE §47 */
 	const SNAPW = 6;   /* weeks in the snap sparkline */
 	const SWING = 2.0; /* last three games this far above or below his average get ▲ or ▼ */
 
@@ -52,16 +52,17 @@ class DBD_MyTeam {
 
 	/** The sample team: this season's points-a-game leaders at each slot, then the next best at each group for the bench. */
 	public static function sample() {
-		$by = array( 'QB' => array(), 'RB' => array(), 'WR' => array(), 'TE' => array() );
+		$by = array( 'QB' => array(), 'RB' => array(), 'WR' => array(), 'TE' => array(), 'K' => array() );
 		foreach ( DBD_Data::player_index() as $r ) { $p = self::fpos( $r ); if ( isset( $by[ $p ] ) && ! empty( $r['fr'][1] ) ) { $by[ $p ][] = $r; } }
 		foreach ( $by as &$l ) { usort( $l, function ( $a, $b ) { return $a['fr'][1] <=> $b['fr'][1]; } ); } unset( $l );
-		$take = array( 'QB' => 2, 'RB' => 4, 'WR' => 4, 'TE' => 2 ); $ids = array();
+		$take = array( 'QB' => 2, 'RB' => 4, 'WR' => 4, 'TE' => 2, 'K' => 1 ); $ids = array();
 		foreach ( $take as $p => $n ) { foreach ( array_slice( $by[ $p ], 0, $n ) as $r ) { $ids[] = $r['id']; } }
 		return $ids;
 	}
 
 	/** Weekly points from his record, the zero-point snap weeks (fx0) included, oldest first. */
 	private static function weeks( $rec, $i ) {
+		if ( ( $rec['pos'] ?? '' ) === 'K' ) { $w = array(); foreach ( (array) ( $rec['games'] ?? array() ) as $g ) { $w[ (int) $g[0] ] = (float) $g[9]; } ksort( $w ); return $w; }  /* a kicker: his game rows, the same in every format */
 		$fm = DBD_Fantasy::FMT[ $i ]; $w = array();
 		foreach ( (array) ( $rec['weeks'] ?? array() ) as $x ) { $w[ (int) $x['week'] ] = DBD_Fantasy::pts( $x, $fm ); }
 		foreach ( (array) ( $rec['fx0'] ?? array() ) as $z ) { $w[ (int) $z ] = 0.0; }
@@ -89,13 +90,14 @@ class DBD_MyTeam {
 		$k = DBD_Data::kickoff( $g ); $al = isset( DBD_Fantasy::SLOT[ $pos ] ) ? DBD_Fantasy::allowed( $opp, $pos, $fm ) : null;
 		$chip = '';
 		if ( $al ) {
-			$tip = '<b>' . esc_html( $teams[ $opp ]['nick'] ?? $opp ) . '</b> allow ' . DBD_Fantasy::num( $al[0] ) . ' ' . DBD_Fantasy::WORD[ $fm ] . ' points a game to ' . esc_html( $pos ) . 's<br>' . esc_html( DBD_Fantasy::ord( $al[1] ) ) . '-most of ' . (int) $al[2];
+			$tip = '<b>' . esc_html( $teams[ $opp ]['nick'] ?? $opp ) . '</b> allow ' . DBD_Fantasy::num( $al[0] ) . ' ' . DBD_Fantasy::WORD[ $fm ] . ' points a game to ' . esc_html( $pos === 'K' ? 'kickers' : $pos . 's' ) . '<br>' . esc_html( DBD_Fantasy::ord( $al[1] ) ) . '-most of ' . (int) $al[2];
 			$chip = '<em class="dbd-fxr ' . DBD_Fantasy::tier( $al[1] ) . '" data-tip="' . esc_attr( $tip ) . '" tabindex="0">' . esc_html( DBD_Fantasy::most( $al[1], $al[2] ) ) . '</em>';
 		}
 		return '<span class="wk"><b>' . DBD_Marks::tile( $opp, 14 ) . $at . ' ' . esc_html( $opp ) . '</b><small><time class="dbd-kick" datetime="' . esc_attr( $k['utc'] ) . '" data-fmt="day">' . esc_html( ( $g['day'] ?? '' ) !== '' ? substr( $g['day'], 0, 3 ) . ' ' . $k['et'] : $k['et'] ) . '</time></small>' . $chip . '</span>';
 	}
 
 	private static function snap_cell( $r, $rec ) {
+		if ( ( $rec['pos'] ?? '' ) === 'K' ) { return '<span class="m">' . esc_html( (int) ( $rec['fgm'] ?? 0 ) . '/' . (int) ( $rec['fga'] ?? 0 ) . ' FG' ) . '</span>'; }  /* no snap trend for a kicker: his field goal line */
 		$cw = (int) DBD_Data::current_week(); $sn = (array) ( $rec['snaps'] ?? array() ); $from = max( 1, $cw - self::SNAPW + 1 );
 		$ws = array(); for ( $wk = $from; $wk <= $cw; $wk++ ) { $ws[] = isset( $sn[ (string) $wk ] ) ? (int) $sn[ (string) $wk ] : null; }
 		$have = array_filter( $ws, function ( $v ) { return $v !== null; } ); if ( ! $have ) { return '<span class="m">no snaps</span>'; }
@@ -120,7 +122,7 @@ class DBD_MyTeam {
 	/** An empty slot (SCOPE §36 addendum): a + that opens a search in the row, limited to the positions the slot takes. */
 	public static function empty_row( $lab ) {
 		$ok = array(); foreach ( self::SLOTS as $sl ) { if ( $sl[0] === $lab ) { $ok = $sl[1]; break; } } if ( ! $ok ) { $ok = array( $lab ); }
-		$what = $lab === 'FLEX' ? 'a back, receiver or tight end' : 'a ' . $lab;
+		$what = $lab === 'FLEX' ? 'a back, receiver or tight end' : ( $lab === 'K' ? 'a kicker' : 'a ' . $lab );
 		return '<div class="mt-row empty" data-pos="' . esc_attr( implode( ',', $ok ) ) . '"><span class="slot">' . esc_html( $lab ) . '</span><span class="who mt-slot">'
 			. '<button class="mt-slotadd" type="button" aria-expanded="false" aria-label="' . esc_attr( 'Add ' . $what ) . '">+</button><span class="m">Empty: add ' . esc_html( $what ) . '</span>'
 			. '<span class="mt-slotq" hidden><input class="dbd-srch mt-slotin" type="search" placeholder="' . esc_attr( 'Add ' . $what . ': name or team' ) . '" autocomplete="off" aria-label="' . esc_attr( 'Add ' . $what ) . '"><ul class="mt-sug" role="listbox" hidden></ul></span></span></div>';
@@ -129,7 +131,7 @@ class DBD_MyTeam {
 	/** One lineup row. $lab is the slot (QB, FLEX) or, on the bench, his position. */
 	public static function row( $lab, $r, $i, $bench = false ) {
 		if ( ! $r ) { return self::empty_row( $lab ); }
-		$rec = DBD_Data::player_record( $r['team'], $r['id'] ) ?: array(); $t = DBD_Data::team( $r['team'] ); $av = self::avail( $r ); $href = DBD_Router::url( array( 'player' => $r['id'] ) );
+		$rec = ( DBD_Kicker::is( $r ) ? DBD_Kicker::get( $r['id'] ) : DBD_Data::player_record( $r['team'], $r['id'] ) ) ?: array(); $t = DBD_Data::team( $r['team'] ); $av = self::avail( $r ); $href = DBD_Router::url( array( 'player' => $r['id'] ) );
 		$flag = $av === 'bye' ? '<i class="fl bye">Bye</i>' : ( $av === 'out' ? '<i class="fl out">Out</i>' : '' );
 		return '<div class="mt-row' . ( $bench ? ' bench' : '' ) . ( in_array( $av, array( 'bye', 'out' ), true ) ? ' ' . $av : '' ) . '" style="--dbd-team:' . esc_attr( DBD_Marks::accent( $t ) ) . '">'
 			. '<span class="slot">' . esc_html( $lab ) . '</span>'
@@ -171,7 +173,7 @@ class DBD_MyTeam {
 
 	/** Compare links: the top three at each group in each scoring format, when there are two or more; [data-fx] shows the chosen format's set. */
 	public static function compare_links( $rows ) {
-		$grp = array( 'QB' => array( 'Compare your quarterbacks', array( 'QB' ) ), 'RB' => array( 'Compare your backs', array( 'RB' ) ), 'WR' => array( 'Compare your wide receivers', array( 'WR' ) ), 'TE' => array( 'Compare your tight ends', array( 'TE' ) ) );  /* SCOPE §38: compare stays within a position */
+		$grp = array( 'QB' => array( 'Compare your quarterbacks', array( 'QB' ) ), 'RB' => array( 'Compare your backs', array( 'RB' ) ), 'WR' => array( 'Compare your wide receivers', array( 'WR' ) ), 'TE' => array( 'Compare your tight ends', array( 'TE' ) ), 'K' => array( 'Compare your kickers', array( 'K' ) ) );  /* SCOPE §38: compare stays within a position */
 		$out = '';
 		foreach ( DBD_Fantasy::FMT as $i => $fm ) {
 			$sorted = $rows; usort( $sorted, function ( $a, $b ) use ( $i ) { return self::ppg( $b, $i ) <=> self::ppg( $a, $i ); } ); $h = '';

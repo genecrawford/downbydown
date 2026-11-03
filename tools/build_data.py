@@ -22,6 +22,9 @@ Writes:
   players/{ABBR}.json  roster rows for QB/RB/FB/WR/TE with weekly stat lines, snap share, PFR extras, injury line, depth slot, grades, fp (playstyle traits),
                        ep (EPA split, success, ANY/A, depth-by-direction grid), trk (hero tile ranks), injw (report designation per week)
   players/index.json   one row per player league-wide for the Players index and search
+  players/kickers.json  every kicker (SCOPE §47): season line, ranges against the league curve, every try, game rows with conditions, kickoffs,
+                       fantasy, career, ranks (trk); the qualifying pool (dist) behind every percentile. Kickers also join index.json, fantasy.json, box kk
+  career/k{year}.json  each finished season's kicking lines, built once (tools/kick_curve.py fits the curve, tools/kick_career.py the files)
   players/mini.json    id -> name, team, position, number, photo id, for the hub's My team card
   career/{year}.json  season totals for every player, one file per finished season (built once, kept)
   players/career/{ABBR}.json  each rostered player's season rows, oldest first, this season last
@@ -269,7 +272,7 @@ if len(snaps) and ST_TW is not None and {'week', 'team'} <= set(snaps.columns):
 pfr = pd.read_csv(env('DBD_PFR'), low_memory=False) if env('DBD_PFR') else pd.DataFrame()
 inj = pd.read_csv(env('DBD_INJ'), low_memory=False) if env('DBD_INJ') else pd.DataFrame()
 depth = pd.read_csv(env('DBD_DEPTH'), low_memory=False, usecols=['dt', 'team', 'gsis_id', 'pos_grp', 'pos_abb', 'pos_rank']) if env('DBD_DEPTH') else pd.DataFrame()
-if len(depth): depth = depth[depth.pos_abb.isin(SKILL)]
+if len(depth): depth = depth[depth.pos_abb.isin(SKILL + ('PK',))]  # the kicker's slot too (SCOPE §47); skill lookups go by id
 # every week's report designation per player (SCOPE §29): the game log's did-not-play rows say "Out · hamstring" for that week
 injw_all = {}
 if len(inj) and 'gsis_id' in inj.columns and 'report_status' in inj.columns:
@@ -594,20 +597,137 @@ lg_groups['rec'] = dict(n=npool['wr'] + npool['te'], min=MINLABEL['wr'], low=LOW
                         week=quart(wkyds['wr'] + wkyds['te']), game={k: quart(wkm['wr'].get(k, []) + wkm['te'].get(k, [])) for k in set(wkm['wr']) | set(wkm['te'])},
                         fp={k: sorted(fpdist['wr'].get(k, []) + fpdist['te'].get(k, [])) for k in set(fpdist['wr']) | set(fpdist['te'])})
 json.dump(clean(dict(season=season, through=through_week, groups=lg_groups, grid=lg_grid)), open(f'{out}/players/league.json', 'w'), separators=(',', ':'))
+# ---- kickers (SCOPE §47): every kicker's season from the play-by-play, written to players/kickers.json with the career
+# section below. Each try is measured against the league curve: a logistic on distance fitted to every try of the three
+# seasons before (tools/kick_curve.py refits it), z = (yards - 40) / 10. 2023-25, 3,413 tries: 96% at 30, 89% at 40, 75% at 50, 53% at 60.
+K_CURVE = (2.1024, -0.9952)
+K_RANGES = [('Under 30', 0, 29), ('30–39', 30, 39), ('40–49', 40, 49), ('50–54', 50, 54), ('55+', 55, 99)]
+def k_make(d): return 1 / (1 + math.exp(-(K_CURVE[0] + K_CURVE[1] * (d - 40) / 10)))
+def k_fx(d): return 3 if d < 40 else 4 if d < 50 else 5 if d < 60 else 6   # ESPN standard: 0-39 3, 40-49 4, 50-59 5, 60+ 6; a missed try -1; an extra point +1, a miss -1
+def k_rng(d): return next(i for i, (_, a, b) in enumerate(K_RANGES) if a <= d <= b)
+def k_new(name): return dict(fg=[], pat=[0, 0], ko=[0, 0], games={}, team=None, name=name)
+def k_clock(t): t = str(t or ''); return t[1:] if len(t) == 5 and t.startswith('0') else t   # 08:38 -> 8:38
+kickers = {}; kick_box = defaultdict(list); k_gameinfo = {}
+if have_pbp and 'kicker_player_id' in df.columns:
+    _kd = df.sort_values(['game_id', 'play_id']) if 'play_id' in df.columns else df
+    _kr = _r.sort_values('week') if 'week' in _r.columns else _r
+    k_ros = {r.gsis_id: r for r in _kr.itertuples()}  # each kicker's latest roster row
+    reg_ = lambda r: getattr(r, 'season_type', 'REG') == 'REG'
+    kpend = None; kstart = defaultdict(list); kbox = defaultdict(lambda: dict(fgm=0, fga=0, miss=[], pm=0, pa=0, lng=0))
+    for r in _kd.itertuples(index=False):
+        gid = r.game_id
+        if gid not in k_gameinfo: k_gameinfo[gid] = dict(roof=c(getattr(r, 'roof', None)), temp=c(getattr(r, 'temp', None)), wind=c(getattr(r, 'wind', None)), home=r.home_team, week=int(r.week), reg=reg_(r))
+        kid = r.kicker_player_id if isinstance(r.kicker_player_id, str) else None
+        # where the other team starts after a kickoff: its first snap of the drive that follows; onside kicks and recoveries left out
+        if _fv(getattr(r, 'kickoff_attempt', 0)) == 1 and kid:
+            onside = 'onside' in str(r.desc).lower() or _fv(getattr(r, 'own_kickoff_recovery', 0)) == 1
+            kpend = None if onside else (gid, r.posteam, kid, reg_(r))
+            if reg_(r):
+                k = kickers.get(kid) or kickers.setdefault(kid, k_new(r.kicker_player_name))
+                k['ko'][0] += 1; k['ko'][1] += int(_fv(getattr(r, 'touchback', 0)) == 1)
+            continue
+        if kpend and gid == kpend[0] and r.play_type in ('pass', 'run', 'punt', 'field_goal', 'qb_kneel', 'qb_spike'):
+            if r.posteam == kpend[1] and _fv(r.yardline_100) is not None and kpend[3]: kstart[kpend[2]].append(100 - int(_fv(r.yardline_100)))
+            kpend = None
+        elif kpend and gid != kpend[0]: kpend = None
+        if not kid: continue
+        fga_ = _fv(getattr(r, 'field_goal_attempt', 0)) == 1; xpa_ = _fv(getattr(r, 'extra_point_attempt', 0)) == 1
+        if not (fga_ or xpa_): continue
+        b = kbox[(gid, r.posteam, kid)]; b['name'] = r.kicker_player_name
+        if fga_:
+            d = int(_fv(r.kick_distance) or 0); res = {'made': 'm', 'blocked': 'b'}.get(str(r.field_goal_result), 'x')
+            b['fga'] += 1
+            if res == 'm': b['fgm'] += 1; b['lng'] = max(b['lng'], d)
+            else: b['miss'].append([d, res])
+        else:
+            good = str(r.extra_point_result) == 'good'; b['pa'] += 1; b['pm'] += int(good)
+        if not reg_(r): continue
+        k = kickers.get(kid) or kickers.setdefault(kid, k_new(r.kicker_player_name))
+        k['team'] = r.posteam; k['name'] = r.kicker_player_name
+        g = k['games'].setdefault(gid, dict(w=int(r.week), opp=r.defteam, home=int(r.home_team == r.posteam), fgm=0, fga=0, lng=0, pm=0, pa=0, fx=0))
+        if fga_:
+            g['fga'] += 1
+            if res == 'm': g['fgm'] += 1; g['lng'] = max(g['lng'], d); g['fx'] += k_fx(d)
+            else: g['fx'] -= 1
+            wp_ = _fv(getattr(r, 'wp', None)); wpa_ = _fv(getattr(r, 'wpa', None))
+            k['fg'].append([int(r.week), gid, d, res, int(_fv(r.qtr) or 0), k_clock(getattr(r, 'time', '')), int(_fv(r.score_differential) or 0), round(wp_, 4) if wp_ is not None else None, round(wpa_, 4) if wpa_ is not None else None])
+        else:
+            k['pat'][1] += 1; k['pat'][0] += int(good); g['pa'] += 1; g['pm'] += int(good); g['fx'] += 1 if good else -1
+    for (gid, tm, kid), b in kbox.items():
+        kick_box[(gid, tm)].append([kid, str(b.get('name') or ''), b['fgm'], b['fga'], b['miss'], b['pm'], b['pa'], b['lng']])
+    kickers = {kid: k for kid, k in kickers.items() if k['fg'] or k['pat'][1]}  # a kickoff specialist with no tries has no page
+    # each team's finals so far: the qualifier is a try for every game his team has played
+    k_tg = defaultdict(int)
+    for g_ in sched[(sched.home_score.notna()) & (sched.game_type == 'REG' if 'game_type' in sched.columns else sched.home_score.notna())].itertuples():
+        k_tg[g_.home_team] += 1; k_tg[g_.away_team] += 1
+    for kid, k in kickers.items():
+        fg = k['fg']; m = sum(1 for x in fg if x[3] == 'm'); exp = sum(k_make(x[2]) for x in fg)
+        by = [[0, 0, 0.0] for _ in K_RANGES]
+        for x in fg: b = by[k_rng(x[2])]; b[1] += 1; b[0] += int(x[3] == 'm'); b[2] += k_make(x[2])
+        ro = k_ros.get(kid); st_ = kstart.get(kid, [])
+        games_ = sorted(k['games'].items(), key=lambda kv: kv[1]['w'])
+        k.update(id=kid, pos='K', team=k['team'] or (c(getattr(ro, 'team', None)) if ro is not None else None),
+                 name=(ro.full_name if ro is not None and isinstance(getattr(ro, 'full_name', None), str) else k['name']), short=k['name'],
+                 num=c(getattr(ro, 'jersey_number', None)) if ro is not None else None, age=_age(getattr(ro, 'birth_date', None)) if ro is not None else None,
+                 ht=_ht(getattr(ro, 'height', None)) if ro is not None else None, wt=c(getattr(ro, 'weight', None)) if ro is not None else None,
+                 col=c(getattr(ro, 'college', None)) if ro is not None else None, exp=int(_num(getattr(ro, 'years_exp', 0))) if ro is not None else 0,
+                 draft=_draft(ro) if ro is not None else None, status=c(getattr(ro, 'status', None)) if ro is not None else None,
+                 photo=(ro.headshot_url if ro is not None and isinstance(getattr(ro, 'headshot_url', None), str) and ro.headshot_url.startswith('https://') else None),
+                 fgm=m, fga=len(fg), blk=sum(1 for x in fg if x[3] == 'b'), lng=max([x[2] for x in fg if x[3] == 'm'] or [0]),
+                 oe=round(m - exp, 2), exp_=round(exp, 2), by=[[a, b_, round(e_, 2)] for a, b_, e_ in by], avgd=round(sum(x[2] for x in fg) / len(fg), 1) if fg else None,
+                 ko=[k['ko'][0], k['ko'][1], round(sum(st_) / len(st_), 1) if st_ else None, len(st_)],
+                 pts=3 * m + k['pat'][0], fx=sum(g['fx'] for _, g in games_), g=len(games_), tg=k_tg.get(k['team'], 0),
+                 games=[[g['w'], gid, g['opp'], g['home'], g['fgm'], g['fga'], g['lng'], g['pm'], g['pa'], g['fx'],
+                         k_gameinfo[gid]['roof'], k_gameinfo[gid]['temp'], k_gameinfo[gid]['wind']] for gid, g in games_])
+        k['q'] = bool(k['fga'] and k['fga'] >= max(1, k['tg']))
+        del k['exp_']
+    # injury and depth lines, as the skill players carry
+    for kid, k in kickers.items():
+        t = k['team']
+        if len(inj) and 'gsis_id' in inj.columns:
+            m_ = inj[(inj.gsis_id == kid) & (inj.team == t)]
+            if len(m_):
+                m_ = m_[m_.week == m_.week.max()]; w = m_.iloc[0]
+                k['inj'] = dict(week=int(w.week), status=c(w.report_status) or c(w.practice_status), what=c(w.report_primary_injury) or c(w.practice_primary_injury))
+        if len(depth):
+            dp_ = depth[(depth.team == t)]
+            if len(dp_):
+                dp_ = dp_[(dp_['dt'] == dp_['dt'].max()) & (dp_.gsis_id == kid)]
+                if len(dp_): w = dp_.sort_values('pos_rank').iloc[0]; k['depth'] = dict(slot='K', rank=int(_num(w['pos_rank'], 9)), date=str(w['dt'])[:10])
+    # ranks and the pool behind every percentile: qualifying kickers only
+    K_MET = {'fgpct': (lambda k: k['fgm'] / k['fga'] if k['fga'] else None, False), 'oe': (lambda k: k['oe'], False), 'oepa': (lambda k: k['oe'] / k['fga'] if k['fga'] else None, False),
+             'f50': (lambda k: k['by'][3][0] + k['by'][4][0], False), 'avgd': (lambda k: k['avgd'], False), 'lng': (lambda k: k['lng'], False),
+             'xppct': (lambda k: k['pat'][0] / k['pat'][1] if k['pat'][1] else None, False), 'kstart': (lambda k: k['ko'][2], True),
+             'pts': (lambda k: k['pts'], False), 'ppg': (lambda k: k['pts'] / k['g'] if k['g'] else None, False), 'fxpg': (lambda k: k['fx'] / k['g'] if k['g'] else None, False)}
+    kq = [k for k in kickers.values() if k['q']]
+    k_dist = {}
+    for mk, (fn, low) in K_MET.items():
+        vals = sorted(v for v in (fn(k) for k in kq) if v is not None); k_dist[mk] = [round(v, 4) for v in vals]
+        for k in kq:
+            v = fn(k)
+            if v is None: continue
+            better = sum(1 for o in vals if (o < v if low else o > v)); tie = sum(1 for o in vals if o == v) > 1
+            k.setdefault('trk', {})[mk] = [better + 1, int(tie)]
+    for kid, k in kickers.items():
+        index_rows.append(dict(id=kid, name=k['name'], team=k['team'], pos='K', num=k['num'], col=k['col'], photo=k['photo'], snap=0, tgt=0, rec=0, car=0, att=0, yds=0, td=0, epa=0, g=k['g'],
+                               st=(k['inj']['status'] if k.get('inj') else None), what=(k['inj']['what'] if k.get('inj') else None), slot=(f"K{k['depth']['rank']}" if k.get('depth') else None),
+                               fgm=k['fgm'], fga=k['fga'], kpts=k['pts']))
+    print('kickers:', len(kickers), 'with a try or extra point;', len(kq), 'qualify;', sum(len(k['fg']) for k in kickers.values()), 'field goal tries')
+
 # ---- the fantasy lens (SCOPE §34): points per format, range, booms and busts, position ranks, points allowed by each defense
 # nflverse's weekly stats carry standard and full-PPR points; half PPR is their average. Every QB, RB (FB counts as RB), WR and TE
 # with a stat line is in the pool, rostered or not, so ranks and points allowed count everyone who scored.
-FX_FMT = ('std', 'half', 'ppr'); FX_POS = ('QB', 'RB', 'WR', 'TE')
-FX_BOOM = {'QB': (25, 25, 25), 'RB': (12, 16, 20), 'WR': (12, 16, 20), 'TE': (9, 12, 15)}   # standard, half, PPR: lines set in PPR, scaled for a reception's worth
-FX_BUST = {'QB': (12, 12, 12), 'RB': (5, 6.5, 8), 'WR': (5, 6.5, 8), 'TE': (3, 4, 5)}
-FX_START = {'QB': 12, 'RB': 24, 'WR': 24, 'TE': 12}                                           # the last weekly starter in a 12-team league
+FX_FMT = ('std', 'half', 'ppr'); FX_POS = ('QB', 'RB', 'WR', 'TE', 'K')  # kickers since 2.8.0 (SCOPE §47): scored from the plays, the same in every format
+FX_BOOM = {'QB': (25, 25, 25), 'RB': (12, 16, 20), 'WR': (12, 16, 20), 'TE': (9, 12, 15), 'K': (12, 12, 12)}   # standard, half, PPR: lines set in PPR, scaled for a reception's worth
+FX_BUST = {'QB': (12, 12, 12), 'RB': (5, 6.5, 8), 'WR': (5, 6.5, 8), 'TE': (3, 4, 5), 'K': (5, 5, 5)}
+FX_START = {'QB': 12, 'RB': 24, 'WR': 24, 'TE': 12, 'K': 12}                                           # the last weekly starter in a 12-team league
 def _fxpct(a, q):
     a = sorted(a); i = (len(a) - 1) * q; lo = int(i); hi = min(lo + 1, len(a) - 1); return a[lo] + (a[hi] - a[lo]) * (i - lo)
 fx_by = defaultdict(list); fx_pos = {}
 if len(stats) and 'fantasy_points' in stats.columns and 'fantasy_points_ppr' in stats.columns:
     for w in stats.itertuples():
         fp_ = 'RB' if getattr(w, 'position', None) == 'FB' else getattr(w, 'position', None)
-        if fp_ not in FX_POS or not isinstance(w.player_id, str): continue
+        if fp_ not in FX_POS or fp_ == 'K' or not isinstance(w.player_id, str): continue  # kickers come from the plays below
         sd, pp = _num(w.fantasy_points), _num(w.fantasy_points_ppr)
         fx_by[w.player_id].append(dict(w=int(w.week), opp=w.opponent_team, pts=(sd, (sd + pp) / 2, pp))); fx_pos[w.player_id] = fp_
 # a game he played without a stat line (snaps, no touch) still counts, at zero points: it is a bust week and a game in his average (Greptile, PR #38)
@@ -627,6 +747,10 @@ for p in allp:
             if ST_TW is not None and (wk_, tm_) not in ST_TW: continue  # the stats haven't published that game yet: not a zero, just not counted
             fx_by[p['id']].append(dict(w=wk_, opp=fx_opp.get((tm_, wk_)), pts=(0.0, 0.0, 0.0))); fx_pos[p['id']] = ps_
             p.setdefault('fx0', []).append(wk_)  # the player page draws these weeks as zero-point games, not misses
+for kid_, k_ in kickers.items():  # each game's kicking points (ESPN standard), the same in all three formats
+    for g_ in k_['games']:
+        if g_[0] <= fx_reg: fx_by[kid_].append(dict(w=g_[0], opp=g_[2], pts=(float(g_[9]),) * 3)); fx_pos[kid_] = 'K'
+    fx_team[kid_] = k_['team']
 fx_sum = {}
 for pid_, ws_ in fx_by.items():
     ps_ = fx_pos[pid_]; s_ = {}
@@ -646,7 +770,7 @@ for ps_ in FX_POS:
         for x in ids_:
             fx_rank.setdefault(x, {})[fm] = dict(tot=1 + sum(1 for o in tots if o > fx_sum[x][fm]['tot']), ppg=(1 + sum(1 for o in ppgs if o > fx_sum[x][fm]['ppg'])) if x in q_ else None, n=len(q_))
         fx_start[ps_].append(ppgs[min(len(ppgs), FX_START[ps_]) - 1] if ppgs else None)
-for p in allp:
+for p in allp + list(kickers.values()):
     if p['id'] in fx_sum: p['fan'] = dict(pos=fx_pos[p['id']], s=fx_sum[p['id']], rk=fx_rank[p['id']])
 for r_ in index_rows:
     if r_['id'] in fx_sum:
@@ -689,7 +813,7 @@ for g in ld_groups:
     for src in ('g', 'fp'):
         for k in ld_groups[g][src]: ld_groups[g][src][k].sort(key=lambda r: -r[1])
 ld_fan = {}
-fan_p = [p for p in allp if p.get('fan')]
+fan_p = [p for p in allp + list(kickers.values()) if p.get('fan')]
 for i_, fm in enumerate(FX_FMT):
     b = {}
     for ps_ in FX_POS:
@@ -740,7 +864,7 @@ weeks = {}
 for r in sched.sort_values(['week', 'gameday', 'gametime']).itertuples():
     g = dict(id=r.game_id, week=int(r.week), day=r.weekday, date=r.gameday, time=r.gametime, away=r.away_team, home=r.home_team,
              away_score=c(r.away_score), home_score=c(r.home_score), spread=c(r.spread_line), total=c(r.total_line),
-             stadium=c(r.stadium), game_type=r.game_type, status='final' if not (isinstance(r.home_score, float) and math.isnan(r.home_score)) else 'upcoming')
+             stadium=c(r.stadium), roof=c(getattr(r, 'roof', None)), game_type=r.game_type, status='final' if not (isinstance(r.home_score, float) and math.isnan(r.home_score)) else 'upcoming')
     weeks.setdefault(str(int(r.week)), []).append(g)
 json.dump(dict(season=season, current_week=week, through_week=through_week, weeks=weeks), open(f'{out}/schedule.json', 'w'), separators=(',', ':'))
 
@@ -930,6 +1054,9 @@ if len(stats) or have_pbp:  # with no weekly file at all, every final is counted
                     if alt and alt['off']: rec[side] = alt; bx_pbp.append(f"{gm['id']} {tm}")
             if any(rec[s_]['off'] for s_ in rec): byweek.setdefault(int(wk), {})[gm['id']] = rec  # a final with no lines from either source gets no box, not an empty one
     for wk, games in byweek.items():
+        for gid_, rec_ in games.items():  # every kicker in the game (SCOPE §47), beside the one-kicker line 2.7.0 reads
+            for s_ in rec_.values():
+                if kick_box.get((gid_, s_['team'])): s_['kk'] = kick_box[(gid_, s_['team'])]
         json.dump(clean(dict(season=season, week=wk, keys=['id', 'name', 'pos', 'snap'] + OFFK, games=games)), open(f'{out}/box/w{wk}.json', 'w'), separators=(',', ':'))
     print('box scores:', sum(len(v) for v in byweek.values()), 'games in', len(byweek), 'weeks')
     print('box scores from the plays (weekly stats not posted yet):', len(bx_pbp), bx_pbp[:6])
@@ -1090,6 +1217,32 @@ for t, pl in team_players.items():
         if hist: rows[p['id']] = [{k: v for k, v in r.items() if k not in ('name', 'pos')} for r in hist]
     os.makedirs(f'{out}/players/career', exist_ok=True)
     json.dump(clean(dict(season=season, team=t, through=through_week, players=rows)), open(f'{out}/players/career/{t}.json', 'w'), separators=(',', ':'))
+
+# ---- kickers (SCOPE §47): players/kickers.json, every kicker's page in one file, with the league ranks behind it.
+# Careers come from career/k{year}.json (tools/kick_career.py, built once per finished season); this season from the plays above.
+from kick_career import fetch_year as k_fetch_year
+k_years = {}
+for y in range(CAREER_FROM, season):
+    cp = f'{out}/career/k{y}.json'
+    if os.path.exists(cp): k_years[y] = json.load(open(cp)); continue
+    try:
+        s_ = k_fetch_year(y)
+        if s_ is None: continue
+        k_years[y] = s_; json.dump(s_, open(cp, 'w'), separators=(',', ':')); print('career: built kickers', y, len(s_))
+    except Exception as e:
+        print('career: skipped kickers', y, repr(e)[:120])
+for kid, k in kickers.items():
+    hist = [dict(k_years[y][kid]) for y in sorted(k_years) if kid in k_years[y]]
+    hist.append(dict(season=season, team=k['team'], g=k['g'], fgm=k['fgm'], fga=k['fga'], lng=k['lng'], f50=[k['by'][3][0] + k['by'][4][0], k['by'][3][1] + k['by'][4][1]], pm=k['pat'][0], pa=k['pat'][1]))
+    k['career'] = hist
+if kickers:
+    k_league = [[0, 0] for _ in K_RANGES]
+    for k in kickers.values():
+        for i_, b_ in enumerate(k['by']): k_league[i_][0] += b_[0]; k_league[i_][1] += b_[1]
+    json.dump(clean(dict(season=season, through=through_week, curve=list(K_CURVE), ranges=[r_[0] for r_ in K_RANGES], league=k_league,
+                         n=sum(1 for k in kickers.values() if k['q']), dist=k_dist, kickers={kid: {x: v for x, v in k.items() if x not in ('games_',)} for kid, k in kickers.items()})),
+              open(f'{out}/players/kickers.json', 'w'), separators=(',', ':'))
+    print('kickers.json:', len(kickers), 'kickers,', os.path.getsize(f'{out}/players/kickers.json') // 1024, 'KB')
 
 # ---------------------------------------------------------------- the defensive half (SCOPE §39): defense/{TEAM}.json, defense/league.json, plays/def/{TEAM}.json
 # Every figure is the defense's: plays it defended (regular season), FTN's blitz, rusher and box counts, PFR's coverage and pressure charting
@@ -1332,7 +1485,7 @@ for wk_s, gl_ in sorted(weeks.items(), key=lambda x: int(x[0])):
                       drama=(1000 - (low if low is not None else 500)) + 120 * lc + 30 * w_.get('flips', 0) + (200 if w_['ot'] else 0))
             for x in top_:
                 helped = g_['home'] if x[1] > 0 else g_['away']; before = s_[x[0]][1]
-                swings_.append(dict(g=g_['id'], t=helped, c=_wk_clock(s_[x[0]][0]), d=x[3], v=round(abs(x[1]) / 10, 1), ba=round((before if helped == g_['home'] else 1000 - before) / 10)))
+                swings_.append(dict(g=g_['id'], t=helped, b=x[2], c=_wk_clock(s_[x[0]][0]), d=x[3], v=round(abs(x[1]) / 10, 1), ba=round((before if helped == g_['home'] else 1000 - before) / 10)))  # b: the team with the ball (SCOPE §47)
         G_.append(r_)
     swings_.sort(key=lambda x: -x['v'])
     fin_ids = {g_['id'] for g_ in gl_ if g_['status'] == 'final'}
