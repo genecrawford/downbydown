@@ -5,7 +5,8 @@
  *
  * Every 6 hours a background cron pass downloads the 102 feeds, 8 at a time, keeps the stories of the last 7 days that
  * belong to a team, and stores one small list per team (option dbd_news_{TEAM}, not autoloaded). Raw feeds are never
- * stored. A feed that fails keeps the stories it had last time. collect() is the whole matching step with no network,
+ * stored. Each pass adds to the stories already stored (within the week), so a feed that fails or serves a stale copy loses nothing.
+ * collect() is the whole matching step with no network,
  * so the CI harness runs it on fixture feeds.
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
@@ -197,7 +198,9 @@ class DBD_News {
 	public static function collect( $feeds, $bodies, $prev = array(), $prev_status = array() ) {
 		$now = self::now(); $teams = array_keys( self::SITES );
 		$col = array(); foreach ( $teams as $t ) { $col[ $t ] = array( 't' => array(), 'l' => array() ); }
-		$status = array(); $failed = array();
+		$status = array();
+		/* each feed's newest story as stored last time, to spot a feed that hands back an older copy of itself (a CDN node's stale cache, 2.9.1) */
+		$had = array(); foreach ( $prev as $pt ) { foreach ( array( 't', 'l' ) as $c ) { foreach ( (array) ( $pt[ $c ] ?? array() ) as $o ) { $f = (string) ( $o['f'] ?? '' ); $had[ $f ] = max( $had[ $f ] ?? 0, (int) $o['ts'] ); } } }
 		$item = function ( $s, $key, $src, $who, $team ) {
 			$w = array(); foreach ( $who as $q ) { if ( $q[2] === $team ) { $w[] = array( $q[0], $q[1] ); } }
 			return array( 'h' => $s[0], 'u' => $s[1], 'ts' => $s[2], 's' => $src, 'f' => $key, 'x' => isset( self::SUB[ $src ] ) ? 1 : 0, 'w' => $w );
@@ -206,7 +209,7 @@ class DBD_News {
 		foreach ( $feeds as $key => $x ) {
 			list( , $kind, $team, $src ) = $x;
 			$b = $bodies[ $key ] ?? array( 'error' => 'not fetched' );
-			if ( is_array( $b ) ) { $failed[ $key ] = true; $status[ $key ] = array( 'ok' => 0, 'n' => 0, 'err' => $b['error'], 'last' => (int) ( $prev_status[ $key ]['last'] ?? 0 ) ); continue; }
+			if ( is_array( $b ) ) { $status[ $key ] = array( 'ok' => 0, 'n' => 0, 'err' => $b['error'], 'last' => (int) ( $prev_status[ $key ]['last'] ?? 0 ) ); continue; }
 			$all = self::parse( $b ); $fresh = array_values( array_filter( $all, function ( $s ) use ( $now ) { return $s[2] && $now - $s[2] <= self::WEEK && $s[2] <= $now + 3600; } ) );
 			$kept = 0;
 			if ( $kind === 'league' ) { foreach ( $fresh as $s ) { $league[] = array( $s, $key, $src ); } $kept = count( $fresh ); }
@@ -218,7 +221,10 @@ class DBD_News {
 					$col[ $team ]['t'][] = $item( $s, $key, $src, $who, $team ); $kept++;
 				}
 			}
-			$status[ $key ] = array( 'ok' => 1, 'n' => $kept, 'all' => count( $all ), 'err' => $all ? ( $fresh ? '' : 'nothing from the last 7 days' ) : 'no stories in the feed', 'last' => $now );
+			$newest = 0; foreach ( $all as $s ) { $newest = max( $newest, (int) $s[2] ); }
+			$err = $all ? ( $fresh ? '' : 'nothing from the last 7 days' ) : 'no stories in the feed';
+			if ( $all && isset( $had[ $key ] ) && $newest < $had[ $key ] ) { $err = 'sent an older copy of itself; the newer stories were kept'; }
+			$status[ $key ] = array( 'ok' => 1, 'n' => $kept, 'all' => count( $all ), 'err' => $err, 'last' => $now );
 		}
 		/* league stories: every team the headline names or whose player it names; none when it names four or more; once each */
 		$seen = array();
@@ -232,10 +238,12 @@ class DBD_News {
 			if ( ! $ts || count( $ts ) > 3 ) { continue; }
 			foreach ( array_keys( $ts ) as $t ) { $col[ $t ]['l'][] = $item( $s, $key, $src, $who, $t ); }
 		}
-		/* a feed that failed this time keeps the stories it had */
+		/* every story stored last time stays while it's within the week, and this pass adds to it: a feed that fails, or hands back an older
+		   copy of itself (a CDN node's stale cache), can't take newer stories away (2.9.1). Only feeds still switched on carry over; a fresh
+		   copy of a story comes first, so the dedupe below keeps it. */
 		foreach ( $teams as $t ) {
 			foreach ( array( 't', 'l' ) as $c ) {
-				foreach ( (array) ( $prev[ $t ][ $c ] ?? array() ) as $o ) { if ( isset( $failed[ $o['f'] ?? '' ] ) && $now - (int) $o['ts'] <= self::WEEK ) { $col[ $t ][ $c ][] = $o; } }
+				foreach ( (array) ( $prev[ $t ][ $c ] ?? array() ) as $o ) { if ( isset( $feeds[ $o['f'] ?? '' ] ) && $now - (int) $o['ts'] <= self::WEEK ) { $col[ $t ][ $c ][] = $o; } }
 			}
 		}
 		$stores = array();

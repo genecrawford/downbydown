@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.9.0
+Stable tag: 2.9.1
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,10 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.9.1 =
+* Team news keeps what it has. Each fetch now adds to the stories already stored from the last 7 days instead of replacing a feed's stories. A feed that fails, or a CDN node that hands back an hours-old copy of a feed (seen live on Daily Norseman on 2026-11-03), can no longer take newer stories off the panel. A source switched off still leaves at the next fetch.
+* Down by Down › Team news flags a feed that sent an older copy of itself.
 
 = 2.9.0 =
 * Team news (SCOPE §49): each team's players page gets a news panel with the last 7 days of stories in two columns. One is the team's own site, its SB Nation blog and The Athletic. The other is around the league: ProFootballTalk, CBS Sports, ESPN, Yahoo Sports, Sporting News, NFL Trade Rumors and The Athletic. Each row is the headline (opening the article in a new tab), the source, the time and any player named, linked to his page. The Athletic's links say "Subscriber". The first five in each column hold no more than two from one source; "Show more" opens up to 20.

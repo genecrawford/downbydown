@@ -173,7 +173,7 @@ function dbd_settings_page() {
 		<?php endif; ?>
 
 		<h2 id="dbd-news">Team news</h2>
-		<p>Every 6 hours (about 12 and 6, morning and evening, Eastern) the site reads the news feeds below, keeps the last 7 days of stories that belong to a team, and shows them on each team's players page, with the newest one on its offense and defense pages. Headline, source and time only, linking out. A feed that fails keeps the stories it had last time.</p>
+		<p>Every 6 hours (about 12 and 6, morning and evening, Eastern) the site reads the news feeds below, keeps the last 7 days of stories that belong to a team, and shows them on each team's players page, with the newest one on its offense and defense pages. Headline, source and time only, linking out. Each fetch adds to the stories already kept, so a feed that fails or sends an old copy of itself loses nothing.</p>
 		<?php
 		$ns = get_option( DBD_News::OPT_STATUS ); $nf = DBD_News::feeds(); $nnext = wp_next_scheduled( DBD_News::HOOK );
 		$nst = is_array( $ns ) ? (array) $ns['feeds'] : array(); $nok = count( array_filter( $nst, function ( $x ) { return ! empty( $x['ok'] ); } ) );
