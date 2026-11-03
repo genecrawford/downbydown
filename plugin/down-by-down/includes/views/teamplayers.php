@@ -37,6 +37,9 @@ if ( $luO || $luD ) {
 	echo '<p class="dbd-note">Starters from the ' . esc_html( $t['nick'] ) . '\' current depth chart (nflverse, from ESPN). Hover a player for his season; skill players open their page. The nickel back, the extra defensive back most teams use against three receivers, is drawn lighter.</p></section>';
 }
 
+/* ---- team news (SCOPE §49), after the lineup and ahead of the roster, so it shows before a season has player data (Greptile, PR #72) */
+echo DBD_News::panel( $team );
+
 /* ---- the roster, grouped by position */
 if ( ! $pl ) { echo '<div class="dbd-empty"><h2>No player data yet</h2><p>Player pages fill in with the next nightly data build.</p></div></main>'; return; }
 $S = function ( $p, $k ) { $s = 0; foreach ( $p['weeks'] ?? array() as $w ) { $s += (float) ( $w[ $k ] ?? 0 ); } return $s; };
@@ -72,8 +75,6 @@ if ( $KR ) {
 	}
 	$body .= '</tbody>';
 }
-/* ---- team news (SCOPE §49), after the lineup */
-echo DBD_News::panel( $team );
 echo '<section class="dbd-panel dbd-roster"><div class="dbd-ph"><span class="dbd-lab"><b>The roster</b> · every skill player with a snap this season, and the kicker</span><span class="dbd-badge">' . count( $pl ) . ' players</span></div>';
 echo '<div class="dbd-tw"><table class="dbd-stat dbd-rost"><thead><tr><th>Player</th><th>Snap</th><th>Tgt/Att</th><th>Rec</th><th>Car</th><th>Yds</th><th>TD</th><th>EPA</th><th>Status</th></tr></thead>' . $body . '</table></div></section>';
 

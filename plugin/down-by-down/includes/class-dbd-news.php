@@ -168,15 +168,19 @@ class DBD_News {
 		return array_values( array_filter( $out, function ( $x ) { return $x[0] !== '' && preg_match( '#^https?://#', $x[1] ); } ) );
 	}
 
-	/** The players a headline names: unique full names (8+ characters) from the players index, at most two. */
+	/** The players a headline names: unique full names (first and last, however short: "Bo Nix") from the players index, as whole words, at most two. */
 	private static function names() {
 		static $n = null; if ( $n !== null ) { return $n; }
-		$c = array(); foreach ( DBD_Data::player_index() as $p ) { if ( strlen( (string) ( $p['name'] ?? '' ) ) > 7 ) { $c[ $p['name'] ][] = $p; } }
+		$c = array(); foreach ( DBD_Data::player_index() as $p ) { $nm = trim( (string) ( $p['name'] ?? '' ) ); if ( strpos( $nm, ' ' ) !== false ) { $c[ $nm ][] = $p; } }
 		$n = array(); foreach ( $c as $name => $ps ) { if ( count( $ps ) === 1 ) { $n[ $name ] = array( $ps[0]['id'], $ps[0]['team'] ); } }
 		return $n;
 	}
 	private static function who( $title ) {
-		$o = array(); foreach ( self::names() as $name => $x ) { if ( strpos( $title, $name ) !== false ) { $o[] = array( $x[0], $name, $x[1] ); if ( count( $o ) === 2 ) { break; } } }
+		$o = array();
+		foreach ( self::names() as $name => $x ) {
+			if ( strpos( $title, $name ) === false || ! preg_match( '/(?<![\p{L}\p{N}])' . preg_quote( $name, '/' ) . '(?![\p{L}\p{N}])/u', $title ) ) { continue; }  /* "Bo Nix", not "Bo Nixon" */
+			$o[] = array( $x[0], $name, $x[1] ); if ( count( $o ) === 2 ) { break; }
+		}
 		return $o;
 	}
 	private static function nick_re() {
@@ -227,7 +231,7 @@ class DBD_News {
 			foreach ( $who as $q ) { if ( isset( $col[ $q[2] ] ) ) { $ts[ $q[2] ] = 1; } }
 			if ( ! $ts || count( $ts ) > 3 ) { continue; }
 			foreach ( array_keys( $ts ) as $t ) {
-				foreach ( $col[ $t ]['t'] as $o ) { if ( $o['u'] === $s[1] ) { continue 2; } }  /* already in the team's own column */
+				foreach ( $col[ $t ]['t'] as $o ) { if ( $o['u'] === $s[1] || preg_replace( '/\W+/u', '', strtolower( $o['h'] ) ) === $k ) { continue 2; } }  /* already in the team's own column, by link or headline (Greptile, PR #72) */
 				$col[ $t ]['l'][] = $item( $s, $key, $src, $who, $t );
 			}
 		}
@@ -240,8 +244,9 @@ class DBD_News {
 		$stores = array();
 		foreach ( $teams as $t ) {
 			$stores[ $t ] = array( 'at' => $now );
+			$u = array();  /* shared by both columns: a story shows once on the panel */
 			foreach ( array( 't', 'l' ) as $c ) {
-				$u = array(); $list = array(); foreach ( $col[ $t ][ $c ] as $o ) { $k = preg_replace( '/\W+/u', '', strtolower( $o['h'] ) ); if ( isset( $u[ $o['u'] ] ) || isset( $u[ $k ] ) ) { continue; } $u[ $o['u'] ] = 1; $u[ $k ] = 1; $list[] = $o; }
+				$list = array(); foreach ( $col[ $t ][ $c ] as $o ) { $k = preg_replace( '/\W+/u', '', strtolower( $o['h'] ) ); if ( isset( $u[ $o['u'] ] ) || isset( $u[ $k ] ) ) { continue; } $u[ $o['u'] ] = 1; $u[ $k ] = 1; $list[] = $o; }
 				$stores[ $t ][ $c ] = array_slice( self::balance( $list ), 0, self::CAP );
 			}
 		}

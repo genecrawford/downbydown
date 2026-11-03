@@ -76,6 +76,8 @@ jobs:
           need(len(d['DET']['t']) == 7 and sum(x['s'] == 'Detroitlions.com' for x in d['DET']['t'][:5]) == 4, 'with too few sources the first five do not fill from the newest')
           need(any(x['h'] == 'Cardinals stun Cowboys in overtime' and x['x'] == 1 for x in d['ARI']['l']), "The Athletic's league feed does not reach the Cardinals")
           need(o['status']['fan:DET']['ok'] == 0 and o['status']['fan:DET']['err'] == 'HTTP 503', 'the failed feed is not reported')
+          need(any(x['h'] == 'Bo Nix cleared to play Sunday' and x['w'] and x['w'][0][1] == 'Bo Nix' for x in d['DEN']['l']), 'a short player name does not match (Bo Nix)')
+          need('Vikings Practice Report: Three Return Ahead of Week 9' not in L, 'a team headline repeats in the league column from another link')
           print('team news:', len(T), 'Vikings team stories,', len(L), 'league; matching rules hold')
           PY
           # the panel and the latest line, drawn from those stored lists
