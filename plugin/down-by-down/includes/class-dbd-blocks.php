@@ -389,7 +389,7 @@ class DBD_Blocks {
 		$fin = array_values( array_filter( (array) $W['games'], function ( $g ) { return ( $g['status'] ?? '' ) === 'final'; } ) );
 		$nu = 0; $nc = 0; $no = 0; $up = null;
 		/* upsets, comebacks and overtimes come from each game's win probability, which can trail the score: count them only when every game has it (Greptile, PR #65) */
-		$known = $fin && count( array_filter( $fin, function ( $g ) { return isset( $g['pre_w'], $g['tags'] ); } ) ) === count( $fin );
+		$known = $fin && count( array_filter( $fin, function ( $g ) { return isset( $g['pre'], $g['tags'] ); } ) ) === count( $fin );  /* pre, not pre_w: a tie has no winner's chance */
 		foreach ( $fin as $g ) {
 			$tg = self::tags( $g );
 			if ( isset( $tg['comeback'] ) ) { $nc++; }
