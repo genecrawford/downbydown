@@ -10,12 +10,15 @@
  *   matchup   the game of the week (picked the way the hub picks it) with its biggest edge, over a four-row offense vs defense
  *   player-card  a player's share card image linked to his page: the week's biggest riser in target share (player="id" pins one)
  *   movers    the biggest jumps in target share in the latest finished week, before and after (count="4", 1 to 5)
+ *   fantasy   the softest defense at each position (QB, RB, WR, TE): the most half-PPR points allowed a game
+ *   leaders   season leader boards (boards="wr.tshare,wr.epat,qb.epadb" by default; "ppr" is the PPR points board; top="5", 3 to 10)
+ *   teams     all 32 teams by division, best record first, each linked to its page
  * Styles: assets/blocks.css. The blocks inherit the surrounding text color for their headings and lines, so they sit on any background.
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 class DBD_Blocks {
-	const TYPES = array( 'hero-map', 'games', 'counts', 'week-highlights', 'matchup', 'player-card', 'movers' );
+	const TYPES = array( 'hero-map', 'games', 'counts', 'week-highlights', 'matchup', 'player-card', 'movers', 'fantasy', 'leaders', 'teams' );
 
 	public static function init() {
 		add_shortcode( 'dbd_block', array( __CLASS__, 'shortcode' ) );
@@ -276,5 +279,65 @@ class DBD_Blocks {
 			$li .= '<li>' . DBD_Marks::player( $m['team'], $m['num'] ?? null, 40, $m['photo'] ?? null ) . '<span><b><a href="' . self::u( array( 'player' => $m['id'] ) ) . '">' . esc_html( $m['name'] ) . '</a></b><small>' . esc_html( ( $m['pos'] ?? '' ) . ' · ' . self::nick( $m['team'] ) ) . '</small></span><em>' . round( (float) $m['before'] ) . '% <i aria-hidden="true">→</i><span class="screen-reader-text"> to </span> <strong>' . round( (float) $m['now'] ) . '%</strong></em></li>';
 		}
 		return self::wrap( 'movers', '<div class="hb-panel"><p class="k">' . esc_html( ( $wk ? 'Rising in ' . self::week_name( $wk ) : 'Rising' ) . ' · share of targets' ) . '</p><ul class="hb-list">' . $li . '</ul></div>' );
+	}
+
+	/** The softest defense at each position: the most half-PPR points allowed a game, linked to that defense. */
+	private static function b_fantasy( $a ) {
+		$f = DBD_Fantasy::file(); if ( empty( $f['rank'] ) || empty( $f['allow'] ) ) { return ''; }
+		$i = DBD_Fantasy::idx( 'half' ); $h = '';
+		foreach ( array( 'QB' => 'quarterbacks', 'RB' => 'running backs', 'WR' => 'wide receivers', 'TE' => 'tight ends' ) as $pos => $who ) {
+			$best = null;
+			foreach ( (array) $f['rank'] as $t => $r ) { $rk = (int) ( $r[ $pos ][ $i ] ?? 0 ); if ( $rk && isset( $f['allow'][ $t ][ $pos ][ $i ] ) && ( ! $best || $rk < $best[1] ) ) { $best = array( $t, $rk ); } }
+			if ( ! $best ) { continue; }
+			$v = (float) $f['allow'][ $best[0] ][ $pos ][ $i ];
+			$h .= '<a class="hb-soft" href="' . self::u( array( 'team' => $best[0], 'side' => 'def' ) ) . '">' . DBD_Marks::tile( $best[0], 38 ) . '<span><i>' . esc_html( $pos ) . '</i><b>' . esc_html( self::nick( $best[0] ) ) . '</b><small>allow ' . esc_html( DBD_Fantasy::num( $v ) ) . ' half-PPR points a game to ' . esc_html( $who ) . ', the most in the NFL</small></span></a>';
+		}
+		return self::wrap( 'fantasy', $h );
+	}
+
+	/**
+	 * Season leader boards from the Leaders page's file. boards="group.metric,…" (wr.tshare, wr.epat, qb.epadb, rb.ypc…, the
+	 * Leaders page's keys), or "ppr" for the PPR points leaders at every position. Only qualified players, as on the Leaders page.
+	 */
+	private static function b_leaders( $a ) {
+		$keys = array_filter( array_map( 'trim', explode( ',', strtolower( (string) ( $a['boards'] ?? 'wr.tshare,wr.epat,qb.epadb' ) ) ) ) );
+		$top = max( 3, min( 10, (int) ( $a['top'] ?? 5 ) ) ); $L = DBD_Leaders::file(); $P = (array) ( $L['players'] ?? array() ); $h = '';
+		foreach ( $keys as $key ) {
+			if ( $key === 'ppr' ) {
+				$rows = (array) ( $L['fan']['ppr']['tot'] ?? array() ); $title = 'PPR points'; $sub = 'season leaders, every position';
+				$val = function ( $r ) { return DBD_Fantasy::num( $r[1] ); };
+			} else {
+				$pp = explode( '.', $key ); if ( count( $pp ) !== 2 ) { continue; }
+				$g = DBD_Leaders::data_group( $pp[0] ); $df = DBD_Leaders::def( $g, 'g', $pp[1] ); if ( ! $df ) { continue; }
+				$rows = DBD_Leaders::rows( $g, 'g', $pp[1], null, DBD_Leaders::pos_of( $pp[0] ) ); $title = $df[0]; $sub = DBD_Leaders::sub( $df ) ?: DBD_Leaders::pool( $pp[0] );
+				$val = function ( $r ) use ( $df ) { return DBD_Leaders::fmt( 'g', $df[2], $r[1] ); };
+			}
+			$li = ''; $n = 0;
+			foreach ( $rows as $r ) {
+				$p = $P[ $r[0] ] ?? null; if ( ! $p ) { continue; }  /* a player missing from the index has no page to link */
+				list( $name, $team, $pos, $num, $photo ) = array_pad( (array) $p, 5, null ); $n++;
+				$li .= '<li><span class="n">' . $n . '</span>' . ( $team ? DBD_Marks::player( $team, $num, 32, $photo ) : '' ) . '<span><b><a href="' . self::u( array( 'player' => $r[0] ) ) . '">' . esc_html( $name ) . '</a></b><small>' . esc_html( ( $team ? self::nick( $team ) . ' · ' : '' ) . $pos ) . '</small></span><em>' . esc_html( $val( $r ) ) . '</em></li>';
+				if ( $n >= $top ) { break; }
+			}
+			if ( $li === '' ) { continue; }
+			$h .= '<div class="hb-board"><h3>' . esc_html( $title ) . '</h3>' . ( $sub !== '' ? '<p class="sub">' . esc_html( $sub ) . '</p>' : '' ) . '<ol class="hb-list">' . $li . '</ol></div>';
+		}
+		return self::wrap( 'leaders', $h );
+	}
+
+	/** All 32 teams by division, AFC then NFC, best record first, each linked to its page. */
+	private static function b_teams( $a ) {
+		$T = DBD_Data::teams(); $h = '';
+		foreach ( array( 'AFC', 'NFC' ) as $c ) {
+			foreach ( array( 'East', 'North', 'South', 'West' ) as $d ) {
+				$div = $c . ' ' . $d; $ts = array_keys( array_filter( $T, function ( $t ) use ( $div ) { return ( $t['div'] ?? '' ) === $div; } ) );
+				if ( ! $ts ) { continue; }
+				usort( $ts, function ( $x, $y ) { return array( DBD_Data::win_pct( $y ), $x ) <=> array( DBD_Data::win_pct( $x ), $y ); } );
+				$h .= '<div class="hb-div"><h4>' . esc_html( $div ) . '</h4>';
+				foreach ( $ts as $t ) { $h .= '<a href="' . self::u( array( 'team' => $t ) ) . '">' . DBD_Marks::tile( $t, 30 ) . '<span>' . esc_html( self::nick( $t ) ) . '</span><em>' . esc_html( DBD_Data::record_text( $t ) ) . '</em></a>'; }
+				$h .= '</div>';
+			}
+		}
+		return self::wrap( 'teams', $h );
 	}
 }
