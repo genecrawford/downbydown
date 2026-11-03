@@ -2306,7 +2306,7 @@ In one fetch on 2026-11-03, every team had stories in its team column, and the s
 
 ### Open decisions (for Gene, one at a time)
 
-1. **Where:** the panel on the team players page plus the latest line on the offense and defense pages (recommended), or the panel only.
+1. **Where:** DECIDED 2026-11-03: the panel on the team players page plus the latest line on the offense and defense pages (Gene: "Panel and latest line").
 2. **Sources:** DECIDED 2026-11-03: the 32 team sites and the 32 SB Nation blogs for each team's own column; ProFootballTalk, CBS Sports, ESPN, Yahoo Sports, Sporting News and NFL Trade Rumors for around the league (Gene: "Yes, add them").
 3. **The Athletic:** leave out (recommended for now), or add each team's Athletic feed to the team column with a "subscriber" mark on its links.
 
