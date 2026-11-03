@@ -2295,18 +2295,18 @@ In one fetch on 2026-11-03, every team had stories in its team column, and the s
 
 ### How it runs
 
-- **On the site, not in the data build:** WordPress fetches the 102 feeds (32 team sites, 32 SB Nation blogs, 31 Athletic team feeds, 7 league feeds) every hour (WordPress has a feed reader built in) and keeps the matched lists in one stored setting. News goes stale in hours, and the data build runs three times a day; keeping it on the site also keeps headlines out of the public data repo.
+- **On the site, not in the data build:** WordPress fetches the 102 feeds (32 team sites, 32 SB Nation blogs, 31 Athletic team feeds, 7 league feeds) every 6 hours (DECIDED 2026-11-03, Gene: "every 6 hours instead of hourly"), at about 12, 6, 12 and 6 Eastern, and keeps the matched lists per team. Running on the site keeps the fetch on its own clock, apart from the data build, and keeps headlines out of the public data repo. A breaking story can take up to 6 hours to appear; "Show more" and the 7-day window are unchanged.
 - **A feed that fails** keeps its last good list, and the plugin's status screen shows each feed's last fetch, its story count and any error, so a dead feed like the Commanders' is visible.
 - **Every link** opens in a new tab with `rel="nofollow noopener"`.
 - **A setting** turns any source off.
 
 ### What it costs the site (measured 2026-11-03)
 
-- **Visitors:** nothing extra. No page view ever fetches a feed. A team page reads one stored list (about 7 KB for its team) and adds about 6 KB of HTML: headlines and links only, no images, no extra script. Page caching (WP Engine, Cloudflare) works as now.
-- **The hourly fetch:** one pass downloads all 102 feeds, 4.6 MB compressed (10.9 MB of XML), about 110 MB a day. One at a time it takes about 50 seconds, too close to WP Engine's 60-second limit, so the plugin fetches 8 at a time (about 7 seconds a pass, slowest feed 1.8 s) using WordPress's built-in parallel requests. It runs in WordPress's background cron request, never inside a visitor's page load.
+- **Visitors:** nothing extra. The times ("3h", "Mon") are worked out when the page is built, so they stay right between fetches. No page view ever fetches a feed. A team page reads one stored list (about 7 KB for its team) and adds about 6 KB of HTML: headlines and links only, no images, no extra script. Page caching (WP Engine, Cloudflare) works as now.
+- **Each fetch (four a day):** one pass downloads all 102 feeds, 4.6 MB compressed (10.9 MB of XML), about 18 MB a day. One at a time it takes about 50 seconds, too close to WP Engine's 60-second limit, so the plugin fetches 8 at a time (about 7 seconds a pass, slowest feed 1.8 s) using WordPress's built-in parallel requests. It runs in WordPress's background cron request, never inside a visitor's page load.
 - **Asking "only if changed" doesn't help:** 67 of the 102 feeds send an ETag or Last-Modified, but the six tested all sent the full feed again, so the plugin doesn't rely on it.
-- **Database:** the matched headlines only, one stored list per team (about 7 KB each, 213 KB for all 32 with each column capped at 20), plus one feed-status list (about 10 KB). All are left out of WordPress's autoload, so no other page reads them. They are replaced each hour, so the total stays flat at about a quarter of a megabyte and never grows.
-- **No raw feeds stored:** WordPress's own feed reader (`fetch_feed`) caches every downloaded feed in the database. For 102 feeds that would be about 11 MB of XML rewritten every hour. The plugin downloads with `wp_remote_get`, reads the headlines and keeps only the matched ones.
+- **Database:** the matched headlines only, one stored list per team (about 7 KB each, 213 KB for all 32 with each column capped at 20), plus one feed-status list (about 10 KB). All are left out of WordPress's autoload, so no other page reads them. They are replaced at each fetch, so the total stays flat at about a quarter of a megabyte and never grows.
+- **No raw feeds stored:** WordPress's own feed reader (`fetch_feed`) caches every downloaded feed in the database. For 102 feeds that would be about 11 MB of XML rewritten at every fetch. The plugin downloads with `wp_remote_get`, reads the headlines and keeps only the matched ones.
 
 ### Left out
 
