@@ -19,7 +19,12 @@ FAN = dict(ARI=('revengeofthebirds.com', 'Revenge of the Birds'), ATL=('thefalco
   NYJ=('ganggreennation.com', 'Gang Green Nation'), PHI=('bleedinggreennation.com', 'Bleeding Green Nation'), PIT=('behindthesteelcurtain.com', 'Behind The Steel Curtain'),
   SF=('ninersnation.com', 'Niners Nation'), SEA=('fieldgulls.com', 'Field Gulls'), TB=('bucsnation.com', 'Bucs Nation'),
   TEN=('musiccitymiracles.com', 'Music City Miracles'), WAS=('hogshaven.com', 'Hogs Haven'))
-LEAGUE = {'NFL Trade Rumors': 'https://www.nfltraderumors.co/feed/',
+ATH = {t: n for t, n in dict(ATL='falcons', BAL='ravens', BUF='bills', CAR='panthers', CHI='bears', CIN='bengals', CLE='browns', DAL='cowboys', DEN='broncos',
+  DET='lions', GB='packers', HOU='texans', IND='colts', JAX='jaguars', KC='chiefs', LV='raiders', LAC='chargers', LA='rams', MIA='dolphins', MIN='vikings',
+  NE='patriots', NO='saints', NYG='giants', NYJ='jets', PHI='eagles', PIT='steelers', SF='niners', SEA='seahawks', TB='buccaneers', TEN='titans',
+  WAS='commanders').items()}  # no Cardinals feed: their Athletic team page points at baseball's Cardinals; the league feed covers them
+SUB = {'The Athletic'}
+LEAGUE = {'The Athletic': 'https://www.nytimes.com/athletic/rss/nfl/', 'NFL Trade Rumors': 'https://www.nfltraderumors.co/feed/',
   'Sporting News': 'https://www.sportingnews.com/us/rss/nfl', 'CBS Sports': 'https://www.cbssports.com/rss/headlines/nfl/', 'ESPN': 'https://www.espn.com/espn/rss/nfl/news',
   'ProFootballTalk': 'https://profootballtalk.nbcsports.com/feed/', 'Yahoo Sports': 'https://sports.yahoo.com/nfl/rss/'}
 def get(u):
@@ -50,6 +55,7 @@ with cf.ThreadPoolExecutor(12) as ex:
     team_raw = dict(zip(SITES, ex.map(lambda t: get(f'https://www.{SITES[t]}/rss/news'), SITES)))
     league_raw = dict(zip(LEAGUE, ex.map(get, LEAGUE.values())))
     fan_raw = dict(zip(FAN, ex.map(lambda t: get(f'https://www.{FAN[t][0]}/rss/index.xml'), FAN)))
+    ath_raw = dict(zip(ATH, ex.map(lambda t: get(f'https://www.nytimes.com/athletic/rss/nfl/{ATH[t]}/'), ATH)))
 now = int(datetime.datetime.now(datetime.timezone.utc).timestamp()); WEEK = 7 * 86400
 P = json.load(open('data/players/index.json'))['players']
 names = {}
@@ -67,6 +73,11 @@ for t, x in fan_raw.items():
     for it in items(x):
         if now - it['ts'] > WEEK: continue
         news[t]['official'].append({**it, 'src': FAN[t][1], 'who': [q for q in players_in(it['title']) if q['team'] == t]})
+for t, x in ath_raw.items():
+    for it in items(x):
+        if now - it['ts'] > WEEK: continue
+        if not (nick[t].search(it['title']) or any(q['team'] == t for q in players_in(it['title']))): continue  # its team feeds carry league-wide pieces too
+        news[t]['official'].append({**it, 'src': 'The Athletic', 'sub': True, 'who': [q for q in players_in(it['title']) if q['team'] == t]})
 seen = set()
 for src, x in league_raw.items():
     for it in items(x):
@@ -75,9 +86,17 @@ for src, x in league_raw.items():
         seen.add(it['url']); seen.add(key); who = players_in(it['title'])
         ts = {t for t in T if nick[t].search(it['title'])} | {q['team'] for q in who}
         if not ts or len(ts) > 3: continue
-        for t in ts: news[t]['league'].append({**it, 'src': src, 'who': [q for q in who if q['team'] == t]})
+        for t in ts:
+            if any(o['url'] == it['url'] for o in news[t]['official']): continue  # already in the team's own column
+            news[t]['league'].append({**it, 'src': src, 'sub': src in SUB, 'who': [q for q in who if q['team'] == t]})
+def balance(lst):
+    lst.sort(key=lambda i: -i['ts']); top, rest, n = [], [], {}
+    for i in lst:
+        if len(top) < 5 and n.get(i['src'], 0) < 2: top.append(i); n[i['src']] = n.get(i['src'], 0) + 1
+        else: rest.append(i)
+    return top + rest
 for t in news:
-    for k in ('official', 'league'): news[t][k].sort(key=lambda i: -i['ts'])
+    for k in ('official', 'league'): news[t][k] = balance(news[t][k])
 json.dump({'built': now, 'news': news}, open('mockup-v23/news.json', 'w'), indent=1)
 print('teams with official:', sum(bool(v['official']) for v in news.values()), '| league stories matched:', sum(len(v['league']) for v in news.values()))
 for t in ('MIN', 'DET', 'DAL'): print(t, len(news[t]['official']), len(news[t]['league']), [i['title'][:60] for i in news[t]['league'][:3]])

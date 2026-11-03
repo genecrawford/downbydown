@@ -2261,7 +2261,7 @@ The mock is `mockup-v23/team-news-MIN.html`: the live Vikings players page with 
 | **SB Nation team blogs** (added 2026-11-03) | `https://www.{blog}/rss/index.xml` (Daily Norseman, Pride Of Detroit, Hogs Haven…) | All 32 answer, 10 recent stories each, every one updated within the last two days. Fan analysis, free to read. Hogs Haven covers Washington while the Commanders' own feed is stale |
 | **NFL Trade Rumors** (added) | `nfltraderumors.co/feed/` | 10 short items on trades, signings and releases |
 | **Sporting News** (added) | `sportingnews.com/us/rss/nfl` | 20 stories |
-| The Athletic | `nytimes.com/athletic/rss/nfl/{team}/` (`vikings`, `niners`, `commanders`…) | A feed for each team and the best beat reporting, but most articles need a subscription. Left out for now (decision 3) |
+| **The Athletic** (added, decision 3) | `nytimes.com/athletic/rss/nfl/{team}/` (`vikings`, `niners`, `commanders`…) and the league feed `nytimes.com/athletic/rss/nfl/` | The best beat reporting; most articles need a subscription, so every Athletic link carries a "Subscriber" label. 31 team feeds answer. The Cardinals have none: their Athletic team page points at baseball's Cardinals, so the league feed (101 stories) covers them. The team feeds also carry league-wide pieces ("NFL Week 9 Power Rankings: You decide"), so an Athletic team story is kept only when its headline names the team or one of its players |
 | FanSided team sites | `thevikingage.com/feed/`, `sidelionreport.com/feed/`… | Work and post a lot, but thinner and uneven; some sites in the network are broken or off-topic. Left out |
 | Sharp Football Analysis | `sharpfootballanalysis.com/feed/` | Works, but the feed is evergreen stats tools and betting pages, never a team's story. Left out |
 | Yardbarker, NFL Spin Zone | | Work, but mostly repackage other outlets. Left out |
@@ -2271,7 +2271,7 @@ The mock is `mockup-v23/team-news-MIN.html`: the live Vikings players page with 
 | PFF | `pff.com/feed` | Works, but most articles are behind PFF's paywall; left out |
 | NFL.com and ESPN stats pages | | Not news, and the site already has these numbers from nflverse |
 
-In one fetch on 2026-11-03, every team had stories in its team column, and the six league feeds matched 189 stories to teams across the week. The Vikings had 14 from vikings.com and Daily Norseman and 3 from the league feeds.
+In one fetch on 2026-11-03, every team had stories in its team column, and the seven league feeds matched 201 stories to teams across the week. The Vikings had 14 from vikings.com and Daily Norseman, 11 from The Athletic, and 4 from the league feeds.
 
 ### How stories find their team
 
@@ -2279,21 +2279,23 @@ In one fetch on 2026-11-03, every team had stories in its team column, and the s
 - **A league story** belongs to every team its headline names, by nickname or full name ("Vikings", "Minnesota Vikings"). College teams that share a nickname are excluded ("Nittany Lions" isn't the Lions).
 - **A headline that names a player** (a unique name in the site's players index) also goes to his team, so "Kyler Murray has a sore hamstring…" reaches the Vikings even without the word "Vikings". The player's name becomes a small link to his page.
 - **A story that names four or more teams** (a power ranking, a "grades for every team" piece) goes to none, because it isn't really any one team's news.
-- **The same story from two sources** shows once.
+- **The same story from two sources** shows once, and a story already in a team's own column isn't repeated in its league column.
 - **Only the last 7 days** are kept.
 
 ### Where it shows
 
 - **The team players page** (`/team/min/players/`) gets a **"Vikings news"** panel, right after the lineup:
-  - two columns: **Vikings.com and Daily Norseman** (the team site and its SB Nation blog together, newest five) and **Around the league** (the six league feeds, newest five)
+  - two columns: **Vikings.com, Daily Norseman and The Athletic** (the team site, its SB Nation blog and its Athletic feed together) and **Around the league** (the seven league feeds)
+  - each column shows its newest five, with **no more than two from one source** in those five, so a busy feed can't crowd out the others; "Show more" lists the rest newest first
   - each row is the headline (opens the article in a new tab), the source and the time ("3h", "Mon"), and any player named, linked to his page
+  - an Athletic story's source reads "The Athletic · Subscriber"
   - "Show more" opens up to ten in each column
   - an empty column says so: "No Vikings stories from the league feeds this week." (In the 2026-11-03 fetch, the Dolphins and Saints had no league stories.)
 - **The offense and defense pages** (`/team/min/`, `/team/min/defense/`) get one line under the page's description: "Latest: Kevin O'Connell Updates Vikings Injuries… · Vikings.com · 5h · All Vikings news", linking to the panel. The explorer stays the first thing on the page.
 
 ### How it runs
 
-- **On the site, not in the data build:** WordPress fetches the 70 feeds (32 team sites, 32 SB Nation blogs, 6 league feeds) every hour (WordPress has a feed reader built in) and keeps the matched lists in one stored setting. News goes stale in hours, and the data build runs three times a day; keeping it on the site also keeps headlines out of the public data repo.
+- **On the site, not in the data build:** WordPress fetches the 102 feeds (32 team sites, 32 SB Nation blogs, 31 Athletic team feeds, 7 league feeds) every hour (WordPress has a feed reader built in) and keeps the matched lists in one stored setting. News goes stale in hours, and the data build runs three times a day; keeping it on the site also keeps headlines out of the public data repo.
 - **A feed that fails** keeps its last good list, and the plugin's status screen shows each feed's last fetch, its story count and any error, so a dead feed like the Commanders' is visible.
 - **Every link** opens in a new tab with `rel="nofollow noopener"`.
 - **A setting** turns any source off.
@@ -2308,14 +2310,17 @@ In one fetch on 2026-11-03, every team had stories in its team column, and the s
 
 1. **Where:** DECIDED 2026-11-03: the panel on the team players page plus the latest line on the offense and defense pages (Gene: "Panel and latest line").
 2. **Sources:** DECIDED 2026-11-03: the 32 team sites and the 32 SB Nation blogs for each team's own column; ProFootballTalk, CBS Sports, ESPN, Yahoo Sports, Sporting News and NFL Trade Rumors for around the league (Gene: "Yes, add them").
-3. **The Athletic:** leave out (recommended for now), or add each team's Athletic feed to the team column with a "subscriber" mark on its links.
+3. **The Athletic:** DECIDED 2026-11-03: added, each team's Athletic feed in the team column and The Athletic's league feed in around the league, every link labelled "Subscriber" (Gene: "Add with a mark").
 
 ### Acceptance
 
 - The Vikings players page shows the panel as in the mock, with both columns filled from live feeds and no story older than 7 days.
-- No college story, no four-team story and no duplicate appears in any team's list.
+- No college story, no four-team story and no duplicate appears in any team's list, and no Athletic team story that doesn't name the team or one of its players.
+- No more than two from one source in a column's first five, and every Athletic link is labelled "Subscriber".
 - A team whose feed is stale or failing shows its league stories, and the status screen flags the feed.
 - The offense and defense pages show the latest line and link to the panel.
 - Checked at 1440 and 375, with no horizontal scroll.
+
+Status: scoped and mocked 2026-11-03; all three decisions made 2026-11-03.
 
 Size: S to M.

@@ -140,14 +140,14 @@ def rows(items, n=5):
     for i, it in enumerate(items[:10]):
         who = ''.join(f' · <a class="nw-p" href="https://downbydown.com/player/{w["slug"]}/">{e(w["name"])}</a>' for w in it['who'])
         out += (f'<li{" class=nw-more" if i >= n else ""}><a class="nw-h" href="{e(it["url"])}" target="_blank" rel="nofollow noopener">{e(it["title"])}</a>'
-                f'<span class="nw-m">{e(it["src"])} · {age(it["ts"])}{who}</span></li>')
+                f'<span class="nw-m">{e(it["src"])}{" · <i>Subscriber</i>" if it.get("sub") else ""} · {age(it["ts"])}{who}</span></li>')
     return out
 def panel(t, nick, site):
     N = NEWS['news'][t]
     col = lambda h, items, empty: (f'<div class="nw-col"><h3>{h}</h3>' + (f'<ol>{rows(items)}</ol>' if items else f'<p class="nw-empty">{empty}</p>') +
                                    (f'<button type="button" class="nw-btn" onclick="this.parentNode.classList.add(\'open\');this.remove()">Show more</button>' if len(items) > 5 else '') + '</div>')
     return (f'<section class="dbd-panel dbd-news mock-new" id="news"><div class="dbd-ph"><span class="dbd-lab"><b>{nick} news</b> · the last 7 days, from the team, its fans and around the league</span></div>'
-            f'<div class="nw-cols">' + col(f'{site.capitalize()} and {N["fan"]}', N['official'], f'No stories from {site} or {N["fan"]} this week.') +
+            f'<div class="nw-cols">' + col(f'{site.capitalize()}, {N["fan"]} and The Athletic' if t != 'ARI' else f'{site.capitalize()} and {N["fan"]}', N['official'], f'No stories from {site} or {N["fan"]} this week.') +
             col('Around the league', N['league'], f'No {nick} stories from the league feeds this week.') + '</div></section>')
 NCSS = '''<style>
 .dbd .dbd-news .nw-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 28px;padding:4px var(--dbd-edge) 14px}
@@ -159,6 +159,7 @@ NCSS = '''<style>
 .dbd .dbd-news .nw-h{display:block;font:600 15px/1.35 var(--dbd-body);color:var(--dbd-ink);text-decoration:none}
 .dbd .dbd-news .nw-h:hover{color:var(--dbd-red-ink);text-decoration:underline}
 .dbd .dbd-news .nw-m{display:block;margin-top:3px;font:500 11px/1.4 var(--dbd-mono);letter-spacing:.04em;text-transform:uppercase;color:var(--dbd-muted)}
+.dbd .dbd-news .nw-m i{font-style:normal;color:var(--dbd-ink-2)}
 .dbd .dbd-news .nw-p{color:var(--dbd-ink-2);text-decoration:underline;text-underline-offset:2px}
 .dbd .dbd-news .nw-empty{margin:10px 0;font:400 14px/1.5 var(--dbd-body);color:var(--dbd-muted)}
 .dbd .dbd-news .nw-btn{margin-top:6px;padding:6px 12px;background:none;border:1px solid var(--dbd-line-2);border-radius:4px;font:600 13px var(--dbd-body);color:var(--dbd-ink);cursor:pointer}
