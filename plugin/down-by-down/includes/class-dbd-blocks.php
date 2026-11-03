@@ -249,6 +249,9 @@ class DBD_Blocks {
 		return self::wrap( 'matchup', $h );
 	}
 
+	/** A week as a sentence names it: "Week 8", or "the Wild Card round", "the Super Bowl" in the playoffs. */
+	private static function week_name( $wk ) { $l = DBD_Router::week_label( $wk ); return strpos( $l, 'Week ' ) === 0 ? $l : 'the ' . $l . ( $l === 'Super Bowl' ? '' : ' round' ); }
+
 	/** The risers in target share from the Players page's movers file (the latest week with every game final), and that week. */
 	private static function movers() {
 		$mv = DBD_Data::get( 'players/movers.json' );
@@ -272,6 +275,6 @@ class DBD_Blocks {
 		foreach ( $up as $m ) {
 			$li .= '<li>' . DBD_Marks::player( $m['team'], $m['num'] ?? null, 40, $m['photo'] ?? null ) . '<span><b><a href="' . self::u( array( 'player' => $m['id'] ) ) . '">' . esc_html( $m['name'] ) . '</a></b><small>' . esc_html( ( $m['pos'] ?? '' ) . ' · ' . self::nick( $m['team'] ) ) . '</small></span><em>' . round( (float) $m['before'] ) . '% <i aria-hidden="true">→</i><span class="screen-reader-text"> to </span> <strong>' . round( (float) $m['now'] ) . '%</strong></em></li>';
 		}
-		return self::wrap( 'movers', '<div class="hb-panel"><p class="k">' . esc_html( ( $wk ? 'Rising in ' . DBD_Router::week_label( $wk ) : 'Rising' ) . ' · share of targets' ) . '</p><ul class="hb-list">' . $li . '</ul></div>' );
+		return self::wrap( 'movers', '<div class="hb-panel"><p class="k">' . esc_html( ( $wk ? 'Rising in ' . self::week_name( $wk ) : 'Rising' ) . ' · share of targets' ) . '</p><ul class="hb-list">' . $li . '</ul></div>' );
 	}
 }
