@@ -61,9 +61,10 @@ class DBD_Blocks {
 	private static function pct( $v ) { return round( (float) $v / 10 ); }
 	/** A play's description without the tacklers' brackets: "…, TOUCHDOWN [J.McMillian]." reads "…, TOUCHDOWN." */
 	private static function clean( $d ) { return trim( (string) preg_replace( '/\s*\[[^\]]*\]/', '', (string) $d ) ); }
-	/** A final game's winner, loser and both scores, the winner's first. */
+	/** A final game's winner, loser and both scores, the winner's first; a tie keeps away then home. */
 	private static function wl( $g ) {
-		$w = $g['win']; $aw = $w === $g['away'];
+		$w = (string) ( $g['win'] ?? '' ); if ( $w === '' ) { return array( $g['away'], $g['home'], (int) $g['a'], (int) $g['h'] ); }
+		$aw = $w === $g['away'];
 		return array( $w, $aw ? $g['home'] : $g['away'], (int) ( $aw ? $g['a'] : $g['h'] ), (int) ( $aw ? $g['h'] : $g['a'] ) );
 	}
 	private static function tags( $g ) { $o = array(); foreach ( (array) ( $g['tags'] ?? array() ) as $t ) { $o[ $t[0] ] = $t[1]; } return $o; }
@@ -192,8 +193,8 @@ class DBD_Blocks {
 		if ( $sw ) {
 			$h .= '<a class="hb-wk" href="' . self::u( array( 'game' => $sw['g'] ) ) . '"><i>The swing of the week</i><span class="mk">' . DBD_Marks::tile( $sw['t'], 40 ) . '</span><h3>' . esc_html( self::clean( $sw['d'] ) ) . '</h3><p><b>+' . round( (float) $sw['v'] ) . '%</b> win probability for the ' . esc_html( self::nick( $sw['t'] ) . ', ' . $sw['c'] ) . '</p></a>';
 		}
-		$fin = array_values( array_filter( (array) $W['games'], function ( $g ) { return ( $g['status'] ?? '' ) === 'final' && ! empty( $g['win'] ); } ) );
-		$ups = array_values( array_filter( $fin, function ( $g ) { return isset( self::tags( $g )['upset'] ); } ) );
+		$fin = array_values( array_filter( (array) $W['games'], function ( $g ) { return ( $g['status'] ?? '' ) === 'final'; } ) );  /* ties stay in for the wildest game (Greptile, PR #61) */
+		$ups = array_values( array_filter( $fin, function ( $g ) { return ! empty( $g['win'] ) && isset( self::tags( $g )['upset'] ); } ) );
 		usort( $ups, function ( $x, $y ) { return $x['pre_w'] <=> $y['pre_w']; } ); $ups = array_slice( $ups, 0, 3 );
 		$shown = array_map( function ( $g ) { return $g['id']; }, $ups );  /* the wildest is another game when there is one */
 		$wd = array_values( array_filter( $fin, function ( $g ) use ( $shown ) { return ! in_array( $g['id'], $shown, true ); } ) ) ?: $fin;
@@ -202,7 +203,7 @@ class DBD_Blocks {
 			$li = '';
 			foreach ( $ups as $g ) { list( $w, $l, $ws, $ls ) = self::wl( $g ); $li .= '<li><a href="' . self::u( array( 'game' => $g['id'] ) ) . '"><b>' . esc_html( self::nick( $w ) . ' ' . $ws ) . '</b>, ' . esc_html( self::nick( $l ) . ' ' . $ls ) . '</a><small>' . self::pct( $g['pre_w'] ) . '% at kickoff</small></li>'; }
 			$wl = ''; $mk = '';
-			if ( $wild ) { list( $w, $l, $ws, $ls ) = self::wl( $wild ); $mk = '<span class="mk">' . DBD_Marks::tile( $w, 30 ) . '</span>'; $wl = '<p class="wild"><span>Wildest game</span><a href="' . self::u( array( 'game' => $wild['id'] ) ) . '"><b>' . esc_html( self::nick( $w ) . ' ' . $ws . ', ' . self::nick( $l ) . ' ' . $ls ) . '</b>' . ( ! empty( $wild['ot'] ) ? ' in overtime' : '' ) . '</a></p>'; }
+			if ( $wild ) { list( $w, $l, $ws, $ls ) = self::wl( $wild ); $mk = empty( $wild['win'] ) ? '' : '<span class="mk">' . DBD_Marks::tile( $w, 30 ) . '</span>'; $wl = '<p class="wild"><span>Wildest game</span><a href="' . self::u( array( 'game' => $wild['id'] ) ) . '"><b>' . esc_html( self::nick( $w ) . ' ' . $ws . ', ' . self::nick( $l ) . ' ' . $ls ) . '</b>' . ( ! empty( $wild['ot'] ) ? ' in overtime' : '' ) . '</a></p>'; }
 			$h .= '<div class="hb-wk ups"><i>' . ( $ups ? 'Upsets' : 'No upsets' ) . '</i>' . $mk . ( $li ? '<ul>' . $li . '</ul>' : '' ) . $wl . '</div>';
 		}
 		return self::wrap( 'week-highlights', $h );
