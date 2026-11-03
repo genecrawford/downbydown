@@ -19,7 +19,7 @@ $depth = ! $arch && ! empty( $k['depth'] ) ? 'K' . (int) $k['depth']['rank'] : '
 $inj = $arch ? null : ( $k['inj'] ?? null ); $st = $inj['status'] ?? ''; $icls = preg_match( '/out|did not/i', $st ) ? 'bad' : ( preg_match( '/limited|questionable|doubtful/i', $st ) ? '' : 'good' );
 
 echo DBD_Router::topbar( array( 'players' => $purl, $nick => $tpurl, $k['name'] => null ) );
-echo '<main class="dbd-content dbd-player dbd-kicker" style="--dbd-team:' . esc_attr( DBD_Marks::accent( $t ) ) . '">';
+echo '<main class="dbd-content dbd-player dbd-kk" style="--dbd-team:' . esc_attr( DBD_Marks::accent( $t ) ) . '">';
 
 /* ---- hero */
 echo '<div class="dbd-ttitle"><div class="t-stagger">';
@@ -85,15 +85,16 @@ echo '<nav class="dbd-jump" aria-label="On this page"><a href="#dbd-good">How go
 
 /* ---- how good is he: the Scorecard and by distance */
 echo '<section class="dbd-band" id="dbd-good"><h2 class="dbd-bandh">How good is he<span>his kicks against the league, distance for distance</span></h2>';
-$sc = '';
+$sc = ''; $scN = 0; $scHead = '<table class="dbd-stat"><thead><tr><th>Stat</th><th>Value</th><th>Rank</th><th>League</th><th>Pctl</th></tr></thead><tbody>';
 foreach ( DBD_Kicker::MET as $key => $M ) {
+	if ( $scN++ === (int) ceil( count( DBD_Kicker::MET ) / 2 ) ) { $sc .= '</tbody></table>' . $scHead; }  /* two tables side by side, as on player pages; they stack on a phone */
 	$v = DBD_Kicker::val( $k, $key ); $vs = $key === 'kstart' ? ( $v === null ? '–' : $f1( $v ) ) : DBD_Kicker::fmt( $M[2], $v ); $rk = DBD_Kicker::rank( $k, $key ); $p = DBD_Kicker::pctile( $k, $key );
 	$med = DBD_Kicker::median( $key ); $mtxt = $med === null ? '' : ( $key === 'kstart' ? $f1( $med ) : DBD_Kicker::fmt( $M[2], $med ) );
 	$tip = '<b>' . esc_html( $k['name'] ) . '</b><br>' . esc_html( $M[0] ) . ': <b>' . esc_html( $vs ) . '</b>' . ( $p !== null ? ' · ' . DBD_Grades::ordinal( $p ) . ' percentile · ' . esc_html( $rk ) . ' of ' . $N : '' ) . '<br><span class="m">' . esc_html( 'League median ' . $mtxt . ' · ' . $M[1] ) . '</span>';
 	$sc .= '<tr' . ( $p !== null && $p >= 80 ? ' class="top"' : '' ) . '><td class="n">' . esc_html( $M[0] ) . '<small>' . esc_html( $M[1] ) . '</small></td><td class="v">' . esc_html( $vs ) . '</td><td class="rk">' . ( $rk !== '' ? '<b>' . esc_html( $rk ) . '</b> of ' . $N : '–' ) . '</td>'
 		. '<td class="b"><div class="bar">' . ( $p !== null ? '<i style="--p:' . (int) $p . '" data-tip="' . esc_attr( $tip ) . '" tabindex="0" role="img" aria-label="' . esc_attr( $M[0] . ' ' . $vs . ', ' . DBD_Grades::ordinal( $p ) . ' percentile' ) . '"></i>' : '' ) . '</div></td><td class="g' . ( $p !== null && $p >= 80 ? ' hi' : ( $p !== null && $p <= 20 ? ' lo' : '' ) ) . '">' . ( $p !== null ? esc_html( DBD_Grades::ordinal( $p ) ) : '–' ) . '</td></tr>';
 }
-echo '<section class="dbd-panel dbd-score"><div class="dbd-ph"><span class="dbd-lab"><b>Scorecard</b> · ' . esc_html( $q ? "among $N kickers with a try for every team game" : 'not enough tries yet to rank: a try for every game his team has played' ) . '</span><span class="dbd-badge">League percentiles</span></div><div class="dbd-score2"><table class="dbd-stat"><thead><tr><th>Stat</th><th>Value</th><th>Rank</th><th>League</th><th>Pctl</th></tr></thead><tbody>' . $sc . '</tbody></table></div></section>';
+echo '<section class="dbd-panel dbd-score"><div class="dbd-ph"><span class="dbd-lab"><b>Scorecard</b> · ' . esc_html( $q ? "among $N kickers with a try for every team game" : 'not enough tries yet to rank: a try for every game his team has played' ) . '</span><span class="dbd-badge">League percentiles</span></div><div class="dbd-score2">' . $scHead . $sc . '</tbody></table></div></section>';
 $F = DBD_Kicker::file(); $LG = (array) ( $F['league'] ?? array() ); $dr = '';
 foreach ( (array) ( $F['ranges'] ?? array() ) as $i => $nm ) {
 	$b = $k['by'][ $i ] ?? array( 0, 0, 0 ); list( $bm, $ba, $be ) = array( (int) $b[0], (int) $b[1], (float) $b[2] ); $lm = (int) ( $LG[ $i ][0] ?? 0 ); $la = (int) ( $LG[ $i ][1] ?? 0 ); $d = $bm - $be;
@@ -107,7 +108,7 @@ echo '</section>';
 $wks = range( 1, max( 1, $through ) ); if ( $games ) { $wks = range( 1, max( (int) end( $games )[0], min( $through, 18 ) ) ); }
 $reach = $k['avgd'] !== null ? $f1( $k['avgd'] ) : null; $avr = DBD_Kicker::rank( $k, 'avgd' );
 $read = '<b>' . (int) $k['fgm'] . ' of ' . (int) $k['fga'] . '</b>' . ( $reach ? ', and his tries average <b>' . $reach . ' yards</b>' . ( $avr !== '' ? ', ' . esc_html( $avr ) . '-longest among qualifying kickers' : '' ) : '' ) . '.'
-	. ( $miss ? ' ' . ( count( $miss ) === 1 ? 'The one that got away came from ' . (int) $miss[0][2] . '.' : 'The ones that got away came from ' . esc_html( implode( ', ', array_map( function ( $x ) { return (int) $x[2]; }, $miss ) ) ) . '.' ) : '' );
+	. ( $miss ? ' ' . ( count( $miss ) === 1 ? 'The one that got away came from ' . (int) $miss[0][2] . '.' : 'The ones that got away came from ' . esc_html( ( function ( $d ) { return count( $d ) > 1 ? implode( ', ', array_slice( $d, 0, -1 ) ) . ' and ' . end( $d ) : (string) $d[0]; } )( array_map( function ( $x ) { return (int) $x[2]; }, $miss ) ) ) . '.' ) : '' );
 echo '<section class="dbd-band"><h2 class="dbd-bandh">Every kick<span>where each try came from, and the ones that swung a game</span></h2>';
 echo '<section class="dbd-panel kk-kicks" id="dbd-kicks"><div class="dbd-ph"><span class="dbd-lab"><b>Every kick</b> · ' . esc_html( (int) $k['fga'] . ' field goal ' . ( (int) $k['fga'] === 1 ? 'try' : 'tries' ) . ( $through ? ', Weeks 1–' . min( $through, end( $wks ) ) : '' ) ) . '</span><span class="dbd-badge">Hover a kick</span></div>';
 if ( $kicks ) {

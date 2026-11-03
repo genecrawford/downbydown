@@ -625,6 +625,9 @@ if have_pbp and 'kicker_player_id' in df.columns:
             if reg_(r):
                 k = kickers.get(kid) or kickers.setdefault(kid, k_new(r.kicker_player_name))
                 k['ko'][0] += 1; k['ko'][1] += int(_fv(getattr(r, 'touchback', 0)) == 1)
+                # a game he only kicked off in (a shutout, two-point tries) is still a game: a zero-point week, counted in his games (Greptile, PR #70)
+                k['games'].setdefault(gid, dict(w=int(r.week), opp=r.posteam, home=int(r.home_team == r.defteam), fgm=0, fga=0, lng=0, pm=0, pa=0, fx=0))
+                if not k['team']: k['team'] = r.defteam
             continue
         if kpend and gid == kpend[0] and r.play_type in ('pass', 'run', 'punt', 'field_goal', 'qb_kneel', 'qb_spike'):
             if r.posteam == kpend[1] and _fv(r.yardline_100) is not None and kpend[3]: kstart[kpend[2]].append(100 - int(_fv(r.yardline_100)))

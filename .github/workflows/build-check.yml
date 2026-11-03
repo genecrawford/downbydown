@@ -397,7 +397,7 @@ jobs:
           export DBD_HARNESS_HTML=pages
           RE=00-0039404
           php tools/view_harness.php /tmp/out player $RE
-          for m in 'dbd-view-player' 'dbd-kicker' 'class="kk-field kk-h"' 'class="kk-field kk-v"' 'class="dbd-panel dbd-score"' 'kk-dist' 'kk-log' 'kk-career' 'Kickers like him' 'class="dbd-mtbtn"'; do grep -q "$m" pages/player-$RE.html || { echo "Reichard's page is missing $m"; exit 1; }; done
+          for m in 'dbd-view-player' 'dbd-player dbd-kk' 'class="kk-field kk-h"' 'class="kk-field kk-v"' 'class="dbd-panel dbd-score"' 'kk-dist' 'kk-log' 'kk-career' 'Kickers like him' 'class="dbd-mtbtn"'; do grep -q "$m" pages/player-$RE.html || { echo "Reichard's page is missing $m"; exit 1; }; done
           N=$(python3 -c "import json;print(json.load(open('/tmp/out/players/kickers.json'))['kickers']['$RE']['fga'])")
           [ "$(grep -o 'class="kk-k"' pages/player-$RE.html | wc -l)" -eq $((N * 2)) ] || { echo "the two charts do not draw his $N tries each"; exit 1; }
           php tools/view_harness.php /tmp/out game 2026_08_MIN_DET

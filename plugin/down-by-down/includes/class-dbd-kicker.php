@@ -69,8 +69,8 @@ class DBD_Kicker {
 	public static function pctile( $k, $key ) {
 		if ( empty( $k['q'] ) ) { return null; }
 		$vals = (array) ( self::file()['dist'][ $key ] ?? array() ); $v = self::val( $k, $key ); if ( ! $vals || $v === null ) { return null; }
-		$low = ! empty( self::MET[ $key ][3] ) || $key === 'kstart'; $below = 0; $eq = 0;
-		foreach ( $vals as $x ) { $x = (float) $x; if ( abs( $x - $v ) < 1e-9 ) { $eq++; } elseif ( $low ? $x > $v : $x < $v ) { $below++; } }
+		$low = ! empty( self::MET[ $key ][3] ) || $key === 'kstart'; $below = 0; $eq = 0; $v = round( (float) $v, 4 );  /* the pool is stored to four places: compare at that precision, so his own entry counts as a tie */
+		foreach ( $vals as $x ) { $x = round( (float) $x, 4 ); if ( abs( $x - $v ) < 1e-6 ) { $eq++; } elseif ( $low ? $x > $v : $x < $v ) { $below++; } }
 		return (int) round( 100 * ( $below + $eq / 2 ) / count( $vals ) );
 	}
 	public static function median( $key ) { $vals = (array) ( self::file()['dist'][ $key ] ?? array() ); return $vals ? (float) $vals[ (int) floor( count( $vals ) / 2 ) ] : null; }
@@ -164,12 +164,13 @@ class DBD_Kicker {
 	public static function field_v( $k, $weeks ) {
 		$T = DBD_Data::team( $k['team'] ) ?: array(); $c1 = preg_match( '/^#[0-9a-fA-F]{6}$/', $T['c1'] ?? '' ) ? $T['c1'] : '#4F2683'; $nick = strtoupper( (string) ( $T['nick'] ?? $k['team'] ) );
 		$W = 390; $YU = 34; $V = 8; $YG = $YU + 10 * $V; $yl = function ( $L ) use ( $YG, $V ) { return $YG + $L * $V; };
-		$H = $yl( 57 ) + 16; $nw = max( 1, count( $weeks ) ); $cw = ( $W - 46 ) / $nw; $G = self::games_by_week( $k );
+		$deep = 57; foreach ( (array) ( $k['fg'] ?? array() ) as $x ) { $deep = max( $deep, (int) $x[2] - 10 + 2 ); }  /* room for the longest try and its dot */
+		$H = $yl( $deep ) + 16; $nw = max( 1, count( $weeks ) ); $cw = ( $W - 46 ) / $nw; $G = self::games_by_week( $k );
 		$s = '<svg class="kk-field kk-v" viewBox="0 0 ' . $W . ' ' . $H . '" role="img" aria-label="' . esc_attr( 'Every field goal try ' . $k['name'] . ' has made or missed this season, by week and distance' ) . '">';
 		$s .= '<rect x="0" y="' . $YU . '" width="' . $W . '" height="' . ( $H - $YU ) . '" fill="#2c4a35"/><rect x="0" y="' . $YU . '" width="' . $W . '" height="' . ( 10 * $V ) . '" fill="' . $c1 . '" opacity=".9"/>';
 		$s .= '<text x="' . ( $W / 2 ) . '" y="' . ( $YU + 5 * $V + 7 ) . '" fill="#fff" opacity=".85" font-family="Tourney,sans-serif" font-weight="800" font-size="22" text-anchor="middle">' . esc_html( $nick ) . '</text>';
 		$s .= '<line x1="0" x2="' . $W . '" y1="' . $YU . '" y2="' . $YU . '" stroke="#ffd23f" stroke-width="4"/>';
-		for ( $L = 0; $L <= 55; $L += 5 ) {
+		for ( $L = 0; $L <= $deep - 2; $L += 5 ) {
 			$s .= '<line x1="0" x2="' . $W . '" y1="' . $yl( $L ) . '" y2="' . $yl( $L ) . '" stroke="#fff" stroke-opacity="' . ( $L % 10 === 0 ? '.55' : '.18' ) . '" stroke-width="' . ( $L === 0 ? 2 : 1 ) . '"/>';
 			if ( $L % 10 === 0 && $L ) { $s .= '<text x="8" y="' . ( $yl( $L ) + 4 ) . '" fill="#fff" fill-opacity=".55" font-family="Tourney,sans-serif" font-weight="800" font-size="13">' . $L . '</text>'; }
 		}
@@ -199,7 +200,12 @@ class DBD_Kicker {
 	/** Offsets that stack kicks closer than $gap apart instead of letting them overlap. */
 	private static function stack( $pos, $gap, $sets ) {
 		$groups = array(); foreach ( $pos as $i => $p ) { $n = count( $groups ); if ( $n && abs( $pos[ end( $groups[ $n - 1 ] ) ] - $p ) < $gap ) { $groups[ $n - 1 ][] = $i; } else { $groups[] = array( $i ); } }
-		$off = array(); foreach ( $groups as $gr ) { $set = $sets[ count( $gr ) ] ?? array_fill( 0, count( $gr ), 0 ); foreach ( $gr as $j => $i ) { $off[ $i ] = $set[ $j ] ?? 0; } }
+		$off = array();
+		foreach ( $groups as $gr ) {
+			$n = count( $gr ); $set = $sets[ $n ] ?? array();
+			if ( ! $set ) { for ( $j = 0; $j < $n; $j++ ) { $set[] = round( ( $j - ( $n - 1 ) / 2 ) * 9, 1 ); } }  /* four or more close together: fanned out 9 apart, overlapping a little but each one showing */
+			foreach ( $gr as $j => $i ) { $off[ $i ] = $set[ $j ] ?? 0; }
+		}
 		return $off;
 	}
 

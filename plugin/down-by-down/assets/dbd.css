@@ -1769,3 +1769,6 @@ html:not([data-fx]) .dbd [data-fx="half"],html[data-fx="std"] .dbd [data-fx="std
   .dbd .kk-field.kk-v{display:block}
   .dbd .kk-log th:last-child,.dbd .kk-log td:last-child{display:none}
 }
+.dbd .kk-cmpt .who{display:inline-flex;align-items:center;gap:8px;text-align:left}
+.dbd .kk-cmpt .who .nm{display:flex;flex-direction:column;line-height:1.25}
+.dbd .kk-cmpt .who .nm small{margin:0;font-weight:500}
