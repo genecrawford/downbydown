@@ -60,7 +60,19 @@ foreach ( $groups as $gk => $gl ) {
 	}
 	$body .= '</tbody>';
 }
-echo '<section class="dbd-panel dbd-roster"><div class="dbd-ph"><span class="dbd-lab"><b>The roster</b> · every skill player with a snap this season</span><span class="dbd-badge">' . count( $pl ) . ' players</span></div>';
+/* SCOPE §47: the team's kicker, from the kicker file (no snaps; his field goals and points in the usage and yards columns) */
+$KR = array_values( array_filter( (array) ( DBD_Kicker::file()['kickers'] ?? array() ), function ( $k ) use ( $team ) { return ( $k['team'] ?? '' ) === $team; } ) );
+usort( $KR, function ( $x, $y ) { return (int) $y['fga'] <=> (int) $x['fga']; } );
+if ( $KR ) {
+	$body .= '<tbody><tr class="gh"><th colspan="9">Kicker</th></tr>';
+	foreach ( $KR as $k ) {
+		$href = DBD_Router::url( array( 'player' => $k['id'] ) ); $st = $k['inj']['status'] ?? ''; $stc = preg_match( '/out|did not/i', $st ) ? ' o' : ( preg_match( '/limited|questionable|doubtful/i', $st ) ? ' q' : '' );
+		$body .= '<tr class="dbd-trow" data-href="' . esc_url( $href ) . '"><td class="dbd-nm"><span class="dbd-nmi">' . DBD_Marks::player( $team, $k['num'] ?? null, 30, $k['photo'] ?? null ) . '<a href="' . esc_url( $href ) . '">' . esc_html( $k['name'] ) . '</a><small>K</small></span></td>'
+			. '<td>–</td><td>' . (int) $k['fgm'] . '/' . (int) $k['fga'] . ' FG</td><td></td><td></td><td>' . (int) $k['pts'] . ' pts</td><td></td><td></td><td>' . ( $st ? '<span class="dbd-st' . $stc . '">' . esc_html( $st . ( ! empty( $k['inj']['what'] ) ? ' · ' . $k['inj']['what'] : '' ) ) . '</span>' : '' ) . '</td></tr>';
+	}
+	$body .= '</tbody>';
+}
+echo '<section class="dbd-panel dbd-roster"><div class="dbd-ph"><span class="dbd-lab"><b>The roster</b> · every skill player with a snap this season, and the kicker</span><span class="dbd-badge">' . count( $pl ) . ' players</span></div>';
 echo '<div class="dbd-tw"><table class="dbd-stat dbd-rost"><thead><tr><th>Player</th><th>Snap</th><th>Tgt/Att</th><th>Rec</th><th>Car</th><th>Yds</th><th>TD</th><th>EPA</th><th>Status</th></tr></thead>' . $body . '</table></div></section>';
 
 /* ---- this team's movers only (the league's are on the Players index) */

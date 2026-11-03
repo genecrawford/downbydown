@@ -13,7 +13,9 @@ $ids  = array_map( function ( $p ) { return $p['id']; }, $rows );
 $P    = array();
 foreach ( $rows as $i => $row ) { $P[] = array( 'row' => $row, 'rec' => DBD_Data::player_record( $row['team'], $row['id'] ) ?: array( 'weeks' => array(), 'snaps' => array(), 'grades' => null ), 'c' => $COLS[ $i ], 't' => DBD_Data::team( $row['team'] ) ); }
 $n  = count( $P ); $gi = $grp ? DBD_Grades::group_info( $grp ) : null; $N = (int) ( $gi['n'] ?? 0 );
-$pool = $grp ? DBD_Grades::pool_label( DBD_Grades::in_use( $grp ) ) : 'players'; $one = array( 'wr' => 'wide receiver', 'te' => 'tight end', 'rec' => 'receiver or tight end', 'rb' => 'back', 'qb' => 'quarterback' )[ $grp ] ?? 'player'; $kind = DBD_Grades::kind( $grp );  /* SCOPE §38: $grp is the pool (wr, te, rb, qb); $kind picks the stats */
+$KK = $grp === 'k';  /* kickers (SCOPE §47): their own Scorecard, no field maps or week-by-week log */
+if ( $KK ) { $gi = null; $N = DBD_Kicker::n(); }
+$pool = $KK ? 'kickers' : ( $grp ? DBD_Grades::pool_label( DBD_Grades::in_use( $grp ) ) : 'players' ); $one = array( 'wr' => 'wide receiver', 'te' => 'tight end', 'rec' => 'receiver or tight end', 'rb' => 'back', 'qb' => 'quarterback', 'k' => 'kicker' )[ $grp ] ?? 'player'; $kind = $KK ? 'k' : DBD_Grades::kind( $grp );  /* SCOPE §38: $grp is the pool (wr, te, rb, qb); $kind picks the stats */
 $ordn = array( 'DBD_Grades', 'ordinal' ); $pct = function ( $v ) { return $v === null ? '-' : round( $v * 100 ) . '%'; }; $sgn = function ( $v, $d = 1 ) { return ( $v > 0 ? '+' : '' ) . number_format( (float) $v, $d ); };
 $low = $gi['low'] ?? array(); $better = function ( $k, $a, $b ) use ( $low ) { if ( $a === null ) { return false; } if ( $b === null ) { return true; } return in_array( $k, $low, true ) ? $a < $b : $a > $b; };
 
@@ -30,7 +32,11 @@ echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Wh
 for ( $i = 0; $i < 3; $i++ ) {
 	if ( isset( $P[ $i ] ) ) {
 		$x = $P[ $i ]; $rowx = $x['row']; $rm = array_values( array_diff( $ids, array( $rowx['id'] ) ) );
-		echo '<div class="dbd-cslot" style="--c:' . $x['c'] . '">' . DBD_Marks::player( $rowx['team'], $rowx['num'], 40, $rowx['photo'] ?? null ) . '<div class="who"><b><a href="' . esc_url( DBD_Router::url( array( 'player' => $rowx['id'] ) ) ) . '">' . esc_html( $rowx['name'] ) . '</a></b><small>' . esc_html( $rowx['pos'] . ' · ' . ( $x['t']['nick'] ?? $rowx['team'] ) . ' · ' . ( DBD_Grades::qualifies( $rowx ) ? 'graded' : 'not yet qualified' ) ) . '</small></div>' . ( $n > 1 ? '<a class="x" href="' . esc_url( $curl( $rm ) ) . '" title="Remove">✕</a>' : '' ) . '</div>';
+		echo '<div class="dbd-cslot" style="--c:' . $x['c'] . '">' . DBD_Marks::player( $rowx['team'], $rowx['num'], 40, $rowx['photo'] ?? null ) . '<div class="who"><b><a href="' . esc_url( DBD_Router::url( array( 'player' => $rowx['id'] ) ) ) . '">' . esc_html( $rowx['name'] ) . '</a></b><small>' . esc_html( $rowx['pos'] . ' · ' . ( $x['t']['nick'] ?? $rowx['team'] ) . ' · ' . ( $KK ? ( ! empty( DBD_Kicker::get( $rowx['id'] )['q'] ) ? 'ranked' : 'not yet ranked' ) : ( DBD_Grades::qualifies( $rowx ) ? 'graded' : 'not yet qualified' ) ) ) . '</small></div>' . ( $n > 1 ? '<a class="x" href="' . esc_url( $curl( $rm ) ) . '" title="Remove">✕</a>' : '' ) . '</div>';
+	} elseif ( $KK ) {  /* no search script on a kicker compare: the closest kickers, one click each */
+		$k0 = DBD_Kicker::get( $ids[0] ?? '' ); $opts = $k0 ? array_filter( DBD_Kicker::suggest( $k0, 6 ), function ( $o ) use ( $ids ) { return ! in_array( $o['id'], $ids, true ); } ) : array();
+		echo '<div class="dbd-cslot empty kk-add"><span>Add a kicker</span>' . implode( '', array_map( function ( $o ) use ( $curl, $ids ) { return '<a href="' . esc_url( $curl( array_merge( $ids, array( $o['id'] ) ) ) ) . '">' . DBD_Marks::tile( $o['team'], 16 ) . esc_html( $o['name'] ) . '</a>'; }, array_slice( $opts, 0, 3 ) ) ) . '</div>';
+		$i = 3;  /* one picker is enough */
 	} else {
 		echo '<div class="dbd-cslot empty"><input type="search" class="dbd-srch" placeholder="' . esc_attr( 'Add a ' . $one . ' by name or team' ) . '" autocomplete="off" data-slot="' . $i . '"><ul class="dbd-csug" hidden></ul></div>';
 	}
@@ -42,6 +48,7 @@ $chip = function ( $x ) { return '<a class="chip" style="--c:' . $x['c'] . '" hr
 $legend = function () use ( $P, $chip ) { return '<div class="dbd-cleg2">' . implode( '', array_map( $chip, $P ) ) . '</div>'; };
 if ( $n ) { echo '<div class="dbd-ckey" aria-label="Who is which color"><span class="k">Key</span>' . implode( '', array_map( $chip, $P ) ) . $actions . '</div>'; }
 
+if ( $KK ) { echo ( $n > 1 ? DBD_Kicker::compare( $rows ) : '<div class="dbd-empty"><h2>Add a second kicker</h2><p>Pick one above to see them side by side.</p></div>' ) . '</main>'; return; }
 if ( ! $n ) { echo '<div class="dbd-empty"><h2>Nobody picked yet</h2><p>Add a player above, or open any player page and hit Compare. Your recent comparisons, if any, are listed above.</p></div></main>'; return; }
 
 /* ---- this week (SCOPE §42): each one's next game and the defense at his position */

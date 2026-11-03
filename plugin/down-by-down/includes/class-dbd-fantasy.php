@@ -12,9 +12,9 @@ class DBD_Fantasy {
 	const LABEL = array( 'std' => 'Standard', 'half' => 'Half PPR', 'ppr' => 'PPR' );
 	const WORD  = array( 'std' => 'standard', 'half' => 'half-PPR', 'ppr' => 'PPR' );
 	/* fallbacks if fantasy.json is missing a line; the build writes the same numbers */
-	const BOOM  = array( 'QB' => array( 25, 25, 25 ), 'RB' => array( 12, 16, 20 ), 'WR' => array( 12, 16, 20 ), 'TE' => array( 9, 12, 15 ) );
-	const BUST  = array( 'QB' => array( 12, 12, 12 ), 'RB' => array( 5, 6.5, 8 ), 'WR' => array( 5, 6.5, 8 ), 'TE' => array( 3, 4, 5 ) );
-	const SLOT  = array( 'QB' => 12, 'RB' => 24, 'WR' => 24, 'TE' => 12 );
+	const BOOM  = array( 'QB' => array( 25, 25, 25 ), 'RB' => array( 12, 16, 20 ), 'WR' => array( 12, 16, 20 ), 'TE' => array( 9, 12, 15 ), 'K' => array( 12, 12, 12 ) );
+	const BUST  = array( 'QB' => array( 12, 12, 12 ), 'RB' => array( 5, 6.5, 8 ), 'WR' => array( 5, 6.5, 8 ), 'TE' => array( 3, 4, 5 ), 'K' => array( 5, 5, 5 ) );
+	const SLOT  = array( 'QB' => 12, 'RB' => 24, 'WR' => 24, 'TE' => 12, 'K' => 12 );  /* K: SCOPE §47, scored ESPN standard, the same in every format */
 	const SOFT  = 8;   /* 1st to 8th in points allowed is a soft matchup */
 	const TOUGH = 25;  /* 25th and below is a tough one */
 
@@ -157,7 +157,7 @@ class DBD_Fantasy {
 		$teams = DBD_Data::teams(); $h = '';
 		foreach ( self::FMT as $fm ) {
 			$al = self::allowed( $def, $pos, $fm ); if ( ! $al ) { $h .= '<span data-fx="' . $fm . '">–</span>'; continue; }
-			$tip = '<b>' . esc_html( $teams[ $def ]['nick'] ?? $def ) . '</b> allow ' . self::num( $al[0] ) . ' ' . self::WORD[ $fm ] . ' points a game to ' . esc_html( $pos ) . 's<br>' . esc_html( self::ord( $al[1] ) ) . '-most of ' . (int) $al[2];
+			$tip = '<b>' . esc_html( $teams[ $def ]['nick'] ?? $def ) . '</b> allow ' . self::num( $al[0] ) . ' ' . self::WORD[ $fm ] . ' points a game to ' . esc_html( $pos === 'K' ? 'kickers' : $pos . 's' ) . '<br>' . esc_html( self::ord( $al[1] ) ) . '-most of ' . (int) $al[2];
 			$h .= '<span data-fx="' . $fm . '"><span class="dbd-fxr ' . self::tier( $al[1] ) . '" data-tip="' . esc_attr( $tip ) . '" tabindex="0">' . esc_html( self::ord( $al[1] ) ) . '</span></span>';
 		}
 		return '<td>' . $h . '</td>';
@@ -178,7 +178,7 @@ class DBD_Fantasy {
 		}
 		if ( $rows === '' ) { return ''; }
 		return '<section class="dbd-panel dbd-fxm" id="dbd-fxm"><div class="dbd-ph"><span class="dbd-lab"><b>Fantasy matchups</b> · ' . esc_html( $label ) . ': where each defense ranks in points allowed, by position</span>' . self::seg() . '</div>'
-			. '<div class="dbd-tw"><table class="dbd-stat dbd-fxmt"><thead><tr><th>Offense</th><th>QB</th><th>RB</th><th>WR</th><th>TE</th></tr></thead><tbody>' . $rows . '</tbody></table></div>'
+			. '<div class="dbd-tw"><table class="dbd-stat dbd-fxmt"><thead><tr><th>Offense</th><th>QB</th><th>RB</th><th>WR</th><th>TE</th><th>K</th></tr></thead><tbody>' . $rows . '</tbody></table></div>'
 			. '<div class="dbd-legend"><span><i class="sq soft"></i>1st to ' . self::ord( self::SOFT ) . ', a soft matchup</span><span><i class="sq tough"></i>' . self::ord( self::TOUGH ) . ' to ' . self::ord( count( $f['allow'] ) ) . ', a tough one</span><span>1st allows the most</span></div>'
 			. '<p class="dbd-note">Points allowed are every player at the position the defense has faced this season, per game. The format you pick is remembered on this device.</p></section>';
 	}

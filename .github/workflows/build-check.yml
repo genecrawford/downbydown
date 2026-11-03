@@ -5,6 +5,10 @@ on:
   pull_request:
     paths:
       - 'tools/build_data.py'
+      - 'tools/kick_career.py'
+      - 'plugin/down-by-down/includes/class-dbd-kicker.php'
+      - 'plugin/down-by-down/includes/views/kicker.php'
+      - 'plugin/down-by-down/includes/class-dbd-week.php'
       - 'tools/view_harness.php'
       - 'plugin/down-by-down/includes/views/player.php'
       - 'plugin/down-by-down/includes/views/game.php'
@@ -304,6 +308,43 @@ jobs:
           print(len(sl), 'players with slugs; e.g.', list(sl.values())[:6])
           if bad or dup or short: print('missing', bad[:5], 'duplicates', dup, 'mini rows without the slug', short[:5]); sys.exit(1)
           PY
+      - name: Check the kickers (SCOPE §47)
+        run: |
+          python3 - <<'PY'
+          import json, math, sys
+          K = json.load(open('/tmp/out/players/kickers.json')); bad = []
+          A, B = K['curve']; ks = K['kickers']; pm = lambda d: 1 / (1 + math.exp(-(A + B * (d - 40) / 10)))
+          for kid, k in ks.items():
+              fg = k['fg']; nm = k['name']
+              if len(fg) != k['fga']: bad.append(f"{nm}: {len(fg)} tries listed, the line says {k['fga']}")
+              if sum(1 for x in fg if x[3] == 'm') != k['fgm']: bad.append(f"{nm}: makes do not add up")
+              if sum(b[1] for b in k['by']) != k['fga'] or sum(b[0] for b in k['by']) != k['fgm']: bad.append(f"{nm}: the ranges do not add up")
+              if abs((k['fgm'] - sum(pm(x[2]) for x in fg)) - k['oe']) > 0.02: bad.append(f"{nm}: over expected {k['oe']} does not match the curve")
+              if sum(g[5] for g in k['games']) != k['fga'] or sum(g[8] for g in k['games']) != k['pat'][1]: bad.append(f"{nm}: the game rows do not add up")
+              if k['pts'] != 3 * k['fgm'] + k['pat'][0]: bad.append(f"{nm}: points")
+              if not k.get('career') or k['career'][-1]['fga'] != k['fga']: bad.append(f"{nm}: career does not end with this season")
+          q = [k for k in ks.values() if k['q']]
+          if K['n'] != len(q) or len(q) < 20: bad.append(f"{len(q)} qualifying kickers, n says {K['n']}")
+          for m in ('oe', 'fgpct', 'kstart'):
+              r = sorted(k['trk'][m][0] for k in q if m in k.get('trk', {}))
+              if not r or r[0] != 1 or any(r[i] > i + 1 for i in range(len(r))): bad.append(f'{m} ranks run {r[:8]}')
+          idx = json.load(open('/tmp/out/players/index.json'))['players']; mini = json.load(open('/tmp/out/players/mini.json'))
+          ki = [r for r in idx if r['pos'] == 'K']
+          if {r['id'] for r in ki} != set(ks): bad.append('the index and kickers.json list different kickers')
+          if any(r['id'] not in mini for r in ki): bad.append('a kicker missing from mini.json')
+          fan = json.load(open('/tmp/out/fantasy.json')); L = json.load(open('/tmp/out/players/leaders.json'))
+          if 'K' not in fan['start'] or not all('K' in v for v in fan['allow'].values()): bad.append('no K in fantasy.json')
+          if not L['fan']['half'].get('ppg.K'): bad.append('no K fantasy board in leaders.json')
+          box = json.load(open('/tmp/out/box/w8.json'))['games'].get('2026_08_MIN_DET', {})
+          kk = {s['team']: s.get('kk') for s in box.values()} if box else {}
+          if not kk.get('MIN') or not kk.get('DET'): bad.append(f'Vikings at Lions box: kickers {kk}')
+          sw = json.load(open('/tmp/out/week/w8.json'))['swings']
+          if not all('b' in x for x in sw): bad.append('week swings without the team with the ball')
+          r = ks.get('00-0039404')
+          if r: print('Reichard', f"{r['fgm']}/{r['fga']}", 'oe', r['oe'], 'rank', r.get('trk', {}).get('oe'), 'long', r['lng'], 'ko start', r['ko'][2], 'fx', r['fx'], 'career', [c['season'] for c in r['career']])
+          print(len(ks), 'kickers;', len(q), 'qualify; box MIN', kk.get('MIN'), 'DET', kk.get('DET'))
+          if bad: print('\n'.join(bad[:30])); sys.exit(1)
+          PY
       - name: Render pages from the fresh data (a QB, a receiver, a back, a non-qualifier; a regulation game, an overtime game, a tie)
         run: |
           set -e
@@ -332,7 +373,7 @@ jobs:
           php tools/view_harness.php /tmp/out defense MIN && grep -q 'class="dbd-panel dbd-score"' pages/defense-MIN.html && grep -q 'class="dbd-lanes"' pages/defense-MIN.html && grep -q 'dbd-ddef' pages/defense-MIN.html || { echo "the Vikings defense tab is missing a band"; exit 1; }
           php tools/view_harness.php /tmp/out leaders def && grep -q 'ld-card' pages/leaders-def.html || { echo "no Defenses boards"; exit 1; }
           php tools/view_harness.php /tmp/out leaders def.take_pg && grep -q 'ld-full' pages/leaders-def.take_pg.html || { echo "no takeaways board"; exit 1; }
-          php tools/view_harness.php /tmp/out leaders "" && [ "$(grep -o 'class="dbd-panel ld-card"' pages/leaders.html | wc -l)" -eq 7 ] || { echo "the fantasy tab does not have seven boards"; exit 1; }
+          php tools/view_harness.php /tmp/out leaders "" && [ "$(grep -o 'class="dbd-panel ld-card"' pages/leaders.html | wc -l)" -eq 8 ] || { echo "the fantasy tab does not have eight boards (QB, RB, WR, TE, K, season, booms, floor)"; exit 1; }
           php tools/view_harness.php /tmp/out leaders wr && [ "$(grep -o 'class="dbd-panel ld-card"' pages/leaders-wr.html | wc -l)" -eq 16 ] || { echo "the wide receivers tab does not have sixteen boards"; exit 1; }
           php tools/view_harness.php /tmp/out leaders te && [ "$(grep -o 'class="dbd-panel ld-card"' pages/leaders-te.html | wc -l)" -eq 16 ] || { echo "the tight ends tab does not have sixteen boards"; exit 1; }
           php tools/view_harness.php /tmp/out week 7 && for m in 'class="dbd-panel dbd-short"' 'class="wk-g"' 'id="wk-plays"' 'class="wk-tr"' 'wk-fx' 'class="dbd-panel dbd-mv"'; do grep -q "$m" pages/week-7.html || { echo "week 7 in review is missing $m"; exit 1; }; done
@@ -350,6 +391,30 @@ jobs:
           php tools/view_harness.php /tmp/out leaders qb && grep -q 'ld-card' pages/leaders-qb.html || { echo "no quarterback boards"; exit 1; }
           php tools/view_harness.php /tmp/out leaders rec.g.drop && grep -q 'data-low="1"' pages/leaders-rec.g.drop.html || { echo "the drop rate board is not marked lower-is-better"; exit 1; }
           php tools/view_harness.php /tmp/out leaders fan.ppg.WR && grep -q 'ld-full' pages/leaders-fan.ppg.WR.html || { echo "no full WR fantasy board"; exit 1; }
+      - name: Render the kicker pieces (SCOPE §47)
+        run: |
+          set -e
+          export DBD_HARNESS_HTML=pages
+          RE=00-0039404
+          php tools/view_harness.php /tmp/out player $RE
+          for m in 'dbd-view-player' 'dbd-player dbd-kk' 'class="kk-field kk-h"' 'class="kk-field kk-v"' 'class="dbd-panel dbd-score"' 'kk-dist' 'kk-log' 'kk-career' 'Kickers like him' 'class="dbd-mtbtn"'; do grep -q "$m" pages/player-$RE.html || { echo "Reichard's page is missing $m"; exit 1; }; done
+          N=$(python3 -c "import json;print(json.load(open('/tmp/out/players/kickers.json'))['kickers']['$RE']['fga'])")
+          [ "$(grep -o 'class="kk-k"' pages/player-$RE.html | wc -l)" -eq $((N * 2)) ] || { echo "the two charts do not draw his $N tries each"; exit 1; }
+          php tools/view_harness.php /tmp/out game 2026_08_MIN_DET
+          grep -q '">DET</span><span class="what"><a href="[^"]*">J.Bates</a> 46 yard field goal' pages/game-2026_08_MIN_DET.html || { echo "Bates' miss is not tagged DET with his name linked"; exit 1; }
+          grep -q 'class="kk-for"[^>]*>MIN</em>' pages/game-2026_08_MIN_DET.html || { echo "the swing bars do not name the team helped"; exit 1; }
+          grep -q '<b>Kicking</b> <a href="[^"]*">W.Reichard</a> 0/1 FG (57 no good)' pages/game-2026_08_MIN_DET.html || { echo "the box score's kicking line is not every kicker with misses"; exit 1; }
+          grep -q '">J.Bates</a> [0-9]*/[0-9]* FG' pages/game-2026_08_MIN_DET.html || { echo "Bates is missing from the box score"; exit 1; }
+          php tools/view_harness.php /tmp/out leaders k && [ "$(grep -o 'class="dbd-panel ld-card"' pages/leaders-k.html | wc -l)" -eq 6 ] || { echo "the Kickers tab does not have six boards"; exit 1; }
+          php tools/view_harness.php /tmp/out leaders k.kstart && grep -q 'ld-full' pages/leaders-k.kstart.html || { echo "no full kickoffs board"; exit 1; }
+          php tools/view_harness.php /tmp/out leaders fan.ppg.K && grep -q 'ld-full' pages/leaders-fan.ppg.K.html || { echo "no full K fantasy board"; exit 1; }
+          CK=$(python3 -c "import json;k=json.load(open('/tmp/out/players/kickers.json'))['kickers'];q=sorted((x for x in k.values() if x['q']),key=lambda x:-x['oe'])[:2];print(','.join(x['id'] for x in q))")
+          php tools/view_harness.php /tmp/out compare "$CK" && grep -q 'class="dbd-panel kk-cmp"' "pages/compare-$CK.html" || { echo "no kicker compare for $CK"; exit 1; }
+          php tools/view_harness.php /tmp/out teamplayers MIN && grep -q 'Will Reichard</a><small>K</small>' pages/teamplayers-MIN.html || { echo "no kicker on the Vikings players page"; exit 1; }
+          grep -q 'player/will-reichard/\|player=00-0039404' pages/teamplayers-MIN.html || { echo "the Vikings lineup does not link the kicker"; exit 1; }
+          php tools/view_harness.php /tmp/out week 8 && grep -q 'class="wk-pv"><b>+[0-9]*</b><small>[A-Z]\{2,3\} [0-9]*%' pages/week-8.html || { echo "the week's swings do not name the team helped"; exit 1; }
+          php tools/view_harness.php /tmp/out myteam "$RE" && grep -q 'mt-row' "pages/myteam-$RE.html" || { echo "My team does not take a kicker"; exit 1; }
+          php tools/view_harness.php /tmp/out players "" && grep -q ' FG</td>' pages/players.html || { echo "no kicker rows on the Players index"; exit 1; }
       - uses: actions/upload-artifact@v4
         with:
           name: pages-fresh-data

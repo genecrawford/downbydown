@@ -8,7 +8,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 class DBD_Leaders {
 	const TOP    = 10;
-	const GROUPS = array( 'fan' => 'Fantasy', 'wr' => 'Wide receivers', 'te' => 'Tight ends', 'rb' => 'Backs', 'qb' => 'Quarterbacks', 'def' => 'Defenses' );
+	const GROUPS = array( 'fan' => 'Fantasy', 'wr' => 'Wide receivers', 'te' => 'Tight ends', 'rb' => 'Backs', 'qb' => 'Quarterbacks', 'k' => 'Kickers', 'def' => 'Defenses' );  /* k: SCOPE §47, from players/kickers.json */
 	/* wide receivers and tight ends rank as separate positions, the way fantasy leagues do (SCOPE §38). leaders.json has a wr and a te
 	   group from 1.14.0's build; an older file has only the combined rec group, read here filtered by position. */
 	const SPLIT  = array( 'wr' => array( 'rec', 'WR' ), 'te' => array( 'rec', 'TE' ) );
@@ -18,7 +18,7 @@ class DBD_Leaders {
 	public static function pool( $g ) { return DBD_Grades::pool_label( $g ); }
 	const STEPS  = array( 'wr' => array( 15, 10, 5 ), 'te' => array( 15, 10, 5 ), 'rec' => array( 15, 10, 5 ), 'rb' => array( 30, 20, 10 ), 'qb' => array( 50, 35, 20 ) );  /* the qualified pool, then two lower steps */
 	const UNIT   = array( 'wr' => 'targets', 'te' => 'targets', 'rec' => 'targets', 'rb' => 'touches', 'qb' => 'attempts' );
-	const FAN    = array( 'ppg.QB' => array( 'Points a game', 'quarterbacks with enough games' ), 'ppg.RB' => array( 'Points a game', 'running backs with enough games' ), 'ppg.WR' => array( 'Points a game', 'wide receivers with enough games' ), 'ppg.TE' => array( 'Points a game', 'tight ends with enough games' ),
+	const FAN    = array( 'ppg.QB' => array( 'Points a game', 'quarterbacks with enough games' ), 'ppg.RB' => array( 'Points a game', 'running backs with enough games' ), 'ppg.WR' => array( 'Points a game', 'wide receivers with enough games' ), 'ppg.TE' => array( 'Points a game', 'tight ends with enough games' ), 'ppg.K' => array( 'Points a game', 'kickers with enough games, ESPN standard' ),
 		'tot' => array( 'Season points', 'every position' ), 'boom' => array( 'Boom weeks', 'every position' ), 'lo' => array( 'Highest floor', 'his 20th-percentile game, 3+ games' ) );
 
 	public static function file() { return DBD_Data::get( 'players/leaders.json' ) ?: array(); }
@@ -118,6 +118,7 @@ class DBD_Leaders {
 	/** One full board: every row above the floor, ranked; the filters (position, usage) run in leaders.js and renumber. */
 	public static function board( $key ) {
 		$parts = explode( '.', $key ); $f = self::file();
+		if ( ( $parts[0] ?? '' ) === 'k' ) { return DBD_Kicker::board( $parts[1] ?? '' ); }  /* SCOPE §47 */
 		if ( ( $parts[0] ?? '' ) === 'def' ) {  /* SCOPE §39: a defense board, all 32 teams */
 			$def = null; foreach ( DBD_Defense::SC as $d ) { if ( $d[0] === ( $parts[1] ?? '' ) ) { $def = $d; } } if ( ! $def ) { return null; }
 			$rows = DBD_Defense::board( $def[0] ); $rk = self::ranks( $rows ); $tb = '';

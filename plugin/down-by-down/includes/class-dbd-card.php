@@ -196,6 +196,11 @@ class DBD_Card {
 		$logo = function ( $t ) use ( $fetch ) { return self::logo_bin( $t, $fetch ); };
 		if ( preg_match( '/^\d{2}-\d{7}$/', $key ) ) {
 			$row = DBD_Data::player( $key ); if ( ! $row ) { return null; }
+			if ( DBD_Kicker::is( $row ) ) {  /* SCOPE §47: a kicker's card, in the player card's layout */
+				$k = DBD_Kicker::get( $key ); if ( ! $k ) { return null; }
+				$assets['photo'] = ! empty( $k['photo'] ) ? $fetch( $k['photo'] ) : null; $assets['team_logo'] = $logo( $k['team'] );
+				return self::draw( DBD_Kicker::card_spec( $k, DBD_Data::team( $k['team'] ) ?: array() ), $assets );
+			}
 			$rec = DBD_Data::player_record( $row['team'], $key ); if ( ! $rec ) { return null; }
 			$team = DBD_Data::team( $row['team'] ); $grp = DBD_Grades::in_use( $rec['grades']['pool'] ?? DBD_Grades::pool_of( $row['pos'] ) ); $gi = $grp ? ( DBD_Grades::group_info( $grp ) ?: array() ) : array(); $gi['_pool'] = $grp;  /* SCOPE §38: the player's own pool */
 			$spec = self::spec( $rec, $row, $team, $gi, DBD_Data::season(), DBD_Data::through_week() ); if ( ! $spec ) { return null; }

@@ -93,7 +93,8 @@ class DBD_Lineup {
 		$li = '';
 		foreach ( array( 'PK', 'P', 'KR', 'PR', 'LS', 'H' ) as $k ) { $e = $lu['st'][ $k ] ?? null; if ( ! $e ) { continue; }
 			$fg = ! empty( $e['fg'] ) && $e['fg'][1] ? ' · ' . (int) $e['fg'][0] . '/' . (int) $e['fg'][1] . ' FG, long ' . (int) $e['fg'][2] : '';
-			$li .= '<li><b>' . esc_html( $k ) . '</b><span class="n">' . esc_html( $e['name'] ?? '' ) . '<small>' . esc_html( ( $e['pos'] ?? '' ) . $fg ) . '</small></span></li>'; }
+			$nm = esc_html( $e['name'] ?? '' ); if ( $k === 'PK' && ! empty( $e['id'] ) && DBD_Kicker::get( $e['id'] ) ) { $nm = '<a href="' . esc_url( DBD_Router::url( array( 'player' => $e['id'] ) ) ) . '">' . $nm . '</a>'; }  /* the kicker's page (SCOPE §47) */
+			$li .= '<li><b>' . esc_html( $k ) . '</b><span class="n">' . $nm . '<small>' . esc_html( ( $e['pos'] ?? '' ) . $fg ) . '</small></span></li>'; }
 		return '<ul class="dbd-lulist st">' . $li . '</ul>';
 	}
 

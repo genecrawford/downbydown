@@ -24,11 +24,29 @@ class DBD_Post {
 	const M_HASH   = '_dbd_hash';        /* the content as the plugin last wrote it: anything else means Gene edited it */
 	const FORM     = '[wpforms id="63" title="false"]';
 
+	/** Whether an attachment is a week post's card: its parent post carries the week. */
+	private static function is_card( $id ) {
+		static $c = array(); $id = (int) $id; if ( ! $id ) { return false; }
+		if ( ! isset( $c[ $id ] ) ) { $p = (int) wp_get_post_parent_id( $id ); $c[ $id ] = $p && get_post_meta( $p, self::M_WEEK, true ) !== ''; }
+		return $c[ $id ];
+	}
+	public static function card_whole( $out, $id, $size ) {
+		if ( $out !== false || $size === 'full' || ! self::is_card( $id ) ) { return $out; }
+		$url = wp_get_attachment_url( $id ); $m = wp_get_attachment_metadata( $id );
+		if ( ! $url || empty( $m['width'] ) || empty( $m['height'] ) ) { return $out; }
+		return array( $url, (int) $m['width'], (int) $m['height'], false );
+	}
+	public static function card_srcset( $sources, $size, $src, $meta, $id ) { return self::is_card( $id ) ? false : $sources; }
+
 	public static function init() {
 		add_filter( 'the_content', array( __CLASS__, 'relink' ), 9 );
 		add_filter( 'the_content', array( __CLASS__, 'signup' ), 20 );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'assets' ) );
 		add_action( 'wp_head', array( __CLASS__, 'head' ), 3 );
+		/* 2.8.0: a post's card image whole. Divi's Blog grid asks for its 400 × 250 crop, which cuts the 1200 × 630 card's edges, so any smaller
+		   size of a week card returns the full image, and its srcset (which would let the browser pick the crop) is dropped */
+		add_filter( 'image_downsize', array( __CLASS__, 'card_whole' ), 10, 3 );
+		add_filter( 'wp_calculate_image_srcset', array( __CLASS__, 'card_srcset' ), 10, 5 );
 	}
 
 	public static function on() { return (bool) get_option( self::OPT_ON, true ); }

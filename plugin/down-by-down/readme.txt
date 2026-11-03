@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.7.0
+Stable tag: 2.8.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,14 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.8.0 =
+* Kickers (SCOPE §47): every kicker gets a page at his player address, built from players/kickers.json: eight tiles ranked among qualifying kickers (a try for every game his team has played), the short version, a Scorecard, his makes by distance against an average kicker's from the same spots (a league curve fitted to 2023–2025), every try drawn on the field at the spot it was held (sideways on wide screens, upright on phones), the kicks that moved his team's win chance most, a game log with the conditions, and his career since 1999.
+* The swing lists on the game page and the week in review tag each play with the team that had the ball; the bar names the team the play helped. A kicker's name in a play links to his page.
+* The box score's kicking line lists every kicker in the game, linked, with misses and their distances, extra points and points.
+* Kickers on Leaders (a Kickers tab of six boards and a K fantasy board), in fantasy (ESPN standard scoring, the same in every format; the matchups grid gains a K column), on My team (a K slot), the Players index (a K filter), each team's players page and lineup, compare (kicker against kicker) and the share card.
+* App pages center in the header's 1240px column, with its side padding, on full-width Divi rows.
+* The week-in-review posts' card images reach Divi's Blog grid whole instead of its 400 × 250 crop.
 
 = 2.7.0 =
 * The weekly post (SCOPE §46): each finished week becomes a post in a "Week in review" category, written from the week's data (the scores, the swing and the play, the best offense and defense, players of the week, fantasy, who is rising and next week's game of the week) and scheduled for the Tuesday after the week at 8:00 AM Eastern. A later sync refreshes a scheduled post's numbers; an edited, published or deleted post is never touched again. The week's share card is the featured image. Settings › Weekly post: on/off, the signup form under each post, every week's post and state, and "Write past weeks" to backfill the season. The week page links to its write-up.

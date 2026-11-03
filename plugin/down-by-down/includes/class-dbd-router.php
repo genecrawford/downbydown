@@ -185,7 +185,7 @@ class DBD_Router {
 			foreach ( array_unique( array_map( 'trim', explode( ',', self::q( 'compare' ) ) ) ) as $id ) {
 				if ( ! preg_match( '/^\d{2}-\d{7}$/', $id ) ) { continue; }
 				$row = DBD_Data::player( $id ); if ( ! $row ) { continue; }
-				$g = DBD_Grades::pool_of( $row['pos'] ); if ( ! $g ) { continue; }  /* SCOPE §38: a wide receiver compares with wide receivers, a tight end with tight ends */
+				$g = DBD_Kicker::is( $row ) ? 'k' : DBD_Grades::pool_of( $row['pos'] ); if ( ! $g ) { continue; }  /* SCOPE §38: a wide receiver compares with wide receivers, a tight end with tight ends; §47: a kicker with kickers */
 				if ( ! $grp ) { $grp = $g; } elseif ( $g !== $grp ) { $mixed = true; continue; }
 				$rows[] = $row; if ( count( $rows ) >= 3 ) { break; }
 			}
@@ -194,7 +194,7 @@ class DBD_Router {
 			$r['view'] = 'leaders'; $g = strtolower( self::q( 'g' ) ); $b = self::q( 'b' );
 			if ( $g === 'rec' ) { $g = 'wr'; }  /* 1.13.0's combined tab */
 			$r['lgroup'] = isset( DBD_Leaders::GROUPS[ $g ] ) ? $g : 'fan';
-			$r['lboard'] = preg_match( '/^[a-z]{2,3}\.[A-Za-z0-9_]{1,10}(\.[A-Za-z0-9_]{1,10})?$/', $b ) ? $b : '';
+			$r['lboard'] = preg_match( '/^[a-z]{1,3}\.[A-Za-z0-9_]{1,10}(\.[A-Za-z0-9_]{1,10})?$/', $b ) ? $b : '';  /* k.oe: the kickers' boards (SCOPE §47) */
 		} elseif ( $view === 'week' ) {  /* the week in review (SCOPE §40): a week with a final game, the latest by default */
 			$r['view'] = 'week'; $ok = DBD_Week::weeks();
 			$r['week'] = ( $week && in_array( $week, $ok, true ) ) ? $week : DBD_Week::default_week();
@@ -206,7 +206,7 @@ class DBD_Router {
 			$pt = strtoupper( self::q( 'pt' ) );  /* the index's own team filter; team= opens that team's page */
 			$r['pteam'] = isset( $teams[ $team ] ) ? $team : ( isset( $teams[ $pt ] ) ? $pt : '' ); $r['ptfilter'] = ! isset( $teams[ $team ] ) && isset( $teams[ $pt ] );
 			$pos        = strtoupper( self::q( 'pos' ) );
-			$r['pos']   = in_array( $pos, array( 'QB', 'RB', 'WR', 'TE' ), true ) ? $pos : '';
+			$r['pos']   = in_array( $pos, array( 'QB', 'RB', 'WR', 'TE', 'K' ), true ) ? $pos : '';  /* K: SCOPE §47 */
 			$r['q']     = mb_substr( self::q( 'q' ), 0, 40 );
 			if ( $r['pteam'] && ! $r['ptfilter'] && $r['q'] === '' ) { $r['view'] = 'teamplayers'; }  /* a team's players is its own page (SCOPE §32); the league index filters by team in place */
 		} elseif ( $team !== '' ) {
@@ -323,6 +323,7 @@ class DBD_Router {
 				return array( 'Pick a team', "All 32 NFL offenses ranked by EPA per play, each with a play explorer showing every snap of the $season season." );
 			case 'player':
 				$p = $r['player']; $t = DBD_Data::team( $p['team'] );
+				if ( DBD_Kicker::is( $p ) ) { return array( "{$p['name']}, {$t['nick']} K", "Every field goal {$p['name']} has tried in $season, drawn on the field: makes over expected for his distances, range, extra points, kickoffs, the kicks that swung games, the game log with conditions, and his career." ); }
 				return array( "{$p['name']}, {$t['nick']} {$p['pos']}", "Where the ball finds {$p['name']}: every target and carry of the $season season on the field, the game log, snap share, usage by down, quarter and score, and the latest injury report." );
 			case 'compare':
 				$names = array_map( function ( $p ) { return $p['name']; }, $r['compare'] );
@@ -418,7 +419,7 @@ class DBD_Router {
 				'side'      => $def ? 'def' : 'off',
 			) );
 		}
-		if ( $r['view'] === 'player' ) {
+		if ( $r['view'] === 'player' && ! DBD_Kicker::is( $r['player'] ) ) {  /* a kicker's page is all PHP (SCOPE §47) */
 			$p = $r['player']; $t = DBD_Data::team( $p['team'] ); $rel = 'plays/' . $p['team'] . '.json'; $rec = DBD_Data::player_record( $p['team'], $p['id'] );
 			$roster = array();
 			foreach ( DBD_Data::team_players( $p['team'] ) as $x ) {
@@ -444,7 +445,7 @@ class DBD_Router {
 				'roster'  => $roster,  /* id => name, short, pos, num, photo: names and tiles for the connection panel */
 			) );
 		}
-		if ( $r['view'] === 'compare' ) {
+		if ( $r['view'] === 'compare' && ( $r['cgroup'] ?? '' ) !== 'k' ) {  /* kicker compare is all PHP (SCOPE §47) */
 			$files = array(); $pl = array();
 			foreach ( $r['compare'] as $row ) { $rel = 'plays/' . $row['team'] . '.json'; $files[ $row['team'] ] = DBD_Data::url() . '/' . $rel . '?v=' . DBD_Data::file_version( $rel ); $rec = DBD_Data::player_record( $row['team'], $row['id'] ); $pl[] = array( 'id' => $row['id'], 'short' => $rec['short'] ?? '', 'name' => $row['name'], 'team' => $row['team'], 'pos' => $row['pos'], 'num' => $row['num'] ); }
 			$maxW = max( 1, (int) DBD_Data::through_week() ); $series = array(); $labels = array();
@@ -481,13 +482,18 @@ class DBD_Router {
 
 	/* ------------------------------------------------------------------ rendering */
 
+	/** The view file a route renders: views/{view}.php, the kicker page for a K (SCOPE §47), notfound.php for anything missing. The harness uses it too. */
+	public static function view_file( $r ) {
+		$file = DBD_PATH . 'includes/views/' . ( $r['view'] === 'player' && DBD_Kicker::is( $r['player'] ?? null ) ? 'kicker' : $r['view'] ) . '.php';
+		return file_exists( $file ) ? $file : DBD_PATH . 'includes/views/notfound.php';
+	}
+
 	public static function shortcode() {
 		if ( ! self::$active ) {  // shortcode inside a loop or a non-singular context: route anyway
 			self::$active = true; self::$page_url = get_permalink(); self::$route = self::route();
 		}
 		$r = self::$route;
-		$file = DBD_PATH . 'includes/views/' . $r['view'] . '.php';
-		if ( ! file_exists( $file ) ) { $file = DBD_PATH . 'includes/views/notfound.php'; }
+		$file = self::view_file( $r );
 		ob_start();
 		echo '<div class="dbd dbd-view-' . esc_attr( $r['view'] ) . ( DBD_Data::archived() ? ' dbd-archived' : '' ) . '">';  // dbd-view-* so it can never collide with component classes like .dbd-teams or .dbd-game
 		include $file;

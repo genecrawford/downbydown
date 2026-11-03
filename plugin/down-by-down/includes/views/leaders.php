@@ -8,7 +8,7 @@ $B = ( $r['lboard'] ?? '' ) !== '' && $F ? DBD_Leaders::board( $r['lboard'] ) : 
 echo DBD_Router::topbar( $B ? array( 'players' => DBD_Router::url( array( 'view' => 'players' ) ), 'leaders' => $lurl( array( 'g' => $B['group'] ) ), $B['title'] => null ) : array( 'players' => DBD_Router::url( array( 'view' => 'players' ) ), 'leaders' => null ) );
 echo '<main class="dbd-content">';
 echo '<div class="dbd-ttitle"><div class="t-stagger"><p class="dbd-kicker t-stagger-line t-stagger-line--1">' . esc_html( $through ? "$season season · through week $through" : "$season season" ) . '</p>';
-if ( $B ) { echo '<h1 class="t-stagger-line t-stagger-line--2">' . esc_html( $B['title'] ) . '</h1><p class="dbd-sub t-stagger-line t-stagger-line--3">' . esc_html( ucfirst( $B['sub'] ) ) . '. ' . ( $B['group'] === 'fan' ? 'Every player on the board, ranked.' : 'Every player above the usage floor, ranked. The default is the qualified pool the grades use; lower the minimum to see more.' ) . '</p></div>'; if ( isset( $B['count'] ) ) { echo '<div class="dbd-badge" id="ld-count">' . (int) $B['count'] . ' players</div>'; } echo '</div>'; }
+if ( $B ) { echo '<h1 class="t-stagger-line t-stagger-line--2">' . esc_html( $B['title'] ) . '</h1><p class="dbd-sub t-stagger-line t-stagger-line--3">' . esc_html( ucfirst( $B['sub'] ) ) . '. ' . ( $B['group'] === 'fan' ? 'Every player on the board, ranked.' : ( $B['group'] === 'k' ? 'Every kicker with a field goal try for every game his team has played, ranked.' :  'Every player above the usage floor, ranked. The default is the qualified pool the grades use; lower the minimum to see more.' ) ) . '</p></div>'; if ( isset( $B['count'] ) ) { echo '<div class="dbd-badge" id="ld-count">' . (int) $B['count'] . ' players</div>'; } echo '</div>'; }
 else { echo '<h1 class="t-stagger-line t-stagger-line--2">League <em>leaders</em></h1><p class="dbd-sub t-stagger-line t-stagger-line--3">Who leads the league in what this site measures: every Scorecard stat, every Playstyle trait and the fantasy numbers, the top ten on each board and one click to the full list.</p></div></div>'; }
 if ( ! $F ) { echo '<div class="dbd-empty"><h2>No leaders yet</h2><p>The boards fill in with the next nightly data build.</p></div></main>'; return; }
 if ( ( $r['lboard'] ?? '' ) !== '' && ! $B ) { echo '<div class="dbd-empty"><h2>No such board</h2><p><a href="' . esc_url( $lurl() ) . '">All the leaders</a></p></div></main>'; return; }
@@ -23,6 +23,8 @@ foreach ( DBD_Leaders::GROUPS as $k => $lab ) { echo '<a href="' . esc_url( $lur
 echo '</div></nav>';
 if ( $g === 'def' ) {
 	echo DBD_Leaders::defenses();  /* SCOPE §39 */
+} elseif ( $g === 'k' ) {
+	echo DBD_Kicker::leaders_tab();  /* SCOPE §47 */
 } elseif ( $g === 'fan' ) {
 	echo '<section class="dbd-panel ld-tools-p"><div class="dbd-toolbar ld-tools"><div class="dbd-fg"><span>Fantasy scoring</span>' . DBD_Fantasy::seg() . '</div></div></section>';
 	echo DBD_Leaders::fantasy();
