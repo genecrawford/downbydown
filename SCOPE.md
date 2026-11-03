@@ -2256,13 +2256,22 @@ The mock is `mockup-v23/team-news-MIN.html`: the live Vikings players page with 
 | **All 32 team sites** | `https://www.{team site}/rss/news` (vikings.com, detroitlions.com…) | All 32 answer. 31 had stories from the past week; the Commanders' feed is stale (its newest items are from October and 2022) |
 | **ProFootballTalk** | `profootballtalk.nbcsports.com/feed/` | 30 stories, mostly team-specific |
 | **CBS Sports** | `cbssports.com/rss/headlines/nfl/` | 36 stories |
-| **ESPN** | `espn.com/espn/rss/nfl/news` | 30 stories |
+| **ESPN** | `espn.com/espn/rss/nfl/news` | 30 stories. Its `?team=` filter is ignored: every team gets the same league feed |
 | **Yahoo Sports** | `sports.yahoo.com/nfl/rss/` | 50 stories |
-| Bleacher Report | none | No feed; left out |
+| **SB Nation team blogs** (added 2026-11-03) | `https://www.{blog}/rss/index.xml` (Daily Norseman, Pride Of Detroit, Hogs Haven…) | All 32 answer, 10 recent stories each, every one updated within the last two days. Fan analysis, free to read. Hogs Haven covers Washington while the Commanders' own feed is stale |
+| **NFL Trade Rumors** (added) | `nfltraderumors.co/feed/` | 10 short items on trades, signings and releases |
+| **Sporting News** (added) | `sportingnews.com/us/rss/nfl` | 20 stories |
+| The Athletic | `nytimes.com/athletic/rss/nfl/{team}/` (`vikings`, `niners`, `commanders`…) | A feed for each team and the best beat reporting, but most articles need a subscription. Left out for now (decision 3) |
+| FanSided team sites | `thevikingage.com/feed/`, `sidelionreport.com/feed/`… | Work and post a lot, but thinner and uneven; some sites in the network are broken or off-topic. Left out |
+| Sharp Football Analysis | `sharpfootballanalysis.com/feed/` | Works, but the feed is evergreen stats tools and betting pages, never a team's story. Left out |
+| Yardbarker, NFL Spin Zone | | Work, but mostly repackage other outlets. Left out |
+| Google News search per team | `news.google.com/rss/search?q=…` | The broadest (Star Tribune, Heavy, SI, NFL.com…), but every link redirects through Google and the feeds are meant for personal reading. Left out |
+| Reddit team subreddits | `reddit.com/r/{team}/.rss` | Fan discussion, not news. Left out |
+| Bleacher Report, USA Today's team Wire sites, AP, Fox Sports, SI team pages, Star Tribune, Pioneer Press | | No feed, or the feed is blocked |
 | PFF | `pff.com/feed` | Works, but most articles are behind PFF's paywall; left out |
 | NFL.com and ESPN stats pages | | Not news, and the site already has these numbers from nflverse |
 
-In one fetch, the four league feeds matched 158 stories to teams across the week; the Vikings had 4 from vikings.com and 3 from the league feeds.
+In one fetch on 2026-11-03, every team had stories in its team column, and the six league feeds matched 189 stories to teams across the week. The Vikings had 14 from vikings.com and Daily Norseman and 3 from the league feeds.
 
 ### How stories find their team
 
@@ -2276,15 +2285,15 @@ In one fetch, the four league feeds matched 158 stories to teams across the week
 ### Where it shows
 
 - **The team players page** (`/team/min/players/`) gets a **"Vikings news"** panel, right after the lineup:
-  - two columns: **From vikings.com** (the team site, newest five) and **Around the league** (the league feeds, newest five)
+  - two columns: **Vikings.com and Daily Norseman** (the team site and its SB Nation blog together, newest five) and **Around the league** (the six league feeds, newest five)
   - each row is the headline (opens the article in a new tab), the source and the time ("3h", "Mon"), and any player named, linked to his page
   - "Show more" opens up to ten in each column
-  - an empty column says so: "No Vikings stories from the league feeds this week."
+  - an empty column says so: "No Vikings stories from the league feeds this week." (In the 2026-11-03 fetch, the Dolphins and Saints had no league stories.)
 - **The offense and defense pages** (`/team/min/`, `/team/min/defense/`) get one line under the page's description: "Latest: Kevin O'Connell Updates Vikings Injuries… · Vikings.com · 5h · All Vikings news", linking to the panel. The explorer stays the first thing on the page.
 
 ### How it runs
 
-- **On the site, not in the data build:** WordPress fetches the 36 feeds every hour (WordPress has a feed reader built in) and keeps the matched lists in one stored setting. News goes stale in hours, and the data build runs three times a day; keeping it on the site also keeps headlines out of the public data repo.
+- **On the site, not in the data build:** WordPress fetches the 70 feeds (32 team sites, 32 SB Nation blogs, 6 league feeds) every hour (WordPress has a feed reader built in) and keeps the matched lists in one stored setting. News goes stale in hours, and the data build runs three times a day; keeping it on the site also keeps headlines out of the public data repo.
 - **A feed that fails** keeps its last good list, and the plugin's status screen shows each feed's last fetch, its story count and any error, so a dead feed like the Commanders' is visible.
 - **Every link** opens in a new tab with `rel="nofollow noopener"`.
 - **A setting** turns any source off.
@@ -2298,7 +2307,8 @@ In one fetch, the four league feeds matched 158 stories to teams across the week
 ### Open decisions (for Gene, one at a time)
 
 1. **Where:** the panel on the team players page plus the latest line on the offense and defense pages (recommended), or the panel only.
-2. **Sources:** the 32 team sites plus ProFootballTalk, CBS Sports, ESPN and Yahoo (recommended), or team sites only.
+2. **Sources:** DECIDED 2026-11-03: the 32 team sites and the 32 SB Nation blogs for each team's own column; ProFootballTalk, CBS Sports, ESPN, Yahoo Sports, Sporting News and NFL Trade Rumors for around the league (Gene: "Yes, add them").
+3. **The Athletic:** leave out (recommended for now), or add each team's Athletic feed to the team column with a "subscriber" mark on its links.
 
 ### Acceptance
 

@@ -1,9 +1,24 @@
 {
- "built": 1793724525,
+ "built": 1793725795,
  "news": {
   "ARI": {
    "site": "azcardinals.com",
+   "fan": "Revenge of the Birds",
    "official": [
+    {
+     "title": "The Cardinals\u2019 running back situation: Highs and lows",
+     "url": "https://www.revengeofthebirds.com/arizona-cardinals-depth-chart/96379/the-cardinals-running-back-situation-highs-and-lows",
+     "ts": 1793707200,
+     "src": "Revenge of the Birds",
+     "who": []
+    },
+    {
+     "title": "What is the Cardinals\u2019 head coach Mike LaFleur saying about a QB change?",
+     "url": "https://www.revengeofthebirds.com/arizona-cardinals-game-information/96356/what-is-the-cardinals-head-coach-mike-lafleur-saying-about-a-qb-change",
+     "ts": 1793660572,
+     "src": "Revenge of the Birds",
+     "who": []
+    },
     {
      "title": "Gardner Minshew Named Cardinals Starting Quarterback, Carson Beck Made Backup",
      "url": "https://www.azcardinals.com/news/gardner-minshew-named-cardinals-starting-quarterback-carson-beck-made-backup",
@@ -38,6 +53,13 @@
      "who": []
     },
     {
+     "title": "Arizona Cardinals news: Cards earn \u2018B\u2019 in comeback win over Cowboys",
+     "url": "https://www.revengeofthebirds.com/arizona-cardinals-news/95817/arizona-cardinals-news-cards-earn-b-in-comeback-win-over-cowboys",
+     "ts": 1793645452,
+     "src": "Revenge of the Birds",
+     "who": []
+    },
+    {
      "title": "Tyler Allgeier's Day As RBOnly",
      "url": "https://www.azcardinals.com/news/tyler-allgeier-s-day-as-rbonly",
      "ts": 1793642366,
@@ -49,6 +71,13 @@
        "team": "ARI"
       }
      ]
+    },
+    {
+     "title": "Beaks & Geeks: Cardinals, Cowboys Winners & Losers: Arizona\u2019s offense comes alive in second half in 33-30 win",
+     "url": "https://www.revengeofthebirds.com/arizona-cardinals-game-information/96270/beaks-geeks-cardinals-cowboys-winners-losers-arizonas-offense-comes-alive-in-second-half-in-33-30-win",
+     "ts": 1793620800,
+     "src": "Revenge of the Birds",
+     "who": []
     },
     {
      "title": "Gardner Minshew II, The Big Picture, And Cowboys Aftermath",
@@ -64,10 +93,58 @@
      ]
     },
     {
+     "title": "Cardinals vs. Seahawks odds: Opening lines for Week 9 matchup",
+     "url": "https://www.revengeofthebirds.com/arizona-cardinals-odds/96278/cardinals-vs-seahawks-odds-week-9-opening-lines-point-spread-total",
+     "ts": 1793576631,
+     "src": "Revenge of the Birds",
+     "who": []
+    },
+    {
      "title": "Cardinals Use Minshew Magic To Steal Victory In Dallas",
      "url": "https://www.azcardinals.com/news/cardinals-cowboys-overtime-minshew-magic-33-30-victory",
      "ts": 1793573520,
      "src": "Azcardinals.com",
+     "who": []
+    },
+    {
+     "title": "Arizona Cardinals bench Jacoby Brissett and offense immediately takes off in win over Cowboys",
+     "url": "https://www.revengeofthebirds.com/arizona-cardinals-scores-results/96286/arizona-cardinals-bench-jacoby-brissett-and-offense-immediately-takes-off-in-win-over-cowboys",
+     "ts": 1793569544,
+     "src": "Revenge of the Birds",
+     "who": [
+      {
+       "name": "Jacoby Brissett",
+       "slug": "jacoby-brissett",
+       "team": "ARI"
+      }
+     ]
+    },
+    {
+     "title": "Cardinals-Cowboys Week 8 game chat",
+     "url": "https://www.revengeofthebirds.com/arizona-cardinals-discussion/96264/cardinals-cowboys-week-8-game-chat",
+     "ts": 1793554200,
+     "src": "Revenge of the Birds",
+     "who": []
+    },
+    {
+     "title": "Cardinals at Cowboys week eight preview",
+     "url": "https://www.revengeofthebirds.com/arizona-cardinals-odds/96261/cardinals-at-cowboys-week-eight-preview",
+     "ts": 1793545200,
+     "src": "Revenge of the Birds",
+     "who": []
+    },
+    {
+     "title": "Arizona Cardinals fans would like to get the Carson Beck era started",
+     "url": "https://www.revengeofthebirds.com/nfl-reacts-survey/96231/arizona-cardinals-fans-would-like-to-get-the-carson-beck-era-started",
+     "ts": 1793538000,
+     "src": "Revenge of the Birds",
+     "who": []
+    },
+    {
+     "title": "How to Watch: Arizona Cardinals at Dallas Cowboys",
+     "url": "https://www.revengeofthebirds.com/arizona-cardinals-game-information/96258/how-to-watch-arizona-cardinals-at-dallas-cowboys-week-eight-2026",
+     "ts": 1793530800,
+     "src": "Revenge of the Birds",
      "who": []
     },
     {
@@ -155,6 +232,20 @@
    ],
    "league": [
     {
+     "title": "Cardinals name Minshew as starter, move Brissett to QB3",
+     "url": "https://www.espn.com/nfl/story/_/id/50361163/cardinals-move-forward-gardner-minshew-starting-qb",
+     "ts": 1793724238,
+     "src": "ESPN",
+     "who": []
+    },
+    {
+     "title": "Cardinals Have High Asking Price For Josh Sweat, Don\u2019t Seem Pressed To Trade Him",
+     "url": "https://nfltraderumors.co/cardinals-have-high-asking-price-for-josh-sweat-dont-seem-pressed-to-trade-him/",
+     "ts": 1793720247,
+     "src": "NFL Trade Rumors",
+     "who": []
+    },
+    {
      "title": "Cowboys vs Cardinals: Quinnen Williams shines in demoralizing loss",
      "url": "https://sports.yahoo.com/articles/cowboys-vs-cardinals-quinnen-williams-153000994.html",
      "ts": 1793719800,
@@ -162,10 +253,10 @@
      "who": []
     },
     {
-     "title": "Cardinals name Minshew as starter, move Brissett to QB3",
-     "url": "https://www.espn.com/nfl/story/_/id/50361163/cardinals-move-forward-gardner-minshew-starting-qb",
-     "ts": 1793716237,
-     "src": "ESPN",
+     "title": "NFC Notes: Budda Baker, Grey Zabel, Cardinals, Rams, Seahawks",
+     "url": "https://nfltraderumors.co/nfc-notes-budda-baker-grey-zabel-cardinals-rams-seahawks/",
+     "ts": 1793671253,
+     "src": "NFL Trade Rumors",
      "who": []
     },
     {
@@ -173,6 +264,24 @@
      "url": "https://www.cbssports.com/nfl/news/cardinals-name-gardner-minshew-carson-beck-no-2-jacoby-brissett/",
      "ts": 1793658430,
      "src": "CBS Sports",
+     "who": [
+      {
+       "name": "Jacoby Brissett",
+       "slug": "jacoby-brissett",
+       "team": "ARI"
+      },
+      {
+       "name": "Gardner Minshew",
+       "slug": "gardner-minshew",
+       "team": "ARI"
+      }
+     ]
+    },
+    {
+     "title": "Cardinals announce big Gardner Minshew, Jacoby Brissett changes after Cowboys win",
+     "url": "https://www.sportingnews.com/us/nfl/arizona-cardinals/news/cardinals-big-gardner-minshew-jacoby-brissett-changes/be3fd66813c37d6d8248e243>",
+     "ts": 1793656423,
+     "src": "Sporting News",
      "who": [
       {
        "name": "Jacoby Brissett",
@@ -221,12 +330,34 @@
   },
   "ATL": {
    "site": "atlantafalcons.com",
+   "fan": "The Falcoholic",
    "official": [
+    {
+     "title": "NFC South Week 8 Review: No one wants to win this thing",
+     "url": "https://www.thefalcoholic.com/atlanta-falcons-analysis/98033/nfc-south-week-8-review-no-one-wants-to-win-this-thing-panthers-buccaneers-saints",
+     "ts": 1793725200,
+     "src": "The Falcoholic",
+     "who": []
+    },
     {
      "title": "Week 9 NFL Power Rankings Roundup: Broncos, Bears surging, NFC South confounded",
      "url": "https://www.atlantafalcons.com/news/week-9-nfl-power-rankings-roundup-broncos-bears-surging-nfc-south-confounded",
      "ts": 1793720388,
      "src": "Atlantafalcons.com",
+     "who": []
+    },
+    {
+     "title": "Falcons cut defenders Drake Jackson, Jared Ivey",
+     "url": "https://www.thefalcoholic.com/atlanta-falcons-news/98048/falcons-cut-defenders-drake-jackson-jared-ivey",
+     "ts": 1793717152,
+     "src": "The Falcoholic",
+     "who": []
+    },
+    {
+     "title": "Falcons Week 8 snap counts from a horrendous loss to the Buccaneers",
+     "url": "https://www.thefalcoholic.com/atlanta-falcons-game-information/98011/falcons-week-8-snap-counts-from-a-horrendous-loss-to-the-buccaneers-corey-levin-bijan-robinson",
+     "ts": 1793710800,
+     "src": "The Falcoholic",
      "who": []
     },
     {
@@ -257,10 +388,38 @@
      "who": []
     },
     {
+     "title": "Falcons \u2013 Buccaneers Week 8 recap: Defeated in a downpour",
+     "url": "https://www.thefalcoholic.com/atlanta-falcons-scores-results/97956/falcons-buccaneers-week-8-recap-defeated-in-a-downpour",
+     "ts": 1793624400,
+     "src": "The Falcoholic",
+     "who": []
+    },
+    {
      "title": "Falcons say wet conditions can't be excuse for overall play in loss to Bucs",
      "url": "https://www.atlantafalcons.com/news/falcons-say-wet-conditions-can-t-be-excuse-for-overall-play-in-loss-to-bucs",
      "ts": 1793575112,
      "src": "Atlantafalcons.com",
+     "who": []
+    },
+    {
+     "title": "Week 8 Snap reactions: Falcons get stuck in the mud",
+     "url": "https://www.thefalcoholic.com/atlanta-falcons-analysis/97988/week-8-snap-reactions-falcons-get-stuck-in-the-mud-michael-penix-jr-tommy-rees",
+     "ts": 1793570113,
+     "src": "The Falcoholic",
+     "who": []
+    },
+    {
+     "title": "Falcons \u2013 Buccaneers instant recap: The rain washes away any shine from our favorite team",
+     "url": "https://www.thefalcoholic.com/atlanta-falcons-scores-results/97929/falcons-buccaneers-instant-recap-the-rain-washes-away-any-shine-from-our-favorite-team",
+     "ts": 1793566528,
+     "src": "The Falcoholic",
+     "who": []
+    },
+    {
+     "title": "Falcons vs Bucs Week 8 postgame show: Penix crumbles in embarrassing loss",
+     "url": "https://www.thefalcoholic.com/atlanta-falcons-analysis/97983/falcons-vs-bucs-week-8-postgame-show-penix-crumbles-in-embarrassing-loss",
+     "ts": 1793566352,
+     "src": "The Falcoholic",
      "who": []
     },
     {
@@ -271,10 +430,31 @@
      "who": []
     },
     {
+     "title": "Falcons \u2013 Buccaneers Week 8 fan discussion",
+     "url": "https://www.thefalcoholic.com/atlanta-falcons-discussion/97823/falcons-buccaneers-week-8-fan-discussion",
+     "ts": 1793554200,
+     "src": "The Falcoholic",
+     "who": []
+    },
+    {
      "title": "Atlanta Falcons Week 8 inactives vs. Tampa Bay Buccaneers",
      "url": "https://www.atlantafalcons.com/news/atlanta-falcons-week-8-inactives-vs-tampa-bay-buccaneers",
      "ts": 1793551818,
      "src": "Atlantafalcons.com",
+     "who": []
+    },
+    {
+     "title": "Intriguing players to watch in Falcons vs. Bucs",
+     "url": "https://www.thefalcoholic.com/atlanta-falcons-analysis/97958/intriguing-players-to-watch-in-falcons-vs-bucs",
+     "ts": 1793545200,
+     "src": "The Falcoholic",
+     "who": []
+    },
+    {
+     "title": "Falcons vs. Buccaneers: What will Week 8\u2019s win or loss mean for Atlanta?",
+     "url": "https://www.thefalcoholic.com/atlanta-falcons-analysis/97905/falcons-vs-buccaneers-what-will-week-8s-win-or-loss-mean-for-atlanta",
+     "ts": 1793538000,
+     "src": "The Falcoholic",
      "who": []
     },
     {
@@ -391,6 +571,7 @@
   },
   "BAL": {
    "site": "baltimoreravens.com",
+   "fan": "Baltimore Beatdown",
    "official": [
     {
      "title": "Reports: Ravens to Sign Quarterback Kedon Slovis",
@@ -400,10 +581,44 @@
      "who": []
     },
     {
+     "title": "Ravens Snap Count Analysis, Week 8: Quarterback position in flux",
+     "url": "https://www.baltimorebeatdown.com/baltimore-ravens-analysis/87390/ravens-snap-count-analysis-week-8-quarterback-position-in-flux",
+     "ts": 1793717153,
+     "src": "Baltimore Beatdown",
+     "who": []
+    },
+    {
      "title": "Late for Work: Pundits Debate Potential Quarterback Trade Options for Ravens",
      "url": "https://www.baltimoreravens.com/news/lamar-jackson-injury-ravens-quarterback-trade-options-ravens-late-for-work",
      "ts": 1793716287,
      "src": "Baltimoreravens.com",
+     "who": []
+    },
+    {
+     "title": "Winners and losers from Ravens\u2019 Week 8 loss to the Bills",
+     "url": "https://www.baltimorebeatdown.com/baltimore-ravens-analysis/87360/winners-and-losers-from-ravens-week-8-loss-to-the-bills",
+     "ts": 1793712600,
+     "src": "Baltimore Beatdown",
+     "who": []
+    },
+    {
+     "title": "Ravens could place Tyler Loop on IR, Jake Moody to kick vs. Jaguars",
+     "url": "https://www.baltimorebeatdown.com/baltimore-ravens-news/87372/ravens-could-place-tyler-loop-on-ir-jake-moody-to-kick-vs-jaguars",
+     "ts": 1793703600,
+     "src": "Baltimore Beatdown",
+     "who": [
+      {
+       "name": "Tyler Loop",
+       "slug": "tyler-loop",
+       "team": "BAL"
+      }
+     ]
+    },
+    {
+     "title": "Ravens sign QB Austin Reed to practice squad",
+     "url": "https://www.baltimorebeatdown.com/baltimore-ravens-news/87363/ravens-sign-qb-austin-reed-to-practice-squad",
+     "ts": 1793672713,
+     "src": "Baltimore Beatdown",
      "who": []
     },
     {
@@ -424,6 +639,13 @@
      "url": "https://www.baltimoreravens.com/news/lamar-jackson-surgery-joe-fagnano-tyler-huntley-ravens-quarterback-injuries",
      "ts": 1793665596,
      "src": "Baltimoreravens.com",
+     "who": []
+    },
+    {
+     "title": "Ravens Report Card, Week 8: Another injury-riddled offensive implosion",
+     "url": "https://www.baltimorebeatdown.com/baltimore-ravens-analysis/87348/ravens-report-card-week-8-another-injury-riddled-offensive-implosion",
+     "ts": 1793655440,
+     "src": "Baltimore Beatdown",
      "who": []
     },
     {
@@ -448,6 +670,24 @@
      "who": []
     },
     {
+     "title": "Ravens\u2019 immediate QB options after Lamar Jackson, Tyler Huntley injuries",
+     "url": "https://www.baltimorebeatdown.com/baltimore-ravens-analysis/87331/ravens-immediate-qb-options-after-lamar-jackson-tyler-huntley-injuries",
+     "ts": 1793633929,
+     "src": "Baltimore Beatdown",
+     "who": [
+      {
+       "name": "Tyler Huntley",
+       "slug": "tyler-huntley",
+       "team": "BAL"
+      },
+      {
+       "name": "Lamar Jackson",
+       "slug": "lamar-jackson",
+       "team": "BAL"
+      }
+     ]
+    },
+    {
      "title": "Late for Work: Pundits Look at Where Ravens Go From Here With Lamar Jackson Headed to Injured Reserve",
      "url": "https://www.baltimoreravens.com/news/lamar-jackson-injured-reserve-ravens-quarterback-trade-murphys-law-trade-deadline-tyler-loop",
      "ts": 1793630368,
@@ -456,6 +696,33 @@
       {
        "name": "Lamar Jackson",
        "slug": "lamar-jackson",
+       "team": "BAL"
+      }
+     ]
+    },
+    {
+     "title": "Top takeaways from the Ravens\u2019 Week 8 loss to the Bills",
+     "url": "https://www.baltimorebeatdown.com/baltimore-ravens-analysis/87301/top-takeaways-from-the-ravens-week-8-loss-to-the-bills",
+     "ts": 1793620800,
+     "src": "Baltimore Beatdown",
+     "who": []
+    },
+    {
+     "title": "AFC Playoff Picture: Ravens tumble after third straight loss",
+     "url": "https://www.baltimorebeatdown.com/baltimore-ravens-nfl-playoffs/87318/afc-playoff-picture-baltimore-ravens-wild-card-race",
+     "ts": 1793620800,
+     "src": "Baltimore Beatdown",
+     "who": []
+    },
+    {
+     "title": "Ravens QB Tyler Huntley could miss TNF vs. Jags with suspected turf toe",
+     "url": "https://www.baltimorebeatdown.com/baltimore-ravens-news/87302/ravens-qb-tyler-huntley-could-miss-tnf-vs-jags-with-suspected-turf-toe",
+     "ts": 1793617200,
+     "src": "Baltimore Beatdown",
+     "who": [
+      {
+       "name": "Tyler Huntley",
+       "slug": "tyler-huntley",
        "team": "BAL"
       }
      ]
@@ -504,6 +771,19 @@
      "ts": 1793576040,
      "src": "Baltimoreravens.com",
      "who": []
+    },
+    {
+     "title": "Ravens QB Lamar Jackson to undergo thumb surgery, will land on IR",
+     "url": "https://www.baltimorebeatdown.com/baltimore-ravens-injuries/87278/ravens-qb-lamar-jackson-to-undergo-thumb-surgery-will-land-on-ir",
+     "ts": 1793572861,
+     "src": "Baltimore Beatdown",
+     "who": [
+      {
+       "name": "Lamar Jackson",
+       "slug": "lamar-jackson",
+       "team": "BAL"
+      }
+     ]
     },
     {
      "title": "Andrew Vorhees Set to Start vs. Bills",
@@ -724,10 +1004,30 @@
      "who": []
     },
     {
+     "title": "Ravens K Tyler Loop Could Go On IR With Groin Injury",
+     "url": "https://nfltraderumors.co/ravens-k-tyler-loop-could-go-on-ir-with-groin-injury/",
+     "ts": 1793716475,
+     "src": "NFL Trade Rumors",
+     "who": [
+      {
+       "name": "Tyler Loop",
+       "slug": "tyler-loop",
+       "team": "BAL"
+      }
+     ]
+    },
+    {
      "title": "Ravens adding QB Kedon Slovis off Packers' practice squad",
      "url": "https://www.nbcsports.com/nfl/profootballtalk/rumor-mill/news/ravens-adding-qb-kedon-slovis-off-packers-practice-squad",
      "ts": 1793716145,
      "src": "ProFootballTalk",
+     "who": []
+    },
+    {
+     "title": "Ravens Signing QB Kedon Slovis Off Packers\u2019 PS",
+     "url": "https://nfltraderumors.co/ravens-signing-qb-kedon-slovis-off-packers-ps/",
+     "ts": 1793715425,
+     "src": "NFL Trade Rumors",
      "who": []
     },
     {
@@ -744,14 +1044,21 @@
      ]
     },
     {
-     "title": "Ravens K Tyler Loop could be headed for injured reserve with groin injury",
-     "url": "https://www.nbcsports.com/nfl/profootballtalk/rumor-mill/news/ravens-k-tyler-loop-could-be-headed-for-injured-reserve-with-groin-injury",
-     "ts": 1793680844,
-     "src": "ProFootballTalk",
+     "title": "Bears and Ravens could be ideal trade partners, but there's a catch",
+     "url": "https://www.sportingnews.com/us/nfl/chicago-bears/news/bears-ravens-could-trade-partners-catch-baltimore/1168dbd69f46dbe0087fbee5>",
+     "ts": 1793657335,
+     "src": "Sporting News",
+     "who": []
+    },
+    {
+     "title": "Ravens, Lamar Jackson could be heading for a split after latest injury news",
+     "url": "https://www.sportingnews.com/us/nfl/baltimore-ravens/news/ravens-lamar-jackson-could-split-injury-news/7af9bf98f24453e8dd0e0aed>",
+     "ts": 1793656364,
+     "src": "Sporting News",
      "who": [
       {
-       "name": "Tyler Loop",
-       "slug": "tyler-loop",
+       "name": "Lamar Jackson",
+       "slug": "lamar-jackson",
        "team": "BAL"
       }
      ]
@@ -787,19 +1094,6 @@
        "slug": "tyler-huntley",
        "team": "BAL"
       },
-      {
-       "name": "Lamar Jackson",
-       "slug": "lamar-jackson",
-       "team": "BAL"
-      }
-     ]
-    },
-    {
-     "title": "Lamar Jackson out again? Zero completions for Baker Mayfield? Let's make sense of a weird Week 8",
-     "url": "https://www.espn.com/nfl/story/_/id/50349483/week-8-barnwell-lamar-bengals-cowboys-buccaneers-chiefs",
-     "ts": 1793630959,
-     "src": "ESPN",
-     "who": [
       {
        "name": "Lamar Jackson",
        "slug": "lamar-jackson",
@@ -844,12 +1138,76 @@
   },
   "BUF": {
    "site": "buffalobills.com",
+   "fan": "Buffalo Rumblings",
    "official": [
+    {
+     "title": "Did Ravens or Bills have it worse with penalties?",
+     "url": "https://www.buffalorumblings.com/buffalo-bills-analysis/144311/did-ravens-or-bills-have-it-worse-with-penalties",
+     "ts": 1793710309,
+     "src": "Buffalo Rumblings",
+     "who": []
+    },
+    {
+     "title": "Buffalo Bills show different defensive tendencies against Ravens",
+     "url": "https://www.buffalorumblings.com/buffalo-bills-analysis/144295/buffalo-bills-show-different-defensive-tendencies-against-ravens",
+     "ts": 1793708183,
+     "src": "Buffalo Rumblings",
+     "who": []
+    },
+    {
+     "title": "Seattle Seahawks vs. Chicago Bears, \u2018MNF\u2019 Week 8 fan discussion",
+     "url": "https://www.buffalorumblings.com/buffalo-bills-discussion/144304/seattle-seahawks-vs-chicago-bears-mnf-week-8-fan-discussion",
+     "ts": 1793666958,
+     "src": "Buffalo Rumblings",
+     "who": []
+    },
+    {
+     "title": "Te\u2019Cory Couch played like wily veteran for Buffalo Bills in win over Ravens",
+     "url": "https://www.buffalorumblings.com/buffalo-bills-analysis/144299/tecory-couch-played-like-wily-veteran-for-buffalo-bills-in-win-over-ravens",
+     "ts": 1793665352,
+     "src": "Buffalo Rumblings",
+     "who": []
+    },
     {
      "title": "Jim Leonhard: Bills' game plan was to be \"aggressive\" regardless of Lamar Jackson injury",
      "url": "https://www.buffalobills.com/news/jim-leonhard-bills-game-plan-was-to-be-aggressive-regardless-of-lamar-jackson-injury",
      "ts": 1793658448,
      "src": "Buffalobills.com",
+     "who": []
+    },
+    {
+     "title": "Bills vs. Vikings odds: Opening lines for Week 9 matchup",
+     "url": "https://www.buffalorumblings.com/buffalo-bills-odds/144128/bills-vs-vikings-odds-week-9-opening-lines-point-spread-total",
+     "ts": 1793654825,
+     "src": "Buffalo Rumblings",
+     "who": []
+    },
+    {
+     "title": "Do you want the Buffalo Bills to make a trade? If so, for whom?",
+     "url": "https://www.buffalorumblings.com/buffalo-bills-rumors/144286/do-you-want-the-buffalo-bills-to-make-a-trade-if-so-for-whom",
+     "ts": 1793641089,
+     "src": "Buffalo Rumblings",
+     "who": []
+    },
+    {
+     "title": "Buffalo Bills make more history in win over Baltimore Ravens",
+     "url": "https://www.buffalorumblings.com/buffalo-bills-history/144268/buffalo-bills-make-more-history-in-win-over-baltimore-ravens",
+     "ts": 1793635244,
+     "src": "Buffalo Rumblings",
+     "who": []
+    },
+    {
+     "title": "Greg Rousseau passes Darryl Talley on Buffalo Bills\u2019 all-time sack list",
+     "url": "https://www.buffalorumblings.com/buffalo-bills-history/144171/greg-rousseau-passes-darryl-talley-on-buffalo-bills-all-time-sack-list",
+     "ts": 1793629316,
+     "src": "Buffalo Rumblings",
+     "who": []
+    },
+    {
+     "title": "Takeaways from Bills win over Ravens",
+     "url": "https://www.buffalorumblings.com/buffalo-bills-analysis/24480803/takeaways-from-bills-win-over-ravens",
+     "ts": 1793624203,
+     "src": "Buffalo Rumblings",
      "who": []
     },
     {
@@ -864,6 +1222,13 @@
      "url": "https://www.buffalobills.com/news/top-3-things-we-learned-from-bills-vs-ravens-week-8",
      "ts": 1793580862,
      "src": "Buffalobills.com",
+     "who": []
+    },
+    {
+     "title": "AFC Playoff Picture: Buffalo Bills are in first place all by themselves",
+     "url": "https://www.buffalorumblings.com/buffalo-bills-nfl-playoffs/144237/afc-playoff-picture-buffalo-bills-kansas-city-chiefs-afc-east",
+     "ts": 1793580373,
+     "src": "Buffalo Rumblings",
      "who": []
     },
     {
@@ -928,12 +1293,34 @@
   },
   "CAR": {
    "site": "panthers.com",
+   "fan": "Cat Scratch Reader",
    "official": [
+    {
+     "title": "Panthers vs Packers game review: Time to pivot",
+     "url": "https://www.catscratchreader.com/carolina-panthers-analysis/62027/panthers-vs-packers-game-review-time-to-pivot",
+     "ts": 1793718000,
+     "src": "Cat Scratch Reader",
+     "who": []
+    },
     {
      "title": "Know Your Foe: Week 9, Denver Broncos",
      "url": "https://www.panthers.com/news/know-your-foe-week-9-denver-broncos",
      "ts": 1793710824,
      "src": "Panthers.com",
+     "who": []
+    },
+    {
+     "title": "Brian Answers: Making sense of Ejiro Evero\u2019s firing, offensive line issues, and more!",
+     "url": "https://www.catscratchreader.com/carolina-panthers-rumors/62022/brian-answers-making-sense-of-ejiro-everos-firing-offensive-line-issues-and-more",
+     "ts": 1793710800,
+     "src": "Cat Scratch Reader",
+     "who": []
+    },
+    {
+     "title": "Carolina Panthers 2027 NFL Draft Prospect Profile: Emmanuel Oyebadejo",
+     "url": "https://www.catscratchreader.com/carolina-panthers-draft/61877/carolina-panthers-2027-nfl-draft-prospect-profile-emmanuel-oyebadejo",
+     "ts": 1793707200,
+     "src": "Cat Scratch Reader",
      "who": []
     },
     {
@@ -955,6 +1342,34 @@
      "url": "https://www.panthers.com/news/panthers-bring-back-deangelo-hall-to-coach-cornerbacks",
      "ts": 1793626821,
      "src": "Panthers.com",
+     "who": []
+    },
+    {
+     "title": "What\u2019s next?",
+     "url": "https://www.catscratchreader.com/carolina-panthers-analysis/61998/whats-next",
+     "ts": 1793623519,
+     "src": "Cat Scratch Reader",
+     "who": []
+    },
+    {
+     "title": "Panthers vs. Broncos odds: Opening lines for Week 9 matchup",
+     "url": "https://www.catscratchreader.com/carolina-panthers-odds/61969/panthers-vs-broncos-odds-week-9-opening-lines-point-spread-total",
+     "ts": 1793617998,
+     "src": "Cat Scratch Reader",
+     "who": []
+    },
+    {
+     "title": "The Scratching Post",
+     "url": "https://www.catscratchreader.com/the-scratching-post/61975/the-scratching-post",
+     "ts": 1793617200,
+     "src": "Cat Scratch Reader",
+     "who": []
+    },
+    {
+     "title": "Week 8 discussion thread",
+     "url": "https://www.catscratchreader.com/carolina-panthers-discussion/61974/week-8-discussion-thread",
+     "ts": 1793548991,
+     "src": "Cat Scratch Reader",
      "who": []
     },
     {
@@ -993,10 +1408,31 @@
      "who": []
     },
     {
+     "title": "Ejiro Evero fired by Carolina Panthers; Todd Wash named interim DC",
+     "url": "https://www.catscratchreader.com/carolina-panthers-coaching-staff/61960/ejiro-evero-jonathan-cooley-fired-todd-wash-interim-defensive-coordinator-play-caller",
+     "ts": 1793371755,
+     "src": "Cat Scratch Reader",
+     "who": []
+    },
+    {
      "title": "Panthers announce changes to defensive coaching staff",
      "url": "https://www.panthers.com/news/panthers-announce-changes-to-defensive-coaching-staff",
      "ts": 1793369676,
      "src": "Panthers.com",
+     "who": []
+    },
+    {
+     "title": "Ask Brian: Welp, that happened",
+     "url": "https://www.catscratchreader.com/carolina-panthers-rumors/61954/ask-brian-welp-that-happened",
+     "ts": 1793368800,
+     "src": "Cat Scratch Reader",
+     "who": []
+    },
+    {
+     "title": "The Optimist: That could have been worse",
+     "url": "https://www.catscratchreader.com/carolina-panthers-discussion/61945/the-optimist-that-could-have-been-worse",
+     "ts": 1793361600,
+     "src": "Cat Scratch Reader",
      "who": []
     },
     {
@@ -1095,13 +1531,6 @@
      "ts": 1793128360,
      "src": "Panthers.com",
      "who": []
-    },
-    {
-     "title": "Panthers in the power rankings before Week 8 against the Green Bay Packers",
-     "url": "https://www.panthers.com/news/panthers-in-the-power-rankings-before-week-8-against-the-green-bay-packers",
-     "ts": 1793120696,
-     "src": "Panthers.com",
-     "who": []
     }
    ],
    "league": [
@@ -1116,7 +1545,36 @@
   },
   "CHI": {
    "site": "chicagobears.com",
+   "fan": "Windy City Gridiron",
    "official": [
+    {
+     "title": "Week 9 NFL Power Rankings: Trade Deadline Status and Needs for Each Team",
+     "url": "https://www.windycitygridiron.com/chicago-bears-power-rankings/126719/week-9-nfl-power-rankings-trade-deadline-status-and-needs-for-each-team",
+     "ts": 1793723400,
+     "src": "Windy City Gridiron",
+     "who": []
+    },
+    {
+     "title": "Bears vs. Seahawks: Inside the Snap Counts, Stats, and Jefe\u2019s Big Game",
+     "url": "https://www.windycitygridiron.com/chicago-bears-analysis/126621/bears-vs-seahawks-inside-snap-counts-stats-and-jefes-big-game-caleb-williams-jeff-simmons",
+     "ts": 1793720220,
+     "src": "Windy City Gridiron",
+     "who": []
+    },
+    {
+     "title": "The Chicago Bears are a legitimate Super Bowl contender",
+     "url": "https://www.windycitygridiron.com/chicago-bears-analysis/126727/chicago-bears-vs-seahawks-recap-notes-week-8-nfl-2026",
+     "ts": 1793710800,
+     "src": "Windy City Gridiron",
+     "who": []
+    },
+    {
+     "title": "Chicago Bears News: Bears beat Seattle Seahawks in road MNF match-up",
+     "url": "https://www.windycitygridiron.com/chicago-bears-news/126699/chicago-bears-news-bears-beat-seattle-seahawks-in-road-mnf-match-up",
+     "ts": 1793703600,
+     "src": "Windy City Gridiron",
+     "who": []
+    },
     {
      "title": "Jeffery Simmons wreaks havoc in Bears debut",
      "url": "https://www.chicagobears.com/news/jeffery-simmons-wreaks-havoc-in-bears-debut",
@@ -1125,10 +1583,52 @@
      "who": []
     },
     {
+     "title": "Bears vs. Buccaneers odds: Opening lines for Week 9 matchup",
+     "url": "https://www.windycitygridiron.com/chicago-bears-odds/126617/bears-vs-buccaneers-odds-week-9-opening-lines-point-spread-total",
+     "ts": 1793686671,
+     "src": "Windy City Gridiron",
+     "who": []
+    },
+    {
      "title": "Game Recap: Bears make statement with impressive prime-time win in Seattle",
      "url": "https://www.chicagobears.com/news/game-recap-bears-make-statement-with-impressive-prime-time-win-in-seattle",
      "ts": 1793682780,
      "src": "Chicagobears.com",
+     "who": []
+    },
+    {
+     "title": "Bears v. Seahawks Postgame: A Statement Victory in Big Jeff\u2019s First Game",
+     "url": "https://www.windycitygridiron.com/chicago-bears-scores-results/126715/bears-v-seahawks-postame-a-statement-victory-in-big-jeffs-first-game",
+     "ts": 1793680557,
+     "src": "Windy City Gridiron",
+     "who": []
+    },
+    {
+     "title": "NFC Playoff Picture: Chicago Bears solidify standing with Monday night win",
+     "url": "https://www.windycitygridiron.com/chicago-bears-nfl-playoffs/126709/nfc-playoff-picture-chicago-bears-solidify-standing-with-monday-night-win",
+     "ts": 1793679802,
+     "src": "Windy City Gridiron",
+     "who": []
+    },
+    {
+     "title": "Bears vs. Seahawks live game message board and fan discussion",
+     "url": "https://www.windycitygridiron.com/chicago-bears-discussion/126622/bears-vs-seahawks-live-game-message-board-fan-discussion-caleb-williams-jeffery-simmons",
+     "ts": 1793667762,
+     "src": "Windy City Gridiron",
+     "who": []
+    },
+    {
+     "title": "Bears-Seahawks Inactives: Malik Muhammad II out for Chicago",
+     "url": "https://www.windycitygridiron.com/chicago-bears-game-information/126623/bears-seahawks-inactives-malik-muhammad-will-not-play",
+     "ts": 1793663426,
+     "src": "Windy City Gridiron",
+     "who": []
+    },
+    {
+     "title": "NFL Trade Deadline Rumors: Bears want pass rush and secondary help",
+     "url": "https://www.windycitygridiron.com/chicago-bears-rumors/126691/nfl-trade-deadline-rumors-bears-want-pass-rush-and-secondary-help-khalil-mack-chargers-49ers",
+     "ts": 1793658600,
+     "src": "Windy City Gridiron",
      "who": []
     },
     {
@@ -1240,15 +1740,15 @@
     {
      "title": "Fantasy buzz: No stopping Bears, Seahawks ease Charbonnet back, Minshew takes over",
      "url": "https://www.espn.com/fantasy/football/story/_/id/40699880/fantasy-football-injuries-position-battles-nfl-news-analysis",
-     "ts": 1793723445,
+     "ts": 1793725016,
      "src": "ESPN",
      "who": []
     },
     {
-     "title": "Caleb Williams has arrived as a top-tier quarterback",
-     "url": "https://www.nbcsports.com/nfl/profootballtalk/rumor-mill/news/caleb-williams-has-arrived-as-a-top-tier-quarterback",
-     "ts": 1793721874,
-     "src": "ProFootballTalk",
+     "title": "Cleats, controversy and the choice of Bears QB Caleb Williams",
+     "url": "https://www.espn.com/nfl/story/_/id/50320658/caddix-shoes-bears-caleb-williams-fines",
+     "ts": 1793724986,
+     "src": "ESPN",
      "who": [
       {
        "name": "Caleb Williams",
@@ -1258,10 +1758,24 @@
      ]
     },
     {
-     "title": "Cleats, controversy and the choice of Bears QB Caleb Williams",
-     "url": "https://www.espn.com/nfl/story/_/id/50320658/caddix-shoes-bears-caleb-williams-fines",
-     "ts": 1793721545,
+     "title": "Sweet Home Chicago: Simmons stymies Darnold, Seahawks in Bears debut",
+     "url": "https://www.espn.com/nfl/story/_/id/50367539/dt-jeffery-simons-immediate-boon-chicago-bears-defense-win-seattle-seahawks",
+     "ts": 1793724238,
      "src": "ESPN",
+     "who": []
+    },
+    {
+     "title": "Bears' Williams dims controversy surrounding cleats with all-black custom pair",
+     "url": "https://www.espn.com/nfl/story/_/id/50367609/chicago-bears-williams-dims-controversy-surrounding-cleats-all-black-custom-pair",
+     "ts": 1793724238,
+     "src": "ESPN",
+     "who": []
+    },
+    {
+     "title": "Caleb Williams has arrived as a top-tier quarterback",
+     "url": "https://www.nbcsports.com/nfl/profootballtalk/rumor-mill/news/caleb-williams-has-arrived-as-a-top-tier-quarterback",
+     "ts": 1793721874,
+     "src": "ProFootballTalk",
      "who": [
       {
        "name": "Caleb Williams",
@@ -1312,20 +1826,6 @@
      ]
     },
     {
-     "title": "Sweet Home Chicago: Simmons stymies Darnold, Seahawks in Bears debut",
-     "url": "https://www.espn.com/nfl/story/_/id/50367539/dt-jeffery-simons-immediate-boon-chicago-bears-defense-win-seattle-seahawks",
-     "ts": 1793716237,
-     "src": "ESPN",
-     "who": []
-    },
-    {
-     "title": "Bears' Williams dims controversy surrounding cleats with all-black custom pair",
-     "url": "https://www.espn.com/nfl/story/_/id/50367609/chicago-bears-williams-dims-controversy-surrounding-cleats-all-black-custom-pair",
-     "ts": 1793716237,
-     "src": "ESPN",
-     "who": []
-    },
-    {
      "title": "Bears crash the Super Bowl conversation by beating Seahawks; Miami up to No. 1 in CFB Power Rankings",
      "url": "https://www.cbssports.com/nfl/news/bears-seahawks-super-bowl-nfl-mnf-miami-cfb-college-football-rankings/",
      "ts": 1793713366,
@@ -1354,6 +1854,13 @@
      "who": []
     },
     {
+     "title": "Seahawks' Quenton Nelson trade faces immediate questions after ugly Bears loss",
+     "url": "https://www.sportingnews.com/us/nfl/seattle-seahawks/news/seahawks-quenton-nelson-trade-faces-immediate-questions-after-ugly-bears-loss/e9821d63a89db33ffab53eca>",
+     "ts": 1793707470,
+     "src": "Sporting News",
+     "who": []
+    },
+    {
      "title": "Could Tyson Bagent save Ravens' playoff hopes? Lamar Jackson injury raises a costly trade question",
      "url": "https://www.cbssports.com/nfl/news/could-tyson-bagent-save-ravens-playoff-hopes-lamar-jackson-injury/",
      "ts": 1793707314,
@@ -1367,6 +1874,27 @@
      ]
     },
     {
+     "title": "Jeffery Simmons makes immediate impact as Bears' blockbuster trade pays off against Seahawks",
+     "url": "https://www.sportingnews.com/us/nfl/chicago-bears/news/jeffery-simmons-makes-immediate-impact-bears-blockbuster-trade-pays-against-seahawks/4dfbeb29404249770bfca5ac>",
+     "ts": 1793707136,
+     "src": "Sporting News",
+     "who": []
+    },
+    {
+     "title": "How Bears defense solved Jaxon Smith-Njigba problem in win over Seahawks",
+     "url": "https://www.sportingnews.com/us/nfl/news/bears-defense-jaxon-smith-njigba-win-seahawks/56f8207715a49dc2964bf77c>",
+     "ts": 1793682131,
+     "src": "Sporting News",
+     "who": []
+    },
+    {
+     "title": "How Bears benefitted from own delay of game penalty to secure win over Seahawks",
+     "url": "https://www.sportingnews.com/us/nfl/chicago-bears/news/bears-delay-game-penalty-seahawks/4635d557ebd0dc899891a8f5>",
+     "ts": 1793681157,
+     "src": "Sporting News",
+     "who": []
+    },
+    {
      "title": "NFL Week 8 grades for every team: Bears earn 'A+' for destroying Seahawks, Cowboys get an 'F' for choking",
      "url": "https://www.cbssports.com/nfl/news/nfl-week-8-grades-cowboys-get-an-f-steelers-surge-to-a/",
      "ts": 1793680863,
@@ -1374,17 +1902,18 @@
      "who": []
     },
     {
-     "title": "Monday Night Football: Jeffery Simmons, Caleb Williams lead Bears to 34-17 rout of Seahawks",
-     "url": "https://www.nbcsports.com/nfl/profootballtalk/rumor-mill/news/monday-night-football-jeffery-simmons-caleb-williams-lead-bears-to-34-17-rout-of-seahawks",
-     "ts": 1793680090,
-     "src": "ProFootballTalk",
-     "who": [
-      {
-       "name": "Caleb Williams",
-       "slug": "caleb-williams",
-       "team": "CHI"
-      }
-     ]
+     "title": "Jeffery Simmons announces his presence with dominant start to Bears career",
+     "url": "https://www.sportingnews.com/us/nfl/chicago-bears/news/jeffery-simmons-dominant-start-bears/c9f84727b50301841444fa28>",
+     "ts": 1793680320,
+     "src": "Sporting News",
+     "who": []
+    },
+    {
+     "title": "Bears vs. Seahawks final score, result: Chicago dominates in all phases to pick up memorable win over Seattle",
+     "url": "https://www.sportingnews.com/us/nfl/news/bears-seahawks-score-results-highlights-nfl-monday-night-football/81125ee05e80cc913e64cb49>",
+     "ts": 1793679481,
+     "src": "Sporting News",
+     "who": []
     },
     {
      "title": "Best Kalshi promo code CBSSPORTS55: Get $55 bonus for Bears vs. Seahawks, Monday Night Football, election",
@@ -1415,10 +1944,30 @@
      "who": []
     },
     {
+     "title": "Caleb Williams incident leads to Patriots player punishment from the NFL",
+     "url": "https://www.sportingnews.com/us/nfl/chicago-bears/news/caleb-williams-incident-patriots-player-punishment-nfl/86b949daf7dff1bef25f53f8>",
+     "ts": 1793663059,
+     "src": "Sporting News",
+     "who": [
+      {
+       "name": "Caleb Williams",
+       "slug": "caleb-williams",
+       "team": "CHI"
+      }
+     ]
+    },
+    {
      "title": "Is Jadarian Price playing on MNF? Latest Seahawks RB injury update for game vs. Bears",
      "url": "https://www.cbssports.com/nfl/news/is-jadarian-price-playing-seahawks-bears-monday-night-football/",
      "ts": 1793661903,
      "src": "CBS Sports",
+     "who": []
+    },
+    {
+     "title": "Maxx Crosby trade update is significant news for Lions, Bears and Cowboys",
+     "url": "https://www.sportingnews.com/us/nfl/las-vegas-raiders/news/maxx-crosby-trade-update-news-lions-bears-cowboys/5e6aa74235cc5b5054509437>",
+     "ts": 1793659960,
+     "src": "Sporting News",
      "who": []
     },
     {
@@ -1435,6 +1984,13 @@
      ]
     },
     {
+     "title": "Bears and Ravens could be ideal trade partners, but there's a catch",
+     "url": "https://www.sportingnews.com/us/nfl/chicago-bears/news/bears-ravens-could-trade-partners-catch-baltimore/1168dbd69f46dbe0087fbee5>",
+     "ts": 1793657335,
+     "src": "Sporting News",
+     "who": []
+    },
+    {
      "title": "Pick Six: Seahawks, Bears picks for 'MNF'; plus 15 crazy stats from Week 8",
      "url": "https://www.cbssports.com/nfl/news/pick-six-seahawks-bears-picks-mnf-15-crazy-stats-week-8/",
      "ts": 1793641592,
@@ -1445,7 +2001,15 @@
   },
   "CIN": {
    "site": "bengals.com",
+   "fan": "Cincy Jungle",
    "official": [
+    {
+     "title": "Boye Mafe: \u201cThere is no selfishness on this d-line right now\u201d",
+     "url": "https://www.cincyjungle.com/cincinnati-bengals-news/204512/boye-mafe-no-selfishness-d-line",
+     "ts": 1793725200,
+     "src": "Cincy Jungle",
+     "who": []
+    },
     {
      "title": "Bengals In Spain: Week of Events Leading Up to 2026 Madrid Game Set",
      "url": "https://www.bengals.com/news/bengals-spain-week-fan-events-2026-madrid-game",
@@ -1465,6 +2029,34 @@
      "url": "https://www.bengals.com/news/how-to-watch-listen-stream-falcons-bengals-week-9-2026-madrid",
      "ts": 1793716366,
      "src": "Bengals.com",
+     "who": []
+    },
+    {
+     "title": "Bengals Tuesday Trenches: Pros and cons of a potential Jonathan Taylor trade and more",
+     "url": "https://www.cincyjungle.com/cincinnati-bengals-rumors/204438/jonathan-taylor-trade-pros-and-cons-colts-running-back",
+     "ts": 1793707200,
+     "src": "Cincy Jungle",
+     "who": []
+    },
+    {
+     "title": "Shemar Stewart\u2019s time to show the Bengals what he\u2019s made of has come",
+     "url": "https://www.cincyjungle.com/cincinnati-bengals-analysis/204390/shemar-stewart-time-to-show-the-bengals-what-hes-made-of-has-come",
+     "ts": 1793705400,
+     "src": "Cincy Jungle",
+     "who": []
+    },
+    {
+     "title": "AFC North Standings: Bengals survive Titans scare; Steelers take first place",
+     "url": "https://www.cincyjungle.com/cincinnati-bengals-news/204122/afc-north-standings-steelers-first-place-ravens-browns",
+     "ts": 1793704500,
+     "src": "Cincy Jungle",
+     "who": []
+    },
+    {
+     "title": "Bengals News: Zac Taylor defends Ja\u2019Marr Chase\u2019s passion after heated sideline outburst",
+     "url": "https://www.cincyjungle.com/cincinnati-bengals-news/204454/zac-taylor-defends-jamarr-chase-passion-heated-sideline-outburst",
+     "ts": 1793703600,
+     "src": "Cincy Jungle",
      "who": []
     },
     {
@@ -1495,6 +2087,13 @@
      "who": []
     },
     {
+     "title": "3 things we learned from the Bengals\u2019 overtime win over the Titans",
+     "url": "https://www.cincyjungle.com/cincinnati-bengals-analysis/204360/3-things-we-learned-bengals-overtime-win-titans",
+     "ts": 1793629800,
+     "src": "Cincy Jungle",
+     "who": []
+    },
+    {
      "title": "Joe Burrow, Tee Higgins Nominated for FedEx Air & Ground Players of Week 8",
      "url": "https://www.bengals.com/news/joe-burrow-tee-higgins-fedex-air-ground-players-week-8-2026-nominees",
      "ts": 1793628300,
@@ -1511,6 +2110,40 @@
        "team": "CIN"
       }
      ]
+    },
+    {
+     "title": "Best available NFL free agent cornerbacks the Bengals could target if DJ Turner misses significant time",
+     "url": "https://www.cincyjungle.com/cincinnati-bengals-free-agency/204228/best-available-nfl-free-agent-cornerbacks",
+     "ts": 1793620860,
+     "src": "Cincy Jungle",
+     "who": []
+    },
+    {
+     "title": "Tee Higgins is on pace for a historic season",
+     "url": "https://www.cincyjungle.com/cincinnati-bengals-news/204281/tee-higgins-on-pace-historic-season",
+     "ts": 1793619000,
+     "src": "Cincy Jungle",
+     "who": [
+      {
+       "name": "Tee Higgins",
+       "slug": "tee-higgins",
+       "team": "CIN"
+      }
+     ]
+    },
+    {
+     "title": "Bengals News: DJ Turner and Cashius Howell Injury Watch",
+     "url": "https://www.cincyjungle.com/cincinnati-bengals-news/204350/dj-turner-cashius-howell-injury-watch",
+     "ts": 1793617200,
+     "src": "Cincy Jungle",
+     "who": []
+    },
+    {
+     "title": "Bengals vs. Falcons odds: Opening lines for Week 9 matchup in Madrid",
+     "url": "https://www.cincyjungle.com/cincinnati-bengals-odds/204023/bengals-vs-falcons-odds-week-9-opening-lines-point-spread-total",
+     "ts": 1793592094,
+     "src": "Cincy Jungle",
+     "who": []
     },
     {
      "title": "Postgame Quick Hits | Joe Burrow's Bengals Grind To Thrilling OT Win: 'I Looked At Him And Told Him He Was Legendary'",
@@ -1740,6 +2373,13 @@
      "who": []
     },
     {
+     "title": "Bengals Officially Place DE Cashius Howell On IR",
+     "url": "https://nfltraderumors.co/bengals-officially-place-de-cashius-howell-on-ir/",
+     "ts": 1793719989,
+     "src": "NFL Trade Rumors",
+     "who": []
+    },
+    {
      "title": "Bengals DE Cashius Howell had wrist surgery",
      "url": "https://www.nbcsports.com/nfl/profootballtalk/rumor-mill/news/bengals-de-cashius-howell-had-wrist-surgery",
      "ts": 1793706823,
@@ -1757,7 +2397,63 @@
   },
   "CLE": {
    "site": "clevelandbrowns.com",
+   "fan": "Dawgs By Nature",
    "official": [
+    {
+     "title": "Rams update Myles Garrett\u2019s injury progress: Browns draft position from LA teetering",
+     "url": "https://www.dawgsbynature.com/cleveland-browns-news/136940/rams-update-myles-garretts-injury-progress-browns-draft-position-from-la-teetering",
+     "ts": 1793721958,
+     "src": "Dawgs By Nature",
+     "who": []
+    },
+    {
+     "title": "Browns waive Week 6 TD scorer; have an open roster spot",
+     "url": "https://www.dawgsbynature.com/cleveland-browns-news/136936/browns-roster-audric-estime-trade",
+     "ts": 1793713124,
+     "src": "Dawgs By Nature",
+     "who": []
+    },
+    {
+     "title": "Browns DE Jared Verse discussion: Too soon to tell or something more",
+     "url": "https://www.dawgsbynature.com/cleveland-browns-analysis/136845/browns-de-jared-verse-option-trade-pass-rush",
+     "ts": 1793712466,
+     "src": "Dawgs By Nature",
+     "who": []
+    },
+    {
+     "title": "Browns trade deadline: Former defender on the market; GM Andrew Berry likely has interest",
+     "url": "https://www.dawgsbynature.com/cleveland-browns-roster/136745/browns-trade-deadline-rumor-jadeveon-clowney-texans",
+     "ts": 1793709597,
+     "src": "Dawgs By Nature",
+     "who": []
+    },
+    {
+     "title": "Browns defensive front problem, and missed tackles, need to improve",
+     "url": "https://www.dawgsbynature.com/cleveland-browns-analysis/136915/browns-defensive-front-problem-and-missed-tackles-need-to-improve",
+     "ts": 1793709000,
+     "src": "Dawgs By Nature",
+     "who": []
+    },
+    {
+     "title": "Too many sacks for Deshaun Watson and Browns offense",
+     "url": "https://www.dawgsbynature.com/cleveland-browns-analysis/136914/too-many-sacks-for-deshaun-watson-and-browns-offense",
+     "ts": 1793707200,
+     "src": "Dawgs By Nature",
+     "who": [
+      {
+       "name": "Deshaun Watson",
+       "slug": "deshaun-watson",
+       "team": "CLE"
+      }
+     ]
+    },
+    {
+     "title": "Cleveland Browns news: Left to pick up the pieces once again",
+     "url": "https://www.dawgsbynature.com/cleveland-browns-news/136894/cleveland-browns-news-jared-verse-todd-monken-deshaun-watson",
+     "ts": 1793703600,
+     "src": "Dawgs By Nature",
+     "who": []
+    },
     {
      "title": "Browns aim to establish effective rushing attack early in games | News & Notes",
      "url": "https://www.clevelandbrowns.com/news/browns-aim-to-establish-effective-rushing-attack-early-in-games-news-notes",
@@ -1770,6 +2466,27 @@
      "url": "https://www.clevelandbrowns.com/news/browns-waive-rb-audric-estime",
      "ts": 1793653829,
      "src": "Clevelandbrowns.com",
+     "who": []
+    },
+    {
+     "title": "Browns vs. Saints odds: Opening lines for Week 9 matchup",
+     "url": "https://www.dawgsbynature.com/cleveland-browns-betting-odds-gambling/136738/browns-vs-saints-odds-week-9-opening-lines-point-spread-total",
+     "ts": 1793642184,
+     "src": "Dawgs By Nature",
+     "who": []
+    },
+    {
+     "title": "2027 Browns mock draft: 3 rounds, 4 picks after Week 8\u2019s loss",
+     "url": "https://www.dawgsbynature.com/cleveland-browns-nfl-draft/136884/2027-browns-mock-draft-dante-moore-yhonzae-pierre-jamari-johnson",
+     "ts": 1793638727,
+     "src": "Dawgs By Nature",
+     "who": []
+    },
+    {
+     "title": "Browns Week 9 opponent makes coaching change, could impact CLE\u2019s weakness",
+     "url": "https://www.dawgsbynature.com/cleveland-browns-game-schedule-information/136870/browns-week-9-opponent-saints-coaches-run-game-tj-paganetti",
+     "ts": 1793629007,
+     "src": "Dawgs By Nature",
      "who": []
     },
     {
@@ -1951,18 +2668,12 @@
      "ts": 1793721958,
      "src": "Yahoo Sports",
      "who": []
-    },
-    {
-     "title": "\ud83d\ude08 Steelers' dog-themed jabs at Browns headline Week 8 trolls",
-     "url": "https://www.espn.com/nfl/story/_/id/50353702/nfl-week-8-trolls",
-     "ts": 1793716237,
-     "src": "ESPN",
-     "who": []
     }
    ]
   },
   "DAL": {
    "site": "dallascowboys.com",
+   "fan": "Blogging The Boys",
    "official": [
     {
      "title": "Past/Present: Oklahoma names Jason Witten offensive coordinator for remainder of 2026 season",
@@ -1979,10 +2690,38 @@
      "who": []
     },
     {
+     "title": "Cowboys vs Cardinals: Quinnen Williams shines in demoralizing loss",
+     "url": "https://www.bloggingtheboys.com/dallas-cowboys-analysis/224984/cardinals-game-quinnen-williams-sacks-pressure",
+     "ts": 1793719800,
+     "src": "Blogging The Boys",
+     "who": []
+    },
+    {
      "title": "Mailbag: Why Pickens isn't getting more involved?",
      "url": "https://www.dallascowboys.com/news/mailbag-why-pickens-isn-t-getting-more-involved",
      "ts": 1793718022,
      "src": "Dallascowboys.com",
+     "who": []
+    },
+    {
+     "title": "Cowboys proved who they are in OT loss to Cardinals",
+     "url": "https://www.bloggingtheboys.com/dallas-cowboys-analysis/224891/cardinals-loss-brian-schottenheimer-play-calls-dak-prescott",
+     "ts": 1793714400,
+     "src": "Blogging The Boys",
+     "who": []
+    },
+    {
+     "title": "Cowboys news: Defense banged up physically after collapse to Cardinals",
+     "url": "https://www.bloggingtheboys.com/dallas-cowboys-news/225085/defense-injuries-cardinals-game-caleb-downs-malachi-lawrence",
+     "ts": 1793707200,
+     "src": "Blogging The Boys",
+     "who": []
+    },
+    {
+     "title": "Monday Night Football live discussion: Bears at Seahawks",
+     "url": "https://www.bloggingtheboys.com/general/225028/monday-night-football-live-discussion-bears-at-seahawks",
+     "ts": 1793667600,
+     "src": "Blogging The Boys",
      "who": []
     },
     {
@@ -2007,6 +2746,34 @@
      "who": []
     },
     {
+     "title": "5 reasons why the Cowboys lost to Cardinals",
+     "url": "https://www.bloggingtheboys.com/dallas-cowboys-analysis/224964/5-reasons-cowboys-lost-cardinals-game-brian-schottenheimer",
+     "ts": 1793660400,
+     "src": "Blogging The Boys",
+     "who": []
+    },
+    {
+     "title": "The third-down call that will haunt Brian Schottenheimer",
+     "url": "https://www.bloggingtheboys.com/dallas-cowboys-analysis/224990/third-down-call-brian-schottenheimer-cardinals-game",
+     "ts": 1793655000,
+     "src": "Blogging The Boys",
+     "who": []
+    },
+    {
+     "title": "Cowboys offense failed to capitalize on defensive stops",
+     "url": "https://www.bloggingtheboys.com/dallas-cowboys-roster/224926/offense-capitalize-defense-stops",
+     "ts": 1793649600,
+     "src": "Blogging The Boys",
+     "who": []
+    },
+    {
+     "title": "5 players Cowboys should consider trading prior to the deadline",
+     "url": "https://www.bloggingtheboys.com/dallas-cowboys-discussion/224918/trade-deadline-candidates-george-pickens-kavontae-turpin",
+     "ts": 1793644200,
+     "src": "Blogging The Boys",
+     "who": []
+    },
+    {
      "title": "Pic 6: Cowboys' 33-30 loss to Cardinals a tale of two halves",
      "url": "https://www.dallascowboys.com/news/pic-6-cowboys-33-30-loss-to-cardinals-a-tale-of-two-halves",
      "ts": 1793637019,
@@ -2018,6 +2785,20 @@
      "url": "https://www.dallascowboys.com/news/spagnola-no-words-for-unimaginable-loss",
      "ts": 1793635200,
      "src": "Dallascowboys.com",
+     "who": []
+    },
+    {
+     "title": "Cowboys vs. Cardinals Stock Report: Brian Schottenheimer\u2019s offense shrinks",
+     "url": "https://www.bloggingtheboys.com/dallas-cowboys-roster/224937/stock-report-down-brian-schottenheimer",
+     "ts": 1793633400,
+     "src": "Blogging The Boys",
+     "who": []
+    },
+    {
+     "title": "10 thoughts on the Cowboys loss to the Cardinals",
+     "url": "https://www.bloggingtheboys.com/dallas-cowboys-discussion/221141/10-thoughts-loss-cardinals-brian-schottenheimer-dak-prescott",
+     "ts": 1793628000,
+     "src": "Blogging The Boys",
      "who": []
     },
     {
@@ -2182,6 +2963,20 @@
    ],
    "league": [
     {
+     "title": "Jerry Jones makes controversial coaching pay comment that is a bad look for Cowboys",
+     "url": "https://www.sportingnews.com/us/nfl/dallas-cowboys/news/jerry-jones-controversial-coaching-pay-comment-bad-cowboys/8ea7afecb190c603f2341fde>",
+     "ts": 1793724980,
+     "src": "Sporting News",
+     "who": []
+    },
+    {
+     "title": "Stephen A. Smith wants Cowboys to hire Rex Ryan after latest collapse",
+     "url": "https://www.sportingnews.com/us/nfl/dallas-cowboys/news/stephen-smith-wants-cowboys-hire-rex-ryan-after-latest-collapse/87f431393d8591756bff72e3>",
+     "ts": 1793720374,
+     "src": "Sporting News",
+     "who": []
+    },
+    {
      "title": "Jerry Jones wants to see more targets for George Pickens",
      "url": "https://www.nbcsports.com/nfl/profootballtalk/rumor-mill/news/jerry-jones-wants-to-see-more-targets-for-george-pickens",
      "ts": 1793720121,
@@ -2206,6 +3001,27 @@
      "url": "https://www.cbssports.com/nfl/news/nfl-week-8-grades-cowboys-get-an-f-steelers-surge-to-a/",
      "ts": 1793680863,
      "src": "CBS Sports",
+     "who": []
+    },
+    {
+     "title": "Maxx Crosby trade update is significant news for Lions, Bears and Cowboys",
+     "url": "https://www.sportingnews.com/us/nfl/las-vegas-raiders/news/maxx-crosby-trade-update-news-lions-bears-cowboys/5e6aa74235cc5b5054509437>",
+     "ts": 1793659960,
+     "src": "Sporting News",
+     "who": []
+    },
+    {
+     "title": "Cardinals announce big Gardner Minshew, Jacoby Brissett changes after Cowboys win",
+     "url": "https://www.sportingnews.com/us/nfl/arizona-cardinals/news/cardinals-big-gardner-minshew-jacoby-brissett-changes/be3fd66813c37d6d8248e243>",
+     "ts": 1793656423,
+     "src": "Sporting News",
+     "who": []
+    },
+    {
+     "title": "Cowboys named landing spot for $76 million ex-Eagles Pro Bowl defender",
+     "url": "https://www.sportingnews.com/us/nfl/dallas-cowboys/news/cowboys-named-landing-spot-76-million-ex-eagles-pro-bowl-defender/5b94b4827d0de5afd406ed07>",
+     "ts": 1793652794,
+     "src": "Sporting News",
      "who": []
     },
     {
@@ -2253,7 +3069,15 @@
   },
   "DEN": {
    "site": "denverbroncos.com",
+   "fan": "Mile High Report",
    "official": [
+    {
+     "title": "NFL Power Rankings for Week 9: Are they beginning to Bo-lieve?",
+     "url": "https://www.milehighreport.com/denver-broncos-power-rankings/191127/nfl-power-rankings-week-9-denver-broncos",
+     "ts": 1793724335,
+     "src": "Mile High Report",
+     "who": []
+    },
     {
      "title": "RB Jonah Coleman nominated for NFL Rookie of the Week following Week 8 win vs. Kansas City Chiefs",
      "url": "https://www.denverbroncos.com/news/rb-jonah-coleman-nominated-for-nfl-rookie-of-the-week-following-week-8-win-vs-kansas-city-chiefs",
@@ -2268,11 +3092,80 @@
      ]
     },
     {
+     "title": "Broncos vs. Chiefs: The No Bull Review",
+     "url": "https://www.milehighreport.com/denver-broncos-analysis/191090/broncos-vs-chiefs-no-bull-review",
+     "ts": 1793719299,
+     "src": "Mile High Report",
+     "who": []
+    },
+    {
+     "title": "Denver Broncos snaps and analysis for the win over the Kansas City Chiefs",
+     "url": "https://www.milehighreport.com/denver-broncos-analysis/191061/denver-broncos-snaps-and-analysis-for-the-win-over-the-kansas-city-chiefs",
+     "ts": 1793712600,
+     "src": "Mile High Report",
+     "who": []
+    },
+    {
+     "title": "Horse Tracks: \u2018Mile High Magic\u2019 wins again",
+     "url": "https://www.milehighreport.com/denver-broncos-news/191105/mile-high-magic-wins-again",
+     "ts": 1793707567,
+     "src": "Mile High Report",
+     "who": []
+    },
+    {
+     "title": "Broncos lead NFL in defensive snaps; run game has to help fix that",
+     "url": "https://www.milehighreport.com/denver-broncos-news/191064/broncos-lead-nfl-in-defensive-stats-run-game-has-to-help-fix-that",
+     "ts": 1793665068,
+     "src": "Mile High Report",
+     "who": []
+    },
+    {
      "title": "Next-Day Notebook: Broncos' defensive depth on display again in win vs. Chiefs",
      "url": "https://www.denverbroncos.com/news/next-day-notebook-broncos-defensive-depth-on-display-again-in-win-vs-chiefs",
      "ts": 1793657439,
      "src": "Denverbroncos.com",
      "who": []
+    },
+    {
+     "title": "Will the Broncos\u2019 big win against the Chiefs make them NFL trade deadline buyers?",
+     "url": "https://www.milehighreport.com/denver-broncos-news/190947/will-the-broncos-big-win-against-the-chiefs-make-them-nfl-trade-deadline-buyers",
+     "ts": 1793638800,
+     "src": "Mile High Report",
+     "who": []
+    },
+    {
+     "title": "Broncos Stock Up, Stock Down: Week 8 vs. Chiefs",
+     "url": "https://www.milehighreport.com/denver-broncos-analysis/191014/broncos-stock-up-stock-down-week-8-chiefs",
+     "ts": 1793637818,
+     "src": "Mile High Report",
+     "who": []
+    },
+    {
+     "title": "Game balls for the Broncos comeback win over Chiefs in Week 8",
+     "url": "https://www.milehighreport.com/denver-broncos-game-information/191018/game-balls-for-the-broncos-comeback-win-over-chiefs-in-week-8",
+     "ts": 1793634979,
+     "src": "Mile High Report",
+     "who": []
+    },
+    {
+     "title": "Sean Payton becomes sixth fastest head coach to 200 wins",
+     "url": "https://www.milehighreport.com/denver-broncos-news/191001/sean-payton-becomes-sixth-fastest-head-coach-to-200-wins",
+     "ts": 1793624400,
+     "src": "Mile High Report",
+     "who": []
+    },
+    {
+     "title": "Jonah Coleman makes statement as Broncos RB of the future",
+     "url": "https://www.milehighreport.com/denver-broncos-news/191006/jonah-coleman-makes-statement-as-broncos-rb-of-the-future",
+     "ts": 1793624246,
+     "src": "Mile High Report",
+     "who": [
+      {
+       "name": "Jonah Coleman",
+       "slug": "jonah-coleman",
+       "team": "DEN"
+      }
+     ]
     },
     {
      "title": "'There's nothing like it': HC Sean Payton earns 200th career win with 28-24 victory over Chiefs",
@@ -2472,7 +3365,15 @@
   },
   "DET": {
    "site": "detroitlions.com",
+   "fan": "Pride Of Detroit",
    "official": [
+    {
+     "title": "NFL Week 9 power rankings: Lions\u2019 rise continues but still have doubters",
+     "url": "https://www.prideofdetroit.com/detroit-lions-news/179514/nfl-week-9-power-rankings-lions-rise-continues-but-still-have-doubters",
+     "ts": 1793722500,
+     "src": "Pride Of Detroit",
+     "who": []
+    },
     {
      "title": "LIONS DAILY: PFF grades, snap counts: RBs, rookies deliver in contentious division matchup",
      "url": "https://www.detroitlions.com/news/lions-daily-pff-grades-snap-counts-rbs-rookies-deliver-in-contentious-division-matchup",
@@ -2481,10 +3382,73 @@
      "who": []
     },
     {
+     "title": "Film study: Cade Mays is still the Detroit Lions\u2019 best center",
+     "url": "https://www.prideofdetroit.com/detroit-lions-analysis/179475/film-study-cade-mays-still-detroit-lions-best-center",
+     "ts": 1793718000,
+     "src": "Pride Of Detroit",
+     "who": []
+    },
+    {
+     "title": "Detroit Lions injury updates: More on Kerby Joseph, Cade Mays, D.J. Reed",
+     "url": "https://www.prideofdetroit.com/detroit-lions-news/179572/detroit-lions-injury-updates-kerby-joseph-cade-mays-dj-reed",
+     "ts": 1793715300,
+     "src": "Pride Of Detroit",
+     "who": []
+    },
+    {
+     "title": "Detroit Lions stock report: 15 risers, 10 fallers against the Vikings",
+     "url": "https://www.prideofdetroit.com/detroit-lions-analysis/179554/detroit-lions-stock-report-15-risers-10-fallers-minnesota-vikings",
+     "ts": 1793712600,
+     "src": "Pride Of Detroit",
+     "who": []
+    },
+    {
+     "title": "Lions, Vikings Song of the Game: \u2018Soldier\u2019s Poem\u2019 by Muse",
+     "url": "https://www.prideofdetroit.com/detroit-lions-discussion/179487/lions-vikings-song-jack-campbell-soldiers-poem-muse",
+     "ts": 1793709000,
+     "src": "Pride Of Detroit",
+     "who": []
+    },
+    {
      "title": "TWENTYMAN: 5 stats that stand out following Lions' Week 8 victory",
      "url": "https://www.detroitlions.com/news/5-stats-that-stand-out-following-detroit-lions-week-8-victory-gibbs-reed-hutchinson",
      "ts": 1793707225,
      "src": "Detroitlions.com",
+     "who": []
+    },
+    {
+     "title": "Discussion: Which NFC contenders will miss the playoffs?",
+     "url": "https://www.prideofdetroit.com/detroit-lions-nfl-playoffs/179522/nfc-playoff-standings-picture-week-9-contenders",
+     "ts": 1793704685,
+     "src": "Pride Of Detroit",
+     "who": []
+    },
+    {
+     "title": "Chicago Bears vs. Seattle Seahawks live discussion, chat",
+     "url": "https://www.prideofdetroit.com/detroit-lions-discussion/179506/chicago-bears-vs-seattle-seahawks-live-discussion-chat",
+     "ts": 1793667600,
+     "src": "Pride Of Detroit",
+     "who": []
+    },
+    {
+     "title": "Detroit Lions signing veteran LB off Patriots practice squad",
+     "url": "https://www.prideofdetroit.com/detroit-lions-news/179488/detroit-lions-signing-kj-britt-new-england-patriots-practice-squad",
+     "ts": 1793664918,
+     "src": "Pride Of Detroit",
+     "who": []
+    },
+    {
+     "title": "Detroit Lions Week 8 snap counts:\u00a0How the defense adjusted to multiple injuries",
+     "url": "https://www.prideofdetroit.com/detroit-lions-analysis/179349/detroit-lions-week-8-snap-counts-how-the-defense-adjusted-to-multiple-injuries",
+     "ts": 1793658600,
+     "src": "Pride Of Detroit",
+     "who": []
+    },
+    {
+     "title": "Detroit Lions injury updates on 6 players; Jimmy Rolder\u2019s rookie season is over",
+     "url": "https://www.prideofdetroit.com/detroit-lions-injuries/179449/detroit-lions-injury-updates-on-6-players-jimmy-rolders-rookie-season-is-over",
+     "ts": 1793655900,
+     "src": "Pride Of Detroit",
      "who": []
     },
     {
@@ -2616,6 +3580,26 @@
    ],
    "league": [
     {
+     "title": "Dan Campbell credits Mike Kafka for big play to Amon-Ra St. Brown",
+     "url": "https://www.nbcsports.com/nfl/profootballtalk/rumor-mill/news/dan-campbell-credits-mike-kafka-for-big-play-to-amon-ra-st-brown",
+     "ts": 1793724420,
+     "src": "ProFootballTalk",
+     "who": [
+      {
+       "name": "Amon-Ra St. Brown",
+       "slug": "amon-ra-st-brown",
+       "team": "DET"
+      }
+     ]
+    },
+    {
+     "title": "Lions LB Campbell still hospitalized, but early signs positive",
+     "url": "https://www.espn.com/nfl/story/_/id/50360680/lions-lb-jack-campbell-hospital-signs-positive",
+     "ts": 1793724238,
+     "src": "ESPN",
+     "who": []
+    },
+    {
      "title": "NFL Week 9 power rankings: Lions\u2019 rise continues but still have doubters",
      "url": "https://sports.yahoo.com/articles/nfl-week-9-power-rankings-161500873.html",
      "ts": 1793722500,
@@ -2630,13 +3614,6 @@
      "who": []
     },
     {
-     "title": "Lions LB Campbell still hospitalized, but early signs positive",
-     "url": "https://www.espn.com/nfl/story/_/id/50360680/lions-lb-jack-campbell-hospital-signs-positive",
-     "ts": 1793716237,
-     "src": "ESPN",
-     "who": []
-    },
-    {
      "title": "Jack Campbell injury update: Lions coach says LB 'improving' after neck injury",
      "url": "https://sports.yahoo.com/articles/jack-campbell-injury-lions-coach-142635303.html",
      "ts": 1793715995,
@@ -2648,6 +3625,20 @@
      "url": "https://www.nbcsports.com/nfl/profootballtalk/rumor-mill/news/lions-to-sign-lb-k-j-britt-off-patriots-practice-squad",
      "ts": 1793713412,
      "src": "ProFootballTalk",
+     "who": []
+    },
+    {
+     "title": "Lions' Aidan Hutchinson speaks out after emotional Jack Campbell injury",
+     "url": "https://www.sportingnews.com/us/nfl/detroit-lions/news/lions-aidan-hutchinson-emotional-jack-campbell-injury/2bf374b122d0ead882796217>",
+     "ts": 1793661233,
+     "src": "Sporting News",
+     "who": []
+    },
+    {
+     "title": "Maxx Crosby trade update is significant news for Lions, Bears and Cowboys",
+     "url": "https://www.sportingnews.com/us/nfl/las-vegas-raiders/news/maxx-crosby-trade-update-news-lions-bears-cowboys/5e6aa74235cc5b5054509437>",
+     "ts": 1793659960,
+     "src": "Sporting News",
      "who": []
     },
     {
@@ -2675,6 +3666,7 @@
   },
   "GB": {
    "site": "packers.com",
+   "fan": "Acme Packing Company",
    "official": [
     {
      "title": "Packers WR Savion Williams is 'dynamic with the ball in his hands'",
@@ -2711,10 +3703,64 @@
      "who": []
     },
     {
+     "title": "Green Bay Packers News: Matthew Golden is putting together a wild second season",
+     "url": "https://www.acmepackingcompany.com/green-bay-packers-news/89141/green-bay-packers-news-matthew-golden-is-putting-together-a-wild-second-season",
+     "ts": 1793716016,
+     "src": "Acme Packing Company",
+     "who": [
+      {
+       "name": "Matthew Golden",
+       "slug": "matthew-golden",
+       "team": "GB"
+      }
+     ]
+    },
+    {
+     "title": "Packers sign QB Cam Miller",
+     "url": "https://www.acmepackingcompany.com/green-bay-packers-news/89125/packers-sign-qb-cam-miller",
+     "ts": 1793659273,
+     "src": "Acme Packing Company",
+     "who": []
+    },
+    {
+     "title": "Packers Roster: Green Bay works out 5 on Monday",
+     "url": "https://www.acmepackingcompany.com/green-bay-packers-news/89118/packers-roster-green-bay-works-out-5-on-monday",
+     "ts": 1793658589,
+     "src": "Acme Packing Company",
+     "who": []
+    },
+    {
+     "title": "How will the Packers manage their IR designations?",
+     "url": "https://www.acmepackingcompany.com/green-bay-packers-analysis/88810/how-will-the-packers-manage-their-ir-designations",
+     "ts": 1793656709,
+     "src": "Acme Packing Company",
+     "who": []
+    },
+    {
      "title": "Matt LaFleur comments on Josh Jacobs, Micah Parsons",
      "url": "https://www.packers.com/news/matt-lafleur-comments-on-josh-jacobs-micah-parsons-nov-2-2026",
      "ts": 1793656042,
      "src": "Packers.com",
+     "who": [
+      {
+       "name": "Josh Jacobs",
+       "slug": "josh-jacobs",
+       "team": "GB"
+      }
+     ]
+    },
+    {
+     "title": "Zaire Franklin could be back for Week 9",
+     "url": "https://www.acmepackingcompany.com/green-bay-packers-news/89114/zaire-franklin-could-be-back-for-week-9",
+     "ts": 1793655689,
+     "src": "Acme Packing Company",
+     "who": []
+    },
+    {
+     "title": "Matt LaFleur says Packers will stick with running back Josh Jacobs",
+     "url": "https://www.acmepackingcompany.com/green-bay-packers-news/89111/matt-lafleur-says-packers-will-stick-with-running-back-josh-jacobs",
+     "ts": 1793649498,
+     "src": "Acme Packing Company",
      "who": [
       {
        "name": "Josh Jacobs",
@@ -2737,6 +3783,13 @@
      ]
     },
     {
+     "title": "Green Bay Packers News: Ty\u2019Ron Hopper is having his moment",
+     "url": "https://www.acmepackingcompany.com/green-bay-packers-news/89102/green-bay-packers-news-tyron-hopper-is-having-his-moment",
+     "ts": 1793633860,
+     "src": "Acme Packing Company",
+     "who": []
+    },
+    {
      "title": "Vote for Jordan Love for FedEx Air Player of the Week",
      "url": "https://www.packers.com/news/vote-for-jordan-love-for-fedex-air-player-of-the-week-8-2026",
      "ts": 1793633400,
@@ -2755,6 +3808,33 @@
      "ts": 1793629800,
      "src": "Packers.com",
      "who": []
+    },
+    {
+     "title": "Packers vs. Patriots odds: Opening lines for Week 9 matchup",
+     "url": "https://www.acmepackingcompany.com/green-bay-packers-odds/89039/packers-vs-patriots-odds-week-9-opening-lines-point-spread-total",
+     "ts": 1793604444,
+     "src": "Acme Packing Company",
+     "who": []
+    },
+    {
+     "title": "Pro Football Blurry",
+     "url": "https://www.acmepackingcompany.com/green-bay-packers-analysis/89048/pro-football-blurry",
+     "ts": 1793572547,
+     "src": "Acme Packing Company",
+     "who": []
+    },
+    {
+     "title": "Packers Film Room: Jordan Love throws 3 TDs",
+     "url": "https://www.acmepackingcompany.com/green-bay-packers-analysis/89016/packers-film-room-jordan-love-throws-3-tds",
+     "ts": 1793571357,
+     "src": "Acme Packing Company",
+     "who": [
+      {
+       "name": "Jordan Love",
+       "slug": "jordan-love",
+       "team": "GB"
+      }
+     ]
     },
     {
      "title": "Inbox: That night belonged to Wisconsin sports fans",
@@ -2925,6 +4005,13 @@
    ],
    "league": [
     {
+     "title": "Packers sticking with RB Jacobs despite latest abuse allegations",
+     "url": "https://www.espn.com/nfl/story/_/id/50360755/packers-sticking-rb-jacobs-latest-abuse-allegations",
+     "ts": 1793724238,
+     "src": "ESPN",
+     "who": []
+    },
+    {
      "title": "NFL Week 9 picks and score predictions: Packers ruin Tom Brady's trip to New England, Jaguars destroy Ravens",
      "url": "https://www.cbssports.com/nfl/news/nfl-week-9-picks-score-predictions-packers-patriots/",
      "ts": 1793719502,
@@ -2936,13 +4023,6 @@
      "url": "https://sports.yahoo.com/articles/panthers-vs-packers-game-review-150000863.html",
      "ts": 1793718000,
      "src": "Yahoo Sports",
-     "who": []
-    },
-    {
-     "title": "Packers sticking with RB Jacobs despite latest abuse allegations",
-     "url": "https://www.espn.com/nfl/story/_/id/50360755/packers-sticking-rb-jacobs-latest-abuse-allegations",
-     "ts": 1793716237,
-     "src": "ESPN",
      "who": []
     },
     {
@@ -2966,6 +4046,13 @@
      ]
     },
     {
+     "title": "Ravens Signing QB Kedon Slovis Off Packers\u2019 PS",
+     "url": "https://nfltraderumors.co/ravens-signing-qb-kedon-slovis-off-packers-ps/",
+     "ts": 1793715425,
+     "src": "NFL Trade Rumors",
+     "who": []
+    },
+    {
      "title": "Ranking NFL's best new coordinators: Packers, Steelers assistants lead top 10 at midseason",
      "url": "https://www.cbssports.com/nfl/news/nfl-coordinator-rankings-midseason-packers-jonathan-gannon-steelers/",
      "ts": 1793710494,
@@ -2976,7 +4063,15 @@
   },
   "HOU": {
    "site": "houstontexans.com",
+   "fan": "Battle Red Blog",
    "official": [
+    {
+     "title": "Bears at Seahawks Monday Night Football Discussion Thread",
+     "url": "https://www.battleredblog.com/general/78743/bears-at-seahawks-monday-night-football-discussion-thread",
+     "ts": 1793665215,
+     "src": "Battle Red Blog",
+     "who": []
+    },
     {
      "title": "Houston Texans Transactions (11-2-2026)",
      "url": "https://www.houstontexans.com/news/houston-texans-transactions-11-2-2026",
@@ -2985,10 +4080,73 @@
      "who": []
     },
     {
+     "title": "Value of Things: In the rearview mirror",
+     "url": "https://www.battleredblog.com/houston-texans-analysis/78722/value-of-things-in-the-rearview-mirror",
+     "ts": 1793626980,
+     "src": "Battle Red Blog",
+     "who": []
+    },
+    {
+     "title": "Eagles at Commanders Sunday Night Football Discussion Thread",
+     "url": "https://www.battleredblog.com/general/78715/eagles-at-commanders-sunday-night-football-discussion-thread",
+     "ts": 1793578958,
+     "src": "Battle Red Blog",
+     "who": []
+    },
+    {
+     "title": "Houston Texans Updated Wide Receiver Room",
+     "url": "https://www.battleredblog.com/houston-texans-analysis/78709/houston-texans-updated-wide-receiver-room",
+     "ts": 1793556179,
+     "src": "Battle Red Blog",
+     "who": []
+    },
+    {
+     "title": "Weekend Musings: Mid-term report for the Houston Texans",
+     "url": "https://www.battleredblog.com/houston-texans-analysis/78691/weekend-musings-mid-term-report-for-the-houston-texans",
+     "ts": 1793462400,
+     "src": "Battle Red Blog",
+     "who": []
+    },
+    {
+     "title": "Panthers at Packers Thursday Night Football Discussion Thread",
+     "url": "https://www.battleredblog.com/general/78683/panthers-at-packers-thursday-night-football-discussion-thread",
+     "ts": 1793317337,
+     "src": "Battle Red Blog",
+     "who": []
+    },
+    {
+     "title": "Why the Houston Texans are the worst franchise in the NFL",
+     "url": "https://www.battleredblog.com/houston-texans-analysis/78667/why-the-houston-texans-are-the-worst-franchise-in-the-nfl",
+     "ts": 1793282400,
+     "src": "Battle Red Blog",
+     "who": []
+    },
+    {
+     "title": "Where do the Houston Texans go from here?",
+     "url": "https://www.battleredblog.com/houston-texans-analysis/78621/where-do-the-houston-texans-go-from-here",
+     "ts": 1793279760,
+     "src": "Battle Red Blog",
+     "who": []
+    },
+    {
      "title": "Houston Texans Transactions (10-28-2026)",
      "url": "https://www.houstontexans.com/news/houston-texans-transactions-10-28-2026",
      "ts": 1793221010,
      "src": "Houstontexans.com",
+     "who": []
+    },
+    {
+     "title": "Houston Texans NFL Power Rankings: Week 8",
+     "url": "https://www.battleredblog.com/houston-texans-power-rankings/78640/houston-texans-nfl-power-rankings-week-8",
+     "ts": 1793205000,
+     "src": "Battle Red Blog",
+     "who": []
+    },
+    {
+     "title": "Playing the Texans Blame game",
+     "url": "https://www.battleredblog.com/houston-texans-analysis/78590/playing-the-texans-blame-game",
+     "ts": 1793198100,
+     "src": "Battle Red Blog",
      "who": []
     }
    ],
@@ -3010,7 +4168,28 @@
   },
   "IND": {
    "site": "colts.com",
+   "fan": "Stampede Blue",
    "official": [
+    {
+     "title": "Colts release unofficial depth chart for Week 9",
+     "url": "https://www.colts.com/news/colts-release-unofficial-depth-chart-for-week-9",
+     "ts": 1793724397,
+     "src": "Colts.com",
+     "who": []
+    },
+    {
+     "title": "Where will Jonathan Taylor land? Breaking down the Colts\u2019 most likely trade partners",
+     "url": "https://www.stampedeblue.com/indianapolis-colts-analysis/129555/where-will-jonathan-taylor-land-breaking-down-the-colts-most-likely-trade-partners",
+     "ts": 1793710800,
+     "src": "Stampede Blue",
+     "who": [
+      {
+       "name": "Jonathan Taylor",
+       "slug": "jonathan-taylor",
+       "team": "IND"
+      }
+     ]
+    },
     {
      "title": "5 Colts Things: Daniel Jones remains starting quarterback, Shane Steichen sees execution as more an issue than effort, several rookies get valuable experience in Week 8 loss to Jaguars",
      "url": "https://www.colts.com/news/5-colts-things-daniel-jones-remains-starting-quarterback-shane-steichen-sees-execution-as-more-an-issue-than-effort-several-rookies-get-valuable-experience-in-week-8-loss-to-jaguars",
@@ -3025,10 +4204,58 @@
      ]
     },
     {
+     "title": "At 2-6, why is Shane Steichen sticking with Daniel Jones?",
+     "url": "https://www.stampedeblue.com/indianapolis-colts-news/129583/at-2-6-why-is-shane-steichen-sticking-with-daniel-jones",
+     "ts": 1793651469,
+     "src": "Stampede Blue",
+     "who": [
+      {
+       "name": "Daniel Jones",
+       "slug": "daniel-jones",
+       "team": "IND"
+      }
+     ]
+    },
+    {
+     "title": "Horsepower or Horseplay? Individual highlights from Week 8\u2019s blowout loss at Jacksonville",
+     "url": "https://www.stampedeblue.com/indianapolis-colts-analysis/129564/horsepower-or-horseplay-individual-highlights-from-week-8s-blowout-loss-at-jacksonville",
+     "ts": 1793647715,
+     "src": "Stampede Blue",
+     "who": []
+    },
+    {
+     "title": "Which Colts players should still matter by 2029?",
+     "url": "https://www.stampedeblue.com/indianapolis-colts-analysis/129496/which-colts-players-should-still-matter-by-2029",
+     "ts": 1793622600,
+     "src": "Stampede Blue",
+     "who": []
+    },
+    {
+     "title": "That performance from the Colts was as bad as it gets",
+     "url": "https://www.stampedeblue.com/indianapolis-colts-analysis/129542/that-performance-from-the-colts-was-as-bad-as-it-gets",
+     "ts": 1793622600,
+     "src": "Stampede Blue",
+     "who": []
+    },
+    {
+     "title": "Colts-Cowboys opening odds: Colts are falling fast",
+     "url": "https://www.stampedeblue.com/indianapolis-colts-odds/129520/colts-cowboys-opening-odds-colts-are-falling-fast",
+     "ts": 1793579042,
+     "src": "Stampede Blue",
+     "who": []
+    },
+    {
      "title": "Shane Steichen says 'everything's going to be evaluated' after Colts blown out by Jaguars in Week 8",
      "url": "https://www.colts.com/news/shane-steichen-says-everything-s-going-to-be-evaluated-after-colts-blown-out-by-jaguars-in-week-8",
      "ts": 1793578826,
      "src": "Colts.com",
+     "who": []
+    },
+    {
+     "title": "Colts hit rock bottom in humiliating 12th straight road loss to Jaguars",
+     "url": "https://www.stampedeblue.com/indianapolis-colts-scores-results/129498/colts-hit-rock-bottom-in-humiliating-12th-straight-road-loss-to-jaguars",
+     "ts": 1793572908,
+     "src": "Stampede Blue",
      "who": []
     },
     {
@@ -3052,10 +4279,31 @@
      "who": []
     },
     {
+     "title": "Indianapolis Colts discussion: Week 8 live chat during the Jaguars game",
+     "url": "https://www.stampedeblue.com/indianapolis-colts-discussion/129476/indianapolis-colts-discussion-week-8-live-chat-during-the-jaguars-game",
+     "ts": 1793555700,
+     "src": "Stampede Blue",
+     "who": []
+    },
+    {
      "title": "Colts announce 7 inactive players for Week 8 game at Jacksonville Jaguars",
      "url": "https://www.colts.com/news/colts-announce-7-inactive-players-for-week-8-game-at-jacksonville-jaguars",
      "ts": 1793550744,
      "src": "Colts.com",
+     "who": []
+    },
+    {
+     "title": "What to Watch for: Colts at Jaguars for Week 8",
+     "url": "https://www.stampedeblue.com/indianapolis-colts-news/129483/what-to-watch-for-colts-at-jaguars-for-week-8",
+     "ts": 1793548288,
+     "src": "Stampede Blue",
+     "who": []
+    },
+    {
+     "title": "5 Questions with Big Cat Country: A New Era?",
+     "url": "https://www.stampedeblue.com/indianapolis-colts-news/129468/5-questions-with-big-cat-country-a-new-era",
+     "ts": 1793545025,
+     "src": "Stampede Blue",
      "who": []
     },
     {
@@ -3211,6 +4459,37 @@
    ],
    "league": [
     {
+     "title": "Colts Blocking TE Mo Alie-Cox Potential Trade Candidate Of Interest",
+     "url": "https://nfltraderumors.co/colts-blocking-te-mo-alie-cox-potential-trade-candidate-of-interest/",
+     "ts": 1793725461,
+     "src": "NFL Trade Rumors",
+     "who": [
+      {
+       "name": "Mo Alie-Cox",
+       "slug": "mo-alie-cox",
+       "team": "IND"
+      }
+     ]
+    },
+    {
+     "title": "Latest On Jonathan Taylor & Josh Downs",
+     "url": "https://nfltraderumors.co/latest-on-jonathan-taylor-josh-downs/",
+     "ts": 1793717956,
+     "src": "NFL Trade Rumors",
+     "who": [
+      {
+       "name": "Josh Downs",
+       "slug": "josh-downs",
+       "team": "IND"
+      },
+      {
+       "name": "Jonathan Taylor",
+       "slug": "jonathan-taylor",
+       "team": "IND"
+      }
+     ]
+    },
+    {
      "title": "Colts are right to consider trading Taylor, and what they might get in return",
      "url": "https://www.espn.com/nfl/story/_/id/50360528/colts-jonathan-taylor-trade-deadline",
      "ts": 1793717472,
@@ -3254,6 +4533,7 @@
   },
   "JAX": {
    "site": "jaguars.com",
+   "fan": "Big Cat Country",
    "official": [
     {
      "title": "NFL Power Rankings, Week 9: Back on Top",
@@ -3277,10 +4557,52 @@
      "who": []
     },
     {
+     "title": "Jaguars Winners and Losers From Week 8: Jags Dominate Lifeless Colts",
+     "url": "https://www.bigcatcountry.com/general/90740/jags-nfl-week-8-winners-and-losers",
+     "ts": 1793644200,
+     "src": "Big Cat Country",
+     "who": []
+    },
+    {
+     "title": "Jacksonville Jaguar News: Jags earn \u2018A\u2019 in blowout win over Colts",
+     "url": "https://www.bigcatcountry.com/jacksonville-jaguars-draft/90342/jacksonville-jaguar-news-jags-earn-a-in-blowout-win-over-colts",
+     "ts": 1793643745,
+     "src": "Big Cat Country",
+     "who": []
+    },
+    {
+     "title": "Jaguars Get Injury News On DaVon Hamilton",
+     "url": "https://www.bigcatcountry.com/general/90752/jaguars-get-injury-news-on-davon-hamilton",
+     "ts": 1793637900,
+     "src": "Big Cat Country",
+     "who": []
+    },
+    {
+     "title": "3 Numbers to Know From the Jaguars\u2019 Win Over the Colts",
+     "url": "https://www.bigcatcountry.com/jacksonville-jaguars-scores-results/90703/jags-colts-nfl-week-8-numbers-to-know",
+     "ts": 1793633400,
+     "src": "Big Cat Country",
+     "who": []
+    },
+    {
+     "title": "Jaguars vs. Ravens odds: Opening lines for Week 9 matchup",
+     "url": "https://www.bigcatcountry.com/jacksonville-jaguars-odds/90625/jaguars-vs-ravens-odds-week-9-opening-lines-point-spread-total",
+     "ts": 1793627858,
+     "src": "Big Cat Country",
+     "who": []
+    },
+    {
      "title": "O-Zone Late Night, 2026 Week 8: Jaguars 42, Colts 7",
      "url": "https://www.jaguars.com/news/o-zone-late-night-2026-week-8-jaguars-42-colts-7",
      "ts": 1793586478,
      "src": "Jaguars.com",
+     "who": []
+    },
+    {
+     "title": "AFC Playoff Picture: Jaguars eviscerating the AFC South",
+     "url": "https://www.bigcatcountry.com/jacksonville-jaguars-nfl-playoffs/90721/afc-playoff-picture-jacksonville-jaguars-eviscerating-the-afc-south",
+     "ts": 1793581927,
+     "src": "Big Cat Country",
      "who": []
     },
     {
@@ -3305,6 +4627,20 @@
      "who": []
     },
     {
+     "title": "3 reasons why the Jaguars beat the Colts",
+     "url": "https://www.bigcatcountry.com/jacksonville-jaguars-game-information/90693/3-reasons-why-the-jaguars-beat-the-colts",
+     "ts": 1793569918,
+     "src": "Big Cat Country",
+     "who": []
+    },
+    {
+     "title": "Jaguars Run Colts Out of Duval in Dominant Win",
+     "url": "https://www.bigcatcountry.com/jacksonville-jaguars-analysis/90629/jaguars-run-indianapolis-out-of-duval-in-dominant-win",
+     "ts": 1793567619,
+     "src": "Big Cat Country",
+     "who": []
+    },
+    {
      "title": "Game Report, 2026 Week 8: Jaguars 42, Colts 7",
      "url": "https://www.jaguars.com/news/game-report-2026-week-8-jaguars-42-colts-7",
      "ts": 1793567540,
@@ -3316,6 +4652,20 @@
      "url": "https://www.jaguars.com/news/in-and-out-2026-week-8-johnson-inactive-brown-and-matiscik-active-for-colts-vs-jaguars",
      "ts": 1793550622,
      "src": "Jaguars.com",
+     "who": []
+    },
+    {
+     "title": "Jacksonville Jaguars vs. Indianapolis Colts game discussion, live chat",
+     "url": "https://www.bigcatcountry.com/jacksonville-jaguars-discussion/90619/jags-colts-nfl-week-8-live-blog",
+     "ts": 1793543275,
+     "src": "Big Cat Country",
+     "who": []
+    },
+    {
+     "title": "Jaguars vs. Colts: How to Watch Week 8",
+     "url": "https://www.bigcatcountry.com/jacksonville-jaguars-game-information/90612/jags-colts-nfl-week-8-watching-guide",
+     "ts": 1793534400,
+     "src": "Big Cat Country",
      "who": []
     },
     {
@@ -3469,7 +4819,36 @@
   },
   "KC": {
    "site": "chiefs.com",
+   "fan": "Arrowhead Pride",
    "official": [
+    {
+     "title": "Numbers Never Lie: 5 Chiefs stats to know from loss to Broncos",
+     "url": "https://www.arrowheadpride.com/kansas-city-chiefs-analysis/215024/numbers-never-lie-5-chiefs-stats-loss-broncos",
+     "ts": 1793722500,
+     "src": "Arrowhead Pride",
+     "who": []
+    },
+    {
+     "title": "NFL Power Rankings Week 9 Roundup: Chiefs fall fast after two losses",
+     "url": "https://www.arrowheadpride.com/kansas-city-chiefs-power-rankings/215026/nfl-power-rankings-week-9-roundup-chiefs-fall-fast-two-losses",
+     "ts": 1793716200,
+     "src": "Arrowhead Pride",
+     "who": []
+    },
+    {
+     "title": "Chiefs News: Kingsley Suamataia\u2019s benching \u2018isn\u2019t punishment\u2019",
+     "url": "https://www.arrowheadpride.com/kansas-city-chiefs-news/215005/chiefs-news-kingsley-suamataias-benching-punishment",
+     "ts": 1793703600,
+     "src": "Arrowhead Pride",
+     "who": []
+    },
+    {
+     "title": "Did the Chiefs have the most crushing loss of Week 8?",
+     "url": "https://www.arrowheadpride.com/kansas-city-chiefs-discussions/214989/did-chiefs-have-most-crushing-loss-week-8",
+     "ts": 1793664000,
+     "src": "Arrowhead Pride",
+     "who": []
+    },
     {
      "title": "Chiefs caen ante Broncos, 28-24, en un partido divisional muy re\u00f1ido.",
      "url": "https://www.chiefs.com/news/chiefs-caen-ante-broncos-28-24-en-un-partido-divisional-muy-renido",
@@ -3478,10 +4857,58 @@
      "who": []
     },
     {
+     "title": "Andy Reid talks about Chiefs\u2019 self-inflicted issues in loss to Broncos",
+     "url": "https://www.arrowheadpride.com/kansas-city-chiefs-news/214978/andy-reid-self-inflicted-issues-loss-broncos",
+     "ts": 1793647800,
+     "src": "Arrowhead Pride",
+     "who": []
+    },
+    {
+     "title": "AFC Playoff Picture after Week 8: Chiefs fall into Wild Card mix",
+     "url": "https://www.arrowheadpride.com/kansas-city-chiefs-nfl-playoffs/214963/afc-playoff-picture-week-8-chiefs-wild-card-mix",
+     "ts": 1793640600,
+     "src": "Arrowhead Pride",
+     "who": []
+    },
+    {
      "title": "Chiefs Fall to Broncos, 28-24, in Divisional Heartbreaker",
      "url": "https://www.chiefs.com/news/chiefs-fall-to-broncos-28-24-in-divisional-heartbreaker",
      "ts": 1793638866,
      "src": "Chiefs.com",
+     "who": []
+    },
+    {
+     "title": "Chiefs fans play the blame game after fourth-quarter collapse in Denver",
+     "url": "https://www.arrowheadpride.com/kansas-city-chiefs-discussions/214952/chiefs-fans-play-blame-game-fourth-quarter-collapse-denver",
+     "ts": 1793637000,
+     "src": "Arrowhead Pride",
+     "who": []
+    },
+    {
+     "title": "Chiefs Week 8 snap count analysis: Cyrus Allen sees season-high workload",
+     "url": "https://www.arrowheadpride.com/kansas-city-chiefs-analysis/214930/week-8-snap-count-analysis-cyrus-allen-season-high-workload",
+     "ts": 1793631600,
+     "src": "Arrowhead Pride",
+     "who": [
+      {
+       "name": "Cyrus Allen",
+       "slug": "cyrus-allen",
+       "team": "KC"
+      }
+     ]
+    },
+    {
+     "title": "5 things we learned from the Chiefs\u2019 heartbreaking collapse in Denver",
+     "url": "https://www.arrowheadpride.com/kansas-city-chiefs-analysis/214878/5-things-learned-chiefs-heartbreaking-collapse-denver",
+     "ts": 1793624400,
+     "src": "Arrowhead Pride",
+     "who": []
+    },
+    {
+     "title": "Chiefs News: Brett Veach is looking for receivers before trade deadline",
+     "url": "https://www.arrowheadpride.com/kansas-city-chiefs-news/214884/chiefs-news-brett-veach-looking-receivers-before-trade-deadline",
+     "ts": 1793618100,
+     "src": "Arrowhead Pride",
      "who": []
     },
     {
@@ -3609,7 +5036,42 @@
   },
   "LA": {
    "site": "therams.com",
+   "fan": "Turf Show Times",
    "official": [
+    {
+     "title": "Quentin Lake is the Rams\u2019 Nick Emmanwori and nobody knows",
+     "url": "https://www.turfshowtimes.com/los-angeles-rams-depth-chart/154049/quentin-lake-rams-nick-emmanwori",
+     "ts": 1793725513,
+     "src": "Turf Show Times",
+     "who": []
+    },
+    {
+     "title": "Rams getting leadership from unlikely source",
+     "url": "https://www.turfshowtimes.com/los-angeles-rams-news/153979/rams-blake-corum-leader-garrett",
+     "ts": 1793714340,
+     "src": "Turf Show Times",
+     "who": []
+    },
+    {
+     "title": "Matthew Stafford dealing with elbow soreness, per McVay",
+     "url": "https://www.turfshowtimes.com/los-angeles-rams-injuries/154017/rams-injury-updates-matthew-stafford-elbow",
+     "ts": 1793670839,
+     "src": "Turf Show Times",
+     "who": [
+      {
+       "name": "Matthew Stafford",
+       "slug": "matthew-stafford",
+       "team": "LA"
+      }
+     ]
+    },
+    {
+     "title": "Rams PFF grades: Offensive line pancakes Chargers in win",
+     "url": "https://www.turfshowtimes.com/los-angeles-rams-scores-results/154014/rams-chargers-pff-grades-offensive-line",
+     "ts": 1793670055,
+     "src": "Turf Show Times",
+     "who": []
+    },
     {
      "title": "Injury Updates: McVay says Myles Garrett will practice in Week 9; 'more likely than not' Terrance Ferguson also returns to practice",
      "url": "https://www.therams.com/news/injury-updates-mcvay-says-myles-garrett-will-practice-in-week-9-more-likely-than-not-terrance-ferguson-also-returns-to-practice",
@@ -3622,6 +5084,27 @@
        "team": "LA"
       }
      ]
+    },
+    {
+     "title": "Rams finally share good news about Myles Garrett",
+     "url": "https://www.turfshowtimes.com/los-angeles-rams-injuries/153976/rams-myles-garrett-injury-update",
+     "ts": 1793659370,
+     "src": "Turf Show Times",
+     "who": []
+    },
+    {
+     "title": "Do the Rams have an impressive win yet this season?",
+     "url": "https://www.turfshowtimes.com/los-angeles-rams-discussion/153973/rams-schedule-playoffs-confidence",
+     "ts": 1793656781,
+     "src": "Turf Show Times",
+     "who": []
+    },
+    {
+     "title": "Rams see surprising name move up edge depth chart",
+     "url": "https://www.turfshowtimes.com/los-angeles-rams-depth-chart/153965/rams-snap-count-wesley-bailey",
+     "ts": 1793650220,
+     "src": "Turf Show Times",
+     "who": []
     },
     {
      "title": "5 Interesting Stats from Rams' 24-9 Week 8 win over Chargers: Blake Corum's yards after contact, Puka Nacua's receptions through 50 career games and more",
@@ -3640,6 +5123,27 @@
        "team": "LA"
       }
      ]
+    },
+    {
+     "title": "Bears can do Rams a favor on Monday Night Football",
+     "url": "https://www.turfshowtimes.com/los-angeles-rams-news/153864/bears-can-do-rams-a-favor-on-monday-night-football",
+     "ts": 1793635200,
+     "src": "Turf Show Times",
+     "who": []
+    },
+    {
+     "title": "Rams\u2019 optimism growing for Myles Garrett\u2019s return",
+     "url": "https://www.turfshowtimes.com/los-angeles-rams-news/153875/rams-garrett-mcvay-chargers-washington-nfc",
+     "ts": 1793627940,
+     "src": "Turf Show Times",
+     "who": []
+    },
+    {
+     "title": "Rams vs. Commanders odds: Opening lines for Week 9 matchup",
+     "url": "https://www.turfshowtimes.com/los-angeles-rams-odds/153672/rams-vs-commanders-odds-week-9-opening-lines-point-spread-total",
+     "ts": 1793624460,
+     "src": "Turf Show Times",
+     "who": []
     },
     {
      "title": "Blake Corum enciende la ofensiva de los Rams ante los Chargers, liderando la primera serie de la segunda mitad y anotando un touchdown que cambi\u00f3 el rumbo del partido",
@@ -3859,12 +5363,27 @@
      "ts": 1793716200,
      "src": "Yahoo Sports",
      "who": []
+    },
+    {
+     "title": "NFC Notes: Budda Baker, Grey Zabel, Cardinals, Rams, Seahawks",
+     "url": "https://nfltraderumors.co/nfc-notes-budda-baker-grey-zabel-cardinals-rams-seahawks/",
+     "ts": 1793671253,
+     "src": "NFL Trade Rumors",
+     "who": []
     }
    ]
   },
   "LAC": {
    "site": "chargers.com",
+   "fan": "Bolts From The Blue",
    "official": [
+    {
+     "title": "Los Angeles Chargers news: Bolts\u2019 have 5 big draft needs in 2027",
+     "url": "https://www.boltsfromtheblue.com/los-angeles-chargers-news/66716/los-angeles-chargers-news-draft-order-needs-2027",
+     "ts": 1793717400,
+     "src": "Bolts From The Blue",
+     "who": []
+    },
     {
      "title": "5 Takeaways: Harbaugh on Njoku's \"Likely\" Return, Chargers Trade Deadline Approach",
      "url": "https://www.chargers.com/news/david-njoku-injury-jim-harbaugh-mike-mcdaniel",
@@ -3873,10 +5392,31 @@
      "who": []
     },
     {
+     "title": "Chargers Week 8 PFF Grades: Herbert struggles despite great protection up front vs. Rams",
+     "url": "https://www.boltsfromtheblue.com/los-angeles-chargers-news/66731/chargers-week-8-pff-grades-herbert-struggles-despite-great-protection-up-front-vs-rams",
+     "ts": 1793653972,
+     "src": "Bolts From The Blue",
+     "who": []
+    },
+    {
+     "title": "Chargers sign former Ravens, Titans CB Jalyn Armour-Davis",
+     "url": "https://www.boltsfromtheblue.com/los-angeles-chargers-roster/66726/los-angeles-chargers-jalyn-armour-davis-ravens-titans",
+     "ts": 1793650761,
+     "src": "Bolts From The Blue",
+     "who": []
+    },
+    {
      "title": "5 Takeaways: Offense Falters Again as Chargers Remain Winless",
      "url": "https://www.chargers.com/news/rams-takeaways-justin-herbert-mike-mcdaniel",
      "ts": 1793642400,
      "src": "Chargers.com",
+     "who": []
+    },
+    {
+     "title": "Los Angeles Chargers news: Bolts earn \u2018D\u2019 in loss to Rams",
+     "url": "https://www.boltsfromtheblue.com/los-angeles-chargers-news/66538/los-angeles-chargers-news-bolts-earn-d-in-loss-to-rams",
+     "ts": 1793640717,
+     "src": "Bolts From The Blue",
      "who": []
     },
     {
@@ -3901,10 +5441,38 @@
      "who": []
     },
     {
+     "title": "Texans vs. Chargers Opening Odds: Bolts face another test in Week 9",
+     "url": "https://www.boltsfromtheblue.com/los-angeles-chargers-odds/66712/texans-vs-chargers-opening-odds-bolts-face-another-test-in-week-9",
+     "ts": 1793597487,
+     "src": "Bolts From The Blue",
+     "who": []
+    },
+    {
      "title": "Game Recap: Chargers Drop Road Game Against the Rams in Week 8",
      "url": "https://www.chargers.com/news/game-recap-rams-week-8-justin-herbert",
      "ts": 1793577246,
      "src": "Chargers.com",
+     "who": []
+    },
+    {
+     "title": "Chargers-Rams Game Chat: Only 9 more weeks to go!",
+     "url": "https://www.boltsfromtheblue.com/los-angeles-chargers-discussion/66690/chargers-rams-game-thread-only-9-more-weeks-to-go",
+     "ts": 1793566500,
+     "src": "Bolts From The Blue",
+     "who": []
+    },
+    {
+     "title": "Chargers-Rams Game Recap: Bolts fall to Rams, fail to find end zone yet again",
+     "url": "https://www.boltsfromtheblue.com/los-angeles-chargers-news/66668/los-angeles-chargers-rams-game-recap-mike-mcdaniel-justin-herbert",
+     "ts": 1793566200,
+     "src": "Bolts From The Blue",
+     "who": []
+    },
+    {
+     "title": "Chargers reveal Week 8 inactives vs. Rams",
+     "url": "https://www.boltsfromtheblue.com/los-angeles-chargers-news/66671/chargers-reveal-week-8-inactives-vs-rams",
+     "ts": 1793562129,
+     "src": "Bolts From The Blue",
      "who": []
     },
     {
@@ -3929,10 +5497,24 @@
      "who": []
     },
     {
+     "title": "Chargers vs. Rams Week 8: How to watch, game time, TV schedule, streaming, and more",
+     "url": "https://www.boltsfromtheblue.com/los-angeles-chargers-game-information/66654/chargers-vs-rams-week-8-how-to-watch-game-time-tv-schedule-streaming-and-more",
+     "ts": 1793540872,
+     "src": "Bolts From The Blue",
+     "who": []
+    },
+    {
      "title": "Los Angeles Chargers Place Derwin James Jr. on Injured Reserve",
      "url": "https://www.chargers.com/news/place-derwin-james-jr-injured-reserve-2026",
      "ts": 1793476800,
      "src": "Chargers.com",
+     "who": []
+    },
+    {
+     "title": "NFL predictions: Chargers face long odds vs. Rams in Week 8",
+     "url": "https://www.boltsfromtheblue.com/los-angeles-chargers-odds/66646/nfl-predictions-chargers-face-long-odds-vs-rams-in-week-8",
+     "ts": 1793455200,
+     "src": "Bolts From The Blue",
      "who": []
     },
     {
@@ -4003,13 +5585,48 @@
   },
   "LV": {
    "site": "raiders.com",
+   "fan": "Silver And Black Pride",
    "official": [
+    {
+     "title": "Raiders news: Rookie defenders making plays",
+     "url": "https://www.silverandblackpride.com/las-vegas-raiders-news/144708/raiders-news-rookie-defenders-treydan-stukes-zeke-masses",
+     "ts": 1793718060,
+     "src": "Silver And Black Pride",
+     "who": []
+    },
     {
      "title": "By the Numbers: Big plays by all units add up to return Raiders to .500",
      "url": "https://www.raiders.com/news/by-the-numbers-big-plays-by-all-units-add-up-to-return-raiders-500-nfl-2026",
      "ts": 1793665397,
      "src": "Raiders.com",
      "who": []
+    },
+    {
+     "title": "Josh Jacobs faces scrutiny following celebration in 2-touchdown performance",
+     "url": "https://www.silverandblackpride.com/las-vegas-raiders-news/144872/raiders-former-players-week-8-josh-jacobs-klavon-chaisson-gardner-minshew",
+     "ts": 1793659140,
+     "src": "Silver And Black Pride",
+     "who": []
+    },
+    {
+     "title": "Trey Zuhn III gets vote of confidence from Klint Kubiak after Las Vegas Raiders Week 8 win over New York Jets",
+     "url": "https://www.silverandblackpride.com/las-vegas-raiders-news/144912/raiders-news-trey-zuhn-starter-klint-kubiak",
+     "ts": 1793657185,
+     "src": "Silver And Black Pride",
+     "who": []
+    },
+    {
+     "title": "Kirk Cousins silences quarterback change talks in Week 8 win over New York Jets",
+     "url": "https://www.silverandblackpride.com/las-vegas-raiders-analysis/144891/raiders-jets-week-8-winners-losers-kirk-cousins",
+     "ts": 1793650080,
+     "src": "Silver And Black Pride",
+     "who": [
+      {
+       "name": "Kirk Cousins",
+       "slug": "kirk-cousins",
+       "team": "LV"
+      }
+     ]
     },
     {
      "title": "Gutierrez: Cousins keeps cool in guiding Raiders to comeback win",
@@ -4019,10 +5636,38 @@
      "who": []
     },
     {
+     "title": "Raiders rally with resurgent 2nd half to ground Jets 38-33 in road win",
+     "url": "https://www.silverandblackpride.com/las-vegas-raiders-scores-results/144764/raiders-2026-week-8-jets-game-review",
+     "ts": 1793642400,
+     "src": "Silver And Black Pride",
+     "who": []
+    },
+    {
+     "title": "Raiders Week 9: Meet the 49ers",
+     "url": "https://www.silverandblackpride.com/las-vegas-raiders-game-information/138050/raiders-week-9-meet-49ers-preview",
+     "ts": 1793635260,
+     "src": "Silver And Black Pride",
+     "who": []
+    },
+    {
+     "title": "Raiders News: Week 8 AFC West Roundup, Broncos pull off 4th quarter comeback against Chiefs",
+     "url": "https://www.silverandblackpride.com/las-vegas-raiders-news/144869/raiders-news-week-8-afc-west-roundup-broncos-chiefs-chargers",
+     "ts": 1793631600,
+     "src": "Silver And Black Pride",
+     "who": []
+    },
+    {
      "title": "Malosos rompen sequ\u00eda con triunfo ante los Jets",
      "url": "https://www.raiders.com/news/malosos-rompen-sequia-con-triunfo-ante-los-jets",
      "ts": 1793591905,
      "src": "Raiders.com",
+     "who": []
+    },
+    {
+     "title": "Raiders vs. 49ers odds: Opening lines for Week 9 matchup",
+     "url": "https://www.silverandblackpride.com/las-vegas-raiders-odds/144702/raiders-vs-49ers-odds-week-9-opening-lines-point-spread-total",
+     "ts": 1793586600,
+     "src": "Silver And Black Pride",
      "who": []
     },
     {
@@ -4037,6 +5682,20 @@
      "url": "https://www.raiders.com/news/game-recap-raiders-come-from-behind-second-half-against-jets-end-four-game-skid-nfl-2026",
      "ts": 1793576155,
      "src": "Raiders.com",
+     "who": []
+    },
+    {
+     "title": "Las Vegas Raiders\u2019 playoff standing gets a boost with Week 8 results",
+     "url": "https://www.silverandblackpride.com/las-vegas-raiders-nfl-playoffs/144792/raiders-playoff-picture-week-8-jets",
+     "ts": 1793575740,
+     "src": "Silver And Black Pride",
+     "who": []
+    },
+    {
+     "title": "Raiders-Jets: 17 things we learned",
+     "url": "https://www.silverandblackpride.com/las-vegas-raiders-game-information/143562/raiders-jets-week-8-review",
+     "ts": 1793571880,
+     "src": "Silver And Black Pride",
      "who": []
     },
     {
@@ -4236,7 +5895,29 @@
   },
   "MIA": {
    "site": "miamidolphins.com",
+   "fan": "The Phinsider",
    "official": [
+    {
+     "title": "Miami Dolphins\u2019 Most Valuable Player | Week Eight | Pressure",
+     "url": "https://www.thephinsider.com/miami-dolphins-analysis/124474/miami-dolphins-most-valuable-player-week-eight-pressure",
+     "ts": 1793711144,
+     "src": "The Phinsider",
+     "who": []
+    },
+    {
+     "title": "Miami Dolphins news: Collecting grades, reactions, and news from Week 8 loss to Patriots",
+     "url": "https://www.thephinsider.com/miami-dolphins-news/124466/miami-dolphins-news-updates-rumors-injuries-week-8-loss-new-england-patriots-grades-winners-and-losers",
+     "ts": 1793709000,
+     "src": "The Phinsider",
+     "who": []
+    },
+    {
+     "title": "Monday Night Football: Chicago Bears Vs Seattle Seahawks Game Information & Discussion",
+     "url": "https://www.thephinsider.com/miami-dolphins-discussion/124431/monday-night-football-chicago-bears-vs-seattle-seahawks-game-information-discussion",
+     "ts": 1793664900,
+     "src": "The Phinsider",
+     "who": []
+    },
     {
      "title": "Miami Dolphins Beautify The Light Preparatory Academy as Part of Jason Jenkins Days of Service",
      "url": "https://www.miamidolphins.com/news/miami-dolphins-beautify-the-light-preparatory-academy-as-part-of-jason-jenkins-days-of-service",
@@ -4252,6 +5933,13 @@
      "who": []
     },
     {
+     "title": "Fins Up, Fins Down | Winners and losers from Miami Dolphins week eight defeat",
+     "url": "https://www.thephinsider.com/miami-dolphins-analysis/124427/fins-up-fins-down-winners-and-losers-from-miami-dolphins-week-eight-defeat",
+     "ts": 1793638998,
+     "src": "The Phinsider",
+     "who": []
+    },
+    {
      "title": "Miami Dolphins Announce 2026 Jason Jenkins Legacy Grant Recipient",
      "url": "https://www.miamidolphins.com/news/miami-dolphins-announce-2026-jason-jenkins-legacy-grant-recipient",
      "ts": 1793633417,
@@ -4259,10 +5947,52 @@
      "who": []
     },
     {
+     "title": "The Good, Bad & Ugly from the Miami Dolphins Week 8 loss to the New England Patriots",
+     "url": "https://www.thephinsider.com/miami-dolphins-analysis/124396/the-good-bad-ugly-from-the-miami-dolphins-week-8-loss-to-the-new-england-patriots",
+     "ts": 1793624400,
+     "src": "The Phinsider",
+     "who": []
+    },
+    {
      "title": "Game Recap: Dolphins Fall To Patriots, 24-19",
      "url": "https://www.miamidolphins.com/news/game-recap-dolphins-fall-to-patriots-24-19",
      "ts": 1793594220,
      "src": "Miamidolphins.com",
+     "who": []
+    },
+    {
+     "title": "Miami Dolphins Discussion: Post-Game Week 8 Takeaways",
+     "url": "https://www.thephinsider.com/miami-dolphins-discussion/124391/miami-dolphins-discussion-post-game-week-8-takeaways",
+     "ts": 1793581200,
+     "src": "The Phinsider",
+     "who": []
+    },
+    {
+     "title": "Patriots vs Dolphins final score, immediate reactions, winners and losers as Miami falls to division rivals",
+     "url": "https://www.thephinsider.com/miami-dolphins-scores-results/124385/patriots-vs-dolphins-final-score-immediate-reactions-winners-and-losers-as-miami-falls-to-division-rivals",
+     "ts": 1793579429,
+     "src": "The Phinsider",
+     "who": []
+    },
+    {
+     "title": "Miami Dolphins Vs New England Patriots: Game Information & Live Chat",
+     "url": "https://www.thephinsider.com/miami-dolphins-discussion/124371/miami-dolphins-vs-new-england-patriots-game-information-live-chat",
+     "ts": 1793564700,
+     "src": "The Phinsider",
+     "who": []
+    },
+    {
+     "title": "Week 8 Early Afternoon/SNF NFL Games- Live Open Discussion & Game Info",
+     "url": "https://www.thephinsider.com/miami-dolphins-discussion/124356/week-8-early-afternoon-nfl-games-live-open-discussion-game-info",
+     "ts": 1793552400,
+     "src": "The Phinsider",
+     "who": []
+    },
+    {
+     "title": "Patriots vs. Dolphins Week 8: Kickoff time, TV channel, online stream, odds, injuries, more",
+     "url": "https://www.thephinsider.com/miami-dolphins-schedule/124359/new-england-patriots-vs-miami-dolphins-how-to-watch-online-stream-start-time-kickoff-odds-news-updates-injuries",
+     "ts": 1793550600,
+     "src": "The Phinsider",
      "who": []
     },
     {
@@ -4326,12 +6056,54 @@
   },
   "MIN": {
    "site": "vikings.com",
+   "fan": "Daily Norseman",
    "official": [
+    {
+     "title": "Lunchbreak: The Athletic Updates Big Board Ahead of NFL Trade Deadline",
+     "url": "https://www.vikings.com/news/lunchbreak-the-athletic-big-board-ahead-of-nfl-trade-deadline",
+     "ts": 1793725234,
+     "src": "Vikings.com",
+     "who": []
+    },
+    {
+     "title": "Is Kyler Murray Fixable? Breaking Down the Vikings\u2019 Offensive Struggles",
+     "url": "https://www.dailynorseman.com/minnesota-vikings-podcasts/101143/is-kyler-murray-fixable-breaking-down-the-vikings-offensive-struggles",
+     "ts": 1793716271,
+     "src": "Daily Norseman",
+     "who": [
+      {
+       "name": "Kyler Murray",
+       "slug": "kyler-murray",
+       "team": "MIN"
+      }
+     ]
+    },
     {
      "title": "Kevin O'Connell Updates Vikings Injuries & Recaps Offense After Week 8",
      "url": "https://www.vikings.com/news/kevin-oconnell-updates-injuries-recaps-offense-after-week-8",
      "ts": 1793656800,
      "src": "Vikings.com",
+     "who": []
+    },
+    {
+     "title": "Week 8 Observations: First Loss, Same Problems",
+     "url": "https://www.dailynorseman.com/minnesota-vikings-analysis/101113/week-8-observations-first-loss-same-problems-minnesota-vikings",
+     "ts": 1793650098,
+     "src": "Daily Norseman",
+     "who": []
+    },
+    {
+     "title": "This Can\u2019t Continue (But It Probably Will)",
+     "url": "https://www.dailynorseman.com/minnesota-vikings-news/101122/this-cant-continue-but-it-probably-will-minnesota-vikings-offense",
+     "ts": 1793632005,
+     "src": "Daily Norseman",
+     "who": []
+    },
+    {
+     "title": "Vikings Week 8 Stock Market Report",
+     "url": "https://www.dailynorseman.com/minnesota-vikings-analysis/101037/vikings-week-8-stock-market-report",
+     "ts": 1793608555,
+     "src": "Daily Norseman",
      "who": []
     },
     {
@@ -4342,6 +6114,27 @@
      "who": []
     },
     {
+     "title": "Vikings vs. Bills odds: Opening lines for Week 9 matchup",
+     "url": "https://www.dailynorseman.com/minnesota-vikings-odds/101017/vikings-vs-bills-odds-week-9-opening-lines-point-spread-total",
+     "ts": 1793590627,
+     "src": "Daily Norseman",
+     "who": []
+    },
+    {
+     "title": "Lions Release Statement on LB Jack Campbell",
+     "url": "https://www.dailynorseman.com/minnesota-vikings-news/101054/detroit-lions-release-statement-lb-jack-campbell",
+     "ts": 1793582678,
+     "src": "Daily Norseman",
+     "who": []
+    },
+    {
+     "title": "NFC Playoff Picture: Vikings fall from atop conference with tiebreaker",
+     "url": "https://www.dailynorseman.com/minnesota-vikings-nfl-playoffs/101046/nfc-playoff-picture-minnesota-vikings-tiebreaker-san-francisco-49ers-division-leaders",
+     "ts": 1793578787,
+     "src": "Daily Norseman",
+     "who": []
+    },
+    {
      "title": "Vikings Offense Struggles to Sustain Drives at Lions",
      "url": "https://www.vikings.com/news/offense-struggles-to-sustain-drives-at-lions-week-8",
      "ts": 1793576587,
@@ -4349,11 +6142,31 @@
      "who": []
     },
     {
-     "title": "Vikings Defense Laments Final 2 Drives by Lions",
-     "url": "https://www.vikings.com/news/defense-laments-final-2-drives-by-lions-week-8",
-     "ts": 1793574839,
-     "src": "Vikings.com",
+     "title": "Lions Run to Victory as Vikings\u2019 Undefeated Streak Ends in Detroit",
+     "url": "https://www.dailynorseman.com/minnesota-vikings-scores-results/101028/minnesota-vikings-detroit-lions-final-score-game-recap",
+     "ts": 1793567547,
+     "src": "Daily Norseman",
      "who": []
+    },
+    {
+     "title": "Minnesota Vikings at Detroit Lions: Week 8 NFL Discussion",
+     "url": "https://www.dailynorseman.com/minnesota-vikings-discussion-chat-message-board/101002/minnesota-vikings-detroit-lions-week-8-nfl-discussion",
+     "ts": 1793554200,
+     "src": "Daily Norseman",
+     "who": []
+    },
+    {
+     "title": "Report: Vikings Had Trade In Place With Niners for Jauan Jennings",
+     "url": "https://www.dailynorseman.com/minnesota-vikings-rumors/101022/minnesota-vikings-trade-in-place-san-francisco-49ers-jauan-jennings",
+     "ts": 1793554157,
+     "src": "Daily Norseman",
+     "who": [
+      {
+       "name": "Jauan Jennings",
+       "slug": "jauan-jennings",
+       "team": "MIN"
+      }
+     ]
     }
    ],
    "league": [
@@ -4388,7 +6201,77 @@
   },
   "NE": {
    "site": "patriots.com",
+   "fan": "Pats Pulpit",
    "official": [
+    {
+     "title": "Rhamondre Stevenson is exactly who the Patriots offense needs right now",
+     "url": "https://www.patspulpit.com/new-england-patriots-analysis/142731/rhamondre-stevenson-patriots-injuries-offense",
+     "ts": 1793725200,
+     "src": "Pats Pulpit",
+     "who": [
+      {
+       "name": "Rhamondre Stevenson",
+       "slug": "rhamondre-stevenson",
+       "team": "NE"
+      }
+     ]
+    },
+    {
+     "title": "Patriots News: Scrubhub \u2013 Backups deliver in Miami",
+     "url": "https://www.patspulpit.com/new-england-patriots-news/142761/patriots-news-scrubhub-backups-deliver-miami",
+     "ts": 1793720780,
+     "src": "Pats Pulpit",
+     "who": []
+    },
+    {
+     "title": "Patriots game ball from Dolphins win in Week 8",
+     "url": "https://www.patspulpit.com/new-england-patriots-analysis/142869/patriots-vs-dolphins-game-ball-nfl-week-8",
+     "ts": 1793718000,
+     "src": "Pats Pulpit",
+     "who": []
+    },
+    {
+     "title": "What Patriots are looking for in a potential Christian Barmore trade",
+     "url": "https://www.patspulpit.com/new-england-patriots-rumors/142725/patriots-christian-barmore-compensation-nfl-trade-deadline-2026",
+     "ts": 1793714400,
+     "src": "Pats Pulpit",
+     "who": []
+    },
+    {
+     "title": "Patriots vs. Dolphins position grades and film review from Week 8",
+     "url": "https://www.patspulpit.com/new-england-patriots-analysis/142854/patriots-vs-dolphins-film-review-position-grades-nfl-week-8",
+     "ts": 1793709000,
+     "src": "Pats Pulpit",
+     "who": []
+    },
+    {
+     "title": "Patriots injury analysis after Dolphins win in Week 8",
+     "url": "https://www.patspulpit.com/new-england-patriots-injuries/142849/patriots-vs-dolphins-injury-analysis-nfl-week-8-packers",
+     "ts": 1793703600,
+     "src": "Pats Pulpit",
+     "who": []
+    },
+    {
+     "title": "Patriots lose practice squad linebacker K.J. Britt to the Lions",
+     "url": "https://www.patspulpit.com/new-england-patriots-news/142844/lions-sign-patriots-linebacker-kj-britt-practice-squad",
+     "ts": 1793700000,
+     "src": "Pats Pulpit",
+     "who": []
+    },
+    {
+     "title": "Patriots updated roster and depth chart for 2026 regular season",
+     "url": "https://www.patspulpit.com/new-england-patriots-depth-chart/122534/updated-roster-practice-squad-2026-nfl-season",
+     "ts": 1793698887,
+     "src": "Pats Pulpit",
+     "who": []
+    },
+    {
+     "title": "What waiving Elliott Davison means for the Patriots",
+     "url": "https://www.patspulpit.com/new-england-patriots-analysis/142821/elliott-davison-released-impact-patriots-roster",
+     "ts": 1793659407,
+     "src": "Pats Pulpit",
+     "who": []
+    },
     {
      "title": "After Further Review: Drake Maye film breakdown, defense review, quick-hit film notes from win over Dolphins",
      "url": "https://www.patriots.com/news/after-further-review-drake-maye-film-breakdown-defense-review-quick-hit-film-notes-from-win-over-dolphins",
@@ -4401,6 +6284,13 @@
        "team": "NE"
       }
      ]
+    },
+    {
+     "title": "Patriots waive safety Elliott Davison, bring back running back Terrell Jennings on practice squad",
+     "url": "https://www.patspulpit.com/new-england-patriots-news/142796/patriots-waive-elliott-davison-re-sign-terrell-jennings-practice-squad",
+     "ts": 1793655103,
+     "src": "Pats Pulpit",
+     "who": []
     },
     {
      "title": "Patriots Release S Elliott Davison and Sign RB Terrell Jennings to the Practice Squad",
@@ -4459,12 +6349,34 @@
      "ts": 1793713104,
      "src": "ESPN",
      "who": []
+    },
+    {
+     "title": "Caleb Williams incident leads to Patriots player punishment from the NFL",
+     "url": "https://www.sportingnews.com/us/nfl/chicago-bears/news/caleb-williams-incident-patriots-player-punishment-nfl/86b949daf7dff1bef25f53f8>",
+     "ts": 1793663059,
+     "src": "Sporting News",
+     "who": []
     }
    ]
   },
   "NO": {
    "site": "neworleanssaints.com",
+   "fan": "Canal Street Chronicles",
    "official": [
+    {
+     "title": "Saints 2026 Trade Deadline Tracker",
+     "url": "https://www.canalstreetchronicles.com/nfl-trade-rumors/117239/saints-2026-trade-deadline-tracker-cesar-ruiz-kendre-miller",
+     "ts": 1793725520,
+     "src": "Canal Street Chronicles",
+     "who": []
+    },
+    {
+     "title": "State of the NFC South: Week 8",
+     "url": "https://www.canalstreetchronicles.com/new-orleans-saints-scores-results/117356/state-of-the-nfc-south-nfl-week-8-bucs-falcons-panthers-saints",
+     "ts": 1793718000,
+     "src": "Canal Street Chronicles",
+     "who": []
+    },
     {
      "title": "Five things to know about the New Orleans Saints for Tuesday, November 3",
      "url": "https://www.neworleanssaints.com/news/five-things-to-know-about-the-new-orleans-saints-week-9-browns-tuesday-november-3",
@@ -4480,10 +6392,52 @@
      "who": []
     },
     {
+     "title": "Saints could get three key players closer to returning to practice",
+     "url": "https://www.canalstreetchronicles.com/new-orleans-saints-injuries/117323/saints-could-get-three-key-players-closer-to-returning-to-practice",
+     "ts": 1793714400,
+     "src": "Canal Street Chronicles",
+     "who": []
+    },
+    {
+     "title": "New Orleans Saints News: After the bye week, the Saints make a coaching change",
+     "url": "https://www.canalstreetchronicles.com/new-orleans-saints-news/117360/new-orleans-saints-news-after-the-bye-week-the-saints-make-a-coaching-change",
+     "ts": 1793710800,
+     "src": "Canal Street Chronicles",
+     "who": []
+    },
+    {
      "title": "New Orleans Saints make run game change in effort to boost production",
      "url": "https://www.neworleanssaints.com/news/new-orleans-saints-make-run-game-change-in-effort-to-boost-production",
      "ts": 1793653827,
      "src": "Neworleanssaints.com",
+     "who": []
+    },
+    {
+     "title": "Saints guard David Edwards takes responsibility following T.J. Paganetti\u2019s firing",
+     "url": "https://www.canalstreetchronicles.com/new-orleans-saints-news/117329/saints-guard-david-edwards-takes-responsibility-following-t-j-paganettis-firing",
+     "ts": 1793649420,
+     "src": "Canal Street Chronicles",
+     "who": []
+    },
+    {
+     "title": "Should the Saints be buyers or sellers at the trade deadline?",
+     "url": "https://www.canalstreetchronicles.com/nfl-trade-rumors/117301/should-the-saints-be-buyers-or-sellers-at-nfl-trade-deadline",
+     "ts": 1793635200,
+     "src": "Canal Street Chronicles",
+     "who": []
+    },
+    {
+     "title": "Saints move on from run game coordinator T.J. Paganetti",
+     "url": "https://www.canalstreetchronicles.com/new-orleans-saints-news/117307/saints-move-on-from-coach-tj-paganetti",
+     "ts": 1793630749,
+     "src": "Canal Street Chronicles",
+     "who": []
+    },
+    {
+     "title": "Saints vs. Browns odds: Opening lines for Week 9 matchup",
+     "url": "https://www.canalstreetchronicles.com/new-orleans-saints-odds/117270/saints-vs-browns-odds-week-9-opening-lines-point-spread-total",
+     "ts": 1793629800,
+     "src": "Canal Street Chronicles",
      "who": []
     },
     {
@@ -4498,6 +6452,13 @@
      "url": "https://www.neworleanssaints.com/news/morning-break-chase-young-makes-his-presence-felt-on-saints-defense-new-orleans-news-headlines-11-2-2026",
      "ts": 1793628041,
      "src": "Neworleanssaints.com",
+     "who": []
+    },
+    {
+     "title": "New Orleans Saints News: Could we see rookie Jordyn Tyson this week?",
+     "url": "https://www.canalstreetchronicles.com/new-orleans-saints-news/117281/new-orleans-saints-news-could-we-see-rookie-jordyn-tyson-this-week",
+     "ts": 1793624400,
+     "src": "Canal Street Chronicles",
      "who": []
     },
     {
@@ -4519,6 +6480,13 @@
        "team": "NO"
       }
      ]
+    },
+    {
+     "title": "The importance of change during the Saints\u2019 bye week",
+     "url": "https://www.canalstreetchronicles.com/new-orleans-saints-analysis/117252/the-importance-of-during-the-saints-bye-week",
+     "ts": 1793458800,
+     "src": "Canal Street Chronicles",
+     "who": []
     },
     {
      "title": "Five things to know about the New Orleans Saints for Saturday, October 31",
@@ -4576,19 +6544,39 @@
      ]
     }
    ],
-   "league": [
-    {
-     "title": "Saints 2026 Trade Deadline Tracker",
-     "url": "https://sports.yahoo.com/articles/saints-2026-trade-deadline-tracker-160000731.html",
-     "ts": 1793721600,
-     "src": "Yahoo Sports",
-     "who": []
-    }
-   ]
+   "league": []
   },
   "NYG": {
    "site": "giants.com",
+   "fan": "Big Blue View",
    "official": [
+    {
+     "title": "Big Blue Kickoff Live | Call (201) 939-4513",
+     "url": "https://www.giants.com/video/big-blue-kickoff-live-call-in-201-939-4513-x9674",
+     "ts": 1793724900,
+     "src": "Giants.com",
+     "who": []
+    },
+    {
+     "title": "NY Giants are betting favorite to win NFC East, and have John Harbaugh to thank",
+     "url": "https://www.bigblueview.com/new-york-giants-analysis/178368/ny-giants-are-betting-favorite-to-win-nfc-east-and-have-john-harbaugh-to-thank",
+     "ts": 1793721540,
+     "src": "Big Blue View",
+     "who": []
+    },
+    {
+     "title": "Cam Skattebo injury: NY Giants\u2019 RB a question mark heading into game vs. Eagles",
+     "url": "https://www.bigblueview.com/new-york-giants-injuries/178373/cam-skattebo-injury-rb-question-mark-vs-eagles",
+     "ts": 1793720831,
+     "src": "Big Blue View",
+     "who": [
+      {
+       "name": "Cam Skattebo",
+       "slug": "cam-skattebo",
+       "team": "NYG"
+      }
+     ]
+    },
     {
      "title": "Week 9 Tracker: Latest news, notes & roster moves",
      "url": "https://www.giants.com/news/week-9-tracker-latest-news-notes-roster-moves-philadelphia-eagles-nfc-east",
@@ -4611,10 +6599,52 @@
      "who": []
     },
     {
+     "title": "NFL power rankings: Nick\u2019s picks for how teams stack up before Week 9",
+     "url": "https://www.bigblueview.com/new-york-giants-power-rankings/178316/nfl-power-rankings-nicks-picks-for-how-teams-stack-up-before-week-9",
+     "ts": 1793711379,
+     "src": "Big Blue View",
+     "who": []
+    },
+    {
+     "title": "NY Giants news: Giants a road favorite, trade rumors, more",
+     "url": "https://www.bigblueview.com/new-york-giants-news/178336/road-favorite-vs-eagles-nfl-trade-rumors-more",
+     "ts": 1793703600,
+     "src": "Big Blue View",
+     "who": []
+    },
+    {
      "title": "Giants vs. Eagles: How to Watch, Listen & Live Stream Week 9",
      "url": "https://www.giants.com/news/giants-vs-eagles-how-to-watch-listen-live-stream-week-9",
      "ts": 1793700000,
      "src": "Giants.com",
+     "who": []
+    },
+    {
+     "title": "Fantasy Football 2026: Waiver Wire, Week 9 edition",
+     "url": "https://www.bigblueview.com/new-york-giants-roster/178306/fantasy-football-2026-waiver-wire-week-9-edition",
+     "ts": 1793662103,
+     "src": "Big Blue View",
+     "who": []
+    },
+    {
+     "title": "NY Giants John Harbaugh: Team \u2018open for any call\u2019, and will make any call",
+     "url": "https://www.bigblueview.com/new-york-giants-news/178333/john-harbaugh-nfl-trade-deadline-team-open-for-any-call-will-make-any-call",
+     "ts": 1793658989,
+     "src": "Big Blue View",
+     "who": []
+    },
+    {
+     "title": "NY Giants add a familiar running back to the practice squad",
+     "url": "https://www.bigblueview.com/new-york-giants-roster/178321/eric-gray-signing-practice-squad",
+     "ts": 1793656646,
+     "src": "Big Blue View",
+     "who": []
+    },
+    {
+     "title": "NY Giants trade candidate: DT Christian Barmore",
+     "url": "https://www.bigblueview.com/new-york-giants-rumors/177273/ny-giants-trade-candidate-dt-christian-barmore",
+     "ts": 1793652300,
+     "src": "Big Blue View",
      "who": []
     },
     {
@@ -4636,6 +6666,20 @@
      "url": "https://www.giants.com/photos/at-the-bye-week-best-of-2026-season-so-far",
      "ts": 1793630280,
      "src": "Giants.com",
+     "who": []
+    },
+    {
+     "title": "Giants vs. Eagles odds: Opening lines for Week 9 matchup",
+     "url": "https://www.bigblueview.com/new-york-giants-odds/178242/giants-vs-eagles-odds-week-9-opening-lines-point-spread-total",
+     "ts": 1793629800,
+     "src": "Big Blue View",
+     "who": []
+    },
+    {
+     "title": "NFC playoff picture: NY Giants lead in NFC East widens",
+     "url": "https://www.bigblueview.com/new-york-giants-news/178268/nfc-playoff-picture-ny-giants-lead-in-nfc-east-widens",
+     "ts": 1793620800,
+     "src": "Big Blue View",
      "who": []
     },
     {
@@ -4682,6 +6726,13 @@
    ],
    "league": [
     {
+     "title": "Harbaugh reached out on Simmons trade, says Giants 'open for any call'",
+     "url": "https://www.espn.com/nfl/story/_/id/50361915/harbaugh-reached-simmons-giants-open-call",
+     "ts": 1793724238,
+     "src": "ESPN",
+     "who": []
+    },
+    {
      "title": "Giants are betting favorite to win NFC East, and have John Harbaugh to thank",
      "url": "https://sports.yahoo.com/articles/giants-betting-favorite-win-nfc-155900840.html",
      "ts": 1793721540,
@@ -4702,22 +6753,50 @@
      ]
     },
     {
-     "title": "Harbaugh reached out on Simmons trade, says Giants 'open for any call'",
-     "url": "https://www.espn.com/nfl/story/_/id/50361915/harbaugh-reached-simmons-giants-open-call",
-     "ts": 1793716237,
-     "src": "ESPN",
-     "who": []
+     "title": "Giants' Cam Skattebo is in a bit of trouble with the NFL",
+     "url": "https://www.sportingnews.com/us/nfl/new-york-giants/news/giants-cam-skattebo-bit-trouble-nfl/a80c1c00d916783c0e79492e>",
+     "ts": 1793663785,
+     "src": "Sporting News",
+     "who": [
+      {
+       "name": "Cam Skattebo",
+       "slug": "cam-skattebo",
+       "team": "NYG"
+      }
+     ]
     }
    ]
   },
   "NYJ": {
    "site": "newyorkjets.com",
+   "fan": "Gang Green Nation",
    "official": [
+    {
+     "title": "Some Long-Term Thoughts on the Jets at 2-6",
+     "url": "https://www.ganggreennation.com/new-york-jets-analysis/98176/some-long-term-thoughts-on-the-jets-at-2-6",
+     "ts": 1793718000,
+     "src": "Gang Green Nation",
+     "who": []
+    },
+    {
+     "title": "New York Jets News: Insider Says Aaron Glenn Path to Salvation has Closed",
+     "url": "https://www.ganggreennation.com/new-york-jets-news/98194/insider-says-aaron-glenn-path-to-salvation-has-closed",
+     "ts": 1793707200,
+     "src": "Gang Green Nation",
+     "who": []
+    },
     {
      "title": "Notebook  | Jets Fighting for the \"Killer Instinct'",
      "url": "https://www.newyorkjets.com/news/notebook-jets-fighting-for-killer-instinct-11-02-2026",
      "ts": 1793651209,
      "src": "Newyorkjets.com",
+     "who": []
+    },
+    {
+     "title": "The Jets aren\u2019t good enough to overcome the mistakes they made against the Raiders",
+     "url": "https://www.ganggreennation.com/new-york-jets-analysis/98165/the-jets-arent-good-enough-to-overcome-the-mistakes-they-made-against-the-raiders",
+     "ts": 1793642030,
+     "src": "Gang Green Nation",
      "who": []
     },
     {
@@ -4750,6 +6829,20 @@
      "url": "https://www.newyorkjets.com/news/3-takeaways-jets-offense-scored-on-first-six-possessions-vs-raiders-11-02-2026",
      "ts": 1793631600,
      "src": "Newyorkjets.com",
+     "who": []
+    },
+    {
+     "title": "New York Jets News: Aaron Glenn is Dying by the Sword",
+     "url": "https://www.ganggreennation.com/new-york-jets-news/98158/aaron-glenn-is-dying-by-the-sword",
+     "ts": 1793620800,
+     "src": "Gang Green Nation",
+     "who": []
+    },
+    {
+     "title": "Jets vs. Chiefs odds: Opening lines for Week 9 matchup",
+     "url": "https://www.ganggreennation.com/new-york-jets-odds/98127/jets-vs-chiefs-odds-week-9-opening-lines-point-spread-total",
+     "ts": 1793595431,
+     "src": "Gang Green Nation",
      "who": []
     },
     {
@@ -4786,10 +6879,51 @@
      ]
     },
     {
+     "title": "Jets vs Raiders: No defending Jets defense in latest Jets embarrassing loss",
+     "url": "https://www.ganggreennation.com/new-york-jets-scores-results/98106/jets-vs-raiders-no-defending-jets-defense-in-latest-jets-embarrassing-loss",
+     "ts": 1793567453,
+     "src": "Gang Green Nation",
+     "who": []
+    },
+    {
+     "title": "New York Jets discussion: Week 8 live chat during the Raiders game",
+     "url": "https://www.ganggreennation.com/new-york-jets-discussion/98100/new-york-jets-discussion-week-8-live-chat-during-the-raiders-game",
+     "ts": 1793554200,
+     "src": "Gang Green Nation",
+     "who": []
+    },
+    {
+     "title": "Jets vs Raiders: Breece Hall headlines Jets\u2019 inactives",
+     "url": "https://www.ganggreennation.com/new-york-jets-analysis/98122/jets-vs-raiders-breece-hall-headlines-jets-inactives",
+     "ts": 1793550891,
+     "src": "Gang Green Nation",
+     "who": [
+      {
+       "name": "Breece Hall",
+       "slug": "breece-hall",
+       "team": "NYJ"
+      }
+     ]
+    },
+    {
      "title": "Jets List 7 Players Inactive Against Las Vegas Raiders",
      "url": "https://www.newyorkjets.com/news/jets-vs-raiders-nfl-game-inactives-11-1-2026",
      "ts": 1793550600,
      "src": "Newyorkjets.com",
+     "who": []
+    },
+    {
+     "title": "Jets fan confidence is low after brutal loss to Miami Dolphins",
+     "url": "https://www.ganggreennation.com/new-york-jets-discussion/98115/jets-fan-confidence-is-low-after-brutal-loss-to-miami-dolphins",
+     "ts": 1793541600,
+     "src": "Gang Green Nation",
+     "who": []
+    },
+    {
+     "title": "Jets vs Raiders Pre-Game Ball",
+     "url": "https://www.ganggreennation.com/new-york-jets-analysis/98096/jets-vs-raiders-pre-game-ball",
+     "ts": 1793538000,
+     "src": "Gang Green Nation",
      "who": []
     },
     {
@@ -4888,7 +7022,96 @@
   },
   "PHI": {
    "site": "philadelphiaeagles.com",
+   "fan": "Bleeding Green Nation",
    "official": [
+    {
+     "title": "Eagles News: Chris Kuper could be in trouble",
+     "url": "https://www.bleedinggreennation.com/news/189233/eagles-news-chris-kuper-could-be-in-trouble",
+     "ts": 1793720105,
+     "src": "Bleeding Green Nation",
+     "who": []
+    },
+    {
+     "title": "Eagles-Commanders Film Review: The idea that Jalen Hurts was holding this offense back should be finished by now",
+     "url": "https://www.bleedinggreennation.com/philadelphia-eagles-analysis/189226/eagles-commanders-film-review-the-idea-that-jalen-hurts-was-holding-this-offense-back-should-be-finished-by-now",
+     "ts": 1793715523,
+     "src": "Bleeding Green Nation",
+     "who": [
+      {
+       "name": "Jalen Hurts",
+       "slug": "jalen-hurts",
+       "team": "PHI"
+      }
+     ]
+    },
+    {
+     "title": "Monday Night Football: Bears vs. Seahawks live chat",
+     "url": "https://www.bleedinggreennation.com/game-day-threads/189187/monday-night-football-bears-vs-seahawks-live-chat",
+     "ts": 1793666700,
+     "src": "Bleeding Green Nation",
+     "who": []
+    },
+    {
+     "title": "Eagles-Commanders snap counts: Makai Lemon seeing more opportunity",
+     "url": "https://www.bleedinggreennation.com/philadelphia-eagles-analysis/189200/eagles-commanders-snap-counts-makai-lemon-seeing-more-opportunity",
+     "ts": 1793662622,
+     "src": "Bleeding Green Nation",
+     "who": [
+      {
+       "name": "Makai Lemon",
+       "slug": "makai-lemon",
+       "team": "PHI"
+      }
+     ]
+    },
+    {
+     "title": "The Eagles\u2019 2026 season is done. Are the coaches done, too?",
+     "url": "https://www.bleedinggreennation.com/philadelphia-eagles-analysis/189132/the-eagles-2026-season-is-done-are-the-coaches-done-too",
+     "ts": 1793648945,
+     "src": "Bleeding Green Nation",
+     "who": []
+    },
+    {
+     "title": "Eagles News: Nick Sirianni\u2019s seat is getting hotter",
+     "url": "https://www.bleedinggreennation.com/news/189155/eagles-news-nick-siriannis-seat-is-getting-hotter",
+     "ts": 1793638413,
+     "src": "Bleeding Green Nation",
+     "who": []
+    },
+    {
+     "title": "Saquon Barkley admits his injuries are holding him back",
+     "url": "https://www.bleedinggreennation.com/philadelphia-eagles-injuries/189070/saquon-barkley-admits-his-body-is-holding-him-back",
+     "ts": 1793636208,
+     "src": "Bleeding Green Nation",
+     "who": [
+      {
+       "name": "Saquon Barkley",
+       "slug": "saquon-barkley",
+       "team": "PHI"
+      }
+     ]
+    },
+    {
+     "title": "10 Eagles things I think I think from the loss to the Commanders",
+     "url": "https://www.bleedinggreennation.com/philadelphia-eagles-analysis/189050/10-eagles-things-i-think-i-think-from-the-loss-to-the-commanders",
+     "ts": 1793604102,
+     "src": "Bleeding Green Nation",
+     "who": []
+    },
+    {
+     "title": "Eagles vs. Giants odds: Opening lines for Week 9 matchup",
+     "url": "https://www.bleedinggreennation.com/philadelphia-eagles-odds/188976/eagles-vs-giants-odds-week-9-opening-lines-point-spread-total",
+     "ts": 1793603408,
+     "src": "Bleeding Green Nation",
+     "who": []
+    },
+    {
+     "title": "2027 NFL Draft order: Eagles in the top 5",
+     "url": "https://www.bleedinggreennation.com/philadelphia-eagles-draft/189106/2027-nfl-draft-order-eagles-in-the-top-5",
+     "ts": 1793602152,
+     "src": "Bleeding Green Nation",
+     "who": []
+    },
     {
      "title": "Nick Sirianni: We're going to 'continue to fight'",
      "url": "https://www.philadelphiaeagles.com/news/nick-sirianni-we-re-going-to-continue-to-fight",
@@ -5022,6 +7245,20 @@
    ],
    "league": [
     {
+     "title": "Eagles Not Expected To Hold Fire Sale But Significant Interest In DT Moro Ojomo",
+     "url": "https://nfltraderumors.co/eagles-not-expected-to-hold-fire-sale-but-significant-interest-in-dt-moro-ojomo/",
+     "ts": 1793724726,
+     "src": "NFL Trade Rumors",
+     "who": []
+    },
+    {
+     "title": "Sirianni: No changes at OC or QB despite Eagles' 6-game skid",
+     "url": "https://www.espn.com/nfl/story/_/id/50361174/sirianni-no-changes-oc-qb-eagles-six-game-skid",
+     "ts": 1793724238,
+     "src": "ESPN",
+     "who": []
+    },
+    {
      "title": "Cam Skattebo injury: Giants\u2019 RB a question mark heading into game vs. Eagles",
      "url": "https://sports.yahoo.com/articles/cam-skattebo-injury-giants-rb-154711038.html",
      "ts": 1793720831,
@@ -5036,26 +7273,6 @@
      "who": []
     },
     {
-     "title": "Sirianni: No changes at OC or QB despite Eagles' 6-game skid",
-     "url": "https://www.espn.com/nfl/story/_/id/50361174/sirianni-no-changes-oc-qb-eagles-six-game-skid",
-     "ts": 1793716237,
-     "src": "ESPN",
-     "who": []
-    },
-    {
-     "title": "Eagles-Commanders Film Review: The idea that Jalen Hurts was holding this offense back should be finished by now",
-     "url": "https://sports.yahoo.com/articles/eagles-commanders-film-review-idea-141843566.html",
-     "ts": 1793715523,
-     "src": "Yahoo Sports",
-     "who": [
-      {
-       "name": "Jalen Hurts",
-       "slug": "jalen-hurts",
-       "team": "PHI"
-      }
-     ]
-    },
-    {
      "title": "Nick Sirianni: Eagles will stick with Tanner McKee, Sean Mannion despite offensive woes",
      "url": "https://www.nbcsports.com/nfl/profootballtalk/rumor-mill/news/nick-sirianni-eagles-will-stick-with-tanner-mckee-sean-mannion-despite-offensive-woes",
      "ts": 1793671496,
@@ -5067,12 +7284,34 @@
        "team": "PHI"
       }
      ]
+    },
+    {
+     "title": "Cowboys named landing spot for $76 million ex-Eagles Pro Bowl defender",
+     "url": "https://www.sportingnews.com/us/nfl/dallas-cowboys/news/cowboys-named-landing-spot-76-million-ex-eagles-pro-bowl-defender/5b94b4827d0de5afd406ed07>",
+     "ts": 1793652794,
+     "src": "Sporting News",
+     "who": []
+    },
+    {
+     "title": "Eagles insider teases major changes could happen by Week 10 bye",
+     "url": "https://www.sportingnews.com/us/nfl/philadelphia-eagles/news/eagles-insider-teases-major-changes-could-happen-week-10-bye/8b1b6275e6a0d21bbc296ac2>",
+     "ts": 1793652172,
+     "src": "Sporting News",
+     "who": []
     }
    ]
   },
   "PIT": {
    "site": "steelers.com",
+   "fan": "Behind The Steel Curtain",
    "official": [
+    {
+     "title": "Steelers news: Pittsburgh must come out of the bye week hot",
+     "url": "https://www.behindthesteelcurtain.com/pittsburgh-steelers-news/177313/steelers-news-pittsburgh-must-come-out-of-the-bye-week-hot",
+     "ts": 1793722644,
+     "src": "Behind The Steel Curtain",
+     "who": []
+    },
     {
      "title": "Not satisfied yet",
      "url": "https://www.steelers.com/news/not-satisfied-yet",
@@ -5095,10 +7334,24 @@
      "who": []
     },
     {
+     "title": "BTSC Monday Night Football thread:\u00a0Bears at Seahawks",
+     "url": "https://www.behindthesteelcurtain.com/pittsburgh-steelers-discussion/177090/btsc-monday-night-football-thread-bears-at-seahawks",
+     "ts": 1793667600,
+     "src": "Behind The Steel Curtain",
+     "who": []
+    },
+    {
      "title": "WATCH: SNR Drive (All Episodes from Week of November 2)",
      "url": "https://www.steelers.com/news/watch-snr-drive-all-episodes-from-week-of-november-2",
      "ts": 1793656800,
      "src": "Steelers.com",
+     "who": []
+    },
+    {
+     "title": "Steelers reportedly interested in trade for Jets WR Garrett Wilson",
+     "url": "https://www.behindthesteelcurtain.com/pittsburgh-steelers-news/177293/steelers-reportedly-interested-in-trade-for-jets-wr-garrett-wilson",
+     "ts": 1793651859,
+     "src": "Behind The Steel Curtain",
      "who": []
     },
     {
@@ -5116,10 +7369,31 @@
      "who": []
     },
     {
+     "title": "Steelers news: Pittsburgh is in the driver\u2019s seat in the AFC North",
+     "url": "https://www.behindthesteelcurtain.com/pittsburgh-steelers-news/177283/steelers-news-pittsburgh-is-in-the-drivers-seat-in-the-afc-north",
+     "ts": 1793645953,
+     "src": "Behind The Steel Curtain",
+     "who": []
+    },
+    {
+     "title": "Steelers have built the NFL\u2019s most dangerous rushing attack",
+     "url": "https://www.behindthesteelcurtain.com/pittsburgh-steelers-analysis/177276/steelers-have-built-the-nfls-most-dangerous-rushing-attack-jaylen-warren-tj-watt",
+     "ts": 1793638235,
+     "src": "Behind The Steel Curtain",
+     "who": []
+    },
+    {
      "title": "Steelers, Giant Eagle partner for CitiParks free lunch program for students",
      "url": "https://www.steelers.com/news/steelers-giant-eagle-partner-for-citiparks-free-lunch-program-for-students",
      "ts": 1793634900,
      "src": "Steelers.com",
+     "who": []
+    },
+    {
+     "title": "5 takeaways from the Steelers\u2019 27-6 win over the Cleveland Browns",
+     "url": "https://www.behindthesteelcurtain.com/pittsburgh-steelers-analysis/177204/5-takeaways-from-the-steelers-27-6-win-over-the-cleveland-browns-jaylen-warren-dk-metcalf-mike-mccarthy-afc-north",
+     "ts": 1793617200,
+     "src": "Behind The Steel Curtain",
      "who": []
     },
     {
@@ -5137,6 +7411,13 @@
      "who": []
     },
     {
+     "title": "Steelers make big jump in AFC playoff picture after win over Browns",
+     "url": "https://www.behindthesteelcurtain.com/pittsburgh-steelers-nfl-playoffs/177240/steelers-make-big-jump-in-afc-playoff-picture-after-win-over-browns",
+     "ts": 1793580258,
+     "src": "Behind The Steel Curtain",
+     "who": []
+    },
+    {
      "title": "From the Press Room: Steelers vs. Browns",
      "url": "https://www.steelers.com/news/from-the-press-room-steelers-vs-browns-x8385",
      "ts": 1793578744,
@@ -5144,10 +7425,31 @@
      "who": []
     },
     {
+     "title": "Steelers make Jared Verse eat his words",
+     "url": "https://www.behindthesteelcurtain.com/pittsburgh-steelers-analysis/177229/steelers-make-jared-verse-eat-his-words",
+     "ts": 1793574224,
+     "src": "Behind The Steel Curtain",
+     "who": []
+    },
+    {
+     "title": "Steelers \u2018right where we want to be\u2019 entering bye week",
+     "url": "https://www.behindthesteelcurtain.com/pittsburgh-steelers-news/177217/steelers-right-where-we-want-to-be-entering-bye-week-afc-north-standings-bengals-ravens-browns-record-aaron-rodgers-tj-watt",
+     "ts": 1793572539,
+     "src": "Behind The Steel Curtain",
+     "who": []
+    },
+    {
      "title": "Queen is the Steelers Player of the Week",
      "url": "https://www.steelers.com/news/queen-is-the-steelers-player-of-the-week",
      "ts": 1793571300,
      "src": "Steelers.com",
+     "who": []
+    },
+    {
+     "title": "Steelers stock report after Week 8 win over Browns",
+     "url": "https://www.behindthesteelcurtain.com/pittsburgh-steelers-analysis/177213/steelers-stock-report-after-week-8-win-over-browns-jaylen-warren-rico-dowdle-darnell-washington",
+     "ts": 1793569669,
+     "src": "Behind The Steel Curtain",
      "who": []
     },
     {
@@ -5159,13 +7461,6 @@
     }
    ],
    "league": [
-    {
-     "title": "\ud83d\ude08 Steelers' dog-themed jabs at Browns headline Week 8 trolls",
-     "url": "https://www.espn.com/nfl/story/_/id/50353702/nfl-week-8-trolls",
-     "ts": 1793716237,
-     "src": "ESPN",
-     "who": []
-    },
     {
      "title": "Prisco's NFL Week 9 Power Rankings: Bills take over top spot, Steelers on the rise",
      "url": "https://www.cbssports.com/nfl/news/nfl-week-9-power-rankings-bills-steelers/",
@@ -5204,7 +7499,43 @@
   },
   "SEA": {
    "site": "seahawks.com",
+   "fan": "Field Gulls",
    "official": [
+    {
+     "title": "Words of Prey, Seahawks-Bears: Gotta be better if you\u2019re not going to catch any breaks",
+     "url": "https://www.fieldgulls.com/seattle-seahawks-game-analysis/178914/words-of-prey-seahawks-bears-gotta-be-better-nfl-analysis",
+     "ts": 1793724951,
+     "src": "Field Gulls",
+     "who": []
+    },
+    {
+     "title": "Seahawks vs. Cardinals odds: Opening lines for Week 9 matchup",
+     "url": "https://www.fieldgulls.com/seattle-seahawks-betting-odds-spreads-picks/178806/seahawks-vs-cardinals-odds-week-9-opening-lines-point-spread-total",
+     "ts": 1793721600,
+     "src": "Field Gulls",
+     "who": []
+    },
+    {
+     "title": "Seahawks Droppings: Forget repeat, Seahawks might miss playoffs after faceplant vs. Bears",
+     "url": "https://www.fieldgulls.com/seattle-seahawks-game-analysis/178945/seahawks-droppings-forget-repeat-seahawks-might-miss-playoffs-after-faceplant-vs-bears",
+     "ts": 1793718000,
+     "src": "Field Gulls",
+     "who": []
+    },
+    {
+     "title": "Seahawks News: Seahawks look unprepared, overmatched in loss to Bears",
+     "url": "https://www.fieldgulls.com/seattle-seahawks-news/178893/seahawks-news-seahawks-look-unprepared-overmatched-in-loss-to-bears",
+     "ts": 1793714400,
+     "src": "Field Gulls",
+     "who": []
+    },
+    {
+     "title": "Winners and Losers from a troubling Seahawks display against the Bears",
+     "url": "https://www.fieldgulls.com/seattle-seahawks-game-analysis/178847/nfl-analysis-winners-and-losers-seahawks-vs-bears-sam-darnold-brian-fleury",
+     "ts": 1793691385,
+     "src": "Field Gulls",
+     "who": []
+    },
     {
      "title": "Seahawks Beat 'In All Three Phases' Against Bears, 'Optimistic' They Will 'Get Things Right'",
      "url": "https://www.seahawks.com/news/seahawks-beat-in-all-three-phases-in-loss-to-bears-but-are-optimistic-that-we-re-going-to-get-things-right",
@@ -5240,6 +7571,20 @@
      "who": []
     },
     {
+     "title": "Seahawks vs. Bears post-game reaction: What we learned from a damaging Monday night defeat",
+     "url": "https://www.fieldgulls.com/seattle-seahawks-game-analysis/178904/seahawks-vs-bears-post-game-reaction-video-what-we-learned-damaging-monday-night-defeat",
+     "ts": 1793680823,
+     "src": "Field Gulls",
+     "who": []
+    },
+    {
+     "title": "NFC Playoff Picture: Seahawks can\u2019t move into Wild Card spot after loss to Bears",
+     "url": "https://www.fieldgulls.com/seattle-seahawks-nfl-playoffs/178918/nfc-playoff-picture-seattle-seahawks-wild-card-standings-week-8",
+     "ts": 1793680638,
+     "src": "Field Gulls",
+     "who": []
+    },
+    {
      "title": "Rapid Reactions: Seahawks Struggle To Find Offensive Rhythm In 34-17 Loss To Bears",
      "url": "https://www.seahawks.com/news/rapid-reactions-seahawks-struggle-to-find-offensive-rhythm-in-34-17-loss-to-bears",
      "ts": 1793680457,
@@ -5247,10 +7592,31 @@
      "who": []
     },
     {
+     "title": "Seahawks-Bears score: Seahawks blown out in Monday night horror show",
+     "url": "https://www.fieldgulls.com/seattle-seahawks-scores-results/178844/seahawks-bears-score-nfl-results-seahawks-blown-out-mike-macdonald-ben-johnson",
+     "ts": 1793679972,
+     "src": "Field Gulls",
+     "who": []
+    },
+    {
      "title": "Seahawks vs. Bears In-Game Injury Updates: Leonard Williams Questionable To Return",
      "url": "https://www.seahawks.com/news/2026-week-8-seahawks-vs-bears-in-game-injury-updates",
      "ts": 1793676494,
      "src": "Seahawks.com",
+     "who": []
+    },
+    {
+     "title": "Seahawks vs. Bears, \u2018Monday Night Football\u2019 game chat and live discussion",
+     "url": "https://www.fieldgulls.com/seattle-seahawks-discussion/178828/seahawks-vs-bears-monday-night-football-game-chat-live-discussion",
+     "ts": 1793665808,
+     "src": "Field Gulls",
+     "who": []
+    },
+    {
+     "title": "Seahawks-Bears inactives: Uchenna Nwosu sidelined with ankle injury",
+     "url": "https://www.fieldgulls.com/seattle-seahawks-injury-report/178892/seahawks-bears-inactives-uchenna-nwosu-sidelined-ankle-injury",
+     "ts": 1793665013,
+     "src": "Field Gulls",
      "who": []
     },
     {
@@ -5467,7 +7833,14 @@
     {
      "title": "Fantasy buzz: No stopping Bears, Seahawks ease Charbonnet back, Minshew takes over",
      "url": "https://www.espn.com/fantasy/football/story/_/id/40699880/fantasy-football-injuries-position-battles-nfl-news-analysis",
-     "ts": 1793723445,
+     "ts": 1793725016,
+     "src": "ESPN",
+     "who": []
+    },
+    {
+     "title": "Sweet Home Chicago: Simmons stymies Darnold, Seahawks in Bears debut",
+     "url": "https://www.espn.com/nfl/story/_/id/50367539/dt-jeffery-simons-immediate-boon-chicago-bears-defense-win-seattle-seahawks",
+     "ts": 1793724238,
      "src": "ESPN",
      "who": []
     },
@@ -5486,13 +7859,6 @@
      "who": []
     },
     {
-     "title": "Sweet Home Chicago: Simmons stymies Darnold, Seahawks in Bears debut",
-     "url": "https://www.espn.com/nfl/story/_/id/50367539/dt-jeffery-simons-immediate-boon-chicago-bears-defense-win-seattle-seahawks",
-     "ts": 1793716237,
-     "src": "ESPN",
-     "who": []
-    },
-    {
      "title": "NFC West Recap: Seahawks, Rams go opposite ways to .500",
      "url": "https://sports.yahoo.com/articles/nfc-west-recap-seahawks-rams-143000101.html",
      "ts": 1793716200,
@@ -5507,6 +7873,58 @@
      "who": []
     },
     {
+     "title": "Seahawks' Quenton Nelson trade faces immediate questions after ugly Bears loss",
+     "url": "https://www.sportingnews.com/us/nfl/seattle-seahawks/news/seahawks-quenton-nelson-trade-faces-immediate-questions-after-ugly-bears-loss/e9821d63a89db33ffab53eca>",
+     "ts": 1793707470,
+     "src": "Sporting News",
+     "who": []
+    },
+    {
+     "title": "Jeffery Simmons makes immediate impact as Bears' blockbuster trade pays off against Seahawks",
+     "url": "https://www.sportingnews.com/us/nfl/chicago-bears/news/jeffery-simmons-makes-immediate-impact-bears-blockbuster-trade-pays-against-seahawks/4dfbeb29404249770bfca5ac>",
+     "ts": 1793707136,
+     "src": "Sporting News",
+     "who": []
+    },
+    {
+     "title": "How Bears defense solved Jaxon Smith-Njigba problem in win over Seahawks",
+     "url": "https://www.sportingnews.com/us/nfl/news/bears-defense-jaxon-smith-njigba-win-seahawks/56f8207715a49dc2964bf77c>",
+     "ts": 1793682131,
+     "src": "Sporting News",
+     "who": [
+      {
+       "name": "Jaxon Smith-Njigba",
+       "slug": "jaxon-smith-njigba",
+       "team": "SEA"
+      }
+     ]
+    },
+    {
+     "title": "Jaxon Smith-Njigba receiving yards pace: How Seahawks WR can catch Calvin Johnson, Cooper Kupp",
+     "url": "https://www.sportingnews.com/us/nfl/seattle-seahawks/news/jaxon-smith-njigba-receiving-yards-pace-calvin-johnson/cc8ea87c65d76c28736c347d>",
+     "ts": 1793681400,
+     "src": "Sporting News",
+     "who": [
+      {
+       "name": "Jaxon Smith-Njigba",
+       "slug": "jaxon-smith-njigba",
+       "team": "SEA"
+      },
+      {
+       "name": "Cooper Kupp",
+       "slug": "cooper-kupp",
+       "team": "SEA"
+      }
+     ]
+    },
+    {
+     "title": "How Bears benefitted from own delay of game penalty to secure win over Seahawks",
+     "url": "https://www.sportingnews.com/us/nfl/chicago-bears/news/bears-delay-game-penalty-seahawks/4635d557ebd0dc899891a8f5>",
+     "ts": 1793681157,
+     "src": "Sporting News",
+     "who": []
+    },
+    {
      "title": "NFL Week 8 grades for every team: Bears earn 'A+' for destroying Seahawks, Cowboys get an 'F' for choking",
      "url": "https://www.cbssports.com/nfl/news/nfl-week-8-grades-cowboys-get-an-f-steelers-surge-to-a/",
      "ts": 1793680863,
@@ -5514,10 +7932,17 @@
      "who": []
     },
     {
-     "title": "Monday Night Football: Jeffery Simmons, Caleb Williams lead Bears to 34-17 rout of Seahawks",
-     "url": "https://www.nbcsports.com/nfl/profootballtalk/rumor-mill/news/monday-night-football-jeffery-simmons-caleb-williams-lead-bears-to-34-17-rout-of-seahawks",
-     "ts": 1793680090,
-     "src": "ProFootballTalk",
+     "title": "Bears vs. Seahawks final score, result: Chicago dominates in all phases to pick up memorable win over Seattle",
+     "url": "https://www.sportingnews.com/us/nfl/news/bears-seahawks-score-results-highlights-nfl-monday-night-football/81125ee05e80cc913e64cb49>",
+     "ts": 1793679481,
+     "src": "Sporting News",
+     "who": []
+    },
+    {
+     "title": "NFC Notes: Budda Baker, Grey Zabel, Cardinals, Rams, Seahawks",
+     "url": "https://nfltraderumors.co/nfc-notes-budda-baker-grey-zabel-cardinals-rams-seahawks/",
+     "ts": 1793671253,
+     "src": "NFL Trade Rumors",
      "who": []
     },
     {
@@ -5579,7 +8004,15 @@
   },
   "SF": {
    "site": "49ers.com",
+   "fan": "Niners Nation",
    "official": [
+    {
+     "title": "The 49ers are reportedly \u2018still looking for a receiver and a pass rusher\u2019",
+     "url": "https://www.ninersnation.com/san-francisco-49ers-rumors/165155/the-49ers-are-reportedly-still-looking-for-a-receiver-and-a-pass-rusher",
+     "ts": 1793721682,
+     "src": "Niners Nation",
+     "who": []
+    },
     {
      "title": "Morning Report: 49ers Roster Moves, DL DeForest Buckner Talks Return  \ud83d\uddde\ufe0f",
      "url": "https://www.49ers.com/news/morning-reports/morning-report-49ers-roster-moves-dl-deforest-buckner-talks-return",
@@ -5588,10 +8021,79 @@
      "who": []
     },
     {
+     "title": "NFC West Recap: Seahawks, Rams go opposite ways to .500",
+     "url": "https://www.ninersnation.com/san-francisco-49ers-news/165169/nfc-west-recap-seahawks-rams-go-opposite-ways-to-500",
+     "ts": 1793716200,
+     "src": "Niners Nation",
+     "who": []
+    },
+    {
+     "title": "49ers News: We\u2019re on to the Raiders",
+     "url": "https://www.ninersnation.com/san-francisco-49ers-news/165180/49ers-news-week-9-las-vegas-raiders-nfc-west-chicago-bears-seattle-seahawks",
+     "ts": 1793698620,
+     "src": "Niners Nation",
+     "who": []
+    },
+    {
+     "title": "Bears-Seahawks live discussion: Can Caleb Williams steal the show on the road?",
+     "url": "https://www.ninersnation.com/san-francisco-49ers-discussion/165159/bears-seahawks-live-discussion-can-caleb-williams-steal-the-show-on-the-road",
+     "ts": 1793667900,
+     "src": "Niners Nation",
+     "who": []
+    },
+    {
+     "title": "3 new trade targets for the 49ers at receiver",
+     "url": "https://www.ninersnation.com/san-francisco-49ers-analysis/165143/3-new-trade-targets-for-the-49ers-at-receiver",
+     "ts": 1793653466,
+     "src": "Niners Nation",
+     "who": []
+    },
+    {
+     "title": "Brandon Aiyuk hires new representation; aims to play in the NFL again",
+     "url": "https://www.ninersnation.com/san-francisco-49ers-news/165153/brandon-aiyuk-hires-new-representation-aims-to-play-in-the-nfl-again",
+     "ts": 1793651796,
+     "src": "Niners Nation",
+     "who": []
+    },
+    {
+     "title": "49ers fill practice squad spot with a veteran wide receiver",
+     "url": "https://www.ninersnation.com/san-francisco-49ers-injuries/165147/49ers-fill-practice-squad-spot-with-a-veteran-wide-receiver",
+     "ts": 1793647444,
+     "src": "Niners Nation",
+     "who": []
+    },
+    {
      "title": "The 49ers Sign WR KhaDarel Hodge to Practice Squad",
      "url": "https://www.49ers.com/news/the-49ers-sign-wr-khadarel-hodge-to-practice-squad",
      "ts": 1793646000,
      "src": "49ers.com",
+     "who": []
+    },
+    {
+     "title": "49ers vs. Raiders odds: All signs point to points",
+     "url": "https://www.ninersnation.com/san-francisco-49ers-odds/165097/49ers-vs-raiders-odds-week-9-opening-lines-point-spread-total",
+     "ts": 1793640600,
+     "src": "Niners Nation",
+     "who": []
+    },
+    {
+     "title": "Will Mac Jones be a trade target for QB-needy teams?",
+     "url": "https://www.ninersnation.com/san-francisco-49ers-rumors/165135/will-mac-jones-be-a-trade-target-for-qb-needy-teams",
+     "ts": 1793635260,
+     "src": "Niners Nation",
+     "who": [
+      {
+       "name": "Mac Jones",
+       "slug": "mac-jones",
+       "team": "SF"
+      }
+     ]
+    },
+    {
+     "title": "Jauan Jennings nixed a trade to return to the 49ers",
+     "url": "https://www.ninersnation.com/san-francisco-49ers-rumors/165124/jauan-jennings-nixed-a-trade-to-return-to-the-49ers",
+     "ts": 1793629800,
+     "src": "Niners Nation",
      "who": []
     },
     {
@@ -5662,12 +8164,20 @@
   },
   "TB": {
    "site": "buccaneers.com",
+   "fan": "Bucs Nation",
    "official": [
     {
      "title": "2026 Bucs NFL Power Rankings Week 9",
      "url": "https://www.buccaneers.com/news/2026-bucs-nfl-power-rankings-week-9",
      "ts": 1793722501,
      "src": "Buccaneers.com",
+     "who": []
+    },
+    {
+     "title": "Tampa Bay Buccaneers news: Bucs offensive line showing promise",
+     "url": "https://www.bucsnation.com/tampa-bay-buccaneers-news/69578/tampa-bay-buccaneers-news-bucs-offensive-line-showing-promise",
+     "ts": 1793721255,
+     "src": "Bucs Nation",
      "who": []
     },
     {
@@ -5699,10 +8209,31 @@
      "who": []
     },
     {
+     "title": "What does Yaya Diaby\u2019s injury mean for the Buccaneers?",
+     "url": "https://www.bucsnation.com/general/69566/what-does-yaya-diabys-injury-mean-for-the-buccaneers",
+     "ts": 1793637159,
+     "src": "Bucs Nation",
+     "who": []
+    },
+    {
      "title": "Takeaways from Buccaneers-Falcons | Week 8",
      "url": "https://www.buccaneers.com/news/takeaways-from-buccaneers-falcons-week-8",
      "ts": 1793635185,
      "src": "Buccaneers.com",
+     "who": []
+    },
+    {
+     "title": "Bucs vs. Bears odds: Opening lines for Week 9 matchup",
+     "url": "https://www.bucsnation.com/tampa-bay-buccaneers-odds/69495/buccaneers-vs-bears-odds-week-9-opening-lines-point-spread-total",
+     "ts": 1793628000,
+     "src": "Bucs Nation",
+     "who": []
+    },
+    {
+     "title": "Tampa Bay Buccaneers news: Bucs make history in win vs. Falcons",
+     "url": "https://www.bucsnation.com/tampa-bay-buccaneers-news/69558/tampa-bay-buccaneers-news-bucs-make-history-in-win-vs-falcons",
+     "ts": 1793620800,
+     "src": "Bucs Nation",
      "who": []
     },
     {
@@ -5727,6 +8258,13 @@
      "who": []
     },
     {
+     "title": "Buccaneers Week 8 Top Performers vs. Atlanta Falcons",
+     "url": "https://www.bucsnation.com/tampa-bay-buccaneers-analysis/69510/buccaneers-week-8-top-performers-vs-atlanta-falcons",
+     "ts": 1793571156,
+     "src": "Bucs Nation",
+     "who": []
+    },
+    {
      "title": "Buccaneers' Next Game: Tampa Bay Gets Prime-Time Stage in Chicago",
      "url": "https://www.buccaneers.com/news/next-game-tampa-bay-buccaneers-vs-chicago-bears-nfl-season-week-9-2026",
      "ts": 1793570400,
@@ -5738,6 +8276,13 @@
      "url": "https://www.buccaneers.com/news/falcons-bucs-5-notes-nfl-week-8-2026",
      "ts": 1793567400,
      "src": "Buccaneers.com",
+     "who": []
+    },
+    {
+     "title": "Week 8 Game Recap: Buccaneers run game does it again in run-first shutout victory",
+     "url": "https://www.bucsnation.com/tampa-bay-buccaneers-game-information/69504/week-8-game-recap-buccaneers-run-game-does-it-again-run-first-shutout-victory",
+     "ts": 1793566981,
+     "src": "Bucs Nation",
      "who": []
     },
     {
@@ -5762,11 +8307,38 @@
      "who": []
     },
     {
+     "title": "Buccaneers vs. Falcons: Game chat for Week 8",
+     "url": "https://www.bucsnation.com/tampa-bay-buccaneers-discussion/69502/buccaneers-falcons-game-chat-for-nfl-week-8",
+     "ts": 1793554420,
+     "src": "Bucs Nation",
+     "who": []
+    },
+    {
+     "title": "Bucs vs. Falcons Inactives: Tampa Bay without Egbuka against Atlanta",
+     "url": "https://www.bucsnation.com/tampa-bay-buccaneers-injuries/69497/buccaneers-falcons-inactives-tampa-bay-without-emeka-egbuka-atlanta-nfl-week-8",
+     "ts": 1793552924,
+     "src": "Bucs Nation",
+     "who": []
+    },
+    {
      "title": "Falcons-Bucs Inactives | Antoine Winfield Jr. Makes His Return",
      "url": "https://www.buccaneers.com/news/falcons-bucs-inactives-antoine-winfield-jr-makes-his-return",
      "ts": 1793550690,
      "src": "Buccaneers.com",
      "who": []
+    },
+    {
+     "title": "Buccaneers vs. Falcons final injury report: Emeka Egbuka ruled out for Sunday\u2019s game",
+     "url": "https://www.bucsnation.com/tampa-bay-buccaneers-injuries/69489/buccaneers-falcons-final-injury-report-emeka-egbuka-ruled-out-for-sundays-game",
+     "ts": 1793455233,
+     "src": "Bucs Nation",
+     "who": [
+      {
+       "name": "Emeka Egbuka",
+       "slug": "emeka-egbuka",
+       "team": "TB"
+      }
+     ]
     },
     {
      "title": "Buccaneers-Falcons Injury Report Oct.30: Egbuka Ruled Out; Gainwell and Goedeke Questionable",
@@ -5780,6 +8352,13 @@
      "url": "https://www.buccaneers.com/news/defensive-mentality-michael-penix-jr-and-bijan-robinson-breakdown-bucs-blitz-week-8",
      "ts": 1793382663,
      "src": "Buccaneers.com",
+     "who": []
+    },
+    {
+     "title": "NFL predictions: Scores and picks for Week 8 between the Buccaneers and Falcons",
+     "url": "https://www.bucsnation.com/tampa-bay-buccaneers-odds/69384/buccaneers-vs-falcons-predictions-week-8-picks",
+     "ts": 1793376000,
+     "src": "Bucs Nation",
      "who": []
     },
     {
@@ -5899,30 +8478,32 @@
      "ts": 1793721255,
      "src": "Yahoo Sports",
      "who": []
-    },
-    {
-     "title": "Lamar Jackson out again? Zero completions for Baker Mayfield? Let's make sense of a weird Week 8",
-     "url": "https://www.espn.com/nfl/story/_/id/50349483/week-8-barnwell-lamar-bengals-cowboys-buccaneers-chiefs",
-     "ts": 1793630959,
-     "src": "ESPN",
-     "who": [
-      {
-       "name": "Baker Mayfield",
-       "slug": "baker-mayfield",
-       "team": "TB"
-      }
-     ]
     }
    ]
   },
   "TEN": {
    "site": "tennesseetitans.com",
+   "fan": "Music City Miracles",
    "official": [
     {
      "title": "Tuesday Mailbag: Jim Wyatt Answers Questions From Titans Fans After Loss to the Bengals",
      "url": "https://www.tennesseetitans.com/news/tuesday-mailbag-jim-wyatt-answers-questions-from-titans-fans-after-loss-to-the-bengals",
      "ts": 1793722911,
      "src": "Tennesseetitans.com",
+     "who": []
+    },
+    {
+     "title": "Tennessee Titans news: Offense shows life vs. Bengals",
+     "url": "https://www.musiccitymiracles.com/tennessee-titans-news/67628/tennessee-titans-news-offense-shows-life-vs-bengals",
+     "ts": 1793721675,
+     "src": "Music City Miracles",
+     "who": []
+    },
+    {
+     "title": "Jeffery Simmons fantastic in Chicago Bears debut",
+     "url": "https://www.musiccitymiracles.com/tennessee-titans-news/67621/jeffery-simmons-fantastic-in-chicago-bears-debut",
+     "ts": 1793719863,
+     "src": "Music City Miracles",
      "who": []
     },
     {
@@ -5939,6 +8520,32 @@
      ]
     },
     {
+     "title": "Do Titans fans believe in Cam Ward again after Week 8?",
+     "url": "https://www.musiccitymiracles.com/tennessee-titans-news/67599/do-titans-fans-believe-in-cam-ward-again-after-week-8",
+     "ts": 1793647800,
+     "src": "Music City Miracles",
+     "who": [
+      {
+       "name": "Cam Ward",
+       "slug": "cam-ward",
+       "team": "TEN"
+      }
+     ]
+    },
+    {
+     "title": "Cam Ward needs to build on yesterday\u2019s performance against Bengals",
+     "url": "https://www.musiccitymiracles.com/tennessee-titans-news/67605/cam-ward-needs-to-build-on-performance-against-bengals",
+     "ts": 1793639652,
+     "src": "Music City Miracles",
+     "who": [
+      {
+       "name": "Cam Ward",
+       "slug": "cam-ward",
+       "team": "TEN"
+      }
+     ]
+    },
+    {
      "title": "Hot Topics From Titans HC Robert Saleh's Zoom Call on Monday",
      "url": "https://www.tennesseetitans.com/news/hot-topics-from-titans-hc-robert-saleh-s-zoom-call-on-monday-x1002",
      "ts": 1793635959,
@@ -5946,10 +8553,24 @@
      "who": []
     },
     {
+     "title": "Tennessee Titans news: Week 8 vs. Bengals shows promise, but no win",
+     "url": "https://www.musiccitymiracles.com/tennessee-titans-news/67595/tennessee-titans-news-week-8-vs-bengals-shows-promise-but-no-win",
+     "ts": 1793620800,
+     "src": "Music City Miracles",
+     "who": []
+    },
+    {
      "title": "Six Things That Stood Out for the Titans in Sunday's 43-36 Overtime Loss to the Bengals",
      "url": "https://www.tennesseetitans.com/news/six-things-that-stood-out-for-the-titans-in-sunday-s-43-36-overtime-loss-to-the-bengals",
      "ts": 1793578806,
      "src": "Tennesseetitans.com",
+     "who": []
+    },
+    {
+     "title": "Titans fall 43-36 in overtime to Bengals",
+     "url": "https://www.musiccitymiracles.com/tennessee-titans-scores-results/67583/titans-fall-43-36-in-overtime-to-bengals",
+     "ts": 1793569692,
+     "src": "Music City Miracles",
      "who": []
     },
     {
@@ -5967,11 +8588,31 @@
      "who": []
     },
     {
+     "title": "Tennessee Titans discussion: Week 8 live chat during the Bengals game",
+     "url": "https://www.musiccitymiracles.com/tennessee-titans-discussion/67572/tennessee-titans-discussion-week-8-live-chat-during-the-bengals-game",
+     "ts": 1793552400,
+     "src": "Music City Miracles",
+     "who": []
+    },
+    {
      "title": "Game Inactives | Week 8 Titans at Bengals",
      "url": "https://www.tennesseetitans.com/news/game-inactives-week-8-titans-at-bengals",
      "ts": 1793550631,
      "src": "Tennesseetitans.com",
      "who": []
+    },
+    {
+     "title": "Are Titans fans done with Cam Ward?",
+     "url": "https://www.musiccitymiracles.com/tennessee-titans-odds/67568/are-titans-fans-done-with-cam-ward",
+     "ts": 1793536465,
+     "src": "Music City Miracles",
+     "who": [
+      {
+       "name": "Cam Ward",
+       "slug": "cam-ward",
+       "team": "TEN"
+      }
+     ]
     },
     {
      "title": "Weekend Mailbag: Jim Wyatt Answers Questions From Titans Fans Ahead of Sunday's Game at the Bengals",
@@ -5988,10 +8629,30 @@
      "who": []
     },
     {
+     "title": "Carnell Tate injury update: Titans rookie WR not expected to play against Bengals",
+     "url": "https://www.musiccitymiracles.com/tennessee-titans-injuries/67564/carnell-tate-injury-update-titans-rookie-wr-not-expected-to-play-against-bengals",
+     "ts": 1793376484,
+     "src": "Music City Miracles",
+     "who": [
+      {
+       "name": "Carnell Tate",
+       "slug": "carnell-tate",
+       "team": "TEN"
+      }
+     ]
+    },
+    {
      "title": "Titans Promote DT Timmy Horne to Active Roster",
      "url": "https://www.tennesseetitans.com/news/titans-promote-dt-timmy-horne-to-active-roster",
      "ts": 1793372959,
      "src": "Tennesseetitans.com",
+     "who": []
+    },
+    {
+     "title": "NFL predictions: Titans-Bengals matchup could get ugly",
+     "url": "https://www.musiccitymiracles.com/tennessee-titans-odds/67474/titans-vs-bengals-predictions-week-8-picks",
+     "ts": 1793370076,
+     "src": "Music City Miracles",
      "who": []
     },
     {
@@ -6055,7 +8716,108 @@
   },
   "WAS": {
    "site": "commanders.com",
-   "official": [],
+   "fan": "Hogs Haven",
+   "official": [
+    {
+     "title": "WR Trey Amos & CB Antonio Williams: part of Commanders core young talent",
+     "url": "https://www.hogshaven.com/washington-commanders-news/452862/wr-trey-amos-cb-antonio-williams-part-of-commanders-core-young-talent",
+     "ts": 1793721600,
+     "src": "Hogs Haven",
+     "who": [
+      {
+       "name": "Antonio Williams",
+       "slug": "antonio-williams",
+       "team": "WAS"
+      }
+     ]
+    },
+    {
+     "title": "Stefon Diggs, Jayden Daniels among best Commanders from Week 8 win",
+     "url": "https://www.hogshaven.com/washington-commanders-analysis/452802/stefon-diggs-jayden-daniels-eagles-commanders-best-performers-week-8",
+     "ts": 1793703600,
+     "src": "Hogs Haven",
+     "who": [
+      {
+       "name": "Jayden Daniels",
+       "slug": "jayden-daniels",
+       "team": "WAS"
+      },
+      {
+       "name": "Stefon Diggs",
+       "slug": "stefon-diggs",
+       "team": "WAS"
+      }
+     ]
+    },
+    {
+     "title": "Commanders injury update: Jeremy McNichols reportedly out for months",
+     "url": "https://www.hogshaven.com/washington-commanders-injuries/452845/commanders-injury-update-jeremy-mcnichols-eagles-foot-austin-ekeler-rachaad-white",
+     "ts": 1793673539,
+     "src": "Hogs Haven",
+     "who": [
+      {
+       "name": "Jeremy McNichols",
+       "slug": "jeremy-mcnichols",
+       "team": "WAS"
+      }
+     ]
+    },
+    {
+     "title": "Washington Commanders Whiteboard: Notes and observations from Week 8",
+     "url": "https://www.hogshaven.com/washington-commanders-analysis/452286/washington-commanders-notes-philadelphia-eagles-dan-quinn-antonio-williams",
+     "ts": 1793656800,
+     "src": "Hogs Haven",
+     "who": []
+    },
+    {
+     "title": "Dan Quinn: Penalties kept us from playing a complete game",
+     "url": "https://www.hogshaven.com/pressers/451382/dan-quinn-penalties-kept-us-from-playing-a-complete-game",
+     "ts": 1793650678,
+     "src": "Hogs Haven",
+     "who": []
+    },
+    {
+     "title": "Commanders vs. Eagles (game two) \u2013 Studs and Duds",
+     "url": "https://www.hogshaven.com/washington-commanders-analysis/452484/commanders-eagles-studs-duds-winners-losers-antonio-williams-trey-amos",
+     "ts": 1793647158,
+     "src": "Hogs Haven",
+     "who": []
+    },
+    {
+     "title": "Commanders: 27 straight points bury Eagles, breathe life back into season",
+     "url": "https://www.hogshaven.com/washington-commanders-news/452280/27-straight-points-bury-eagles-breathe-life-back-into-commanders-season",
+     "ts": 1793624400,
+     "src": "Hogs Haven",
+     "who": []
+    },
+    {
+     "title": "Commanders vs. Rams odds: Opening lines for Week 9 matchup",
+     "url": "https://www.hogshaven.com/washington-commanders-odds/452206/commanders-vs-rams-odds-week-9-opening-lines-point-spread-total",
+     "ts": 1793617200,
+     "src": "Hogs Haven",
+     "who": []
+    },
+    {
+     "title": "How Jayden Daniels sideline speech impacted Commanders win over Eagles",
+     "url": "https://www.hogshaven.com/washington-commanders-analysis/452442/commanders-eagles-jayden-daniels-sideline-speech-snf-nfl-week-8",
+     "ts": 1793608609,
+     "src": "Hogs Haven",
+     "who": [
+      {
+       "name": "Jayden Daniels",
+       "slug": "jayden-daniels",
+       "team": "WAS"
+      }
+     ]
+    },
+    {
+     "title": "Commanders report card: Team grades in NFL Week 8 win Eagles",
+     "url": "https://www.hogshaven.com/washington-commanders-analysis/452385/commanders-report-card-nfl-week-8-eagles-jayden-daniels-dan-quinn-saquon-barkley",
+     "ts": 1793602372,
+     "src": "Hogs Haven",
+     "who": []
+    }
+   ],
    "league": [
     {
      "title": "WR Trey Amos & CB Antonio Williams comprise part of Commanders core young talent - Daily Slop",
@@ -6069,13 +8831,6 @@
        "team": "WAS"
       }
      ]
-    },
-    {
-     "title": "Eagles-Commanders Film Review: The idea that Jalen Hurts was holding this offense back should be finished by now",
-     "url": "https://sports.yahoo.com/articles/eagles-commanders-film-review-idea-141843566.html",
-     "ts": 1793715523,
-     "src": "Yahoo Sports",
-     "who": []
     },
     {
      "title": "Week 9 NFL odds, picks, predictions: Computer model backs Chiefs and Commanders",

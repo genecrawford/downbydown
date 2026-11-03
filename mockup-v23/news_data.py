@@ -8,11 +8,26 @@ SITES = dict(ARI='azcardinals.com', ATL='atlantafalcons.com', BAL='baltimorerave
   IND='colts.com', JAX='jaguars.com', KC='chiefs.com', LV='raiders.com', LAC='chargers.com', LA='therams.com', MIA='miamidolphins.com', MIN='vikings.com',
   NE='patriots.com', NO='neworleanssaints.com', NYG='giants.com', NYJ='newyorkjets.com', PHI='philadelphiaeagles.com', PIT='steelers.com', SF='49ers.com',
   SEA='seahawks.com', TB='buccaneers.com', TEN='tennesseetitans.com', WAS='commanders.com')
-LEAGUE = {'CBS Sports': 'https://www.cbssports.com/rss/headlines/nfl/', 'ESPN': 'https://www.espn.com/espn/rss/nfl/news',
+FAN = dict(ARI=('revengeofthebirds.com', 'Revenge of the Birds'), ATL=('thefalcoholic.com', 'The Falcoholic'), BAL=('baltimorebeatdown.com', 'Baltimore Beatdown'),
+  BUF=('buffalorumblings.com', 'Buffalo Rumblings'), CAR=('catscratchreader.com', 'Cat Scratch Reader'), CHI=('windycitygridiron.com', 'Windy City Gridiron'),
+  CIN=('cincyjungle.com', 'Cincy Jungle'), CLE=('dawgsbynature.com', 'Dawgs By Nature'), DAL=('bloggingtheboys.com', 'Blogging The Boys'),
+  DEN=('milehighreport.com', 'Mile High Report'), DET=('prideofdetroit.com', 'Pride Of Detroit'), GB=('acmepackingcompany.com', 'Acme Packing Company'),
+  HOU=('battleredblog.com', 'Battle Red Blog'), IND=('stampedeblue.com', 'Stampede Blue'), JAX=('bigcatcountry.com', 'Big Cat Country'),
+  KC=('arrowheadpride.com', 'Arrowhead Pride'), LV=('silverandblackpride.com', 'Silver And Black Pride'), LAC=('boltsfromtheblue.com', 'Bolts From The Blue'),
+  LA=('turfshowtimes.com', 'Turf Show Times'), MIA=('thephinsider.com', 'The Phinsider'), MIN=('dailynorseman.com', 'Daily Norseman'),
+  NE=('patspulpit.com', "Pats Pulpit"), NO=('canalstreetchronicles.com', 'Canal Street Chronicles'), NYG=('bigblueview.com', 'Big Blue View'),
+  NYJ=('ganggreennation.com', 'Gang Green Nation'), PHI=('bleedinggreennation.com', 'Bleeding Green Nation'), PIT=('behindthesteelcurtain.com', 'Behind The Steel Curtain'),
+  SF=('ninersnation.com', 'Niners Nation'), SEA=('fieldgulls.com', 'Field Gulls'), TB=('bucsnation.com', 'Bucs Nation'),
+  TEN=('musiccitymiracles.com', 'Music City Miracles'), WAS=('hogshaven.com', 'Hogs Haven'))
+LEAGUE = {'NFL Trade Rumors': 'https://www.nfltraderumors.co/feed/',
+  'Sporting News': 'https://www.sportingnews.com/us/rss/nfl', 'CBS Sports': 'https://www.cbssports.com/rss/headlines/nfl/', 'ESPN': 'https://www.espn.com/espn/rss/nfl/news',
   'ProFootballTalk': 'https://profootballtalk.nbcsports.com/feed/', 'Yahoo Sports': 'https://sports.yahoo.com/nfl/rss/'}
 def get(u):
     try:
-        with urllib.request.urlopen(urllib.request.Request(u, headers={'User-Agent': UA}), timeout=20) as r: return r.read().decode('utf-8', 'replace')
+        with urllib.request.urlopen(urllib.request.Request(u, headers={'User-Agent': UA}), timeout=20) as r:
+            b = r.read()
+            if b[:2] == b'\x1f\x8b': import gzip; b = gzip.decompress(b)
+            return b.decode('utf-8', 'replace')
     except Exception as ex: return ''
 def items(x):
     out = []
@@ -23,10 +38,18 @@ def items(x):
         try: ts = int(email.utils.parsedate_to_datetime(clean(d.group(1))).timestamp()) if d else 0
         except Exception: ts = 0
         out.append({'title': clean(t.group(1)), 'url': clean(l.group(1)), 'ts': ts})
+    for it in re.findall(r'<entry\b.*?</entry>', x, re.S):
+        t = re.search(r'<title[^>]*>(.*?)</title>', it, re.S); l = re.search(r'<link[^>]*rel="alternate"[^>]*href="([^"]+)"', it) or re.search(r'<link[^>]*href="([^"]+)"', it)
+        d = re.search(r'<published>(.*?)</published>', it) or re.search(r'<updated>(.*?)</updated>', it)
+        if not (t and l): continue
+        try: ts = int(datetime.datetime.fromisoformat(d.group(1).strip().replace('Z', '+00:00')).timestamp()) if d else 0
+        except Exception: ts = 0
+        out.append({'title': html.unescape(re.sub(r'<!\[CDATA\[|\]\]>', '', t.group(1))).strip(), 'url': html.unescape(l.group(1)), 'ts': ts})
     return out
 with cf.ThreadPoolExecutor(12) as ex:
     team_raw = dict(zip(SITES, ex.map(lambda t: get(f'https://www.{SITES[t]}/rss/news'), SITES)))
     league_raw = dict(zip(LEAGUE, ex.map(get, LEAGUE.values())))
+    fan_raw = dict(zip(FAN, ex.map(lambda t: get(f'https://www.{FAN[t][0]}/rss/index.xml'), FAN)))
 now = int(datetime.datetime.now(datetime.timezone.utc).timestamp()); WEEK = 7 * 86400
 P = json.load(open('data/players/index.json'))['players']
 names = {}
@@ -35,11 +58,15 @@ names = {n: v[0] for n, v in names.items() if len(v) == 1 and len(n) > 7}
 COLLEGE = r'(?<!Nittany )(?<!Penn State )(?<!Baylor )(?<!Pitt )(?<!Florida )(?<!Louisville )(?<!Winnipeg )(?<!Boston College )(?<!Colorado State )(?<!St\. Louis )(?<!Texas Southern )'
 nick = {t: re.compile(COLLEGE + r'\b(' + re.escape(T[t]['nick']) + '|' + re.escape(T[t]['name']) + r')\b') for t in T}
 def players_in(title): return [{'name': n, 'slug': p['slug'], 'team': p['team']} for n, p in names.items() if n in title][:2]
-news = {t: {'site': SITES[t], 'official': [], 'league': []} for t in T}
+news = {t: {'site': SITES[t], 'fan': FAN[t][1], 'official': [], 'league': []} for t in T}
 for t, x in team_raw.items():
     for it in items(x)[:30]:
         if now - it['ts'] > WEEK: continue
         news[t]['official'].append({**it, 'src': SITES[t][0].upper() + SITES[t][1:], 'who': [q for q in players_in(it['title']) if q['team'] == t]})
+for t, x in fan_raw.items():
+    for it in items(x):
+        if now - it['ts'] > WEEK: continue
+        news[t]['official'].append({**it, 'src': FAN[t][1], 'who': [q for q in players_in(it['title']) if q['team'] == t]})
 seen = set()
 for src, x in league_raw.items():
     for it in items(x):

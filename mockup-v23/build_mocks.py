@@ -146,8 +146,8 @@ def panel(t, nick, site):
     N = NEWS['news'][t]
     col = lambda h, items, empty: (f'<div class="nw-col"><h3>{h}</h3>' + (f'<ol>{rows(items)}</ol>' if items else f'<p class="nw-empty">{empty}</p>') +
                                    (f'<button type="button" class="nw-btn" onclick="this.parentNode.classList.add(\'open\');this.remove()">Show more</button>' if len(items) > 5 else '') + '</div>')
-    return (f'<section class="dbd-panel dbd-news mock-new" id="news"><div class="dbd-ph"><span class="dbd-lab"><b>{nick} news</b> · the last 7 days, from the team site and around the league</span></div>'
-            f'<div class="nw-cols">' + col(f'From {site}', N['official'], f'No stories from {site} this week.') +
+    return (f'<section class="dbd-panel dbd-news mock-new" id="news"><div class="dbd-ph"><span class="dbd-lab"><b>{nick} news</b> · the last 7 days, from the team, its fans and around the league</span></div>'
+            f'<div class="nw-cols">' + col(f'{site.capitalize()} and {N["fan"]}', N['official'], f'No stories from {site} or {N["fan"]} this week.') +
             col('Around the league', N['league'], f'No {nick} stories from the league feeds this week.') + '</div></section>')
 NCSS = '''<style>
 .dbd .dbd-news .nw-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 28px;padding:4px var(--dbd-edge) 14px}
