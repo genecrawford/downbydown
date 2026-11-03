@@ -58,7 +58,10 @@ jobs:
           def need(c, m):
               if not c: raise SystemExit('team news: ' + m)
           M = d['MIN']; T = [x['h'] for x in M['t']]; L = [x['h'] for x in M['l']]
-          need(len(T) == 7, f'the Vikings team column has {len(T)} stories, want 7: {T}')
+          need(len(T) == 8, f'the Vikings team column has {len(T)} stories, want 8: {T}')
+          need('A newer Norseman story the stale copy lacks' in T, 'a stale feed copy took away a newer stored story (2.9.1)')
+          need('A Vikings.com story from eight days ago' not in T, 'a stored story older than 7 days was kept')
+          need('older copy' in o['status']['fan:MIN']['err'], 'a feed that sent an older copy of itself is not flagged')
           need('A Story From Two Weeks Ago' not in T, 'a story older than 7 days was kept')
           need('NFL Week 9 Power Rankings: You decide' not in T, 'an Athletic team-feed story naming no Viking was kept')
           need('Justin Jefferson and the new shape of the offense' in T, 'an Athletic story naming a Vikings player was dropped')
