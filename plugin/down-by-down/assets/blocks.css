@@ -118,7 +118,7 @@
 .dbd-hb.dbd-hb .hb-list{margin:0;padding:0;list-style:none}
 .dbd-hb.dbd-hb .hb-list li{display:flex;align-items:center;gap:12px;margin:0;padding:9px 0;border-top:1px solid var(--line);list-style:none}
 .dbd-hb.dbd-hb .hb-list li::before{content:none}
-.hb-list li>span:not(.dbd-head):not(.dbd-lgw){flex:1;min-width:0}
+.hb-list li>span:not(.dbd-head):not(.dbd-lgw):not(.n){flex:1;min-width:0}
 .hb-list b{display:block;font:600 15px "IBM Plex Sans",sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dbd-hb.dbd-hb .hb-list b a{color:var(--ink)}
 .dbd-hb.dbd-hb .hb-list b a:hover{text-decoration:underline;text-underline-offset:3px}
@@ -143,6 +143,8 @@
 .hb-board{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 18px}
 .dbd-hb.dbd-hb .hb-board h3{margin:0;padding:0;color:var(--ink);font:800 22px/1.1 "Tourney",sans-serif;text-transform:uppercase}
 .dbd-hb.dbd-hb .hb-board .sub{margin:2px 0 8px;font:500 13px "IBM Plex Sans",sans-serif;color:var(--muted)}
+.dbd-hb.dbd-hb .hb-board .hb-list li{gap:10px}
+.hb-board .hb-list b{font-size:14px;line-height:1.25;white-space:normal;overflow:visible}  /* long names wrap rather than cut off */
 .hb-board .hb-list .n{flex:none;width:18px;font:800 16px "Tourney",sans-serif;color:var(--muted)}
 .hb-board .hb-list em{flex:none;font:800 17px "Tourney",sans-serif;font-style:normal;white-space:nowrap}
 
@@ -155,4 +157,5 @@
 .hb-div a span{flex:1;min-width:0;font:700 16px "Barlow Condensed",sans-serif;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hb-div a em{flex:none;font:600 12px "IBM Plex Mono",monospace;font-style:normal;color:var(--muted)}
 @media (max-width:1000px){.dbd-hb.hb-teams{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:420px){.dbd-hb.hb-teams{gap:10px}.hb-div{padding:10px 8px}.dbd-hb.dbd-hb .hb-div a{gap:7px;padding:6px 4px;margin:0}.hb-div a span{font-size:14px;letter-spacing:.03em}.hb-div a em{font-size:11px}}
+@media (max-width:420px){.dbd-hb.hb-teams{gap:10px}.hb-div{padding:10px 8px}.dbd-hb.dbd-hb .hb-div a{gap:6px;padding:6px 4px;margin:0}.hb-div a span{font-size:14px;letter-spacing:.02em}.hb-div a em{font-size:11px}
+  .hb-div a>.dbd-lgw,.hb-div a>svg{width:22px!important;height:22px!important}}  /* a smaller mark so "Commanders" fits beside 2-4-1 */
