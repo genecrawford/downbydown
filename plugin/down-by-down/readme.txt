@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.1.0
+Stable tag: 2.2.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,9 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.2.0 =
+* `[dbd_block type="week-highlights"]`: the latest week in review in three cards (the play of the week, the swing of the week, the upsets with each winner's chance at kickoff and the wildest other game), for the home's second section.
 
 = 2.1.0 =
 * Live blocks for pages built in the theme: `[dbd_block type="hero-map"]` (the week's most-targeted player, his line and every target on the field; `player="…"` pins one), `[dbd_block type="games"]` (this week's games as score tiles, the next one flagged) and `[dbd_block type="counts"]` (snaps, games, players, offenses and defenses). Each draws this week's data, is cached until the next data build, and takes the surrounding text color for its headings, so it sits on any background.

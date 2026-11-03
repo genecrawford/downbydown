@@ -1,0 +1,35 @@
+<style>
+/* Down x Down main nav: chalk lettering on the field, a red first-down line under the link you're on or hovering.
+   The doubled class beats Divi's own list and link rules. */
+.dxd-nav{--dxd-red:#cb2026;position:relative;background:#213a29;font-family:"Barlow Condensed","Arial Narrow",sans-serif;border-bottom:2px solid rgba(255,255,255,.9)}
+.dxd-nav::after{content:"";position:absolute;left:0;right:0;bottom:0;height:7px;pointer-events:none;
+  background:repeating-linear-gradient(90deg,rgba(255,255,255,.28) 0 1px,transparent 1px 2%)}
+.dxd-nav.dxd-nav ul{display:flex;flex-wrap:wrap;justify-content:center;max-width:1240px;margin:0 auto;padding:0 clamp(12px,3vw,40px);list-style:none}
+.dxd-nav.dxd-nav li{margin:0;padding:0;list-style:none}
+.dxd-nav.dxd-nav li::before{content:none}
+.dxd-nav.dxd-nav a{position:relative;display:block;padding:19px clamp(10px,1.3vw,18px) 22px;color:#fff;opacity:.82;font-size:15px;font-weight:700;line-height:1;letter-spacing:.12em;text-transform:uppercase;text-decoration:none;white-space:nowrap;transition:opacity .15s}
+.dxd-nav.dxd-nav a::after{content:"";position:absolute;left:clamp(10px,1.3vw,18px);right:clamp(10px,1.3vw,18px);bottom:11px;height:3px;background:var(--dxd-red);transform:scaleX(0);transform-origin:left center;transition:transform .2s ease-out}
+.dxd-nav.dxd-nav a:hover,.dxd-nav.dxd-nav a:focus-visible,.dxd-nav.dxd-nav a[aria-current="page"]{opacity:1}
+.dxd-nav.dxd-nav a:hover::after,.dxd-nav.dxd-nav a:focus-visible::after,.dxd-nav.dxd-nav a[aria-current="page"]::after{transform:scaleX(1)}
+.dxd-nav.dxd-nav a:focus-visible{outline:2px solid #fff;outline-offset:-6px;border-radius:4px}
+@media (prefers-reduced-motion:reduce){.dxd-nav.dxd-nav a::after{transition:none}}
+/* a phone: three to a row, no sideways scroll */
+@media (max-width:700px){
+  .dxd-nav.dxd-nav ul{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));padding:6px 8px 12px}
+  .dxd-nav.dxd-nav a{padding:12px 4px 15px;font-size:13px;letter-spacing:.08em;text-align:center;white-space:normal}
+  .dxd-nav.dxd-nav a::after{left:22%;right:22%;bottom:7px;transform-origin:center}
+}
+</style>
+<nav class="dxd-nav" aria-label="Main">
+<ul>
+ 	<li><a href="https://downbydown.com/hub/#dbd-slate">Slate</a></li>
+ 	<li><a href="https://downbydown.com/hub/#dbd-teams">Teams</a></li>
+ 	<li><a href="https://downbydown.com/players/">Players</a></li>
+ 	<li><a href="https://downbydown.com/my-team/">My team</a></li>
+ 	<li><a href="https://downbydown.com/matchups/">Matchups</a></li>
+ 	<li><a href="https://downbydown.com/week/">Week in review</a></li>
+ 	<li><a href="https://downbydown.com/teams/">Play explorer</a></li>
+ 	<li><a href="https://downbydown.com/leaders/">Leaders</a></li>
+ 	<li><a href="https://downbydown.com/about/">About</a></li>
+</ul>
+</nav>

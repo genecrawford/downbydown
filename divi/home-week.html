@@ -1,0 +1,33 @@
+<style>
+/* Down x Down home: "What happened this week". Paste this whole file into one Divi Code module, in a section under the hero.
+   The marker, heading and link are yours to edit here; the three cards are the plugin's week-highlights block (2.2.0+). */
+.et_pb_column:has(.dxd-week){padding:0!important}
+.et_pb_module:has(.dxd-week){align-items:stretch!important}  /* Divi centers a module's content, which would shrink the section */
+.et_pb_text_inner:has(.dxd-week),.et_pb_code_inner:has(.dxd-week){width:100%!important;max-width:none!important}
+.dxd-week{background:#f4f1ea;color:#121417;font-family:"IBM Plex Sans",system-ui,sans-serif;-webkit-font-smoothing:auto;-moz-osx-font-smoothing:auto}  /* Divi's antialiased smoothing hollows Tourney */
+.dxd-week *{box-sizing:border-box}
+.dxd-week p:empty{display:none}
+.dxd-week .dxd-wrap{max-width:1240px;margin:0 auto;padding:clamp(40px,6vw,72px) clamp(16px,4vw,48px)}
+.dxd-week .dxd-sec-h{display:flex;flex-wrap:wrap;align-items:flex-end;gap:6px 20px;margin-bottom:22px}
+/* the sideline down marker */
+.dxd-dm{display:flex;flex-basis:100%;align-items:center;gap:10px;margin-bottom:4px}
+.dxd-dm .b{display:flex;align-items:flex-start;justify-content:center;width:48px;height:48px;padding-top:4px;border-radius:7px;background:#cb2026;color:#fff}
+.dxd-dm .b b{font:800 32px/1 "Tourney",sans-serif}
+.dxd-dm .b sup{margin-top:2px;font:700 13px "Barlow Condensed",sans-serif;text-transform:uppercase;vertical-align:baseline;top:0}
+.dxd-dm .t b{display:block;font:700 26px/1 "Barlow Condensed",sans-serif;letter-spacing:.04em;text-transform:uppercase}
+.dxd-dm .t small{display:block;margin-top:3px;font:600 11px "IBM Plex Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:#5d616a}
+.dxd-week h2{margin:0;padding:0;color:#121417;font:800 clamp(30px,3.6vw,48px)/1.02 "Tourney",sans-serif;text-transform:uppercase}
+.dxd-week .dxd-more{margin-left:auto;color:#121417;font:700 14px "Barlow Condensed",sans-serif;letter-spacing:.12em;text-transform:uppercase;text-decoration:underline;text-underline-offset:4px;white-space:nowrap}
+.dxd-week .dxd-more:hover{color:#cb2026}
+@media (max-width:700px){.dxd-week .dxd-more{margin-left:0}}
+</style>
+<section class="dxd-week">
+<div class="dxd-wrap">
+<div class="dxd-sec-h">
+<span class="dxd-dm" aria-hidden="true"><span class="b"><b>1</b><sup>st</sup></span><span class="t"><b>&amp; 10</b><small>Own 25</small></span></span>
+<h2>What happened this week</h2>
+<a class="dxd-more" href="https://downbydown.com/week/">The full week in review</a>
+</div>
+<div class="dxd-cards">[dbd_block type="week-highlights"]</div>
+</div>
+</section>
