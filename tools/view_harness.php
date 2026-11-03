@@ -151,7 +151,8 @@ if ( $view === 'block' || $view === 'page' ) {
 		if ( $view === 'block' ) {
 			parse_str( (string) ( $argv[4] ?? '' ), $atts ); $html = DBD_Blocks::render( $arg, $atts ); $name = 'block-' . $arg;
 			echo "block $arg: " . strlen( $html ) . " bytes, $warnings warnings\n";
-			if ( strlen( $html ) < ( $arg === 'counts' ? 100 : 600 ) ) { fwrite( STDERR, "block $arg: suspiciously short\n" ); exit( 3 ); }
+			$min = array( 'counts' => 100, 'player-card' => 150 )[ $arg ] ?? 600;  /* counts is one line; player-card is one linked image */
+			if ( strlen( $html ) < $min ) { fwrite( STDERR, "block $arg: suspiciously short\n" ); exit( 3 ); }
 		} else {
 			$src = (string) @file_get_contents( $arg ); if ( $src === '' ) { fwrite( STDERR, "no page file $arg\n" ); exit( 2 ); }
 			$n = 0; $html = preg_replace_callback( '/\[dbd_block\s+([^\]]*)\]/', function ( $m ) use ( &$n ) { $n++; preg_match_all( '/(\w+)="([^"]*)"/', $m[1], $kv, PREG_SET_ORDER ); $a = array(); foreach ( $kv as $p ) { $a[ strtolower( $p[1] ) ] = $p[2]; } return DBD_Blocks::render( strtolower( $a['type'] ?? '' ), $a ); }, $src );

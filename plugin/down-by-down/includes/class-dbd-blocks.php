@@ -8,12 +8,14 @@
  *   counts    one line: snaps charted, games, players, offenses and defenses
  *   week-highlights  the latest week in review in three cards: the play of the week, the swing of the week, the upsets and the wildest game
  *   matchup   the game of the week (picked the way the hub picks it) with its biggest edge, over a four-row offense vs defense
+ *   player-card  a player's share card image linked to his page: the week's biggest riser in target share (player="id" pins one)
+ *   movers    the biggest jumps in target share in the latest finished week, before and after (count="4", 1 to 5)
  * Styles: assets/blocks.css. The blocks inherit the surrounding text color for their headings and lines, so they sit on any background.
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 class DBD_Blocks {
-	const TYPES = array( 'hero-map', 'games', 'counts', 'week-highlights', 'matchup' );
+	const TYPES = array( 'hero-map', 'games', 'counts', 'week-highlights', 'matchup', 'player-card', 'movers' );
 
 	public static function init() {
 		add_shortcode( 'dbd_block', array( __CLASS__, 'shortcode' ) );
@@ -245,5 +247,34 @@ class DBD_Blocks {
 		}
 		if ( $rows ) { $h .= '<div class="hb-h2h"><div class="hh">' . DBD_Marks::tile( $O, 26 ) . '<b>' . esc_html( self::nick( $O ) ) . ' offense</b><span>vs</span><b>' . esc_html( self::nick( $D ) ) . ' defense</b>' . DBD_Marks::tile( $D, 26 ) . '</div>' . $rows . '</div>'; }
 		return self::wrap( 'matchup', $h );
+	}
+
+	/** A week as a sentence names it: "Week 8", or "the Wild Card round", "the Super Bowl" in the playoffs. */
+	private static function week_name( $wk ) { $l = DBD_Router::week_label( $wk ); return strpos( $l, 'Week ' ) === 0 ? $l : 'the ' . $l . ( $l === 'Super Bowl' ? '' : ' round' ); }
+
+	/** The risers in target share from the Players page's movers file (the latest week with every game final), and that week. */
+	private static function movers() {
+		$mv = DBD_Data::get( 'players/movers.json' );
+		$up = array_values( array_filter( (array) ( $mv['targets']['up'] ?? array() ), function ( $m ) { return ! empty( $m['id'] ) && DBD_Data::player( (string) $m['id'] ); } ) );
+		return array( $up, (int) ( $mv['week'] ?? 0 ) );
+	}
+
+	/** A player's share card (default: the week's biggest riser in target share), linked to his page. No card drawing on the host: no block. */
+	private static function b_player_card( $a ) {
+		if ( ! DBD_Card::available() ) { return ''; }
+		$pid = (string) ( $a['player'] ?? '' );
+		if ( $pid === '' ) { $pid = (string) ( self::movers()[0][0]['id'] ?? '' ); }
+		$p = $pid !== '' ? DBD_Data::player( $pid ) : null; if ( ! $p ) { return ''; }
+		return self::wrap( 'player-card', '<a href="' . self::u( array( 'player' => $pid ) ) . '"><img src="' . esc_url( DBD_Card::url( $pid ) ) . '" alt="' . esc_attr( $p['name'] . "'s share card" ) . '" width="1200" height="630" loading="lazy" decoding="async"></a>' );
+	}
+
+	/** The biggest jumps in target share in the latest finished week: his share before that week, and that week's. The data keeps five. */
+	private static function b_movers( $a ) {
+		list( $up, $wk ) = self::movers(); $up = array_slice( $up, 0, max( 1, min( 5, (int) ( $a['count'] ?? 4 ) ) ) ); if ( ! $up ) { return ''; }
+		$li = '';
+		foreach ( $up as $m ) {
+			$li .= '<li>' . DBD_Marks::player( $m['team'], $m['num'] ?? null, 40, $m['photo'] ?? null ) . '<span><b><a href="' . self::u( array( 'player' => $m['id'] ) ) . '">' . esc_html( $m['name'] ) . '</a></b><small>' . esc_html( ( $m['pos'] ?? '' ) . ' · ' . self::nick( $m['team'] ) ) . '</small></span><em>' . round( (float) $m['before'] ) . '% <i aria-hidden="true">→</i><span class="screen-reader-text"> to </span> <strong>' . round( (float) $m['now'] ) . '%</strong></em></li>';
+		}
+		return self::wrap( 'movers', '<div class="hb-panel"><p class="k">' . esc_html( ( $wk ? 'Rising in ' . self::week_name( $wk ) : 'Rising' ) . ' · share of targets' ) . '</p><ul class="hb-list">' . $li . '</ul></div>' );
 	}
 }

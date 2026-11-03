@@ -1,0 +1,39 @@
+<style>
+/* Down x Down home: the players section. Paste this whole file into one Divi Code module, in a section under the matchup section.
+   The marker, heading and link are yours to edit here; the share card and the risers are the plugin's player-card and movers blocks (2.4.0+). */
+.et_pb_column:has(.dxd-pl){padding:0!important}
+.et_pb_module:has(.dxd-pl){align-items:stretch!important}  /* Divi centers a module's content, which would shrink the section */
+.et_pb_text_inner:has(.dxd-pl),.et_pb_code_inner:has(.dxd-pl){width:100%!important;max-width:none!important}
+.dxd-pl{background:#f4f1ea;color:#121417;border-top:1px solid rgba(22,30,54,.22);font-family:"IBM Plex Sans",system-ui,sans-serif;-webkit-font-smoothing:auto;-moz-osx-font-smoothing:auto}  /* Divi's antialiased smoothing hollows Tourney */
+.dxd-pl *{box-sizing:border-box}
+.dxd-pl p:empty{display:none}
+.dxd-pl .dxd-wrap{max-width:1240px;margin:0 auto;padding:clamp(40px,6vw,72px) clamp(16px,4vw,48px)}
+.dxd-pl .dxd-sec-h{display:flex;flex-wrap:wrap;align-items:flex-end;gap:6px 20px;margin-bottom:22px}
+/* the sideline down marker */
+.dxd-pl .dxd-dm{display:flex;flex-basis:100%;align-items:center;gap:10px;margin-bottom:4px}
+.dxd-pl .dxd-dm .b{display:flex;align-items:flex-start;justify-content:center;width:48px;height:48px;padding-top:4px;border-radius:7px;background:#cb2026;color:#fff}
+.dxd-pl .dxd-dm .b b{font:800 32px/1 "Tourney",sans-serif}
+.dxd-pl .dxd-dm .b sup{margin-top:2px;font:700 13px "Barlow Condensed",sans-serif;text-transform:uppercase;vertical-align:baseline;top:0}
+.dxd-pl .dxd-dm .t b{display:block;font:700 26px/1 "Barlow Condensed",sans-serif;letter-spacing:.04em;text-transform:uppercase}
+.dxd-pl .dxd-dm .t small{display:block;margin-top:3px;font:600 11px "IBM Plex Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:#5d616a}
+.dxd-pl h2{margin:0;padding:0;color:#121417;font:800 clamp(30px,3.6vw,48px)/1.02 "Tourney",sans-serif;text-transform:uppercase}
+.dxd-pl .dxd-more{margin-left:auto;color:#121417;font:700 14px "Barlow Condensed",sans-serif;letter-spacing:.12em;text-transform:uppercase;text-decoration:underline;text-underline-offset:4px;white-space:nowrap}
+.dxd-pl .dxd-more:hover{color:#cb2026}
+.dxd-pl .dxd-two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(16px,2.4vw,32px);align-items:stretch}
+.dxd-pl .dxd-list>.dbd-hb,.dxd-pl .dxd-list .hb-panel{height:100%}  /* the risers panel runs the card's height */
+@media (max-width:900px){.dxd-pl .dxd-two{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:700px){.dxd-pl .dxd-more{margin-left:0}}
+</style>
+<section class="dxd-pl">
+<div class="dxd-wrap">
+<div class="dxd-sec-h">
+<span class="dxd-dm" aria-hidden="true"><span class="b"><b>1</b><sup>st</sup></span><span class="t"><b>&amp; 10</b><small>Own 41</small></span></span>
+<h2>Every player, in context</h2>
+<a class="dxd-more" href="https://downbydown.com/players/">Every player</a>
+</div>
+<div class="dxd-two">
+<div class="dxd-card">[dbd_block type="player-card"]</div>
+<div class="dxd-list">[dbd_block type="movers"]</div>
+</div>
+</div>
+</section>
