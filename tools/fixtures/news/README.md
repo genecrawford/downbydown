@@ -1,0 +1,2 @@
+Made-up feeds for the team news harness (SCOPE §49): `php tools/view_harness.php <data> news tools/fixtures/news`.
+The clock is pinned at 2026-11-03 18:00 UTC. A feed key's file is its key with `:` and spaces as `-` (`league:CBS Sports` is `league-CBS-Sports.xml`); a feed with no file reads as empty, and one listed in `fail.txt` as failed. `prev.json` is the previous pass's stored lists.

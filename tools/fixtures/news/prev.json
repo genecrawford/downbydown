@@ -1,0 +1,26 @@
+{
+ "DET": {
+  "at": 1793707200,
+  "t": [
+   {
+    "h": "Pride Of Detroit film study from yesterday",
+    "u": "https://example.test/pod/film",
+    "ts": 1793642400,
+    "s": "Pride Of Detroit",
+    "f": "fan:DET",
+    "x": 0,
+    "w": []
+   },
+   {
+    "h": "Pride Of Detroit story from ten days ago",
+    "u": "https://example.test/pod/old",
+    "ts": 1792864800,
+    "s": "Pride Of Detroit",
+    "f": "fan:DET",
+    "x": 0,
+    "w": []
+   }
+  ],
+  "l": []
+ }
+}

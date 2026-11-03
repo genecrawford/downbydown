@@ -7,6 +7,8 @@
  *   DBD_HARNESS_ROOT=1: the app page is /hub/, not the front page, with paths at the root
  *   live blocks (class-dbd-blocks.php): block <type> ['k=v&k=v' attributes] | page <html file> (a theme page with its [dbd_block] shortcodes drawn)
  *   the weekly post (class-dbd-post.php, SCOPE §46): post <N> (DBD_HARNESS_AHEAD=0 leaves out next week, as a backfilled post does) | sitemap (every app URL)
+ *   team news (class-dbd-news.php, SCOPE §49): news <fixture dir> matches the fixture feeds and writes the stored lists to DBD_HARNESS_NEWS,
+ *   which the team and teamplayers views then read; DBD_HARNESS_NOW pins the clock
  */
 if ( php_sapi_name() !== 'cli' ) { exit( 1 ); }
 list( , $data, $view, $arg ) = $argv + array( null, 'data', 'player', '00-0036322' );
@@ -32,6 +34,7 @@ function wp_mkdir_p( $d ) { return is_dir( $d ) || @mkdir( $d, 0777, true ); }
 function wp_upload_dir() { global $tmp; return array( 'basedir' => $tmp, 'baseurl' => 'https://example.test/uploads' ); }
 function get_option( $k, $d = false ) { if ( $k === 'dbd_headshots' || $k === 'dbd_logos' ) { return (bool) getenv( 'DBD_HARNESS_MEDIA' ); }
 	if ( getenv( 'DBD_HARNESS_PRETTY' ) ) { if ( $k === 'permalink_structure' ) { return '/%postname%/'; } if ( $k === 'dbd_app_page' ) { return 10; } if ( $k === 'page_on_front' ) { return getenv( 'DBD_HARNESS_ROOT' ) ? 5 : 10; } if ( $k === 'show_on_front' ) { return 'page'; } }  /* readable URLs (SCOPE §43) */
+	if ( strpos( $k, 'dbd_news_' ) === 0 && ( $nf = getenv( 'DBD_HARNESS_NEWS' ) ) && is_readable( $nf ) ) { $nj = json_decode( (string) file_get_contents( $nf ), true ); return $nj[ substr( $k, 9 ) ] ?? $d; }  /* team news (SCOPE §49) */
 	return $d; }
 function wp_parse_url( $u, $c = -1 ) { return parse_url( $u, $c ); }
 function get_query_var( $k ) { return ''; }
@@ -63,7 +66,24 @@ function wp_schedule_single_event() {} function wp_next_scheduled() { return fal
 
 /* ---- the plugin, minus the bootstrap and admin. The SEO class extends a WordPress sitemap base class; an empty stand-in lets it load. */
 if ( ! class_exists( 'WP_Sitemaps_Provider' ) ) { class WP_Sitemaps_Provider { public $name = ''; public $object_type = ''; } }
-foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-kicker', 'class-dbd-defense', 'class-dbd-week', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-sync', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo', 'class-dbd-blocks', 'class-dbd-post' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
+foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-kicker', 'class-dbd-defense', 'class-dbd-week', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-sync', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo', 'class-dbd-blocks', 'class-dbd-post', 'class-dbd-news' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
+
+if ( getenv( 'DBD_HARNESS_NOW' ) && class_exists( 'DBD_News' ) ) { DBD_News::$now = (int) getenv( 'DBD_HARNESS_NOW' ); }
+
+/* ---- team news (SCOPE §49): the fixture feeds through the matching step, with no network. A feed key's file is the key with ':' and spaces as '-';
+   no file reads as an empty feed, a key in fail.txt as a failed fetch, and prev.json is the previous pass's stored lists. */
+if ( $view === 'news' ) {
+	$nd = rtrim( (string) ( $arg ?: 'tools/fixtures/news' ), '/' );
+	$fail = is_readable( "$nd/fail.txt" ) ? array_filter( array_map( 'trim', file( "$nd/fail.txt" ) ) ) : array();
+	$bodies = array();
+	foreach ( DBD_News::feeds() as $k => $x ) { $fn = $nd . '/' . preg_replace( '/[: ]+/', '-', $k ) . '.xml'; $bodies[ $k ] = in_array( $k, $fail, true ) ? array( 'error' => 'HTTP 503' ) : ( is_readable( $fn ) ? (string) file_get_contents( $fn ) : '' ); }
+	$prev = is_readable( "$nd/prev.json" ) ? json_decode( (string) file_get_contents( "$nd/prev.json" ), true ) : array();
+	try { list( $stores, $status ) = DBD_News::collect( DBD_News::feeds(), $bodies, $prev ); }
+	catch ( Throwable $e ) { fwrite( STDERR, 'FATAL in news: ' . $e->getMessage() . ' at ' . basename( $e->getFile() ) . ':' . $e->getLine() . "\n" ); exit( 1 ); }
+	$nout = getenv( 'DBD_HARNESS_NEWS' ) ?: $tmp . '/news.json'; file_put_contents( $nout, json_encode( $stores ) );
+	echo json_encode( array( 'stores' => array_filter( $stores, function ( $x ) { return $x['t'] || $x['l']; } ), 'status' => array_filter( $status, function ( $x ) { return empty( $x['ok'] ) || ! empty( $x['n'] ); } ) ), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . "\n";
+	exit( $warnings ? 1 : 0 );
+}
 
 /* ---- readable URLs (SCOPE §43): every old link to a path and back to the same route */
 if ( $view === 'urls' ) {
