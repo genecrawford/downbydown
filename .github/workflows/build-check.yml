@@ -337,7 +337,8 @@ jobs:
           php tools/view_harness.php /tmp/out leaders te && [ "$(grep -o 'class="dbd-panel ld-card"' pages/leaders-te.html | wc -l)" -eq 16 ] || { echo "the tight ends tab does not have sixteen boards"; exit 1; }
           php tools/view_harness.php /tmp/out week 7 && for m in 'class="dbd-panel dbd-short"' 'class="wk-g"' 'id="wk-plays"' 'class="wk-tr"' 'wk-fx' 'class="dbd-panel dbd-mv"'; do grep -q "$m" pages/week-7.html || { echo "week 7 in review is missing $m"; exit 1; }; done
           php tools/view_harness.php /tmp/out week "" && grep -q 'wk-grid' pages/week.html || { echo "the default week in review has no scoreboard"; exit 1; }
-          grep -q 'in review →' pages/matchups.html || { echo "no week in review link on the Matchups page"; exit 1; }
+          # A week with finals: the current week has none from Tuesday to Thursday, so the default Matchups page has no link then.
+          php tools/view_harness.php /tmp/out matchups 7 && grep -q 'in review →' pages/matchups-7.html || { echo "no week in review link on the Week 7 Matchups page"; exit 1; }
           php tools/view_harness.php /tmp/out hub "" && for m in 'id="hb-week"' 'id="hb-players"' 'id="hb-mt"' 'class="dbd-stand hb-pic"' 'data-pane="1"'; do grep -q "$m" pages/hub.html || { echo "the hub is missing $m"; exit 1; }; done
           LEFT=$(python3 -c "import json;s=json.load(open('/tmp/out/schedule.json'));print(sum(g['status']!='final' for g in s['weeks'][str(s['current_week'])]))")
           if [ "$LEFT" -gt 1 ]; then grep -q 'class="hb-g"' pages/hub.html || { echo "no still-to-play cards on the hub with $LEFT games left"; exit 1; }; fi
