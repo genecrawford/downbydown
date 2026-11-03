@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.6.0
+Stable tag: 2.7.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,12 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.7.0 =
+* The weekly post (SCOPE §46): each finished week becomes a post in a "Week in review" category, written from the week's data (the scores, the swing and the play, the best offense and defense, players of the week, fantasy, who is rising and next week's game of the week) and scheduled for the Tuesday after the week at 8:00 AM Eastern. A later sync refreshes a scheduled post's numbers; an edited, published or deleted post is never touched again. The week's share card is the featured image. Settings › Weekly post: on/off, the signup form under each post, every week's post and state, and "Write past weeks" to backfill the season. The week page links to its write-up.
+* The home's featured player and week highlights stay on last week until half of the new week's games are final, so a Thursday night game alone doesn't take over the home.
+* Kickoff chances round the way the data build does (22.5% reads 22% everywhere, as in the tags).
+* Search: the home page (a theme page) gets a description (Settings), share tags with the hub's card and the site's name as WebSite data; the sitemap adds the week in review and leaders pages and drops the author page; robots.txt loses Crawl-delay; Divi's viewport no longer blocks pinch-zoom on phones.
 
 = 2.6.0 =
 * `[dbd_block type="newsletter-preview"]`: the latest finished week as the Tuesday email (subject, headline, the swing, the play, the risers, a button to the week in review), for the home's newsletter section.

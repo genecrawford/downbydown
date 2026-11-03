@@ -1,0 +1,41 @@
+/* Down by Down: the weekly post (SCOPE §46) inside Divi's post layout. Flat like the site: 1px rules, no shadows. The doubled class
+   beats Divi's own table, list and link rules in post content. */
+.dbd-post{--ink:#121417;--ink2:#3b4255;--muted:#5d616a;--line:rgba(22,30,54,.14);--red:#cb2026;color:var(--ink);-webkit-font-smoothing:auto;-moz-osx-font-smoothing:auto}
+.dbd-post.dbd-post p{margin:0 0 16px;padding:0;line-height:1.65}
+.dbd-post.dbd-post p.open{font-size:1.18em;line-height:1.55}
+.dbd-post.dbd-post h2{margin:36px 0 12px;padding:22px 0 0;border-top:1px solid rgba(22,30,54,.2);color:var(--ink);font:800 clamp(22px,2.4vw,26px)/1.1 "Tourney",sans-serif;text-transform:uppercase}
+.dbd-post.dbd-post a{color:var(--ink);text-decoration:underline;text-decoration-color:rgba(203,32,38,.55);text-underline-offset:3px}
+.dbd-post.dbd-post a:hover{color:var(--red)}
+.dbd-post.dbd-post table{width:100%;margin:0 0 16px;border:0;border-collapse:collapse;font-size:16px}
+.dbd-post.dbd-post td{padding:9px 6px;border:0;border-top:1px solid var(--line);vertical-align:middle}
+.dbd-post.dbd-post tr:last-child td{border-bottom:1px solid var(--line)}
+.dbd-post.dbd-post td a{text-decoration:none}
+.dbd-post.dbd-post td a:hover b{text-decoration:underline}
+.dbd-post .lg{display:inline-block;vertical-align:-5px;margin:0 8px 0 0}
+.dbd-post.dbd-post td.tg{font:500 13px "IBM Plex Sans",sans-serif;color:var(--muted);text-align:right}
+.dbd-post.dbd-post td.ph{width:48px}
+.dbd-post .hs{display:block;border-radius:50%;object-fit:cover}
+.dbd-post .pl small{display:block;font-size:13px;color:var(--muted)}
+.dbd-post.dbd-post td.ln{text-align:right;font:500 14px "IBM Plex Mono",monospace;color:var(--ink2)}
+.dbd-post td.ln span{display:block;font-size:12px;color:#1e7f4a}
+.dbd-post td.ln b{font:800 18px "Tourney",sans-serif;color:var(--ink)}
+.dbd-post.dbd-post p.next{display:flex;align-items:center;gap:10px;margin:0 0 10px;font:800 22px "Tourney",sans-serif;text-transform:uppercase}
+.dbd-post.dbd-post p.next .lg{margin:0}
+.dbd-post-sign{margin:40px 0 0;padding:22px 24px;background:#fffdf8;border:1px solid rgba(22,30,54,.18);border-radius:12px;color:#121417}
+.dbd-post-sign h3{margin:0 0 4px;padding:0;font:800 22px "Tourney",sans-serif;text-transform:uppercase;-webkit-font-smoothing:auto}
+.dbd-post-sign>p{margin:0 0 12px;padding:0}
+.dbd-post-sign .wpforms-container{margin:0!important}
+.dbd-post-sign input[type=email],.dbd-post-sign input[type=text]{height:46px!important;border:1px solid rgba(22,30,54,.28)!important;border-radius:6px!important;box-shadow:none!important}
+.dbd-post-sign button[type=submit]{height:46px!important;padding:0 22px!important;background:#cb2026!important;border:0!important;border-radius:6px!important;color:#fff!important;font:700 15px "Barlow Condensed",sans-serif!important;letter-spacing:.1em!important;text-transform:uppercase}
+@media (max-width:560px){
+  .dbd-post .sc tr{display:block;border-top:1px solid var(--line)}
+  .dbd-post.dbd-post .sc td{display:block;border:0;padding:8px 2px 2px}
+  .dbd-post.dbd-post .sc td.tg{padding:0 2px 9px;text-align:left}
+  .dbd-post.dbd-post .sc{border-bottom:1px solid var(--line)}
+  .dbd-post .pl tr{display:grid;grid-template-columns:48px minmax(0,1fr);border-top:1px solid var(--line)}
+  .dbd-post.dbd-post .pl td{border:0;padding:8px 4px 2px}
+  .dbd-post.dbd-post .pl td.ph{grid-row:span 2;padding-top:10px}
+  .dbd-post.dbd-post .pl td.ln{text-align:left;padding:0 4px 10px}
+  .dbd-post .pl td.ln span{display:inline;margin-left:8px}
+  .dbd-post.dbd-post .pl{border-bottom:1px solid var(--line)}
+}

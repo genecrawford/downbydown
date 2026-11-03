@@ -6,6 +6,7 @@
  *   views: player <gsis id> | players | team <ABBR> | hub | game <game id> | teamplayers <ABBR> | matchups | teams | compare <id,id> | myteam [id,id,…] | leaders [g or board key] | defense <ABBR> | week [N]
  *   DBD_HARNESS_ROOT=1: the app page is /hub/, not the front page, with paths at the root
  *   live blocks (class-dbd-blocks.php): block <type> ['k=v&k=v' attributes] | page <html file> (a theme page with its [dbd_block] shortcodes drawn)
+ *   the weekly post (class-dbd-post.php, SCOPE §46): post <N> (DBD_HARNESS_AHEAD=0 leaves out next week, as a backfilled post does) | sitemap (every app URL)
  */
 if ( php_sapi_name() !== 'cli' ) { exit( 1 ); }
 list( , $data, $view, $arg ) = $argv + array( null, 'data', 'player', '00-0036322' );
@@ -56,12 +57,13 @@ function wp_generate_password( $n = 12 ) { return substr( bin2hex( random_bytes(
 function is_wp_error( $x ) { return $x === null; }
 function wp_remote_get() { return null; } function wp_remote_retrieve_response_code() { return 0; } function wp_remote_retrieve_body() { return ''; }
 function shortcode_atts( $d, $a ) { return array_merge( $d, (array) $a ); }
+function wp_strip_all_tags( $s ) { return trim( strip_tags( (string) $s ) ); }
 function __( $s ) { return $s; } function _e( $s ) { echo $s; }
 function wp_schedule_single_event() {} function wp_next_scheduled() { return false; } function wp_schedule_event() {} function register_activation_hook() {} function register_deactivation_hook() {}
 
 /* ---- the plugin, minus the bootstrap and admin. The SEO class extends a WordPress sitemap base class; an empty stand-in lets it load. */
 if ( ! class_exists( 'WP_Sitemaps_Provider' ) ) { class WP_Sitemaps_Provider { public $name = ''; public $object_type = ''; } }
-foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-defense', 'class-dbd-week', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-sync', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo', 'class-dbd-blocks' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
+foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-defense', 'class-dbd-week', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-sync', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo', 'class-dbd-blocks', 'class-dbd-post' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
 
 /* ---- readable URLs (SCOPE §43): every old link to a path and back to the same route */
 if ( $view === 'urls' ) {
@@ -143,6 +145,28 @@ if ( $view === 'redirect' ) {
 	} elseif ( getenv( 'DBD_HARNESS_ROOT' ) ) { $rp->setValue( null, '' ); DBD_Router::front(); }  /* the front page answers old links */
 	else { DBD_Router::$route = DBD_Router::route(); DBD_Router::redirect_old(); }
 	echo "stays ($warnings warnings)\n"; exit( $warnings ? 1 : 0 );
+}
+
+/* ---- the weekly post: week N composed as the plugin would write it, inside a stand-in for Divi's post column */
+if ( $view === 'post' ) {
+	try { $doc = DBD_Post::compose( (int) $arg, null, getenv( 'DBD_HARNESS_AHEAD' ) !== '0' ); }
+	catch ( Throwable $e ) { fwrite( STDERR, "FATAL in post $arg: " . get_class( $e ) . ': ' . $e->getMessage() . ' at ' . basename( $e->getFile() ) . ':' . $e->getLine() . "\n" ); exit( 1 ); }
+	if ( ! $doc ) { echo "post $arg: none (the week isn't complete), $warnings warnings\n"; exit( $warnings ? 1 : 0 ); }
+	if ( getenv( 'DBD_HARNESS_OLD_SEASON' ) ) { $doc['html'] = DBD_Post::with_season( $doc['html'] . '<p class="gene">An added link: <a href="https://example.test/about/">About</a></p>', (int) getenv( 'DBD_HARNESS_OLD_SEASON' ) ); }  /* how the post reads once its season is archived */
+	echo "post $arg: " . $doc['title'] . ' · ' . strlen( $doc['html'] ) . " bytes, $warnings warnings\n";
+	if ( strlen( $doc['html'] ) < 3000 || $doc['excerpt'] === '' ) { fwrite( STDERR, "post $arg: suspiciously short\n" ); exit( 3 ); }
+	$dir = getenv( 'DBD_HARNESS_HTML' );
+	if ( $dir ) {
+		if ( ! is_dir( $dir . '/assets' ) ) { mkdir( $dir . '/assets', 0777, true ); } copy( DBD_PATH . 'assets/post.css', $dir . '/assets/post.css' );
+		$fonts = '<link href="https://fonts.googleapis.com/css2?family=Tourney:wght@800&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">';
+		$divi = '<style>body{margin:0;background:#fff;font:400 16px/1.7 "Open Sans",Arial,sans-serif;color:#666}.entry-content tr td{padding:6px 24px;border-top:1px solid #eee}a{color:#2ea3f2}h1{color:#333;font-size:30px;padding-bottom:10px}p{padding-bottom:1em}article{max-width:760px;margin:0 auto;padding:48px 20px}</style>';  /* stand-ins for Divi's post rules, which the post must hold up against */
+		file_put_contents( $dir . '/post-w' . (int) $arg . '.html', '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' . esc_html( $doc['title'] ) . '</title>' . $fonts . $divi . '<link rel="stylesheet" href="assets/post.css"></head><body><article class="entry-content"><h1>' . esc_html( $doc['title'] ) . '</h1>' . $doc['html'] . '</article></body></html>' );
+	}
+	exit( $warnings ? 1 : 0 );
+}
+if ( $view === 'sitemap' ) {
+	try { foreach ( DBD_Seo::urls() as $u ) { echo $u['loc'] . "\n"; } } catch ( Throwable $e ) { fwrite( STDERR, 'FATAL in sitemap: ' . $e->getMessage() . "\n" ); exit( 1 ); }
+	exit( $warnings ? 1 : 0 );
 }
 
 /* ---- live blocks: one block, or a theme page (divi/home-hero.html) with its [dbd_block] shortcodes drawn, written to DBD_HARNESS_HTML */

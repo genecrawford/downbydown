@@ -65,7 +65,7 @@ class DBD_Blocks {
 	private static function nick( $a ) { return DBD_Data::team( $a )['nick'] ?? $a; }
 	private static function u( $args ) { return esc_url( DBD_Router::url( $args ) ); }
 	private static function wrap( $type, $inner ) { return $inner === '' ? '' : '<div class="dbd-hb hb-' . esc_attr( $type ) . '">' . $inner . '</div>'; }
-	private static function pct( $v ) { return round( (float) $v / 10 ); }
+	private static function pct( $v ) { return DBD_Data::pct( $v ); }
 	/** A play's description without the tacklers' brackets: "…, TOUCHDOWN [J.McMillian]." reads "…, TOUCHDOWN." */
 	private static function clean( $d ) { return trim( (string) preg_replace( '/\s*\[[^\]]*\]/', '', (string) $d ) ); }
 	/** A final game's winner, loser and both scores, the winner's first; a tie keeps away then home. */
@@ -78,7 +78,7 @@ class DBD_Blocks {
 
 	/** The week's most-targeted player (or player="id"): photo, line, every target on the field, a link to his page. */
 	private static function b_hero_map( $a ) {
-		$wk = DBD_Week::default_week(); if ( ! $wk ) { return ''; }
+		$wk = DBD_Week::settled_week(); if ( ! $wk ) { return ''; }
 		$pid = (string) ( $a['player'] ?? '' ); $auto = $pid === '';
 		$hit = $auto ? self::most_targeted( $wk ) : self::week_line( $pid, $wk );
 		if ( ! $hit ) { return ''; }
@@ -192,7 +192,7 @@ class DBD_Blocks {
 	 * final game, so a Sunday night shows that Sunday.
 	 */
 	private static function b_week_highlights( $a ) {
-		$n = DBD_Week::default_week(); $W = $n ? DBD_Week::file( $n ) : null; if ( ! $W ) { return ''; }
+		$n = DBD_Week::settled_week(); $W = $n ? DBD_Week::file( $n ) : null; if ( ! $W ) { return ''; }
 		$h = '';
 		$tp = $W['plays'][0] ?? null;
 		if ( $tp ) {
@@ -236,7 +236,7 @@ class DBD_Blocks {
 		/* no game left to play (the Super Bowl is over, the new season hasn't started): the last week's final game stands in, with its score */
 		$done = false;
 		if ( ! $gotw ) {
-			$lw = DBD_Week::default_week();
+			$lw = DBD_Week::settled_week();
 			foreach ( DBD_Data::week_games( $lw ) as $g ) {
 				if ( ! DBD_Router::is_final( $g ) ) { continue; }
 				$b = DBD_Takeaways::best_edge( $g['away'], $g['home'] );
@@ -247,7 +247,7 @@ class DBD_Blocks {
 		if ( ! $gotw ) { return ''; }
 		$O = $best['O']; $D = $best['D']; $cards = DBD_Takeaways::cards( $O, $D ); $k = DBD_Data::kickoff( $gotw ); $d = strtotime( (string) ( $gotw['date'] ?? '' ) );
 		$kick = $done
-			? implode( ' · ', array_filter( array( DBD_Router::week_label( (int) ( $gotw['week'] ?? DBD_Week::default_week() ) ), 'Final', (string) ( $gotw['stadium'] ?? '' ) ) ) )
+			? implode( ' · ', array_filter( array( DBD_Router::week_label( (int) ( $gotw['week'] ?? DBD_Week::settled_week() ) ), 'Final', (string) ( $gotw['stadium'] ?? '' ) ) ) )
 			: implode( ' · ', array_filter( array( 'Game of the week', trim( ( $d ? gmdate( 'l', $d ) . ' ' : '' ) . ( $k['et'] ?? '' ) ), (string) ( $gotw['stadium'] ?? '' ) ) ) );
 		$side = function ( $t ) { return '<span>' . DBD_Marks::tile( $t, 54 ) . '<b>' . esc_html( self::nick( $t ) ) . '</b><small>' . esc_html( DBD_Data::record_text( $t ) ) . '</small></span>'; };
 		$tot  = isset( $gotw['total'] ) && $gotw['total'] !== null && $gotw['total'] !== '' ? 'O/U ' . $gotw['total'] : '';
@@ -283,7 +283,7 @@ class DBD_Blocks {
 
 	/** A new season's first week, before anyone has a week to rise from: the week's most-targeted players instead. */
 	private static function most_targets_list( $cnt ) {
-		$wk = DBD_Week::default_week(); if ( ! $wk ) { return ''; }
+		$wk = DBD_Week::settled_week(); if ( ! $wk ) { return ''; }
 		$li = '';
 		foreach ( self::top_targeted( $wk, $cnt ) as $r ) {
 			list( $pid, $team, $w ) = $r; $p = DBD_Data::player( $pid ); if ( ! $p ) { continue; }
@@ -297,7 +297,7 @@ class DBD_Blocks {
 		if ( ! DBD_Card::available() ) { return ''; }
 		$pid = (string) ( $a['player'] ?? '' );
 		if ( $pid === '' ) { $pid = (string) ( self::movers()[0][0]['id'] ?? '' ); }
-		if ( $pid === '' ) { $hit = self::most_targeted( DBD_Week::default_week() ); $pid = $hit ? (string) $hit[0] : ''; }  /* no risers yet: the week's most-targeted player */
+		if ( $pid === '' ) { $hit = self::most_targeted( DBD_Week::settled_week() ); $pid = $hit ? (string) $hit[0] : ''; }  /* no risers yet: the week's most-targeted player */
 		$p = $pid !== '' ? DBD_Data::player( $pid ) : null; if ( ! $p ) { return ''; }
 		return self::wrap( 'player-card', '<a href="' . self::u( array( 'player' => $pid ) ) . '"><img src="' . esc_url( DBD_Card::url( $pid ) ) . '" alt="' . esc_attr( $p['name'] . "'s share card" ) . '" width="1200" height="630" loading="lazy" decoding="async"></a>' );
 	}

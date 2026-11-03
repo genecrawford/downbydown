@@ -1,14 +1,65 @@
 <?php
 /**
  * Search: an XML sitemap for every app URL (WordPress cannot discover query-string routes on its own),
- * and JSON-LD SportsEvent data on matchup pages.
+ * and JSON-LD SportsEvent data on matchup pages. Since 2.7.0 also the site-wide pieces: the home page's description, share tags and
+ * site-name data when the home is a theme page, no author pages in the sitemap, no Crawl-delay in robots.txt, and pinch-zoom on phones.
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 class DBD_Seo {
 
+	const OPT_HOME_DESC = 'dbd_home_desc';
+	const HOME_DESC = 'Free NFL play-by-play charts: every snap drawn on the field, target maps, EPA by team, a matchup read for every game and fantasy with the why. Updated three times a day.';
+
 	public static function init() {
 		add_action( 'init', array( __CLASS__, 'register_sitemap' ) );
+		add_filter( 'wp_sitemaps_add_provider', array( __CLASS__, 'drop_users' ), 10, 2 );
+		add_filter( 'robots_txt', array( __CLASS__, 'robots' ), PHP_INT_MAX );
+		add_action( 'wp_head', array( __CLASS__, 'viewport' ), 0 );
+		add_action( 'wp_head', array( __CLASS__, 'home_head' ), 3 );
+	}
+
+	/** An SEO plugin writes the head tags itself; the plugin then leaves the home page's to it. */
+	public static function seo_plugin() {
+		return defined( 'WPSEO_VERSION' ) || defined( 'RANK_MATH_VERSION' ) || defined( 'AIOSEO_VERSION' ) || defined( 'SEOPRESS_VERSION' ) || defined( 'THE_SEO_FRAMEWORK_VERSION' );
+	}
+
+	/** The author archive is a thin page that shows the login name: out of the sitemap. */
+	public static function drop_users( $provider, $name ) { return $name === 'users' ? false : $provider; }
+
+	/** No Crawl-delay: Bing honors it and would crawl the site's thousands of pages slowly (Google ignores it). */
+	public static function robots( $txt ) { return (string) preg_replace( '/^\s*Crawl-delay:.*(\r?\n)?/mi', '', (string) $txt ); }
+
+	/**
+	 * Divi prints a viewport that turns off pinch-zoom (maximum-scale=1, user-scalable=0), an accessibility failure. Its tag goes and a
+	 * plain one takes its place. Only when Divi's function is hooked, so another theme's viewport is never doubled.
+	 */
+	public static function viewport() {
+		if ( has_action( 'wp_head', 'et_add_viewport_meta' ) === false ) { return; }
+		remove_action( 'wp_head', 'et_add_viewport_meta' );
+		echo '<meta name="viewport" content="width=device-width, initial-scale=1">' . "\n";
+	}
+
+	/** The home page when it is a theme page (the app lives on /hub/): description, share tags with the hub's card, and the site's name. */
+	public static function home_head() {
+		if ( ! is_front_page() || ( class_exists( 'DBD_Router' ) && DBD_Router::$active ) ) { return; }  /* the app as the front page writes its own */
+		$name = get_bloginfo( 'name' ); $url = home_url( '/' );
+		$ld = array( '@context' => 'https://schema.org', '@graph' => array(
+			array( '@type' => 'WebSite', '@id' => $url . '#website', 'name' => $name, 'url' => $url ),
+			array( '@type' => 'Organization', '@id' => $url . '#org', 'name' => $name, 'url' => $url ) + ( get_site_icon_url( 512 ) ? array( 'logo' => get_site_icon_url( 512 ) ) : array() ),
+		) );
+		echo '<script type="application/ld+json">' . wp_json_encode( $ld, JSON_UNESCAPED_SLASHES ) . '</script>' . "\n";
+		if ( self::seo_plugin() ) { return; }
+		$d = trim( (string) get_option( self::OPT_HOME_DESC, '' ) ); if ( $d === '' ) { $d = self::HOME_DESC; }
+		$t = wp_get_document_title();
+		echo '<meta name="description" content="' . esc_attr( $d ) . '">' . "\n";
+		echo '<meta property="og:title" content="' . esc_attr( $t ) . '">' . "\n" . '<meta property="og:description" content="' . esc_attr( $d ) . '">' . "\n";
+		echo '<meta property="og:url" content="' . esc_url( $url ) . '">' . "\n" . '<meta property="og:type" content="website">' . "\n" . '<meta property="og:site_name" content="' . esc_attr( $name ) . '">' . "\n";
+		if ( class_exists( 'DBD_Card' ) && DBD_Card::available() && DBD_Data::has_data() ) {
+			$img = DBD_Card::url( 'page-hub' );
+			echo '<meta property="og:image" content="' . esc_url( $img ) . '">' . "\n" . '<meta property="og:image:width" content="1200">' . "\n" . '<meta property="og:image:height" content="630">' . "\n";
+			echo '<meta name="twitter:card" content="summary_large_image">' . "\n" . '<meta name="twitter:image" content="' . esc_url( $img ) . '">' . "\n";
+		}
 	}
 
 	public static function register_sitemap() {
@@ -33,6 +84,14 @@ class DBD_Seo {
 		$u    = function ( $args = array() ) { return DBD_Router::url( $args ); };  /* readable paths when the site uses them (SCOPE §43) */
 		$list = array( array( 'loc' => $u(), 'changefreq' => 'daily', 'priority' => 1.0 ), array( 'loc' => $u( array( 'view' => 'teams' ) ), 'changefreq' => 'daily' ), array( 'loc' => $u( array( 'view' => 'matchups' ) ), 'changefreq' => 'daily' ) );
 		foreach ( DBD_Data::weeks() as $w ) { $list[] = array( 'loc' => $u( array( 'view' => 'matchups', 'week' => $w ) ), 'changefreq' => 'weekly' ); }
+		/* the week in review and the leaders (2.7.0): a week page once a game in it is final, the leaders index and each group's boards */
+		$wks = class_exists( 'DBD_Week' ) ? DBD_Week::weeks() : array();
+		if ( $wks ) { $list[] = array( 'loc' => $u( array( 'view' => 'week' ) ), 'changefreq' => 'daily', 'priority' => 0.8 ); }
+		foreach ( $wks as $w ) { $list[] = array( 'loc' => $u( array( 'view' => 'week', 'week' => $w ) ), 'changefreq' => 'weekly', 'priority' => 0.7 ); }
+		if ( DBD_Data::has_players() ) {
+			$list[] = array( 'loc' => $u( array( 'view' => 'leaders' ) ), 'changefreq' => 'daily', 'priority' => 0.8 );
+			foreach ( array_keys( DBD_Leaders::GROUPS ) as $g ) { if ( $g !== 'fan' ) { $list[] = array( 'loc' => $u( array( 'view' => 'leaders', 'g' => $g ) ), 'changefreq' => 'daily', 'priority' => 0.7 ); } }
+		}
 		foreach ( array_keys( DBD_Data::teams() ) as $a ) { $list[] = array( 'loc' => $u( array( 'team' => $a ) ), 'changefreq' => 'daily', 'priority' => 0.8 ); }
 		if ( DBD_Data::has_players() ) {
 			$list[] = array( 'loc' => $u( array( 'view' => 'players' ) ), 'changefreq' => 'daily', 'priority' => 0.8 );

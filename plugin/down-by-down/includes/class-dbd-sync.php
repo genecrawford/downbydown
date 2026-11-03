@@ -132,6 +132,8 @@ class DBD_Sync {
 			self::recompute_stats();
 			if ( class_exists( 'DBD_Card' ) ) { DBD_Data::flush(); DBD_Card::prune(); }  /* the cards for earlier weeks and versions go (SCOPE §43) */
 			$out['archive'] = self::sync_archive( $remote, $base, $start );
+			/* the weekly post (SCOPE §46): a newly complete week gets its post; a failure there never fails the sync */
+			if ( class_exists( 'DBD_Post' ) ) { try { $p = DBD_Post::after_sync(); if ( $p ) { $out['posts'] = $p; } } catch ( Throwable $e ) { $out['post_error'] = $e->getMessage(); } DBD_Data::use_season( null ); }
 		}
 		return self::finish( $out, $start );
 	}

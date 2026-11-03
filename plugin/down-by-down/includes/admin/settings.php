@@ -13,6 +13,9 @@ add_action( 'admin_init', function () {
 	register_setting( 'dbd', 'dbd_logos', array( 'type' => 'boolean', 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => false ) );
 	register_setting( 'dbd', DBD_Urls::OPT, array( 'type' => 'boolean', 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => true ) );  /* readable URLs (SCOPE §43) */
 	register_setting( 'dbd', DBD_Urls::OPT_ROOT, array( 'type' => 'boolean', 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => true ) );  /* app paths at the root while the app sits on its own page */
+	register_setting( 'dbd', DBD_Seo::OPT_HOME_DESC, array( 'type' => 'string', 'sanitize_callback' => 'sanitize_textarea_field', 'default' => '' ) );  /* the home page's description (2.7.0) */
+	register_setting( 'dbd_posts', DBD_Post::OPT_ON, array( 'type' => 'boolean', 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => true ) );  /* the weekly post (SCOPE §46) */
+	register_setting( 'dbd_posts', DBD_Post::OPT_FORM, array( 'type' => 'string', 'sanitize_callback' => 'sanitize_text_field', 'default' => DBD_Post::FORM ) );
 } );
 
 add_action( 'admin_post_dbd_clear_cards', function () {
@@ -20,6 +23,16 @@ add_action( 'admin_post_dbd_clear_cards', function () {
 	if ( ! current_user_can( 'manage_options' ) ) { wp_die( 'No.' ); }
 	$r = DBD_Card::prune( true );
 	wp_safe_redirect( add_query_arg( array( 'page' => 'down-by-down', 'cleared' => (int) $r[0] ), admin_url( 'admin.php' ) ) );
+	exit;
+} );
+
+add_action( 'admin_post_dbd_write_past', function () {
+	check_admin_referer( 'dbd_write_past' );
+	if ( ! current_user_can( 'manage_options' ) ) { wp_die( 'No.' ); }
+	if ( function_exists( 'set_time_limit' ) ) { @set_time_limit( 120 ); }  /* each post draws its week's share card */
+	$r = DBD_Post::backfill();
+	$new = count( array_filter( $r, function ( $x ) { return $x === 'new'; } ) );
+	wp_safe_redirect( add_query_arg( array( 'page' => 'down-by-down', 'written' => $new ), admin_url( 'admin.php' ) ) . '#dbd-weekly' );
 	exit;
 } );
 
@@ -53,6 +66,9 @@ function dbd_settings_page() {
 		<?php endif; ?>
 		<?php if ( isset( $_GET['cleared'] ) ) : ?>
 			<div class="notice notice-success"><p><?php echo esc_html( (int) $_GET['cleared'] . ' cached cards cleared. They are drawn again the next time a page is shared.' ); ?></p></div>
+		<?php endif; ?>
+		<?php if ( isset( $_GET['written'] ) ) : ?>
+			<div class="notice notice-success"><p><?php $wn = (int) $_GET['written']; echo esc_html( $wn ? $wn . ' weekly post' . ( $wn === 1 ? '' : 's' ) . ' written.' : 'No new posts: every finished week already has one, or was deleted.' ); ?></p></div>
 		<?php endif; ?>
 		<?php if ( isset( $_GET['token'] ) ) : ?>
 			<div class="notice notice-warning"><p>New token generated. Update the <code>DBD_SYNC_TOKEN</code> secret in the GitHub repo or the nightly push will stop working.</p></div>
@@ -102,9 +118,45 @@ function dbd_settings_page() {
 					elseif ( DBD_Urls::is_front() ) { echo 'The app is the front page, so its paths are at the root either way.'; }
 					else { echo 'The app page is <a href="' . esc_url( get_permalink( $aid ) ) . '">' . esc_html( get_permalink( $aid ) ) . '</a>: the hub lives there. ' . ( DBD_Urls::on() ? 'Test a path: <a href="' . esc_url( DBD_Router::url( array( 'team' => 'MIN' ) ) ) . '">' . esc_html( DBD_Router::url( array( 'team' => 'MIN' ) ) ) . '</a>.' : '' ) . ' Leave this on so links shared before the move keep working; a real page named teams, players, leaders, week or matchups would be hidden behind the app\'s paths. Only one page should hold <code>[down_by_down]</code>.'; }
 					?></p></td></tr>
+				<tr><th scope="row"><label for="dbd_home_desc">Home page description</label></th>
+					<td><textarea name="<?php echo esc_attr( DBD_Seo::OPT_HOME_DESC ); ?>" id="dbd_home_desc" rows="3" class="large-text" placeholder="<?php echo esc_attr( DBD_Seo::HOME_DESC ); ?>"><?php echo esc_textarea( (string) get_option( DBD_Seo::OPT_HOME_DESC, '' ) ); ?></textarea>
+					<p class="description">What search results and shared links show under the home page's title, when the home is a page you built (the app on its own page). Empty uses the text shown. An SEO plugin, if you add one, takes over.</p></td></tr>
 			</table>
 			<?php submit_button( 'Save' ); ?>
 		</form>
+
+		<h2 id="dbd-weekly">Weekly post</h2>
+		<p>Every finished week becomes a post in the <b><?php echo esc_html( DBD_Post::CAT_NAME ); ?></b> category, written from the week's data and scheduled for the Tuesday after the week at 8:00 AM Eastern, so you can read and edit it first. Until it publishes, a later sync refreshes its numbers; once you edit it or it publishes, it is never changed again. A deleted post is never written again.</p>
+		<form method="post" action="options.php">
+			<?php settings_fields( 'dbd_posts' ); ?>
+			<table class="form-table" role="presentation">
+				<tr><th scope="row">Write the weekly post</th>
+					<td><label><input type="checkbox" name="<?php echo esc_attr( DBD_Post::OPT_ON ); ?>" value="1" <?php checked( DBD_Post::on() ); ?>> Write each finished week's post after the sync that finishes it</label></td></tr>
+				<tr><th scope="row"><label for="dbd_post_form">Signup under each post</label></th>
+					<td><input name="<?php echo esc_attr( DBD_Post::OPT_FORM ); ?>" id="dbd_post_form" type="text" class="regular-text code" value="<?php echo esc_attr( get_option( DBD_Post::OPT_FORM, DBD_Post::FORM ) ); ?>">
+					<p class="description">A form shortcode shown under each weekly post on the website, not in the feed. Leave it empty for none.</p></td></tr>
+			</table>
+			<?php submit_button( 'Save' ); ?>
+		</form>
+		<?php $pm = DBD_Post::map(); $cw = array_values( array_filter( DBD_Week::weeks(), function ( $w ) { $f = DBD_Week::file( $w ); return $f && ! empty( $f['complete'] ); } ) ); ?>
+		<table class="widefat striped" style="max-width:720px"><thead><tr><th>Week</th><th>Post</th><th>State</th></tr></thead><tbody>
+			<?php foreach ( array_reverse( $cw ) as $w ) : $pp = isset( $pm[ $w ] ) ? get_post( (int) $pm[ $w ] ) : null; ?>
+			<tr><td><?php echo esc_html( DBD_Router::week_label( $w ) ); ?></td>
+				<td><?php echo $pp ? '<a href="' . esc_url( get_edit_post_link( $pp->ID ) ) . '">' . esc_html( get_the_title( $pp ) ) . '</a>' : '–'; ?></td>
+				<td><?php
+				if ( ! isset( $pm[ $w ] ) ) { echo 'not written'; }
+				elseif ( ! $pp || $pp->post_status === 'trash' ) { echo 'deleted (won\'t be written again)'; }
+				elseif ( $pp->post_status === 'future' ) { echo esc_html( 'scheduled for ' . get_date_from_gmt( $pp->post_date_gmt, 'D M j, g:i A' ) ); }
+				else { echo esc_html( $pp->post_status === 'publish' ? 'published ' . get_date_from_gmt( $pp->post_date_gmt, 'M j' ) : $pp->post_status ); }
+				?></td></tr>
+			<?php endforeach; ?>
+			<?php if ( ! $cw ) : ?><tr><td colspan="3">No finished week yet this season.</td></tr><?php endif; ?>
+		</tbody></table>
+		<?php $missing = count( array_filter( $cw, function ( $w ) use ( $pm ) { return ! isset( $pm[ $w ] ); } ) ); ?>
+		<?php if ( $missing ) : ?>
+		<p><form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" onsubmit="return confirm('Write a post for each of the <?php echo (int) $missing; ?> finished week(s) without one? Each is dated the Tuesday after its week and publishes with that date.');">
+			<?php wp_nonce_field( 'dbd_write_past' ); ?><input type="hidden" name="action" value="dbd_write_past"><button class="button button-primary">Write past weeks (<?php echo (int) $missing; ?>)</button></form></p>
+		<?php endif; ?>
 
 		<h2>Share cards</h2>
 		<?php list( $cn, $cb ) = DBD_Card::stats(); $cp = get_option( 'dbd_card_prune' ); ?>
