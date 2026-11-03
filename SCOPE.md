@@ -2148,3 +2148,164 @@ Build notes:
   - Four or more close kicks fan out instead of stacking.
   - The phone chart grows to fit any 68+ yard try.
 - **Archived 2025:** it has no kicker file, so last season has no kicker pages until that season is rebuilt with the archive workflow.
+
+## 48. The Tuesday email, part 2 of the week in review (scoped and mocked 2026-11-03, `mockup-v23/`)
+
+Part 1 (§46, 2.7.0) writes each finished week as a post, scheduled for Tuesday 8:00 AM Eastern. Nothing emails it yet. The home page promises "The week in review, every Tuesday", and its signup (WPForms #63, one email field plus a hidden spam trap) has nowhere to put the addresses. This part sends each week's post to a real list.
+
+Two things found while scoping:
+- **WPForms Lite has no email-service connections.** Brevo, Mailchimp and the other add-ons need a paid WPForms plan. The plugin can pass each signup on itself (WPForms runs the `wpforms_process_complete` hook in Lite too), so no WPForms upgrade is needed.
+- **WPForms Lite doesn't save entries.** Anyone who has signed up so far exists only in the notification emails WPForms sent Gene. Those addresses get imported once, by hand (see setup).
+
+The mocks:
+- `mockup-v23/email-week-8.html` is the Week 8 email as it would arrive, built from the live Week 8 post, with the inbox header on top.
+- `mockup-v23/signup.html` shows the signup from start to finish: the home form after submitting, the confirmation email, and the landing note after confirming.
+
+### The service: Brevo (recommended)
+
+An email service does the sending, not WordPress: it handles unsubscribe links, the legal footer, bounces and inbox placement. Recommended: **Brevo**, driven by the plugin through Brevo's API.
+- **The plugin builds the email itself,** from the published post, so the email is exactly the mock: the site's look, every link into the app, no generic RSS template.
+- **The list lives in Brevo,** where Gene can see, export and import it. Brevo handles unsubscribes and the List-Unsubscribe header Gmail and Yahoo now require.
+- **Cost:** Brevo's free plan has unlimited contacts and 300 emails a day, so it covers a list of up to about 300. Past that, a paid Brevo plan. The free plan also adds a small Brevo logo to the footer.
+- **Gene already knows Brevo** from SOCO. Down by Down gets its own Brevo account, separate from SOCO's.
+
+The alternative is **MailPoet**, a WordPress plugin that emails each new post in a category. It's free to a few hundred subscribers and keeps everything inside WordPress, but the email is MailPoet's template around the post. Its "latest content" block isn't documented to carry tables, which the scores and the player rows are. The plugin would still pass the WPForms signups to it.
+
+### What the reader gets
+
+- **When:** Tuesday at 8:00 AM Eastern, when the post publishes. Gene's edits to the scheduled post are in the email, because the email is built at publish time.
+- **From:** "Down by Down", from an address on downbydown.com (decision 4), with replies going to Gene.
+- **Subject:** the post's title: "Week 8 in review: Cardinals stun Cowboys from 23%". The inbox preview line is the opening's first sentence.
+- **The email:**
+  - a dark header bar with the wordmark and the date
+  - the week's share card
+  - the whole post, about 600 words: the scores table, the swing and the play, best offense and defense, players of the week, fantasy, rising and next week (decision 2)
+  - a red button to the week page
+- **The footer:** why you're getting it, "View in browser" (the post), unsubscribe, and a postal address. A postal address is required by US law for this kind of email (decision 4).
+- **Email-safe:** inline styles, tables for layout, a 600px column that narrows on a phone, system fonts (web fonts don't load in Gmail), and images with sizes and alt text. Team logos and player photos load from the same places the site uses.
+
+### Signing up
+
+1. A visitor enters an email in the home form. The plugin passes it to Brevo, and WPForms carries on as now (its notification to Gene is unchanged).
+2. **Double opt-in (decision 3):** Brevo sends a short "Confirm your email" message. Nobody is added to the list until they click.
+3. The confirm link lands on **the latest week-in-review post** with a slim note on top: "You're in. The next one arrives Tuesday morning." The newest post shows a new subscriber exactly what they signed up for.
+4. The home form's message after submitting changes to "Almost there. Check your inbox for a confirmation link." That's an edit in WPForms (the form's Confirmation setting); the plugin can't change it.
+
+Someone who signs up twice is not added twice. Brevo updates the existing contact.
+
+### Sending
+
+- **What sends:** the plugin's own week posts (the ones with the hidden season and week fields), once each. A post the plugin didn't write never sends.
+- **The trigger:** the post going from scheduled to published. The plugin creates a Brevo campaign with the email, sends it to the list, and stores the campaign on the post, so a second publish (an unpublish and republish, an edit) never sends again.
+- **Never late or old:** a post published more than 24 hours after its Tuesday doesn't send, so backfilled weeks and past seasons never email.
+- **Skip a week:** a "Don't email this one" checkbox on the post, for a week Gene would rather not send.
+- **Send a test:** a button in the settings and on the post sends the email to Gene's address only, any time before it goes out.
+- **If Brevo fails:** the plugin retries every 10 minutes for an hour, then emails Gene that it didn't send. The post publishes either way.
+
+### The plugin side
+
+- **Settings → Down by Down → Email:** Brevo API key, the list, the confirmation template, sender name and address, reply-to, the postal address, the signup form's ID (63), and an on/off switch. Off by default until Gene has finished setup.
+- **A send log:** each week's email, when it went, how many it went to, and its Brevo campaign link.
+- **No subscriber data stored in WordPress.** The plugin passes the address to Brevo and keeps nothing.
+
+### Setup steps for Gene (once)
+
+1. Create a Brevo account for Down by Down.
+2. Authenticate downbydown.com in Brevo: Brevo shows three DNS records (DKIM, DMARC, the Brevo code) to add in Cloudflare. Without these, Gmail and Yahoo treat bulk email as suspect.
+3. Create the list ("Week in review"), and a confirmation template (the plugin's settings page gives the HTML to paste).
+4. Paste the API key into the plugin's Email settings, pick the list and template, and send a test.
+5. Import the addresses from the WPForms notification emails into the list (a CSV in Brevo).
+6. Change the WPForms #63 confirmation message, and switch sending on.
+
+### Left out
+
+- **A welcome email** with the most recent issue: possible later as a Brevo automation, no plugin change.
+- **Open and click numbers in WordPress:** Brevo's own campaign report has them; the send log links to it.
+- **Team or fantasy-only editions:** one list, one email.
+- **Email during the off-season:** the plugin only sends when a week post publishes, so it goes quiet on its own.
+
+### Open decisions (for Gene, one at a time)
+
+1. **The service:** Brevo, driven by the plugin (recommended), or MailPoet.
+2. **What's in the email:** the whole post (recommended; it's a two-minute read and every link goes back into the app) or a short teaser like the home page's preview, with a button to the post.
+3. **Double opt-in:** yes (recommended; it keeps fake and mistyped addresses off the list and protects delivery) or no.
+4. **Sender and footer:** the from address (suggested `week@downbydown.com`), the reply-to (Gene's), and the postal address for the footer (Period Three's, or a PO box).
+
+### Acceptance
+
+- The Week 8 email, sent as a test, matches the mock in Gmail (web and phone) and Apple Mail, with no layout breaks and every link working.
+- A new signup gets the confirmation email, lands on the latest post with the note, and appears in the Brevo list only after confirming.
+- Publishing a week post sends once. Republishing or editing never sends again. A backfilled post never sends. "Don't email this one" holds.
+- A failed Brevo call retries, then tells Gene.
+- Unsubscribe works, and the footer carries the postal address.
+
+**Queued fix to ride along:** on the website, the weekly post's scores table squeezes between about 480 and 700px wide ("Packers 27, Panthers" over "19"). It stacks cleanly on a phone and sits in two columns on a desktop; the in-between width should stack too.
+
+Size: M.
+
+## 49. Team news (scoped and mocked 2026-11-03, `mockup-v23/`)
+
+Gene's idea (2026-11-03): pull team-by-team news from around the web and link to it from the team pages. The answer at the time: use the sites' own news feeds (RSS) instead of scraping their pages. Scraping breaks whenever a site's layout changes and most sports sites' terms forbid it. Feeds exist for exactly this. The site shows the headline, the source and the time, and links out. It never copies article text or images.
+
+The mock is `mockup-v23/team-news-MIN.html`: the live Vikings players page with the news panel added, built from real headlines fetched on 2026-11-03. `mockup-v23/team-latest-MIN.html` shows the one-line latest headline on the Vikings offense page.
+
+### Sources (checked 2026-11-03)
+
+| Source | Feed | Result |
+|---|---|---|
+| **All 32 team sites** | `https://www.{team site}/rss/news` (vikings.com, detroitlions.com…) | All 32 answer. 31 had stories from the past week; the Commanders' feed is stale (its newest items are from October and 2022) |
+| **ProFootballTalk** | `profootballtalk.nbcsports.com/feed/` | 30 stories, mostly team-specific |
+| **CBS Sports** | `cbssports.com/rss/headlines/nfl/` | 36 stories |
+| **ESPN** | `espn.com/espn/rss/nfl/news` | 30 stories |
+| **Yahoo Sports** | `sports.yahoo.com/nfl/rss/` | 50 stories |
+| Bleacher Report | none | No feed; left out |
+| PFF | `pff.com/feed` | Works, but most articles are behind PFF's paywall; left out |
+| NFL.com and ESPN stats pages | | Not news, and the site already has these numbers from nflverse |
+
+In one fetch, the four league feeds matched 158 stories to teams across the week; the Vikings had 4 from vikings.com and 3 from the league feeds.
+
+### How stories find their team
+
+- **A team site's story** belongs to that team.
+- **A league story** belongs to every team its headline names, by nickname or full name ("Vikings", "Minnesota Vikings"). College teams that share a nickname are excluded ("Nittany Lions" isn't the Lions).
+- **A headline that names a player** (a unique name in the site's players index) also goes to his team, so "Kyler Murray has a sore hamstring…" reaches the Vikings even without the word "Vikings". The player's name becomes a small link to his page.
+- **A story that names four or more teams** (a power ranking, a "grades for every team" piece) goes to none, because it isn't really any one team's news.
+- **The same story from two sources** shows once.
+- **Only the last 7 days** are kept.
+
+### Where it shows
+
+- **The team players page** (`/team/min/players/`) gets a **"Vikings news"** panel, right after the lineup:
+  - two columns: **From vikings.com** (the team site, newest five) and **Around the league** (the league feeds, newest five)
+  - each row is the headline (opens the article in a new tab), the source and the time ("3h", "Mon"), and any player named, linked to his page
+  - "Show more" opens up to ten in each column
+  - an empty column says so: "No Vikings stories from the league feeds this week."
+- **The offense and defense pages** (`/team/min/`, `/team/min/defense/`) get one line under the page's description: "Latest: Kevin O'Connell Updates Vikings Injuries… · Vikings.com · 5h · All Vikings news", linking to the panel. The explorer stays the first thing on the page.
+
+### How it runs
+
+- **On the site, not in the data build:** WordPress fetches the 36 feeds every hour (WordPress has a feed reader built in) and keeps the matched lists in one stored setting. News goes stale in hours, and the data build runs three times a day; keeping it on the site also keeps headlines out of the public data repo.
+- **A feed that fails** keeps its last good list, and the plugin's status screen shows each feed's last fetch, its story count and any error, so a dead feed like the Commanders' is visible.
+- **Every link** opens in a new tab with `rel="nofollow noopener"`.
+- **A setting** turns any source off.
+
+### Left out
+
+- **News on the player pages:** the matching already finds stories that name a player, so his page could list them. A small follow-on.
+- **News on the hub or the game page** (both teams' news before kickoff): later.
+- **Article text, images or summaries:** never.
+
+### Open decisions (for Gene, one at a time)
+
+1. **Where:** the panel on the team players page plus the latest line on the offense and defense pages (recommended), or the panel only.
+2. **Sources:** the 32 team sites plus ProFootballTalk, CBS Sports, ESPN and Yahoo (recommended), or team sites only.
+
+### Acceptance
+
+- The Vikings players page shows the panel as in the mock, with both columns filled from live feeds and no story older than 7 days.
+- No college story, no four-team story and no duplicate appears in any team's list.
+- A team whose feed is stale or failing shows its league stories, and the status screen flags the feed.
+- The offense and defense pages show the latest line and link to the panel.
+- Checked at 1440 and 375, with no horizontal scroll.
+
+Size: S to M.

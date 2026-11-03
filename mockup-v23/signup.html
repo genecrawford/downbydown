@@ -1,0 +1,75 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Signup flow</title><style>
+body{margin:0;padding:24px 12px 60px;background:#dcdcdf;font-family:-apple-system,system-ui,sans-serif}
+.mail{max-width:640px;margin:0 auto 32px;background:#fff;border:1px solid #c9c9cf;border-radius:10px;overflow:hidden}
+.mh{display:flex;flex-direction:column;gap:3px;padding:12px 16px;background:#f2f2f4;border-bottom:1px solid #e1e1e6;font:13px/1.45 -apple-system,system-ui,sans-serif;color:#555}
+.mh b{color:#111} .mh .pv{color:#777}
+.mail img{max-width:100%;height:auto}
+h1.m{max-width:640px;margin:0 auto 6px;font:700 15px/1.3 -apple-system,system-ui,sans-serif;color:#222}
+
+/* Down x Down home: the newsletter section. Paste this whole file into one Divi Code module, in a section under the teams section.
+   The marker, heading, words and your WPForms signup are yours to edit here; the email on the right is the plugin's newsletter-preview block
+   (2.6.0+), the latest finished week as the Tuesday email. */
+.et_pb_column:has(.dxd-nl){padding:0!important}
+.et_pb_module:has(.dxd-nl){align-items:stretch!important}  /* Divi centers a module's content, which would shrink the section */
+.et_pb_text_inner:has(.dxd-nl),.et_pb_code_inner:has(.dxd-nl){width:100%!important;max-width:none!important}
+.dxd-nl{background:#f4f1ea;color:#121417;border-top:1px solid rgba(22,30,54,.22);font-family:"IBM Plex Sans",system-ui,sans-serif;-webkit-font-smoothing:auto;-moz-osx-font-smoothing:auto}  /* Divi's antialiased smoothing hollows Tourney */
+.dxd-nl *{box-sizing:border-box}
+.dxd-nl p:empty{display:none}
+.dxd-nl .dxd-wrap{max-width:1240px;margin:0 auto;padding:clamp(40px,6vw,72px) clamp(16px,4vw,48px)}
+/* the sideline down marker */
+.dxd-nl .dxd-dm{display:flex;flex-basis:100%;align-items:center;gap:10px;margin-bottom:4px}
+.dxd-nl .dxd-dm .b{display:flex;align-items:flex-start;justify-content:center;width:48px;height:48px;padding-top:4px;border-radius:7px;background:#cb2026;color:#fff}
+.dxd-nl .dxd-dm .b b{font:800 32px/1 "Tourney",sans-serif}
+.dxd-nl .dxd-dm .b sup{margin-top:2px;font:700 13px "Barlow Condensed",sans-serif;text-transform:uppercase;vertical-align:baseline;top:0}
+.dxd-nl .dxd-dm .t b{display:block;font:700 26px/1 "Barlow Condensed",sans-serif;letter-spacing:.04em;text-transform:uppercase}
+.dxd-nl .dxd-dm .t small{display:block;margin-top:3px;font:600 11px "IBM Plex Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:#5d616a}
+.dxd-nl h2{margin:0;padding:0;color:#121417;font:800 clamp(30px,3.6vw,48px)/1.02 "Tourney",sans-serif;text-transform:uppercase}
+.dxd-nl .dxd-two{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:clamp(28px,5vw,64px);align-items:center}
+.dxd-nl .dxd-dm{margin-bottom:12px}
+.dxd-nl .dxd-lede{margin:18px 0 22px;padding:0;max-width:32em;color:#3b4255;font-size:17px;line-height:1.6}
+/* your WPForms signup, in the site's type: square-ish fields with a 1px rule, a red button */
+.dxd-nl .wpforms-container{--wpforms-field-border-radius:6px;--wpforms-field-border-color:rgba(22,30,54,.28);--wpforms-field-background-color:#fffdf8;--wpforms-field-text-color:#121417;--wpforms-label-color:#121417;--wpforms-button-background-color:#cb2026;--wpforms-button-text-color:#fff;--wpforms-button-border-radius:6px;margin:0!important;max-width:460px}
+.dxd-nl .wpforms-container .wpforms-field{padding:0 0 12px!important}
+.dxd-nl .wpforms-container .wpforms-field-label{margin:0 0 6px!important;color:#121417!important;font:700 14px "Barlow Condensed",sans-serif!important;letter-spacing:.1em!important;text-transform:uppercase}
+.dxd-nl .wpforms-container input[type=email],.dxd-nl .wpforms-container input[type=text]{width:100%!important;max-width:none!important;height:48px!important;padding:0 14px!important;background:#fffdf8!important;border:1px solid rgba(22,30,54,.28)!important;border-radius:6px!important;box-shadow:none!important;color:#121417!important;font:400 16px "IBM Plex Sans",sans-serif!important}
+.dxd-nl .wpforms-container input:focus{border-color:#121417!important;outline:2px solid rgba(203,32,38,.25)!important;outline-offset:1px}
+.dxd-nl .wpforms-container .wpforms-submit-container{padding:4px 0 0!important}
+.dxd-nl .wpforms-container button[type=submit]{height:48px!important;padding:0 24px!important;background:#cb2026!important;border:0!important;border-radius:6px!important;box-shadow:none!important;color:#fff!important;font:700 15px "Barlow Condensed",sans-serif!important;letter-spacing:.1em!important;text-transform:uppercase}
+.dxd-nl .wpforms-container button[type=submit]:hover{background:#a8181d!important}
+.dxd-nl .wpforms-confirmation-container-full{margin:0!important;padding:14px 16px!important;background:#fffdf8!important;border:1px solid rgba(22,30,54,.2)!important;border-radius:6px!important;color:#121417!important}
+@media (max-width:900px){.dxd-nl .dxd-two{grid-template-columns:minmax(0,1fr)}}
+
+.step{max-width:1000px;margin:0 auto 10px;font:700 15px/1.3 -apple-system,system-ui,sans-serif;color:#222}
+.frame{max-width:1000px;margin:0 auto 34px;border:1px solid #c9c9cf;border-radius:10px;overflow:hidden}
+.dxd-nl .wpforms-confirmation-container-full{margin-top:18px;padding:14px 16px;background:#fff;border:1px solid rgba(22,30,54,.22);border-radius:4px;font:16px/1.5 "IBM Plex Sans",sans-serif;color:#121417}
+.dxd-nl .wpforms-confirmation-container-full p{margin:0}</style></head><body><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;600&family=Tourney:wght@800&display=swap"><p class="step">1. The home form after submitting (the message is WPForms #63's Confirmation setting)</p><div class="frame"><section class="dxd-nl">
+<div class="dxd-wrap">
+<div class="dxd-two">
+<div class="dxd-copy">
+<span class="dxd-dm" aria-hidden="true"><span class="b"><b>1</b><sup>st</sup></span><span class="t"><b>&amp; 10</b><small>Opp 17</small></span></span>
+<h2>The week in review, every Tuesday</h2>
+<p class="dxd-lede">One email after every week: the upsets, the swing that turned a game, the best play and the players whose roles are growing, with a link to the full week. Free, and nothing else in your inbox.</p>
+<div class="wpforms-confirmation-container-full"><p><b>Almost there.</b> Check your inbox for a confirmation link.</p></div>
+</div>
+
+</div>
+</div>
+</section></div><p class="step">2. The confirmation email Brevo sends (the plugin's settings page gives this as HTML to paste into Brevo)</p><div class="mail"><div class="mh"><span>From: <b>Down by Down &lt;week@downbydown.com&gt;</b></span><span>Subject: <b>Confirm your email for Down by Down</b></span><span class="pv">One click and you&#x27;re in.</span></div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#efebe2"><tr><td align="center" style="padding:20px 10px">
+<span style="display:none;max-height:0;overflow:hidden">One click and you&#x27;re in.</span>
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:#fffdf8;border:1px solid rgba(22,30,54,.12)">
+<tr><td style="background:#0f1311;padding:16px 24px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+<td style="font:900 20px/1 'Arial Black','Helvetica Neue',Arial,sans-serif;letter-spacing:.03em;color:#fff">DOWN <span style="color:#cb2026">X</span> DOWN</td>
+<td align="right" style="font:12px/1.2 -apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#b9bcc2"></td></tr></table></td></tr>
+<tr><td style="padding:28px 28px 30px">
+<h1 style="margin:0 0 14px;font:900 24px/1.15 'Arial Black','Helvetica Neue',Arial,sans-serif;text-transform:uppercase;color:#121417">One click and you're in</h1>
+<p style="margin:0 0 18px;font:16px/1.6 -apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#121417">Confirm your email to get the week in review every Tuesday morning: the upsets, the swing that turned a game, the best play and the players whose roles are growing.</p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px"><tr><td style="background:#cb2026;border-radius:4px">
+<a href="signup-landed.html" style="display:inline-block;padding:13px 22px;font:700 15px/1 -apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#fff;text-decoration:none">Confirm my email</a></td></tr></table>
+<p style="margin:0;font:14px/1.6 -apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#5d616a">If you didn't sign up, ignore this email and you won't hear from us.</p>
+</td></tr>
+<tr><td style="background:#f4f1ea;padding:20px 28px;border-top:1px solid #e3dfd6;font:12px/1.6 -apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#5d616a">
+Someone, hopefully you, signed up for the week in review at <a href="https://downbydown.com/" style="color:#5d616a">downbydown.com</a>.<br>
+
+Down by Down · [postal address, decision 4]<br>Not affiliated with the NFL. Data: nflverse.</td></tr>
+</table></td></tr></table></div><p class="step">3. The confirm link lands on the latest post with a note on top: <a href="signup-landed.html">open it</a></p></body></html>
