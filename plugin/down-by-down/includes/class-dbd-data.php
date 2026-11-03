@@ -98,6 +98,10 @@ class DBD_Data {
 		return isset( $s['season'] ) ? (int) $s['season'] : (int) gmdate( 'Y' );
 	}
 
+	/** A chance stored in tenths (225) as a whole percent, rounded the way the data build rounds (half to even: 22.5 is 22), so the
+	    plugin's numbers match the build's tags ("Upset · 22% at kickoff") everywhere. */
+	public static function pct( $v ) { return (int) round( (float) $v / 10, 0, PHP_ROUND_HALF_EVEN ); }
+
 	public static function current_week() {
 		$s = self::schedule();
 		return isset( $s['current_week'] ) ? (int) $s['current_week'] : 1;

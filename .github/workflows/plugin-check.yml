@@ -210,6 +210,32 @@ jobs:
           grep -q 'href="https://example.test/game/' blockroot/page-home-hero.html
           grep -q 'href="https://example.test/player/' blockroot/page-home-hero.html
           grep -q 'href="https://example.test/matchups/"' blockroot/page-home-hero.html
+      - name: The weekly post (2.7.0)
+        run: |
+          set -e
+          export DBD_HARNESS_MEDIA=1 DBD_HARNESS_HTML=posts
+          # every complete week composes (a backfilled post leaves out next week); Week 7 is finished and fixed, so its checks hold
+          for w in $(python3 -c "import json,glob,re; print(' '.join(sorted({re.search(r'w(\\d+)', f).group(1) for f in glob.glob('data/week/w*.json') if json.load(open(f)).get('complete')}, key=int)))"); do
+            DBD_HARNESS_AHEAD=0 php tools/view_harness.php data post "$w"
+          done
+          grep -q '<h1>Week 7 in review: Giants stun Texans from 22%</h1>' posts/post-w7.html  # the build's rounding: 22.5 is 22
+          [ "$(grep -o '<tr><td><a href' posts/post-w7.html | wc -l)" -eq 14 ] || { echo "Week 7 should list 14 scores"; exit 1; }
+          grep -q 'Joe Burrow' posts/post-w7.html
+          if grep -q 'TOUCHDOWN \[' posts/*.html; then echo "a tackler's bracket left in a post"; exit 1; fi
+          if grep -q 'Next week' posts/post-w7.html; then echo "a backfilled post has no next week"; exit 1; fi
+          # a week still in progress has no post yet
+          open_wk="$(python3 -c "import json,glob,re; o=[re.search(r'w(\\d+)', f).group(1) for f in glob.glob('data/week/w*.json') if not json.load(open(f)).get('complete')]; print(o[0] if o else '')")"
+          if [ -n "$open_wk" ]; then php tools/view_harness.php data post "$open_wk" | grep -q 'none'; fi
+          # the sitemap lists the week pages and the leaders (2.7.0)
+          DBD_HARNESS_PRETTY=1 DBD_HARNESS_ROOT=1 php tools/view_harness.php data sitemap > sitemap.txt
+          grep -qx 'https://example.test/week/7/' sitemap.txt
+          grep -qx 'https://example.test/leaders/' sitemap.txt
+          grep -qx 'https://example.test/leaders/wr/' sitemap.txt
+          echo "sitemap: $(wc -l < sitemap.txt) URLs"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: weekly-posts
+          path: posts/
       - uses: actions/upload-artifact@v4
         with:
           name: home-hero

@@ -27,13 +27,13 @@ class DBD_Hub {
 		$lines = array();
 		$far = $cbg && $cbg['low'] < 300;  /* a comeback is a winner who fell below 30%, as the week page says it */
 		if ( $upg && $far && $upg['id'] === $cbg['id'] ) {  /* one game was both: say it once, and make room for the wildest */
-			$lines[] = array( 'Upset', '<b>' . esc_html( self::nick( $upg['win'] ) ) . '</b> over the ' . esc_html( self::nick( $loser( $upg ) ) ) . ', ' . $score( $upg ) . ': a ' . round( $upg['pre_w'] / 10 ) . '% underdog at kickoff, and down to ' . max( 1, round( $upg['low'] / 10 ) ) . '% before winning.', $upg['id'] );
+			$lines[] = array( 'Upset', '<b>' . esc_html( self::nick( $upg['win'] ) ) . '</b> over the ' . esc_html( self::nick( $loser( $upg ) ) ) . ', ' . $score( $upg ) . ': a ' . DBD_Data::pct( $upg['pre_w'] ) . '% underdog at kickoff, and down to ' . max( 1, DBD_Data::pct( $upg['low'] ) ) . '% before winning.', $upg['id'] );
 			$wg = null; foreach ( $wd as $g ) { if ( $g['id'] !== $upg['id'] ) { $wg = $g; break; } }
 			if ( $wg ) { $lc = (int) ( $wg['lc'] ?? 0 ); $lines[] = array( 'Wildest', '<b>' . esc_html( self::nick( $wg['away'] ) . ' at ' . self::nick( $wg['home'] ) ) . '</b>: the lead changed hands ' . $lc . ' time' . ( $lc === 1 ? '' : 's' ) . '; ' . ( ! empty( $wg['win'] ) ? 'the ' . esc_html( self::nick( $wg['win'] ) ) . ' won ' . $score( $wg ) . '.' : 'it ended tied.' ), $wg['id'] ); }
 		} else {
-			if ( $upg ) { $lines[] = array( 'Upset', '<b>' . esc_html( self::nick( $upg['win'] ) ) . '</b> over the ' . esc_html( self::nick( $loser( $upg ) ) ) . ', ' . $score( $upg ) . ', as a ' . round( $upg['pre_w'] / 10 ) . '% underdog.', $upg['id'] ); }
-			if ( $far ) { $lines[] = array( 'Comeback', '<b>' . esc_html( self::nick( $cbg['win'] ) ) . '</b> back from ' . max( 1, round( $cbg['low'] / 10 ) ) . '% against the ' . esc_html( self::nick( $loser( $cbg ) ) ) . ', ' . $score( $cbg ) . '.', $cbg['id'] ); }
-			elseif ( $cbg ) { $lines[] = array( 'Comeback', 'Nobody came back from far: the lowest any winner fell was ' . round( $cbg['low'] / 10 ) . '% (the ' . esc_html( self::nick( $cbg['win'] ) ) . ').', $cbg['id'] ); }
+			if ( $upg ) { $lines[] = array( 'Upset', '<b>' . esc_html( self::nick( $upg['win'] ) ) . '</b> over the ' . esc_html( self::nick( $loser( $upg ) ) ) . ', ' . $score( $upg ) . ', as a ' . DBD_Data::pct( $upg['pre_w'] ) . '% underdog.', $upg['id'] ); }
+			if ( $far ) { $lines[] = array( 'Comeback', '<b>' . esc_html( self::nick( $cbg['win'] ) ) . '</b> back from ' . max( 1, DBD_Data::pct( $cbg['low'] ) ) . '% against the ' . esc_html( self::nick( $loser( $cbg ) ) ) . ', ' . $score( $cbg ) . '.', $cbg['id'] ); }
+			elseif ( $cbg ) { $lines[] = array( 'Comeback', 'Nobody came back from far: the lowest any winner fell was ' . DBD_Data::pct( $cbg['low'] ) . '% (the ' . esc_html( self::nick( $cbg['win'] ) ) . ').', $cbg['id'] ); }
 		}
 		$star = null; foreach ( (array) ( $W['players'] ?? array() ) as $rows ) { foreach ( (array) $rows as $r ) { if ( ! $star || $r['e'] > $star['e'] ) { $star = $r; } } }
 		if ( $star ) { $lines[] = array( 'Player', '<b>' . esc_html( $star['n'] ) . '</b> (' . esc_html( $star['t'] . ' ' . $star['pos'] ) . '): ' . ( $star['e'] > 0 ? '+' : '' ) . number_format( (float) $star['e'], 1 ) . ' EPA, ' . esc_html( $star['x'] ) . '.', null ); }

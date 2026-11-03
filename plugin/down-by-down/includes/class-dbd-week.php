@@ -18,6 +18,25 @@ class DBD_Week {
 	}
 
 	/** The most recent week with a final game, so a Sunday night shows that Sunday. */
+	/**
+	 * The week the home's blocks feature (the most-targeted player, the week's highlights): the latest week once at least half of its
+	 * games are final, else the week before. A Thursday night game alone doesn't take over the home until Sunday's games are in.
+	 */
+	/** The published weekly post for this season's week n (SCOPE §46), for the link back from the week page; never for an archived season. */
+	private static function writeup( $n ) {
+		if ( ! class_exists( 'DBD_Post' ) || ! function_exists( 'get_posts' ) || DBD_Data::archived() ) { return ''; }
+		return (string) DBD_Post::url_for( $n );
+	}
+
+	public static function settled_week() {
+		$ws = self::weeks(); if ( ! $ws ) { return 0; }
+		$last = max( $ws ); $g = DBD_Data::week_games( $last );
+		$fin = count( array_filter( $g, array( 'DBD_Router', 'is_final' ) ) );
+		if ( $fin * 2 >= count( $g ) ) { return $last; }
+		$prev = array_filter( $ws, function ( $w ) use ( $last ) { return $w < $last; } );
+		return $prev ? max( $prev ) : $last;  /* a season's first week has no week before it */
+	}
+
 	public static function default_week() {
 		$w = self::weeks();
 		return $w ? max( $w ) : 0;
@@ -56,7 +75,7 @@ class DBD_Week {
 		$k = $season . ' season' . ( $dates ? ' · ' . $fd( reset( $dates ) ) . ' to ' . $fd( end( $dates ) ) : '' ) . ' · ' . $all . ' games' . ( ! empty( $W['byes'] ) ? ' · byes: ' . implode( ', ', $W['byes'] ) : '' );
 		$sub = 'What happened this week: every game\'s swings in one strip, the plays that decided them, the offenses and defenses that had their day, the players who carried them' . ( $W && ! empty( $W['complete'] ) ? ', and whose role moved' : '' ) . '.';
 		return '<div class="dbd-ttitle"><div class="t-stagger"><p class="dbd-kicker t-stagger-line t-stagger-line--1">' . esc_html( $k ) . '</p><h1 class="t-stagger-line t-stagger-line--2"><span>' . esc_html( DBD_Router::week_label( $n ) ) . '</span> in review</h1>'
-			. '<p class="dbd-sub t-stagger-line t-stagger-line--3">' . esc_html( $sub ) . '</p></div><div class="dbd-badge">' . (int) $fin . ' of ' . (int) $all . ' final</div></div>';
+			. '<p class="dbd-sub t-stagger-line t-stagger-line--3">' . esc_html( $sub ) . ( ( $wu = self::writeup( $n ) ) !== '' ? ' <a class="dbd-writeup" href="' . esc_url( $wu ) . '">Read the ' . esc_html( DBD_Router::week_label( $n ) ) . ' write-up</a>' : '' ) . '</p></div><div class="dbd-badge">' . (int) $fin . ' of ' . (int) $all . ' final</div></div>';
 	}
 
 	private static function picker( $n, $weeks ) {
@@ -76,10 +95,10 @@ class DBD_Week {
 		$li = array();
 		$up = array_filter( $fin, function ( $g ) { return ! empty( $g['win'] ) && $g['pre_w'] < 500; } );
 		if ( $up ) { usort( $up, function ( $a, $b ) { return $a['pre_w'] <=> $b['pre_w']; } ); $g = $up[0];
-			$li[] = array( 'Upset', 'The <b>' . esc_html( self::nick( $g['win'] ) ) . '</b> beat the ' . esc_html( self::nick( self::loser( $g ) ) ) . ' ' . self::score( $g ) . ' as a <b>' . round( $g['pre_w'] / 10 ) . '%</b> underdog at kickoff, the longest odds anyone overcame this week.', self::game_url( $g['id'] ) ); }
+			$li[] = array( 'Upset', 'The <b>' . esc_html( self::nick( $g['win'] ) ) . '</b> beat the ' . esc_html( self::nick( self::loser( $g ) ) ) . ' ' . self::score( $g ) . ' as a <b>' . DBD_Data::pct( $g['pre_w'] ) . '%</b> underdog at kickoff, the longest odds anyone overcame this week.', self::game_url( $g['id'] ) ); }
 		$cb = array_filter( $fin, function ( $g ) { return ! empty( $g['win'] ); } );
 		if ( $cb ) { usort( $cb, function ( $a, $b ) { return $a['low'] <=> $b['low']; } ); $g = $cb[0];
-			$li[] = array( 'Comeback', $g['low'] < 300 ? 'The <b>' . esc_html( self::nick( $g['win'] ) ) . '</b> were down to <b>' . max( 1, round( $g['low'] / 10 ) ) . '%</b> against the ' . esc_html( self::nick( self::loser( $g ) ) ) . ' and won ' . self::score( $g ) . '.' : 'Nobody came back from far: the lowest any winner fell was <b>' . round( $g['low'] / 10 ) . '%</b> (the ' . esc_html( self::nick( $g['win'] ) ) . ').', self::game_url( $g['id'] ) ); }
+			$li[] = array( 'Comeback', $g['low'] < 300 ? 'The <b>' . esc_html( self::nick( $g['win'] ) ) . '</b> were down to <b>' . max( 1, DBD_Data::pct( $g['low'] ) ) . '%</b> against the ' . esc_html( self::nick( self::loser( $g ) ) ) . ' and won ' . self::score( $g ) . '.' : 'Nobody came back from far: the lowest any winner fell was <b>' . DBD_Data::pct( $g['low'] ) . '%</b> (the ' . esc_html( self::nick( $g['win'] ) ) . ').', self::game_url( $g['id'] ) ); }
 		if ( $fin ) { $wd = $fin; usort( $wd, function ( $a, $b ) { return array( $b['lc'] ?? 0, $b['drama'] ?? 0 ) <=> array( $a['lc'] ?? 0, $a['drama'] ?? 0 ); } ); $g = $wd[0]; $lc = (int) ( $g['lc'] ?? 0 );
 			$li[] = array( 'Wildest', '<b>' . esc_html( self::nick( $g['away'] ) . ' at ' . self::nick( $g['home'] ) ) . '</b>: the lead changed hands <b>' . $lc . '</b> time' . ( $lc === 1 ? '' : 's' ) . ( ! empty( $g['ot'] ) ? ' and it went to overtime' : '' ) . '; ' . ( ! empty( $g['win'] ) ? 'the ' . esc_html( self::nick( $g['win'] ) ) . ' won ' . self::score( $g ) : 'it ended tied' ) . ( ! empty( $g['big'] ) ? ', and the biggest swing was ' . (int) $g['big'][0] . ' points at ' . esc_html( $g['big'][1] ) : '' ) . '.', self::game_url( $g['id'] ) ); }
 		$T = (array) ( $W['teams'] ?? array() );
@@ -121,7 +140,7 @@ class DBD_Week {
 		$row = function ( $a, $s ) use ( $g ) { return '<span class="' . ( ( $g['win'] ?? '' ) === $a ? 'w' : '' ) . '">' . self::mk( $a ) . '<b>' . esc_html( self::nick( $a ) ) . '</b><em>' . (int) $s . '</em></span>'; };
 		$tags = ''; foreach ( (array) ( $g['tags'] ?? array() ) as $t ) { $tags .= '<i class="wk-tag ' . esc_attr( $t[0] ) . '">' . esc_html( $t[1] ) . '</i>'; }
 		$fav = $g['pre'] >= 500 ? $g['home'] : $g['away'];
-		$tip = '<b>' . esc_html( self::nick( $g['away'] ) . ' at ' . self::nick( $g['home'] ) ) . '</b><br>Kickoff: ' . esc_html( self::nick( $fav ) ) . ' ' . round( max( $g['pre'], 1000 - $g['pre'] ) / 10 ) . '%<br>Lead changes: ' . (int) ( $g['lc'] ?? 0 ) . ' · the favorite flipped ' . (int) ( $g['flips'] ?? 0 ) . ' times' . ( ! empty( $g['big'] ) ? '<br>Biggest swing: ' . (int) $g['big'][0] . ' pts, ' . esc_html( $g['big'][1] ) : '' );
+		$tip = '<b>' . esc_html( self::nick( $g['away'] ) . ' at ' . self::nick( $g['home'] ) ) . '</b><br>Kickoff: ' . esc_html( self::nick( $fav ) ) . ' ' . DBD_Data::pct( max( $g['pre'], 1000 - $g['pre'] ) ) . '%<br>Lead changes: ' . (int) ( $g['lc'] ?? 0 ) . ' · the favorite flipped ' . (int) ( $g['flips'] ?? 0 ) . ' times' . ( ! empty( $g['big'] ) ? '<br>Biggest swing: ' . (int) $g['big'][0] . ' pts, ' . esc_html( $g['big'][1] ) : '' );
 		return '<a class="wk-g" href="' . $href . '" data-k="' . $key . '" data-d="' . (int) ( $g['drama'] ?? 0 ) . '" data-tip="' . esc_attr( $tip ) . '"><div class="wk-gt">' . $row( $g['away'], $g['a'] ) . $row( $g['home'], $g['h'] ) . '</div>'
 			. '<div class="wk-gm">' . self::spark( $g ) . ( ! empty( $g['big'] ) ? '<small>Biggest swing <b>' . (int) $g['big'][0] . ' pts</b> · ' . esc_html( $g['big'][1] ) . '</small>' : '' ) . '</div>' . ( $tags ? '<div class="wk-tags">' . $tags . '</div>' : '' ) . '</a>';
 	}

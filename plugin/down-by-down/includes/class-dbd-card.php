@@ -290,7 +290,7 @@ class DBD_Card {
 				$big = null; foreach ( (array) ( $wp['top'] ?? array() ) as $x ) { if ( strpos( (string) ( $x[3] ?? '' ), ' kneels ' ) !== false ) { continue; } if ( ! $big || abs( $x[1] ) > abs( $big[1] ) ) { $big = $x; } }
 				if ( $big && isset( $wp['s'][ (int) $big[0] ], $s['wp'][ (int) $big[0] ] ) ) {
 					$t = (int) $wp['s'][ (int) $big[0] ][0]; $q = min( 4, intdiv( $t, 900 ) + 1 ); $rem = max( 0, 900 * $q - $t );
-					$s['mark'] = array( 'x' => $s['wp'][ (int) $big[0] ][0], 'y' => $s['wp'][ (int) $big[0] ][1], 'clock' => ( $t >= 3600 ? 'OT' : 'Q' . $q . ' ' . intdiv( $rem, 60 ) . ':' . sprintf( '%02d', $rem % 60 ) ), 'team' => $big[1] > 0 ? $h : $a, 'pct' => (int) round( abs( $big[1] ) / 10 ) );
+					$s['mark'] = array( 'x' => $s['wp'][ (int) $big[0] ][0], 'y' => $s['wp'][ (int) $big[0] ][1], 'clock' => ( $t >= 3600 ? 'OT' : 'Q' . $q . ' ' . intdiv( $rem, 60 ) . ':' . sprintf( '%02d', $rem % 60 ) ), 'team' => $big[1] > 0 ? $h : $a, 'pct' => (int) DBD_Data::pct( abs( $big[1] ) ) );
 				}
 			}
 			$s['low'] = $s['wp'] ? min( array_column( $s['wp'], 1 ) ) / 10 : null;
@@ -360,7 +360,7 @@ class DBD_Card {
 			$s['kicker'] = $season . ' season · week ' . $wk; $s['title'] = array( 'Week ' . $wk, '!in review' );
 			$s['say'] = ucfirst( $plural( count( $ups ), 'upset' ) . ', ' . $plural( count( $cbs ), 'comeback' ) . ' and ' . $plural( count( $ots ), 'overtime' ) . ': the plays that swung the week, and who moved.' );
 			$wtxt = ''; if ( $wild ) { $wn = $wild['win'] ?? ''; $ln = $wn === $wild['away'] ? $wild['home'] : $wild['away']; $ws = $wn === $wild['away'] ? $wild['a'] : $wild['h']; $ls = $wn === $wild['away'] ? $wild['h'] : $wild['a']; $wtxt = array( max( $ws, $ls ) . '-' . min( $ws, $ls ), $nk( $wn ) . ' ' . $ws . ', ' . $nk( $ln ) . ' ' . $ls . ( ! empty( $wild['ot'] ) ? ' in OT' : '' ) ); }
-			$s['tiles'] = array( array( 'Finals', (string) count( $fin ), $n ? $n . ' still to play' : 'all played' ), array( 'Upsets', (string) count( $ups ), $ups ? $nk( $ups[0]['win'] ) . ' from ' . round( ( $ups[0]['pre_w'] ?? 0 ) / 10 ) . '%' : 'none this week' ) );
+			$s['tiles'] = array( array( 'Finals', (string) count( $fin ), $n ? $n . ' still to play' : 'all played' ), array( 'Upsets', (string) count( $ups ), $ups ? $nk( $ups[0]['win'] ) . ' from ' . DBD_Data::pct( ( $ups[0]['pre_w'] ?? 0 ) ) . '%' : 'none this week' ) );
 			if ( $wtxt ) { $s['tiles'][] = array( 'Wildest', $wtxt[0], $wtxt[1] ); }
 			$board = array(); $gl = $W['games']; usort( $gl, function ( $a, $b ) { return array( ( $a['status'] ?? '' ) !== 'final', $a['date'] ?? '', $a['time'] ?? '' ) <=> array( ( $b['status'] ?? '' ) !== 'final', $b['date'] ?? '', $b['time'] ?? '' ); } );
 			foreach ( $gl as $g ) {
