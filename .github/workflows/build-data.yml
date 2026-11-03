@@ -5,7 +5,8 @@ name: Build data
 # came, so Monday night's game sat unfinished until a manual run), and nflverse posts weekly player stats a few hours
 # after the play-by-play. The extra runs are backstops: Sunday after the early and late games (21:37 and 01:37 UTC
 # Monday), after Sunday night (05:37 UTC Monday), and after Monday night (05:37 and 08:37 UTC Tuesday). Off the top of
-# the hour, when GitHub is busiest. A run with nothing new commits nothing; overlapping runs queue (concurrency below).
+# the hour, when GitHub is busiest. A run with nothing new commits nothing (not even a new built_at) and doesn't ping the
+# site; overlapping runs queue (concurrency below).
 # Each run downloads the nflverse files, rebuilds /data, commits it if anything changed, then tells the WordPress site to sync. The site also pulls daily on its own as a fallback.
 on:
   schedule:
@@ -96,6 +97,11 @@ jobs:
           git config user.name "downbydown-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data
+          # The build always stamps a new built_at. If that is the manifest's only change and nothing else in data changed,
+          # put the old manifest back, so a run with nothing new commits nothing and doesn't ping the site.
+          if git diff --cached --quiet -- data ':!data/manifest.json' && [ -z "$(git diff --cached -U0 -- data/manifest.json | grep -E '^[+-]' | grep -vE '^(\+\+\+|---) ' | grep -v '"built_at"')" ]; then
+            git restore --staged --worktree -- data/manifest.json
+          fi
           if git diff --cached --quiet; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No data changes."
