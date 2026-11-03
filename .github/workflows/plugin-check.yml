@@ -156,6 +156,7 @@ jobs:
           grep -q 'Open the matchup' blockpages/page-home-matchup.html
           grep -q 'class="hb-h2h"' blockpages/page-home-matchup.html
           php tools/view_harness.php data block player-card
+          grep -q 'card=00-' blockpages/block-player-card.html
           php tools/view_harness.php data block movers
           php tools/view_harness.php data page divi/home-players.html
           grep -q 'class="dbd-hb hb-movers"' blockpages/page-home-players.html
