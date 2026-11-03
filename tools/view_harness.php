@@ -206,7 +206,7 @@ if ( empty( $routed ) ) {
 $rp = new ReflectionProperty( 'DBD_Router', 'page_url' ); $rp->setAccessible( true ); $rp->setValue( null, 'https://example.test/app/' );
 DBD_Router::$route = DBD_Router::route();
 } else { $view = DBD_Router::$route['view']; $arg = str_replace( '/', '_', trim( (string) $arg, '/' ) ); }
-$file = DBD_PATH . 'includes/views/' . DBD_Router::$route['view'] . '.php';
+$file = method_exists( 'DBD_Router', 'view_file' ) ? DBD_Router::view_file( DBD_Router::$route ) : DBD_PATH . 'includes/views/' . DBD_Router::$route['view'] . '.php';  /* the router's choice: a kicker's page for a K (SCOPE §47) */
 if ( ! is_readable( $file ) ) { fwrite( STDERR, "no view file for route '" . DBD_Router::$route['view'] . "'\n" ); exit( 2 ); }
 ob_start();
 try { include $file; $html = ob_get_clean(); }

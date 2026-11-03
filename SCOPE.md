@@ -2011,3 +2011,125 @@ Build notes from review (Greptile, PR #67):
 - **An edit to the title, body or excerpt** stops refreshes.
 - **One writer per week:** a lock on the season and week stops a webhook sync and "Write past weeks" from making two posts.
 - **Old seasons' links:** a post keeps the app's plain links, the canonical pages while its season is current. Once the season is archived, the post shows its app links with the season prefix (`/2026/team/min/`). A link Gene adds to his own pages is left alone.
+
+## 47. Kickers (scoped and mocked 2026-11-03, `mockup-v22/`)
+
+Gene, looking at the Vikings–Lions swing list: "we need to work kickers into this stuff." That list tagged Jake Bates' missed 46-yarder **MIN**, which read as if the Vikings' kicker missed. The data was right: the tag is the team the play helped, and Bates (Detroit) missed. But the site has no kickers at all. They show up only as a name in the box score and lineups, with no page, no stats, no Leaders board and no fantasy scoring. This section adds them, and fixes the tag.
+
+The mock is two pages in the live site's shell, built from this season's nflverse files through Week 8. Every number is real:
+- `mockup-v22/kicker-reichard.html`: Will Reichard's page
+- `mockup-v22/elsewhere.html`: the swing tag before and after, the box score line, a Kickers tab on Leaders, and fantasy
+
+`kick_data.py` and `mock.py` rebuild them.
+
+### What nflverse has for kickers
+
+- **Play-by-play** (already downloaded):
+  - every field goal try: distance, result (made, missed, blocked), the kicker, clock, score, and win chance before and after
+  - every extra point
+  - every kickoff: distance, touchback, and the drive that follows
+  - roof, temperature and wind for each game played
+- **Weekly player stats** (already downloaded): field goals by range, the made and missed lists, extra points, game-winning tries.
+- **Rosters** (already downloaded): kickers with number, college, draft and NFL headshot.
+- **Not in the data:** the hash or angle of a kick, hang time, where a kickoff landed, and forecasts for games not yet played (the schedule has the roof, so "indoors" is known ahead).
+
+### Over expected: the league curve
+
+A 50-yarder isn't a 30-yarder, so raw field goal percentage flatters kickers who are only sent out short. The page measures each kicker against an average kicker from the same spots:
+- **The curve:** a logistic fit on distance over every try from 2023–2025, 3,413 kicks. It gives 96% at 30 yards, 89% at 40, 75% at 50 and 53% at 60, within a few points of the real rates in each 5-yard band.
+- **Over expected** = makes − the sum of each try's chance. Reichard is 18 of 20 against 15.9 expected: **+2.1**, 4th of 31.
+- The curve's two numbers live in the build. `tools/kick_curve.py` refits them from the last three seasons, once a year when a season is archived.
+
+### The kicker page (`/player/will-reichard/`)
+
+Same shell, header and side card as every player page. The parts that only make sense for skill players (Playstyle, the EPA grid, targets) are replaced:
+
+| Part | What it shows | Reichard (mock) |
+|---|---|---|
+| **Title and side card** | Season, K, number, years; age, size, college, draft; photo; "Vikings special teams" with his tries and kickoffs; Compare, Share card, My team | 2026 season · K · #16 · 3rd season |
+| **Tiles** (8, ranked among qualifying kickers) | Field goals, Over expected, From 50+, Avg try, Extra points, Points, Kickoffs (where the other team starts), Fantasy | 18/20 · +2.1 · 6/8 · 45.3 yds · 10/10 · 64 · own 29 · 11.4 |
+| **The short version** | How good (over expected), Range, Under pressure (fourth quarter or overtime of a one-score game), Fantasy, This week (opponent and roof) | "Perfect inside 55 (16 of 16)"; "6 of 7" late and close; "indoors at U.S. Bank Stadium" |
+| **Scorecard** | Eight stats with rank, league bar and percentile, as on every player page | |
+| **By distance** | Five ranges: his made/tried, his %, expected, league %, over expected | 55+: 2/4 against 2.4 expected |
+| **Every kick** | Each try drawn at the spot it was held, one row per game, numbered by distance: white = good, red ring = no good, red = blocked; extra points per game at the end. Hover or tap a kick for the clock, score, the average kicker's chance and the win-chance swing. On a phone the field stands upright: the uprights at the top, one column per week | 20 dots, 2 misses at 57 and 59 |
+| **The kicks that mattered** | His five tries that moved the win chance most, in the swing-list style, with a note that a made kick can lower it (three points can be worth less than the drive's touchdown chances) | Week 7: 59 yards, blocked, up 3 (72% → 60%) |
+| **Game log** | Week, opponent, FG, long, XP, points, fantasy, conditions (indoors, or temperature and wind) | Week 4: 5/5, 15 points, 19 fantasy |
+| **Career** | Regular-season line by season: games, FG, %, long, 50+, XP, and a sentence on his best year | 2025: 33 of 35 (94%), long 62 |
+
+The qualifier is a try for every game his team has played (33 kickers through Week 8). The mock used 8 tries, which gives 31.
+
+### Elsewhere on the site
+
+- **The swing tag (game page, week page):** the tag becomes the team **with the ball**. The bar names the team the play **helped**, in that team's color ("+13 MIN"). So Bates' miss reads as a Lions kick that helped the Vikings. The turning-point row works the same. Nothing new is stored: each swing already records the team with the ball.
+- **Play text:** a kicker's name in a play links to his page ("J.Bates 46 yard field goal…").
+- **Box score:** the kicking line lists every kicker in the game, linked, with misses and their distance, extra points and points. Today it shows one kicker and field goals only. For Vikings–Lions: "W.Reichard 0/1 FG (57 no good), 1/1 XP, 1 pts · J.Bates 2/3 FG (46 no good), 1/1 XP, 7 pts".
+- **Team pages:** the lineup's kicker links to his page. The team's Players page gets a Kicker row.
+- **Players index:** K in the position filter.
+- **Compare:** kicker against kicker, on the kicker stats.
+- **Leaders:** a **Kickers** tab after Tight ends, with six boards: Over expected, Field goal %, From 50+, Points, Kickoffs (lowest start), Fantasy points a game.
+- **Fantasy:**
+  - kickers are scored the same way in every format (see decision 1)
+  - a K board on Leaders
+  - the Fantasy panel on a kicker's page
+  - My team takes a kicker
+  - a defense's fantasy line adds kicker points allowed: the Colts give up the most, 11.4 a game
+- **Share card:** a kicker card with his field goal line, over expected, long and a small version of the kick chart.
+
+### Data
+
+`tools/build_data.py`:
+- **`players/{TEAM}.json`:** the kicker gets an entry (position K) with a `k` block:
+  - the season line, ranges with expected, over expected, kickoffs (count, touchbacks, opponent start)
+  - points, fantasy, game rows with conditions
+  - every try: week, game, distance, result, quarter, clock, score margin, win chance and swing
+  - about 4 KB a kicker
+- **`players/index.json`** and **`players/mini.json`:** include kickers, so search, My team and the index find them.
+- **`players/league.json`:** a `k` group with the qualifier and the distributions behind every rank and percentile.
+- **`leaders.json`:** the six kicker boards.
+- **`fantasy.json`:** K in the position ranks and in each defense's points allowed. The value is the same across standard, half and PPR.
+- **`career/{season}.json`:** kicking columns (FG made and tried, long, 50+, XP) from the weekly stats.
+- **`box/w{N}.json`:** `k` becomes a list of every kicker in the game: id, name, FG made and tried, the misses with distance, XP made and tried.
+- The curve constants, and `tools/kick_curve.py` to refit them.
+
+The build check validates:
+- every kicker's tries add up to his field goal line
+- ranks run 1 to N with no gaps
+- the expected sums match the curve
+- Vikings–Lions Week 8 renders with Bates' row tagged DET and the bar naming MIN
+- both kickers appear in that box score
+- the Kickers tab has six boards
+- Reichard's page renders at 1440 and 375 with no sideways scroll
+
+### Plugin
+
+- **The page:** the player route sends a K to `views/kicker.php`, built by a new `DBD_Kicker` class (tiles, short version, scorecard, by distance, the chart in both orientations, the kicks that mattered, game log, career).
+- **Game page:** `game.php` gets the swing tag and the box line.
+- **Elsewhere:** Leaders gets the tab, `DBD_Fantasy` the K position, My team and Compare accept kickers, the players index gets the filter, and `DBD_Card` a kicker card.
+- **Styles:** kicker styles in `dbd.css`.
+- **Sync:** the sync allowlist already covers every file the build changes.
+
+### Decisions for Gene
+
+1. **Fantasy scoring for kickers.** Recommended: ESPN standard. Field goals score 3 for 0–39 yards, 4 for 40–49, 5 for 50–59 and 6 for 60+. A missed field goal is −1, an extra point +1, a missed extra point −1. The alternative is Yahoo's, which doesn't take points off for a miss.
+2. **The qualifier.** Recommended: a try for every game his team has played.
+3. **The swing tag.** Recommended: the team with the ball, and the bar names who it helped. The alternative keeps today's tag and labels it "helped MIN".
+
+### Left out
+
+- **Punters:** the same pattern later (net average, inside the 20, the drive that follows).
+- **Kick returners.**
+- **Onside kicks:** too rare.
+- **Hang time, landing spot, hash marks:** not in the data.
+- **Weather forecasts for upcoming games:** not in the data. The roof is.
+- **A kicker line in the weekly post:** possible once the page exists.
+
+### Acceptance
+
+- Reichard's page matches the mock with fresh data: 18 of 20, +2.1 over expected, 4th of 31 (or of 33 under the recommended qualifier).
+- The chart shows 20 tries and the extra points per game. Upright on a phone, sideways on desktop.
+- The Vikings–Lions swing list tags Bates' miss DET, with "+13 MIN" on the bar.
+- Both kickers are in that box score, linked, with their misses.
+- The Leaders Kickers tab and the K fantasy board rank the same kickers as the pages.
+- Checked at 1440 and 375, with no horizontal scroll.
+
+Size: L. Status: scoped and mocked 2026-11-03, awaiting Gene's sign-off and the three decisions. It ships as 2.8.0 with the queued fixes: app pages centered under the header, and the News page's card images served whole instead of Divi's 400×250 crop.

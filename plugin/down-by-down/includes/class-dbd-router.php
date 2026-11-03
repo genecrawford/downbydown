@@ -482,13 +482,18 @@ class DBD_Router {
 
 	/* ------------------------------------------------------------------ rendering */
 
+	/** The view file a route renders: views/{view}.php, the kicker page for a K (SCOPE §47), notfound.php for anything missing. The harness uses it too. */
+	public static function view_file( $r ) {
+		$file = DBD_PATH . 'includes/views/' . ( $r['view'] === 'player' && DBD_Kicker::is( $r['player'] ?? null ) ? 'kicker' : $r['view'] ) . '.php';
+		return file_exists( $file ) ? $file : DBD_PATH . 'includes/views/notfound.php';
+	}
+
 	public static function shortcode() {
 		if ( ! self::$active ) {  // shortcode inside a loop or a non-singular context: route anyway
 			self::$active = true; self::$page_url = get_permalink(); self::$route = self::route();
 		}
 		$r = self::$route;
-		$file = DBD_PATH . 'includes/views/' . ( $r['view'] === 'player' && DBD_Kicker::is( $r['player'] ) ? 'kicker' : $r['view'] ) . '.php';  /* SCOPE §47: a K gets the kicker page */
-		if ( ! file_exists( $file ) ) { $file = DBD_PATH . 'includes/views/notfound.php'; }
+		$file = self::view_file( $r );
 		ob_start();
 		echo '<div class="dbd dbd-view-' . esc_attr( $r['view'] ) . ( DBD_Data::archived() ? ' dbd-archived' : '' ) . '">';  // dbd-view-* so it can never collide with component classes like .dbd-teams or .dbd-game
 		include $file;
