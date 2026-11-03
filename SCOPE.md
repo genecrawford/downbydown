@@ -1922,3 +1922,92 @@ Size: L. Status: signed off 2026-11-02 ("Build it") and built as 2.0.0. As built
 - **The data layer swaps per-season caches** instead of flushing them.
 - **The season page has its own share card:** the champion and the best units in the tiles, the playoff scores on the field.
 - **My team is always the current season,** even under `/2025/my-team/`.
+
+## 46. The weekly post, part 1 of the Tuesday email (scoped and mocked 2026-11-03, `mockup-v21/`)
+
+(§45 is the marketing home, scoped on the superseded PR #58 branch and built since as the `[dbd_block]` blocks.)
+
+The home page promises "The week in review, every Tuesday", and its signup form (WPForms #63) collects addresses, but nothing is written or sent yet. This is part 1: every finished week becomes a **real blog post**, written from the week's data in the site's plain voice and published Tuesday morning. Part 2, later, is the email: an email service sends each new post to the list.
+
+Writing the post first matters for three reasons:
+- the email has something to send, with a link back to a real page
+- each post is a page Google can index, a written recap that the data-heavy week page isn't
+- Gene can read and edit each issue before it goes out
+
+The mock is `mockup-v21/week-7-post.html`. It is Week 7 2026, written from the site's own published data by the same rules the plugin would use.
+
+### What the reader sees
+
+The post is short, about 600 words, a two-minute read. Every name, team and game links into the app.
+
+| Part | What it says | Week 7 (mock) |
+|---|---|---|
+| **Title** | The week's headline: the biggest upset, else the wildest game, else "Week N in review" | Week 7 in review: Giants stun Texans from 22% |
+| **Byline and image** | The Tuesday date, "Week N · 14 games", and the week's share card as the featured image (the same card the week page shares) | Tuesday, October 27, 2026 |
+| **Opening** | Two or three sentences: the counts (upsets, comebacks, overtime) and the week's best story, with season context only when it's notable ("the most comebacks of any week this season") | Four upsets, four comebacks, one overtime game. The Giants were 22% to win at kickoff and came back from 18%… |
+| **The scores** | Every game in one compact table: winner first and bold, the score, and the tag (Upset · 22% at kickoff, Comeback from 14%, Overtime). Ordered by drama, so the wild games come first | 14 rows |
+| **The swing and the play** | The biggest win-probability swing (team, clock, the cleaned play, +22%) and the best single play by EPA, each a short paragraph with a link to its game | D.Watson to H.Fannin with 28 seconds left (Browns, +22%); D.Maye to R.Stevenson for 48 yards (+6.54 EPA) |
+| **Best offense, best defense** | The week's best unit on each side by EPA a play, against its own usual | Bengals +0.33 a play (usual +0.09); Buccaneers allowed −0.27 |
+| **Players of the week** | The top quarterback, back, receiver and tight end by EPA, each with his line | Joe Burrow 22/30, 292 yds, 4 TD (+19.4) |
+| **Fantasy** | The top five half-PPR scorers of the week | Tony Pollard 35.0 |
+| **Rising** | The three biggest jumps in target share and the week's new faces (debuts, first starts) | Chris Godwin Jr. 16% → 46% |
+| **Next week** | The coming week's game of the week (the hub's pick) and its biggest edge in one sentence, linking to the matchup | Bears at Seahawks, Monday night |
+| **The full week** | One line linking to the week page ("every play, every team and every player from Week 7") and, on the website only, the signup form | |
+
+### How a post gets made
+
+- **When:** the first data sync after a week's last game is final (the early-Tuesday build after Monday night) creates the post.
+- **Status:** created as **scheduled for Tuesday 8:00 AM Eastern**, so Gene has a window to read and edit it. If the sync runs after 8:00, the post publishes right away. A setting switches this to "save as draft" for Gene to publish by hand.
+- **Never overwrites Gene:** until it publishes, a stat correction in a later sync refreshes the post's numbers. Once Gene edits it, or once it is published, the plugin never touches it again.
+- **One post per week:** the post carries the season and week as hidden fields, so a week never gets two posts, and a deleted post isn't recreated.
+- **Frozen once published:** the numbers in the post are the numbers as of Tuesday morning, as a recap should be. The live, always-current version is the week page.
+- **Where it lives:** a normal WordPress post in a **"Week in review"** category the plugin creates. Normal posts work with Divi's blog layouts, the site's RSS feed (`/category/week-in-review/feed/`, which part 2 sends from), Site Kit and any SEO plugin, without anything custom.
+- **The writing:** plain sentences assembled from the data, with a few ways to say each thing so the posts don't read the same every week. No AI writing at runtime: every sentence comes from a rule.
+- **Email-safe markup:** headings, paragraphs, one simple table and links. No layout that depends on the site's CSS, so the same post body reads correctly in an email in part 2.
+- **The look on the website:** the post body inherits Divi's post template. The plugin adds one small stylesheet so the table, the player rows and the signup box match the site's flat style. Gene's Divi Theme Builder post template, if he makes one, wins.
+
+### SEO
+
+- The title is the headline above. The meta description is the opening's first sentence. The featured image is the week card, which becomes the share image.
+- The post links to the week page, and the week page gains a "Read the Week 7 write-up" link back, so the two pages point to each other instead of competing.
+- Posts appear in the WordPress sitemap automatically (normal posts).
+
+### Backfill
+
+The 2026 season already has seven finished weeks. A one-time **"Write past weeks"** button in the plugin settings creates posts for Weeks 1 to 7, each dated the Tuesday after its week, so the category starts with a season's worth of recaps. Gene decides whether to run it.
+
+### Left out of part 1
+
+- **Sending the email:** part 2. The likely route is MailPoet (inside WordPress, emails each new post in a category) or Mailchimp (an RSS campaign every Tuesday). Either gets the subscribers from the WPForms signup through a WPForms add-on, and handles unsubscribes and inbox delivery.
+- **Gene's own intro paragraph:** possible today by editing the scheduled post; a dedicated "note from Gene" field could come later.
+- **Past seasons:** the 2025 archive gets no posts.
+- **Team tags:** tagging each post with the teams it mentions, for team archive pages, is a follow-on.
+
+### Open decisions (for Gene, one at a time)
+
+1. **Publish mode:** DECIDED 2026-11-03: scheduled for Tuesday 8:00 AM Eastern with an editing window (Gene: "Schedule for 8 AM").
+2. **Backfill:** DECIDED 2026-11-03: write Weeks 1 to 7 with the one-time button, each dated the Tuesday after its week (Gene: "Yes, backfill 1–7").
+3. **Post template:** DECIDED 2026-11-03: Divi's default post layout with the plugin's small stylesheet for now; a Theme Builder template can take over later (Gene: "Divi default for now").
+
+### Acceptance
+
+- The Week 7 post matches the mock:
+  - the title "Week 7 in review: Giants stun Texans from 22%"
+  - 14 score rows, ordered by drama
+  - the swing D.Watson to H.Fannin (+22%) and the play D.Maye to R.Stevenson (+6.54)
+  - Burrow, Javonte Williams, Luther Burden III and Greg Dulcich as players of the week
+  - Pollard at 35.0 half PPR
+  - Godwin, Loveland and Lamb rising
+- The kickoff chance reads 22% everywhere: the plugin uses the build's rounding, so the post, the week page and the newsletter preview agree. Today the preview says 23%.
+- A second sync never makes a second post, never overwrites an edited post, and never recreates a deleted one.
+- The feed lists the posts.
+- CI renders a post from fresh data with no empty section, and with a week in progress (no post yet).
+- Checked at 1440 and 375, with no horizontal scroll.
+
+Size: M. Status: scoped and mocked 2026-11-03; all three decisions made 2026-11-03; built as 2.7.0 (PR #67), together with the queued fixes: the settled week for the home's featured player and highlights, kickoff chances rounded like the build, and the search fixes.
+
+Build notes from review (Greptile, PR #67):
+- **Results come from the score.** The win-probability fields (`win`, the tags) can lag the score, and the build leaves them out in the playoffs, so wins and ties are read from `a` and `h`.
+- **An edit to the title, body or excerpt** stops refreshes.
+- **One writer per week:** a lock on the season and week stops a webhook sync and "Write past weeks" from making two posts.
+- **Old seasons' links:** a post keeps the app's plain links, the canonical pages while its season is current. Once the season is archived, the post shows its app links with the season prefix (`/2026/team/min/`). A link Gene adds to his own pages is left alone.
