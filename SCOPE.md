@@ -2300,6 +2300,14 @@ In one fetch on 2026-11-03, every team had stories in its team column, and the s
 - **Every link** opens in a new tab with `rel="nofollow noopener"`.
 - **A setting** turns any source off.
 
+### What it costs the site (measured 2026-11-03)
+
+- **Visitors:** nothing extra. No page view ever fetches a feed. A team page reads one stored list (about 7 KB for its team) and adds about 6 KB of HTML: headlines and links only, no images, no extra script. Page caching (WP Engine, Cloudflare) works as now.
+- **The hourly fetch:** one pass downloads all 102 feeds, 4.6 MB compressed (10.9 MB of XML), about 110 MB a day. One at a time it takes about 50 seconds, too close to WP Engine's 60-second limit, so the plugin fetches 8 at a time (about 7 seconds a pass, slowest feed 1.8 s) using WordPress's built-in parallel requests. It runs in WordPress's background cron request, never inside a visitor's page load.
+- **Asking "only if changed" doesn't help:** 67 of the 102 feeds send an ETag or Last-Modified, but the six tested all sent the full feed again, so the plugin doesn't rely on it.
+- **Database:** the matched headlines only, one stored list per team (about 7 KB each, 213 KB for all 32 with each column capped at 20), plus one feed-status list (about 10 KB). All are left out of WordPress's autoload, so no other page reads them. They are replaced each hour, so the total stays flat at about a quarter of a megabyte and never grows.
+- **No raw feeds stored:** WordPress's own feed reader (`fetch_feed`) caches every downloaded feed in the database. For 102 feeds that would be about 11 MB of XML rewritten every hour. The plugin downloads with `wp_remote_get`, reads the headlines and keeps only the matched ones.
+
 ### Left out
 
 - **News on the player pages:** the matching already finds stories that name a player, so his page could list them. A small follow-on.
