@@ -294,7 +294,7 @@ jobs:
           echo "sitemap: $(wc -l < sitemap.txt) URLs"
       - name: The Tuesday email (2.10.0, SCOPE §48)
         run: |
-          set -ex
+          set -e
           export DBD_HARNESS_MEDIA=1 DBD_HARNESS_PRETTY=1 DBD_HARNESS_ROOT=1 DBD_HARNESS_HTML=emails
           # every complete week's post builds into an email (the harness also checks the one-day send window)
           for w in $(python3 -c "import json,glob,re; print(' '.join(sorted({re.search(r'w(\\d+)', f).group(1) for f in glob.glob('data/week/w*.json') if json.load(open(f)).get('complete')}, key=int)))"); do
@@ -315,7 +315,8 @@ jobs:
           grep -q 'Joe Burrow' "$f"
           grep -q '>Every play from Week 7</a>' "$f"
           grep -q 'href="https://example.test/week/7/"' "$f"
-          grep -q 'href="https://example.test/leaders/fan/"[^>]*>Fantasy leaders all season, by position</a>' "$f"
+          grep -q 'href="https://example.test/leaders/"[^>]*>Fantasy leaders all season, by position</a>' "$f"  # fantasy is the leaders' first board
+          grep -q 'href="https://example.test/players/"[^>]*>Every player’s season, by position</a>' "$f"
           grep -q '>Follow your own players on My team</a>' "$f"
           if grep -q 'the week page' "$f"; then echo "the post's closing line belongs to the site, the email has its button"; exit 1; fi
           grep -q 'href="{{ doubleoptin }}"' emails/confirm.html

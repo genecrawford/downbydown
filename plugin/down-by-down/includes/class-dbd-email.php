@@ -217,7 +217,7 @@ class DBD_Email {
 		$wk = DBD_Router::week_label( $n );
 		return array(
 			'The scores'          => array( 'Every play of every ' . $wk . ' game, with the win chances', array( 'view' => 'week', 'week' => $n ) ),
-			'Players of the week' => array( 'Where every player ranks this season', array( 'view' => 'leaders' ) ),
+			'Players of the week' => array( 'Every player’s season, by position', array( 'view' => 'players' ) ),
 			'Fantasy'             => array( 'Fantasy leaders all season, by position', array( 'view' => 'leaders', 'g' => 'fan' ) ),
 			'Rising'              => array( 'Follow your own players on My team', array( 'view' => 'myteam' ) ),
 		);
