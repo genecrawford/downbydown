@@ -205,11 +205,14 @@ class DBD_Email {
 	public static function build( $p ) {
 		$c = (string) preg_replace( '/<!--.*?-->/s', '', (string) $p->post_content );  /* block editor comments, if the post was opened in it */
 		if ( stripos( $c, '<p' ) === false ) { $c = wpautop( $c ); }
-		$s = (int) get_post_meta( $p->ID, DBD_Post::M_SEASON, true );
-		if ( $s && $s !== DBD_Data::current_season() ) { $c = DBD_Post::with_season( $c, $s ); }
 		$et = new DateTimeZone( 'America/New_York' ); $t = strtotime( $p->post_date_gmt . ' UTC' );
 		$date = $t && $t > 0 ? wp_date( 'l, F j', $t, $et ) : '';
-		return self::compose( html_entity_decode( $p->post_title, ENT_QUOTES, 'UTF-8' ), $c, get_permalink( $p ), (string) get_the_post_thumbnail_url( $p, 'full' ), $date, (int) get_post_meta( $p->ID, DBD_Post::M_WEEK, true ) );
+		$doc = self::compose( html_entity_decode( $p->post_title, ENT_QUOTES, 'UTF-8' ), $c, get_permalink( $p ), (string) get_the_post_thumbnail_url( $p, 'full' ), $date, (int) get_post_meta( $p->ID, DBD_Post::M_WEEK, true ) );
+		/* an archived season's post (a test of an old week): every app link in the finished email, the added section links and the
+		   week button included, opens that season's pages (Greptile, PR #75) */
+		$s = (int) get_post_meta( $p->ID, DBD_Post::M_SEASON, true );
+		if ( $s && $s !== DBD_Data::current_season() ) { $doc['html'] = DBD_Post::with_season( $doc['html'], $s ); }
+		return $doc;
 	}
 
 	/** Links back to the site at the end of a section, by its heading (a heading Gene renames simply gets none). */
@@ -382,7 +385,10 @@ class DBD_Email {
 
 	public static function save_box( $id, $p ) {
 		if ( ! isset( $_POST['dbd_email_box'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['dbd_email_box'] ) ), 'dbd_email_box' ) ) { return; }
-		if ( ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) || ! current_user_can( 'edit_post', $id ) || get_post_meta( $id, self::M_STATE, true ) !== '' ) { return; }
+		/* WordPress decides the send (transition_post_status) before it saves the box (save_post), so a tick made while clicking Publish
+		   arrives after the post is queued: it still counts until the send runs, which checks it again (Greptile, PR #75) */
+		$state = (string) get_post_meta( $id, self::M_STATE, true );
+		if ( ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) || ! current_user_can( 'edit_post', $id ) || ! in_array( $state, array( '', 'queued' ), true ) ) { return; }
 		if ( ! empty( $_POST['dbd_email_skip'] ) ) { update_post_meta( $id, self::M_SKIP, 1 ); } else { delete_post_meta( $id, self::M_SKIP ); }
 	}
 
