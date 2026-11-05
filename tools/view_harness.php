@@ -8,6 +8,7 @@
  *   live blocks (class-dbd-blocks.php): block <type> ['k=v&k=v' attributes] | page <html file> (a theme page with its [dbd_block] shortcodes drawn)
  *   the weekly post (class-dbd-post.php, SCOPE §46): post <N> (DBD_HARNESS_AHEAD=0 leaves out next week, as a backfilled post does) | sitemap (every app URL)
  *   the Tuesday email (class-dbd-email.php, SCOPE §48): email <N> builds week N's email from its post, as Brevo would get it, into DBD_HARNESS_HTML
+ *   joined: the "You're in" note's checks (2.10.2), with the post drawn outside the loop the way Divi's Theme Builder draws it
  *   team news (class-dbd-news.php, SCOPE §49): news <fixture dir> matches the fixture feeds and writes the stored lists to DBD_HARNESS_NEWS,
  *   which the team and teamplayers views then read; DBD_HARNESS_NOW pins the clock
  */
@@ -196,6 +197,29 @@ if ( $view === 'email' ) {
 	echo "email $arg: " . $m['subject'] . ' · ' . strlen( $m['html'] ) . ' bytes · preview "' . $m['pre'] . '" · late at 5s/23h59/24h01/a year: ' . implode( '/', array_map( function ( $x ) { return $x ? 'yes' : 'no'; }, $late ) ) . ", $warnings warnings\n";
 	if ( ( $dir = getenv( 'DBD_HARNESS_HTML' ) ) ) { if ( ! is_dir( $dir ) ) { mkdir( $dir, 0777, true ); } file_put_contents( $dir . '/email-w' . (int) $arg . '.html', $m['html'] ); file_put_contents( $dir . '/confirm.html', DBD_Email::confirm_html() ); }
 	exit( $warnings || $late !== array( false, false, true, true ) ? 1 : 0 );
+}
+/* ---- the "You're in" note (2.10.2): on the viewed week post's body only, once, and with no loop (Divi's Post Content module) */
+if ( $view === 'joined' ) {
+	$GLOBALS['hj'] = array( 'id' => 7, 'viewed' => 7, 'week' => '8' );
+	function get_the_ID() { return $GLOBALS['hj']['id']; } function get_queried_object_id() { return $GLOBALS['hj']['viewed']; }
+	function get_post_meta( $id, $k, $one = false ) { return $k === '_dbd_week' ? $GLOBALS['hj']['week'] : ''; } function is_feed() { return false; }
+	$body = '<div class="dbd-post"><p class="open">Three upsets.</p></div>';
+	$cases = array(  /* name, query, viewed post, post being drawn, its week, content, note expected */
+		array( 'the landing, outside the loop', 1, 7, 7, '8', $body, true ),
+		array( 'no ?dbd_joined', 0, 7, 7, '8', $body, false ),
+		array( 'another post drawn on the page (a blog grid)', 1, 7, 9, '8', $body, false ),
+		array( 'content that is not the week body', 1, 7, 7, '8', '<p>A sidebar text.</p>', false ),
+		array( 'already has the note', 1, 7, 7, '8', DBD_Email::joined_note( 8 ) . $body, false ),
+		array( 'a post that is not a week post', 1, 7, 7, '', $body, false ),
+	);
+	$bad = 0;
+	foreach ( $cases as $c ) {
+		$_GET = $c[1] ? array( 'dbd_joined' => '1' ) : array(); $GLOBALS['hj'] = array( 'viewed' => $c[2], 'id' => $c[3], 'week' => $c[4] );
+		$out = DBD_Email::joined( $c[5] ); $has = substr_count( $out, 'dbd-joined' ) - substr_count( $c[5], 'dbd-joined' ) === 1;
+		echo '  ' . ( $has === $c[6] ? 'ok' : 'WRONG' ) . ': ' . $c[0] . ( $has ? ' (note added)' : '' ) . "\n"; $bad += $has !== $c[6];
+	}
+	if ( strpos( DBD_Email::joined( $body ), 'Week 8' ) === false && $bad === 0 ) { $_GET = array( 'dbd_joined' => '1' ); $GLOBALS['hj'] = array( 'viewed' => 7, 'id' => 7, 'week' => '8' ); if ( strpos( DBD_Email::joined( $body ), 'Week 8' ) === false ) { echo "  WRONG: the note names the week\n"; $bad++; } }
+	echo "joined: $bad problems, $warnings warnings\n"; exit( $bad || $warnings ? 1 : 0 );
 }
 if ( $view === 'sitemap' ) {
 	try { foreach ( DBD_Seo::urls() as $u ) { echo $u['loc'] . "\n"; } } catch ( Throwable $e ) { fwrite( STDERR, 'FATAL in sitemap: ' . $e->getMessage() . "\n" ); exit( 1 ); }

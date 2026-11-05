@@ -127,8 +127,9 @@ class DBD_Email {
 		if ( empty( $_GET['dbd_joined'] ) || is_feed() || ! is_singular( 'post' ) || (int) get_the_ID() !== (int) get_queried_object_id() ) { return $content; }
 		if ( strpos( (string) $content, 'dbd-post' ) === false || strpos( (string) $content, 'dbd-joined' ) !== false ) { return $content; }
 		$w = get_post_meta( get_the_ID(), DBD_Post::M_WEEK, true ); if ( $w === '' ) { return $content; }
-		return '<p class="dbd-joined"><b>You’re in.</b> The next one arrives Tuesday morning. This is the latest, ' . esc_html( DBD_Router::week_label( (int) $w ) ) . '.</p>' . $content;
+		return self::joined_note( (int) $w ) . $content;
 	}
+	public static function joined_note( $w ) { return '<p class="dbd-joined"><b>You’re in.</b> The next one arrives Tuesday morning. This is the latest, ' . esc_html( DBD_Router::week_label( (int) $w ) ) . '.</p>'; }
 
 	/* ------------------------------------------------------------------ sending */
 

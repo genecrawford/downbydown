@@ -320,6 +320,8 @@ jobs:
           grep -q '>Follow your own players on My team</a>' "$f"
           if grep -q 'the week page' "$f"; then echo "the post's closing line belongs to the site, the email has its button"; exit 1; fi
           grep -q 'href="{{ doubleoptin }}"' emails/confirm.html
+          # the "You're in" note (2.10.2): the viewed week post's body only, once, with no loop (Divi's Post Content module)
+          php tools/view_harness.php data joined
       - uses: actions/upload-artifact@v4
         if: always()
         with:
