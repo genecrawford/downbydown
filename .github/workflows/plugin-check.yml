@@ -292,6 +292,39 @@ jobs:
           grep -qx 'https://example.test/leaders/' sitemap.txt
           grep -qx 'https://example.test/leaders/wr/' sitemap.txt
           echo "sitemap: $(wc -l < sitemap.txt) URLs"
+      - name: The Tuesday email (2.10.0, SCOPE §48)
+        run: |
+          set -e
+          export DBD_HARNESS_MEDIA=1 DBD_HARNESS_PRETTY=1 DBD_HARNESS_ROOT=1 DBD_HARNESS_HTML=emails
+          # every complete week's post builds into an email (the harness also checks the one-day send window)
+          for w in $(python3 -c "import json,glob,re; print(' '.join(sorted({re.search(r'w(\\d+)', f).group(1) for f in glob.glob('data/week/w*.json') if json.load(open(f)).get('complete')}, key=int)))"); do
+            DBD_HARNESS_AHEAD=0 php tools/view_harness.php data email "$w" | tee -a email.txt
+          done
+          if grep -q 'preview ""' email.txt; then echo "an email without its preview line"; exit 1; fi
+          for f in emails/email-w*.html; do
+            b=$(wc -c < "$f"); [ "$b" -lt 100000 ] || { echo "$f is $b bytes: Gmail cuts an email off past 102 KB"; exit 1; }
+            grep -q 'href="{{ unsubscribe }}"' "$f" || { echo "$f has no unsubscribe link"; exit 1; }
+            grep -q '808 Lady Street, Suite D, Columbia, SC 29201' "$f" || { echo "$f has no postal address"; exit 1; }
+            if grep -o 'href="[^"]*"' "$f" | grep -v 'href="https://' | grep -qv 'unsubscribe'; then echo "$f has a link that isn't a full https address"; grep -o 'href="[^"]*"' "$f" | grep -v 'href="https://' ; exit 1; fi
+            if grep -o 'class="[^"]*"' "$f" | grep -qvE 'class="(dxp|dxh)"'; then echo "$f kept a site class (its styles must be inline)"; exit 1; fi
+            if grep -qE '<script|<div class|<table class' "$f"; then echo "$f kept site markup"; exit 1; fi
+          done
+          f=emails/email-w7.html
+          grep -q 'Week 7 in review: Giants stun Texans from 22%' "$f"
+          [ "$(grep -o 'padding:9px 0;border-top' "$f" | wc -l)" -eq 14 ] || { echo "the Week 7 email should list 14 scores"; exit 1; }
+          grep -q 'Joe Burrow' "$f"
+          grep -q '>Every play from Week 7</a>' "$f"
+          grep -q 'href="https://example.test/week/7/"' "$f"
+          grep -q 'href="https://example.test/leaders/"[^>]*>Fantasy leaders all season, by position</a>' "$f"  # fantasy is the leaders' first board
+          grep -q 'href="https://example.test/players/"[^>]*>Every player’s season, by position</a>' "$f"
+          grep -q '>Follow your own players on My team</a>' "$f"
+          if grep -q 'the week page' "$f"; then echo "the post's closing line belongs to the site, the email has its button"; exit 1; fi
+          grep -q 'href="{{ doubleoptin }}"' emails/confirm.html
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tuesday-emails
+          path: emails/
       - uses: actions/upload-artifact@v4
         with:
           name: weekly-posts
