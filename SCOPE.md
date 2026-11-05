@@ -1983,22 +1983,11 @@ The 2026 season already has seven finished weeks. A one-time **"Write past weeks
 - **Past seasons:** the 2025 archive gets no posts.
 - **Team tags:** tagging each post with the teams it mentions, for team archive pages, is a follow-on.
 
-### Decisions (made 2026-11-05)
+### Open decisions (for Gene, one at a time)
 
-1. **The service:** Brevo, driven by the plugin. Gene made a free Brevo account for Down by Down; downbydown.com is authenticated through Brevo's Cloudflare setup (Brevo code, two DKIM records, DMARC in monitoring mode), and the domain keeps one SPF record (Cloudflare Email Routing's).
-2. **What's in the email:** the whole post, as much of it as holds up in email, with a link back to the site at the end of its sections and the red button to the week page.
-3. **Double opt-in:** yes.
-4. **Sender and footer:** from "Down by Down" at week@downbydown.com, replies to week@downbydown.com (Cloudflare Email Routing forwards it to Gene), and the footer address 808 Lady Street, Suite D, Columbia, SC 29201.
-
-### Built in 2.10.0 (PR #75)
-
-- `DBD_Email` (class-dbd-email.php). The signup goes to `contacts/doubleOptinConfirmation` with the confirm link to `/?dbd_joined=1`, which forwards to the newest week post with the "You're in" note. No addresses are stored; the settings page shows counts and the last error.
-- A week post going to published decides once, on the post, whether it sends. Off, not set up, skipped, or more than a day past its date means "not sent". Otherwise a background task creates a Brevo campaign (stored on the post) and sends it. A retry reuses the stored campaign and checks its status first, so a timed-out send can't go twice.
-- The links back to the site: the scores to the week page, players of the week to the Players page, fantasy to the leader boards, rising to My team. A heading Gene renames gets no link. An archived season's email links to its own season.
-- The post's "Tuesday email" box: its state, "Don't email this one" (it holds even when ticked while clicking Publish) and a test to the test address through Brevo's transactional email.
-- The settings section "Tuesday email": key, list and template pickers read from Brevo, sender, reply-to, postal address, form ID, test address, the confirmation template's HTML (button link `{{ doubleoptin }}`, template tagged `optin`) and the send log.
-- CI builds every finished week's email: about 25 KB each (Gmail cuts off past 102 KB), unsubscribe and postal address present, only full https links, no site classes left.
-- The queued scores-table fix had already shipped in 2.9.0.
+1. **Publish mode:** DECIDED 2026-11-03: scheduled for Tuesday 8:00 AM Eastern with an editing window (Gene: "Schedule for 8 AM").
+2. **Backfill:** DECIDED 2026-11-03: write Weeks 1 to 7 with the one-time button, each dated the Tuesday after its week (Gene: "Yes, backfill 1–7").
+3. **Post template:** DECIDED 2026-11-03: Divi's default post layout with the plugin's small stylesheet for now; a Theme Builder template can take over later (Gene: "Divi default for now").
 
 ### Acceptance
 
@@ -2235,12 +2224,22 @@ Someone who signs up twice is not added twice. Brevo updates the existing contac
 - **Team or fantasy-only editions:** one list, one email.
 - **Email during the off-season:** the plugin only sends when a week post publishes, so it goes quiet on its own.
 
-### Open decisions (for Gene, one at a time)
+### Decisions (made 2026-11-05)
 
-1. **The service:** Brevo, driven by the plugin (recommended), or MailPoet.
-2. **What's in the email:** the whole post (recommended; it's a two-minute read and every link goes back into the app) or a short teaser like the home page's preview, with a button to the post.
-3. **Double opt-in:** yes (recommended; it keeps fake and mistyped addresses off the list and protects delivery) or no.
-4. **Sender and footer:** the from address (suggested `week@downbydown.com`), the reply-to (Gene's), and the postal address for the footer (Period Three's, or a PO box).
+1. **The service:** Brevo, driven by the plugin. Gene made a free Brevo account for Down by Down; downbydown.com is authenticated through Brevo's Cloudflare setup (Brevo code, two DKIM records, DMARC in monitoring mode), and the domain keeps one SPF record (Cloudflare Email Routing's).
+2. **What's in the email:** the whole post, as much of it as holds up in email, with a link back to the site at the end of its sections and the red button to the week page.
+3. **Double opt-in:** yes.
+4. **Sender and footer:** from "Down by Down" at week@downbydown.com, replies to week@downbydown.com (Cloudflare Email Routing forwards it to Gene), and the footer address 808 Lady Street, Suite D, Columbia, SC 29201.
+
+### Built in 2.10.0 (PR #75)
+
+- `DBD_Email` (class-dbd-email.php). The signup goes to `contacts/doubleOptinConfirmation` with the confirm link to `/?dbd_joined=1`, which forwards to the newest week post with the "You're in" note. No addresses are stored; the settings page shows counts and the last error.
+- A week post going to published decides once, on the post, whether it sends. Off, not set up, skipped, or more than a day past its date means "not sent". Otherwise a background task creates a Brevo campaign (stored on the post) and sends it. A retry reuses the stored campaign and checks its status first, so a timed-out send can't go twice.
+- The links back to the site: the scores to the week page, players of the week to the Players page, fantasy to the leader boards, rising to My team. A heading Gene renames gets no link. An archived season's email links to its own season.
+- The post's "Tuesday email" box: its state, "Don't email this one" (it holds even when ticked while clicking Publish) and a test to the test address through Brevo's transactional email.
+- The settings section "Tuesday email": key, list and template pickers read from Brevo, sender, reply-to, postal address, form ID, test address, the confirmation template's HTML (button link `{{ doubleoptin }}`, template tagged `optin`) and the send log.
+- CI builds every finished week's email: about 25 KB each (Gmail cuts off past 102 KB), unsubscribe and postal address present, only full https links, no site classes left.
+- The queued scores-table fix had already shipped in 2.9.0.
 
 ### Acceptance
 
