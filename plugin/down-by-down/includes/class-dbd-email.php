@@ -374,11 +374,11 @@ class DBD_Email {
 	}
 
 	public static function box_html( $p ) {
-		$state = (string) get_post_meta( $p->ID, self::M_STATE, true ); $done = $state !== '';
+		$state = (string) get_post_meta( $p->ID, self::M_STATE, true ); $done = ! in_array( $state, array( '', 'queued' ), true );  /* a queued send can still be skipped */
 		wp_nonce_field( 'dbd_email_box', 'dbd_email_box' );
 		$camp = (int) get_post_meta( $p->ID, self::M_CAMP, true );
-		echo '<p>' . ( $done ? esc_html( ucfirst( $state ) . '.' ) : ( self::ready() ? 'Emails the list when it publishes.' : 'The email is off or not set up, so this post won’t send.' ) ) . ( $camp ? ' Brevo campaign ' . (int) $camp . '.' : '' ) . '</p>';
-		if ( ! $done ) { echo '<p><label><input type="checkbox" name="dbd_email_skip" value="1" ' . checked( (bool) get_post_meta( $p->ID, self::M_SKIP, true ), true, false ) . '> Don’t email this one</label></p>'; }
+		echo '<p>' . ( $state !== '' ? esc_html( ucfirst( $state ) . '.' ) : ( self::ready() ? 'Emails the list when it publishes.' : 'The email is off or not set up, so this post won’t send.' ) ) . ( $camp ? ' Brevo campaign ' . (int) $camp . '.' : '' ) . '</p>';
+		if ( ! $done ) { echo '<input type="hidden" name="dbd_email_skip_shown" value="1"><p><label><input type="checkbox" name="dbd_email_skip" value="1" ' . checked( (bool) get_post_meta( $p->ID, self::M_SKIP, true ), true, false ) . '> Don’t email this one</label></p>'; }
 		$u = wp_nonce_url( admin_url( 'admin-post.php?action=dbd_email_test&post=' . (int) $p->ID ), 'dbd_email_test' );
 		echo '<p><a class="button" href="' . esc_url( $u ) . '">Send a test to ' . esc_html( self::test_to() ) . '</a></p><p class="description">Save your edits first: the test is built from the saved post.</p>';
 	}
@@ -389,6 +389,7 @@ class DBD_Email {
 		   arrives after the post is queued: it still counts until the send runs, which checks it again (Greptile, PR #75) */
 		$state = (string) get_post_meta( $id, self::M_STATE, true );
 		if ( ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) || ! current_user_can( 'edit_post', $id ) || ! in_array( $state, array( '', 'queued' ), true ) ) { return; }
+		if ( empty( $_POST['dbd_email_skip_shown'] ) ) { return; }  /* only a form that showed the checkbox can change it */
 		if ( ! empty( $_POST['dbd_email_skip'] ) ) { update_post_meta( $id, self::M_SKIP, 1 ); } else { delete_post_meta( $id, self::M_SKIP ); }
 	}
 
