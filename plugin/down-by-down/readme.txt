@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.9.1
+Stable tag: 2.10.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,11 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.10.0 =
+* The Tuesday email (SCOPE §48). Each week post, as it publishes, is emailed to a Brevo list: the whole post with every style inline, a 600px column that narrows on a phone, links back to the site at the end of its sections and a button to the week page. It sends once (the Brevo campaign is stored on the post); a post published more than a day after its date never sends, and the post's "Tuesday email" box has "Don't email this one" and a test button. A failed send retries every 10 minutes for an hour, then emails the site owner.
+* Signups: the WPForms signup form hands each address to Brevo's double opt-in. Brevo sends the confirmation (the settings page gives its HTML), and the click lands on the newest week post with a "You're in" note. WordPress keeps no addresses.
+* Settings › Down by Down › Tuesday email: the Brevo key, list, confirmation template, sender, reply-to, postal address, form, a test button and the send log. Off until switched on.
 
 = 2.9.1 =
 * Team news keeps what it has. Each fetch now adds to the stories already stored from the last 7 days instead of replacing a feed's stories. A feed that fails, or a CDN node that hands back an hours-old copy of a feed (seen live on Daily Norseman on 2026-11-03), can no longer take newer stories off the panel. A source switched off still leaves at the next fetch.

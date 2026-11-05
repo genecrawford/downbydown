@@ -7,6 +7,7 @@
  *   DBD_HARNESS_ROOT=1: the app page is /hub/, not the front page, with paths at the root
  *   live blocks (class-dbd-blocks.php): block <type> ['k=v&k=v' attributes] | page <html file> (a theme page with its [dbd_block] shortcodes drawn)
  *   the weekly post (class-dbd-post.php, SCOPE §46): post <N> (DBD_HARNESS_AHEAD=0 leaves out next week, as a backfilled post does) | sitemap (every app URL)
+ *   the Tuesday email (class-dbd-email.php, SCOPE §48): email <N> builds week N's email from its post, as Brevo would get it, into DBD_HARNESS_HTML
  *   team news (class-dbd-news.php, SCOPE §49): news <fixture dir> matches the fixture feeds and writes the stored lists to DBD_HARNESS_NEWS,
  *   which the team and teamplayers views then read; DBD_HARNESS_NOW pins the clock
  */
@@ -66,7 +67,7 @@ function wp_schedule_single_event() {} function wp_next_scheduled() { return fal
 
 /* ---- the plugin, minus the bootstrap and admin. The SEO class extends a WordPress sitemap base class; an empty stand-in lets it load. */
 if ( ! class_exists( 'WP_Sitemaps_Provider' ) ) { class WP_Sitemaps_Provider { public $name = ''; public $object_type = ''; } }
-foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-kicker', 'class-dbd-defense', 'class-dbd-week', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-sync', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo', 'class-dbd-blocks', 'class-dbd-post', 'class-dbd-news' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
+foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-kicker', 'class-dbd-defense', 'class-dbd-week', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-sync', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo', 'class-dbd-blocks', 'class-dbd-post', 'class-dbd-news', 'class-dbd-email' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
 
 if ( getenv( 'DBD_HARNESS_NOW' ) && class_exists( 'DBD_News' ) ) { DBD_News::$now = (int) getenv( 'DBD_HARNESS_NOW' ); }
 
@@ -183,6 +184,18 @@ if ( $view === 'post' ) {
 		file_put_contents( $dir . '/post-w' . (int) $arg . '.html', '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' . esc_html( $doc['title'] ) . '</title>' . $fonts . $divi . '<link rel="stylesheet" href="assets/post.css"></head><body><article class="entry-content"><h1>' . esc_html( $doc['title'] ) . '</h1>' . $doc['html'] . '</article></body></html>' );
 	}
 	exit( $warnings ? 1 : 0 );
+}
+/* ---- the Tuesday email (SCOPE §48): week N's post as the email Brevo sends, and the send-window rule */
+if ( $view === 'email' ) {
+	try {
+		$doc = DBD_Post::compose( (int) $arg, null, getenv( 'DBD_HARNESS_AHEAD' ) !== '0' );
+		if ( ! $doc ) { echo "email $arg: none (the week isn't complete), $warnings warnings\n"; exit( $warnings ? 1 : 0 ); }
+		$m = DBD_Email::compose( $doc['title'], $doc['html'], 'https://example.test/week-' . (int) $arg . '-in-review/', 'https://example.test/uploads/week-' . (int) $arg . '.png', 'Tuesday, November 3', (int) $arg );
+	} catch ( Throwable $e ) { fwrite( STDERR, "FATAL in email $arg: " . get_class( $e ) . ': ' . $e->getMessage() . ' at ' . basename( $e->getFile() ) . ':' . $e->getLine() . "\n" ); exit( 1 ); }
+	$late = array( DBD_Email::late( '2026-11-03 13:00:00', strtotime( '2026-11-03 13:00:05 UTC' ) ), DBD_Email::late( '2026-11-03 13:00:00', strtotime( '2026-11-04 12:59:00 UTC' ) ), DBD_Email::late( '2026-11-03 13:00:00', strtotime( '2026-11-04 13:01:00 UTC' ) ), DBD_Email::late( '2025-11-04 13:00:00', strtotime( '2026-11-03 13:00:00 UTC' ) ) );
+	echo "email $arg: " . $m['subject'] . ' · ' . strlen( $m['html'] ) . ' bytes · preview "' . $m['pre'] . '" · late at 5s/23h59/24h01/a year: ' . implode( '/', array_map( function ( $x ) { return $x ? 'yes' : 'no'; }, $late ) ) . ", $warnings warnings\n";
+	if ( ( $dir = getenv( 'DBD_HARNESS_HTML' ) ) ) { if ( ! is_dir( $dir ) ) { mkdir( $dir, 0777, true ); } file_put_contents( $dir . '/email-w' . (int) $arg . '.html', $m['html'] ); file_put_contents( $dir . '/confirm.html', DBD_Email::confirm_html() ); }
+	exit( $warnings || $late !== array( false, false, true, true ) ? 1 : 0 );
 }
 if ( $view === 'sitemap' ) {
 	try { foreach ( DBD_Seo::urls() as $u ) { echo $u['loc'] . "\n"; } } catch ( Throwable $e ) { fwrite( STDERR, 'FATAL in sitemap: ' . $e->getMessage() . "\n" ); exit( 1 ); }

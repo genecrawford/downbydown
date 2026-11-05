@@ -17,6 +17,8 @@ add_action( 'admin_init', function () {
 	register_setting( 'dbd_posts', DBD_Post::OPT_ON, array( 'type' => 'boolean', 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => true ) );  /* the weekly post (SCOPE §46) */
 	register_setting( 'dbd_posts', DBD_Post::OPT_FORM, array( 'type' => 'string', 'sanitize_callback' => 'sanitize_text_field', 'default' => DBD_Post::FORM ) );
 	/* team news (SCOPE §49): the source groups switched on; an empty save switches every source off */
+	/* the Tuesday email (SCOPE §48): one array; a blank API key keeps the saved one */
+	register_setting( 'dbd_email', DBD_Email::OPT, array( 'type' => 'array', 'sanitize_callback' => array( 'DBD_Email', 'sanitize' ) ) );
 	register_setting( 'dbd_news', DBD_News::OPT_SRC, array( 'type' => 'array', 'sanitize_callback' => function ( $v ) { return array_values( array_intersect( array_map( 'strval', (array) $v ), array_keys( DBD_News::groups() ) ) ); } ) );
 } );
 
@@ -171,6 +173,75 @@ function dbd_settings_page() {
 		<p><form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" onsubmit="return confirm('Write a post for each of the <?php echo (int) $missing; ?> finished week(s) without one? Each is dated the Tuesday after its week and publishes with that date.');">
 			<?php wp_nonce_field( 'dbd_write_past' ); ?><input type="hidden" name="action" value="dbd_write_past"><button class="button button-primary">Write past weeks (<?php echo (int) $missing; ?>)</button></form></p>
 		<?php endif; ?>
+
+		<h2 id="dbd-email">Tuesday email</h2>
+		<?php
+		$eo = DBD_Email::opts(); $acct = $eo['key'] !== '' ? DBD_Email::cached( 'account' ) : null;
+		$lists = $eo['key'] !== '' ? DBD_Email::cached( 'contacts/lists?limit=50' ) : null; $tpls = $eo['key'] !== '' ? DBD_Email::cached( 'smtp/templates?templateStatus=true&limit=100' ) : null;
+		$ll = is_array( $lists[1]['lists'] ?? null ) ? $lists[1]['lists'] : array(); $tl = is_array( $tpls[1]['templates'] ?? null ) ? $tpls[1]['templates'] : array();
+		usort( $tl, function ( $x, $y ) { return array( ( $y['tag'] ?? '' ) === 'optin', $y['id'] ?? 0 ) <=> array( ( $x['tag'] ?? '' ) === 'optin', $x['id'] ?? 0 ); } );
+		$es = get_option( DBD_Email::OPT_SUB ); $el = (array) get_option( DBD_Email::OPT_LOG, array() ); $lp = DBD_Email::latest();
+		$opt = DBD_Email::OPT;
+		?>
+		<p>Each week post, as it publishes on its Tuesday, is emailed to your Brevo list: the whole post, styled for email, with links back to the site. It sends once; editing or republishing never sends it again, and a post published more than a day after its date (a backfilled week, a past season) never sends. The post's own <b>Tuesday email</b> box has "Don't email this one" and a test button. New signups from the form get Brevo's confirmation email and join the list only after they click it. WordPress keeps no addresses.</p>
+		<table class="widefat striped" style="max-width:720px"><tbody>
+			<tr><td style="width:160px">Brevo</td><td><?php
+			if ( $eo['key'] === '' ) { echo 'Not connected. Paste an API key below (Brevo › your name › SMTP &amp; API › API keys).'; }
+			elseif ( $acct[2] ) { echo '<span style="color:#b32d2e">' . esc_html( $acct[2] ) . '</span>'; }
+			else { echo esc_html( 'Connected as ' . ( $acct[1]['email'] ?? '?' ) . ( ! empty( $acct[1]['plan'][0]['type'] ) ? ' (' . $acct[1]['plan'][0]['type'] . ' plan)' : '' ) ); }
+			?></td></tr>
+			<tr><td>Sending</td><td><?php echo DBD_Email::ready() ? 'On: the next week post to publish is emailed.' : ( $eo['on'] ? 'Switched on, but it needs an API key and a list.' : 'Off. Nothing is emailed and the form adds nobody until you switch it on.' ); ?></td></tr>
+			<tr><td>Signups</td><td><?php
+			if ( (int) $eo['tpl'] < 1 ) { echo 'Waiting for the confirmation template, so new signups aren\'t passed to Brevo yet.'; }
+			else { echo esc_html( is_array( $es ) ? (int) ( $es['ok'] ?? 0 ) . ' confirmation email' . ( (int) ( $es['ok'] ?? 0 ) === 1 ? '' : 's' ) . ' sent' . ( ! empty( $es['last'] ) ? ', the last ' . get_date_from_gmt( gmdate( 'Y-m-d H:i:s', (int) $es['last'] ), 'M j, g:i A' ) : '' ) . '.' : 'None yet.' ); }
+			if ( is_array( $es ) && ! empty( $es['last_err'] ) ) { echo '<br><span style="color:#b32d2e">' . esc_html( (int) $es['err'] . ' failed. The last, ' . get_date_from_gmt( gmdate( 'Y-m-d H:i:s', (int) $es['last_err'][0] ), 'M j, g:i A' ) . ': ' . $es['last_err'][1] ) . '</span>'; }
+			?></td></tr>
+		</tbody></table>
+		<form method="post" action="options.php">
+			<?php settings_fields( 'dbd_email' ); ?>
+			<table class="form-table" role="presentation">
+				<tr><th scope="row">Send the email</th>
+					<td><label><input type="checkbox" name="<?php echo esc_attr( $opt ); ?>[on]" value="1" <?php checked( (bool) $eo['on'] ); ?>> Email each week post to the list when it publishes, and pass signups to Brevo</label></td></tr>
+				<tr><th scope="row"><label for="dbd_e_key">Brevo API key</label></th>
+					<td><input name="<?php echo esc_attr( $opt ); ?>[key]" id="dbd_e_key" type="password" class="regular-text code" autocomplete="off" value="" placeholder="<?php echo esc_attr( $eo['key'] !== '' ? 'saved, ending ' . substr( $eo['key'], -4 ) : 'xkeysib-…' ); ?>">
+					<?php if ( $eo['key'] !== '' ) : ?><label style="margin-left:8px"><input type="checkbox" name="<?php echo esc_attr( $opt ); ?>[forget]" value="1"> Remove the key</label><?php endif; ?>
+					<p class="description">Leave it empty to keep the saved key.</p></td></tr>
+				<tr><th scope="row"><label for="dbd_e_list">List</label></th>
+					<td><?php if ( $ll ) : ?><select name="<?php echo esc_attr( $opt ); ?>[list]" id="dbd_e_list"><option value="0">Choose a list</option><?php foreach ( $ll as $l ) : ?><option value="<?php echo (int) $l['id']; ?>" <?php selected( (int) $eo['list'], (int) $l['id'] ); ?>><?php echo esc_html( $l['name'] . ' (' . (int) ( $l['uniqueSubscribers'] ?? $l['totalSubscribers'] ?? 0 ) . ')' ); ?></option><?php endforeach; ?></select>
+					<?php else : ?><input name="<?php echo esc_attr( $opt ); ?>[list]" id="dbd_e_list" type="number" min="0" class="small-text" value="<?php echo (int) $eo['list']; ?>"><?php endif; ?>
+					<p class="description">The Brevo list the email goes to and signups join. Create one called "Week in review" in Brevo (Contacts › Lists), then save here to see it.</p></td></tr>
+				<tr><th scope="row"><label for="dbd_e_tpl">Confirmation template</label></th>
+					<td><?php if ( $tl ) : ?><select name="<?php echo esc_attr( $opt ); ?>[tpl]" id="dbd_e_tpl"><option value="0">Choose a template</option><?php foreach ( $tl as $t ) : ?><option value="<?php echo (int) $t['id']; ?>" <?php selected( (int) $eo['tpl'], (int) $t['id'] ); ?>><?php echo esc_html( $t['name'] . ( ( $t['tag'] ?? '' ) === 'optin' ? ' (optin)' : '' ) ); ?></option><?php endforeach; ?></select>
+					<?php else : ?><input name="<?php echo esc_attr( $opt ); ?>[tpl]" id="dbd_e_tpl" type="number" min="0" class="small-text" value="<?php echo (int) $eo['tpl']; ?>"><?php endif; ?>
+					<p class="description">The "Confirm your email" message Brevo sends each signup. Make it from the HTML below.</p>
+					<details style="margin-top:8px"><summary>The confirmation email's HTML</summary>
+					<p class="description">In Brevo: Campaigns › Templates › New template, choose to paste your own code and paste this. In the template's settings, give it the tag <code>optin</code>, then save and activate it. Its button links to <code>{{ doubleoptin }}</code>, Brevo's confirm link; after the click, Brevo opens your newest week post with a "You're in" note.</p>
+					<textarea readonly rows="8" class="large-text code" onclick="this.select()"><?php echo esc_textarea( DBD_Email::confirm_html() ); ?></textarea></details></td></tr>
+				<tr><th scope="row"><label for="dbd_e_fn">From</label></th>
+					<td><input name="<?php echo esc_attr( $opt ); ?>[from_name]" id="dbd_e_fn" type="text" class="regular-text" value="<?php echo esc_attr( $eo['from_name'] ); ?>"> <input name="<?php echo esc_attr( $opt ); ?>[from_email]" type="email" class="regular-text" value="<?php echo esc_attr( $eo['from_email'] ); ?>" aria-label="From address">
+					<p class="description">The address must be a sender in Brevo (Senders, Domains &amp; Dedicated IPs).</p></td></tr>
+				<tr><th scope="row"><label for="dbd_e_re">Reply-to</label></th>
+					<td><input name="<?php echo esc_attr( $opt ); ?>[reply]" id="dbd_e_re" type="email" class="regular-text" value="<?php echo esc_attr( $eo['reply'] ); ?>"></td></tr>
+				<tr><th scope="row"><label for="dbd_e_ad">Postal address</label></th>
+					<td><input name="<?php echo esc_attr( $opt ); ?>[address]" id="dbd_e_ad" type="text" class="large-text" value="<?php echo esc_attr( $eo['address'] ); ?>"><p class="description">In every email's footer, as US law requires.</p></td></tr>
+				<tr><th scope="row"><label for="dbd_e_fm">Signup form</label></th>
+					<td><input name="<?php echo esc_attr( $opt ); ?>[form]" id="dbd_e_fm" type="number" min="1" class="small-text" value="<?php echo (int) $eo['form']; ?>"> <span class="description">The WPForms form's ID. Change its Confirmation message (Settings › Confirmations) to "Almost there. Check your inbox for a confirmation link."</span></td></tr>
+				<tr><th scope="row"><label for="dbd_e_te">Tests go to</label></th>
+					<td><input name="<?php echo esc_attr( $opt ); ?>[test]" id="dbd_e_te" type="email" class="regular-text" value="<?php echo esc_attr( $eo['test'] ); ?>" placeholder="<?php echo esc_attr( DBD_Email::test_to() ); ?>"> <span class="description">Empty uses the reply-to.</span></td></tr>
+			</table>
+			<?php submit_button( 'Save' ); ?>
+		</form>
+		<?php if ( $lp ) : ?>
+		<p><a class="button" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=dbd_email_test' ), 'dbd_email_test' ) ); ?>">Send a test of "<?php echo esc_html( html_entity_decode( $lp->post_title, ENT_QUOTES, 'UTF-8' ) ); ?>" to <?php echo esc_html( DBD_Email::test_to() ); ?></a></p>
+		<?php endif; ?>
+		<table class="widefat striped" style="max-width:720px"><thead><tr><th>When</th><th>Post</th><th>Result</th><th>To</th></tr></thead><tbody>
+			<?php foreach ( $el as $r ) : ?>
+			<tr><td><?php echo esc_html( get_date_from_gmt( gmdate( 'Y-m-d H:i:s', (int) $r['at'] ), 'M j, g:i A' ) ); ?></td>
+				<td><a href="<?php echo esc_url( (string) get_edit_post_link( (int) $r['post'] ) ); ?>"><?php echo esc_html( $r['title'] ); ?></a></td>
+				<td><?php echo esc_html( $r['result'] . ( $r['camp'] ? ' (Brevo campaign ' . $r['camp'] . ')' : '' ) ); ?></td><td><?php echo $r['n'] ? (int) $r['n'] . ' subscribers' : '–'; ?></td></tr>
+			<?php endforeach; ?>
+			<?php if ( ! $el ) : ?><tr><td colspan="4">Nothing sent yet.</td></tr><?php endif; ?>
+		</tbody></table>
 
 		<h2 id="dbd-news">Team news</h2>
 		<p>Every 6 hours (about 12 and 6, morning and evening, Eastern) the site reads the news feeds below, keeps the last 7 days of stories that belong to a team, and shows them on each team's players page, with the newest one on its offense and defense pages. Headline, source and time only, linking out. Each fetch adds to the stories already kept, so a feed that fails or sends an old copy of itself loses nothing.</p>

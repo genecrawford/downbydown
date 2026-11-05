@@ -9,6 +9,10 @@ foreach ( array( 'ARI', 'ATL', 'BAL', 'BUF', 'CAR', 'CHI', 'CIN', 'CLE', 'DAL', 
 foreach ( array( 'dbd_news_status', 'dbd_news_sources' ) as $o ) { delete_option( $o ); }
 wp_clear_scheduled_hook( 'dbd_news_event' ); wp_clear_scheduled_hook( 'dbd_news_first' );
 
+/* the Tuesday email (SCOPE §48): its settings, send log and signup counts; any queued sends */
+foreach ( array( 'dbd_email', 'dbd_email_log', 'dbd_email_signups' ) as $o ) { delete_option( $o ); }
+wp_unschedule_hook( 'dbd_email_send' );
+
 $u   = wp_upload_dir();
 $dir = trailingslashit( $u['basedir'] ) . 'down-by-down';
 if ( is_dir( $dir ) ) {
