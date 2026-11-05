@@ -70,7 +70,7 @@ def shell(sub, inner, pre, date='Tuesday, November 3', view=True):
 <tr><td style="background:#f4f1ea;padding:20px 28px;border-top:1px solid {LINE};font:12px/1.6 {SANS};color:{MUT}">
 {'You&#39;re getting this because you signed up for the week in review at' if view else 'Someone, hopefully you, signed up for the week in review at'} <a href="https://downbydown.com/" style="color:{MUT}">downbydown.com</a>.<br>
 {(f'<a href="{POST[chr(108)+"ink"]}" style="color:{MUT}">View in browser</a> · <a href="#" style="color:{MUT}">Unsubscribe</a><br>') if view else ''}
-Down by Down · [postal address, decision 4]<br>Not affiliated with the NFL. Data: nflverse.</td></tr>
+Down by Down · 808 Lady Street, Suite D, Columbia, SC 29201<br>Not affiliated with the NFL. Data: nflverse.</td></tr>
 </table></td></tr></table>'''
 
 def inbox(sub, pre, body):
@@ -98,7 +98,7 @@ email = inbox(title, first, shell(title, inner, first))
 open('email-week-8.html', 'w').write(PAGE.format(t='Tuesday email, Week 8', extra='', body=
     '<h1 class="m">The Week 8 email (SCOPE §48)</h1>' +
     NOTE.format('Built from the live Week 8 post exactly as the plugin would send it: inline styles, a 600px column, system fonts. '
-                'The postal address in the footer waits on decision 4.') + email))
+                'The footer carries the postal address from decision 4.') + email))
 
 # ---------- the signup (§48) ----------
 nl = open('../divi/home-newsletter.html').read()
