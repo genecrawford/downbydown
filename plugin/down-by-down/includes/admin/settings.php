@@ -177,7 +177,7 @@ function dbd_settings_page() {
 		<h2 id="dbd-email">Tuesday email</h2>
 		<?php
 		$eo = DBD_Email::opts(); $acct = $eo['key'] !== '' ? DBD_Email::cached( 'account' ) : null;
-		$lists = $eo['key'] !== '' ? DBD_Email::cached( 'contacts/lists?limit=50' ) : null; $tpls = $eo['key'] !== '' ? DBD_Email::cached( 'smtp/templates?templateStatus=true&limit=100' ) : null;
+		$lists = $eo['key'] !== '' ? DBD_Email::cached( DBD_Email::READS[1] ) : null; $tpls = $eo['key'] !== '' ? DBD_Email::cached( DBD_Email::READS[2] ) : null;
 		$ll = is_array( $lists[1]['lists'] ?? null ) ? $lists[1]['lists'] : array(); $tl = is_array( $tpls[1]['templates'] ?? null ) ? $tpls[1]['templates'] : array();
 		usort( $tl, function ( $x, $y ) { return array( ( $y['tag'] ?? '' ) === 'optin', $y['id'] ?? 0 ) <=> array( ( $x['tag'] ?? '' ) === 'optin', $x['id'] ?? 0 ); } );
 		$es = get_option( DBD_Email::OPT_SUB ); $el = (array) get_option( DBD_Email::OPT_LOG, array() ); $lp = DBD_Email::latest();
@@ -213,7 +213,7 @@ function dbd_settings_page() {
 				<tr><th scope="row"><label for="dbd_e_tpl">Confirmation template</label></th>
 					<td><?php if ( $tl ) : ?><select name="<?php echo esc_attr( $opt ); ?>[tpl]" id="dbd_e_tpl"><option value="0">Choose a template</option><?php foreach ( $tl as $t ) : ?><option value="<?php echo (int) $t['id']; ?>" <?php selected( (int) $eo['tpl'], (int) $t['id'] ); ?>><?php echo esc_html( $t['name'] . ( ( $t['tag'] ?? '' ) === 'optin' ? ' (optin)' : '' ) ); ?></option><?php endforeach; ?></select>
 					<?php else : ?><input name="<?php echo esc_attr( $opt ); ?>[tpl]" id="dbd_e_tpl" type="number" min="0" class="small-text" value="<?php echo (int) $eo['tpl']; ?>"><?php endif; ?>
-					<p class="description">The "Confirm your email" message Brevo sends each signup. Make it from the HTML below.</p>
+					<p class="description">The "Confirm your email" message Brevo sends each signup. Make it from the HTML below. Only active templates are listed; one made in the last minute shows after you save here.</p>
 					<details style="margin-top:8px"><summary>The confirmation email's HTML</summary>
 					<p class="description">In Brevo: Campaigns › Templates › New template, choose to paste your own code and paste this. In the template's settings, give it the tag <code>optin</code>, then save and activate it. Its button links to <code>{{ doubleoptin }}</code>, Brevo's confirm link; after the click, Brevo opens your newest week post with a "You're in" note.</p>
 					<textarea readonly rows="8" class="large-text code" onclick="this.select()"><?php echo esc_textarea( DBD_Email::confirm_html() ); ?></textarea></details></td></tr>

@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.10.0
+Stable tag: 2.10.1
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,9 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.10.1 =
+* Tuesday email settings: saving asks Brevo again for the account, lists and templates, and an empty answer is no longer remembered for 10 minutes, so a list or confirmation template made a minute ago shows in its dropdown at once.
 
 = 2.10.0 =
 * The Tuesday email (SCOPE §48). Each week post, as it publishes, is emailed to a Brevo list: the whole post with every style inline, a 600px column that narrows on a phone, links back to the site at the end of its sections and a button to the week page. It sends once (the Brevo campaign is stored on the post); a post published more than a day after its date never sends, and the post's "Tuesday email" box has "Don't email this one" and a test button. A failed send retries every 10 minutes for an hour, then emails the site owner.

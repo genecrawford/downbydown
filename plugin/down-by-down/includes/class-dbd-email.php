@@ -72,12 +72,24 @@ class DBD_Email {
 		return array( $code, $j, $err );
 	}
 
-	/** A GET kept for 10 minutes, for the settings page (the account, the lists, the templates). */
+	const READS = array( 'account', 'contacts/lists?limit=50', 'smtp/templates?templateStatus=true&limit=100' );  /* what the settings page reads */
+	private static function ckey( $path, $key ) { return 'dbd_brevo_' . md5( $path . '|' . $key ); }
+
+	/**
+	 * A GET kept for 10 minutes, for the settings page (the account, the lists, the templates). Only a good answer with something in
+	 * it is kept: an error or an empty list (before Gene has made the list or the template) is asked again on the next load (2.10.1).
+	 */
 	public static function cached( $path ) {
-		$k = 'dbd_brevo_' . md5( $path . '|' . self::get( 'key' ) );
+		$k = self::ckey( $path, (string) self::get( 'key' ) );
 		$v = get_transient( $k ); if ( is_array( $v ) ) { return $v; }
-		$r = self::api( 'GET', $path ); set_transient( $k, $r, 600 );
+		$r = self::api( 'GET', $path );
+		if ( $r[2] === '' && is_array( $r[1] ) && ( ! isset( $r[1]['count'] ) || (int) $r[1]['count'] > 0 ) ) { set_transient( $k, $r, 600 ); }
 		return $r;
+	}
+
+	/** Saving the settings asks Brevo again, so a list or template made a minute ago shows at once. */
+	public static function forget_reads( $keys ) {
+		foreach ( array_unique( array_filter( (array) $keys ) ) as $key ) { foreach ( self::READS as $path ) { delete_transient( self::ckey( $path, (string) $key ) ); } }
 	}
 
 	/* ------------------------------------------------------------------ signing up */
@@ -406,6 +418,7 @@ class DBD_Email {
 			'form' => absint( $v['form'] ?? 0 ) ?: $d['form'], 'test' => sanitize_email( (string) ( $v['test'] ?? '' ) ),
 		);
 		if ( ! empty( $v['forget'] ) ) { $out['key'] = ''; $out['on'] = false; }
+		self::forget_reads( array( $old['key'], $out['key'] ) );
 		return $out;
 	}
 }
