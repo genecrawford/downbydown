@@ -122,7 +122,10 @@ class DBD_Email {
 
 	/** The note on top of the post a new subscriber lands on. */
 	public static function joined( $content ) {
-		if ( empty( $_GET['dbd_joined'] ) || is_feed() || ! in_the_loop() || ! is_main_query() || ! is_singular( 'post' ) ) { return $content; }
+		/* Divi's Theme Builder draws the post with its Post Content module, outside the loop, so the test is the post being viewed and
+		   its week-in-review body, once (2.10.2: in_the_loop() left the note off the live site) */
+		if ( empty( $_GET['dbd_joined'] ) || is_feed() || ! is_singular( 'post' ) || (int) get_the_ID() !== (int) get_queried_object_id() ) { return $content; }
+		if ( strpos( (string) $content, 'dbd-post' ) === false || strpos( (string) $content, 'dbd-joined' ) !== false ) { return $content; }
 		$w = get_post_meta( get_the_ID(), DBD_Post::M_WEEK, true ); if ( $w === '' ) { return $content; }
 		return '<p class="dbd-joined"><b>You’re in.</b> The next one arrives Tuesday morning. This is the latest, ' . esc_html( DBD_Router::week_label( (int) $w ) ) . '.</p>' . $content;
 	}
