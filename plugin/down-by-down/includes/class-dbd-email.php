@@ -395,18 +395,33 @@ class DBD_Email {
 	public static function failed( $id ) { return strpos( (string) get_post_meta( (int) $id, self::M_STATE, true ), 'failed' ) === 0 && get_post_status( (int) $id ) === 'publish'; }
 	public static function again_url( $id ) { return wp_nonce_url( admin_url( 'admin-post.php?action=dbd_email_again&post=' . (int) $id ), 'dbd_email_again_' . (int) $id ); }
 
-	/** Try again: a failed send starts over now (six retries again if Brevo still refuses), whatever its date. */
+	/**
+	 * Try again: a failed send starts over now (six retries again if Brevo still refuses), whatever its date. Returns array( 'ok'|'error', notice ).
+	 * Nothing changes unless it can go: the email set up, and no send of this post running (Greptile, PR #82).
+	 */
+	public static function again( $pid ) {
+		$pid = (int) $pid;
+		if ( ! self::failed( $pid ) ) { return array( 'error', 'That email isn’t a failed send, so there was nothing to try again.' ); }
+		if ( ! self::ready() ) { return array( 'error', 'Switch the email on and finish the Brevo setup (a key and a list) first. The email is still waiting for Try again.' ); }
+		$lock = 'dbd_email_lock_' . $pid; $held = get_option( $lock, 0 );
+		if ( $held && time() - (int) $held < 300 ) { return array( 'error', 'A send of this email is still finishing. Try again in a minute.' ); }
+		update_post_meta( $pid, self::M_STATE, 'queued' ); update_post_meta( $pid, self::M_TRIES, 0 ); update_post_meta( $pid, self::M_AGAIN, 1 );
+		self::send( $pid );
+		$st = (string) get_post_meta( $pid, self::M_STATE, true );
+		if ( $st === 'queued' ) {  /* another send took the lock between the check and the send: the background picks it up */
+			wp_schedule_single_event( time() + 60, self::HOOK, array( $pid ) );
+			return array( 'ok', 'Queued: it sends within a couple of minutes.' );
+		}
+		if ( $st === 'sent' ) { return array( 'ok', 'The email went to the list.' ); }
+		if ( strpos( $st, 'retrying' ) === 0 ) { return array( 'error', 'Brevo still didn’t take it (' . substr( $st, 10 ) . '). It retries every 10 minutes for an hour.' ); }
+		return array( 'error', ucfirst( $st ) . '.' );
+	}
+
 	public static function again_action() {
 		$pid = (int) ( $_GET['post'] ?? 0 );
 		check_admin_referer( 'dbd_email_again_' . $pid );
 		if ( ! $pid || ! current_user_can( 'edit_post', $pid ) || ! current_user_can( 'manage_options' ) ) { wp_die( 'No.' ); }
-		if ( self::failed( $pid ) ) {
-			update_post_meta( $pid, self::M_STATE, 'queued' ); update_post_meta( $pid, self::M_TRIES, 0 ); update_post_meta( $pid, self::M_AGAIN, 1 );
-			self::send( $pid );
-			$st = (string) get_post_meta( $pid, self::M_STATE, true );
-			$msg = $st === 'sent' ? array( 'ok', 'The email went to the list.' ) : array( 'error', 'Brevo still didn’t take it (' . $st . '). It retries every 10 minutes for an hour.' );
-		} else { $msg = array( 'error', 'That email isn’t a failed send, so there was nothing to try again.' ); }
-		set_transient( 'dbd_email_test_' . get_current_user_id(), $msg, 120 );
+		set_transient( 'dbd_email_test_' . get_current_user_id(), self::again( $pid ), 120 );
 		wp_safe_redirect( wp_get_referer() ?: (string) get_edit_post_link( $pid, 'url' ) );
 		exit;
 	}
