@@ -173,7 +173,8 @@ function dbd_admin_email_word( $p ) {
 	if ( $st !== '' ) { return $st; }
 	if ( $p->post_status === 'publish' ) { return 'not emailed (published before the email)'; }
 	if ( get_post_meta( $p->ID, DBD_Email::M_SKIP, true ) ) { return 'won’t send: you chose not to email it'; }
-	return DBD_Email::ready() ? 'sends when it publishes' : 'won’t send while the email is off';
+	if ( DBD_Email::ready() ) { return 'sends when it publishes'; }
+	return DBD_Email::get( 'on' ) ? 'won’t send until Brevo is set up (a key and a list)' : 'won’t send while the email is off';
 }
 
 /* ------------------------------------------------------------------ the page */
