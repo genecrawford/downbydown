@@ -205,7 +205,7 @@ if ( $view === 'email' ) {
 if ( $view === 'send' ) {
 	$GLOBALS['dbd_opt'] = array( 'dbd_email' => array( 'on' => true, 'key' => 'xkeysib-test', 'list' => 3, 'tpl' => 5 ) );
 	$GLOBALS['hmeta'] = array(); $GLOBALS['hcalls'] = array(); $GLOBALS['brevo'] = array( 'create' => 201 ); $GLOBALS['hmail'] = array();
-	$wk = (int) ( $arg ?: 8 ); $doc = DBD_Post::compose( $wk, null, false ); if ( ! $doc ) { fwrite( STDERR, "no week $wk\n" ); exit( 2 ); }
+	$wk = ctype_digit( (string) $arg ) ? (int) $arg : 8; $doc = DBD_Post::compose( $wk, null, false ); if ( ! $doc ) { fwrite( STDERR, "no week $wk\n" ); exit( 2 ); }
 	$mk = function ( $id, $days, $state ) use ( $doc, $wk ) {
 		$GLOBALS['hposts'][ $id ] = (object) array( 'ID' => $id, 'post_title' => $doc['title'], 'post_content' => $doc['html'], 'post_status' => 'publish', 'post_type' => 'post', 'post_date_gmt' => gmdate( 'Y-m-d H:i:s', time() - (int) ( $days * 86400 ) ) );
 		$GLOBALS['hmeta'][ $id ] = array( '_dbd_week' => $wk, '_dbd_season' => (int) DBD_Data::current_season(), '_dbd_email_state' => $state );
