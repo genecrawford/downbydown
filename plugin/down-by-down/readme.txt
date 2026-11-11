@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.11.0
+Stable tag: 2.11.1
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,10 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.11.1 =
+* The Tuesday email sends on Brevo's free plan. Creating the campaign with a tag was refused (405, "not allowed to avail tag option"), so the Week 9 email failed all seven tries. The tag is gone.
+* Try again: a failed email has a Try again button on its post's Tuesday email box and in the send log. It sends now, even though it's more than a day late, because you chose to.
 
 = 2.11.0 =
 * The admin page, reorganised (SCOPE §50). The one long page is now five tabs, each also listed under Down by Down in the sidebar: Overview (what needs a look, then a summary of each area with its main button), Week in review (the weekly post, its weeks with each one's email, the Tuesday email and its send log), Team news, Site (photos, logos, addresses, the home description, notes for the theme) and Data (the current data and Sync now, the sync log, seasons, share cards, and the data source and GitHub push under Advanced).

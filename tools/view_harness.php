@@ -9,6 +9,7 @@
  *   the weekly post (class-dbd-post.php, SCOPE §46): post <N> (DBD_HARNESS_AHEAD=0 leaves out next week, as a backfilled post does) | sitemap (every app URL)
  *   the Tuesday email (class-dbd-email.php, SCOPE §48): email <N> builds week N's email from its post, as Brevo would get it, into DBD_HARNESS_HTML
  *   admin <tab|all>: the admin page's tabs (2.11.0, SCOPE §50) drawn with stored settings and two week posts, into DBD_HARNESS_HTML
+ *   send: the Tuesday email's send path against a fake Brevo (2.11.1): the campaign body, the one-day window, Try again and its guards
  *   joined: the "You're in" note's checks (2.10.2), with the post drawn outside the loop the way Divi's Theme Builder draws it
  *   team news (class-dbd-news.php, SCOPE §49): news <fixture dir> matches the fixture feeds and writes the stored lists to DBD_HARNESS_NEWS,
  *   which the team and teamplayers views then read; DBD_HARNESS_NOW pins the clock
@@ -44,7 +45,7 @@ function wp_parse_url( $u, $c = -1 ) { return parse_url( $u, $c ); }
 function get_query_var( $k ) { return ''; }
 function add_rewrite_rule() {} function flush_rewrite_rules() {}
 if ( ! defined( 'DAY_IN_SECONDS' ) ) { define( 'DAY_IN_SECONDS', 86400 ); define( 'HOUR_IN_SECONDS', 3600 ); }
-function update_option( $k, $v ) { return true; }
+function update_option( $k, $v, $al = null ) { if ( isset( $GLOBALS['dbd_opt'] ) ) { $GLOBALS['dbd_opt'][ $k ] = $v; } return true; }  /* stored only in the admin and send modes, which read it back */
 function get_transient( $k ) { return false; }
 function set_transient( $k, $v, $e = 0 ) { return true; }
 function home_url( $p = '' ) { return 'https://example.test' . $p; }
@@ -62,7 +63,7 @@ function has_shortcode() { return true; } function is_singular() { return true; 
 function selected() {} function checked() {}
 function wp_generate_password( $n = 12 ) { return substr( bin2hex( random_bytes( 8 ) ), 0, $n ); }
 function is_wp_error( $x ) { return $x === null; }
-function wp_remote_get() { return null; } function wp_remote_retrieve_response_code() { return 0; } function wp_remote_retrieve_body() { return ''; }
+function wp_remote_get() { return null; } function wp_remote_retrieve_response_code( $r = null ) { return is_array( $r ) ? (int) ( $r['response']['code'] ?? 0 ) : 0; } function wp_remote_retrieve_body( $r = null ) { return is_array( $r ) ? (string) ( $r['body'] ?? '' ) : ''; }
 function shortcode_atts( $d, $a ) { return array_merge( $d, (array) $a ); }
 function wp_strip_all_tags( $s ) { return trim( strip_tags( (string) $s ) ); }
 function __( $s ) { return $s; } function _e( $s ) { echo $s; }
@@ -200,6 +201,69 @@ if ( $view === 'email' ) {
 	if ( ( $dir = getenv( 'DBD_HARNESS_HTML' ) ) ) { if ( ! is_dir( $dir ) ) { mkdir( $dir, 0777, true ); } file_put_contents( $dir . '/email-w' . (int) $arg . '.html', $m['html'] ); file_put_contents( $dir . '/confirm.html', DBD_Email::confirm_html() ); }
 	exit( $warnings || $late !== array( false, false, true, true ) ? 1 : 0 );
 }
+/* ---- the send path (2.11.1): DBD_Email::send() and again() against a fake Brevo that records each call */
+if ( $view === 'send' ) {
+	$GLOBALS['dbd_opt'] = array( 'dbd_email' => array( 'on' => true, 'key' => 'xkeysib-test', 'list' => 3, 'tpl' => 5 ) );
+	$GLOBALS['hmeta'] = array(); $GLOBALS['hcalls'] = array(); $GLOBALS['brevo'] = array( 'create' => 201 ); $GLOBALS['hmail'] = array();
+	$wk = ctype_digit( (string) $arg ) ? (int) $arg : 8; $doc = DBD_Post::compose( $wk, null, false ); if ( ! $doc ) { fwrite( STDERR, "no week $wk\n" ); exit( 2 ); }
+	$mk = function ( $id, $days, $state ) use ( $doc, $wk ) {
+		$GLOBALS['hposts'][ $id ] = (object) array( 'ID' => $id, 'post_title' => $doc['title'], 'post_content' => $doc['html'], 'post_status' => 'publish', 'post_type' => 'post', 'post_date_gmt' => gmdate( 'Y-m-d H:i:s', time() - (int) ( $days * 86400 ) ) );
+		$GLOBALS['hmeta'][ $id ] = array( '_dbd_week' => $wk, '_dbd_season' => (int) DBD_Data::current_season(), '_dbd_email_state' => $state );
+	};
+	foreach ( array(
+		'get_post' => function ( $id ) { return $GLOBALS['hposts'][ (int) $id ] ?? null; },
+		'get_post_status' => function ( $id ) { return $GLOBALS['hposts'][ (int) $id ]->post_status ?? false; },
+		'get_post_meta' => function ( $id, $k = '', $one = false ) { return $GLOBALS['hmeta'][ (int) $id ][ $k ] ?? ''; },
+		'update_post_meta' => function ( $id, $k, $v ) { $GLOBALS['hmeta'][ (int) $id ][ $k ] = $v; return true; },
+		'add_option' => function ( $k, $v = '' ) { if ( isset( $GLOBALS['dbd_opt'][ $k ] ) ) { return false; } $GLOBALS['dbd_opt'][ $k ] = $v; return true; },
+		'delete_option' => function ( $k ) { unset( $GLOBALS['dbd_opt'][ $k ] ); return true; },
+		'wp_remote_request' => function ( $url, $a ) {
+			$path = substr( $url, strlen( DBD_Email::API ) ); $m = $a['method']; $GLOBALS['hcalls'][] = array( $m, $path, isset( $a['body'] ) ? json_decode( $a['body'], true ) : null );
+			if ( $m === 'POST' && $path === 'emailCampaigns' ) { $c = $GLOBALS['brevo']['create']; return array( 'response' => array( 'code' => $c ), 'body' => $c === 201 ? '{"id":7}' : '{"code":"method_not_allowed","message":"You are not allowed to avail tag option for your campaign"}' ); }
+			if ( preg_match( '#^emailCampaigns/\d+/sendNow$#', $path ) ) { return array( 'response' => array( 'code' => 204 ), 'body' => '' ); }
+			if ( strpos( $path, 'contacts/lists/' ) === 0 ) { return array( 'response' => array( 'code' => 200 ), 'body' => '{"uniqueSubscribers":198}' ); }
+			return array( 'response' => array( 'code' => 404 ), 'body' => '{"message":"not faked"}' );
+		},
+		'get_the_post_thumbnail_url' => function () { return 'https://example.test/card.png'; },
+		'wpautop' => function ( $s ) { return $s; },
+		'wp_mail' => function ( $to, $sub ) { $GLOBALS['hmail'][] = $sub; return true; },
+		'is_email' => function ( $e ) { return (bool) filter_var( $e, FILTER_VALIDATE_EMAIL ); },
+		'admin_url' => function ( $p = '' ) { return 'https://example.test/wp-admin/' . $p; },
+	) as $fn => $body ) { if ( ! function_exists( $fn ) ) { $GLOBALS['hfn'][ $fn ] = $body; eval( 'function ' . $fn . '( ...$a ) { return $GLOBALS["hfn"]["' . $fn . '"]( ...$a ); }' ); } }
+	$st = function ( $id ) { return (string) ( $GLOBALS['hmeta'][ $id ]['_dbd_email_state'] ?? '' ); };
+	$bad = 0; $check = function ( $name, $ok, $got = '' ) use ( &$bad ) { echo '  ' . ( $ok ? 'ok' : 'WRONG' ) . ": $name" . ( $ok ? '' : " (got: $got)" ) . "\n"; $bad += ! $ok; };
+	try {
+		/* on time: the campaign is made without a tag and sent */
+		$mk( 1, 0.1, 'queued' ); DBD_Email::send( 1 );
+		$create = array_values( array_filter( $GLOBALS['hcalls'], function ( $c ) { return $c[0] === 'POST' && $c[1] === 'emailCampaigns'; } ) )[0][2] ?? array();
+		$check( 'an on-time post sends', $st( 1 ) === 'sent', $st( 1 ) );
+		$check( 'the campaign has no tag (Brevo free plan)', ! array_key_exists( 'tag', $create ), implode( ',', array_keys( $create ) ) );
+		$check( 'the campaign goes to the list, with the unsubscribe link', ( $create['recipients']['listIds'] ?? null ) === array( 3 ) && strpos( (string) ( $create['htmlContent'] ?? '' ), '{{ unsubscribe }}' ) !== false );
+		$check( 'the campaign is stored on the post', (int) ( $GLOBALS['hmeta'][1]['_dbd_email_campaign'] ?? 0 ) === 7 );
+		$check( 'the send log counts the list', ( $GLOBALS['dbd_opt']['dbd_email_log'][0]['n'] ?? 0 ) === 198 );
+		/* late without Try again: never sends */
+		$mk( 2, 2, 'queued' ); DBD_Email::send( 2 );
+		$check( 'a post two days late does not send on its own', strpos( $st( 2 ), 'not sent: it was more than a day late' ) === 0, $st( 2 ) );
+		/* Try again on a failed late post: sends */
+		$mk( 3, 1.5, 'failed: Brevo answered 405' ); $r = DBD_Email::again( 3 );
+		$check( 'Try again sends a failed post a day and a half late', $st( 3 ) === 'sent' && $r[0] === 'ok', $st( 3 ) . ' / ' . $r[1] );
+		/* Brevo still refusing: retrying, the tries counted */
+		$GLOBALS['brevo']['create'] = 405; $mk( 4, 1.5, 'failed: x' ); $r = DBD_Email::again( 4 );
+		$check( 'Try again that Brevo refuses goes back to retrying', strpos( $st( 4 ), 'retrying: Brevo answered 405' ) === 0 && (int) $GLOBALS['hmeta'][4]['_dbd_email_tries'] === 1 && $r[0] === 'error', $st( 4 ) );
+		$GLOBALS['brevo']['create'] = 201;
+		/* the guards: not set up, a send running, not a failed post */
+		$mk( 5, 1.5, 'failed: x' ); $GLOBALS['dbd_opt']['dbd_email']['key'] = ''; $r = DBD_Email::again( 5 ); $GLOBALS['dbd_opt']['dbd_email']['key'] = 'xkeysib-test';
+		$check( 'Try again before Brevo is set up changes nothing', $st( 5 ) === 'failed: x' && DBD_Email::failed( 5 ), $st( 5 ) . ' / ' . $r[1] );
+		$mk( 6, 1.5, 'failed: x' ); $GLOBALS['dbd_opt']['dbd_email_lock_6'] = time(); $r = DBD_Email::again( 6 ); unset( $GLOBALS['dbd_opt']['dbd_email_lock_6'] );
+		$check( 'Try again while a send is finishing changes nothing', $st( 6 ) === 'failed: x', $st( 6 ) . ' / ' . $r[1] );
+		$mk( 7, 0.1, 'sent' ); $n = count( $GLOBALS['hcalls'] ); $r = DBD_Email::again( 7 );
+		$check( 'Try again on a sent post does nothing', $st( 7 ) === 'sent' && count( $GLOBALS['hcalls'] ) === $n, $st( 7 ) );
+		/* the last automatic try fails: failed, and Gene is told */
+		$GLOBALS['brevo']['create'] = 405; $mk( 8, 0.1, 'retrying: x' ); $GLOBALS['hmeta'][8]['_dbd_email_tries'] = DBD_Email::TRIES - 1; DBD_Email::send( 8 );
+		$check( 'the seventh refusal is final and emails the owner', strpos( $st( 8 ), 'failed: ' ) === 0 && count( $GLOBALS['hmail'] ) === 1 && DBD_Email::failed( 8 ), $st( 8 ) );
+	} catch ( Throwable $e ) { fwrite( STDERR, 'FATAL in send: ' . $e->getMessage() . ' at ' . basename( $e->getFile() ) . ':' . $e->getLine() . "\n" ); exit( 1 ); }
+	echo "send: $bad problems, $warnings warnings\n"; exit( $bad || $warnings ? 1 : 0 );
+}
 /* ---- the admin page (2.11.0, SCOPE §50): every tab drawn with stored settings, a sync that failed, a feed to check, an email sent and two week posts */
 if ( $view === 'admin' ) {
 	$season = (int) ( DBD_Data::root_manifest()['season'] ?? 2026 );
@@ -208,18 +272,19 @@ if ( $view === 'admin' ) {
 	$GLOBALS['dbd_opt'] = array(
 		'dbd_posts' => array( $season => array( $last - 1 => 102, $last => 101 ) ),
 		'dbd_email' => array( 'on' => true, 'key' => '', 'list' => 3, 'tpl' => 0 ),
-		'dbd_email_log' => array( array( 'at' => 1793700000, 'post' => 102, 'title' => 'Week ' . ( $last - 1 ) . ' in review', 'result' => 'sent', 'camp' => 4, 'n' => 198 ) ),
+		'dbd_email_log' => array( array( 'at' => 1793800000, 'post' => 103, 'title' => 'Week 0 in review', 'result' => 'failed: Brevo answered 405: You are not allowed to avail tag option for your campaign', 'camp' => 0, 'n' => 0 ), array( 'at' => 1793700000, 'post' => 102, 'title' => 'Week ' . ( $last - 1 ) . ' in review', 'result' => 'sent', 'camp' => 4, 'n' => 198 ) ),
 		'dbd_email_signups' => array( 'ok' => 16, 'last' => 1793900000, 'err' => 1, 'last_err' => array( 1793950000, 'Brevo answered 400: invalid email' ) ),
 		'dbd_sync_log' => array( array( 'time' => '2026-11-11 11:04:00', 'trigger' => 'push', 'ok' => false, 'error' => 'manifest.json: HTTP 502', 'changed' => array(), 'seconds' => 2.1 ), array( 'time' => '2026-11-10 23:05:00', 'trigger' => 'push', 'ok' => true, 'error' => '', 'changed' => array( 'a', 'b' ), 'seconds' => 4.1 ) ),
 		'dbd_news_status' => array( 'at' => 1793900000, 'secs' => 7, 'feeds' => array( 'site:MIN' => array( 'ok' => true, 'n' => 5, 'err' => '' ), 'fan:WAS' => array( 'ok' => false, 'err' => 'HTTP 503', 'last' => 1793800000 ) ) ),
 		'dbd_sync_token' => 'harness-token',
 	);
-	$GLOBALS['hposts'] = array( 101 => (object) array( 'ID' => 101, 'post_title' => 'Week ' . $last . ' in review', 'post_status' => 'future', 'post_date_gmt' => '2026-11-17 13:00:00', 'post_type' => 'post' ), 102 => (object) array( 'ID' => 102, 'post_title' => 'Week ' . ( $last - 1 ) . ' in review', 'post_status' => 'publish', 'post_date_gmt' => '2026-11-10 13:00:00', 'post_type' => 'post' ) );
-	$GLOBALS['hmeta'] = array( 101 => array( '_dbd_week' => $last ), 102 => array( '_dbd_week' => $last - 1, '_dbd_email_state' => 'sent' ) );
+	$GLOBALS['hposts'] = array( 101 => (object) array( 'ID' => 101, 'post_title' => 'Week ' . $last . ' in review', 'post_status' => 'future', 'post_date_gmt' => '2026-11-17 13:00:00', 'post_type' => 'post' ), 102 => (object) array( 'ID' => 102, 'post_title' => 'Week ' . ( $last - 1 ) . ' in review', 'post_status' => 'publish', 'post_date_gmt' => '2026-11-10 13:00:00', 'post_type' => 'post' ), 103 => (object) array( 'ID' => 103, 'post_title' => 'Week 0 in review', 'post_status' => 'publish', 'post_date_gmt' => '2026-11-03 13:00:00', 'post_type' => 'post' ) );
+	$GLOBALS['hmeta'] = array( 101 => array( '_dbd_week' => $last ), 102 => array( '_dbd_week' => $last - 1, '_dbd_email_state' => 'sent' ), 103 => array( '_dbd_week' => 0, '_dbd_email_state' => 'failed: Brevo answered 405' ) );
 	foreach ( array(
 		'get_posts' => function ( $a ) { $st = (array) ( $a['post_status'] ?? 'publish' ); $o = array_values( array_filter( $GLOBALS['hposts'], function ( $p ) use ( $st ) { return in_array( $p->post_status, $st, true ); } ) ); return ( $a['fields'] ?? '' ) === 'ids' ? array_map( function ( $p ) { return $p->ID; }, $o ) : $o; },
 		'get_post' => function ( $id ) { return $GLOBALS['hposts'][ (int) $id ] ?? null; },
 		'get_post_meta' => function ( $id, $k = '', $one = false ) { return $GLOBALS['hmeta'][ (int) $id ][ $k ] ?? ''; },
+		'get_post_status' => function ( $id ) { return $GLOBALS['hposts'][ (int) $id ]->post_status ?? false; },
 		'get_the_title' => function ( $p ) { return is_object( $p ) ? $p->post_title : ( $GLOBALS['hposts'][ (int) $p ]->post_title ?? '' ); },
 		'get_edit_post_link' => function ( $id, $c = 'display' ) { return 'https://example.test/wp-admin/post.php?post=' . (int) $id . '&action=edit'; },
 		'get_date_from_gmt' => function ( $d, $f = 'Y-m-d H:i:s' ) { $x = new DateTime( $d, new DateTimeZone( 'UTC' ) ); $x->setTimezone( new DateTimeZone( 'America/New_York' ) ); return $x->format( $f ); },
@@ -236,8 +301,8 @@ if ( $view === 'admin' ) {
 		'add_menu_page' => function () {}, 'add_submenu_page' => function () {}, 'register_setting' => function () {},
 	) as $fn => $body ) { if ( ! function_exists( $fn ) ) { $GLOBALS['hfn'][ $fn ] = $body; eval( 'function ' . $fn . '( ...$a ) { return $GLOBALS["hfn"]["' . $fn . '"]( ...$a ); }' ); } }
 	require DBD_PATH . 'includes/admin/settings.php';
-	$want = array( 'ov' => array( 'Needs a look', 'The last data sync failed', 'needs a Brevo API key', 'The last signup didn’t reach Brevo', 'Open Week in review', 'Sync now', 'Fetch news now', 'news feed' ),
-		'wk' => array( 'The weekly post', 'Weeks', 'The Tuesday email', 'Send log', 'sent to 198', 'won’t send until Brevo is set up', 'Waiting for the confirmation template' ),
+	$want = array( 'ov' => array( 'Needs a look', 'The last data sync failed', 'needs a Brevo API key', 'The last signup didn’t reach Brevo', 'Its send log row has Try again', 'Open Week in review', 'Sync now', 'Fetch news now', 'news feed' ),
+		'wk' => array( 'The weekly post', 'Weeks', 'The Tuesday email', 'Send log', 'sent to 198', 'won’t send until Brevo is set up', 'Waiting for the confirmation template', 'action=dbd_email_again&post=103', 'Try again' ),
 		'nw' => array( 'Fetching', 'Sources', 'HTTP 503', 'Fetch news now' ),
 		'st' => array( 'Photos and logos', 'Addresses', 'Search and sharing', 'Using it in the theme', 'value="dbd"' ),
 		'dt' => array( 'Current data', 'Sync log', 'Seasons', 'Share cards', 'value="dbd_data"', 'harness-token' ) );

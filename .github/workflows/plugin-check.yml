@@ -324,6 +324,8 @@ jobs:
           php tools/view_harness.php data joined
           # the admin page (2.11.0): every tab draws with its boxes, no form inside another
           DBD_HARNESS_HTML=admin php tools/view_harness.php data admin all
+          # the send path (2.11.1) against a fake Brevo: no campaign tag, the one-day window, Try again and its guards
+          php tools/view_harness.php data send 8
       - uses: actions/upload-artifact@v4
         if: always()
         with:

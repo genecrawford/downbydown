@@ -24,6 +24,7 @@ class DBD_Email {
 	const M_CAMP  = '_dbd_email_campaign';
 	const M_STATE = '_dbd_email_state';  /* queued, retrying: …, sent, failed: …, not sent: … (set once a post publishes; never reset) */
 	const M_TRIES = '_dbd_email_tries';
+	const M_AGAIN = '_dbd_email_again';  /* Gene pressed Try again on a failed send: it goes even though it's more than a day late (2.11.1) */
 	const WINDOW  = 86400;               /* a post sends only within a day of its date: backfilled weeks and past seasons never email */
 	const RETRY   = 600;
 	const TRIES   = 7;                   /* the first try and six retries 10 minutes apart: an hour */
@@ -56,6 +57,7 @@ class DBD_Email {
 		add_action( 'add_meta_boxes', array( __CLASS__, 'box' ), 10, 2 );
 		add_action( 'save_post_post', array( __CLASS__, 'save_box' ), 10, 2 );
 		add_action( 'admin_post_dbd_email_test', array( __CLASS__, 'test_action' ) );
+		add_action( 'admin_post_dbd_email_again', array( __CLASS__, 'again_action' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'notice' ) );
 	}
 
@@ -164,7 +166,7 @@ class DBD_Email {
 		$state = (string) get_post_meta( $id, self::M_STATE, true );
 		if ( $state !== 'queued' && strpos( $state, 'retrying' ) !== 0 ) { return; }
 		$camp = (int) get_post_meta( $id, self::M_CAMP, true );
-		$stop = $p->post_status !== 'publish' ? 'it was unpublished before it went' : ( get_post_meta( $id, self::M_SKIP, true ) ? 'you chose not to email this one' : ( ! self::ready() ? 'the email was switched off' : ( ! $camp && self::late( $p->post_date_gmt, time() ) ? 'it was more than a day late (the site’s scheduled tasks may not have run)' : '' ) ) );
+		$stop = $p->post_status !== 'publish' ? 'it was unpublished before it went' : ( get_post_meta( $id, self::M_SKIP, true ) ? 'you chose not to email this one' : ( ! self::ready() ? 'the email was switched off' : ( ! $camp && ! get_post_meta( $id, self::M_AGAIN, true ) && self::late( $p->post_date_gmt, time() ) ? 'it was more than a day late (the site’s scheduled tasks may not have run)' : '' ) ) );
 		if ( $stop !== '' ) { update_post_meta( $id, self::M_STATE, 'not sent: ' . $stop ); self::log( $p, 'not sent: ' . $stop ); return; }
 		$lock = 'dbd_email_lock_' . $id;  /* one sender per post: a retry and a slow first try can overlap */
 		if ( ! add_option( $lock, time(), '', false ) ) { if ( time() - (int) get_option( $lock, 0 ) < 300 ) { return; } update_option( $lock, time(), false ); }
@@ -175,7 +177,7 @@ class DBD_Email {
 				list( , $j, $err ) = self::api( 'POST', 'emailCampaigns', array(
 					'name' => $doc['subject'] . ' (' . (int) get_post_meta( $id, DBD_Post::M_SEASON, true ) . ')', 'subject' => $doc['subject'], 'previewText' => $doc['pre'],
 					'sender' => array( 'name' => $o['from_name'], 'email' => $o['from_email'] ), 'replyTo' => $o['reply'], 'htmlContent' => $doc['html'],
-					'recipients' => array( 'listIds' => array( (int) $o['list'] ) ), 'tag' => 'week-in-review', 'inlineImageActivation' => false,
+					'recipients' => array( 'listIds' => array( (int) $o['list'] ) ), 'inlineImageActivation' => false,  /* no campaign tag: Brevo's free plan refuses it (405, Week 9, 2.11.1) */
 				) );
 				if ( $err !== '' || empty( $j['id'] ) ) { return self::retry( $p, $err ?: 'Brevo didn’t return a campaign' ); }
 				$camp = (int) $j['id']; update_post_meta( $id, self::M_CAMP, $camp );
@@ -389,12 +391,48 @@ class DBD_Email {
 		add_meta_box( 'dbd-email', 'Tuesday email', array( __CLASS__, 'box_html' ), 'post', 'side', 'high' );
 	}
 
+	/** Whether a post's send failed for good, so Try again can start it over. */
+	public static function failed( $id ) { return strpos( (string) get_post_meta( (int) $id, self::M_STATE, true ), 'failed' ) === 0 && get_post_status( (int) $id ) === 'publish'; }
+	public static function again_url( $id ) { return wp_nonce_url( admin_url( 'admin-post.php?action=dbd_email_again&post=' . (int) $id ), 'dbd_email_again_' . (int) $id ); }
+
+	/**
+	 * Try again: a failed send starts over now (six retries again if Brevo still refuses), whatever its date. Returns array( 'ok'|'error', notice ).
+	 * Nothing changes unless it can go: the email set up, and no send of this post running (Greptile, PR #82).
+	 */
+	public static function again( $pid ) {
+		$pid = (int) $pid;
+		if ( ! self::failed( $pid ) ) { return array( 'error', 'That email isn’t a failed send, so there was nothing to try again.' ); }
+		if ( ! self::ready() ) { return array( 'error', 'Switch the email on and finish the Brevo setup (a key and a list) first. The email is still waiting for Try again.' ); }
+		$lock = 'dbd_email_lock_' . $pid; $held = get_option( $lock, 0 );
+		if ( $held && time() - (int) $held < 300 ) { return array( 'error', 'A send of this email is still finishing. Try again in a minute.' ); }
+		update_post_meta( $pid, self::M_STATE, 'queued' ); update_post_meta( $pid, self::M_TRIES, 0 ); update_post_meta( $pid, self::M_AGAIN, 1 );
+		self::send( $pid );
+		$st = (string) get_post_meta( $pid, self::M_STATE, true );
+		if ( $st === 'queued' ) {  /* another send took the lock between the check and the send: the background picks it up */
+			wp_schedule_single_event( time() + 60, self::HOOK, array( $pid ) );
+			return array( 'ok', 'Queued: it sends within a couple of minutes.' );
+		}
+		if ( $st === 'sent' ) { return array( 'ok', 'The email went to the list.' ); }
+		if ( strpos( $st, 'retrying' ) === 0 ) { return array( 'error', 'Brevo still didn’t take it (' . substr( $st, 10 ) . '). It retries every 10 minutes for an hour.' ); }
+		return array( 'error', ucfirst( $st ) . '.' );
+	}
+
+	public static function again_action() {
+		$pid = (int) ( $_GET['post'] ?? 0 );
+		check_admin_referer( 'dbd_email_again_' . $pid );
+		if ( ! $pid || ! current_user_can( 'edit_post', $pid ) || ! current_user_can( 'manage_options' ) ) { wp_die( 'No.' ); }
+		set_transient( 'dbd_email_test_' . get_current_user_id(), self::again( $pid ), 120 );
+		wp_safe_redirect( wp_get_referer() ?: (string) get_edit_post_link( $pid, 'url' ) );
+		exit;
+	}
+
 	public static function box_html( $p ) {
 		$state = (string) get_post_meta( $p->ID, self::M_STATE, true ); $done = ! in_array( $state, array( '', 'queued' ), true );  /* a queued send can still be skipped */
 		wp_nonce_field( 'dbd_email_box', 'dbd_email_box' );
 		$camp = (int) get_post_meta( $p->ID, self::M_CAMP, true );
 		echo '<p>' . ( $state !== '' ? esc_html( ucfirst( $state ) . '.' ) : ( self::ready() ? 'Emails the list when it publishes.' : 'The email is off or not set up, so this post won’t send.' ) ) . ( $camp ? ' Brevo campaign ' . (int) $camp . '.' : '' ) . '</p>';
 		if ( ! $done ) { echo '<input type="hidden" name="dbd_email_skip_shown" value="1"><p><label><input type="checkbox" name="dbd_email_skip" value="1" ' . checked( (bool) get_post_meta( $p->ID, self::M_SKIP, true ), true, false ) . '> Don’t email this one</label></p>'; }
+		if ( self::failed( $p->ID ) ) { echo '<p><a class="button button-primary" href="' . esc_url( self::again_url( $p->ID ) ) . '">Try again</a></p><p class="description">Sends it to the list now, even though it’s late.</p>'; }
 		$u = wp_nonce_url( admin_url( 'admin-post.php?action=dbd_email_test&post=' . (int) $p->ID ), 'dbd_email_test' );
 		echo '<p><a class="button" href="' . esc_url( $u ) . '">Send a test to ' . esc_html( self::test_to() ) . '</a></p><p class="description">Save your edits first: the test is built from the saved post.</p>';
 	}
