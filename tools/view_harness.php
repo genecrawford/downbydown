@@ -8,6 +8,7 @@
  *   live blocks (class-dbd-blocks.php): block <type> ['k=v&k=v' attributes] | page <html file> (a theme page with its [dbd_block] shortcodes drawn)
  *   the weekly post (class-dbd-post.php, SCOPE §46): post <N> (DBD_HARNESS_AHEAD=0 leaves out next week, as a backfilled post does) | sitemap (every app URL)
  *   the Tuesday email (class-dbd-email.php, SCOPE §48): email <N> builds week N's email from its post, as Brevo would get it, into DBD_HARNESS_HTML
+ *   admin <tab|all>: the admin page's tabs (2.11.0, SCOPE §50) drawn with stored settings and two week posts, into DBD_HARNESS_HTML
  *   joined: the "You're in" note's checks (2.10.2), with the post drawn outside the loop the way Divi's Theme Builder draws it
  *   team news (class-dbd-news.php, SCOPE §49): news <fixture dir> matches the fixture feeds and writes the stored lists to DBD_HARNESS_NEWS,
  *   which the team and teamplayers views then read; DBD_HARNESS_NOW pins the clock
@@ -34,7 +35,8 @@ function trailingslashit( $s ) { return rtrim( $s, '/\\' ) . '/'; }
 function untrailingslashit( $s ) { return rtrim( $s, '/\\' ); }
 function wp_mkdir_p( $d ) { return is_dir( $d ) || @mkdir( $d, 0777, true ); }
 function wp_upload_dir() { global $tmp; return array( 'basedir' => $tmp, 'baseurl' => 'https://example.test/uploads' ); }
-function get_option( $k, $d = false ) { if ( $k === 'dbd_headshots' || $k === 'dbd_logos' ) { return (bool) getenv( 'DBD_HARNESS_MEDIA' ); }
+function get_option( $k, $d = false ) { if ( isset( $GLOBALS['dbd_opt'] ) && array_key_exists( $k, $GLOBALS['dbd_opt'] ) ) { return $GLOBALS['dbd_opt'][ $k ]; }  /* the admin mode's stored settings */
+	if ( $k === 'dbd_headshots' || $k === 'dbd_logos' ) { return (bool) getenv( 'DBD_HARNESS_MEDIA' ); }
 	if ( getenv( 'DBD_HARNESS_PRETTY' ) ) { if ( $k === 'permalink_structure' ) { return '/%postname%/'; } if ( $k === 'dbd_app_page' ) { return 10; } if ( $k === 'page_on_front' ) { return getenv( 'DBD_HARNESS_ROOT' ) ? 5 : 10; } if ( $k === 'show_on_front' ) { return 'page'; } }  /* readable URLs (SCOPE §43) */
 	if ( strpos( $k, 'dbd_news_' ) === 0 && ( $nf = getenv( 'DBD_HARNESS_NEWS' ) ) && is_readable( $nf ) ) { $nj = json_decode( (string) file_get_contents( $nf ), true ); return $nj[ substr( $k, 9 ) ] ?? $d; }  /* team news (SCOPE §49) */
 	return $d; }
@@ -197,6 +199,60 @@ if ( $view === 'email' ) {
 	echo "email $arg: " . $m['subject'] . ' · ' . strlen( $m['html'] ) . ' bytes · preview "' . $m['pre'] . '" · late at 5s/23h59/24h01/a year: ' . implode( '/', array_map( function ( $x ) { return $x ? 'yes' : 'no'; }, $late ) ) . ", $warnings warnings\n";
 	if ( ( $dir = getenv( 'DBD_HARNESS_HTML' ) ) ) { if ( ! is_dir( $dir ) ) { mkdir( $dir, 0777, true ); } file_put_contents( $dir . '/email-w' . (int) $arg . '.html', $m['html'] ); file_put_contents( $dir . '/confirm.html', DBD_Email::confirm_html() ); }
 	exit( $warnings || $late !== array( false, false, true, true ) ? 1 : 0 );
+}
+/* ---- the admin page (2.11.0, SCOPE §50): every tab drawn with stored settings, a sync that failed, a feed to check, an email sent and two week posts */
+if ( $view === 'admin' ) {
+	$season = (int) ( DBD_Data::root_manifest()['season'] ?? 2026 );
+	$wks = array_values( array_filter( DBD_Week::weeks(), function ( $w ) { $f = DBD_Week::file( $w ); return $f && ! empty( $f['complete'] ); } ) );
+	$last = $wks ? max( $wks ) : 1;
+	$GLOBALS['dbd_opt'] = array(
+		'dbd_posts' => array( $season => array( $last - 1 => 102, $last => 101 ) ),
+		'dbd_email' => array( 'on' => true, 'key' => '', 'list' => 3, 'tpl' => 0 ),
+		'dbd_email_log' => array( array( 'at' => 1793700000, 'post' => 102, 'title' => 'Week ' . ( $last - 1 ) . ' in review', 'result' => 'sent', 'camp' => 4, 'n' => 198 ) ),
+		'dbd_email_signups' => array( 'ok' => 16, 'last' => 1793900000, 'err' => 1, 'last_err' => array( 1793950000, 'Brevo answered 400: invalid email' ) ),
+		'dbd_sync_log' => array( array( 'time' => '2026-11-11 11:04:00', 'trigger' => 'push', 'ok' => false, 'error' => 'manifest.json: HTTP 502', 'changed' => array(), 'seconds' => 2.1 ), array( 'time' => '2026-11-10 23:05:00', 'trigger' => 'push', 'ok' => true, 'error' => '', 'changed' => array( 'a', 'b' ), 'seconds' => 4.1 ) ),
+		'dbd_news_status' => array( 'at' => 1793900000, 'secs' => 7, 'feeds' => array( 'site:MIN' => array( 'ok' => true, 'n' => 5, 'err' => '' ), 'fan:WAS' => array( 'ok' => false, 'err' => 'HTTP 503', 'last' => 1793800000 ) ) ),
+		'dbd_sync_token' => 'harness-token',
+	);
+	$GLOBALS['hposts'] = array( 101 => (object) array( 'ID' => 101, 'post_title' => 'Week ' . $last . ' in review', 'post_status' => 'future', 'post_date_gmt' => '2026-11-17 13:00:00', 'post_type' => 'post' ), 102 => (object) array( 'ID' => 102, 'post_title' => 'Week ' . ( $last - 1 ) . ' in review', 'post_status' => 'publish', 'post_date_gmt' => '2026-11-10 13:00:00', 'post_type' => 'post' ) );
+	$GLOBALS['hmeta'] = array( 101 => array( '_dbd_week' => $last ), 102 => array( '_dbd_week' => $last - 1, '_dbd_email_state' => 'sent' ) );
+	foreach ( array(
+		'get_posts' => function ( $a ) { $st = (array) ( $a['post_status'] ?? 'publish' ); $o = array_values( array_filter( $GLOBALS['hposts'], function ( $p ) use ( $st ) { return in_array( $p->post_status, $st, true ); } ) ); return ( $a['fields'] ?? '' ) === 'ids' ? array_map( function ( $p ) { return $p->ID; }, $o ) : $o; },
+		'get_post' => function ( $id ) { return $GLOBALS['hposts'][ (int) $id ] ?? null; },
+		'get_post_meta' => function ( $id, $k = '', $one = false ) { return $GLOBALS['hmeta'][ (int) $id ][ $k ] ?? ''; },
+		'get_the_title' => function ( $p ) { return is_object( $p ) ? $p->post_title : ( $GLOBALS['hposts'][ (int) $p ]->post_title ?? '' ); },
+		'get_edit_post_link' => function ( $id, $c = 'display' ) { return 'https://example.test/wp-admin/post.php?post=' . (int) $id . '&action=edit'; },
+		'get_date_from_gmt' => function ( $d, $f = 'Y-m-d H:i:s' ) { $x = new DateTime( $d, new DateTimeZone( 'UTC' ) ); $x->setTimezone( new DateTimeZone( 'America/New_York' ) ); return $x->format( $f ); },
+		'admin_url' => function ( $p = '' ) { return 'https://example.test/wp-admin/' . $p; },
+		'settings_fields' => function ( $g ) { echo '<input type="hidden" name="option_page" value="' . esc_attr( $g ) . '">'; },
+		'submit_button' => function ( $t = 'Save', $c = 'primary', $n = 'submit', $w = true ) { echo '<input type="submit" name="' . esc_attr( $n ) . '" class="button button-' . esc_attr( $c ) . '" value="' . esc_attr( $t ) . '">'; },
+		'wp_nonce_field' => function ( $a = -1, $n = '_wpnonce', $r = true, $e = true ) { $h = '<input type="hidden" name="' . esc_attr( $n ) . '" value="nonce">'; if ( $e ) { echo $h; } return $h; },
+		'wp_nonce_url' => function ( $u, $a = -1 ) { return $u . '&_wpnonce=nonce'; },
+		'esc_textarea' => function ( $s ) { return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' ); },
+		'size_format' => function ( $b, $d = 0 ) { return round( $b / 1048576, $d ) . ' MB'; },
+		'current_user_can' => function () { return true; },
+		'sanitize_key' => function ( $k ) { return preg_replace( '/[^a-z0-9_\-]/', '', strtolower( (string) $k ) ); },
+		'is_email' => function ( $e ) { return (bool) filter_var( $e, FILTER_VALIDATE_EMAIL ); },
+		'add_menu_page' => function () {}, 'add_submenu_page' => function () {}, 'register_setting' => function () {},
+	) as $fn => $body ) { if ( ! function_exists( $fn ) ) { $GLOBALS['hfn'][ $fn ] = $body; eval( 'function ' . $fn . '( ...$a ) { return $GLOBALS["hfn"]["' . $fn . '"]( ...$a ); }' ); } }
+	require DBD_PATH . 'includes/admin/settings.php';
+	$want = array( 'ov' => array( 'Needs a look', 'The last data sync failed', 'needs a Brevo API key', 'The last signup didn’t reach Brevo', 'Open Week in review', 'Sync now', 'Fetch news now', 'news feed' ),
+		'wk' => array( 'The weekly post', 'Weeks', 'The Tuesday email', 'Send log', 'sent to 198', 'won’t send until Brevo is set up', 'Waiting for the confirmation template' ),
+		'nw' => array( 'Fetching', 'Sources', 'HTTP 503', 'Fetch news now' ),
+		'st' => array( 'Photos and logos', 'Addresses', 'Search and sharing', 'Using it in the theme', 'value="dbd"' ),
+		'dt' => array( 'Current data', 'Sync log', 'Seasons', 'Share cards', 'value="dbd_data"', 'harness-token' ) );
+	$bad = 0; $dir = getenv( 'DBD_HARNESS_HTML' ); if ( $dir && ! is_dir( $dir ) ) { mkdir( $dir, 0777, true ); }
+	foreach ( dbd_admin_tabs() as $k => $t ) {
+		if ( $arg && $arg !== 'all' && $arg !== $k ) { continue; }
+		$_GET = array( 'page' => $t[0] );
+		ob_start(); try { dbd_settings_page(); } catch ( Throwable $e ) { ob_end_clean(); fwrite( STDERR, "FATAL in admin $k: " . $e->getMessage() . ' at ' . basename( $e->getFile() ) . ':' . $e->getLine() . "\n" ); exit( 1 ); }
+		$h = ob_get_clean(); $miss = array_filter( $want[ $k ], function ( $x ) use ( $h ) { return strpos( $h, $x ) === false; } );
+		$forms = substr_count( $h, '<form' ); $nested = preg_match( '#<form(?:(?!</form>).)*<form#s', $h );
+		echo "  admin $k (" . $t[1] . '): ' . strlen( $h ) . " bytes, $forms forms" . ( $miss ? ', MISSING: ' . implode( ' | ', $miss ) : '' ) . ( $nested ? ', A FORM INSIDE A FORM' : '' ) . "\n";
+		$bad += count( $miss ) + $nested;
+		if ( $dir ) { file_put_contents( "$dir/admin-$k.html", '<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="https://example.test/wp-admin/css/common.css">' . $h ); }
+	}
+	echo "admin: $bad problems, $warnings warnings\n"; exit( $bad || $warnings ? 1 : 0 );
 }
 /* ---- the "You're in" note (2.10.2): on the viewed week post's body only, once, and with no loop (Divi's Post Content module) */
 if ( $view === 'joined' ) {
