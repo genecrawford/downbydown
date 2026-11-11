@@ -143,7 +143,7 @@ function dbd_admin_attention() {
 	if ( $last && empty( $last['ok'] ) ) { $a[] = array( 'bad', 'The last data sync failed: ' . ( $last['error'] ?: 'no reason given' ) . '.', 'dt' ); }
 	if ( defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON ) { $a[] = array( 'warn', 'WP-Cron is switched off on this site, so the scheduled pull, the news fetch and the email only run if a real cron calls wp-cron.php.', 'dt' ); }
 	$elast = $s['elog'][0] ?? null;
-	if ( $elast && strpos( (string) $elast['result'], 'failed' ) === 0 ) { $a[] = array( 'bad', 'The email for "' . $elast['title'] . '" didn’t send: ' . substr( (string) $elast['result'], 8 ), 'wk' ); }
+	if ( $elast && strpos( (string) $elast['result'], 'failed' ) === 0 ) { $a[] = array( 'bad', 'The email for "' . $elast['title'] . '" didn’t send: ' . substr( (string) $elast['result'], 8 ) . ( DBD_Email::failed( $elast['post'] ) ? '. Its send log row has Try again.' : '' ), 'wk' ); }
 	$eo = $s['eo'];
 	if ( ! empty( $eo['on'] ) && ! DBD_Email::ready() ) { $a[] = array( 'warn', 'The email is switched on but needs a Brevo API key and a list.', 'wk' ); }
 	if ( DBD_Email::ready() && (int) $eo['tpl'] < 1 ) { $a[] = array( 'warn', 'New signups aren’t passed to Brevo until a confirmation template is picked.', 'wk' ); }
@@ -399,12 +399,13 @@ function dbd_tab_week() {
 			<?php if ( $lp && $eo['key'] !== '' ) : ?><a class="button" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=dbd_email_test' ), 'dbd_email_test' ) ); ?>">Send a test of <?php echo esc_html( DBD_Router::week_label( (int) get_post_meta( $lp->ID, DBD_Post::M_WEEK, true ) ) ); ?> to <?php echo esc_html( DBD_Email::test_to() ); ?></a><?php endif; ?></div>
 	</form>
 
+	<?php $again = array(); ?>
 	<div class="dbd-box"><h2>Send log</h2>
 		<table class="widefat striped"><thead><tr><th>When</th><th>Post</th><th>Result</th><th>To</th></tr></thead><tbody>
 			<?php foreach ( $el as $r ) : ?>
 			<tr><td><?php echo esc_html( dbd_admin_when( $r['at'] ) ); ?></td>
 				<td><a href="<?php echo esc_url( (string) get_edit_post_link( (int) $r['post'] ) ); ?>"><?php echo esc_html( $r['title'] ); ?></a></td>
-				<td><?php echo esc_html( $r['result'] . ( $r['camp'] ? ' (Brevo campaign ' . $r['camp'] . ')' : '' ) ); ?></td><td><?php echo $r['n'] ? (int) $r['n'] : '–'; ?></td></tr>
+				<td><?php echo esc_html( $r['result'] . ( $r['camp'] ? ' (Brevo campaign ' . $r['camp'] . ')' : '' ) ); ?><?php if ( strpos( (string) $r['result'], 'failed' ) === 0 && DBD_Email::failed( $r['post'] ) && ! isset( $again[ $r['post'] ] ) ) : $again[ $r['post'] ] = 1; ?> <a class="button button-small" href="<?php echo esc_url( DBD_Email::again_url( $r['post'] ) ); ?>">Try again</a><?php endif; ?></td><td><?php echo $r['n'] ? (int) $r['n'] : '–'; ?></td></tr>
 			<?php endforeach; ?>
 			<?php if ( ! $el ) : ?><tr><td colspan="4">Nothing sent yet.</td></tr><?php endif; ?>
 		</tbody></table></div>

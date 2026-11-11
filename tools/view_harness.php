@@ -208,18 +208,19 @@ if ( $view === 'admin' ) {
 	$GLOBALS['dbd_opt'] = array(
 		'dbd_posts' => array( $season => array( $last - 1 => 102, $last => 101 ) ),
 		'dbd_email' => array( 'on' => true, 'key' => '', 'list' => 3, 'tpl' => 0 ),
-		'dbd_email_log' => array( array( 'at' => 1793700000, 'post' => 102, 'title' => 'Week ' . ( $last - 1 ) . ' in review', 'result' => 'sent', 'camp' => 4, 'n' => 198 ) ),
+		'dbd_email_log' => array( array( 'at' => 1793800000, 'post' => 103, 'title' => 'Week 0 in review', 'result' => 'failed: Brevo answered 405: You are not allowed to avail tag option for your campaign', 'camp' => 0, 'n' => 0 ), array( 'at' => 1793700000, 'post' => 102, 'title' => 'Week ' . ( $last - 1 ) . ' in review', 'result' => 'sent', 'camp' => 4, 'n' => 198 ) ),
 		'dbd_email_signups' => array( 'ok' => 16, 'last' => 1793900000, 'err' => 1, 'last_err' => array( 1793950000, 'Brevo answered 400: invalid email' ) ),
 		'dbd_sync_log' => array( array( 'time' => '2026-11-11 11:04:00', 'trigger' => 'push', 'ok' => false, 'error' => 'manifest.json: HTTP 502', 'changed' => array(), 'seconds' => 2.1 ), array( 'time' => '2026-11-10 23:05:00', 'trigger' => 'push', 'ok' => true, 'error' => '', 'changed' => array( 'a', 'b' ), 'seconds' => 4.1 ) ),
 		'dbd_news_status' => array( 'at' => 1793900000, 'secs' => 7, 'feeds' => array( 'site:MIN' => array( 'ok' => true, 'n' => 5, 'err' => '' ), 'fan:WAS' => array( 'ok' => false, 'err' => 'HTTP 503', 'last' => 1793800000 ) ) ),
 		'dbd_sync_token' => 'harness-token',
 	);
-	$GLOBALS['hposts'] = array( 101 => (object) array( 'ID' => 101, 'post_title' => 'Week ' . $last . ' in review', 'post_status' => 'future', 'post_date_gmt' => '2026-11-17 13:00:00', 'post_type' => 'post' ), 102 => (object) array( 'ID' => 102, 'post_title' => 'Week ' . ( $last - 1 ) . ' in review', 'post_status' => 'publish', 'post_date_gmt' => '2026-11-10 13:00:00', 'post_type' => 'post' ) );
-	$GLOBALS['hmeta'] = array( 101 => array( '_dbd_week' => $last ), 102 => array( '_dbd_week' => $last - 1, '_dbd_email_state' => 'sent' ) );
+	$GLOBALS['hposts'] = array( 101 => (object) array( 'ID' => 101, 'post_title' => 'Week ' . $last . ' in review', 'post_status' => 'future', 'post_date_gmt' => '2026-11-17 13:00:00', 'post_type' => 'post' ), 102 => (object) array( 'ID' => 102, 'post_title' => 'Week ' . ( $last - 1 ) . ' in review', 'post_status' => 'publish', 'post_date_gmt' => '2026-11-10 13:00:00', 'post_type' => 'post' ), 103 => (object) array( 'ID' => 103, 'post_title' => 'Week 0 in review', 'post_status' => 'publish', 'post_date_gmt' => '2026-11-03 13:00:00', 'post_type' => 'post' ) );
+	$GLOBALS['hmeta'] = array( 101 => array( '_dbd_week' => $last ), 102 => array( '_dbd_week' => $last - 1, '_dbd_email_state' => 'sent' ), 103 => array( '_dbd_week' => 0, '_dbd_email_state' => 'failed: Brevo answered 405' ) );
 	foreach ( array(
 		'get_posts' => function ( $a ) { $st = (array) ( $a['post_status'] ?? 'publish' ); $o = array_values( array_filter( $GLOBALS['hposts'], function ( $p ) use ( $st ) { return in_array( $p->post_status, $st, true ); } ) ); return ( $a['fields'] ?? '' ) === 'ids' ? array_map( function ( $p ) { return $p->ID; }, $o ) : $o; },
 		'get_post' => function ( $id ) { return $GLOBALS['hposts'][ (int) $id ] ?? null; },
 		'get_post_meta' => function ( $id, $k = '', $one = false ) { return $GLOBALS['hmeta'][ (int) $id ][ $k ] ?? ''; },
+		'get_post_status' => function ( $id ) { return $GLOBALS['hposts'][ (int) $id ]->post_status ?? false; },
 		'get_the_title' => function ( $p ) { return is_object( $p ) ? $p->post_title : ( $GLOBALS['hposts'][ (int) $p ]->post_title ?? '' ); },
 		'get_edit_post_link' => function ( $id, $c = 'display' ) { return 'https://example.test/wp-admin/post.php?post=' . (int) $id . '&action=edit'; },
 		'get_date_from_gmt' => function ( $d, $f = 'Y-m-d H:i:s' ) { $x = new DateTime( $d, new DateTimeZone( 'UTC' ) ); $x->setTimezone( new DateTimeZone( 'America/New_York' ) ); return $x->format( $f ); },
@@ -236,8 +237,8 @@ if ( $view === 'admin' ) {
 		'add_menu_page' => function () {}, 'add_submenu_page' => function () {}, 'register_setting' => function () {},
 	) as $fn => $body ) { if ( ! function_exists( $fn ) ) { $GLOBALS['hfn'][ $fn ] = $body; eval( 'function ' . $fn . '( ...$a ) { return $GLOBALS["hfn"]["' . $fn . '"]( ...$a ); }' ); } }
 	require DBD_PATH . 'includes/admin/settings.php';
-	$want = array( 'ov' => array( 'Needs a look', 'The last data sync failed', 'needs a Brevo API key', 'The last signup didn’t reach Brevo', 'Open Week in review', 'Sync now', 'Fetch news now', 'news feed' ),
-		'wk' => array( 'The weekly post', 'Weeks', 'The Tuesday email', 'Send log', 'sent to 198', 'won’t send until Brevo is set up', 'Waiting for the confirmation template' ),
+	$want = array( 'ov' => array( 'Needs a look', 'The last data sync failed', 'needs a Brevo API key', 'The last signup didn’t reach Brevo', 'Its send log row has Try again', 'Open Week in review', 'Sync now', 'Fetch news now', 'news feed' ),
+		'wk' => array( 'The weekly post', 'Weeks', 'The Tuesday email', 'Send log', 'sent to 198', 'won’t send until Brevo is set up', 'Waiting for the confirmation template', 'action=dbd_email_again&post=103', 'Try again' ),
 		'nw' => array( 'Fetching', 'Sources', 'HTTP 503', 'Fetch news now' ),
 		'st' => array( 'Photos and logos', 'Addresses', 'Search and sharing', 'Using it in the theme', 'value="dbd"' ),
 		'dt' => array( 'Current data', 'Sync log', 'Seasons', 'Share cards', 'value="dbd_data"', 'harness-token' ) );
