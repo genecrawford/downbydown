@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Down by Down admin, reorganised</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f0f0f1;font:13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif;color:#1d2327}
+a{color:#2271b1}
+.bar{height:32px;background:#1d2327;color:#c3c4c7;display:flex;align-items:center;padding:0 12px;font-size:13px}
+.shell{display:flex;min-height:calc(100vh - 32px)}
+.menu{width:160px;background:#1d2327;flex:none;padding-top:8px}
+.menu div{padding:8px 12px;color:#f0f0f1;font-size:14px}
+.menu .on{background:#2271b1;color:#fff}
+.menu .sub{padding:4px 12px 4px 22px;font-size:13px;color:#c3c4c7;background:#2c3338}
+.menu .sub.on{color:#fff;font-weight:600;background:#2c3338}
+.wrap{flex:1;min-width:0;padding:10px 20px 60px}
+.note{max-width:980px;margin:6px 0 14px;padding:10px 14px;background:#fffbe6;border:1px dashed #c9a400;font-size:13px}
+h1{font-size:23px;font-weight:400;margin:6px 0 4px}
+.lede{margin:0 0 14px;color:#50575e}
+.tabs{display:flex;gap:0;border-bottom:1px solid #c3c4c7;margin:0 0 20px;overflow-x:auto}
+.tabs button{appearance:none;background:#dcdcde;border:1px solid #c3c4c7;border-bottom:0;margin:0 6px -1px 0;padding:7px 12px;font:600 14px/1.4 inherit;color:#50575e;cursor:pointer;white-space:nowrap}
+.tabs button[aria-selected=true]{background:#f0f0f1;color:#000;border-bottom:1px solid #f0f0f1}
+.tabs .flag{display:inline-block;margin-left:6px;padding:0 6px;border-radius:9px;background:#d63638;color:#fff;font-size:11px;line-height:17px}
+.pane{display:none;max-width:980px}.pane.on{display:block}
+.box{background:#fff;border:1px solid #c3c4c7;margin:0 0 20px}
+.box>h2{margin:0;padding:10px 16px;border-bottom:1px solid #c3c4c7;font-size:14px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.box>h2 span{font-weight:400;color:#50575e;font-size:13px}
+.box .in{padding:12px 16px}
+.box .in>p:first-child{margin-top:0}
+.rows{width:100%;border-collapse:collapse}
+.rows td{padding:8px 16px;border-top:1px solid #f0f0f1;vertical-align:top}
+.rows tr:first-child td{border-top:0}
+.rows td:first-child{width:190px;color:#50575e}
+.ok{color:#00a32a}.warn{color:#996800}.bad{color:#d63638}
+.dot{display:inline-block;width:8px;height:8px;border-radius:4px;margin-right:6px;vertical-align:0}
+.dot.ok{background:#00a32a}.dot.warn{background:#dba617}.dot.bad{background:#d63638}.dot.off{background:#a7aaad}
+.form{width:100%;border-collapse:collapse}
+.form th{width:200px;text-align:left;font-weight:600;padding:14px 16px 14px 16px;vertical-align:top}
+.form td{padding:10px 16px 10px 0}
+.form .desc{display:block;margin-top:4px;color:#646970;font-size:13px}
+input[type=text],input[type=email],input[type=url],input[type=password],select,textarea{border:1px solid #8c8f94;border-radius:4px;padding:3px 8px;min-height:30px;font:14px inherit;background:#fff}
+.w{width:25em;max-width:100%}.ww{width:100%}
+.btn{display:inline-block;border:1px solid #2271b1;color:#2271b1;background:#f6f7f7;border-radius:3px;padding:0 10px;min-height:30px;line-height:28px;font-size:13px;cursor:pointer;text-decoration:none}
+.btn.p{background:#2271b1;color:#fff}
+.foot{padding:12px 16px;border-top:1px solid #c3c4c7;background:#f6f7f7;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.foot .desc{color:#646970}
+.list{width:100%;border-collapse:collapse}
+.list th{text-align:left;padding:8px 16px;border-bottom:1px solid #c3c4c7;font-weight:600}
+.list td{padding:8px 16px;border-top:1px solid #f0f0f1}
+.list tr:nth-child(even) td{background:#f6f7f7}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.grid .box{margin:0}
+.grid .rows td:first-child{width:110px}
+.steps{margin:0;padding-left:20px}.steps li{margin:4px 0}
+details summary{cursor:pointer;color:#2271b1}
+code{background:#f0f0f1;padding:1px 4px;font-size:12px}
+@media (max-width:782px){.menu{display:none}.grid{grid-template-columns:1fr}.form th{display:block;width:auto;padding-bottom:0}.form td{display:block;padding-left:16px}.rows td:first-child{width:120px}}
+</style></head>
+<body>
+<div class="bar">Down by Down &nbsp;·&nbsp; Howdy, Gene</div>
+<div class="shell">
+<nav class="menu"><div>Dashboard</div><div>Posts</div><div>Media</div><div>Pages</div><div>Comments</div><div class="on">Down by Down</div><div class="sub on">Overview</div><div class="sub">Week in review</div><div class="sub">Team news</div><div class="sub">Site</div><div class="sub">Data</div><div>Appearance</div><div>Plugins</div><div>Settings</div></nav>
+<main class="wrap">
+<p class="note"><b>Mock (SCOPE §50).</b> The one long page split into five tabs, also listed under Down by Down in the sidebar. Each tab saves on its own; the buttons that do something (Sync now, Fetch news now, Send a test) sit at the foot of the box they belong to. Click the tabs.</p>
+<h1>Down by Down</h1>
+<p class="lede">Season 2026 · Week 9 · data built today at 6:04 AM · version 2.11.0</p>
+<div class="tabs" role="tablist">
+<button role="tab" aria-selected="true" data-t="ov">Overview</button>
+<button role="tab" aria-selected="false" data-t="wk">Week in review</button>
+<button role="tab" aria-selected="false" data-t="nw">Team news <span class="flag">2</span></button>
+<button role="tab" aria-selected="false" data-t="st">Site</button>
+<button role="tab" aria-selected="false" data-t="dt">Data</button>
+</div>
+
+<!-- ============ OVERVIEW ============ -->
+<section class="pane on" id="ov">
+<div class="box"><h2>Needs a look <span>only what isn't right</span></h2>
+<table class="rows">
+<tr><td><span class="dot warn"></span>Team news</td><td>2 feeds didn't answer on the last fetch: Hogs Haven (503), Bleeding Green Nation (no recent stories). <a href="#" data-go="nw">Team news</a></td></tr>
+</table></div>
+<div class="grid">
+<div class="box"><h2>Week in review</h2>
+<table class="rows">
+<tr><td>Next post</td><td>Week 9 in review, scheduled Tue Nov 10, 8:00 AM</td></tr>
+<tr><td>Email</td><td><span class="dot ok"></span>On, to Week in review (214)</td></tr>
+<tr><td>Last email</td><td>Week 8, Nov 3: sent to 198</td></tr>
+<tr><td>Signups</td><td>16 confirmation emails this week</td></tr>
+</table>
+<div class="foot"><a class="btn" href="#" data-go="wk">Open Week in review</a></div></div>
+<div class="box"><h2>Data</h2>
+<table class="rows">
+<tr><td>Built</td><td>Today, 6:04 AM (11 minutes after the GitHub build)</td></tr>
+<tr><td>Play-by-play</td><td>Through Week 9</td></tr>
+<tr><td>Next pull</td><td>Tomorrow, 4:30 AM</td></tr>
+<tr><td>Last sync</td><td><span class="dot ok"></span>ok, 46 files changed</td></tr>
+</table>
+<div class="foot"><a class="btn p" href="#">Sync now</a><a class="btn" href="#" data-go="dt">Open Data</a></div></div>
+<div class="box"><h2>Team news</h2>
+<table class="rows">
+<tr><td>Last fetch</td><td>Today, 12:00 PM: 100 of 102 feeds</td></tr>
+<tr><td>Next fetch</td><td>Today, 6:00 PM</td></tr>
+</table>
+<div class="foot"><a class="btn" href="#">Fetch news now</a><a class="btn" href="#" data-go="nw">Open Team news</a></div></div>
+<div class="box"><h2>Site</h2>
+<table class="rows">
+<tr><td>App page</td><td><a href="#">downbydown.com/</a> (front page)</td></tr>
+<tr><td>Photos, logos</td><td>Headshots on · logos on</td></tr>
+<tr><td>Addresses</td><td>Readable: /team/min/</td></tr>
+</table>
+<div class="foot"><a class="btn" href="#" data-go="st">Open Site</a></div></div>
+</div>
+</section>
+
+<!-- ============ WEEK IN REVIEW ============ -->
+<section class="pane" id="wk">
+<div class="box"><h2>The weekly post <span>written after each finished week, scheduled for Tuesday 8:00 AM Eastern</span></h2>
+<table class="form">
+<tr><th>Write the weekly post</th><td><label><input type="checkbox" checked> Write each finished week's post after the sync that finishes it</label><span class="desc">Until it publishes, a later sync refreshes its numbers. Once you edit it or it publishes, it's never changed again.</span></td></tr>
+<tr><th>Signup under each post</th><td><input type="text" class="w" value='[wpforms id="63" title="false"]'><span class="desc">A form shortcode under each weekly post on the site. Empty for none.</span></td></tr>
+</table>
+<div class="foot"><a class="btn p" href="#">Save</a></div></div>
+
+<div class="box"><h2>Weeks</h2>
+<table class="list"><thead><tr><th>Week</th><th>Post</th><th>Post state</th><th>Email</th></tr></thead><tbody>
+<tr><td>Week 9</td><td><a href="#">Week 9 in review: Bills stun Chiefs from 19%</a></td><td>scheduled Tue Nov 10, 8:00 AM</td><td>sends when it publishes</td></tr>
+<tr><td>Week 8</td><td><a href="#">Week 8 in review: Cardinals stun Cowboys from 23%</a></td><td>published Nov 3</td><td>sent to 198</td></tr>
+<tr><td>Week 7</td><td><a href="#">Week 7 in review: Giants stun Texans from 22%</a></td><td>published Oct 27</td><td>not sent (before the email)</td></tr>
+<tr><td>Week 6</td><td><a href="#">Week 6 in review: Cardinals stun Rams from 13%</a></td><td>published Oct 20</td><td>not sent (before the email)</td></tr>
+</tbody></table>
+<div class="foot"><span class="desc">Every finished week has a post.</span></div></div>
+
+<div class="box"><h2>The Tuesday email <span><span class="dot ok"></span>On</span></h2>
+<table class="rows">
+<tr><td>Brevo</td><td>Connected as gene@period-three.com (free plan)</td></tr>
+<tr><td>Signups</td><td>16 confirmation emails sent, the last today at 11:42 AM</td></tr>
+</table>
+<table class="form" style="border-top:1px solid #f0f0f1">
+<tr><th>Send the email</th><td><label><input type="checkbox" checked> Email each week post to the list when it publishes, and pass signups to Brevo</label></td></tr>
+<tr><th>Brevo API key</th><td><input type="password" class="w" placeholder="saved, ending 9f2c"> <label><input type="checkbox"> Remove the key</label></td></tr>
+<tr><th>List</th><td><select class="w"><option>Week in review (214)</option></select></td></tr>
+<tr><th>Confirmation template</th><td><select class="w"><option>Down by Down confirmation (optin)</option></select>
+<details style="margin-top:8px"><summary>The confirmation email's HTML</summary><textarea class="ww" rows="4" readonly>&lt;!doctype html&gt;…</textarea></details></td></tr>
+<tr><th>From</th><td><input type="text" value="Down by Down"> <input type="email" class="w" value="week@downbydown.com"></td></tr>
+<tr><th>Reply-to</th><td><input type="email" class="w" value="week@downbydown.com"></td></tr>
+<tr><th>Postal address</th><td><input type="text" class="ww" value="808 Lady Street, Suite D, Columbia, SC 29201"><span class="desc">In every email's footer, as US law requires.</span></td></tr>
+<tr><th>Signup form</th><td><input type="text" size="4" value="63"> <span class="desc" style="display:inline">The WPForms form's ID.</span></td></tr>
+<tr><th>Tests go to</th><td><input type="email" class="w" placeholder="week@downbydown.com"></td></tr>
+</table>
+<div class="foot"><a class="btn p" href="#">Save</a><a class="btn" href="#">Send a test of Week 9 to week@downbydown.com</a></div></div>
+
+<div class="box"><h2>Send log</h2>
+<table class="list"><thead><tr><th>When</th><th>Post</th><th>Result</th><th>To</th></tr></thead><tbody>
+<tr><td>Nov 3, 8:00 AM</td><td><a href="#">Week 8 in review…</a></td><td>sent (Brevo campaign 4)</td><td>198</td></tr>
+</tbody></table></div>
+</section>
+
+<!-- ============ TEAM NEWS ============ -->
+<section class="pane" id="nw">
+<div class="box"><h2>Fetching <span>every 6 hours, about 12 and 6 Eastern</span></h2>
+<table class="rows">
+<tr><td>Last fetch</td><td>Today, 12:00 PM: 100 of 102 feeds read in 7 seconds</td></tr>
+<tr><td>Next fetch</td><td>Today, 6:00 PM</td></tr>
+<tr><td><span class="dot warn"></span>Feeds to check</td><td><a href="#">Hogs Haven (WAS)</a>: HTTP 503, last read Nov 4<br><a href="#">Bleeding Green Nation (PHI)</a>: no stories in the last 7 days</td></tr>
+</table>
+<div class="foot"><a class="btn p" href="#">Fetch news now</a><span class="desc">Each fetch adds to the stories kept, so a feed that fails loses nothing.</span></div></div>
+<div class="box"><h2>Sources</h2>
+<table class="form">
+<tr><th>Show stories from</th><td>
+<label style="display:block"><input type="checkbox" checked> Team sites (32)</label>
+<label style="display:block"><input type="checkbox" checked> SB Nation team blogs (32)</label>
+<label style="display:block"><input type="checkbox" checked> The Athletic, team feeds (31)</label>
+<label style="display:block"><input type="checkbox" checked> Around the league (7)</label>
+<span class="desc">A source switched off leaves the pages at the next fetch. Switch everything off to hide the news.</span></td></tr>
+</table>
+<div class="foot"><a class="btn p" href="#">Save</a></div></div>
+</section>
+
+<!-- ============ SITE ============ -->
+<section class="pane" id="st">
+<div class="box"><h2>Photos and logos</h2>
+<table class="form">
+<tr><th>Player photos</th><td><label><input type="checkbox" checked> Show NFL headshots</label><span class="desc">Hotlinked from the NFL's image CDN; league property, not licensed to this site. Off removes every photo at once.</span></td></tr>
+<tr><th>Team logos</th><td><label><input type="checkbox" checked> Show team logos in place of the drawn tiles</label><span class="desc">Hotlinked from ESPN's CDN; the drawn tile stays if a logo fails.</span></td></tr>
+</table></div>
+<div class="box"><h2>Addresses</h2>
+<table class="form">
+<tr><th>Readable URLs</th><td><label><input type="checkbox" checked> Use paths like <code>/team/min/</code> and <code>/player/justin-jefferson/</code></label><span class="desc">Old <code>?team=</code> links redirect. Permalinks: /%postname%/.</span></td></tr>
+<tr><th>Paths at the site root</th><td><label><input type="checkbox" checked> Keep <code>/team/min/</code> and <code>/2025/</code> at the root</label><span class="desc">The app is the front page, so its paths are at the root either way.</span></td></tr>
+</table></div>
+<div class="box"><h2>Search and sharing</h2>
+<table class="form">
+<tr><th>Home page description</th><td><textarea class="ww" rows="3" placeholder="How every NFL offense actually plays…"></textarea><span class="desc">Shown under the home page's title in search results and shared links. Empty uses the placeholder text.</span></td></tr>
+</table>
+<div class="foot"><a class="btn p" href="#">Save</a><span class="desc">Saves the three boxes above.</span></div></div>
+<div class="box"><h2>Using it in the theme</h2><div class="in">
+<details open><summary>Pages and addresses</summary><p><code>[down_by_down]</code> on one page makes it the app: <code>team/min/</code>, <code>game/…</code>, <code>player/…</code>, <code>matchups/</code>, <code>teams/</code>, <code>players/</code>, <code>leaders/</code>, <code>week/8/</code>, <code>my-team/</code>.</p></details>
+<details><summary>Live blocks for Divi pages</summary><p><code>[dbd_block type="hero-map"]</code>, <code>[dbd_block type="games"]</code>, <code>[dbd_block type="week-highlights"]</code>, …</p></details>
+<details><summary>Body classes and menu counts</summary><p><code>dbd-view-hub</code>, <code>dbd-view-team</code>, … · <code>[dbd_count games]</code></p></details>
+</div></div>
+</section>
+
+<!-- ============ DATA ============ -->
+<section class="pane" id="dt">
+<div class="box"><h2>Current data</h2>
+<table class="rows">
+<tr><td>Season</td><td>2026, week 9</td></tr>
+<tr><td>Play-by-play through</td><td>Week 9</td></tr>
+<tr><td>Built</td><td>2026-11-05 11:04 UTC (today, 6:04 AM)</td></tr>
+<tr><td>Files</td><td>412 in <code>uploads/down-by-down</code></td></tr>
+<tr><td>Next scheduled pull</td><td>Nov 6, 4:30 AM</td></tr>
+<tr><td>After an update</td><td>This version (2.11.0) has synced.</td></tr>
+</table>
+<div class="foot"><a class="btn p" href="#">Sync now</a></div></div>
+<div class="box"><h2>Sync log</h2>
+<table class="list"><thead><tr><th>When (UTC)</th><th>Trigger</th><th>Result</th><th>Changed</th><th>Seconds</th></tr></thead><tbody>
+<tr><td>2026-11-05 11:04</td><td>push</td><td>ok</td><td>46 files</td><td>9.2</td></tr>
+<tr><td>2026-11-04 23:05</td><td>push</td><td>ok</td><td>12 files</td><td>4.1</td></tr>
+<tr><td>2026-11-04 09:30</td><td>cron</td><td>ok</td><td>nothing</td><td>1.0</td></tr>
+</tbody></table><div class="foot"><a href="#">Show all 50</a></div></div>
+<div class="box"><h2>Seasons</h2>
+<table class="list"><thead><tr><th>Season</th><th>State</th><th>Files</th><th>Built</th></tr></thead><tbody>
+<tr><td>2026</td><td>current</td><td>412</td><td>2026-11-05</td></tr><tr><td>2025</td><td>archived</td><td>398</td><td>2026-11-02</td></tr>
+</tbody></table><div class="in"><span style="color:#646970">A finished season is set aside when the next one's first build runs. Earlier seasons come from the repo's "Build an archived season" action.</span></div></div>
+<div class="box"><h2>Share cards</h2>
+<table class="rows"><tr><td>Cached</td><td>1,204 cards, 61 MB</td></tr><tr><td>Last cleanup</td><td>Today, 6:05 AM: removed 310 (15 MB)</td></tr></table>
+<div class="foot"><a class="btn" href="#">Clear card cache</a></div></div>
+<details class="box" style="padding:0"><summary style="padding:10px 16px;font-weight:600;color:#1d2327">Advanced: data source and GitHub push</summary>
+<table class="form" style="border-top:1px solid #c3c4c7">
+<tr><th>Folder URL</th><td><input type="url" class="ww" value="https://raw.githubusercontent.com/genecrawford/downbydown/main/data/"><span class="desc">The repo's data folder. Must contain manifest.json.</span></td></tr>
+<tr><th>DBD_SITE_URL</th><td><code>https://downbydown.com/</code> (a repo variable)</td></tr>
+<tr><th>DBD_SYNC_TOKEN</th><td><code>••••••••••••••••c81a</code> <a href="#">Show</a> (a repo secret)</td></tr>
+</table>
+<div class="foot"><a class="btn p" href="#">Save</a><a class="btn" href="#">Generate a new token</a></div></details>
+</section>
+</main></div>
+<script>
+document.querySelectorAll('.tabs button').forEach(function(b){b.addEventListener('click',function(){show(b.dataset.t)})});
+document.querySelectorAll('[data-go]').forEach(function(a){a.addEventListener('click',function(e){e.preventDefault();show(a.dataset.go);window.scrollTo(0,0)})});
+function show(t){document.querySelectorAll('.tabs button').forEach(function(x){x.setAttribute('aria-selected',x.dataset.t===t)});document.querySelectorAll('.pane').forEach(function(p){p.classList.toggle('on',p.id===t)})}
+</script>
+</body></html>

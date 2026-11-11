@@ -2348,3 +2348,16 @@ Build notes from review (Greptile, PR #72):
 - **Tests:** made-up feeds in `tools/fixtures/news/` run through the matching step in Plugin check, with the clock pinned, then the panel and the latest line are rendered from the result.
 
 Size: S to M.
+
+## 50. The admin page, reorganised (mocked and built 2026-11-11, `mockup-v24/`, 2.11.0)
+
+Gene: the Down by Down admin page "comes off as just one big form with no sections". It had grown a section per release (data, display, weekly post, email, news, cards, seasons, GitHub, theme notes, sync log) on one long page.
+
+- **Five tabs**, each also a page under Down by Down in the sidebar: **Overview**, **Week in review**, **Team news**, **Site**, **Data**.
+- **Overview:** a "Needs a look" box that appears only when something is wrong (a failed sync, WP-Cron off, a failed email, the email on but not set up, no confirmation template, a failed signup newer than the last good one, finished weeks without a post, feeds to check). Below it, four summaries (the week in review, the data, team news, the site), each with its main button.
+- **Week in review:** the weekly post settings; the weeks, newest first, with each post's state and its email; the Tuesday email's status and settings; the send log.
+- **Team news:** the fetch status with "Fetch news now"; the sources.
+- **Site:** photos and logos, addresses, the home description (one Save), and the theme notes folded into three sections.
+- **Data:** the current data with "Sync now"; the sync log (six rows, the rest folded); seasons; share cards; and, under Advanced, the data folder URL and the GitHub push (the token behind "Show the token").
+- Every box that saves is its own form, so a save never touches another tab's settings. The data folder URL moved to its own settings group for that reason.
+- CI renders every tab from stored settings and checks its boxes are there and that no form sits inside another.
