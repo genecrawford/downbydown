@@ -322,6 +322,8 @@ jobs:
           grep -q 'href="{{ doubleoptin }}"' emails/confirm.html
           # the "You're in" note (2.10.2): the viewed week post's body only, once, with no loop (Divi's Post Content module)
           php tools/view_harness.php data joined
+          # the admin page (2.11.0): every tab draws with its boxes, no form inside another
+          DBD_HARNESS_HTML=admin php tools/view_harness.php data admin all
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.10.2
+Stable tag: 2.11.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,11 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.11.0 =
+* The admin page, reorganised (SCOPE §50). The one long page is now five tabs, each also listed under Down by Down in the sidebar: Overview (what needs a look, then a summary of each area with its main button), Week in review (the weekly post, its weeks with each one's email, the Tuesday email and its send log), Team news, Site (photos, logos, addresses, the home description, notes for the theme) and Data (the current data and Sync now, the sync log, seasons, share cards, and the data source and GitHub push under Advanced).
+* Each box that saves is its own form, so saving one tab never changes another's settings. The data folder URL now saves on its own.
+* Includes 2.10.1 and 2.10.2.
 
 = 2.10.2 =
 * The "You're in" note now shows on the post a new subscriber lands on. Divi's Theme Builder draws the post outside the WordPress loop, which the note was waiting for.

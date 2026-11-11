@@ -205,7 +205,7 @@ class DBD_Email {
 		$title = html_entity_decode( $p->post_title, ENT_QUOTES, 'UTF-8' );
 		wp_mail( self::test_to(), 'Down by Down: the email for "' . $title . '" didn’t send',
 			"The post published, but Brevo didn't take the email after " . self::TRIES . " tries over an hour.\n\nThe last error: $err\n\n"
-			. "The post: " . get_permalink( $p ) . "\nThe email settings and send log: " . admin_url( 'admin.php?page=down-by-down#dbd-email' ) . "\n\n"
+			. "The post: " . get_permalink( $p ) . "\nThe email settings and send log: " . admin_url( 'admin.php?page=down-by-down-week#dbd-email' ) . "\n\n"
 			. "It won't try again on its own. If you want it to go out, send it from Brevo (Campaigns), or tell Claude." );
 	}
 
@@ -374,7 +374,7 @@ class DBD_Email {
 		$p = $pid ? get_post( $pid ) : self::latest();
 		$err = $p ? self::test( $p ) : 'There’s no week post to send yet.';
 		set_transient( 'dbd_email_test_' . get_current_user_id(), $err === '' ? array( 'ok', 'Test sent to ' . self::test_to() . ': "' . html_entity_decode( $p->post_title, ENT_QUOTES, 'UTF-8' ) . '".' ) : array( 'error', 'The test didn’t send. ' . $err ), 120 );
-		wp_safe_redirect( $pid ? get_edit_post_link( $pid, 'url' ) : admin_url( 'admin.php?page=down-by-down#dbd-email' ) );
+		wp_safe_redirect( $pid ? get_edit_post_link( $pid, 'url' ) : admin_url( 'admin.php?page=down-by-down-week#dbd-email' ) );
 		exit;
 	}
 
