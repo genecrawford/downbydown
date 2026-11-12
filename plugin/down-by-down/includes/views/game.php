@@ -41,6 +41,9 @@ foreach ( array( $AWAY, $HOME ) as $a ) {
 echo '</div><div class="dbd-line"><span>' . esc_html( DBD_Router::line_text( $g ) ) . '</span><span>' . ( isset( $g['total'] ) ? 'O/U ' . esc_html( $g['total'] ) : '' ) . '</span><span>' . DBD_Router::kickoff_html( $g ) . '</span></div></div></aside>';
 echo '</div>';
 
+/* ---- the NFL's highlights video for a finished game (SCOPE §51) */
+echo DBD_Videos::highlight( $g );
+
 /* ---- how it played out (SCOPE §30): win probability for a final game, from wp/w{week}.json. Regulation only; overtime shows its scoring plays. */
 $WP = $final ? DBD_Data::win_prob( $g ) : null;
 if ( $WP && ! empty( $WP['s'] ) ) {

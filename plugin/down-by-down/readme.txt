@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.11.1
+Stable tag: 2.12.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,11 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.12.0 =
+* Team videos (SCOPE §51). Each team's players page shows its newest videos above the news: the last 14 days from the team's official YouTube channel and from the NFL's channel when a title names the team, four in a row with "Show more" opening up to 12. Shorts are left out. Only the thumbnails load with the page; a click plays the video in place with YouTube's privacy-enhanced player.
+* Game highlights. A finished game's page opens with its highlights video from the NFL's weekly "Game Recaps" playlist, matched by the two teams' full names and the week, and kept for good once found.
+* Both ride on the team news fetch every 6 hours, with no key. Down by Down › News and videos shows the last fetch, any channel to check, how many games have highlights, and an on/off switch.
 
 = 2.11.1 =
 * The Tuesday email sends on Brevo's free plan. Creating the campaign with a tag was refused (405, "not allowed to avail tag option"), so the Week 9 email failed all seven tries. The tag is gone.

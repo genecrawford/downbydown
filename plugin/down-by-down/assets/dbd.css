@@ -1792,3 +1792,21 @@ html:not([data-fx]) .dbd [data-fx="half"],html[data-fx="std"] .dbd [data-fx="std
 .dbd .dbd-latest a{color:var(--dbd-ink)}
 .dbd .dbd-latest span{font:500 11px var(--dbd-mono);letter-spacing:.04em;text-transform:uppercase;color:var(--dbd-muted)}
 @media (max-width:700px){.dbd .dbd-news .nw-cols{grid-template-columns:minmax(0,1fr)}}
+
+/* team videos and game highlights (SCOPE §51) */
+.dbd .dbd-vids .vd-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px 16px;padding:12px var(--dbd-edge) 16px}
+.dbd .dbd-vids .vd-more{display:none}.dbd .dbd-vids.open .vd-more{display:block}
+.dbd .dbd-vid{margin:0;min-width:0}
+.dbd .dbd-play{position:relative;display:block;width:100%;aspect-ratio:16/9;margin:0;padding:0;border:0;border-radius:4px;overflow:hidden;background:#0f1311;cursor:pointer}
+.dbd .dbd-play img{display:block;width:100%;height:100%;object-fit:cover}
+.dbd .dbd-play::after{content:"";position:absolute;left:10px;bottom:10px;width:34px;height:24px;border-radius:5px;background:rgba(15,19,17,.82) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M3 2l5 3-5 3z' fill='%23fff'/%3E%3C/svg%3E") center/12px no-repeat}
+.dbd .dbd-play:hover::after,.dbd .dbd-play:focus-visible::after{background-color:var(--dbd-red)}
+.dbd .dbd-play.on::after{display:none}
+.dbd .dbd-play iframe{display:block;width:100%;height:100%;border:0}
+.dbd .dbd-vid h4{margin:8px 0 0;padding:0;font:600 14px/1.35 var(--dbd-body);color:var(--dbd-ink);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.dbd .dbd-vid span{display:block;margin-top:3px;font:500 11px/1.4 var(--dbd-mono);letter-spacing:.04em;text-transform:uppercase;color:var(--dbd-muted)}
+.dbd .dbd-vids .nw-btn{margin:0 var(--dbd-edge) 14px;padding:6px 12px;background:none;border:1px solid var(--dbd-line-2);border-radius:4px;font:600 13px var(--dbd-body);color:var(--dbd-ink);cursor:pointer}
+.dbd .dbd-hl .dbd-pb{padding:12px var(--dbd-edge) 14px}
+.dbd .dbd-hl .dbd-play{max-width:760px}
+.dbd .dbd-hl p{margin:8px 0 0;padding:0;font:400 14px/1.5 var(--dbd-body);color:var(--dbd-ink-2)}
+@media (max-width:900px){.dbd .dbd-vids .vd-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}

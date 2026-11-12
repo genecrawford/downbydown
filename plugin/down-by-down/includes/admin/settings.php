@@ -15,7 +15,7 @@ function dbd_admin_tabs() {
 	return array(
 		'ov' => array( 'down-by-down', 'Overview' ),
 		'wk' => array( 'down-by-down-week', 'Week in review' ),
-		'nw' => array( 'down-by-down-news', 'Team news' ),
+		'nw' => array( 'down-by-down-news', 'News and videos' ),
 		'st' => array( 'down-by-down-site', 'Site' ),
 		'dt' => array( 'down-by-down-data', 'Data' ),
 	);
@@ -53,6 +53,8 @@ add_action( 'admin_init', function () {
 	/* the Tuesday email (SCOPE §48): one array; a blank API key keeps the saved one */
 	register_setting( 'dbd_email', DBD_Email::OPT, array( 'type' => 'array', 'sanitize_callback' => array( 'DBD_Email', 'sanitize' ) ) );
 	/* team news (SCOPE §49): the source groups switched on; an empty save switches every source off */
+	/* team videos and highlights (SCOPE §51): on by default */
+	register_setting( 'dbd_videos', DBD_Videos::OPT_ON, array( 'type' => 'boolean', 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => true ) );
 	register_setting( 'dbd_news', DBD_News::OPT_SRC, array( 'type' => 'array', 'sanitize_callback' => function ( $v ) { return array_values( array_intersect( array_map( 'strval', (array) $v ), array_keys( DBD_News::groups() ) ) ); } ) );
 } );
 
@@ -61,8 +63,9 @@ add_action( 'admin_init', function () {
 add_action( 'admin_post_dbd_news_now', function () {
 	check_admin_referer( 'dbd_news_now' );
 	if ( ! current_user_can( 'manage_options' ) ) { wp_die( 'No.' ); }
-	delete_transient( 'dbd_news_lock' );
+	delete_transient( 'dbd_news_lock' ); delete_transient( 'dbd_videos_lock' );
 	DBD_News::run();
+	DBD_Videos::run();  /* the videos ride on the same fetch (SCOPE §51) */
 	wp_safe_redirect( dbd_admin_url( dbd_admin_back( 'nw' ), array( 'news' => 1 ) ) );
 	exit;
 } );
@@ -152,7 +155,19 @@ function dbd_admin_attention() {
 	$miss = count( array_filter( $s['weeks'], function ( $w ) use ( $s ) { return ! isset( $s['pmap'][ $w ] ); } ) );
 	if ( $miss && DBD_Post::on() ) { $a[] = array( 'warn', $miss . ' finished week' . ( $miss === 1 ? ' has' : 's have' ) . ' no post.', 'wk' ); }
 	if ( $s['nprob'] ) { $n = count( $s['nprob'] ); $a[] = array( 'warn', $n . ' news feed' . ( $n === 1 ? '' : 's' ) . ' didn’t answer properly on the last fetch.', 'nw' ); }
+	if ( DBD_Videos::on() ) {
+		$vs = get_option( DBD_Videos::OPT_STATUS ); $vp = is_array( $vs ) ? array_filter( (array) $vs['feeds'], function ( $x ) { return empty( $x['ok'] ) || ! empty( $x['err'] ); } ) : array();
+		if ( $vp ) { $n = count( $vp ); $a[] = array( 'warn', $n . ' YouTube channel' . ( $n === 1 ? '' : 's' ) . ' to check after the last fetch.', 'nw' ); }
+		if ( is_array( $vs ) && empty( $vs['pl']['ok'] ) ) { $a[] = array( 'warn', 'Game highlights couldn’t be found: ' . ( $vs['pl']['err'] ?? 'unknown' ) . '.', 'nw' ); }
+	}
 	return $a;
+}
+
+/** This season's finished games with highlights, and all its finished games. */
+function dbd_admin_highlights() {
+	$have = (array) ( ( (array) get_option( DBD_Videos::OPT_HL, array() ) )[ DBD_Data::season() ] ?? array() ); $n = 0; $f = 0;
+	foreach ( DBD_Data::weeks() as $w ) { foreach ( DBD_Data::week_games( $w ) as $g ) { if ( DBD_Router::is_final( $g ) ) { $f++; $n += isset( $have[ $g['id'] ] ) ? 1 : 0; } } }
+	return array( $n, $f );
 }
 
 /** The week posts next and last: the one scheduled soonest, else the newest published. */
@@ -284,11 +299,12 @@ function dbd_tab_overview() {
 		</tbody></table>
 		<div class="dbd-foot"><?php echo dbd_admin_button( 'dbd_sync_now', 'Sync now', true, '', 'ov' ); ?><a class="button" href="<?php echo esc_url( dbd_admin_url( 'dt' ) ); ?>">Open Data</a></div></div>
 
-		<div class="dbd-box"><h2>Team news</h2><table class="dbd-rows"><tbody>
+		<div class="dbd-box"><h2>News and videos</h2><table class="dbd-rows"><tbody>
 			<tr><td>Last fetch</td><td><?php echo is_array( $s['news'] ) ? esc_html( dbd_admin_when( $s['news']['at'] ) . ': ' . $s['nok'] . ' of ' . count( $s['feeds'] ) . ' feeds' ) : 'not yet'; ?></td></tr>
 			<tr><td>Next fetch</td><td><?php $nn = wp_next_scheduled( DBD_News::HOOK ); echo esc_html( $nn ? dbd_admin_when( $nn ) : 'not scheduled' ); ?></td></tr>
+			<tr><td>Videos</td><td><?php $hs = dbd_admin_highlights(); echo esc_html( DBD_Videos::on() ? ( get_option( DBD_Videos::OPT_STATUS ) ? $hs[0] . ' of ' . $hs[1] . ' finished games have highlights' : 'the first fetch hasn’t run yet' ) : 'switched off' ); ?></td></tr>
 		</tbody></table>
-		<div class="dbd-foot"><?php echo dbd_admin_button( 'dbd_news_now', 'Fetch news now', false, '', 'ov' ); ?><a class="button" href="<?php echo esc_url( dbd_admin_url( 'nw' ) ); ?>">Open Team news</a></div></div>
+		<div class="dbd-foot"><?php echo dbd_admin_button( 'dbd_news_now', 'Fetch news and videos now', false, '', 'ov' ); ?><a class="button" href="<?php echo esc_url( dbd_admin_url( 'nw' ) ); ?>">Open News and videos</a></div></div>
 
 		<div class="dbd-box"><h2>Site</h2><table class="dbd-rows"><tbody>
 			<?php $aid = DBD_Urls::page_id(); ?>
@@ -426,8 +442,33 @@ function dbd_tab_news() {
 			else { $li = array(); foreach ( $s['nprob'] as $k => $x ) { $li[] = '<a href="' . esc_url( $nf[ $k ][0] ?? '' ) . '">' . esc_html( ( $nf[ $k ][3] ?? $k ) . ( ! empty( $nf[ $k ][2] ) && ( $nf[ $k ][1] ?? '' ) !== 'site' ? ' (' . $nf[ $k ][2] . ')' : '' ) ) . '</a>: ' . esc_html( $x['err'] ?: 'failed' ) . ( empty( $x['ok'] ) && ! empty( $x['last'] ) ? esc_html( ', last read ' . dbd_admin_when( $x['last'], 'M j' ) ) : '' ); } echo implode( '<br>', $li ); }
 			?></td></tr>
 		</tbody></table>
-		<div class="dbd-foot"><?php echo dbd_admin_button( 'dbd_news_now', 'Fetch news now', true ); ?><span class="description">Each fetch adds to the stories kept from the last 7 days, so a feed that fails or sends an old copy of itself loses nothing.</span></div>
+		<div class="dbd-foot"><?php echo dbd_admin_button( 'dbd_news_now', 'Fetch news and videos now', true ); ?><span class="description">Each fetch adds to the stories kept from the last 7 days, so a feed that fails or sends an old copy of itself loses nothing.</span></div>
 	</div>
+	<?php
+	$vs = get_option( DBD_Videos::OPT_STATUS ); $vf = DBD_Videos::feeds(); $vst = is_array( $vs ) ? (array) $vs['feeds'] : array();
+	$vok = count( array_filter( $vst, function ( $x ) { return ! empty( $x['ok'] ); } ) ); $vprob = array_filter( $vst, function ( $x ) { return empty( $x['ok'] ) || ! empty( $x['err'] ); } );
+	$hs = dbd_admin_highlights(); $pl = is_array( $vs ) ? (array) ( $vs['pl'] ?? array() ) : array();
+	?>
+	<form method="post" action="options.php" class="dbd-box" id="dbd-videos"><h2>Videos <small>each team's YouTube channel and the NFL's, with the same fetch</small></h2>
+		<?php settings_fields( 'dbd_videos' ); ?>
+		<table class="dbd-rows"><tbody>
+			<tr><td>Last fetch</td><td><?php echo is_array( $vs ) ? esc_html( dbd_admin_when( $vs['at'] ) . ': ' . $vok . ' of ' . count( $vst ) . ' channels read in ' . $vs['secs'] . ' seconds' ) : ( DBD_Videos::on() ? 'not yet: the first fetch runs a couple of minutes after the update' : 'switched off' ); ?></td></tr>
+			<tr><td><?php echo $vprob ? '<span class="dbd-dot warn"></span>' : ''; ?>Channels to check</td><td><?php
+			if ( ! $vprob ) { echo is_array( $vs ) ? 'None: every channel answered.' : '–'; }
+			else { $li = array(); foreach ( $vprob as $k => $x ) { $li[] = '<a href="' . esc_url( 'https://www.youtube.com/channel/' . ( $k === 'yt:NFL' ? DBD_Videos::NFL : ( DBD_Videos::CH[ substr( $k, 3 ) ] ?? '' ) ) ) . '">' . esc_html( $vf[ $k ][3] ?? $k ) . '</a>: ' . esc_html( $x['err'] ?: 'failed' ); } echo implode( '<br>', $li ); }
+			?></td></tr>
+			<tr><td><?php echo $pl && empty( $pl['ok'] ) ? '<span class="dbd-dot warn"></span>' : ''; ?>Game highlights</td><td><?php
+			echo esc_html( $hs[0] . ' of ' . $hs[1] . ' finished games this season' );
+			if ( $pl && empty( $pl['ok'] ) ) { echo '<br><span class="dbd-red">' . esc_html( 'The last fetch couldn’t find them: ' . $pl['err'] . '.' ) . '</span>'; }
+			elseif ( ! empty( $pl['found'] ) ) { echo esc_html( '; the last fetch found ' . (int) $pl['found'] . '.' ); }
+			?><p class="description">From the NFL's weekly "Game Recaps" playlists, which its YouTube page lists for about the last five weeks; earlier weeks may have none.</p></td></tr>
+		</tbody></table>
+		<table class="form-table" role="presentation" style="border-top:1px solid #f0f0f1">
+			<tr><th scope="row">Show videos</th><td><label><input type="checkbox" name="<?php echo esc_attr( DBD_Videos::OPT_ON ); ?>" value="1" <?php checked( DBD_Videos::on() ); ?>> Show each team's videos on its players page and each finished game's highlights</label>
+			<p class="description">Shorts are left out. Only thumbnails load with a page; a click plays the video in place with YouTube's privacy-enhanced player.</p></td></tr>
+		</table>
+		<div class="dbd-foot"><?php submit_button( 'Save', 'primary', 'submit', false ); ?></div>
+	</form>
 	<form method="post" action="options.php" class="dbd-box"><h2>Sources <small>shown on each team's players page, with the newest on its offense and defense pages</small></h2>
 		<?php settings_fields( 'dbd_news' ); ?>
 		<table class="form-table" role="presentation">

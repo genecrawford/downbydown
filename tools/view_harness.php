@@ -11,6 +11,8 @@
  *   admin <tab|all>: the admin page's tabs (2.11.0, SCOPE §50) drawn with stored settings and two week posts, into DBD_HARNESS_HTML
  *   send: the Tuesday email's send path against a fake Brevo (2.11.1): the campaign body, the one-day window, Try again and its guards
  *   joined: the "You're in" note's checks (2.10.2), with the post drawn outside the loop the way Divi's Theme Builder draws it
+ *   team videos (class-dbd-videos.php, SCOPE §51): videos <fixture dir> matches the fixture channel feeds and the recap playlist and writes the stored
+ *   lists to DBD_HARNESS_VIDEOS, which the teamplayers and game views then read
  *   team news (class-dbd-news.php, SCOPE §49): news <fixture dir> matches the fixture feeds and writes the stored lists to DBD_HARNESS_NEWS,
  *   which the team and teamplayers views then read; DBD_HARNESS_NOW pins the clock
  */
@@ -39,6 +41,7 @@ function wp_upload_dir() { global $tmp; return array( 'basedir' => $tmp, 'baseur
 function get_option( $k, $d = false ) { if ( isset( $GLOBALS['dbd_opt'] ) && array_key_exists( $k, $GLOBALS['dbd_opt'] ) ) { return $GLOBALS['dbd_opt'][ $k ]; }  /* the admin mode's stored settings */
 	if ( $k === 'dbd_headshots' || $k === 'dbd_logos' ) { return (bool) getenv( 'DBD_HARNESS_MEDIA' ); }
 	if ( getenv( 'DBD_HARNESS_PRETTY' ) ) { if ( $k === 'permalink_structure' ) { return '/%postname%/'; } if ( $k === 'dbd_app_page' ) { return 10; } if ( $k === 'page_on_front' ) { return getenv( 'DBD_HARNESS_ROOT' ) ? 5 : 10; } if ( $k === 'show_on_front' ) { return 'page'; } }  /* readable URLs (SCOPE §43) */
+	if ( ( strpos( $k, 'dbd_videos_' ) === 0 || $k === 'dbd_highlights' ) && ( $vf = getenv( 'DBD_HARNESS_VIDEOS' ) ) && is_readable( $vf ) ) { $vj = json_decode( (string) file_get_contents( $vf ), true ); return $k === 'dbd_highlights' ? ( $vj['hl'] ?? $d ) : ( $vj['videos'][ substr( $k, 11 ) ] ?? $d ); }  /* team videos (SCOPE §51) */
 	if ( strpos( $k, 'dbd_news_' ) === 0 && ( $nf = getenv( 'DBD_HARNESS_NEWS' ) ) && is_readable( $nf ) ) { $nj = json_decode( (string) file_get_contents( $nf ), true ); return $nj[ substr( $k, 9 ) ] ?? $d; }  /* team news (SCOPE §49) */
 	return $d; }
 function wp_parse_url( $u, $c = -1 ) { return parse_url( $u, $c ); }
@@ -71,7 +74,7 @@ function wp_schedule_single_event() {} function wp_next_scheduled() { return fal
 
 /* ---- the plugin, minus the bootstrap and admin. The SEO class extends a WordPress sitemap base class; an empty stand-in lets it load. */
 if ( ! class_exists( 'WP_Sitemaps_Provider' ) ) { class WP_Sitemaps_Provider { public $name = ''; public $object_type = ''; } }
-foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-kicker', 'class-dbd-defense', 'class-dbd-week', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-sync', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo', 'class-dbd-blocks', 'class-dbd-post', 'class-dbd-news', 'class-dbd-email' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
+foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-kicker', 'class-dbd-defense', 'class-dbd-week', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-sync', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo', 'class-dbd-blocks', 'class-dbd-post', 'class-dbd-news', 'class-dbd-email', 'class-dbd-videos' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
 
 if ( getenv( 'DBD_HARNESS_NOW' ) && class_exists( 'DBD_News' ) ) { DBD_News::$now = (int) getenv( 'DBD_HARNESS_NOW' ); }
 
@@ -87,6 +90,25 @@ if ( $view === 'news' ) {
 	catch ( Throwable $e ) { fwrite( STDERR, 'FATAL in news: ' . $e->getMessage() . ' at ' . basename( $e->getFile() ) . ':' . $e->getLine() . "\n" ); exit( 1 ); }
 	$nout = getenv( 'DBD_HARNESS_NEWS' ) ?: $tmp . '/news.json'; file_put_contents( $nout, json_encode( $stores ) );
 	echo json_encode( array( 'stores' => array_filter( $stores, function ( $x ) { return $x['t'] || $x['l']; } ), 'status' => array_filter( $status, function ( $x ) { return empty( $x['ok'] ) || ! empty( $x['n'] ); } ) ), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . "\n";
+	exit( $warnings ? 1 : 0 );
+}
+
+/* ---- team videos and highlights (SCOPE §51): the fixture channel feeds and recap playlist through the matching, no network */
+if ( $view === 'videos' ) {
+	$vd = rtrim( (string) ( $arg ?: 'tools/fixtures/videos' ), '/' );
+	$fail = is_readable( "$vd/fail.txt" ) ? array_filter( array_map( 'trim', file( "$vd/fail.txt" ) ) ) : array();
+	$bodies = array();
+	foreach ( DBD_Videos::feeds() as $k => $x ) { $fn = $vd . '/' . str_replace( ':', '-', $k ) . '.xml'; $bodies[ $k ] = in_array( $k, $fail, true ) ? array( 'error' => 'HTTP 503' ) : ( is_readable( $fn ) ? (string) file_get_contents( $fn ) : '' ); }
+	$prev = is_readable( "$vd/prev.json" ) ? json_decode( (string) file_get_contents( "$vd/prev.json" ), true ) : array();
+	try {
+		list( $stores, $status ) = DBD_Videos::collect( DBD_Videos::feeds(), $bodies, $prev );
+		$season = DBD_Data::season(); $lists = DBD_Videos::playlists( (string) @file_get_contents( "$vd/playlists.html" ), $season ); $hl = array();
+		$pb = array(); foreach ( $lists as $w => $pid ) { $pf = "$vd/pl-$pid.xml"; $pb[ 'pl:' . $w ] = is_readable( $pf ) ? (string) file_get_contents( $pf ) : array( 'error' => 'HTTP 503' ); }  /* a playlist without a file stands for one that failed */
+		list( $hl, $found, $plerr ) = DBD_Videos::apply_recaps( $lists, $pb, array() );
+		$miss_all = DBD_Videos::weeks_missing( array() ); $miss_some = DBD_Videos::weeks_missing( $hl );
+	} catch ( Throwable $e ) { fwrite( STDERR, 'FATAL in videos: ' . $e->getMessage() . ' at ' . basename( $e->getFile() ) . ':' . $e->getLine() . "\n" ); exit( 1 ); }
+	$vout = getenv( 'DBD_HARNESS_VIDEOS' ) ?: $tmp . '/videos.json'; file_put_contents( $vout, json_encode( array( 'videos' => $stores, 'hl' => array( $season => $hl ) ) ) );
+	echo json_encode( array( 'videos' => array_filter( $stores, function ( $x ) { return $x['v']; } ), 'status' => array_filter( $status, function ( $x ) { return empty( $x['ok'] ) || ! empty( $x['n'] ); } ), 'playlists' => $lists, 'highlights' => $hl, 'missing_first' => $miss_all, 'missing_after' => $miss_some, 'found' => $found, 'playlist_errors' => $plerr ), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . "\n";
 	exit( $warnings ? 1 : 0 );
 }
 
@@ -301,9 +323,9 @@ if ( $view === 'admin' ) {
 		'add_menu_page' => function () {}, 'add_submenu_page' => function () {}, 'register_setting' => function () {},
 	) as $fn => $body ) { if ( ! function_exists( $fn ) ) { $GLOBALS['hfn'][ $fn ] = $body; eval( 'function ' . $fn . '( ...$a ) { return $GLOBALS["hfn"]["' . $fn . '"]( ...$a ); }' ); } }
 	require DBD_PATH . 'includes/admin/settings.php';
-	$want = array( 'ov' => array( 'Needs a look', 'The last data sync failed', 'needs a Brevo API key', 'The last signup didn’t reach Brevo', 'Its send log row has Try again', 'Open Week in review', 'Sync now', 'Fetch news now', 'news feed' ),
+	$want = array( 'ov' => array( 'Needs a look', 'The last data sync failed', 'needs a Brevo API key', 'The last signup didn’t reach Brevo', 'Its send log row has Try again', 'Open Week in review', 'Sync now', 'Fetch news and videos now', 'news feed' ),
 		'wk' => array( 'The weekly post', 'Weeks', 'The Tuesday email', 'Send log', 'sent to 198', 'won’t send until Brevo is set up', 'Waiting for the confirmation template', 'action=dbd_email_again&post=103', 'Try again' ),
-		'nw' => array( 'Fetching', 'Sources', 'HTTP 503', 'Fetch news now' ),
+		'nw' => array( 'Fetching', 'Sources', 'HTTP 503', 'Fetch news and videos now', 'Videos', 'Game highlights' ),
 		'st' => array( 'Photos and logos', 'Addresses', 'Search and sharing', 'Using it in the theme', 'value="dbd"' ),
 		'dt' => array( 'Current data', 'Sync log', 'Seasons', 'Share cards', 'value="dbd_data"', 'harness-token' ) );
 	$bad = 0; $dir = getenv( 'DBD_HARNESS_HTML' ); if ( $dir && ! is_dir( $dir ) ) { mkdir( $dir, 0777, true ); }

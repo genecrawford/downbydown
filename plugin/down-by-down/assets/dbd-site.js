@@ -268,3 +268,15 @@
     });
   }
 })();
+
+/* team videos and game highlights (SCOPE §51): a thumbnail becomes YouTube's privacy-enhanced player on a click, so no player loads until then */
+document.addEventListener('click', function (ev) {
+  var b = ev.target.closest ? ev.target.closest('.dbd-play') : null;
+  if (!b || b.querySelector('iframe') || !/^[\w-]{6,20}$/.test(b.getAttribute('data-v') || '')) return;
+  var f = document.createElement('iframe');
+  f.src = 'https://www.youtube-nocookie.com/embed/' + b.getAttribute('data-v') + '?autoplay=1&rel=0&playsinline=1';
+  f.title = (b.getAttribute('aria-label') || 'Video').replace(/^Play: /, '');
+  f.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+  f.allowFullscreen = true; f.loading = 'eager';
+  b.innerHTML = ''; b.appendChild(f); b.classList.add('on');
+});

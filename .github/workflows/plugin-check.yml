@@ -98,6 +98,51 @@ jobs:
           DBD_HARNESS_NEWS=/tmp/none.json php tools/view_harness.php data team MIN
           if grep -q 'dbd-latest' pages/team-MIN.html; then echo "a latest line showed with nothing stored"; exit 1; fi
           echo "team news renders"
+      - name: Team videos and highlights (SCOPE §51)
+        run: |
+          set -e
+          # the matching on made-up feeds (tools/fixtures/videos), no network, with the clock pinned
+          export DBD_HARNESS_NOW=1793728800 DBD_HARNESS_VIDEOS=/tmp/videos.json
+          php tools/view_harness.php data videos tools/fixtures/videos > /tmp/videos-out.json
+          python3 - <<'PY'
+          import json
+          d = json.load(open('/tmp/videos.json')); o = json.load(open('/tmp/videos-out.json'))
+          def need(c, m):
+              if not c: raise SystemExit('videos: ' + m)
+          M = [x['v'] for x in d['videos']['MIN']['v']]
+          need(M == ['MINvid00001', 'NFLtwoteam1', 'NFLcapsabc1', 'MINvid00002', 'MINvid00003', 'MINprev0001', 'MINvid00004', 'MINvid00005'], f'the Vikings list is {M}')
+          need('NFLcapsabc1' in [x['v'] for x in d['videos']['CHI']['v']], 'a title in capitals does not reach its teams')
+          need(o['found'] == 2 and len(o['playlist_errors']) == 1 and 'Week 6' in o['playlist_errors'][0], f"a recap playlist that fails is not reported: {o['playlist_errors']}")
+          need(not any('short' in v for v in M), 'a Short was kept')
+          need('MINold00001' not in M and 'MINprevold1' not in M, 'a video older than 14 days was kept')
+          need(M.count('MINvid00002') == 1, 'a video stored last pass and fetched again shows twice')
+          need([x['v'] for x in d['videos']['GB']['v']] == ['NFLtwoteam1'], 'an NFL video naming two teams does not reach both')
+          need(all(x['v'] != 'NFLroundup1' for t in d['videos'] for x in d['videos'][t]['v']), 'an NFL roundup naming four teams was kept')
+          need(all(x['v'] != 'NFLcollege1' for t in d['videos'] for x in d['videos'][t]['v']), '"Minnesota" alone matched the Vikings')
+          need(o['status']['yt:DET']['ok'] is False and o['status']['yt:DET']['err'] == 'HTTP 503', 'the failed channel is not reported')
+          need(o['playlists'] == {'7': 'PLrecaps07xx', '6': 'PLrecaps06xx'}, f"the playlists found are {o['playlists']}")
+          H = o['highlights']
+          need(H.get('2026_07_NE_CHI', {}).get('v') == 'HLneatchi01' and H.get('2026_07_PIT_NO', {}).get('v') == 'HLpitno0001', f'the Week 7 highlights are {H}')
+          need('2026_07_SF_ATL' not in H and '2026_07_CIN_BAL' not in H, 'a video from another week, or one that is not highlights, was matched')
+          need(o['missing_first'] and o['missing_first'] == sorted(o['missing_first'], reverse=True), 'the weeks to look up are not newest first')
+          need(set(o['missing_after']) < set(o['missing_first']), 'once some highlights are stored, old weeks are still looked up every pass')
+          print('videos:', len(M), 'Vikings videos,', len(H), 'highlights; matching rules hold')
+          PY
+          export DBD_HARNESS_HTML=pages DBD_HARNESS_MEDIA=1
+          php tools/view_harness.php data teamplayers MIN
+          for m in 'class="dbd-panel dbd-vids" id="videos"' '<b>Vikings videos</b>' 'data-v="MINvid00001"' 'https://i.ytimg.com/vi/MINvid00001/mqdefault.jpg' 'class="dbd-vid vd-more"' '>Show more</button>' 'NFL · '; do
+            grep -qF "$m" pages/teamplayers-MIN.html || { echo "the Vikings videos panel is missing $m"; exit 1; }
+          done
+          python3 -c "import sys; h=open('pages/teamplayers-MIN.html').read(); sys.exit(0 if h.find('dbd-vids') < h.find('dbd-news') or h.find('dbd-news') < 0 else 'the videos are not above the news')"
+          if grep -q 'youtube-nocookie.com/embed\|<iframe' pages/teamplayers-MIN.html; then echo "a player loads with the page"; exit 1; fi
+          php tools/view_harness.php data game 2026_07_PIT_NO
+          grep -qF 'class="dbd-panel dbd-hl" id="highlights"' pages/game-2026_07_PIT_NO.html && grep -qF 'data-v="HLpitno0001"' pages/game-2026_07_PIT_NO.html || { echo "the game has no highlights"; exit 1; }
+          php tools/view_harness.php data game 2026_07_SF_ATL
+          if grep -q 'dbd-hl' pages/game-2026_07_SF_ATL.html; then echo "a game without its recap shows highlights"; exit 1; fi
+          DBD_HARNESS_VIDEOS=/tmp/none.json php tools/view_harness.php data teamplayers MIN
+          if grep -q 'dbd-vids' pages/teamplayers-MIN.html; then echo "a videos panel showed with nothing stored"; exit 1; fi
+          grep -q "youtube-nocookie.com/embed/" plugin/down-by-down/assets/dbd-site.js
+          echo "videos render"
       - name: Render share cards
         run: |
           set -e
