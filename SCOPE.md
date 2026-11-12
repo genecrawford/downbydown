@@ -2492,3 +2492,53 @@ Gene: the news and videos "get really lost when you scan the page". The mock mad
 
 - **Offense and defense pages:** the one-line "Latest" under the title is gone. At the end of the page, after the explorer, a block: "{Team} news" with the newest headline in large type and the next two, and "Newest video" beside it, playing in place. On a phone the video goes under the news.
 - **Players page:** Videos and News come last, after the roster and movers. They get the page's biggest headings, a white panel and a team-color top rule. The first video is large with four beside it; each news column opens with its newest headline in large type. Two jump links under the title, "Videos 12" and "News 40", point down to them.
+
+## 54. Hints of the news and the NFL's videos across the site (scoped and mocked 2026-11-12, `mockup-v27/`)
+
+Gene: thread small hints of the news and videos onto the team and player pages, and use the NFL's matchup videos (a "Minnesota Vikings vs Green Bay Packers | 2026 Week 10 Game Preview") and its weekly recap playlists across pages. The rule from §53 holds: news and videos are secondary, so anything bigger than a small link comes after the stats.
+
+### Sources (checked 2026-11-12)
+
+The NFL's YouTube channel posts three playlists a week. Its playlists page names them, and each has a public feed; no key is needed, as for the recaps in §51.
+
+| Playlist (title on the NFL's page) | One video per | Title pattern | Size (Week 9 / 10) |
+|---|---|---|---|
+| "2026 Week 10 Game Previews" | upcoming game | "Minnesota Vikings vs Green Bay Packers \| 2026 Week 10 Game Preview" | 16 |
+| "Game Recaps (Week 9) \| 2026 NFL Season" (already read, §51) | finished game | "Buffalo Bills vs Minnesota Vikings Highlights \| 2026 NFL Season Week 9" | 15 |
+| "Player Highlights (Week 9) \| 2026 NFL Season" | standout player | "Josh Allen's best plays from 249-yard game, 1-TD game vs. Vikings \| Week 9" | 17 |
+
+- **Matching:** a preview or recap matches the game whose two full team names are in its title. A player highlight matches the unique player name it starts with (13 of Week 9's 15 newest did). Two others name a team's defense ("Bears' best defensive plays vs. Buccaneers"), which goes to that team's defense page. One names a defender, who has no page yet (defender pages are on the later list).
+- **A feed shows only its newest 15,** so each fetch adds what's new and keeps it. The 6-hour fetch keeps up: the videos arrive over a day or two.
+- **Storage:** each game's preview and recap, and each player's highlights by week, kept for the season. A few kilobytes.
+
+### Where the hints go
+
+Everything opens on YouTube in a new tab, since the NFL blocks playing its videos on other sites (2.13.1).
+
+1. **An upcoming game's page:** "Watch the NFL preview" at the foot of the game box, the one hint near the top. At the end of the page, after the stats: "Before the game", the three newest stories naming both teams (from both teams' stored news), with the preview beside them. Mock: `game-preview.html`.
+2. **A finished game's page:** the same spots carry the recap, "Watch the highlights" in the game box and the recap at the end (decision 1).
+3. **A player's page:** "Week 9 highlights" with his pills at the top, linking to his newest. A small "Highlights" mark on each week's row of his game log that has one. At the end of the page: "{Name} in the news" (the newest stories that name him, from the stored news) with his newest highlights beside them. A player without a highlights video shows only the news; a player with neither shows nothing. Mock: `player-allen.html` (open the game log tab).
+4. **The offense and defense pages:** two small jump links under the title, "News 40" and "Videos 12", down to the block at the end. The defense page's block can also carry the NFL's "{Team}' best defensive plays" video (decision 2). Mock: `team-jump.html`.
+5. **The matchups list:** a small "Preview" mark on each game with one, which becomes "Highlights" once the game is final. Mock: `matchups-marks.html`.
+6. **The week page:** "Week 9 highlights" at the end, every game's recap, eight shown then "Show all". Mock: `week-highlights.html`.
+7. **The Tuesday email:** a "Highlights" link beside each score whose recap is posted by the time it sends (decision 3). Mock: `email-highlights.html`.
+
+### How it runs
+
+- **With the news and videos fetch** every 6 hours: the playlists page (about 1 MB) and the current week's previews, recaps and player highlights (three small feeds).
+- **During the season:** the page is read every pass, since there's always a new week's preview playlist. In the off-season it's read only when something is missing.
+- **Admin:** the Videos box on News and videos counts this week's previews, recaps and player highlights found, and says when a playlist couldn't be found.
+
+### Decisions (for Gene, one at a time)
+
+1. **The recap on a finished game's page:** move it from the top (where 2.12.0 put it) to the end with the rest (recommended, so every page follows §53), or leave it at the top.
+2. **Team defense videos:** add "{Team}' best defensive plays" to the defense page's block (recommended), or leave them out.
+3. **The email's Highlights links:** yes (recommended: a reason to click from every score), or no.
+
+### Acceptance
+
+- Every upcoming game with a posted preview shows the box link, and the preview and its news at the end. A finished game shows its recap in both spots.
+- Every player with a highlights video shows the pill, the game log mark on that week, and the video at the end. Every player named in a stored story shows the news at the end.
+- The matchups list, the week page and the email carry their marks and links. Nothing anywhere shows a player in place of a link.
+
+Size: M.
