@@ -228,10 +228,12 @@ class DBD_Email {
 		/* each game's recap, keyed by its address as the post wrote it (SCOPE §54). An archived season's post (a test of an old week) reads that
 		   season's games and recaps, then the addresses are made back in the current season, the way the post's links were (Greptile, PR #91). */
 		$wk = (int) get_post_meta( $p->ID, DBD_Post::M_WEEK, true ); $hl = array(); $ids = array();
-		$ps = (int) get_post_meta( $p->ID, DBD_Post::M_SEASON, true ); $sw = $ps && $ps !== DBD_Data::current_season() && DBD_Data::use_season( $ps );
+		$was = DBD_Data::archived() ? DBD_Data::season() : null; $ps = (int) get_post_meta( $p->ID, DBD_Post::M_SEASON, true );
+		DBD_Data::use_season( $ps && $ps !== DBD_Data::current_season() ? $ps : null );
 		foreach ( DBD_Data::week_games( $wk ) as $g ) { $r = DBD_Videos::recap( $g ); if ( $r ) { $ids[ $g['id'] ] = DBD_Videos::url( $r ); } }
-		if ( $sw ) { DBD_Data::use_season( null ); }
+		DBD_Data::use_season( null );  /* the post's links were made in its own season's current days */
 		foreach ( $ids as $gid => $u ) { $hl[ DBD_Router::url( array( 'game' => $gid ) ) ] = $u; }
+		DBD_Data::use_season( $was );  /* whatever season was showing before */
 		$doc = self::compose( html_entity_decode( $p->post_title, ENT_QUOTES, 'UTF-8' ), $c, get_permalink( $p ), (string) get_the_post_thumbnail_url( $p, 'full' ), $date, $wk, null, $hl );
 		/* an archived season's post (a test of an old week): every app link in the finished email, the added section links and the
 		   week button included, opens that season's pages (Greptile, PR #75) */
