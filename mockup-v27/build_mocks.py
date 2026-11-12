@@ -25,6 +25,7 @@ CSS = '''<style>
 /* a row of video cards (the week page, the end of a game or player page) */
 .dbd .vd-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px 16px;padding:12px var(--dbd-edge) 16px}
 .dbd .vd-row .dbd-vid h4{font-size:14px}
+.dbd .vd-row .vd-more{display:none}.dbd .open .vd-row .vd-more{display:block}
 @media (max-width:900px){.dbd .vd-row{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>'''
 def note(t): return f'<div class="mock-note"><b>Mock.</b> {t}</div>'
@@ -89,9 +90,9 @@ open('matchups-marks.html', 'w').write(no_tracking(css(mu)))
 
 # ---------- 5. the week page: every game's recap at the end
 wk = open('_week-9.html').read()
-cards = ''.join(card(v['id'], v['title'], 'NFL on YouTube') for v in F['recap9'][:8])
+cards = ''.join(card(v['id'], v['title'], 'NFL on YouTube').replace('<figure class="dbd-vid">', '<figure class="dbd-vid vd-more">' if i >= 8 else '<figure class="dbd-vid">', 1) for i, v in enumerate(F['recap9']))
 blk = (f'<section class="dbd-panel dbd-vids dbd-feature mock-new" id="highlights"><div class="dbd-ph big"><h2>Week 9 highlights</h2><p>Every game\'s recap from the NFL on YouTube</p></div>'
-       f'<div class="vd-row">{cards}</div><button type="button" class="nw-btn" onclick="this.remove()">Show all {len(F["recap9"])}</button></section>')
+       f'<div class="vd-row">{cards}</div><button type="button" class="nw-btn" onclick="this.parentNode.classList.add(\'open\');this.remove()">Show all {len(F["recap9"])}</button></section>')
 wk = end(wk, note('The week page: every game\'s recap at the end, after the week\'s numbers. Eight show, then "Show all".') + blk)
 open('week-highlights.html', 'w').write(no_tracking(css(wk)))
 
