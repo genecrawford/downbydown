@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.13.0
+Stable tag: 2.13.1
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,9 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.13.1 =
+* Team videos and game highlights open on YouTube in a new tab. The NFL and the teams block their videos from playing on other sites, which YouTube only shows once a video is clicked ("Video unavailable … blocked it from display on this website"), so playing them in place on the page couldn't work. Each thumbnail now says YouTube beside its play mark.
 
 = 2.13.0 =
 * News and videos are easier to spot, and stay after the stats. On the offense and defense pages, the one-line "Latest" under the title becomes a block at the end of the page, after the explorer: the newest headline in large type, the next two, and the newest video beside them. On the players page, Videos and News move to the end, after the roster and movers, with the page's biggest headings and a team-color top rule; the first video is large with four beside it, and each news column opens with its newest headline in large type. Jump links under the title point down to them.

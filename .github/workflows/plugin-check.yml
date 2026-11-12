@@ -139,20 +139,19 @@ jobs:
           PY
           export DBD_HARNESS_HTML=pages DBD_HARNESS_MEDIA=1
           php tools/view_harness.php data teamplayers MIN
-          for m in 'class="dbd-panel dbd-vids dbd-feature" id="videos"' '<h2>Vikings videos</h2>' 'href="#videos">Videos <b>8</b>' 'data-v="MINvid00001"' 'https://i.ytimg.com/vi/MINvid00001/hqdefault.jpg' 'https://i.ytimg.com/vi/NFLtwoteam1/mqdefault.jpg' 'class="dbd-vid vd-more"' '>Show more</button>' 'NFL · '; do
+          for m in 'class="dbd-panel dbd-vids dbd-feature" id="videos"' '<h2>Vikings videos</h2>' 'href="#videos">Videos <b>8</b>' 'href="https://www.youtube.com/watch?v=MINvid00001" target="_blank" rel="noopener"' 'https://i.ytimg.com/vi/MINvid00001/hqdefault.jpg' 'https://i.ytimg.com/vi/NFLtwoteam1/mqdefault.jpg' 'class="dbd-vid vd-more"' '>Show more</button>' 'NFL · '; do
             grep -qF "$m" pages/teamplayers-MIN.html || { echo "the Vikings videos panel is missing $m"; exit 1; }
           done
           python3 -c "import sys; h=open('pages/teamplayers-MIN.html').read(); sys.exit(0 if 0 < h.find('dbd-panel dbd-roster') < h.find('dbd-panel dbd-vids') and ( h.find('dbd-panel dbd-news') < 0 or h.find('dbd-panel dbd-vids') < h.find('dbd-panel dbd-news') ) else 'the videos are not after the roster and before the news (2.13.0)')"
           php tools/view_harness.php data team MIN
-          grep -qF '<div class="ar-vid"><h2 class="ar-t">Newest video</h2><button type="button" class="dbd-play" data-v="MINvid00001"' pages/team-MIN.html || { echo "the offense page's newest video is missing"; exit 1; }
-          if grep -q 'youtube-nocookie.com/embed\|<iframe' pages/teamplayers-MIN.html; then echo "a player loads with the page"; exit 1; fi
+          grep -qF '<div class="ar-vid"><h2 class="ar-t">Newest video</h2><a class="dbd-play" href="https://www.youtube.com/watch?v=MINvid00001"' pages/team-MIN.html || { echo "the offense page's newest video is missing"; exit 1; }
+          if grep -q 'youtube-nocookie.com/embed\|<iframe' pages/teamplayers-MIN.html; then echo "an embedded player on the page: the NFL and teams block them (2.13.1)"; exit 1; fi
           php tools/view_harness.php data game 2026_07_PIT_NO
-          grep -qF 'class="dbd-panel dbd-hl" id="highlights"' pages/game-2026_07_PIT_NO.html && grep -qF 'data-v="HLpitno0001"' pages/game-2026_07_PIT_NO.html || { echo "the game has no highlights"; exit 1; }
+          grep -qF 'class="dbd-panel dbd-hl" id="highlights"' pages/game-2026_07_PIT_NO.html && grep -qF 'href="https://www.youtube.com/watch?v=HLpitno0001"' pages/game-2026_07_PIT_NO.html || { echo "the game has no highlights"; exit 1; }
           php tools/view_harness.php data game 2026_07_SF_ATL
           if grep -q 'dbd-hl' pages/game-2026_07_SF_ATL.html; then echo "a game without its recap shows highlights"; exit 1; fi
           DBD_HARNESS_VIDEOS=/tmp/none.json php tools/view_harness.php data teamplayers MIN
           if grep -q 'dbd-vids' pages/teamplayers-MIN.html; then echo "a videos panel showed with nothing stored"; exit 1; fi
-          grep -q "youtube-nocookie.com/embed/" plugin/down-by-down/assets/dbd-site.js
           echo "videos render"
       - name: Render share cards
         run: |

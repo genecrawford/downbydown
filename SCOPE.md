@@ -2397,7 +2397,8 @@ The mocks:
 - **On each finished game's page, at the top:** "Highlights · from the NFL on YouTube", one large video.
   - A game the playlist hasn't reached yet shows nothing; the highlights usually post the night of the game.
   - Once found, a game keeps its highlights for good, so past weeks have theirs too.
-- **Playing:** only the thumbnail loads with the page. A click swaps in YouTube's own player (the privacy-enhanced `youtube-nocookie.com` one) and plays it in place.
+- **Changed in 2.13.1:** the NFL and the teams block their videos from playing on other sites. YouTube only shows that once a video is clicked ("Video unavailable … blocked it from display on this website or application"); its public embed check says they're fine, and an ordinary YouTube video plays on the site. So each thumbnail links to the video on YouTube in a new tab instead of playing in place.
+- **Playing (as first built):** only the thumbnail loads with the page. A click swaps in YouTube's own player (the privacy-enhanced `youtube-nocookie.com` one) and plays it in place.
   - Nothing is downloaded or rehosted. Embedding with YouTube's player is how YouTube expects other sites to show videos.
   - Thumbnails load from YouTube's image server.
 
