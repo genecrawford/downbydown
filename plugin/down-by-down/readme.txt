@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.12.1
+Stable tag: 2.13.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,10 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.13.0 =
+* News and videos are easier to spot, and stay after the stats. On the offense and defense pages, the one-line "Latest" under the title becomes a block at the end of the page, after the explorer: the newest headline in large type, the next two, and the newest video beside them. On the players page, Videos and News move to the end, after the roster and movers, with the page's biggest headings and a team-color top rule; the first video is large with four beside it, and each news column opens with its newest headline in large type. Jump links under the title point down to them.
+* Includes 2.12.1.
 
 = 2.12.1 =
 * A player who changed teams mid-season (Kirk Cousins, back with the Vikings) got "There has been a critical error" on his page. The game log's column loop reused the variable holding his team, and the traded-player note under the log then read it. The bug dated from 1.3.6 and only showed once a traded player reached that note. CI now renders his page.

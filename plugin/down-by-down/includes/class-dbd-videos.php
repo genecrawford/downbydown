@@ -22,7 +22,7 @@ class DBD_Videos {
 	const HOOK_FIRST = 'dbd_videos_first';
 	const DAYS       = 1209600;              /* 14 days */
 	const CAP        = 12;
-	const TOP        = 4;
+	const TOP        = 5;                   /* the first large, four beside it (2.13.0) */
 	const NFL        = 'UCDVYQ4Zhbm3S2dlz7P1GBDg';
 	const PLAYLISTS  = 'https://www.youtube.com/channel/UCDVYQ4Zhbm3S2dlz7P1GBDg/playlists';
 	/* each team's official channel, found by its handle and checked 2026-11-12 (@chiefs is an old 2006 channel and @DenverBroncos is empty) */
@@ -230,10 +230,10 @@ class DBD_Videos {
 		$list = self::team( $t ); if ( ! $list ) { return ''; }
 		$nick = DBD_Data::team( $t )['nick'] ?? $t; $cards = '';
 		foreach ( $list as $i => $o ) {
-			$cards .= '<figure class="dbd-vid' . ( $i >= self::TOP ? ' vd-more' : '' ) . '">' . self::play( $o['v'], $o['h'] ) . '<h4>' . esc_html( $o['h'] ) . '</h4>'
+			$cards .= '<figure class="dbd-vid' . ( $i >= self::TOP ? ' vd-more' : '' ) . '">' . self::play( $o['v'], $o['h'], $i === 0 ) . '<h4>'  /* the first, shown large, gets the bigger thumbnail (Greptile, PR #86) */ . esc_html( $o['h'] ) . '</h4>'
 				. '<span>' . esc_html( ( $o['s'] === 'nfl' ? 'NFL' : $nick ) . ' · ' . self::age( $o['ts'] ) ) . '</span></figure>';
 		}
-		return '<section class="dbd-panel dbd-vids" id="videos"><div class="dbd-ph"><span class="dbd-lab"><b>' . esc_html( $nick ) . ' videos</b> · the last 14 days, from the ' . esc_html( $nick ) . ' and the NFL on YouTube</span></div>'
+		return '<section class="dbd-panel dbd-vids dbd-feature" id="videos"><div class="dbd-ph big"><h2>' . esc_html( $nick ) . ' videos</h2><p>The last 14 days, from the ' . esc_html( $nick ) . ' and the NFL on YouTube</p></div>'
 			. '<div class="vd-grid">' . $cards . '</div>'
 			. ( count( $list ) > self::TOP ? '<button type="button" class="nw-btn" onclick="this.parentNode.classList.add(\'open\');this.remove()">Show more</button>' : '' ) . '</section>';
 	}
