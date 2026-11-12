@@ -135,6 +135,13 @@ jobs:
           need('2026_07_SF_ATL' not in H and '2026_07_CIN_BAL' not in H, 'a video from another week, or one that is not highlights, was matched')
           need(o['missing_first'] and o['missing_first'] == sorted(o['missing_first'], reverse=True), 'the weeks to look up are not newest first')
           need(set(o['missing_after']) < set(o['missing_first']), 'once some highlights are stored, old weeks are still looked up every pass')
+          # the NFL's previews and player highlights (2.14.0, SCOPE §54)
+          A = o['all_playlists']
+          need(A['preview'] == {'7': 'PLprev07xxxx'} and A['player'] == {'7': 'PLplayers07x', '6': 'PLplayers06x'}, f'the weekly playlists found are {A}')
+          need(o['previews'] == {'2026_07_NE_CHI': o['previews'].get('2026_07_NE_CHI')} and o['previews']['2026_07_NE_CHI']['v'] == 'PVneatchi01', f"the Week 7 previews are {o['previews']}")
+          need(list(o['players']) == ['00-0036322'] and o['players']['00-0036322']['7']['v'] == 'PHjj0000001', f"the player highlights are {o['players']}")
+          need(o['defense'] == {'CHI': o['defense'].get('CHI')} and o['defense']['CHI']['7']['v'] == 'PHbearsdef1', f"the team defense videos are {o['defense']}")
+          need(any('Week 6 player highlights' in e for e in o['other_errors']), f"a player playlist that fails is not reported: {o['other_errors']}")
           print('videos:', len(M), 'Vikings videos,', len(H), 'highlights; matching rules hold')
           PY
           export DBD_HARNESS_HTML=pages DBD_HARNESS_MEDIA=1
@@ -147,9 +154,44 @@ jobs:
           grep -qF '<div class="ar-vid"><h2 class="ar-t">Newest video</h2><a class="dbd-play" href="https://www.youtube.com/watch?v=MINvid00001"' pages/team-MIN.html || { echo "the offense page's newest video is missing"; exit 1; }
           if grep -q 'youtube-nocookie.com/embed\|<iframe' pages/teamplayers-MIN.html; then echo "an embedded player on the page: the NFL and teams block them (2.13.1)"; exit 1; fi
           php tools/view_harness.php data game 2026_07_PIT_NO
-          grep -qF 'class="dbd-panel dbd-hl" id="highlights"' pages/game-2026_07_PIT_NO.html && grep -qF 'href="https://www.youtube.com/watch?v=HLpitno0001"' pages/game-2026_07_PIT_NO.html || { echo "the game has no highlights"; exit 1; }
+          grep -qF '<h2 class="ar-t">The highlights</h2>' pages/game-2026_07_PIT_NO.html && grep -qF 'href="https://www.youtube.com/watch?v=HLpitno0001"' pages/game-2026_07_PIT_NO.html || { echo "the game has no highlights"; exit 1; }
           php tools/view_harness.php data game 2026_07_SF_ATL
-          if grep -q 'dbd-hl' pages/game-2026_07_SF_ATL.html; then echo "a game without its recap shows highlights"; exit 1; fi
+          if grep -q 'The highlights</h2>\|Watch the highlights' pages/game-2026_07_SF_ATL.html; then echo "a game without its recap shows highlights"; exit 1; fi
+          # SCOPE §54: a finished game's recap sits in the game box and at the end, not at the top
+          php tools/view_harness.php data game 2026_07_NE_CHI
+          f=pages/game-2026_07_NE_CHI.html
+          grep -qF 'class="dbd-vmk gb" href="https://www.youtube.com/watch?v=HLneatchi01"' $f || { echo "no highlights link in the game box"; exit 1; }
+          grep -qF '<h2 class="ar-t">The highlights</h2>' $f || { echo "no recap at the end of the game page"; exit 1; }
+          if grep -q 'dbd-panel dbd-hl' $f; then echo "the recap is still at the top"; exit 1; fi
+          python3 -c "import sys; h=open('$f').read(); sys.exit(0 if 0 < h.find('dbd-gamebox') < h.find('id=\"around\"') else 'the game block is not after the game box')"
+          # an upcoming game with a preview (only while the season has one)
+          UP=$(python3 -c "import json; s=json.load(open('data/schedule.json')); print(next((g['id'] for w in s['weeks'].values() for g in w if g.get('home_score') is None), ''))")
+          if [ -n "$UP" ]; then
+            python3 -c "import json; d=json.load(open('/tmp/videos.json')); d.setdefault('pv', {}).setdefault('2026', {})['$UP']={'v':'PVupcoming1','h':'An upcoming Game Preview','ts':1793700000}; json.dump(d, open('/tmp/videos-up.json','w'))"
+            DBD_HARNESS_VIDEOS=/tmp/videos-up.json php tools/view_harness.php data game "$UP"
+            grep -qF '>Watch the NFL preview</a>' pages/game-$UP.html && grep -qF '<h2 class="ar-t">The NFL preview</h2>' pages/game-$UP.html || { echo "the upcoming game shows no preview"; exit 1; }
+          fi
+          # the player page: the pill, the game log mark, the block at the end
+          php tools/view_harness.php data player 00-0036322
+          f=pages/player-00-0036322.html
+          grep -qF 'class="dbd-vmk dbd-pill" href="https://www.youtube.com/watch?v=PHjj0000001"' $f || { echo "no highlights pill"; exit 1; }
+          grep -qF '>Week 7 highlights</a>' $f || { echo "the pill does not name the week"; exit 1; }
+          grep -qF 'class="dbd-vmk gl" href="https://www.youtube.com/watch?v=PHjj0000001"' $f || { echo "no Highlights mark in the game log"; exit 1; }
+          grep -qF '<h2 class="ar-t">His highlights</h2>' $f || { echo "no highlights at the end of the player page"; exit 1; }
+          if grep -qF '.dbd .dbd-jump{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0}' plugin/down-by-down/assets/dbd.css; then echo "the player page's section bar is still restyled by 2.13.0's rule"; exit 1; fi
+          # the matchups list, the week page, the defense page, the roster, the email
+          php tools/view_harness.php data matchups 7
+          [ "$(grep -o 'class="dbd-vmk sl"' pages/matchups-7.html | wc -l)" -eq 2 ] || { echo "the Week 7 matchups should mark 2 recaps"; exit 1; }
+          php tools/view_harness.php data week 7
+          grep -qF '<h2>Week 7 highlights</h2>' pages/week-7.html || { echo "no recaps on the week page"; exit 1; }
+          php tools/view_harness.php data defense CHI
+          grep -qF '<h2 class="ar-t">Defense highlights</h2>' pages/defense-CHI.html || { echo "no team defense video on the defense page"; exit 1; }
+          grep -qF 'class="dbd-hop' pages/defense-CHI.html || { echo "no News and Videos links under the defense page title"; exit 1; }
+          php tools/view_harness.php data teamplayers MIN
+          grep -qF 'class="dbd-slot s1" title="First on the Vikings depth chart at QB: the starter">QB1</span>' pages/teamplayers-MIN.html || { echo "no depth chip for the starter"; exit 1; }
+          if grep -qE '</a><small>[A-Z]+[0-9]</small>' pages/teamplayers-MIN.html; then echo "the old depth label is still there"; exit 1; fi
+          DBD_HARNESS_HTML=emails php tools/view_harness.php data email 7 > /dev/null
+          [ "$(grep -o '>Highlights</a>' emails/email-w7.html | wc -l)" -eq 2 ] || { echo "the Week 7 email should link 2 recaps"; exit 1; }
           DBD_HARNESS_VIDEOS=/tmp/none.json php tools/view_harness.php data teamplayers MIN
           if grep -q 'dbd-vids' pages/teamplayers-MIN.html; then echo "a videos panel showed with nothing stored"; exit 1; fi
           echo "videos render"

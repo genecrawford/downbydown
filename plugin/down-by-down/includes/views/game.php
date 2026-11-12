@@ -38,11 +38,10 @@ foreach ( array( $AWAY, $HOME ) as $a ) {
 	echo '<div class="dbd-t">' . DBD_Marks::tile( $a, 34 ) . '<b>' . esc_html( $a ) . '</b><span>' . esc_html( $t['nick'] . ' · ' . DBD_Data::record_text( $a ) ) . '</span></div>';
 	echo '<div class="dbd-rkline">' . ( $final ? '<b class="dbd-score">' . (int) $sc . '</b>' : 'OFF #' . (int) DBD_Data::rank( 'off', $a ) . ' · ' . DBD_Defense::link( $a, 'DEF #' . (int) DBD_Data::rank( 'def', $a ) ) ) . '</div>';  /* SCOPE §39: to the defense tab */
 }
-echo '</div><div class="dbd-line"><span>' . esc_html( DBD_Router::line_text( $g ) ) . '</span><span>' . ( isset( $g['total'] ) ? 'O/U ' . esc_html( $g['total'] ) : '' ) . '</span><span>' . DBD_Router::kickoff_html( $g ) . '</span></div></div></aside>';
+echo '</div><div class="dbd-line"><span>' . esc_html( DBD_Router::line_text( $g ) ) . '</span><span>' . ( isset( $g['total'] ) ? 'O/U ' . esc_html( $g['total'] ) : '' ) . '</span><span>' . DBD_Router::kickoff_html( $g ) . '</span></div>'
+	. ( ( $gvid = DBD_Videos::game_video( $g ) ) ? DBD_Videos::mark( $gvid[0], $gvid[1] === 'recap' ? 'Watch the highlights' : 'Watch the NFL preview', 'gb' ) : '' )  /* the one video hint near the top (SCOPE §54) */
+	. '</div></aside>';
 echo '</div>';
-
-/* ---- the NFL's highlights video for a finished game (SCOPE §51) */
-echo DBD_Videos::highlight( $g );
 
 /* ---- how it played out (SCOPE §30): win probability for a final game, from wp/w{week}.json. Regulation only; overtime shows its scoring plays. */
 $WP = $final ? DBD_Data::win_prob( $g ) : null;
@@ -163,7 +162,7 @@ if ( ! $final ) { $luB = DBD_Lineup::board( $O, $D );
 
 if ( ! $cards ) {
 	echo $luHtml;
-	echo '<div class="dbd-empty"><h2>Numbers appear after Week 1</h2><p>Takeaways, the head-to-head table and the pass zones fill in once both teams have played.</p></div></main>';
+	echo '<div class="dbd-empty"><h2>Numbers appear after Week 1</h2><p>Takeaways, the head-to-head table and the pass zones fill in once both teams have played.</p></div>' . DBD_News::game_block( $g ) . '</main>';
 	return;
 }
 if ( $early ) { echo '<div class="dbd-panel dbd-notice"><div class="dbd-pb">Fewer than three games for one or both teams. Ranks are shown, but treat every number as a small sample.</div></div>'; }
@@ -257,4 +256,4 @@ $zone_grid = function ( $abbr, $side, $title ) {
 echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Where the ball goes</b> · EPA per throw</span><span class="dbd-badge">Deep is 15+ air yds</span></div><div class="dbd-pb"><div class="dbd-zones">';
 echo $zone_grid( $O, 'off', $Ot['nick'] . ': EPA per throw' ) . $zone_grid( $D, 'def', $Dt['nick'] . ': EPA allowed per throw' );
 echo '</div><p class="dbd-note">Green gains more than expected, red loses value. Cells with fewer than 5 throws are grayed out.</p></div></section>';
-echo '</div></main>';
+echo '</div>' . DBD_News::game_block( $g ) . '</main>';  /* the news naming both teams and the preview or recap, after the stats (SCOPE §54) */

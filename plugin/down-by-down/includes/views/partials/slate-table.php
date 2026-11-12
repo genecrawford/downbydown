@@ -25,7 +25,8 @@ foreach ( $games as $g ) {
 	echo '<td class="dbd-at">at</td>';
 	echo $tm( $g['home'] ) . '<td class="dbd-num ' . ( $f && ! $hw ? 'l' : '' ) . '">' . ( $f ? (int) $g['home_score'] : '' ) . '</td>';
 	$line = DBD_Router::line_text( $g );
-	echo '<td class="dbd-ln">' . ( $line ? '<b>' . esc_html( $line ) . '</b>' : '' ) . ( isset( $g['total'] ) && $g['total'] !== null ? ' · O/U ' . esc_html( $g['total'] ) : '' ) . '</td>';
+	$gv = DBD_Videos::game_video( $g );  /* SCOPE §54: the NFL's preview before the game, its recap after */
+	echo '<td class="dbd-ln">' . ( $line ? '<b>' . esc_html( $line ) . '</b>' : '' ) . ( isset( $g['total'] ) && $g['total'] !== null ? ' · O/U ' . esc_html( $g['total'] ) : '' ) . ( $gv ? DBD_Videos::mark( $gv[0], $gv[1] === 'recap' ? 'Highlights' : 'Preview', 'sl' ) : '' ) . '</td>';
 	echo '<td><a class="dbd-go" href="' . esc_url( $href ) . '">' . ( $f ? 'Recap' : 'Matchup' ) . '</a></td>';
 	echo '</tr>';
 }

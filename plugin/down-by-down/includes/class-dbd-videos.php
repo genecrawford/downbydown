@@ -16,7 +16,10 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 class DBD_Videos {
 
 	const OPT        = 'dbd_videos_';        /* + team: that team's videos */
-	const OPT_HL     = 'dbd_highlights';     /* season => game id => array( v, h, ts ) */
+	const OPT_HL     = 'dbd_highlights';     /* season => game id => array( v, h, ts ): the NFL's recap */
+	const OPT_PV     = 'dbd_previews';       /* season => game id => array( v, h, ts ): the NFL's preview (2.14.0, SCOPE §54) */
+	const OPT_PH     = 'dbd_player_hl';      /* season => player id => week => array( v, h, ts ): "{Name}'s best plays … | Week N" */
+	const OPT_DH     = 'dbd_defense_hl';     /* season => team => week => array( v, h, ts ): "{Team}' best defensive plays … | Week N" */
 	const OPT_STATUS = 'dbd_videos_status';  /* the last pass: when, how long, each channel's state, the playlists found */
 	const OPT_ON     = 'dbd_videos_on';      /* videos and highlights shown (on by default) */
 	const HOOK_FIRST = 'dbd_videos_first';
@@ -69,22 +72,38 @@ class DBD_Videos {
 		list( $stores, $status ) = self::collect( $feeds, $bodies, $prev );
 		foreach ( $stores as $t => $s ) { update_option( self::OPT . $t, $s, false ); }
 
-		/* highlights: the weeks with a finished game still missing its video, from the playlists page */
+		/* the NFL's weekly playlists (SCOPE §51, §54): recaps for finished games still missing theirs, previews for games still to play, and the
+		   newest two weeks of player highlights. The playlists page is read whenever one of those can still change. */
 		$season = DBD_Data::season(); $all = (array) get_option( self::OPT_HL, array() ); $have = (array) ( $all[ $season ] ?? array() );
-		$need = self::weeks_missing( $have ); $pl = array( 'ok' => true, 'err' => '', 'weeks' => array(), 'found' => 0 );
-		if ( $need ) {
+		$pvAll = (array) get_option( self::OPT_PV, array() ); $pv = (array) ( $pvAll[ $season ] ?? array() );
+		$phAll = (array) get_option( self::OPT_PH, array() ); $ph = (array) ( $phAll[ $season ] ?? array() );
+		$dhAll = (array) get_option( self::OPT_DH, array() ); $dh = (array) ( $dhAll[ $season ] ?? array() );
+		$need = self::weeks_missing( $have ); $ahead = self::weeks_ahead( $pv ); $live = $ahead || self::in_season();
+		$pl = array( 'ok' => true, 'err' => '', 'weeks' => array(), 'found' => 0, 'pv' => 0, 'ph' => 0 );
+		if ( $need || $live ) {
 			$r = wp_remote_get( self::PLAYLISTS, array( 'timeout' => 15, 'user-agent' => sprintf( DBD_News::UA, DBD_VERSION ), 'headers' => array( 'Accept-Language' => 'en-US,en;q=0.8' ) ) );
 			$html = ( ! is_wp_error( $r ) && (int) wp_remote_retrieve_response_code( $r ) === 200 ) ? (string) wp_remote_retrieve_body( $r ) : '';
-			$lists = $html !== '' ? self::playlists( $html, $season ) : array();
-			if ( $html === '' ) { $pl = array( 'ok' => false, 'err' => 'the NFL playlists page didn\'t answer', 'weeks' => array(), 'found' => 0 ); }
-			elseif ( ! $lists ) { $pl = array( 'ok' => false, 'err' => 'no "Game Recaps" playlists found on the NFL playlists page (YouTube may have changed it)', 'weeks' => array(), 'found' => 0 ); }
-			$want = array_intersect_key( $lists, array_flip( $need ) ); $pf = array();
+			$L = $html !== '' ? self::playlists_all( $html, $season ) : array( 'recap' => array(), 'preview' => array(), 'player' => array() );
+			if ( $html === '' ) { $pl = array_merge( $pl, array( 'ok' => false, 'err' => 'the NFL playlists page didn\'t answer' ) ); }
+			elseif ( ! $L['recap'] && ! $L['preview'] && ! $L['player'] ) { $pl = array_merge( $pl, array( 'ok' => false, 'err' => 'no weekly playlists found on the NFL playlists page (YouTube may have changed it)' ) ); }
+			$want = array_intersect_key( $L['recap'], array_flip( $need ) );
+			$wantPv = array_intersect_key( $L['preview'], array_flip( $ahead ) );
+			$pw = array_keys( $L['player'] ); rsort( $pw ); $wantPh = array_intersect_key( $L['player'], array_flip( array_slice( $pw, 0, 2 ) ) );
+			$pf = array();
 			foreach ( $want as $w => $pid ) { $pf[ 'pl:' . $w ] = array( 'https://www.youtube.com/feeds/videos.xml?playlist_id=' . $pid, 'pl', '', 'Game Recaps, Week ' . $w ); }
+			foreach ( $wantPv as $w => $pid ) { $pf[ 'pv:' . $w ] = array( 'https://www.youtube.com/feeds/videos.xml?playlist_id=' . $pid, 'pl', '', 'Game Previews, Week ' . $w ); }
+			foreach ( $wantPh as $w => $pid ) { $pf[ 'ph:' . $w ] = array( 'https://www.youtube.com/feeds/videos.xml?playlist_id=' . $pid, 'pl', '', 'Player Highlights, Week ' . $w ); }
 			$pb = $pf ? DBD_News::fetch( $pf ) : array();
 			list( $have, $found, $errs ) = self::apply_recaps( $want, $pb, $have );
-			$pl['found'] += $found; $pl['weeks'] = array_keys( $want );
+			list( $pv, $nPv, $e2 ) = self::apply_previews( $wantPv, $pb, $pv );
+			list( $ph, $dh, $nPh, $e3 ) = self::apply_players( $wantPh, $pb, $ph, $dh );
+			$errs = array_merge( $errs, $e2, $e3 );
+			$pl['found'] += $found; $pl['pv'] = $nPv; $pl['ph'] = $nPh; $pl['weeks'] = array_keys( $want );
 			if ( $errs ) { $pl['ok'] = false; $pl['err'] = implode( '; ', $errs ); }
 			$all[ $season ] = $have; update_option( self::OPT_HL, $all, false );
+			$pvAll[ $season ] = $pv; update_option( self::OPT_PV, $pvAll, false );
+			$phAll[ $season ] = $ph; update_option( self::OPT_PH, $phAll, false );
+			$dhAll[ $season ] = $dh; update_option( self::OPT_DH, $dhAll, false );
 		}
 		update_option( self::OPT_STATUS, array( 'at' => DBD_News::now(), 'secs' => round( microtime( true ) - $t0, 1 ), 'feeds' => $status, 'pl' => $pl ), false );
 		delete_transient( 'dbd_videos_lock' );
@@ -108,6 +127,18 @@ class DBD_Videos {
 		return $out;
 	}
 
+	/** This season's weeks with a game still to play that has no preview yet. */
+	public static function weeks_ahead( $pv ) {
+		$out = array();
+		foreach ( DBD_Data::weeks() as $w ) { foreach ( DBD_Data::week_games( $w ) as $g ) { if ( ! DBD_Router::is_final( $g ) && ! isset( $pv[ $g['id'] ] ) ) { $out[] = (int) $w; break; } } }
+		return $out;
+	}
+	/** Whether any game of this season is still to play. */
+	public static function in_season() {
+		foreach ( DBD_Data::weeks() as $w ) { foreach ( DBD_Data::week_games( $w ) as $g ) { if ( ! DBD_Router::is_final( $g ) ) { return true; } } }
+		return false;
+	}
+
 	/* ------------------------------------------------------------------ reading YouTube */
 
 	/** A channel or playlist feed's videos: array( id, title, ts, short ). Read with patterns, like the news feeds. */
@@ -124,15 +155,25 @@ class DBD_Videos {
 		return $out;
 	}
 
-	/** The NFL playlists page's "Game Recaps (Week N) | {season} NFL Season" playlists: week => playlist id. */
-	public static function playlists( $html, $season ) {
-		$out = array();
+	/**
+	 * The NFL playlists page's weekly playlists for $season: array( 'recap' => week => id, 'preview' => …, 'player' => … ). Titles:
+	 * "Game Recaps (Week 9) | 2026 NFL Season", "2026 Week 10 Game Previews", "Player Highlights (Week 9) | 2026 NFL Season" (Week 8's said "Highlight").
+	 */
+	public static function playlists_all( $html, $season ) {
+		$out = array( 'recap' => array(), 'preview' => array(), 'player' => array() ); $season = (int) $season;
 		foreach ( explode( '{"lockupViewModel":', (string) $html ) as $chunk ) {
-			if ( ! preg_match( '#"title":\{"content":"Game Recaps \(Week (\d{1,2})\)\s*\|\s*(\d{4}) NFL Season"#', $chunk, $m ) || (int) $m[2] !== (int) $season ) { continue; }
-			if ( preg_match( '#"(?:playlistId|contentId)":"(PL[\w-]{8,40})"#', $chunk, $p ) && ! isset( $out[ (int) $m[1] ] ) ) { $out[ (int) $m[1] ] = $p[1]; }
+			if ( ! preg_match( '#"title":\{"content":"([^"]{6,120})"#', $chunk, $tm ) || ! preg_match( '#"(?:playlistId|contentId)":"(PL[\w-]{8,40})"#', $chunk, $p ) ) { continue; }
+			$t = $tm[1]; $k = null; $w = 0;
+			if ( preg_match( '#^Game Recaps \(Week (\d{1,2})\)\s*\|\s*(\d{4}) NFL Season$#', $t, $m ) && (int) $m[2] === $season ) { $k = 'recap'; $w = (int) $m[1]; }
+			elseif ( preg_match( '#^(\d{4}) Week (\d{1,2}) Game Previews$#', $t, $m ) && (int) $m[1] === $season ) { $k = 'preview'; $w = (int) $m[2]; }
+			elseif ( preg_match( '#^Player Highlights? \(Week (\d{1,2})\)\s*\|\s*(\d{4}) NFL Season$#', $t, $m ) && (int) $m[2] === $season ) { $k = 'player'; $w = (int) $m[1]; }
+			if ( $k && ! isset( $out[ $k ][ $w ] ) ) { $out[ $k ][ $w ] = $p[1]; }
 		}
 		return $out;
 	}
+
+	/** The recap playlists alone: week => playlist id (§51). */
+	public static function playlists( $html, $season ) { return self::playlists_all( $html, $season )['recap']; }
 
 	/** A recap playlist's videos matched to week $w's games: game id => array( v, h, ts ). A video names both teams in full and the week. */
 	public static function highlights( $w, $body, $games ) {
@@ -160,6 +201,67 @@ class DBD_Videos {
 			$found += count( array_diff_key( $got, $have ) ); $have = $got + $have;
 		}
 		return array( $have, $found, $errs );
+	}
+
+	/** Each week's preview playlist matched to its games: like the recaps, a video names both teams in full, the week and "Preview". */
+	public static function previews( $w, $body, $games ) {
+		$out = array();
+		foreach ( self::parse( $body ) as $v ) {
+			if ( ! preg_match( '/\bWeek\s+' . (int) $w . '\b/i', $v[1] ) || stripos( $v[1], 'preview' ) === false ) { continue; }
+			foreach ( $games as $g ) {
+				$a = (string) ( DBD_Data::team( $g['away'] )['name'] ?? '' ); $h = (string) ( DBD_Data::team( $g['home'] )['name'] ?? '' );
+				if ( $a !== '' && $h !== '' && stripos( $v[1], $a ) !== false && stripos( $v[1], $h ) !== false && ! isset( $out[ $g['id'] ] ) ) { $out[ $g['id'] ] = array( 'v' => $v[0], 'h' => $v[1], 'ts' => $v[2] ); break; }
+			}
+		}
+		return $out;
+	}
+	public static function apply_previews( $want, $bodies, $have ) {
+		$found = 0; $errs = array();
+		foreach ( $want as $w => $pid ) {
+			$b = $bodies[ 'pv:' . $w ] ?? array( 'error' => 'not fetched' );
+			if ( ! is_string( $b ) ) { $errs[] = 'the Week ' . (int) $w . ' preview playlist didn\'t answer (' . ( $b['error'] ?? 'failed' ) . ')'; continue; }
+			$got = self::previews( (int) $w, $b, DBD_Data::week_games( (int) $w ) ); $found += count( array_diff_key( $got, $have ) ); $have = $got + $have;
+		}
+		return array( $have, $found, $errs );
+	}
+
+	/** Unique full player names (two words or more) => id, as the news uses them. */
+	private static function player_names() {
+		static $n = null; if ( $n !== null ) { return $n; }
+		$c = array(); foreach ( DBD_Data::player_index() as $p ) { $nm = trim( (string) ( $p['name'] ?? '' ) ); if ( strpos( $nm, ' ' ) !== false ) { $c[ $nm ][] = $p['id']; } }
+		$n = array(); foreach ( $c as $nm => $ids ) { if ( count( $ids ) === 1 ) { $n[ $nm ] = $ids[0]; } }
+		return $n;
+	}
+
+	/**
+	 * A player-highlights playlist's videos: array( player id => item, team => item ). A video belongs to the player whose unique full name comes
+	 * first in its title, or, with no player, to the team whose "{Nick}' best defensive plays" it is. Each names the week.
+	 */
+	public static function player_videos( $w, $body ) {
+		$p = array(); $t = array(); $names = self::player_names(); $nicks = array();
+		foreach ( DBD_Data::teams() as $ab => $x ) { $nicks[ strtolower( (string) $x['nick'] ) ] = $ab; }
+		foreach ( self::parse( $body ) as $v ) {
+			if ( ! preg_match( '/\bWeek\s+' . (int) $w . '\b/i', $v[1] ) ) { continue; }
+			$item = array( 'v' => $v[0], 'h' => $v[1], 'ts' => $v[2] ); $best = null; $at = PHP_INT_MAX;
+			foreach ( $names as $nm => $id ) {
+				$i = strpos( $v[1], $nm ); if ( $i === false || $i >= $at ) { continue; }
+				if ( preg_match( '/(?<![\p{L}\p{N}])' . preg_quote( $nm, '/' ) . '(?![\p{L}\p{N}])/u', $v[1] ) ) { $best = $id; $at = $i; }
+			}
+			if ( $best ) { if ( ! isset( $p[ $best ] ) ) { $p[ $best ] = $item; } continue; }
+			if ( preg_match( '/^(?:The\s+)?([\w. ]+?)[\x{2019}\']s?\s+best defensive plays/iu', $v[1], $m ) && isset( $nicks[ strtolower( trim( $m[1] ) ) ] ) ) { $ab = $nicks[ strtolower( trim( $m[1] ) ) ]; if ( ! isset( $t[ $ab ] ) ) { $t[ $ab ] = $item; } }
+		}
+		return array( $p, $t );
+	}
+	public static function apply_players( $want, $bodies, $ph, $dh ) {
+		$found = 0; $errs = array();
+		foreach ( $want as $w => $pid ) {
+			$b = $bodies[ 'ph:' . $w ] ?? array( 'error' => 'not fetched' );
+			if ( ! is_string( $b ) ) { $errs[] = 'the Week ' . (int) $w . ' player highlights playlist didn\'t answer (' . ( $b['error'] ?? 'failed' ) . ')'; continue; }
+			list( $p, $t ) = self::player_videos( (int) $w, $b );
+			foreach ( $p as $id => $it ) { if ( ! isset( $ph[ $id ][ $w ] ) ) { $found++; } $ph[ $id ][ (int) $w ] = $ph[ $id ][ (int) $w ] ?? $it; }
+			foreach ( $t as $ab => $it ) { $dh[ $ab ][ (int) $w ] = $dh[ $ab ][ (int) $w ] ?? $it; }
+		}
+		return array( $ph, $dh, $found, $errs );
 	}
 
 	/** The teams a title names, by nickname or full name (whole words). */
@@ -241,11 +343,43 @@ class DBD_Videos {
 			. ( count( $list ) > self::TOP ? '<button type="button" class="nw-btn" onclick="this.parentNode.classList.add(\'open\');this.remove()">Show more</button>' : '' ) . '</section>';
 	}
 
-	/** A finished game's highlights, at the top of its page; empty until the NFL's recap is found. */
-	public static function highlight( $g ) {
-		if ( ! self::on() || ! DBD_Router::is_final( $g ) ) { return ''; }
-		$h = ( (array) get_option( self::OPT_HL, array() ) )[ DBD_Data::season() ][ $g['id'] ] ?? null; if ( ! is_array( $h ) || empty( $h['v'] ) ) { return ''; }
-		return '<section class="dbd-panel dbd-hl" id="highlights"><div class="dbd-ph"><span class="dbd-lab"><b>Highlights</b> · from the NFL on YouTube</span></div>'
-			. '<div class="dbd-pb">' . self::play( $h['v'], (string) $h['h'], true ) . '<p>' . esc_html( (string) $h['h'] ) . '</p></div></section>';
+	/* ---- the stored videos, for the pages (SCOPE §54) */
+
+	private static function season_store( $opt ) { return (array) ( ( (array) get_option( $opt, array() ) )[ DBD_Data::season() ] ?? array() ); }
+	/** A finished game's recap, or null. */
+	public static function recap( $g ) { if ( ! self::on() ) { return null; } $h = self::season_store( self::OPT_HL )[ $g['id'] ] ?? null; return is_array( $h ) && ! empty( $h['v'] ) ? $h : null; }
+	/** A game's preview, or null. */
+	public static function preview( $g ) { if ( ! self::on() ) { return null; } $h = self::season_store( self::OPT_PV )[ $g['id'] ] ?? null; return is_array( $h ) && ! empty( $h['v'] ) ? $h : null; }
+	/** A finished game's recap, else its preview: array( item, 'recap' | 'preview' ), or null. */
+	public static function game_video( $g ) {
+		if ( DBD_Router::is_final( $g ) ) { $r = self::recap( $g ); return $r ? array( $r, 'recap' ) : null; }
+		$p = self::preview( $g ); return $p ? array( $p, 'preview' ) : null;
+	}
+	/** A player's highlights this season: week => item, newest week last. */
+	public static function player_weeks( $pid ) { if ( ! self::on() ) { return array(); } $w = (array) ( self::season_store( self::OPT_PH )[ $pid ] ?? array() ); ksort( $w ); return $w; }
+	/** A team's newest defensive-plays video from the last 14 days, or null. */
+	public static function defense( $t ) {
+		if ( ! self::on() || DBD_Data::archived() ) { return null; }
+		$w = (array) ( self::season_store( self::OPT_DH )[ $t ] ?? array() ); $best = null;
+		foreach ( $w as $it ) { if ( DBD_News::now() - (int) $it['ts'] <= self::DAYS && ( ! $best || $it['ts'] > $best['ts'] ) ) { $best = $it; } }
+		return $best;
+	}
+	public static function url( $item ) { return 'https://www.youtube.com/watch?v=' . preg_replace( '/[^\w-]/', '', (string) $item['v'] ); }
+	/** A small play mark linking to a video on YouTube in a new tab. */
+	public static function mark( $item, $label, $cls = '' ) {
+		return '<a class="dbd-vmk' . ( $cls !== '' ? ' ' . $cls : '' ) . '" href="' . esc_url( self::url( $item ) ) . '" target="_blank" rel="noopener" title="' . esc_attr( (string) $item['h'] ) . '">' . esc_html( $label ) . '</a>';
+	}
+
+	/** Every recap of week $w at the end of the week page: eight, then "Show all". Empty with none. */
+	public static function week_panel( $w ) {
+		if ( ! self::on() ) { return ''; } $store = self::season_store( self::OPT_HL ); $cards = ''; $n = 0;
+		foreach ( DBD_Data::week_games( $w ) as $g ) {
+			$h = $store[ $g['id'] ] ?? null; if ( ! is_array( $h ) || empty( $h['v'] ) ) { continue; }
+			$cards .= '<figure class="dbd-vid' . ( $n >= 8 ? ' vd-more' : '' ) . '">' . self::play( $h['v'], (string) $h['h'] ) . '<h4>' . esc_html( (string) $h['h'] ) . '</h4><span>NFL on YouTube</span></figure>'; $n++;
+		}
+		if ( ! $n ) { return ''; }
+		$lab = DBD_Router::week_label( $w );
+		return '<section class="dbd-panel dbd-vids dbd-feature dbd-wkhl" id="highlights"><div class="dbd-ph big"><h2>' . esc_html( $lab ) . ' highlights</h2><p>Every game\'s recap from the NFL on YouTube</p></div>'
+			. '<div class="vd-row">' . $cards . '</div>' . ( $n > 8 ? '<button type="button" class="nw-btn" onclick="this.parentNode.classList.add(\'open\');this.remove()">Show all ' . $n . '</button>' : '' ) . '</section>';
 	}
 }

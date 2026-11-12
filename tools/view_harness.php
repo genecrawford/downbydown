@@ -41,7 +41,8 @@ function wp_upload_dir() { global $tmp; return array( 'basedir' => $tmp, 'baseur
 function get_option( $k, $d = false ) { if ( isset( $GLOBALS['dbd_opt'] ) && array_key_exists( $k, $GLOBALS['dbd_opt'] ) ) { return $GLOBALS['dbd_opt'][ $k ]; }  /* the admin mode's stored settings */
 	if ( $k === 'dbd_headshots' || $k === 'dbd_logos' ) { return (bool) getenv( 'DBD_HARNESS_MEDIA' ); }
 	if ( getenv( 'DBD_HARNESS_PRETTY' ) ) { if ( $k === 'permalink_structure' ) { return '/%postname%/'; } if ( $k === 'dbd_app_page' ) { return 10; } if ( $k === 'page_on_front' ) { return getenv( 'DBD_HARNESS_ROOT' ) ? 5 : 10; } if ( $k === 'show_on_front' ) { return 'page'; } }  /* readable URLs (SCOPE §43) */
-	if ( ( strpos( $k, 'dbd_videos_' ) === 0 || $k === 'dbd_highlights' ) && ( $vf = getenv( 'DBD_HARNESS_VIDEOS' ) ) && is_readable( $vf ) ) { $vj = json_decode( (string) file_get_contents( $vf ), true ); return $k === 'dbd_highlights' ? ( $vj['hl'] ?? $d ) : ( $vj['videos'][ substr( $k, 11 ) ] ?? $d ); }  /* team videos (SCOPE §51) */
+	$vk = array( 'dbd_highlights' => 'hl', 'dbd_previews' => 'pv', 'dbd_player_hl' => 'ph', 'dbd_defense_hl' => 'dh' );
+	if ( ( strpos( $k, 'dbd_videos_' ) === 0 || isset( $vk[ $k ] ) ) && ( $vf = getenv( 'DBD_HARNESS_VIDEOS' ) ) && is_readable( $vf ) ) { $vj = json_decode( (string) file_get_contents( $vf ), true ); return isset( $vk[ $k ] ) ? ( $vj[ $vk[ $k ] ] ?? $d ) : ( $vj['videos'][ substr( $k, 11 ) ] ?? $d ); }  /* team videos (SCOPE §51) */
 	if ( strpos( $k, 'dbd_news_' ) === 0 && ( $nf = getenv( 'DBD_HARNESS_NEWS' ) ) && is_readable( $nf ) ) { $nj = json_decode( (string) file_get_contents( $nf ), true ); return $nj[ substr( $k, 9 ) ] ?? $d; }  /* team news (SCOPE §49) */
 	return $d; }
 function wp_parse_url( $u, $c = -1 ) { return parse_url( $u, $c ); }
@@ -102,13 +103,16 @@ if ( $view === 'videos' ) {
 	$prev = is_readable( "$vd/prev.json" ) ? json_decode( (string) file_get_contents( "$vd/prev.json" ), true ) : array();
 	try {
 		list( $stores, $status ) = DBD_Videos::collect( DBD_Videos::feeds(), $bodies, $prev );
-		$season = DBD_Data::season(); $lists = DBD_Videos::playlists( (string) @file_get_contents( "$vd/playlists.html" ), $season ); $hl = array();
-		$pb = array(); foreach ( $lists as $w => $pid ) { $pf = "$vd/pl-$pid.xml"; $pb[ 'pl:' . $w ] = is_readable( $pf ) ? (string) file_get_contents( $pf ) : array( 'error' => 'HTTP 503' ); }  /* a playlist without a file stands for one that failed */
+		$season = DBD_Data::season(); $L = DBD_Videos::playlists_all( (string) @file_get_contents( "$vd/playlists.html" ), $season ); $lists = $L['recap'];
+		$pb = array();  /* a playlist without a file stands for one that failed */
+		foreach ( array( 'recap' => 'pl', 'preview' => 'pv', 'player' => 'ph' ) as $kind => $pre ) { foreach ( $L[ $kind ] as $w => $pid ) { $pf = "$vd/pl-$pid.xml"; $pb[ $pre . ':' . $w ] = is_readable( $pf ) ? (string) file_get_contents( $pf ) : array( 'error' => 'HTTP 503' ); } }
 		list( $hl, $found, $plerr ) = DBD_Videos::apply_recaps( $lists, $pb, array() );
+		list( $pv, $pvN, $pverr ) = DBD_Videos::apply_previews( $L['preview'], $pb, array() );
+		list( $ph, $dh, $phN, $pherr ) = DBD_Videos::apply_players( $L['player'], $pb, array(), array() );
 		$miss_all = DBD_Videos::weeks_missing( array() ); $miss_some = DBD_Videos::weeks_missing( $hl );
 	} catch ( Throwable $e ) { fwrite( STDERR, 'FATAL in videos: ' . $e->getMessage() . ' at ' . basename( $e->getFile() ) . ':' . $e->getLine() . "\n" ); exit( 1 ); }
-	$vout = getenv( 'DBD_HARNESS_VIDEOS' ) ?: $tmp . '/videos.json'; file_put_contents( $vout, json_encode( array( 'videos' => $stores, 'hl' => array( $season => $hl ) ) ) );
-	echo json_encode( array( 'videos' => array_filter( $stores, function ( $x ) { return $x['v']; } ), 'status' => array_filter( $status, function ( $x ) { return empty( $x['ok'] ) || ! empty( $x['n'] ); } ), 'playlists' => $lists, 'highlights' => $hl, 'missing_first' => $miss_all, 'missing_after' => $miss_some, 'found' => $found, 'playlist_errors' => $plerr ), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . "\n";
+	$vout = getenv( 'DBD_HARNESS_VIDEOS' ) ?: $tmp . '/videos.json'; file_put_contents( $vout, json_encode( array( 'videos' => $stores, 'hl' => array( $season => $hl ), 'pv' => array( $season => $pv ), 'ph' => array( $season => $ph ), 'dh' => array( $season => $dh ) ) ) );
+	echo json_encode( array( 'videos' => array_filter( $stores, function ( $x ) { return $x['v']; } ), 'status' => array_filter( $status, function ( $x ) { return empty( $x['ok'] ) || ! empty( $x['n'] ); } ), 'playlists' => $lists, 'highlights' => $hl, 'missing_first' => $miss_all, 'missing_after' => $miss_some, 'found' => $found, 'playlist_errors' => $plerr, 'all_playlists' => $L, 'previews' => $pv, 'players' => $ph, 'defense' => $dh, 'other_errors' => array_merge( $pverr, $pherr ) ), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . "\n";
 	exit( $warnings ? 1 : 0 );
 }
 
@@ -216,7 +220,8 @@ if ( $view === 'email' ) {
 	try {
 		$doc = DBD_Post::compose( (int) $arg, null, getenv( 'DBD_HARNESS_AHEAD' ) !== '0' );
 		if ( ! $doc ) { echo "email $arg: none (the week isn't complete), $warnings warnings\n"; exit( $warnings ? 1 : 0 ); }
-		$m = DBD_Email::compose( $doc['title'], $doc['html'], 'https://example.test/week-' . (int) $arg . '-in-review/', 'https://example.test/uploads/week-' . (int) $arg . '.png', 'Tuesday, November 3', (int) $arg );
+		$hlm = array(); foreach ( DBD_Data::week_games( (int) $arg ) as $g ) { $r = DBD_Videos::recap( $g ); if ( $r ) { $hlm[ DBD_Router::url( array( 'game' => $g['id'] ) ) ] = DBD_Videos::url( $r ); } }  /* SCOPE §54, with DBD_HARNESS_VIDEOS */
+		$m = DBD_Email::compose( $doc['title'], $doc['html'], 'https://example.test/week-' . (int) $arg . '-in-review/', 'https://example.test/uploads/week-' . (int) $arg . '.png', 'Tuesday, November 3', (int) $arg, null, $hlm );
 	} catch ( Throwable $e ) { fwrite( STDERR, "FATAL in email $arg: " . get_class( $e ) . ': ' . $e->getMessage() . ' at ' . basename( $e->getFile() ) . ':' . $e->getLine() . "\n" ); exit( 1 ); }
 	$late = array( DBD_Email::late( '2026-11-03 13:00:00', strtotime( '2026-11-03 13:00:05 UTC' ) ), DBD_Email::late( '2026-11-03 13:00:00', strtotime( '2026-11-04 12:59:00 UTC' ) ), DBD_Email::late( '2026-11-03 13:00:00', strtotime( '2026-11-04 13:01:00 UTC' ) ), DBD_Email::late( '2025-11-04 13:00:00', strtotime( '2026-11-03 13:00:00 UTC' ) ) );
 	echo "email $arg: " . $m['subject'] . ' · ' . strlen( $m['html'] ) . ' bytes · preview "' . $m['pre'] . '" · late at 5s/23h59/24h01/a year: ' . implode( '/', array_map( function ( $x ) { return $x ? 'yes' : 'no'; }, $late ) ) . ", $warnings warnings\n";

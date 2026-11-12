@@ -10,7 +10,7 @@ foreach ( array( 'dbd_news_status', 'dbd_news_sources' ) as $o ) { delete_option
 wp_clear_scheduled_hook( 'dbd_news_event' ); wp_clear_scheduled_hook( 'dbd_news_first' );
 /* team videos and highlights (SCOPE §51) */
 foreach ( array( 'ARI', 'ATL', 'BAL', 'BUF', 'CAR', 'CHI', 'CIN', 'CLE', 'DAL', 'DEN', 'DET', 'GB', 'HOU', 'IND', 'JAX', 'KC', 'LV', 'LAC', 'LA', 'MIA', 'MIN', 'NE', 'NO', 'NYG', 'NYJ', 'PHI', 'PIT', 'SF', 'SEA', 'TB', 'TEN', 'WAS' ) as $t ) { delete_option( 'dbd_videos_' . $t ); }
-foreach ( array( 'dbd_videos_status', 'dbd_videos_on', 'dbd_highlights' ) as $o ) { delete_option( $o ); }
+foreach ( array( 'dbd_videos_status', 'dbd_videos_on', 'dbd_highlights', 'dbd_previews', 'dbd_player_hl', 'dbd_defense_hl' ) as $o ) { delete_option( $o ); }
 wp_clear_scheduled_hook( 'dbd_videos_first' );
 
 /* the Tuesday email (SCOPE §48): its settings, send log and signup counts; any queued sends */

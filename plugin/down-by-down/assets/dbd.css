@@ -1824,10 +1824,6 @@ html:not([data-fx]) .dbd [data-fx="half"],html[data-fx="std"] .dbd [data-fx="std
 .dbd .dbd-news h3{font-size:14px}
 .dbd .dbd-news .nw-h{font-size:16px;line-height:1.35}
 .dbd .dbd-news li:first-child .nw-h{font-size:19px;line-height:1.28}
-.dbd .dbd-jump{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0}
-.dbd .dbd-jump a{display:inline-flex;align-items:baseline;gap:6px;padding:7px 12px;border:1px solid var(--dbd-ink);border-radius:4px;background:#fff;font:700 14px/1 var(--dbd-display);letter-spacing:.06em;text-transform:uppercase;color:var(--dbd-ink);text-decoration:none}
-.dbd .dbd-jump a b{font:600 11px/1 var(--dbd-mono);color:var(--dbd-muted)}
-.dbd .dbd-jump a:hover{background:var(--dbd-ink);color:#fff}.dbd .dbd-jump a:hover b{color:#cfd2d8}
 .dbd .dbd-around{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);margin:24px 0;background:#fff;border:1px solid var(--dbd-line-2);border-top:3px solid var(--dbd-team,#161e36);border-radius:6px;overflow:hidden}
 .dbd .dbd-around.one{grid-template-columns:minmax(0,1fr)}
 .dbd .dbd-around>div{padding:16px 20px 18px;min-width:0}
@@ -1845,3 +1841,27 @@ html:not([data-fx]) .dbd [data-fx="half"],html[data-fx="std"] .dbd [data-fx="std
 .dbd .dbd-around .ar-vid h3{margin:10px 0 0;padding:0;font:600 16px/1.35 var(--dbd-body);color:var(--dbd-ink)}
 @media (max-width:900px){.dbd .dbd-vids .vd-grid>.dbd-vid:first-child{grid-row:auto}.dbd .dbd-ph.big h2{font-size:22px}}
 @media (max-width:760px){.dbd .dbd-around{grid-template-columns:minmax(0,1fr)}.dbd .dbd-around>div+div{border-left:0;border-top:1px solid var(--dbd-line)}.dbd .dbd-around .ar-lead{font-size:19px}}
+
+/* links down the page to its news and videos (2.14.0: their own class; dbd-jump is the player page's sticky section bar, which 2.13.0's rules overrode) */
+.dbd .dbd-hop{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0}
+.dbd .dbd-hop a{display:inline-flex;align-items:baseline;gap:6px;padding:7px 12px;border:1px solid var(--dbd-ink);border-radius:4px;background:#fff;font:700 14px/1 var(--dbd-display);letter-spacing:.06em;text-transform:uppercase;color:var(--dbd-ink);text-decoration:none}
+.dbd .dbd-hop a b{font:600 11px/1 var(--dbd-mono);color:var(--dbd-muted)}
+.dbd .dbd-hop a:hover{background:var(--dbd-ink);color:#fff}.dbd .dbd-hop a:hover b{color:#cfd2d8}
+/* a small play mark linking to the NFL's video (SCOPE §54): the game box, the matchups list, a game log row, a player's pills */
+.dbd .dbd-vmk{display:inline-flex;align-items:center;gap:5px;font:600 12px/1 var(--dbd-body);color:var(--dbd-ink);text-decoration:none;white-space:nowrap}
+.dbd .dbd-vmk::before{content:"";flex:none;width:18px;height:13px;border-radius:3px;background:#0f1311 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M3 2l5 3-5 3z' fill='%23fff'/%3E%3C/svg%3E") center/8px no-repeat}
+.dbd .dbd-vmk:hover{color:var(--dbd-red-ink)}.dbd .dbd-vmk:hover::before{background-color:var(--dbd-red)}
+.dbd .dbd-vmk.gb{display:flex;margin-top:10px;padding-top:10px;border-top:1px solid var(--dbd-line)}
+.dbd .dbd-vmk.sl,.dbd .dbd-vmk.gl{margin-left:8px;font-size:11px;vertical-align:1px}
+.dbd .dbd-vmk.sl{display:flex;margin:4px 0 0}
+.dbd .dbd-pill.dbd-vmk{gap:6px}
+/* the week page's recaps */
+.dbd .vd-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px 16px;padding:12px var(--dbd-edge) 16px}
+.dbd .vd-row .dbd-vid h4{font-size:14px}
+.dbd .vd-row .vd-more{display:none}.dbd .open .vd-row .vd-more{display:block}
+.dbd .dbd-wkhl .nw-btn{margin:0 var(--dbd-edge) 14px;padding:6px 12px;background:none;border:1px solid var(--dbd-line-2);border-radius:4px;font:600 13px var(--dbd-body);color:var(--dbd-ink);cursor:pointer}
+@media (max-width:900px){.dbd .vd-row{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* the roster's depth slot (2.14.0): a small chip a gap after the name, the starter's dark and a backup's light */
+.dbd .dbd-rost .dbd-nmi{gap:10px}
+.dbd .dbd-slot{flex:0 0 auto;margin-left:2px;padding:2px 5px 1px;border:1px solid var(--dbd-line-2);border-radius:3px;font:600 10px/1.2 var(--dbd-mono);letter-spacing:.04em;color:var(--dbd-muted);cursor:help}
+.dbd .dbd-slot.s1{border-color:var(--dbd-ink);color:var(--dbd-ink)}

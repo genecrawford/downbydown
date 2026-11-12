@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.13.1
+Stable tag: 2.14.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,15 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.14.0 =
+* Hints of the news and the NFL's weekly videos across the site (SCOPE §54). The NFL's Game Previews and Player Highlights playlists join its recaps. Everything opens on YouTube; anything bigger than a small link comes after the stats.
+* Game pages: "Watch the NFL preview" (or, once final, "Watch the highlights") at the foot of the game box, and at the end of the page the stories naming both teams beside the preview or recap. The recap moved from the top of the page to the end.
+* Player pages: a pill to his newest highlights, a Highlights mark on each week of his game log that has one, and at the end the stories naming him with his newest highlights.
+* Offense and defense pages: News and Videos links under the title, down to the block at the end. The defense page's block shows the NFL's team defense video when there is one from the last 14 days.
+* The matchups list marks each game's preview or recap; the week page ends with every game's recap; the Tuesday email adds a Highlights link beside each score whose recap is posted.
+* The roster's depth slot (QB1) is a small chip a gap after the name: dark for the starter, light for a backup, explained on hover.
+* The player page's sticky section bar has its own look back (2.13.0's jump links had restyled it).
 
 = 2.13.1 =
 * Team videos and game highlights open on YouTube in a new tab. The NFL and the teams block their videos from playing on other sites, which YouTube only shows once a video is clicked ("Video unavailable … blocked it from display on this website"), so playing them in place on the page couldn't work. Each thumbnail now says YouTube beside its play mark.
