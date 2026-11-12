@@ -7,7 +7,7 @@
  *     fetch adds to what's stored, so a channel that fails loses nothing.
  *   - Game highlights: the NFL posts a "Game Recaps (Week N) | 2026 NFL Season" playlist each week, one "Team vs Team ... Highlights" video a
  *     game. The NFL's playlists page names them; each fetch reads it for the weeks still missing highlights and keeps every match for good.
- *   - Runs with team news, every 6 hours. Only thumbnails load with a page; a click swaps in YouTube's privacy-enhanced player (dbd-site.js).
+ *   - Runs with team news, every 6 hours. Each thumbnail links to the video on YouTube: the NFL and the teams don't allow playing them on other sites.
  *
  * collect() and highlights() are pure (bodies in, lists out), so the view harness checks the matching without the network.
  */
@@ -218,11 +218,14 @@ class DBD_Videos {
 		return intdiv( $d, DAY_IN_SECONDS ) . 'd';
 	}
 
-	/** The thumbnail that becomes YouTube's player on a click (dbd-site.js). */
+	/**
+	 * A video's thumbnail, linking to it on YouTube in a new tab. The NFL and the teams block their videos from playing on other sites (only a
+	 * click shows it: "blocked it from display on this website"), so nothing plays in place (2.13.1).
+	 */
 	public static function play( $v, $title, $big = false ) {
 		$id = preg_replace( '/[^\w-]/', '', (string) $v );
-		return '<button type="button" class="dbd-play" data-v="' . esc_attr( $id ) . '" aria-label="' . esc_attr( 'Play: ' . $title ) . '">'
-			. '<img src="' . esc_url( 'https://i.ytimg.com/vi/' . $id . '/' . ( $big ? 'hqdefault' : 'mqdefault' ) . '.jpg' ) . '" alt="" loading="lazy" decoding="async" width="' . ( $big ? 480 : 320 ) . '" height="' . ( $big ? 270 : 180 ) . '"></button>';
+		return '<a class="dbd-play" href="' . esc_url( 'https://www.youtube.com/watch?v=' . $id ) . '" target="_blank" rel="noopener" aria-label="' . esc_attr( 'Watch on YouTube (opens a new tab): ' . $title ) . '">'
+			. '<img src="' . esc_url( 'https://i.ytimg.com/vi/' . $id . '/' . ( $big ? 'hqdefault' : 'mqdefault' ) . '.jpg' ) . '" alt="" loading="lazy" decoding="async" width="' . ( $big ? 480 : 320 ) . '" height="' . ( $big ? 270 : 180 ) . '"><span class="yt">YouTube</span></a>';
 	}
 
 	/** "{Nick} videos" for the team players page, above the news; empty with nothing stored. */

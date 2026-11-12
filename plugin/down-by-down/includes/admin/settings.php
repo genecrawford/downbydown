@@ -465,7 +465,7 @@ function dbd_tab_news() {
 		</tbody></table>
 		<table class="form-table" role="presentation" style="border-top:1px solid #f0f0f1">
 			<tr><th scope="row">Show videos</th><td><label><input type="checkbox" name="<?php echo esc_attr( DBD_Videos::OPT_ON ); ?>" value="1" <?php checked( DBD_Videos::on() ); ?>> Show each team's videos on its players page and each finished game's highlights</label>
-			<p class="description">Shorts are left out. Only thumbnails load with a page; a click plays the video in place with YouTube's privacy-enhanced player.</p></td></tr>
+			<p class="description">Shorts are left out. A click opens the video on YouTube in a new tab: the NFL and the teams don't allow their videos to play on other sites.</p></td></tr>
 		</table>
 		<div class="dbd-foot"><?php submit_button( 'Save', 'primary', 'submit', false ); ?></div>
 	</form>
