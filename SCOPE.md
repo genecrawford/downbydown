@@ -2361,3 +2361,126 @@ Gene: the Down by Down admin page "comes off as just one big form with no sectio
 - **Data:** the current data with "Sync now"; the sync log (six rows, the rest folded); seasons; share cards; and, under Advanced, the data folder URL and the GitHub push (the token behind "Show the token").
 - Every box that saves is its own form, so a save never touches another tab's settings. The data folder URL moved to its own settings group for that reason.
 - CI renders every tab from stored settings and checks its boxes are there and that no form sits inside another.
+
+## 51. Team videos and game highlights (scoped and mocked 2026-11-12, `mockup-v25/`)
+
+Gene: team news reads the blogs; what about YouTube videos for each team? Every NFL team has an official YouTube channel, and YouTube publishes a public feed of each channel's newest 15 videos. It needs no key and has no cost, and it's read the same way as the team news feeds.
+
+The mocks:
+- `mockup-v25/videos-MIN.html`: the Vikings' players page with their videos above the news. These are real videos from the feeds on Nov 12.
+- `mockup-v25/game-highlights.html`: the Bills at Vikings game page (Week 9) opening with its NFL highlights video.
+
+### Sources (all checked 2026-11-12)
+
+- **The 32 team channels.** Each one was found by its handle and checked: it's the official channel, and its feed has videos from this week.
+
+  | Team | Channel | Team | Channel | Team | Channel | Team | Channel |
+  |---|---|---|---|---|---|---|---|
+  | ARI | @AZCardinals | ATL | @AtlantaFalcons | BAL | @BaltimoreRavens | BUF | @buffalobills |
+  | CAR | @CarolinaPanthers | CHI | @ChicagoBears | CIN | @Bengals | CLE | @Browns |
+  | DAL | @dallascowboys | DEN | @Broncos | DET | @DetroitLionsNFL | GB | @packers |
+  | HOU | @HoustonTexans | IND | @Colts | JAX | @jaguars | KC | @KansasCityChiefs |
+  | LV | @Raiders | LAC | @Chargers | LA | @LARams | MIA | @MiamiDolphins |
+  | MIN | @vikings | NE | @patriots | NO | @NewOrleansSaints | NYG | @NYGiants |
+  | NYJ | @nyjets | PHI | @eagles | PIT | @steelers | SF | @49ers |
+  | SEA | @seahawks | TB | @buccaneers | TEN | @Titans | WAS | @Commanders |
+
+  Lookalikes to avoid: `@chiefs` is an old 2006 channel and `@DenverBroncos` is empty.
+- **The NFL's channel** (@NFL), filtered to videos whose title names the team (its nickname or city). This brings in league-made videos about the team.
+- **Game highlights:** each week the NFL posts a playlist named like "Game Recaps (Week 9) | 2026 NFL Season". It has one "Buffalo Bills vs Minnesota Vikings Highlights | 2026 NFL Season Week 9" video per game, and the playlist also has a public feed.
+
+### What the reader gets
+
+- **On each team's players page, above the news:** "{Team} videos · the last 14 days, from the {Team} and the NFL on YouTube".
+  - Four thumbnails in a row (two on a phone), with "Show more" opening up to 12.
+  - Each shows its title, the source (the team or the NFL) and its age.
+- **On each finished game's page, at the top:** "Highlights · from the NFL on YouTube", one large video.
+  - A game the playlist hasn't reached yet shows nothing; the highlights usually post the night of the game.
+  - Once found, a game keeps its highlights for good, so past weeks have theirs too.
+- **Playing:** only the thumbnail loads with the page. A click swaps in YouTube's own player (the privacy-enhanced `youtube-nocookie.com` one) and plays it in place.
+  - Nothing is downloaded or rehosted. Embedding with YouTube's player is how YouTube expects other sites to show videos.
+  - Thumbnails load from YouTube's image server.
+
+### How it runs
+
+- **Riding on the team news fetch** (every 6 hours): 33 channel feeds, plus the current and previous weeks' recap playlists.
+  - Measured on 2026-11-12: about 0.8 MB, and 9 seconds one after another (about 2 seconds 8 at a time, the way news is fetched).
+  - In the database: about 1,500 bytes a video, up to 12 a team, so about 0.5 MB in all. The highlights are one video ID per game.
+- **Matching:**
+  - A team channel's videos belong to that team.
+  - An NFL channel video belongs to every team its title names, capped at two teams; a title naming more than that is a league roundup.
+  - A recap video belongs to the game whose two full team names and week are in its title.
+- **Shorts** (vertical clips, a third of most feeds) are left out (decision 1).
+- **Finding each week's recap playlist** (decision 2): the playlist is new each week, so its ID has to be found.
+  - Recommended: read the NFL channel's public playlists page once a fetch and pick the playlist whose title names the week. No key is needed.
+  - If YouTube changes that page, highlights stop appearing until it's fixed. Everything else keeps working, and the admin page says the highlights couldn't be found.
+  - Earlier weeks' playlists are on the same page, so the first run backfills Weeks 1 to 9.
+- **Admin:** the Team news tab becomes **News and videos**, with a Videos box showing the last fetch, the channels to check and an on/off switch for videos and highlights. A channel that stops posting is flagged there, the way a feed is.
+
+### Decisions (for Gene, one at a time)
+
+1. **Shorts:** leave them out (recommended: they're vertical clips that don't sit in a row of wide thumbnails, and the long videos are the press conferences, all-access pieces and recaps) or include them.
+2. **Finding the highlights:** read the NFL's playlists page with no key (recommended), or use a free YouTube Data API key from Google Cloud, which is sturdier against YouTube changing its page but is one more account and key to keep.
+3. **Where the videos go:** above the news on the players page (recommended, as mocked), below it, or on the team's offense page under the news line.
+
+### Acceptance
+
+- Every team's players page shows its videos, newest first, with no Shorts. A click plays the video in place, and the page loads no YouTube player until then.
+- Every finished game since Week 1 shows its highlights. A game without them shows nothing.
+- The Week 9 Bills at Vikings page shows the mocked video.
+- A channel that fails or goes quiet is flagged on the admin page and loses nothing already stored.
+
+Size: M.
+
+## 52. Tickets from SeatGeek (scoped and mocked 2026-11-12, `mockup-v25/`)
+
+Gene asked about something like SeatGeek: ticket prices for the games. SeatGeek's public API lists every upcoming NFL game with its cheapest current ticket and a link to buy. It needs a free developer key (a "client ID"), which Gene registers for at platform.seatgeek.com.
+
+The mocks use sample prices until the key exists:
+- `mockup-v25/tickets-game.html`: Vikings at Packers (Week 10) with "Tickets from $112 on SeatGeek · checked 2h ago" in the game box.
+- `mockup-v25/tickets-team.html`: the Vikings page with the next game and the next home game, each with its cheapest ticket.
+- `mockup-v25/tickets-matchups.html`: the week's matchups, each upcoming game with "Tickets from $X" under its line.
+
+### What the reader gets
+
+- **An upcoming game's page:** the cheapest ticket on SeatGeek in the game box, with when it was checked, linking to the game on SeatGeek.
+  - With no listings, it shows "Tickets on SeatGeek" without a price.
+  - A finished game shows nothing.
+- **A team's offense and defense pages:** one line under the news line: "Next game: at Packers, Sun Nov 15, 1:00 PM · tickets from $112. Next home game: Falcons, Sun Nov 29 · from $96."
+  - When the next game is at home, that's the only one shown.
+- **The matchups list:** "Tickets from $X" under each upcoming game's line, with one line above the games saying when the prices were checked.
+- **Prices are resale prices** that move all day, so each one says when it was checked, and the link opens SeatGeek's current listings.
+
+### How it runs
+
+- **Twice a day, at 8 AM and 4 PM Eastern,** in WordPress: one call to SeatGeek for every upcoming NFL game, 100 a page, so two or three calls in all.
+  - Stored as one small option: each game's lowest price, its link and when it was checked. About 15 KB.
+  - The key stays in WordPress settings, never in the public repo.
+- **Matching:** SeatGeek lists each game with its two teams and its date and time. A game matches ours when both teams and the date agree.
+- **Links** carry `rel="nofollow sponsored"`, the way paid or partner links should.
+- **Admin:** a Tickets box on the News and videos tab (which becomes **News, videos and tickets**):
+  - the SeatGeek key and an on/off switch, off until set up
+  - an optional partner ID (decision 2)
+  - the last check and how many games were matched
+- **Nothing shows until the key is in.** The feature can ship before Gene has the key and switch on later.
+
+### Decisions (for Gene, one at a time)
+
+1. **Which seller:** SeatGeek only (recommended: one price per game, every game listed), or also Ticketmaster's face-value tickets from its own free API, shown as a second link.
+2. **Earning from the links:** SeatGeek has a partner program that pays a commission on tickets bought through the site's links. Gene applies (its current terms couldn't be confirmed from here). Once approved, its partner ID goes into the settings and every link carries it. Until then the links are plain.
+   - With a partner ID on, the footer says "Ticket links may earn Down by Down a commission", as US advertising rules require.
+3. **Where it shows:** all three places as mocked (recommended), or only the game pages.
+
+### Setup for Gene (once)
+
+1. Register at platform.seatgeek.com with a SeatGeek account and create an app. It gives a client ID.
+2. Paste the client ID into the Tickets box and switch it on. The first check runs at once.
+3. Optional: apply to SeatGeek's partner program and, once approved, paste the partner ID.
+
+### Acceptance
+
+- Every upcoming game on the matchups list, its game page and its teams' pages shows SeatGeek's cheapest ticket, or "Tickets on SeatGeek" with no price, and each place says when the prices were checked (once, above the list, on the matchups page).
+- A finished game shows nothing, and nothing shows anywhere while the switch is off or the key is missing.
+- A failed check keeps the last prices, with their real check time, and the admin page says why.
+
+Size: S to M. Videos (§51) and tickets (§52) can ship together as 2.12.0, with tickets switched off until the key is in.

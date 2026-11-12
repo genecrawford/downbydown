@@ -11,3 +11,5 @@ scratch/
 __pycache__/
 *.pyc
 mockup-v23/news.json
+mockup-v25/videos.json
+mockup-v25/_*.html
