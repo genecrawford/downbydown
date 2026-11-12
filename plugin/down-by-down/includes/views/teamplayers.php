@@ -38,6 +38,7 @@ if ( $luO || $luD ) {
 }
 
 /* ---- team news (SCOPE §49), after the lineup and ahead of the roster, so it shows before a season has player data (Greptile, PR #72) */
+echo DBD_Videos::panel( $team );  /* team videos (SCOPE §51), above the news */
 echo DBD_News::panel( $team );
 
 /* ---- the roster, grouped by position */
