@@ -110,7 +110,9 @@ jobs:
           def need(c, m):
               if not c: raise SystemExit('videos: ' + m)
           M = [x['v'] for x in d['videos']['MIN']['v']]
-          need(M == ['MINvid00001', 'NFLtwoteam1', 'MINvid00002', 'MINvid00003', 'MINprev0001', 'MINvid00004', 'MINvid00005'], f'the Vikings list is {M}')
+          need(M == ['MINvid00001', 'NFLtwoteam1', 'NFLcapsabc1', 'MINvid00002', 'MINvid00003', 'MINprev0001', 'MINvid00004', 'MINvid00005'], f'the Vikings list is {M}')
+          need('NFLcapsabc1' in [x['v'] for x in d['videos']['CHI']['v']], 'a title in capitals does not reach its teams')
+          need(o['found'] == 2 and len(o['playlist_errors']) == 1 and 'Week 6' in o['playlist_errors'][0], f"a recap playlist that fails is not reported: {o['playlist_errors']}")
           need(not any('short' in v for v in M), 'a Short was kept')
           need('MINold00001' not in M and 'MINprevold1' not in M, 'a video older than 14 days was kept')
           need(M.count('MINvid00002') == 1, 'a video stored last pass and fetched again shows twice')

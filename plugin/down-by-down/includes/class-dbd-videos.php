@@ -81,11 +81,9 @@ class DBD_Videos {
 			$want = array_intersect_key( $lists, array_flip( $need ) ); $pf = array();
 			foreach ( $want as $w => $pid ) { $pf[ 'pl:' . $w ] = array( 'https://www.youtube.com/feeds/videos.xml?playlist_id=' . $pid, 'pl', '', 'Game Recaps, Week ' . $w ); }
 			$pb = $pf ? DBD_News::fetch( $pf ) : array();
-			foreach ( $want as $w => $pid ) {
-				$b = $pb[ 'pl:' . $w ] ?? ''; if ( ! is_string( $b ) ) { continue; }
-				$got = self::highlights( (int) $w, $b, DBD_Data::week_games( (int) $w ) );
-				$pl['found'] += count( array_diff_key( $got, $have ) ); $have = $got + $have; $pl['weeks'][] = (int) $w;
-			}
+			list( $have, $found, $errs ) = self::apply_recaps( $want, $pb, $have );
+			$pl['found'] += $found; $pl['weeks'] = array_keys( $want );
+			if ( $errs ) { $pl['ok'] = false; $pl['err'] = implode( '; ', $errs ); }
 			$all[ $season ] = $have; update_option( self::OPT_HL, $all, false );
 		}
 		update_option( self::OPT_STATUS, array( 'at' => DBD_News::now(), 'secs' => round( microtime( true ) - $t0, 1 ), 'feeds' => $status, 'pl' => $pl ), false );
@@ -149,10 +147,25 @@ class DBD_Videos {
 		return $out;
 	}
 
+	/**
+	 * Each week's recap playlist body matched to its games and added to $have. $bodies: 'pl:{week}' => body or array( 'error' => … ).
+	 * Returns array( $have, how many new, the errors ) so a playlist that fails is reported, not skipped quietly (Greptile, PR #84).
+	 */
+	public static function apply_recaps( $want, $bodies, $have ) {
+		$found = 0; $errs = array();
+		foreach ( $want as $w => $pid ) {
+			$b = $bodies[ 'pl:' . $w ] ?? array( 'error' => 'not fetched' );
+			if ( ! is_string( $b ) ) { $errs[] = 'the Week ' . (int) $w . ' recap playlist didn\'t answer (' . ( $b['error'] ?? 'failed' ) . ')'; continue; }
+			$got = self::highlights( (int) $w, $b, DBD_Data::week_games( (int) $w ) );
+			$found += count( array_diff_key( $got, $have ) ); $have = $got + $have;
+		}
+		return array( $have, $found, $errs );
+	}
+
 	/** The teams a title names, by nickname or full name (whole words). */
 	private static function named( $title ) {
 		static $re = null;
-		if ( $re === null ) { $re = array(); foreach ( DBD_Data::teams() as $t => $x ) { $re[ $t ] = '/\b(' . preg_quote( (string) $x['nick'], '/' ) . '|' . preg_quote( (string) $x['name'], '/' ) . ')\b/u'; } }
+		if ( $re === null ) { $re = array(); foreach ( DBD_Data::teams() as $t => $x ) { $re[ $t ] = '/\b(' . preg_quote( (string) $x['nick'], '/' ) . '|' . preg_quote( (string) $x['name'], '/' ) . ')\b/iu'; } }  /* any case: "VIKINGS vs. PACKERS" (Greptile, PR #84) */
 		$o = array(); foreach ( $re as $t => $r ) { if ( preg_match( $r, $title ) ) { $o[] = $t; } }
 		return $o;
 	}

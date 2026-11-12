@@ -103,11 +103,12 @@ if ( $view === 'videos' ) {
 	try {
 		list( $stores, $status ) = DBD_Videos::collect( DBD_Videos::feeds(), $bodies, $prev );
 		$season = DBD_Data::season(); $lists = DBD_Videos::playlists( (string) @file_get_contents( "$vd/playlists.html" ), $season ); $hl = array();
-		foreach ( $lists as $w => $pid ) { $pf = "$vd/pl-$pid.xml"; if ( is_readable( $pf ) ) { $hl = DBD_Videos::highlights( (int) $w, (string) file_get_contents( $pf ), DBD_Data::week_games( (int) $w ) ) + $hl; } }
+		$pb = array(); foreach ( $lists as $w => $pid ) { $pf = "$vd/pl-$pid.xml"; $pb[ 'pl:' . $w ] = is_readable( $pf ) ? (string) file_get_contents( $pf ) : array( 'error' => 'HTTP 503' ); }  /* a playlist without a file stands for one that failed */
+		list( $hl, $found, $plerr ) = DBD_Videos::apply_recaps( $lists, $pb, array() );
 		$miss_all = DBD_Videos::weeks_missing( array() ); $miss_some = DBD_Videos::weeks_missing( $hl );
 	} catch ( Throwable $e ) { fwrite( STDERR, 'FATAL in videos: ' . $e->getMessage() . ' at ' . basename( $e->getFile() ) . ':' . $e->getLine() . "\n" ); exit( 1 ); }
 	$vout = getenv( 'DBD_HARNESS_VIDEOS' ) ?: $tmp . '/videos.json'; file_put_contents( $vout, json_encode( array( 'videos' => $stores, 'hl' => array( $season => $hl ) ) ) );
-	echo json_encode( array( 'videos' => array_filter( $stores, function ( $x ) { return $x['v']; } ), 'status' => array_filter( $status, function ( $x ) { return empty( $x['ok'] ) || ! empty( $x['n'] ); } ), 'playlists' => $lists, 'highlights' => $hl, 'missing_first' => $miss_all, 'missing_after' => $miss_some ), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . "\n";
+	echo json_encode( array( 'videos' => array_filter( $stores, function ( $x ) { return $x['v']; } ), 'status' => array_filter( $status, function ( $x ) { return empty( $x['ok'] ) || ! empty( $x['n'] ); } ), 'playlists' => $lists, 'highlights' => $hl, 'missing_first' => $miss_all, 'missing_after' => $miss_some, 'found' => $found, 'playlist_errors' => $plerr ), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . "\n";
 	exit( $warnings ? 1 : 0 );
 }
 
