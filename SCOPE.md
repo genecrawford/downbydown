@@ -2484,3 +2484,10 @@ The mocks use sample prices until the key exists:
 - A failed check keeps the last prices, with their real check time, and the admin page says why.
 
 Size: S to M. Videos (§51) and tickets (§52) can ship together as 2.12.0, with tickets switched off until the key is in.
+
+## 53. News and videos, easy to spot (mocked and built 2026-11-12, `mockup-v26/`, 2.13.0)
+
+Gene: the news and videos "get really lost when you scan the page". The mock made them stronger; his one change was that they stay after the stats, since they're the pages' secondary content.
+
+- **Offense and defense pages:** the one-line "Latest" under the title is gone. At the end of the page, after the explorer, a block: "{Team} news" with the newest headline in large type and the next two, and "Newest video" beside it, playing in place. On a phone the video goes under the news.
+- **Players page:** Videos and News come last, after the roster and movers. They get the page's biggest headings, a white panel and a team-color top rule. The first video is large with four beside it; each news column opens with its newest headline in large type. Two jump links under the title, "Videos 12" and "News 40", point down to them.
