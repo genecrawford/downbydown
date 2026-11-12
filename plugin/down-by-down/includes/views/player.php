@@ -6,6 +6,7 @@
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 $r = DBD_Router::$route; $row = $r['player']; $a = $row['team']; $t = DBD_Data::team( $a );
+$pid = (string) $row['id'];  /* his id, kept: the game log reuses $row for its row builder (2.14.0) */
 $p = DBD_Data::player_record( $a, $row['id'] );
 if ( ! $p ) { include DBD_PATH . 'includes/views/notfound.php'; return; }
 $season = DBD_Data::season(); $through = DBD_Data::through_week();
@@ -44,7 +45,7 @@ echo '<p class="dbd-kicker t-stagger-line t-stagger-line--1">' . esc_html( "$sea
 echo '<h1 class="t-stagger-line t-stagger-line--2 withmark">' . DBD_Marks::jersey( $a, $p['num'], 58 ) . '<span>' . esc_html( $first ) . ' <em>' . esc_html( $last ) . '</em></span></h1>';
 $bio = array_filter( array( $p['age'] ? 'Age ' . (int) $p['age'] : '', $p['ht'] ?: '', $p['wt'] ? (int) $p['wt'] . ' lb' : '', $p['col'] ?: '', $p['draft'] ?: '' ) );
 echo '<p class="dbd-sub t-stagger-line t-stagger-line--3">' . esc_html( implode( ' · ', $bio ) ) . '.' . ( $depth ? ' Listed <b>' . esc_html( $depth ) . '</b> on the ' . esc_html( $p['depth']['grp'] ) . ' depth chart.' : '' ) . ' Snap share <b>' . round( $snapAvg ) . '%</b> across ' . $ng . ' ' . ( $ng === 1 ? 'game' : 'games' ) . '.</p>';
-$hwk = $arch ? array() : DBD_Videos::player_weeks( $row['id'] );  /* his NFL highlights by week (SCOPE §54) */
+$hwk = $arch ? array() : DBD_Videos::player_weeks( $pid );  /* his NFL highlights by week (SCOPE §54) */
 echo '<div class="dbd-pills">' . ( $hwk ? DBD_Videos::mark( end( $hwk ), DBD_Router::week_label( (int) array_key_last( $hwk ) ) . ' highlights', 'dbd-pill' ) : '' ) . ( $arch ? '' : ( $p['inj'] ? '<span class="dbd-pill ' . $icls . '">Week ' . (int) $p['inj']['week'] . ' report · ' . esc_html( $p['inj']['what'] ) . ' · ' . esc_html( str_ireplace( ' in practice', '', $st ) ) . '</span>' : '<span class="dbd-pill good">No injury listing</span>' ) ) . ( $depth ? '<span class="dbd-pill">' . esc_html( $depth ) . '</span>' : '' ) . '<a class="dbd-pill" href="' . esc_url( $tpurl ) . '">' . esc_html( $t['nick'] ) . ' players</a></div>';
 $sug = DBD_Grades::suggest( $row, 3 ); $cmp = function ( $ids ) { return DBD_Router::url( array( 'compare' => implode( ',', $ids ) ) ); };
 /* the side card (SCOPE §35): the team with his snap share, two equal actions, then players like him as a list */
@@ -720,7 +721,7 @@ echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Te
 foreach ( $mates as $x ) { list( $m, $tc, $y, $td, $ep ) = $x; $href = DBD_Router::url( array( 'player' => $m['id'] ) );
 	echo '<tr class="dbd-trow" data-href="' . esc_url( $href ) . '"><td class="dbd-nm"><span class="dbd-nmi">' . DBD_Marks::player( $a, $m['num'], 30, $m['photo'] ?? null ) . '<a href="' . esc_url( $href ) . '">' . esc_html( $m['name'] ) . '</a><small>' . esc_html( $m['pos'] ) . '</small></span></td><td>' . (int) $tc . '</td><td data-v="' . (int) round( $y ) . '">' . (int) round( $y ) . ( (int) $td ? ' <small>· ' . (int) $td . ' TD</small>' : '' ) . '</td>' . $e( $ep ) . '</tr>'; }
 echo '</tbody></table></div></section>';
-echo '</div></section>' . ( $arch ? '' : DBD_News::player_block( $row['id'], $p['name'], $a ) ) . '</main>';  /* the news naming him and his highlights, after the stats (SCOPE §54) */
+echo '</div></section>' . ( $arch ? '' : DBD_News::player_block( $pid, $p['name'], $a ) ) . '</main>';  /* the news naming him and his highlights, after the stats (SCOPE §54) */
 
 /* ---- SCOPE §31: fold the methods notes, then put the short version under the tiles */
 $rest = ob_get_clean();
