@@ -154,9 +154,9 @@ jobs:
           grep -qF '<div class="ar-vid"><h2 class="ar-t">Newest video</h2><a class="dbd-play" href="https://www.youtube.com/watch?v=MINvid00001"' pages/team-MIN.html || { echo "the offense page's newest video is missing"; exit 1; }
           if grep -q 'youtube-nocookie.com/embed\|<iframe' pages/teamplayers-MIN.html; then echo "an embedded player on the page: the NFL and teams block them (2.13.1)"; exit 1; fi
           php tools/view_harness.php data game 2026_07_PIT_NO
-          grep -qF 'class="dbd-panel dbd-hl" id="highlights"' pages/game-2026_07_PIT_NO.html && grep -qF 'href="https://www.youtube.com/watch?v=HLpitno0001"' pages/game-2026_07_PIT_NO.html || { echo "the game has no highlights"; exit 1; }
+          grep -qF '<h2 class="ar-t">The highlights</h2>' pages/game-2026_07_PIT_NO.html && grep -qF 'href="https://www.youtube.com/watch?v=HLpitno0001"' pages/game-2026_07_PIT_NO.html || { echo "the game has no highlights"; exit 1; }
           php tools/view_harness.php data game 2026_07_SF_ATL
-          if grep -q 'dbd-hl' pages/game-2026_07_SF_ATL.html; then echo "a game without its recap shows highlights"; exit 1; fi
+          if grep -q 'The highlights</h2>\|Watch the highlights' pages/game-2026_07_SF_ATL.html; then echo "a game without its recap shows highlights"; exit 1; fi
           # SCOPE §54: a finished game's recap sits in the game box and at the end, not at the top
           php tools/view_harness.php data game 2026_07_NE_CHI
           f=pages/game-2026_07_NE_CHI.html
