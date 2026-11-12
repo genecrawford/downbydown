@@ -315,16 +315,40 @@ class DBD_News {
 			if ( count( $list ) > self::TOP ) { $o .= '<button type="button" class="nw-btn" onclick="this.parentNode.classList.add(\'open\');this.remove()">Show more</button>'; }
 			return $o . '</div>';
 		};
-		return '<section class="dbd-panel dbd-news" id="news"><div class="dbd-ph"><span class="dbd-lab"><b>' . esc_html( $nick ) . ' news</b> · the last 7 days, from the team, its fans and around the league</span></div>'
+		return '<section class="dbd-panel dbd-news dbd-feature" id="news"><div class="dbd-ph big"><h2>' . esc_html( $nick ) . ' news</h2><p>The last 7 days, from the team, its fans and around the league</p></div>'
 			. '<div class="nw-cols">' . $col( $src, $s['t'], 'No stories from ' . $src . ' this week.' ) . $col( 'Around the league', $s['l'], 'No ' . $nick . ' stories from the league feeds this week.' ) . '</div></section>';
 	}
 
-	/** One line under the offense and defense pages' description: the newest story from the team's own column. */
-	public static function latest( $t ) {
-		$s = self::team( $t ); if ( ! $s || ! $s['t'] ) { return ''; }
-		$o = $s['t'][0]; foreach ( $s['t'] as $x ) { if ( $x['ts'] > $o['ts'] ) { $o = $x; } }
-		$T = DBD_Data::team( $t );
-		return '<p class="dbd-latest">Latest: <a href="' . esc_url( $o['u'] ) . '" target="_blank" rel="nofollow noopener">' . esc_html( $o['h'] ) . '</a> <span>' . esc_html( $o['s'] ) . ( ! empty( $o['x'] ) ? ' · Subscriber' : '' ) . ' · ' . esc_html( self::age( $o['ts'] ) ) . '</span> · '
-			. '<a href="' . esc_url( DBD_Router::url( array( 'view' => 'players', 'team' => $t ) ) ) . '#news">All ' . esc_html( $T['nick'] ?? $t ) . ' news</a></p>';
+	/** The team's newest stories from its own column, newest first. */
+	public static function newest( $t, $n = 3 ) {
+		$s = self::team( $t ); if ( ! $s || ! $s['t'] ) { return array(); }
+		$l = $s['t']; usort( $l, function ( $a, $b ) { return (int) $b['ts'] <=> (int) $a['ts']; } );
+		return array_slice( $l, 0, $n );
+	}
+
+	/**
+	 * At the end of the offense and defense pages, after the explorer (2.13.0: news and video are the page's secondary content, so they come
+	 * after the stats, made easy to spot): the newest headline large, the next two, and the newest video beside them. Either half alone if
+	 * the other has nothing; nothing at all with neither.
+	 */
+	public static function around( $t ) {
+		$news = self::newest( $t, 3 ); $vids = class_exists( 'DBD_Videos' ) ? DBD_Videos::team( $t ) : array();
+		if ( ! $news && ! $vids ) { return ''; }
+		$nick = DBD_Data::team( $t )['nick'] ?? $t; $pp = DBD_Router::url( array( 'view' => 'players', 'team' => $t ) );
+		$meta = function ( $o ) { return esc_html( $o['s'] ) . ( ! empty( $o['x'] ) ? ' · Subscriber' : '' ) . ' · ' . esc_html( self::age( $o['ts'] ) ); };
+		$o = '<section class="dbd-around' . ( $news && $vids ? '' : ' one' ) . '" id="around">';
+		if ( $news ) {
+			$lead = array_shift( $news );
+			$o .= '<div class="ar-news"><h2 class="ar-t">' . esc_html( $nick ) . ' news</h2>'
+				. '<a class="ar-lead" href="' . esc_url( $lead['u'] ) . '" target="_blank" rel="nofollow noopener">' . esc_html( $lead['h'] ) . '</a><span class="ar-m">' . $meta( $lead ) . '</span>';
+			if ( $news ) { $o .= '<ul class="ar-more">'; foreach ( $news as $x ) { $o .= '<li><a href="' . esc_url( $x['u'] ) . '" target="_blank" rel="nofollow noopener">' . esc_html( $x['h'] ) . '</a><span class="ar-m">' . $meta( $x ) . '</span></li>'; } $o .= '</ul>'; }
+			$o .= '<a class="ar-all" href="' . esc_url( $pp ) . '#news">All ' . esc_html( $nick ) . ' news</a></div>';
+		}
+		if ( $vids ) {
+			$v = $vids[0];
+			$o .= '<div class="ar-vid"><h2 class="ar-t">Newest video</h2>' . DBD_Videos::play( $v['v'], $v['h'] ) . '<h3>' . esc_html( $v['h'] ) . '</h3>'
+				. '<span class="ar-m">' . esc_html( ( $v['s'] === 'nfl' ? 'NFL' : $nick ) . ' · ' . DBD_Videos::age( $v['ts'] ) ) . ' · <a href="' . esc_url( $pp ) . '#videos">All ' . esc_html( $nick ) . ' videos</a></span></div>';
+		}
+		return $o . '</section>';
 	}
 }

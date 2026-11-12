@@ -15,7 +15,11 @@ echo '<main class="dbd-content" style="--dbd-team:' . esc_attr( DBD_Marks::accen
 echo '<div class="dbd-ttitle"><div class="t-stagger">';
 echo '<p class="dbd-kicker t-stagger-line t-stagger-line--1">' . esc_html( $through ? "$season season · through week $through" : "$season season" ) . '</p>';
 echo '<h1 class="t-stagger-line t-stagger-line--2 withmark">' . DBD_Marks::pennant( $team, 48 ) . '<span><em>' . esc_html( $t['nick'] ) . '</em> players</span></h1>';
-echo '<p class="dbd-sub t-stagger-line t-stagger-line--3">The ' . esc_html( $t['nick'] ) . '\' lineup from the depth chart, every skill player\'s season, and who moved this week. <a href="' . esc_url( $turl ) . '">Open the ' . esc_html( $t['nick'] ) . ' offense explorer</a>.</p></div>';
+echo '<p class="dbd-sub t-stagger-line t-stagger-line--3">The ' . esc_html( $t['nick'] ) . '\' lineup from the depth chart, every skill player\'s season, and who moved this week. <a href="' . esc_url( $turl ) . '">Open the ' . esc_html( $t['nick'] ) . ' offense explorer</a>.</p>';
+/* jump links down to the news and videos, which sit at the end of the page after the stats (2.13.0) */
+$VS = DBD_Videos::team( $team ); $NS = DBD_News::team( $team ); $nn = $NS ? count( $NS['t'] ) + count( $NS['l'] ) : 0;
+if ( $VS || $nn ) { echo '<nav class="dbd-jump t-stagger-line t-stagger-line--3" aria-label="Further down this page">' . ( $VS ? '<a href="#videos">Videos <b>' . count( $VS ) . '</b></a>' : '' ) . ( $nn ? '<a href="#news">News <b>' . (int) $nn . '</b></a>' : '' ) . '</nav>'; }
+echo '</div>';
 echo '<a class="dbd-badge" href="' . esc_url( $purl ) . '">All ' . (int) $all . ' players</a></div>';
 /* this season's record, broken down (SCOPE §33) */
 $RS = DBD_Data::record_split( $team );
@@ -37,12 +41,11 @@ if ( $luO || $luD ) {
 	echo '<p class="dbd-note">Starters from the ' . esc_html( $t['nick'] ) . '\' current depth chart (nflverse, from ESPN). Hover a player for his season; skill players open their page. The nickel back, the extra defensive back most teams use against three receivers, is drawn lighter.</p></section>';
 }
 
-/* ---- team news (SCOPE §49), after the lineup and ahead of the roster, so it shows before a season has player data (Greptile, PR #72) */
-echo DBD_Videos::panel( $team );  /* team videos (SCOPE §51), above the news */
-echo DBD_News::panel( $team );
+/* team videos and news (SCOPE §49, §51) come last, after the stats (2.13.0); before a season has player data they still show (Greptile, PR #72) */
+$tail = DBD_Videos::panel( $team ) . DBD_News::panel( $team );
 
 /* ---- the roster, grouped by position */
-if ( ! $pl ) { echo '<div class="dbd-empty"><h2>No player data yet</h2><p>Player pages fill in with the next nightly data build.</p></div></main>'; return; }
+if ( ! $pl ) { echo '<div class="dbd-empty"><h2>No player data yet</h2><p>Player pages fill in with the next nightly data build.</p></div>' . $tail . '</main>'; return; }
 $S = function ( $p, $k ) { $s = 0; foreach ( $p['weeks'] ?? array() as $w ) { $s += (float) ( $w[ $k ] ?? 0 ); } return $s; };
 $snapAvg = function ( $p ) { return ! empty( $p['snaps'] ) ? (int) round( array_sum( $p['snaps'] ) / count( $p['snaps'] ) ) : 0; };
 $groups = array( 'QB' => 'Quarterbacks', 'RB' => 'Running backs', 'WR' => 'Wide receivers', 'TE' => 'Tight ends' );
@@ -90,4 +93,5 @@ if ( $MV && ! empty( $MV['week'] ) ) {
 	echo $li ? '<ul class="dbd-mvlist">' . $li . '</ul>' : '<p class="dbd-wp-say">No ' . esc_html( $t['nick'] ) . ' player moved enough in Week ' . (int) $MV['week'] . ' to make the league\'s movers. <a href="' . esc_url( $purl ) . '">See every team\'s movers</a>.</p>';
 	echo '</section>';
 }
+echo $tail;
 echo '</main>';

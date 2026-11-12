@@ -12,7 +12,6 @@ echo '<h1 class="t-stagger-line t-stagger-line--2 withmark">' . DBD_Marks::penna
 $town = esc_html( preg_replace( '/\s+\S+$/', '', $t['name'] ) );
 if ( $def ) { echo '<p class="dbd-sub t-stagger-line t-stagger-line--3">Every snap the ' . esc_html( $t['nick'] ) . ' defended, what it cost them and how they got there: the league ranks the player pages quote, where offenses find room, how this defense plays, and who plays in it.</p>'; }
 else { echo '<p class="dbd-sub t-stagger-line t-stagger-line--3">Every ' . $town . ' offensive snap so far, drawn on the field. Pick games and filters, then hover or click any play to see what happened.' . ( DBD_Data::has_players() ? ' Or start from <a href="' . esc_url( DBD_Router::url( array( 'view' => 'players', 'team' => $a ) ) ) . '">the ' . esc_html( $t['nick'] ) . ' players</a>.' : '' ) . '</p>'; }
-echo DBD_News::latest( $a );  /* the team's newest story (SCOPE §49) */
 /* SCOPE §39: the switch is two links, so each side is its own address */
 echo '<nav class="dbd-sideswitch" aria-label="Offense or defense"><a href="' . esc_url( DBD_Router::url( array( 'team' => $a ) ) ) . '"' . ( $def ? '' : ' aria-current="page"' ) . '>Offense</a><a href="' . esc_url( DBD_Router::url( array( 'team' => $a, 'side' => 'def' ) ) ) . '"' . ( $def ? ' aria-current="page"' : '' ) . '>Defense</a></nav></div>';
 $D = $def ? DBD_Data::defense( $a ) : null;
@@ -27,4 +26,5 @@ if ( ! $through ) {
 } else {
 	echo '<div id="dbd-explorer" data-team="' . esc_attr( $a ) . '">' . DBD_Marks::skel( 'explorer', 'Loading every snap' ) . '</div>';
 }
+echo DBD_News::around( $a );  /* news and the newest video, after the explorer: secondary to the stats (2.13.0) */
 echo '</main>';
