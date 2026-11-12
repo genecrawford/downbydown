@@ -189,7 +189,7 @@ class DBD_News {
 		$r = array(); foreach ( DBD_Data::teams() as $t => $x ) { $r[ $t ] = '/' . self::COLLEGE . '\b(' . preg_quote( $x['nick'], '/' ) . '|' . preg_quote( $x['name'], '/' ) . ')\b/u'; }
 		return $r;
 	}
-	private static function names_team( $t, $title ) { $re = self::nick_re(); return isset( $re[ $t ] ) && preg_match( $re[ $t ], $title ); }
+	public static function names_team( $t, $title ) { $re = self::nick_re(); return isset( $re[ $t ] ) && preg_match( $re[ $t ], $title ); }
 
 	/**
 	 * Match every feed's stories to teams. $bodies: key => body or array( 'error' => … ). $prev: team => last stored lists (a failed feed's stories
@@ -327,28 +327,83 @@ class DBD_News {
 	}
 
 	/**
-	 * At the end of the offense and defense pages, after the explorer (2.13.0: news and video are the page's secondary content, so they come
-	 * after the stats, made easy to spot): the newest headline large, the next two, and the newest video beside them. Either half alone if
-	 * the other has nothing; nothing at all with neither.
+	 * The news and video block at the end of a page (2.13.0, SCOPE §53-54): a news half (a lead story large, up to two more, a link to all) and
+	 * a video half. Either half alone when the other is empty; nothing with neither. $vid: array( item, heading, meta, link url, link text ) or null.
 	 */
-	public static function around( $t ) {
-		$news = self::newest( $t, 3 ); $vids = class_exists( 'DBD_Videos' ) ? DBD_Videos::team( $t ) : array();
-		if ( ! $news && ! $vids ) { return ''; }
-		$nick = DBD_Data::team( $t )['nick'] ?? $t; $pp = DBD_Router::url( array( 'view' => 'players', 'team' => $t ) );
+	public static function block( $id, $news_h, $news, $all_url, $all_text, $vid ) {
+		if ( ! $news && ! $vid ) { return ''; }
 		$meta = function ( $o ) { return esc_html( $o['s'] ) . ( ! empty( $o['x'] ) ? ' · Subscriber' : '' ) . ' · ' . esc_html( self::age( $o['ts'] ) ); };
-		$o = '<section class="dbd-around' . ( $news && $vids ? '' : ' one' ) . '" id="around">';
+		$o = '<section class="dbd-around' . ( $news && $vid ? '' : ' one' ) . '" id="' . esc_attr( $id ) . '">';
 		if ( $news ) {
 			$lead = array_shift( $news );
-			$o .= '<div class="ar-news"><h2 class="ar-t">' . esc_html( $nick ) . ' news</h2>'
+			$o .= '<div class="ar-news"><h2 class="ar-t">' . esc_html( $news_h ) . '</h2>'
 				. '<a class="ar-lead" href="' . esc_url( $lead['u'] ) . '" target="_blank" rel="nofollow noopener">' . esc_html( $lead['h'] ) . '</a><span class="ar-m">' . $meta( $lead ) . '</span>';
 			if ( $news ) { $o .= '<ul class="ar-more">'; foreach ( $news as $x ) { $o .= '<li><a href="' . esc_url( $x['u'] ) . '" target="_blank" rel="nofollow noopener">' . esc_html( $x['h'] ) . '</a><span class="ar-m">' . $meta( $x ) . '</span></li>'; } $o .= '</ul>'; }
-			$o .= '<a class="ar-all" href="' . esc_url( $pp ) . '#news">All ' . esc_html( $nick ) . ' news</a></div>';
+			$o .= $all_url !== '' ? '<a class="ar-all" href="' . esc_url( $all_url ) . '">' . esc_html( $all_text ) . '</a></div>' : '</div>';
 		}
-		if ( $vids ) {
-			$v = $vids[0];
-			$o .= '<div class="ar-vid"><h2 class="ar-t">Newest video</h2>' . DBD_Videos::play( $v['v'], $v['h'], true ) . '<h3>' . esc_html( $v['h'] ) . '</h3>'
-				. '<span class="ar-m">' . esc_html( ( $v['s'] === 'nfl' ? 'NFL' : $nick ) . ' · ' . DBD_Videos::age( $v['ts'] ) ) . ' · <a href="' . esc_url( $pp ) . '#videos">All ' . esc_html( $nick ) . ' videos</a></span></div>';
+		if ( $vid ) {
+			list( $it, $vh, $vm, $vu, $vt ) = $vid;
+			$o .= '<div class="ar-vid"><h2 class="ar-t">' . esc_html( $vh ) . '</h2>' . DBD_Videos::play( $it['v'], (string) $it['h'], true ) . '<h3>' . esc_html( (string) $it['h'] ) . '</h3>'
+				. '<span class="ar-m">' . esc_html( $vm ) . ( $vu !== '' ? ' · <a href="' . esc_url( $vu ) . '">' . esc_html( $vt ) . '</a>' : '' ) . '</span></div>';
 		}
 		return $o . '</section>';
+	}
+
+	/** Every stored story about a team (its own column and the league's), newest first, without repeats. */
+	private static function all_of( $t ) {
+		$s = self::team( $t ); if ( ! $s ) { return array(); }
+		$l = array_merge( (array) $s['t'], (array) $s['l'] ); usort( $l, function ( $a, $b ) { return (int) $b['ts'] <=> (int) $a['ts']; } );
+		$seen = array(); return array_values( array_filter( $l, function ( $o ) use ( &$seen ) { if ( isset( $seen[ $o['u'] ] ) ) { return false; } $seen[ $o['u'] ] = 1; return true; } ) );
+	}
+
+	/** The newest stories naming both teams of a game (from either team's stored news), up to $n. */
+	public static function both( $a, $b, $n = 3 ) {
+		$out = array(); $seen = array();
+		foreach ( array_merge( self::all_of( $a ), self::all_of( $b ) ) as $o ) {
+			if ( isset( $seen[ $o['u'] ] ) || ! self::names_team( $a, $o['h'] ) || ! self::names_team( $b, $o['h'] ) ) { continue; }
+			$seen[ $o['u'] ] = 1; $out[] = $o;
+		}
+		usort( $out, function ( $x, $y ) { return (int) $y['ts'] <=> (int) $x['ts']; } );
+		return array_slice( $out, 0, $n );
+	}
+
+	/** The newest stories that name a player (the news tags them by id), from his team's stored news, up to $n. */
+	public static function about( $pid, $team, $n = 3 ) {
+		$out = array();
+		foreach ( self::all_of( $team ) as $o ) { foreach ( (array) ( $o['w'] ?? array() ) as $w ) { if ( ( $w[0] ?? '' ) === $pid ) { $out[] = $o; break; } } }
+		return array_slice( $out, 0, $n );
+	}
+
+	/** The team's newest stories from its own column, newest first. */
+	public static function newest( $t, $n = 3 ) {
+		$s = self::team( $t ); if ( ! $s || ! $s['t'] ) { return array(); }
+		$l = $s['t']; usort( $l, function ( $a, $b ) { return (int) $b['ts'] <=> (int) $a['ts']; } );
+		return array_slice( $l, 0, $n );
+	}
+
+	/**
+	 * At the end of the offense and defense pages, after the explorer: the team's newest stories and its newest video. On the defense page the
+	 * video is the NFL's "{Team}' best defensive plays" when one is from the last 14 days (2.14.0).
+	 */
+	public static function around( $t, $def = false ) {
+		$nick = DBD_Data::team( $t )['nick'] ?? $t; $pp = DBD_Router::url( array( 'view' => 'players', 'team' => $t ) );
+		$dv = $def ? DBD_Videos::defense( $t ) : null; $vids = $dv ? array() : ( class_exists( 'DBD_Videos' ) ? DBD_Videos::team( $t ) : array() );
+		$vid = $dv ? array( $dv, 'Defense highlights', 'NFL on YouTube', '', '' )
+			: ( $vids ? array( $vids[0], 'Newest video', ( $vids[0]['s'] === 'nfl' ? 'NFL' : $nick ) . ' · ' . DBD_Videos::age( $vids[0]['ts'] ), $pp . '#videos', 'All ' . $nick . ' videos' ) : null );
+		return self::block( 'around', $nick . ' news', self::newest( $t, 3 ), $pp . '#news', 'All ' . $nick . ' news', $vid );
+	}
+
+	/** At the end of a game's page: the news naming both teams, and the NFL's preview (before) or recap (after). */
+	public static function game_block( $g ) {
+		$f = DBD_Router::is_final( $g ); $gv = DBD_Videos::game_video( $g );
+		$vid = $gv ? array( $gv[0], $gv[1] === 'recap' ? 'The highlights' : 'The NFL preview', 'NFL on YouTube', '', '' ) : null;
+		return self::block( 'around', $f ? 'After the game' : 'Before the game', self::both( $g['away'], $g['home'], 3 ), '', '', $vid );
+	}
+
+	/** At the end of a player's page: the stories naming him, and his newest highlights. */
+	public static function player_block( $pid, $name, $team ) {
+		$hw = DBD_Videos::player_weeks( $pid ); $last = $hw ? end( $hw ) : null; $lw = $hw ? array_key_last( $hw ) : 0;
+		$vid = $last ? array( $last, 'His highlights', DBD_Router::week_label( (int) $lw ) . ' · NFL on YouTube', '', '' ) : null;
+		return self::block( 'around', $name . ' in the news', self::about( $pid, $team, 3 ), '', '', $vid );
 	}
 }

@@ -462,6 +462,8 @@ function dbd_tab_news() {
 			if ( $pl && empty( $pl['ok'] ) ) { echo '<br><span class="dbd-red">' . esc_html( 'The last fetch couldn’t find them: ' . $pl['err'] . '.' ) . '</span>'; }
 			elseif ( ! empty( $pl['found'] ) ) { echo esc_html( '; the last fetch found ' . (int) $pl['found'] . '.' ); }
 			?><p class="description">From the NFL's weekly "Game Recaps" playlists, which its YouTube page lists for about the last five weeks; earlier weeks may have none.</p></td></tr>
+			<?php $sn = DBD_Data::season(); $pvC = count( (array) ( ( (array) get_option( DBD_Videos::OPT_PV, array() ) )[ $sn ] ?? array() ) ); $phS = (array) ( ( (array) get_option( DBD_Videos::OPT_PH, array() ) )[ $sn ] ?? array() ); $phC = array_sum( array_map( 'count', $phS ) ); $dhC = array_sum( array_map( 'count', (array) ( ( (array) get_option( DBD_Videos::OPT_DH, array() ) )[ $sn ] ?? array() ) ) ); ?>
+			<tr><td>Previews and players</td><td><?php echo esc_html( $pvC . ' game previews, ' . $phC . ' player highlight videos (' . count( $phS ) . ' players) and ' . $dhC . ' team defense videos this season' . ( ! empty( $pl['pv'] ) || ! empty( $pl['ph'] ) ? '; the last fetch found ' . (int) ( $pl['pv'] ?? 0 ) . ' previews and ' . (int) ( $pl['ph'] ?? 0 ) . ' player videos' : '' ) . '.' ); ?><p class="description">From the NFL's weekly "Game Previews" and "Player Highlights" playlists (SCOPE §54).</p></td></tr>
 		</tbody></table>
 		<table class="form-table" role="presentation" style="border-top:1px solid #f0f0f1">
 			<tr><th scope="row">Show videos</th><td><label><input type="checkbox" name="<?php echo esc_attr( DBD_Videos::OPT_ON ); ?>" value="1" <?php checked( DBD_Videos::on() ); ?>> Show each team's videos on its players page and each finished game's highlights</label>

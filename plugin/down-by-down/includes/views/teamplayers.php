@@ -18,7 +18,7 @@ echo '<h1 class="t-stagger-line t-stagger-line--2 withmark">' . DBD_Marks::penna
 echo '<p class="dbd-sub t-stagger-line t-stagger-line--3">The ' . esc_html( $t['nick'] ) . '\' lineup from the depth chart, every skill player\'s season, and who moved this week. <a href="' . esc_url( $turl ) . '">Open the ' . esc_html( $t['nick'] ) . ' offense explorer</a>.</p>';
 /* jump links down to the news and videos, which sit at the end of the page after the stats (2.13.0) */
 $VS = DBD_Videos::team( $team ); $NS = DBD_News::team( $team ); $nn = $NS ? count( $NS['t'] ) + count( $NS['l'] ) : 0;
-if ( $VS || $nn ) { echo '<nav class="dbd-jump t-stagger-line t-stagger-line--3" aria-label="Further down this page">' . ( $VS ? '<a href="#videos">Videos <b>' . count( $VS ) . '</b></a>' : '' ) . ( $nn ? '<a href="#news">News <b>' . (int) $nn . '</b></a>' : '' ) . '</nav>'; }
+if ( $VS || $nn ) { echo '<nav class="dbd-hop t-stagger-line t-stagger-line--3" aria-label="Further down this page">' . ( $VS ? '<a href="#videos">Videos <b>' . count( $VS ) . '</b></a>' : '' ) . ( $nn ? '<a href="#news">News <b>' . (int) $nn . '</b></a>' : '' ) . '</nav>'; }
 echo '</div>';
 echo '<a class="dbd-badge" href="' . esc_url( $purl ) . '">All ' . (int) $all . ' players</a></div>';
 /* this season's record, broken down (SCOPE §33) */
@@ -61,7 +61,7 @@ foreach ( $groups as $gk => $gl ) {
 		$slot = ! empty( $p['depth'] ) ? $p['depth']['slot'] . $p['depth']['rank'] : ''; $st = $p['inj']['status'] ?? '';
 		$stc = preg_match( '/out|did not/i', $st ) ? ' o' : ( preg_match( '/limited|questionable|doubtful/i', $st ) ? ' q' : '' );
 		$href = DBD_Router::url( array( 'player' => $p['id'] ) );
-		$body .= '<tr class="dbd-trow" data-href="' . esc_url( $href ) . '"><td class="dbd-nm"><span class="dbd-nmi">' . DBD_Marks::player( $team, $p['num'] ?? null, 30, $p['photo'] ?? null ) . '<a href="' . esc_url( $href ) . '">' . esc_html( $p['name'] ) . '</a>' . ( $slot ? '<small>' . esc_html( $slot ) . '</small>' : '' ) . '</span></td>'
+		$body .= '<tr class="dbd-trow" data-href="' . esc_url( $href ) . '"><td class="dbd-nm"><span class="dbd-nmi">' . DBD_Marks::player( $team, $p['num'] ?? null, 30, $p['photo'] ?? null ) . '<a href="' . esc_url( $href ) . '">' . esc_html( $p['name'] ) . '</a>' . ( $slot ? '<span class="dbd-slot' . ( (int) $p['depth']['rank'] === 1 ? ' s1' : '' ) . '" title="' . esc_attr( (int) $p['depth']['rank'] === 1 ? 'First on the ' . $t['nick'] . ' depth chart at ' . $p['depth']['slot'] . ': the starter' : DBD_Grades::ordinal( (int) $p['depth']['rank'] ) . ' on the ' . $t['nick'] . ' depth chart at ' . $p['depth']['slot'] ) . '">' . esc_html( $slot ) . '</span>' : '' )  /* the depth slot as a chip: the starter's dark, a backup's light (2.14.0) */ . '</span></td>'
 			. '<td>' . $snapAvg( $p ) . '%</td><td>' . (int) $use . '</td><td>' . ( $gk === 'QB' ? '' : (int) $S( $p, 'receptions' ) ) . '</td><td>' . ( (int) $S( $p, 'carries' ) ?: '' ) . '</td><td>' . (int) round( $yds ) . '</td><td>' . ( (int) $td ?: '' ) . '</td>'
 			. '<td class="' . ( $ep >= 0 ? 'pos' : 'neg' ) . '">' . ( $ep > 0 ? '+' : '' ) . number_format( $ep, 1 ) . '</td><td>' . ( $st ? '<span class="dbd-st' . $stc . '">' . esc_html( $st . ( ! empty( $p['inj']['what'] ) ? ' · ' . $p['inj']['what'] : '' ) ) . '</span>' : '' ) . '</td></tr>';
 	}

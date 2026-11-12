@@ -225,7 +225,9 @@ class DBD_Email {
 		if ( stripos( $c, '<p' ) === false ) { $c = wpautop( $c ); }
 		$et = new DateTimeZone( 'America/New_York' ); $t = strtotime( $p->post_date_gmt . ' UTC' );
 		$date = $t && $t > 0 ? wp_date( 'l, F j', $t, $et ) : '';
-		$doc = self::compose( html_entity_decode( $p->post_title, ENT_QUOTES, 'UTF-8' ), $c, get_permalink( $p ), (string) get_the_post_thumbnail_url( $p, 'full' ), $date, (int) get_post_meta( $p->ID, DBD_Post::M_WEEK, true ) );
+		$wk = (int) get_post_meta( $p->ID, DBD_Post::M_WEEK, true ); $hl = array();  /* each game's recap, keyed by its address on the site (SCOPE §54) */
+		foreach ( DBD_Data::week_games( $wk ) as $g ) { $r = DBD_Videos::recap( $g ); if ( $r ) { $hl[ DBD_Router::url( array( 'game' => $g['id'] ) ) ] = DBD_Videos::url( $r ); } }
+		$doc = self::compose( html_entity_decode( $p->post_title, ENT_QUOTES, 'UTF-8' ), $c, get_permalink( $p ), (string) get_the_post_thumbnail_url( $p, 'full' ), $date, $wk, null, $hl );
 		/* an archived season's post (a test of an old week): every app link in the finished email, the added section links and the
 		   week button included, opens that season's pages (Greptile, PR #75) */
 		$s = (int) get_post_meta( $p->ID, DBD_Post::M_SEASON, true );
@@ -247,7 +249,11 @@ class DBD_Email {
 	private static function s( $css ) { return ' style="' . $css . '"'; }
 
 	/** The post's HTML with every style inline and its tables rebuilt for email: what Brevo sends. */
-	public static function body( $c, $n, &$week ) {
+	/**
+	 * $hl: a game's address on the site => its NFL recap on YouTube. Each score with one gets a "Highlights" link (SCOPE §54); a game whose recap
+	 * isn't posted when the email goes (Monday night's, sometimes) has none.
+	 */
+	public static function body( $c, $n, &$week, $hl = array() ) {
 		$INK = self::INK; $MUT = self::MUT; $LINE = self::LINE; $SANS = self::SANS;
 		$week = preg_match( '#<p class="full">.*?href="([^"]+)"#s', $c, $m ) ? html_entity_decode( $m[1], ENT_QUOTES ) : '';
 		$c = (string) preg_replace( '#<p class="full">.*?</p>#s', '', $c );
@@ -263,11 +269,13 @@ class DBD_Email {
 
 		$table = '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"' . self::s( "border-collapse:collapse;margin:0 0 14px;border-bottom:1px solid $LINE" ) . '>';
 		/* the scores: one cell a game, the note under the score */
-		$c = (string) preg_replace_callback( '#<table class="sc">.*?</table>#s', function ( $m ) use ( $table, $INK, $MUT, $LINE, $SANS ) {
+		$c = (string) preg_replace_callback( '#<table class="sc">.*?</table>#s', function ( $m ) use ( $table, $INK, $MUT, $LINE, $SANS, $hl ) {
 			preg_match_all( '#<tr>\s*<td>(.*?)</td>\s*<td class="tg">(.*?)</td>\s*</tr>#s', $m[0], $rows, PREG_SET_ORDER ); $out = '';
 			foreach ( $rows as $r ) {
 				$a = (string) preg_replace( '#<img[^>]*src="([^"]*)"[^>]*>#', '<img src="$1" width="22" height="22" alt=""' . self::s( 'vertical-align:-6px;margin-right:8px;border:0' ) . '>', $r[1] );
-				$a = str_replace( '<a ', '<a' . self::s( "color:$INK;text-decoration:none;font:400 15px/1.4 $SANS" ) . ' ', $a );
+				$hu = preg_match( '#href="([^"]+)"#', $r[1], $hm ) ? ( $hl[ html_entity_decode( $hm[1], ENT_QUOTES ) ] ?? '' ) : '';
+				$a = str_replace( '<a ', '<a' . self::s( "color:$INK;text-decoration:none;font:400 15px/1.4 $SANS" ) . ' ', $a )
+					. ( $hu !== '' ? ' <a href="' . esc_url( $hu ) . '"' . self::s( 'margin-left:6px;font:600 13px/1.4 ' . $SANS . ';color:' . self::REDINK . ';text-decoration:underline' ) . '>Highlights</a>' : '' );
 				$out .= '<tr><td' . self::s( "padding:9px 0;border-top:1px solid $LINE" ) . '>' . $a . ( trim( $r[2] ) !== '' ? '<div' . self::s( "margin:2px 0 0 30px;font:13px/1.4 $SANS;color:$MUT" ) . '>' . $r[2] . '</div>' : '' ) . '</td></tr>';
 			}
 			return $table . $out . '</table>';
@@ -303,9 +311,9 @@ class DBD_Email {
 	}
 
 	/** The whole email. $n is the week, $card the share card, $date the day it goes. Returns array( subject, pre, html ). */
-	public static function compose( $title, $content, $link, $card, $date, $n, $o = null ) {
+	public static function compose( $title, $content, $link, $card, $date, $n, $o = null, $hl = array() ) {
 		$o = $o ?: self::opts(); $INK = self::INK; $MUT = self::MUT; $SANS = self::SANS; $e = 'esc_html';
-		$week = ''; $body = self::body( (string) $content, (int) $n, $week );
+		$week = ''; $body = self::body( (string) $content, (int) $n, $week, (array) $hl );
 		$week = $week !== '' ? $week : DBD_Router::url( array( 'view' => 'week', 'week' => (int) $n ) );
 		$open = preg_match( '#<p class="open">(.*?)</p>#s', (string) $content, $m ) ? trim( html_entity_decode( wp_strip_all_tags( $m[1] ), ENT_QUOTES, 'UTF-8' ) ) : '';
 		$pre = preg_match( '/^(.+?[.!?])(\s|$)/u', $open, $m ) ? $m[1] : $open;
