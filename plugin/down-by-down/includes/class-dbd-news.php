@@ -319,13 +319,6 @@ class DBD_News {
 			. '<div class="nw-cols">' . $col( $src, $s['t'], 'No stories from ' . $src . ' this week.' ) . $col( 'Around the league', $s['l'], 'No ' . $nick . ' stories from the league feeds this week.' ) . '</div></section>';
 	}
 
-	/** The team's newest stories from its own column, newest first. */
-	public static function newest( $t, $n = 3 ) {
-		$s = self::team( $t ); if ( ! $s || ! $s['t'] ) { return array(); }
-		$l = $s['t']; usort( $l, function ( $a, $b ) { return (int) $b['ts'] <=> (int) $a['ts']; } );
-		return array_slice( $l, 0, $n );
-	}
-
 	/**
 	 * The news and video block at the end of a page (2.13.0, SCOPE §53-54): a news half (a lead story large, up to two more, a link to all) and
 	 * a video half. Either half alone when the other is empty; nothing with neither. $vid: array( item, heading, meta, link url, link text ) or null.
