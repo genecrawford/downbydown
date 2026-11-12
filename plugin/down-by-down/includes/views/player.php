@@ -541,7 +541,7 @@ foreach ( $views as $name => $vd ) {
 	list( $cols, $row, $foot ) = $vd;
 	$tiers = array( null, null ); if ( $hasDef ) { $tiers[] = 'dbd-t3'; }
 	$heads = '';
-	foreach ( explode( '|', $cols ) as $c ) { $t = null; if ( preg_match( '/\^(\d)$/', $c, $m ) ) { $t = 'dbd-t' . $m[1]; $c = substr( $c, 0, -2 ); } $tiers[] = $t; $heads .= '<th>' . esc_html( $c ) . '</th>'; }
+	foreach ( explode( '|', $cols ) as $c ) { $tier = null; if ( preg_match( '/\^(\d)$/', $c, $m ) ) { $tier = 'dbd-t' . $m[1]; $c = substr( $c, 0, -2 ); } $tiers[] = $tier;  /* $tier, not $t: $t is his team, used below for a traded player's note (2.12.1) */ $heads .= '<th>' . esc_html( $c ) . '</th>'; }
 	$body = ''; $gameRow = function ( $w ) use ( $cell, $res, $hasDef, $dchipShort, $dchip, $oppOf, $row ) { $wk = (int) $w['week']; $opp = $w['opponent_team'] ?? $oppOf( $wk, $w['team'] ?? null ); return '<tr>' . $cell( $wk ) . $cell( $res( $wk, $w['team'] ?? null ) . ( $hasDef ? '<span class="dbd-dfold">' . $dchipShort( $opp ) . '</span>' : '' ), 'res' ) . ( $hasDef ? $dchip( $opp ) : '' ) . $row( $w, $wk ) . '</tr>'; };
 	$gxMore = 0;
 	if ( $gxWeeks ) {

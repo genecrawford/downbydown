@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.12.0
+Stable tag: 2.12.1
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,9 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.12.1 =
+* A player who changed teams mid-season (Kirk Cousins, back with the Vikings) got "There has been a critical error" on his page. The game log's column loop reused the variable holding his team, and the traded-player note under the log then read it. The bug dated from 1.3.6 and only showed once a traded player reached that note. CI now renders his page.
 
 = 2.12.0 =
 * Team videos (SCOPE §51). Each team's players page shows its newest videos above the news: the last 14 days from the team's official YouTube channel and from the NFL's channel when a title names the team, four in a row with "Show more" opening up to 12. Shorts are left out. Only the thumbnails load with the page; a click plays the video in place with YouTube's privacy-enhanced player.
