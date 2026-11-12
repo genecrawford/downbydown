@@ -139,7 +139,7 @@ jobs:
           PY
           export DBD_HARNESS_HTML=pages DBD_HARNESS_MEDIA=1
           php tools/view_harness.php data teamplayers MIN
-          for m in 'class="dbd-panel dbd-vids dbd-feature" id="videos"' '<h2>Vikings videos</h2>' 'href="#videos">Videos <b>8</b>' 'data-v="MINvid00001"' 'https://i.ytimg.com/vi/MINvid00001/mqdefault.jpg' 'class="dbd-vid vd-more"' '>Show more</button>' 'NFL · '; do
+          for m in 'class="dbd-panel dbd-vids dbd-feature" id="videos"' '<h2>Vikings videos</h2>' 'href="#videos">Videos <b>8</b>' 'data-v="MINvid00001"' 'https://i.ytimg.com/vi/MINvid00001/hqdefault.jpg' 'https://i.ytimg.com/vi/NFLtwoteam1/mqdefault.jpg' 'class="dbd-vid vd-more"' '>Show more</button>' 'NFL · '; do
             grep -qF "$m" pages/teamplayers-MIN.html || { echo "the Vikings videos panel is missing $m"; exit 1; }
           done
           python3 -c "import sys; h=open('pages/teamplayers-MIN.html').read(); sys.exit(0 if 0 < h.find('dbd-panel dbd-roster') < h.find('dbd-panel dbd-vids') and ( h.find('dbd-panel dbd-news') < 0 or h.find('dbd-panel dbd-vids') < h.find('dbd-panel dbd-news') ) else 'the videos are not after the roster and before the news (2.13.0)')"

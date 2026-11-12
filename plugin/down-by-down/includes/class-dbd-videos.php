@@ -230,7 +230,7 @@ class DBD_Videos {
 		$list = self::team( $t ); if ( ! $list ) { return ''; }
 		$nick = DBD_Data::team( $t )['nick'] ?? $t; $cards = '';
 		foreach ( $list as $i => $o ) {
-			$cards .= '<figure class="dbd-vid' . ( $i >= self::TOP ? ' vd-more' : '' ) . '">' . self::play( $o['v'], $o['h'] ) . '<h4>' . esc_html( $o['h'] ) . '</h4>'
+			$cards .= '<figure class="dbd-vid' . ( $i >= self::TOP ? ' vd-more' : '' ) . '">' . self::play( $o['v'], $o['h'], $i === 0 ) . '<h4>'  /* the first, shown large, gets the bigger thumbnail (Greptile, PR #86) */ . esc_html( $o['h'] ) . '</h4>'
 				. '<span>' . esc_html( ( $o['s'] === 'nfl' ? 'NFL' : $nick ) . ' · ' . self::age( $o['ts'] ) ) . '</span></figure>';
 		}
 		return '<section class="dbd-panel dbd-vids dbd-feature" id="videos"><div class="dbd-ph big"><h2>' . esc_html( $nick ) . ' videos</h2><p>The last 14 days, from the ' . esc_html( $nick ) . ' and the NFL on YouTube</p></div>'

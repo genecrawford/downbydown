@@ -346,7 +346,7 @@ class DBD_News {
 		}
 		if ( $vids ) {
 			$v = $vids[0];
-			$o .= '<div class="ar-vid"><h2 class="ar-t">Newest video</h2>' . DBD_Videos::play( $v['v'], $v['h'] ) . '<h3>' . esc_html( $v['h'] ) . '</h3>'
+			$o .= '<div class="ar-vid"><h2 class="ar-t">Newest video</h2>' . DBD_Videos::play( $v['v'], $v['h'], true ) . '<h3>' . esc_html( $v['h'] ) . '</h3>'
 				. '<span class="ar-m">' . esc_html( ( $v['s'] === 'nfl' ? 'NFL' : $nick ) . ' · ' . DBD_Videos::age( $v['ts'] ) ) . ' · <a href="' . esc_url( $pp ) . '#videos">All ' . esc_html( $nick ) . ' videos</a></span></div>';
 		}
 		return $o . '</section>';
