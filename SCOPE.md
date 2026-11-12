@@ -2542,3 +2542,9 @@ Everything opens on YouTube in a new tab, since the NFL blocks playing its video
 - The matchups list, the week page and the email carry their marks and links. Nothing anywhere shows a player in place of a link.
 
 Size: M.
+
+### Built in 2.14.0 (PR #91)
+
+- §54 as scoped, with Gene's decisions: the recap moved to the end of a finished game's page, team defense videos on the defense page's block, and Highlights links in the Tuesday email.
+- The roster's depth slot (QB1) became a small chip a gap after the name, dark for the starter and light for a backup, explained on hover (`mockup-v28/roster-slot.html`, option A).
+- Fixed on the way: 2.13.0's jump links reused `.dbd-jump`, the player page's sticky section bar, and restyled it. The new links are `.dbd-hop`.
