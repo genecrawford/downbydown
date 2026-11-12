@@ -98,6 +98,10 @@ jobs:
           DBD_HARNESS_NEWS=/tmp/none.json php tools/view_harness.php data team MIN
           if grep -q 'dbd-latest' pages/team-MIN.html; then echo "a latest line showed with nothing stored"; exit 1; fi
           echo "team news renders"
+      - name: A player traded back mid-season (2.12.1)
+        run: |
+          # Kirk Cousins (00-0029604) came back to the Vikings mid-season; his page threw a fatal on the live site on 2026-11-12
+          DBD_HARNESS_MEDIA=1 php tools/view_harness.php data player 00-0029604
       - name: Team videos and highlights (SCOPE §51)
         run: |
           set -e
