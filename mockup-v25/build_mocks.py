@@ -107,6 +107,6 @@ def addtix(m):
     return re.sub(r'(<td class="dbd-ln">.*?)(</td>)', lambda x: x.group(1) + f'<a class="tx" href="https://seatgeek.com/" target="_blank" rel="nofollow sponsored noopener">Tickets from ${next(prices, 80)}</a>' + x.group(2), m.group(0), count=1, flags=re.S)
 mu = re.sub(r'<tr class="dbd-g".*?</tr>', addtix, mu, flags=re.S)
 mu = mu.replace('</head>', CSS + '</head>', 1)
-mu = re.sub(r'(<main class="dbd-content"[^>]*>)', lambda m: m.group(1) + note('SCOPE §52. Each upcoming game in the list gets "Tickets from $X" under its line. Sample prices.'), mu, count=1)
+mu = re.sub(r'(<main class="dbd-content"[^>]*>)', lambda m: m.group(1) + note('SCOPE §52. Each upcoming game in the list gets "Tickets from $X" under its line, and one line above the games says when the prices were checked. Sample prices.') + '<p class="dbd-next mock-new">Ticket prices from SeatGeek <span>checked 2h ago</span></p>', mu, count=1)
 open('tickets-matchups.html', 'w').write(no_tracking(mu))
 print('wrote videos-MIN.html game-highlights.html tickets-game.html tickets-team.html tickets-matchups.html;', len(vids), 'videos')

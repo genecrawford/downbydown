@@ -2448,7 +2448,7 @@ The mocks use sample prices until the key exists:
   - A finished game shows nothing.
 - **A team's offense and defense pages:** one line under the news line: "Next game: at Packers, Sun Nov 15, 1:00 PM · tickets from $112. Next home game: Falcons, Sun Nov 29 · from $96."
   - When the next game is at home, that's the only one shown.
-- **The matchups list:** "Tickets from $X" under each upcoming game's line.
+- **The matchups list:** "Tickets from $X" under each upcoming game's line, with one line above the games saying when the prices were checked.
 - **Prices are resale prices** that move all day, so each one says when it was checked, and the link opens SeatGeek's current listings.
 
 ### How it runs
@@ -2479,7 +2479,7 @@ The mocks use sample prices until the key exists:
 
 ### Acceptance
 
-- Every upcoming game on the matchups list, its game page and its teams' pages shows SeatGeek's cheapest ticket and when it was checked, or "Tickets on SeatGeek" with no price.
+- Every upcoming game on the matchups list, its game page and its teams' pages shows SeatGeek's cheapest ticket, or "Tickets on SeatGeek" with no price, and each place says when the prices were checked (once, above the list, on the matchups page).
 - A finished game shows nothing, and nothing shows anywhere while the switch is off or the key is missing.
 - A failed check keeps the last prices, with their real check time, and the admin page says why.
 
