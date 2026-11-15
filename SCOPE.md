@@ -2593,3 +2593,13 @@ Gene: make the offense page's header "more specific to the team" and shrink the 
 - **Layout by width:** below 900px the numbers drop under the title as one row of four; on a phone they become a 2 by 2 grid, and the logo shrinks to 60px. The loose "447 snaps" badge goes away.
 - **The game chips shrink to one line each** (week and home or away, a 16px logo and the opponent, then the result) as rounded pills. The chip you pick fills with the team's color, with the result in the accent. On a phone the chips run in one row that scrolls sideways.
 - **Code:** team.php builds the panel; dbd.css adds `.dbd-tpanel`, and the `.dbd-game` rules shrink. team-explorer.js keeps writing `#dbd-kicker` and `#dbd-snaps`, now inside the panel. The defense tab uses the same panel, and DBD_Defense's EPA badge moves into the numbers.
+
+## 58. Touchdowns stand out on the drive chart (scoped and mocked 2026-11-15, `mockup-v32/`)
+
+Gene: make the touchdowns more prominent on the drive chart. Today a touchdown is the same 3px line as every play, just green, and it gets lost among the runs and completions.
+
+Both options change only `drive()` in team-explorer.js, so they show on the offense and defense tabs alike. The mocks run the live explorer on the Vikings' real plays (`td-a.html`, `td-b.html`; pick Week 1 vs GB for four touchdowns).
+
+- **Option A, the touchdown play** (`td-a.html`): on each touchdown row, a green band across the field, a 5px green line, a ringed dot where the ball crossed, and a green "TD" block filling the end zone on that row. Nothing else changes.
+- **Option B, the scoring drive** (`td-b.html`): every snap of a drive that ended in a touchdown sits on a light green wash, so the march reads, not just the last play. The touchdown play gets the 5px line and the "TD" tag in the end zone.
+- On the defense tab the same marks show the touchdowns the defense gave up.
