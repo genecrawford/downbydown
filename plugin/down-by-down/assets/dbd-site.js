@@ -218,13 +218,23 @@
   }
 })();
 
+/* Analytics events (SCOPE §65): sent only when Google Analytics is on the page (Site Kit's gtag). dbdTrack is shared with compare.js
+   and myteam.js. */
+window.dbdTrack = function (name, params) { if (typeof window.gtag !== 'function') return; try { window.gtag('event', name, params || {}); } catch (e) {} };
+(function () {
+  var a = document.querySelector('a.dbd-share'); if (!a) return;
+  var key = ''; try { key = new URL(a.href, location.href).searchParams.get('card') || ''; } catch (e) {}
+  var type = /^team-/.test(key) ? 'team' : /^game-/.test(key) ? 'game' : /^page-/.test(key) ? 'page' : 'player';
+  a.addEventListener('click', function () { window.dbdTrack('share', { method: a.dataset.sheet === '1' ? 'share_sheet' : 'image', content_type: type, item_id: key }); });
+})();
+
 /* share card (SCOPE §26): on devices that can share files, fetch the PNG ahead of time so the click can hand it to the share sheet
    while the browser still counts the click as a user gesture; anywhere else, or before it is ready, the link opens the image. */
 (function () {
   var a = document.querySelector('a.dbd-share'); if (!a || !navigator.share || !navigator.canShare) return;
   var file = null, probe = new File([new Blob(['x'])], 'x.png', { type: 'image/png' });
   if (!navigator.canShare({ files: [probe] })) return;
-  var load = function () { fetch(a.href).then(function (r) { return r.ok ? r.blob() : null; }).then(function (b) { if (b) file = new File([b], 'down-by-down-card.png', { type: 'image/png' }); }).catch(function () {}); };
+  var load = function () { fetch(a.href).then(function (r) { return r.ok ? r.blob() : null; }).then(function (b) { if (b) { file = new File([b], 'down-by-down-card.png', { type: 'image/png' }); a.dataset.sheet = '1'; } }).catch(function () {}); };
   if ('requestIdleCallback' in window) requestIdleCallback(load, { timeout: 4000 }); else setTimeout(load, 1500);
   a.addEventListener('click', function (e) {
     if (!file) return;  /* not ready yet: the link opens the image in a new tab */

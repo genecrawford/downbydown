@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.24.0
+Stable tag: 2.25.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,10 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.25.0 =
+* Measurement (SCOPE §65): a Growth tab in the admin (visits by source, Google search, titles to tune, top landing pages, email) and a Growth box on the Overview. Analytics and Search Console numbers are read in the browser through Site Kit; email numbers come from Brevo, with the list's size saved once a day.
+* Analytics events: share (the share-card button, and Copy link on Compare and My team) and sign_up (a confirmed subscriber landing on the post), sent only when Site Kit's Analytics tag is on the page.
 
 = 2.24.0 =
 * Search (SCOPE §64, plan 1): page titles lead with what people search ("Justin Jefferson stats 2026: targets, snaps, EPA", "Vikings vs Packers, Week 11: Vikings offense matchup", "2026 NFL Draft results: every pick by round").
