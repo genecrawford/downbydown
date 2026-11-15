@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.21.0
+Stable tag: 2.22.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,11 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.22.0 =
+* Before the NFL on every player page (SCOPE §62): the draft (round and pick, his class, where he went among his position, Pro Bowls and All-Pro since), the combine (each drill with his percentile against every player at his position tested since 2000, and a score that averages the drills he ran), and the opening of his Wikipedia article with its CC BY-SA credit.
+* The bio line names the round ("Round 1, pick 22 (2020)"); Draft and combine and Wikipedia pills join the header, and the section bar gains Before the NFL.
+* Data build: nflverse draft_picks and combine join each player; one Wikidata query maps PFR ids to English Wikipedia articles, and article summaries are cached in tools/cache/wiki.json (refreshed after 30 days, never synced to the site).
 
 = 2.21.0 =
 * One filter panel on the team pages (SCOPE §61): its header says how many snaps the filters leave ("21 of 447 snaps"), with Reset beside it only when something is filtered. Games and players sit up front as labeled chip rows; down, type, zone, formation and quarter wait behind More filters, which shows how many are on and opens by itself when any are. Everything picked uses the team's color; the red is gone.

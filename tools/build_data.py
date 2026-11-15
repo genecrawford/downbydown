@@ -45,7 +45,7 @@ Writes:
 
 Runs nightly in GitHub Actions during the season; the WordPress plugin pulls what changed.
 """
-import pandas as pd, json, math, sys, os, hashlib, datetime
+import pandas as pd, json, math, sys, os, hashlib, datetime, bisect, time
 
 pbp_path, roster_path, games_path, teams_path, out = sys.argv[1:6]
 week_arg = int(sys.argv[6]) if len(sys.argv) > 6 else None
@@ -229,7 +229,9 @@ def _ht(h):
         return None
 
 def _draft(r):
-    # nflverse rosters carry the overall pick, not the round; rounds vary in length so we do not guess one
+    # the round comes from nflverse's draft picks (SCOPE §62); rosters carry only the overall pick, and rounds vary in length so we do not guess one
+    d_ = DP.get(r.gsis_id) if 'DP' in globals() else None
+    if d_ is not None: return f"Round {int(d_['round'])}, pick {int(d_['pick'])} ({int(d_['season'])})"
     try:
         n = int(float(r.draft_number)); return f"Pick {n} overall ({c(r.entry_year)})"
     except Exception:
@@ -279,6 +281,111 @@ if len(inj) and 'gsis_id' in inj.columns and 'report_status' in inj.columns:
     for w in inj[inj.report_status.notna()].itertuples():
         if isinstance(w.gsis_id, str):
             injw_all.setdefault(w.gsis_id, {})[str(int(w.week))] = [c(w.report_status), c(getattr(w, 'report_primary_injury', None))]
+# ---------------------------------------------------------------- before the NFL (SCOPE §62): the draft, the combine, Wikipedia
+# nflverse draft_picks (1980 on, keyed by gsis_id) and combine (2000 on, keyed by PFR id). Combine percentiles are against every player at
+# the same position tested since 2000 (WR and TE apart, as in §38); timed drills count faster as better. Wikipedia: one Wikidata query maps
+# PFR ids to English articles, and each article's summary is cached in tools/cache/wiki.json (outside data/, so the site never syncs it)
+# and refetched after 30 days. A failed network call leaves the player without the Wikipedia part; nothing else depends on it.
+DRAFT = pd.read_csv(env('DBD_DRAFT'), low_memory=False) if env('DBD_DRAFT') else pd.DataFrame()
+COMB = pd.read_csv(env('DBD_COMBINE'), low_memory=False) if env('DBD_COMBINE') else pd.DataFrame()
+DP = {}
+if len(DRAFT) and 'gsis_id' in DRAFT.columns:
+    for d_ in DRAFT[DRAFT.gsis_id.notna()].itertuples(): DP[d_.gsis_id] = d_._asdict()
+CB_GRP = lambda pos: {'FB': 'RB', 'HB': 'RB'}.get(str(pos), str(pos))
+CB_DRILLS = ('ht', 'wt', 'forty', 'bench', 'vertical', 'broad_jump', 'cone', 'shuttle'); CB_LOW = ('forty', 'cone', 'shuttle'); CB_ATH = CB_DRILLS[2:]
+def _inches(h):
+    try: f_, i_ = str(h).split('-'); return int(f_) * 12 + int(i_)
+    except Exception: return None
+def _cbv(row, k):
+    if k == 'ht': return _inches(row.get('ht'))
+    v = row.get(k)
+    try: v = float(v)
+    except Exception: return None
+    return None if math.isnan(v) else v
+CB_BY_PFR, CB_BY_NAME, CB_POOL = {}, {}, {}
+if len(COMB):
+    for row in COMB.to_dict('records'):
+        if isinstance(row.get('pfr_id'), str) and row['pfr_id']: CB_BY_PFR[row['pfr_id']] = row
+        CB_BY_NAME.setdefault((str(row.get('player_name')), int(row['season']) if c(row.get('season')) else None), row)
+        g_ = CB_GRP(row.get('pos'))
+        for k in CB_DRILLS:
+            v = _cbv(row, k)
+            if v is not None: CB_POOL.setdefault((g_, k), []).append(v)
+    for k_ in CB_POOL: CB_POOL[k_].sort()
+def _pct(g_, k, v):
+    pool = CB_POOL.get((g_, k)) or []
+    if not pool: return None
+    beat = len(pool) - bisect.bisect_right(pool, v) if k in CB_LOW else bisect.bisect_left(pool, v)
+    return round(100 * beat / len(pool))
+def _before_nfl(r, pfid):
+    """The player's draft and combine record for the player page, or None."""
+    if not len(DRAFT) and not len(COMB): return None  # no files this run (an archive build): no band, rather than a wrong one (Greptile, PR #110)
+    out_ = {}
+    d_ = DP.get(r.gsis_id)
+    if d_ is not None:
+        cls_ = DRAFT[(DRAFT.season == d_['season']) & (DRAFT.position == d_['position'])].sort_values('pick')
+        ids_ = list(cls_.gsis_id); names_ = list(cls_.pfr_player_name)
+        k_ = ids_.index(r.gsis_id) + 1 if r.gsis_id in ids_ else None
+        out_['dr'] = dict(y=int(d_['season']), r=int(d_['round']), p=int(d_['pick']), t=c(d_['team']), sc=c(d_.get('college')), pos=c(d_['position']), k=k_, n=len(ids_),
+                          b=[str(x) for x in names_[:k_ - 1]] if k_ and k_ <= 5 else None,
+                          pb=int(_num(d_.get('probowls'))), ap=int(_num(d_.get('allpro'))), hof=bool(_num(d_.get('hof'))))
+    else:
+        ey_ = c(getattr(r, 'entry_year', None)); dn_ = _num(getattr(r, 'draft_number', None), None)
+        if dn_: out_['dn'] = [int(dn_), int(ey_) if ey_ else None]  # drafted, but not in the draft file: the roster's overall pick
+        elif ey_: out_['ud'] = int(ey_)  # undrafted only when the roster has no pick either, the year he came in
+    cb_ = CB_BY_PFR.get(pfid) if pfid else None
+    if cb_ is None and c(getattr(r, 'entry_year', None)): cb_ = CB_BY_NAME.get((str(r.full_name), int(c(r.entry_year))))
+    if cb_ is None and len(COMB): out_['nc'] = 1  # the combine file has no row for him
+    if cb_ is not None:
+        g_ = CB_GRP(r.position); dr_ = []
+        for k in CB_DRILLS:
+            v = _cbv(cb_, k); dr_.append([k, v, _pct(g_, k, v) if v is not None else None])
+        ath_ = [x[2] for x in dr_ if x[0] in CB_ATH and x[2] is not None]
+        out_['cb'] = dict(y=int(cb_['season']), g=g_, d=dr_, sc=round(sum(ath_) / len(ath_)) if len(ath_) >= 2 else None, nr=len(ath_))
+    return out_ or None
+WIKI = {}
+def _wiki(pfids):
+    """PFR id -> [article title, description, opening paragraph] for the players on this build's rosters (cached, see above)."""
+    path_ = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cache', 'wiki.json')
+    try: cache_ = json.load(open(path_))
+    except Exception: cache_ = {}
+    if os.environ.get('DBD_WIKI') != '1': return {k: v[:3] for k, v in cache_.items() if k in pfids and v and v[0]}
+    import urllib.request, urllib.parse, urllib.error
+    ua_ = {'User-Agent': 'DownByDown/2 (https://downbydown.com; https://github.com/genecrawford/downbydown) data build', 'Accept': 'application/json'}
+    def get_(url_):
+        with urllib.request.urlopen(urllib.request.Request(url_, headers=ua_), timeout=30) as f_: return json.load(f_)
+    titles_ = {}
+    try:
+        q_ = 'SELECT ?id ?a WHERE { ?p wdt:P3561 ?id . ?a schema:about ?p ; schema:isPartOf <https://en.wikipedia.org/> }'
+        for b_ in get_('https://query.wikidata.org/sparql?format=json&query=' + urllib.parse.quote(q_))['results']['bindings']:
+            pid_ = b_['id']['value'].split('/')[-1]  # Wikidata writes "J/JeffJu00"
+            titles_[pid_] = urllib.parse.unquote(b_['a']['value'].rsplit('/', 1)[-1]).replace('_', ' ')
+    except Exception as e_:
+        print('wikipedia: Wikidata query failed, using the cache:', e_)
+    today_ = datetime.date.today().isoformat(); stale_ = (datetime.date.today() - datetime.timedelta(days=30)).isoformat(); fetched_ = 0
+    for pid_ in sorted(pfids):
+        t_ = titles_.get(pid_) or (cache_.get(pid_) or [None])[0]
+        if not t_: continue
+        have_ = cache_.get(pid_)
+        if have_ and have_[0].replace('_', ' ') == t_ and len(have_) > 3 and have_[3] >= stale_: continue
+        if fetched_ >= 600: break  # spread a cold cache over a few nights; every attempt counts, failed or not (Greptile, PR #110)
+        fetched_ += 1
+        try:
+            j_ = get_('https://en.wikipedia.org/api/rest_v1/page/summary/' + urllib.parse.quote(t_.replace(' ', '_'), safe=''))
+            if j_.get('type') == 'standard': cache_[pid_] = [(j_.get('titles', {}).get('normalized') or t_).replace('_', ' '), j_.get('description') or '', (j_.get('extract') or '')[:900], today_]
+        except urllib.error.HTTPError as e_:
+            if e_.code == 429: print('wikipedia: rate limited after', fetched_, 'requests; the rest wait for the next build'); break
+            print('wikipedia: summary failed for', pid_, e_)
+        except Exception as e_:
+            print('wikipedia: summary failed for', pid_, e_)
+        time.sleep(0.25)  # well under Wikimedia's rate limit, after failures too
+    os.makedirs(os.path.dirname(path_), exist_ok=True)
+    json.dump(cache_, open(path_, 'w'), indent=0, sort_keys=True, ensure_ascii=False)
+    print('wikipedia:', len(titles_), 'titles,', fetched_, 'requests,', len(cache_), 'cached')
+    return {k: v[:3] for k, v in cache_.items() if k in pfids and v and v[0]}
+WIKI = _wiki({x for x in _rw.pfr_id if isinstance(x, str) and x} if 'pfr_id' in _rw.columns else set())
+print('before the NFL:', len(DP), 'draft picks,', len(CB_BY_PFR), 'combine rows,', len(WIKI), 'Wikipedia articles on these rosters')
+
 index_rows = []
 team_players = {}
 for t in T:
@@ -299,6 +406,9 @@ for t in T:
         # snap counts and PFR extras key by PFR id; names collide (two Justin Jeffersons), so the name fallback
         # is limited to teams this player actually has stat lines for
         pfid = r.pfr_id if isinstance(getattr(r, 'pfr_id', None), str) and r.pfr_id else None
+        bf_ = _before_nfl(r, pfid)
+        if bf_ is not None: p['bf'] = bf_
+        if pfid and pfid in WIKI: p['wk'] = WIKI[pfid]  # [title, description, opening paragraph] (SCOPE §62)
         teams_of = {t} | {w['team'] for w in p['weeks'] if w.get('team')}
         if len(snaps):
             sn_p = snaps[snaps.pfr_player_id == pfid] if pfid and 'pfr_player_id' in snaps.columns else snaps[(snaps.player == r.full_name) & snaps.team.isin(teams_of)]

@@ -77,6 +77,8 @@ jobs:
           dl "injuries/injuries_${S}.csv"               inj.csv     DBD_INJ
           dl "depth_charts/depth_charts_${S}.csv"       depth.csv   DBD_DEPTH
           dl "ftn_charting/ftn_charting_${S}.csv"       ftn.csv     DBD_FTN
+          dl "draft_picks/draft_picks.csv"              draft.csv   DBD_DRAFT    # SCOPE §62: every draft since 1980
+          dl "combine/combine.csv"                      combine.csv DBD_COMBINE  # SCOPE §62: every combine since 2000
           ls -la in
 
       - name: Set last season aside (SCOPE §44)
@@ -87,16 +89,24 @@ jobs:
           python3 tools/archive.py freeze data "$S"
 
       - name: Build data
+        env:
+          DBD_WIKI: '1'  # SCOPE §62: refresh the Wikipedia cache in tools/cache/wiki.json
         run: |
           mkdir -p data
           python3 tools/build_data.py "$pbp" in/roster.csv in/games.csv in/teams.csv data ${{ github.event.inputs.week }}
 
+      - name: Show one player's new fields (a run on any other branch is a dry run)
+        if: github.ref != 'refs/heads/main'
+        run: |
+          python3 -c "import json; d=json.load(open('data/players/MIN.json')); p=[x for x in d['players'] if x.get('bf')]; print(len(p), 'MIN players with bf,', sum(1 for x in d['players'] if x.get('wk')), 'with wk'); print(json.dumps([x for x in d['players'] if x['id']=='00-0036322'][0].get('bf')), [x for x in d['players'] if x['id']=='00-0036322'][0].get('wk'), [x for x in d['players'] if x['id']=='00-0036322'][0].get('draft'))"
+
       - name: Commit data if it changed
         id: commit
+        if: github.ref == 'refs/heads/main'  # only main's data reaches the site; a branch run builds and stops
         run: |
           git config user.name "downbydown-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data
+          git add data tools/cache
           # The build always stamps a new built_at. If that is the manifest's only change and nothing else in data changed,
           # put the old manifest back, so a run with nothing new commits nothing and doesn't ping the site.
           if git diff --cached --quiet -- data ':!data/manifest.json' && [ -z "$(git diff --cached -U0 -- data/manifest.json | grep -E '^[+-]' | grep -vE '^(\+\+\+|---) ' | grep -v '"built_at"')" ]; then
