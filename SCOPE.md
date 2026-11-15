@@ -2649,3 +2649,33 @@ Gene: the area under the team panel "looks like a mess now visually and ux wise"
   - **B, one row of dropdowns** (`filters-b-dropdowns.html`): seven labeled dropdowns in one row (Game, Player, Down, Type, Field zone, Formation, Quarter). One in use gets a team-color border and tint. It folds to four columns, then two, on narrower screens.
   - **C, fewer at once** (`filters-c-fewer.html`): the game and player chips stay up front as two labeled rows. Down, type, zone, formation and quarter wait behind "More filters", which shows "1 on" and opens by itself when any are set.
   - In A and B the game becomes one pick at a time (today's chips allow several games at once); C keeps multi-pick.
+
+## 62. Before the NFL: the draft, the combine and Wikipedia (scoped and mocked 2026-11-15, `mockup-v37/`)
+
+Gene asked which data sources exist for the NFL draft and combine, and whether Wikipedia/Wikimedia could extend the player pages ("link to their wikipedia profile at a minimum"). "Scope both."
+
+**Sources (all free, checked 2026-11-15):**
+- nflverse `draft_picks`: 12,927 picks, 1980 to 2026. Round, pick, team, college, age, gsis_id and pfr_player_id, plus career Pro Bowls, All-Pro, Hall of Fame and AV.
+- nflverse `combine`: 8,968 players, 2000 to 2026. Height, weight, 40, bench, vertical, broad jump, 3-cone and shuttle, with pfr_id. Undrafted invitees are included.
+- Wikidata maps Pro Football Reference player IDs (property P3561, written with a letter prefix: "J/JeffJu00") to English Wikipedia articles: 28,910 players carry the ID, 26,846 of them with an article. NFL.com IDs (P9338) cover 24,827 and ESPN IDs (P3686) only 2,883, so the PFR ID is the key.
+- Wikipedia's REST summary (`/api/rest_v1/page/summary/{title}`) returns a one-line description, the opening paragraph and a thumbnail.
+
+**The player page (mock: Justin Jefferson, `player-jj.html`):**
+- **Header:** the bio line names the round ("Round 1, pick 22 (2020)" instead of "Pick 22 overall"). Two pills join the others: "Draft and combine" (jumps to the band) and "Wikipedia ↗" (only when he has an article, opening it in a new tab).
+- **A new band after Career, "Before the NFL":**
+  - **The draft:** "Round 1 · Pick 22", the year, the team and the school. Where he went among his position in his class ("5th of 35 WRs taken, after Ruggs, Jeudy, Lamb, Reagor"), and what he has earned since ("4 Pro Bowls · 2 first-team All-Pro"). An undrafted player reads "Undrafted, 2019 · signed by …" where the data has it.
+  - **The combine:** each drill with his result and a bar for his percentile among every player at his position tested since 2000. The timed drills count faster as better. Skipped drills read "did not test". The badge is a combine score, the average of the drills he ran ("Score 74 of 100"). A note explains pro days aren't in the data. A player with no combine row gets a one-line note instead of the panel.
+  - **From Wikipedia:** the article's one-line description in the header, its opening paragraph, "Read on Wikipedia ↗", and the CC BY-SA 4.0 credit Wikipedia asks for. No Wikipedia photos: their licenses vary, and the page already has NFL headshots behind the admin switch.
+  - The sticky section bar gains a "Before the NFL" link.
+
+**Data build:**
+- `tools/build_data.py` downloads `draft_picks.csv` and `combine.csv` with the other nflverse files.
+- Draft joins on gsis_id. Combine joins on the PFR ID, falling back to name plus draft year plus school.
+- Percentiles by position pool (WR and TE apart, as in §38) are computed once per build.
+- Each player record gains `bf: { dr: [season, round, pick, team, school, posRank, posCount, before[], probowls, allpro], cb: { drill: [value, pct] }, sc: score, wk: [title, description, extract] }`.
+- **Wikipedia:** one Wikidata query per build maps every P3561 ID to its enwiki title. Summaries are fetched only for rostered players without one cached. The cache is a `data/wiki.json` the build commits and refreshes monthly, about 1,800 calls the first time and a handful after. Requests carry a User-Agent naming the site, as Wikimedia asks.
+- Nothing on the WordPress side calls Wikipedia; the plugin reads the synced data.
+
+**Decisions for Gene:**
+1. Show the Wikipedia paragraph, or only the link (pill) at a minimum? Default in the mock: both.
+2. Keep the combine score, or show the drills only?
