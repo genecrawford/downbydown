@@ -33,15 +33,17 @@ echo '<div class="fr"><span class="fl">Team</span><div><select data-filter="f" a
 
 /* ---- every pick, by round */
 echo '<div class="bd-grid"><section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Every pick</b> · click a column to sort</span><span class="dbd-badge">' . ( $Y >= 2000 ? 'Combine: 0 to 100 against his position' : 'The combine data starts in 2000' ) . '</span></div><div class="bd-tw"><table class="bd-t">';
-echo '<thead><tr><th data-k="p" class="n">Pick</th><th data-k="f">Team</th><th data-k="n">Player</th><th data-k="pos">Pos</th><th data-k="sc">School</th><th class="n" data-k="cs">Combine</th><th data-k="w">' . $so . '</th></tr></thead><tbody>';
+echo '<thead><tr><th data-k="p" class="n">Pick</th><th data-k="f">Team</th><th data-k="n">Player</th><th class="n" data-k="cs">Combine</th><th data-k="w">' . $so . '</th></tr></thead><tbody>';  /* position and school ride under the name (2.23.2) */
+$perR = array(); foreach ( $rows as $x ) { $perR[ (int) $x['r'] ] = ( $perR[ (int) $x['r'] ] ?? 0 ) + 1; }
 $cur = null;
 foreach ( $rows as $x ) {
-	if ( (int) $x['r'] !== $cur ) { $cur = (int) $x['r']; echo '<tr class="rd" data-rd="' . $cur . '"><td colspan="7">Round ' . $cur . '</td></tr>'; }
-	$name = $x['pg'] && $x['id'] ? '<a href="' . esc_url( DBD_Router::url( array( 'player' => $x['id'] ) ) ) . '">' . esc_html( $x['n'] ) . '</a>' : '<b>' . esc_html( $x['n'] ) . '</b>';
+	if ( (int) $x['r'] !== $cur ) { $cur = (int) $x['r']; echo '<tr class="rd" data-rd="' . $cur . '"><td colspan="5">Round ' . $cur . ' <span>' . (int) $perR[ $cur ] . ' picks</span></td></tr>'; }
+	$name = $x['pg'] && $x['id'] ? '<a class="pn" href="' . esc_url( DBD_Router::url( array( 'player' => $x['id'] ) ) ) . '">' . esc_html( $x['n'] ) . '</a>' : '<span class="pn">' . esc_html( $x['n'] ) . '</span>';
 	$hon = ( $x['hof'] ? ' <span class="bd-hof" title="Pro Football Hall of Fame">HOF</span>' : '' );
 	$ln = DBD_Boards::line( $x ); $cs = $x['cs'];
 	echo '<tr data-p="' . (int) $x['p'] . '" data-r="' . (int) $x['r'] . '" data-pos="' . esc_attr( $x['pos'] ) . '" data-f="' . esc_attr( $x['f'] ) . '" data-n="' . esc_attr( $x['n'] ) . '" data-sc="' . esc_attr( $x['sc'] ) . '" data-cs="' . ( $cs === null ? '' : (int) $cs ) . '" data-w="' . DBD_Boards::weight( $x ) . '">'
-		. '<td class="pk n">' . (int) $x['p'] . '<small>Rd ' . (int) $x['r'] . '</small></td><td class="tm">' . DBD_Boards::logo( $x['f'] ) . esc_html( $x['t'] ) . '</td><td class="nm">' . $name . $hon . '</td><td>' . esc_html( $x['pos'] ) . '</td><td>' . esc_html( $x['sc'] ) . '</td>'
+		. '<td class="pk"><b>' . (int) $x['p'] . '</b><small>R' . (int) $x['r'] . '</small></td><td class="tm"><span class="tmw">' . DBD_Boards::logo( $x['f'], 22 ) . '<b>' . esc_html( $x['t'] ) . '</b></span></td>'
+		. '<td class="nm">' . $name . '<span class="ps"><b>' . esc_html( $x['pos'] ) . '</b>' . ( $x['sc'] !== '' ? ' · ' . esc_html( $x['sc'] ) : '' ) . $hon . '</span></td>'
 		. '<td class="n">' . ( $cs === null ? '<span class="bd-sc">–</span>' : '<span class="bd-sc" style="' . esc_attr( DBD_Boards::heat( $cs ) ) . '">' . (int) $cs . '</span>' ) . '</td>'
 		. '<td class="so' . ( $ln === '' ? ' none' : '' ) . '">' . ( $ln === '' ? ( $newest ? 'hasn\'t played' : 'didn\'t play' ) : esc_html( $ln ) ) . ( (int) $x['pb'] ? ' <span class="bd-pb">' . (int) $x['pb'] . 'x Pro Bowl</span>' : '' ) . '</td></tr>';
 }

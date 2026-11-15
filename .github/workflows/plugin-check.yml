@@ -27,6 +27,7 @@ jobs:
           [ "$(grep -o '<tr data-p=' $f | wc -l)" -eq 257 ] || { echo "the 2026 board should have 257 picks"; exit 1; }
           grep -qF 'The <em>2026</em> draft' $f && grep -qF 'data-filter="pos"' $f && grep -qF 'Early returns' $f || { echo "the 2026 draft board is missing a piece"; exit 1; }
           grep -qF '>2026 combine results</a>' $f && grep -qF 'class="bd-next"' $f && grep -qF 'The 2026 combine' $f || { echo "the draft board lost its links to the combine (2.23.1)"; exit 1; }
+          grep -qF 'Round 1 <span>32 picks</span>' $f && grep -qF '<span class="ps"><b>' $f && ! grep -qF '<th data-k="pos">' $f || { echo "the pick list cleanup is missing (2.23.2)"; exit 1; }
           php tools/view_harness.php data draft 1983
           f=pages/draft-1983.html
           python3 -c "import sys,re; h=open('$f').read(); r=re.search(r'<tr data-p=\"1\"[^>]*>.*?</tr>', h, re.S).group(0); sys.exit(0 if 'John Elway' in r and '>BAL<' in r and 'bd-hof' in r and 'The combine data starts in 2000' in h and 'Class leaders' in h else 'the 1983 board is wrong: Elway should be the Baltimore pick, HOF')"

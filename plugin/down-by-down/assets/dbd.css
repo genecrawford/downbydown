@@ -2077,3 +2077,25 @@ html:not([data-fx]) .dbd [data-fx="half"],html[data-fx="std"] .dbd [data-fx="std
 .dbd a.bd-next .go{justify-self:start;margin-top:8px;padding:9px 16px;border-radius:var(--dbd-r);background:var(--dbd-red);font:700 13px var(--dbd-display);text-transform:uppercase;letter-spacing:.12em}
 .dbd a.bd-next:hover .go{background:#fff;color:var(--dbd-ink)}
 .dbd a.bd-next:focus-visible{outline:3px solid var(--dbd-red);outline-offset:3px}
+
+/* 2.23.2: the pick list, cleaned up for scanning: one pick number, a fixed-size logo, one name style with position and school under it, reversed round headings */
+.dbd .bd-t td{padding:9px 10px}
+.dbd .bd-t tbody tr[data-p]:hover td{background:var(--dbd-panel-2)}
+.dbd .bd-t td.pk{width:44px;text-align:right;vertical-align:middle}
+.dbd .bd-t td.pk b{display:block;font:700 18px/1 var(--dbd-display);color:var(--dbd-ink);font-variant-numeric:tabular-nums}
+.dbd .bd-t td.pk small{display:none}
+.dbd .bd-t.is-sorted td.pk small{display:block;margin-top:3px;font:500 10px var(--dbd-mono);color:var(--dbd-muted)}
+.dbd .bd-t td.tm{width:78px}
+.dbd .bd-t .tmw{display:inline-flex;align-items:center;gap:8px}
+.dbd .bd-t .tmw .tl{margin:0;line-height:0}
+.dbd .bd-t .tmw .dbd-lgw{--lgs:1!important}
+.dbd .bd-t .tmw b{font:600 12px var(--dbd-mono);color:var(--dbd-ink-2);letter-spacing:.02em}
+.dbd .bd-t td.nm .pn{display:block;font:600 14px/1.25 var(--dbd-body);color:var(--dbd-ink);text-decoration:none}
+.dbd .bd-t td.nm a.pn{text-decoration:underline;text-decoration-color:var(--dbd-line-2);text-decoration-thickness:1px;text-underline-offset:3px}
+.dbd .bd-t td.nm a.pn:hover{text-decoration-color:var(--dbd-red);text-decoration-thickness:2px}
+.dbd .bd-t td.nm .ps{display:block;margin-top:2px;font:400 12px var(--dbd-body);color:var(--dbd-muted)}
+.dbd .bd-t td.nm .ps b{font:600 11px var(--dbd-mono);color:var(--dbd-ink-2)}
+.dbd .bd-t td.nm .bd-hof{margin-left:6px}
+.dbd .bd-t tr.rd td{padding:9px 10px;background:var(--dbd-ink);border-bottom:0;font:700 13px var(--dbd-display);letter-spacing:.14em;color:#fff}
+.dbd .bd-t tr.rd td span{margin-left:8px;font:500 11px var(--dbd-mono);letter-spacing:0;text-transform:none;color:rgba(255,255,255,.65)}
+.dbd .bd-t td.so{font-size:13px}
