@@ -369,6 +369,7 @@ body.dbd-standalone .dbd{--dbd-stick:var(--wp-admin--admin-bar--height, 0px)}  /
 .dbd .dbd-play{cursor:pointer}.dbd .dbd-play:hover line,.dbd .dbd-play:hover circle{stroke-width:4}.dbd .dbd-sel line{stroke:#fff !important}
 .dbd .dbd-sprays{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;padding:12px 14px}
 .dbd .dbd-sprays>div{min-width:0}
+.dbd .dbd-sec-spray .dbd-sprays{grid-template-columns:minmax(0,1fr);gap:22px}  /* the playbook maps run full width, one over the other (2.19.1) */
 @media (max-width:700px){.dbd .dbd-sprays{grid-template-columns:minmax(0,1fr)}}
 .dbd .dbd-sprays h4{margin:0 0 8px;font:700 11px var(--dbd-display);text-transform:uppercase;letter-spacing:.14em;color:var(--dbd-ink-2)}
 .dbd .dbd-panel .dbd-note{padding:8px 14px 12px}
@@ -398,9 +399,9 @@ body.dbd-standalone .dbd{--dbd-stick:var(--wp-admin--admin-bar--height, 0px)}  /
 
 /* ---- tendencies charts (Chartist draws the SVG, these style it; overlays are HTML on top) ---- */
 .dbd .dbd-chview{container-type:inline-size;container-name:dbdch}
-.dbd .dbd-chgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 18px;padding:0 14px 10px}
+.dbd .dbd-chgrid{display:grid;grid-template-columns:minmax(0,1fr);gap:0 18px;padding:0 14px 10px}  /* one chart per row, full width (2.19.1) */
 .dbd .dbd-chart{padding:12px 0 10px;border-top:1px solid var(--dbd-line);min-width:0}
-.dbd .dbd-chgrid .dbd-chart:nth-child(-n+2){border-top:0}
+.dbd .dbd-chgrid .dbd-chart:first-child{border-top:0}
 @container dbdch (max-width: 600px){.dbd .dbd-chgrid .dbd-chart:nth-child(2){border-top:1px solid var(--dbd-line)}}
 .dbd .dbd-chart.wide{grid-column:1/-1}
 .dbd .dbd-chart h4{margin:0 0 4px;font:700 11px var(--dbd-display);text-transform:uppercase;letter-spacing:.14em;color:var(--dbd-ink-2)}
@@ -1161,7 +1162,7 @@ body.dbd-standalone .dbd{--dbd-stick:var(--wp-admin--admin-bar--height, 0px)}  /
 .dbd .dbd-plmore button{padding:6px 12px;background:none;border:1px solid var(--dbd-line-2);border-radius:var(--dbd-r);font:600 13px var(--dbd-body);color:var(--dbd-ink-2);cursor:pointer}
 .dbd .dbd-plmore button:hover{border-color:var(--dbd-ink-2);color:var(--dbd-ink)}
 .dbd .dbd-plmore .of{margin-right:auto}
-.dbd .dbd-chgrid .dbd-ch{height:240px}  /* two to a row, a little shorter */
+.dbd .dbd-chgrid .dbd-ch{height:320px}  /* full width, so taller to read (2.19.1) */
 .dbd .dbd-chgrid .dbd-chart{container:dbdc/inline-size}  /* each chart measures itself: two to a row leaves about 345px */
 @container dbdc (max-width:480px){.dbd .dbd-ch-rule span{display:none}}  /* week labels on the cumulative chart collide below this; the rules stay */
 /* 1.8.1 · fixes from the 1.8.0 live check */

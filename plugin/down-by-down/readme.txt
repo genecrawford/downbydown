@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.19.0
+Stable tag: 2.19.1
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,10 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.19.1 =
+* The pass and run maps run the full width of their panel, one over the other, redrawn on a wider field so the routes, gaps and labels have room.
+* The four Tendencies charts stack the same way, one per row at full width and taller (320px), so their labels and points read.
 
 = 2.19.0 =
 * The pass and run maps are drawn like a playbook page (SCOPE §59): the line of scrimmage, the five linemen (the center a square), the quarterback and the back in chalk.
