@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.15.0
+Stable tag: 2.16.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,11 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.16.0 =
+* The game page opens with a face-off (SCOPE §56): the offense's panel on the left and the defense's on the right, each in its team's colors with the same accent band as Keys to the game, the role and rank in the accent and the team name linking to its offense or defense page. The game card sits between them: status, the line, the total, kickoff and the preview or highlights, and the score once the game is final. On a phone the two panels sit side by side over the game card.
+* The switch between the two offenses is bigger, with each team's logo; the page's offense is dark.
+* The small logo pair over the headline is gone (the panels carry the logos), and a team's record no longer wraps onto two lines.
 
 = 2.15.0 =
 * Keys to the game wears the offense's colors (SCOPE §55): white text on the team's dark color, its other color on the numbers, the tags, the offense's name and a band along the bottom, with the team tile in the header. Flip the page to the other offense and the colors flip with it.
