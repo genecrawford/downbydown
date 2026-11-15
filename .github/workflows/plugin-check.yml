@@ -526,6 +526,8 @@ jobs:
           grep -q "dbdTrack('share', { method: 'copy_link', content_type: 'my_team'" plugin/down-by-down/assets/myteam.js
           php tools/view_harness.php data joined_js | grep -q "gtag('event','sign_up',{method:'email'})"
           node --check plugin/down-by-down/assets/growth.js
+          # growth.js against canned Site Kit answers and a refused read: the requests it makes and the figures it draws (Greptile, PR #119)
+          node tools/growth_test.js plugin/down-by-down/assets/growth.js
           # the send path (2.11.1) against a fake Brevo: no campaign tag, the one-day window, Try again and its guards
           php tools/view_harness.php data send 8
       - uses: actions/upload-artifact@v4

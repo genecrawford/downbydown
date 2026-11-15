@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 class DBD_Growth {
 
-	const OPT_SIZES = 'dbd_growth_sizes';  /* the email list's size by day: array( 'Y-m-d' => n ), the newest 90 */
+	const OPT_SIZES = 'dbd_growth_sizes';  /* the email list's size by day: array( 'list' => Brevo list id, 'days' => array( 'Y-m-d' => n ) ), the newest 90 */
 	const HOOK      = 'dbd_growth_daily';
 	const KEEP      = 90;
 	const DAYS      = 28;
@@ -45,23 +45,29 @@ class DBD_Growth {
 		list( $j, $err ) = self::brevo( 'contacts/lists/' . (int) DBD_Email::get( 'list' ) );
 		if ( $err !== '' || ! isset( $j['totalSubscribers'] ) ) { return array( null, $err !== '' ? $err : 'Brevo didn’t say how many are on the list' ); }
 		$n = (int) $j['totalSubscribers'];
-		self::save_size( wp_date( 'Y-m-d' ), $n );
+		self::save_size( wp_date( 'Y-m-d' ), $n, (int) DBD_Email::get( 'list' ) );
 		return array( $n, '' );
 	}
 
-	public static function save_size( $day, $n ) {
-		$s = get_option( self::OPT_SIZES, array() ); $s = is_array( $s ) ? $s : array();
+	/** The saved sizes for $list. A different list starts its own record, so switching lists never reads as growth (Greptile, PR #119). */
+	private static function sizes( $list ) {
+		$o = get_option( self::OPT_SIZES, array() );
+		return is_array( $o ) && (int) ( $o['list'] ?? 0 ) === (int) $list && is_array( $o['days'] ?? null ) ? $o['days'] : array();
+	}
+
+	public static function save_size( $day, $n, $list ) {
+		$s = self::sizes( $list );
 		if ( isset( $s[ $day ] ) && (int) $s[ $day ] === (int) $n ) { return; }
 		$s[ $day ] = (int) $n; ksort( $s ); $s = array_slice( $s, -self::KEEP, null, true );
-		update_option( self::OPT_SIZES, $s, false );
+		update_option( self::OPT_SIZES, array( 'list' => (int) $list, 'days' => $s ), false );
 	}
 
 	/**
 	 * The change in the list's size over $days: array( change, the day it's measured from ) or null with nothing saved before today.
 	 * It's measured from the newest saved day at least $days back, or from the oldest saved day while the record is younger than that.
 	 */
-	public static function size_change( $now, $days = self::DAYS, $today = null ) {
-		$s = get_option( self::OPT_SIZES, array() ); if ( ! is_array( $s ) || ! $s ) { return null; }
+	public static function size_change( $now, $days = self::DAYS, $today = null, $list = null ) {
+		$s = self::sizes( $list ?? (int) DBD_Email::get( 'list' ) ); if ( ! $s ) { return null; }
 		$today = $today ?? wp_date( 'Y-m-d' ); $cut = gmdate( 'Y-m-d', strtotime( $today . ' -' . (int) $days . ' days' ) );
 		ksort( $s ); $from = null;
 		foreach ( $s as $d => $n ) { if ( $d < $today && ( $from === null || $d <= $cut ) ) { $from = $d; } }

@@ -295,18 +295,21 @@ if ( $view === 'send' ) {
 if ( $view === 'growth' ) {
 	$fails = 0; $t = function ( $what, $got, $want ) use ( &$fails ) { $ok = $got === $want; if ( ! $ok ) { $fails++; } echo ( $ok ? '  ok   ' : '  FAIL ' ) . $what . ': ' . json_encode( $got ) . ( $ok ? '' : ' (want ' . json_encode( $want ) . ')' ) . "\n"; };
 	$GLOBALS['dbd_opt'] = array();
-	$t( 'nothing saved', DBD_Growth::size_change( 10, 28, '2026-11-15' ), null );
-	DBD_Growth::save_size( '2026-11-15', 10 );
-	$t( 'only today saved', DBD_Growth::size_change( 10, 28, '2026-11-15' ), null );
-	DBD_Growth::save_size( '2026-11-10', 4 ); DBD_Growth::save_size( '2026-11-12', 6 );
-	$t( 'younger than 28 days: from the oldest', DBD_Growth::size_change( 10, 28, '2026-11-15' ), array( 6, '2026-11-10' ) );
-	DBD_Growth::save_size( '2026-10-01', 1 ); DBD_Growth::save_size( '2026-10-17', 2 ); DBD_Growth::save_size( '2026-10-19', 3 );
-	$t( 'the newest day at least 28 back', DBD_Growth::size_change( 10, 28, '2026-11-15' ), array( 8, '2026-10-17' ) );
-	DBD_Growth::save_size( '2026-11-10', 4 ); $t( 'the same size saves nothing new', count( $GLOBALS['dbd_opt'][ DBD_Growth::OPT_SIZES ] ), 6 );
-	for ( $i = 0; $i < 120; $i++ ) { DBD_Growth::save_size( gmdate( 'Y-m-d', strtotime( '2026-01-01 +' . $i . ' days' ) ), $i ); }
-	$S = $GLOBALS['dbd_opt'][ DBD_Growth::OPT_SIZES ]; $t( 'keeps the newest 90', array( count( $S ), array_key_last( $S ) ), array( 90, '2026-11-15' ) );
+	$t( 'nothing saved', DBD_Growth::size_change( 10, 28, '2026-11-15', 4 ), null );
+	DBD_Growth::save_size( '2026-11-15', 10, 4 );
+	$t( 'only today saved', DBD_Growth::size_change( 10, 28, '2026-11-15', 4 ), null );
+	DBD_Growth::save_size( '2026-11-10', 4, 4 ); DBD_Growth::save_size( '2026-11-12', 6, 4 );
+	$t( 'younger than 28 days: from the oldest', DBD_Growth::size_change( 10, 28, '2026-11-15', 4 ), array( 6, '2026-11-10' ) );
+	DBD_Growth::save_size( '2026-10-01', 1, 4 ); DBD_Growth::save_size( '2026-10-17', 2, 4 ); DBD_Growth::save_size( '2026-10-19', 3, 4 );
+	$t( 'the newest day at least 28 back', DBD_Growth::size_change( 10, 28, '2026-11-15', 4 ), array( 8, '2026-10-17' ) );
+	DBD_Growth::save_size( '2026-11-10', 4, 4 ); $t( 'the same size saves nothing new', count( $GLOBALS['dbd_opt'][ DBD_Growth::OPT_SIZES ]['days'] ), 6 );
+	for ( $i = 0; $i < 120; $i++ ) { DBD_Growth::save_size( gmdate( 'Y-m-d', strtotime( '2026-01-01 +' . $i . ' days' ) ), $i, 4 ); }
+	$S = $GLOBALS['dbd_opt'][ DBD_Growth::OPT_SIZES ]['days']; $t( 'keeps the newest 90', array( count( $S ), array_key_last( $S ) ), array( 90, '2026-11-15' ) );
+	$t( 'another list has no record yet', DBD_Growth::size_change( 500, 28, '2026-11-15', 7 ), null );
+	DBD_Growth::save_size( '2026-11-15', 500, 7 );
+	$t( 'switching lists starts over', array( $GLOBALS['dbd_opt'][ DBD_Growth::OPT_SIZES ]['list'], count( $GLOBALS['dbd_opt'][ DBD_Growth::OPT_SIZES ]['days'] ), DBD_Growth::size_change( 500, 28, '2026-11-16', 7 ) ), array( 7, 1, array( 0, '2026-11-15' ) ) );
 	if ( ! function_exists( 'dbd_admin_when' ) ) { function dbd_admin_when( $ts, $f = 'M j, g:i A' ) { return gmdate( $f, (int) $ts ); } }
-	$row = array( 'title' => 'Week 9 in review', 'at' => 1794873600, 'n' => 139, 'camp' => 2, 'result' => 'sent' );
+	$row = array( 'title' => 'Week 9 in review', 'at' => 1794409200, 'n' => 139, 'camp' => 2, 'result' => 'sent' );
 	$t( 'email line with stats', DBD_Growth::email_line( $row, array( 'delivered' => 139, 'uniqueViews' => 81, 'uniqueClicks' => 29 ) ), 'Week 9 in review, Nov 11: delivered to 139, 58% opened, 21% clicked' );
 	$t( 'email line without stats', DBD_Growth::email_line( $row, null ), 'Week 9 in review, Nov 11: sent to 139' );
 	$GLOBALS['dbd_opt'] = array( 'dbd_email' => array( 'key' => '', 'list' => 4 ) );
