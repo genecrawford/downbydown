@@ -2872,3 +2872,39 @@ Outbound clicks to YouTube and news sites need nothing from the plugin: Analytic
 **Effort:** one small release, 2.25.0. It touches PHP (the tab, the Brevo reads), so Greptile reviews it.
 
 **Undo:** the tab only reads; the events only add to Analytics. Turning the release back removes both, and the stored list sizes go with the plugin's other settings.
+
+## 66. More signups for the Tuesday email (scoped and mocked 2026-11-15, `mockup-v41/`)
+
+SCOPE §64 Plan 3, in detail. Today the signup form (WPForms #63, `[wpforms id="63" title="false"]`) shows only on the home page and under each weekly post.
+
+**66a. A signup strip at the end of four page types:** game pages, player pages (kickers too), and the draft and combine boards.
+- It sits after everything else on the page, below the news and videos, as one plain panel: a line, a sentence and the same form. Not a popup, nothing that moves.
+- It uses the shortcode from the Week in review tab's "Signup under each post" setting, so changing the form there changes it everywhere.
+- It only shows while the email is on and Brevo is set up, so it's never a dead form.
+- Someone who has confirmed on this device (the "You're in" landing) sees "You're on the list" instead of the form.
+- It has an id (`#dbd-sign`), so the email's forward line and any post can link straight to it.
+- A new Analytics event, `generate_lead`, fires when the form is sent, with the page type. The Growth tab's Signups row becomes "41 confirmed, from 55 forms sent".
+
+**66b. The line changes with the calendar:**
+
+| Dates | Line | Sentence |
+|---|---|---|
+| September 1 to February 14 | The week in review, every Tuesday | The scores, the biggest swings and the players who rose, one email after every week. Free. |
+| February 15 to April 30 | The combine and draft boards, the week they land | Every drill and every pick, the week the results are in. Then the week in review again from September. Free. |
+| May 1 to August 31 | The week in review, every Tuesday from September | The scores, the biggest swings and the players who rose, one email after every week. Free. |
+
+**Board emails, so the February line is true:** today the plugin only emails weekly posts, so nothing would arrive in March or April. The release adds two emails a year:
+- The Tuesday 8 AM after a new year's combine results land and stop changing for two days: the combine card, the fastest 40, top vertical and most bench reps, the top ten, and a button to the board.
+- The same after the draft: the draft card, the first pick, the team with the most picks, the first ten picks, and a button to the board.
+- They use the Tuesday email's template, show in its send log, can be sent as a test first, and have the same Try again. The board page is their "View in browser".
+- On the Week in review tab: a switch for board emails (on by default) and which one is next.
+
+**66c. Two things in every Tuesday email:**
+- **The standout chart:** "The swing and the play" gets the swing game's card, its win-probability line with the biggest swing marked, linking to the game. It goes into the weekly post itself, so the site and the email match. It's saved to the media library when the post is written, like the week card, so email apps load it from the site. Posts already published don't change.
+- **A forward line** under the main button: "Know someone who'd like this? Forward it. They can sign up at downbydown.com." The link opens the post's signup form (`#dbd-sign`). Board emails get the same line, linking to the board's strip.
+
+**Gene's part:** nothing to set up. As the list grows, keep an eye on Brevo's free-plan limit (300 emails a day).
+
+**Effort:** one release, 2.26.0. The board emails are most of it. It touches PHP, so Greptile reviews it.
+
+**Undo:** the strip only shows while the email is on; board emails have their own switch; the chart and forward line only affect posts written after the update.
