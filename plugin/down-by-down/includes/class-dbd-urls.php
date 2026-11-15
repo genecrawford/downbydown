@@ -16,7 +16,7 @@ class DBD_Urls {
 	const OPT_SIG  = 'dbd_rewrite_sig';   /* what the rewrite rules were last flushed for */
 	const OPT_ROOT = 'dbd_root_paths';    /* app paths stay at the site root when the app page isn't the front page (/hub/); on by default */
 	const BASES    = 'team|game|player|compare|players|leaders|week|matchups|teams|my-team';
-	const ROUTE_KEYS = array( 'team', 'game', 'player', 'compare', 'view', 'side', 'week', 'g' );  /* a path decides these; the query string can't override them */
+	const ROUTE_KEYS = array( 'team', 'game', 'player', 'compare', 'view', 'side', 'week', 'g', 'y' );  /* a path decides these; the query string can't override them */
 
 	private static $on = null; private static $page = null; private static $players = null; private static $games = null;
 
@@ -200,6 +200,10 @@ class DBD_Urls {
 			case 'week':
 				if ( ! $n ) { return array( 'view' => 'week' ); }
 				return ( $n === 1 && ctype_digit( $seg[0] ) ) ? array( 'view' => 'week', 'week' => $seg[0] ) : $nf;
+			case 'draft':
+			case 'combine':  /* the season boards (SCOPE §63): /draft/ is the newest, /draft/2026/ a year */
+				if ( ! $n ) { return array( 'view' => $b ); }
+				return ( $n === 1 && preg_match( '/^(19|20)\d\d$/', $seg[0] ) ) ? array( 'view' => $b, 'y' => $seg[0] ) : $nf;
 			case 'matchups':
 				if ( ! $n ) { return array( 'view' => 'matchups' ); }
 				return ( $n === 1 && preg_match( '/^week-(\d{1,2})$/', $seg[0], $mm ) ) ? array( 'view' => 'matchups', 'week' => $mm[1] ) : $nf;
@@ -236,6 +240,7 @@ class DBD_Urls {
 			elseif ( $v === 'leaders' ) { $g = (string) ( $a['g'] ?? '' ); $p = 'leaders/' . ( $g !== '' && $g !== 'fan' && isset( DBD_Leaders::GROUPS[ $g ] ) ? $g . '/' : '' ); unset( $a['g'] ); }
 			elseif ( $v === 'week' ) { $p = 'week/' . ( ! empty( $a['week'] ) ? (int) $a['week'] . '/' : '' ); unset( $a['week'] ); }
 			elseif ( $v === 'matchups' ) { $p = 'matchups/' . ( ! empty( $a['week'] ) ? 'week-' . (int) $a['week'] . '/' : '' ); unset( $a['week'] ); }
+			elseif ( $v === 'draft' || $v === 'combine' ) { $p = $v . '/' . ( ! empty( $a['y'] ) ? (int) $a['y'] . '/' : '' ); unset( $a['y'] ); }
 			else { return null; }
 			unset( $a['view'] );
 		} elseif ( isset( $a['myteam'] ) ) {

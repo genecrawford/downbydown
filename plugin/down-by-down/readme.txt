@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.22.0
+Stable tag: 2.23.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,11 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.23.0 =
+* The season draft board, /draft/{year}/ (SCOPE §63): every pick of a draft back to 1980, round by round, with team (as it was that year, today's logo), school, combine score, Hall of Fame and Pro Bowls, and what each player has done so far (the newest class) or over his career. Round, position and team filters with a live count; every column sorts; Early returns (or Class leaders), picks by position and by school beside it; a year switcher.
+* The season combine board, /combine/{year}/: every combine since 2000, the top five in each drill against history ("5 better since 2000"), then everyone who tested with each result shaded by his percentile at his position since 2000, his combine score and where he was drafted. Position filter, every column sorts.
+* Data: tools/build_boards.py writes data/draft/{year}.json, data/combine/{year}.json and data/boards.json from the nflverse files the build already downloads; the boards stay out of season archives and are listed in the sitemap.
 
 = 2.22.0 =
 * Before the NFL on every player page (SCOPE §62): the draft (round and pick, his class, where he went among his position, Pro Bowls and All-Pro since), the combine (each drill with his percentile against every player at his position tested since 2000, and a score that averages the drills he ran), and the opening of his Wikipedia article with its CC BY-SA credit.

@@ -8,7 +8,7 @@ data/career/ (the build's cache of past seasons' totals, never synced) stays out
 """
 import hashlib, json, os, shutil, sys
 
-KEEP_OUT = ('archive', 'career')  # top-level folders that never go into an archived season
+KEEP_OUT = ('archive', 'career', 'draft', 'combine', 'boards.json')  # never go into an archived season: the boards span every year (SCOPE §63)
 
 
 def sha1(p):
