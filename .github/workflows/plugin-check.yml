@@ -26,12 +26,14 @@ jobs:
           f=pages/draft-2026.html
           [ "$(grep -o '<tr data-p=' $f | wc -l)" -eq 257 ] || { echo "the 2026 board should have 257 picks"; exit 1; }
           grep -qF 'The <em>2026</em> draft' $f && grep -qF 'data-filter="pos"' $f && grep -qF 'Early returns' $f || { echo "the 2026 draft board is missing a piece"; exit 1; }
+          grep -qF '>2026 combine results</a>' $f && grep -qF 'class="bd-next"' $f && grep -qF 'The 2026 combine' $f || { echo "the draft board lost its links to the combine (2.23.1)"; exit 1; }
           php tools/view_harness.php data draft 1983
           f=pages/draft-1983.html
           python3 -c "import sys,re; h=open('$f').read(); r=re.search(r'<tr data-p=\"1\"[^>]*>.*?</tr>', h, re.S).group(0); sys.exit(0 if 'John Elway' in r and '>BAL<' in r and 'bd-hof' in r and 'The combine data starts in 2000' in h and 'Class leaders' in h else 'the 1983 board is wrong: Elway should be the Baltimore pick, HOF')"
           php tools/view_harness.php data combine 2026
           f=pages/combine-2026.html
           [ "$(grep -o 'class="dbd-panel bd-lead"' $f | wc -l)" -eq 6 ] || { echo "the combine board should have six leader lists"; exit 1; }
+          grep -qF '>2026 draft board</a>' $f && grep -qF 'class="bd-next"' $f || { echo "the combine board lost its links to the draft (2.23.1)"; exit 1; }
           grep -qF 'Brenen Thompson' $f && grep -qF 'LAC · R4 #105' $f || { echo "the combine board lost the fastest 40 or its draft slot"; exit 1; }
           grep -qF '>4.43<' pages/combine-2026.html || grep -qF '>4.26<' $f || { echo "combine times lost their hundredths"; exit 1; }
           python3 -c "import json,sys; m=json.load(open('data/manifest.json'))['files']; sys.exit(0 if 'draft/2026.json' in m and 'combine/2026.json' in m and 'boards.json' in m else 'the manifest does not list the board files, so sites would never download them')"

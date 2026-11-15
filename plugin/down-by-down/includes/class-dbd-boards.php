@@ -81,6 +81,30 @@ class DBD_Boards {
 		return DBD_Data::team( (string) $f ) ? '<span class="tl">' . DBD_Marks::tile( (string) $f, $n ) . '</span>' : '';  /* the shared mark: the logo only when the logo setting is on (Greptile, PR #112) */
 	}
 
+	/** The other board for this year (SCOPE §63, 2.23.1): array( url, button label, headline, line ). Before 2000 the draft points at the newest combine. */
+	public static function other( $kind, $year ) {
+		$to = $kind === 'draft' ? 'combine' : 'draft'; $ys = self::years( $to ); $y = in_array( (int) $year, $ys, true ) ? (int) $year : ( $ys[0] ?? 0 );
+		if ( ! $y ) { return null; }
+		$B = self::get( $to, $y ); $n = $B ? count( $B['rows'] ) : 0; $same = $y === (int) $year;
+		if ( $to === 'combine' ) {
+			return array( DBD_Router::url( array( 'view' => 'combine', 'y' => $y ) ), $same ? $y . ' combine results' : 'Combine results', 'The ' . $y . ' combine',
+				( $same ? '' : 'The combine data starts in 2000. ' ) . $n . ' players tested: the 40, vertical, broad jump, bench, 3-cone and shuttle, each against every player at the position since 2000, with where each was drafted.' );
+		}
+		return array( DBD_Router::url( array( 'view' => 'draft', 'y' => $y ) ), $y . ' draft board', 'The ' . $y . ' draft', $n . ' picks, round by round: team, school, combine score and what each player has done since.' );
+	}
+
+	/** The head's controls: the year switcher and a button to the other board. */
+	public static function controls( $kind, $year ) {
+		$o = self::other( $kind, $year );
+		return '<div class="bd-ctl">' . self::switcher( $kind, $year ) . ( $o ? '<a class="bd-btn" href="' . esc_url( $o[0] ) . '">' . esc_html( $o[1] ) . '</a>' : '' ) . '</div>';
+	}
+
+	/** The big link to the other board at the foot of the page. */
+	public static function next_link( $kind, $year ) {
+		$o = self::other( $kind, $year ); if ( ! $o ) { return ''; }
+		return '<a class="bd-next" href="' . esc_url( $o[0] ) . '"><span class="k">' . ( $kind === 'draft' ? 'Next: the combine' : 'Next: the draft' ) . '</span><b>' . esc_html( $o[2] ) . '</b><span class="s">' . esc_html( $o[3] ) . '</span><span class="go">' . esc_html( $kind === 'draft' ? 'See the combine results' : 'See the draft board' ) . '</span></a>';
+	}
+
 	/** The year switcher: every year of this board, each linking to its page. */
 	public static function switcher( $kind, $year ) {
 		$o = ''; foreach ( self::years( $kind ) as $y ) { $o .= '<option value="' . esc_url( DBD_Router::url( array( 'view' => $kind, 'y' => $y ) ) ) . '"' . ( $y === (int) $year ? ' selected' : '' ) . '>' . (int) $y . '</option>'; }

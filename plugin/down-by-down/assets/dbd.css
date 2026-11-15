@@ -2063,3 +2063,17 @@ html:not([data-fx]) .dbd [data-fx="half"],html[data-fx="std"] .dbd [data-fx="std
 .dbd .bd-other{margin:4px 0 0;font:600 14px var(--dbd-body)}.dbd .bd-other a{color:var(--dbd-ink);text-decoration:underline;text-decoration-color:var(--dbd-red);text-decoration-thickness:2px;text-underline-offset:3px}
 .dbd .bd-filters .dbd-reset[hidden]{display:none}
 @container dbd (max-width:700px){.dbd .bd-filters .fr{grid-template-columns:minmax(0,1fr);gap:6px}.dbd .bd-filters .bd-chips{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px}}
+
+/* 2.23.1: the other board, a button beside the year switcher and a big link at the foot of the page */
+.dbd .bd-ctl{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.dbd a.bd-btn{display:inline-flex;align-items:center;height:34px;padding:0 14px;border-radius:var(--dbd-r);background:var(--dbd-ink);color:#fff;font:700 13px var(--dbd-display);text-transform:uppercase;letter-spacing:.12em;text-decoration:none;white-space:nowrap}
+.dbd a.bd-btn:hover{background:var(--dbd-red)}
+.dbd a.bd-btn:focus-visible{outline:2px solid var(--dbd-ink);outline-offset:2px}
+.dbd a.bd-next{position:relative;display:grid;gap:6px;margin:8px 0 0;padding:26px clamp(18px,3vw,32px) 31px;border-radius:var(--dbd-r);background:var(--dbd-ink);color:#fff;text-decoration:none;overflow:hidden}
+.dbd a.bd-next::after{content:"";position:absolute;left:0;right:0;bottom:0;height:5px;background:var(--dbd-red)}
+.dbd a.bd-next .k{font:700 11px var(--dbd-display);text-transform:uppercase;letter-spacing:.2em;color:#ff8a80}
+.dbd a.bd-next b{font:800 clamp(30px,4.2vw,52px)/1 var(--dbd-hero);text-transform:uppercase;letter-spacing:.02em}
+.dbd a.bd-next .s{max-width:70ch;font:400 15px/1.5 var(--dbd-body);color:rgba(255,255,255,.8)}
+.dbd a.bd-next .go{justify-self:start;margin-top:8px;padding:9px 16px;border-radius:var(--dbd-r);background:var(--dbd-red);font:700 13px var(--dbd-display);text-transform:uppercase;letter-spacing:.12em}
+.dbd a.bd-next:hover .go{background:#fff;color:var(--dbd-ink)}
+.dbd a.bd-next:focus-visible{outline:3px solid var(--dbd-red);outline-offset:3px}

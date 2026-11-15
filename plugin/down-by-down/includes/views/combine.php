@@ -11,7 +11,7 @@ $drafted = count( array_filter( $rows, function ( $x ) { return ! empty( $x['dr'
 $fast = null; foreach ( $rows as $x ) { if ( $x['forty'] !== null && ( ! $fast || $x['forty'] < $fast['forty'] ) ) { $fast = $x; } }
 echo '<div class="bd-head"><div><p class="dbd-kicker">The ' . $Y . ' NFL Combine · ' . count( $rows ) . ' players tested</p><h1>The <em>' . $Y . '</em> combine</h1>'
 	. '<p class="bd-say">' . ( $fast ? '<b>' . esc_html( $fast['n'] ) . '</b> ran the fastest 40 (' . esc_html( DBD_Boards::fmt( 'forty', $fast['forty'] ) ) . '). ' : '' ) . '<b>' . $drafted . '</b> of the ' . count( $rows ) . ' who tested were drafted that spring. Every result below is shaded by how it compares with every player at the same position since 2000.</p></div>'
-	. DBD_Boards::switcher( 'combine', $Y ) . '</div>';
+	. DBD_Boards::controls( 'combine', $Y ) . '</div>';
 
 /* ---- the leaders: each drill's top five this year, against history */
 echo '<div class="bd-leaders">';
@@ -44,5 +44,5 @@ foreach ( $rows as $x ) {
 	echo '<td class="dr">' . ( $dr ? esc_html( ( $dr[2] ? $dr[2] . ' · ' : '' ) . 'R' . (int) $dr[0] . ' #' . (int) $dr[1] ) : 'Undrafted' ) . '</td></tr>';
 }
 echo '</tbody></table></div><p class="dbd-note">Results from nflverse\'s combine data (Pro Football Reference). Shading compares each result with every player at the same position at the combine since 2000: faster is better on the 40, 3-cone and shuttle, more is better on the rest. The score averages those percentiles over the drills he ran (two at least). Pro day results aren\'t included.</p></section>';
-echo '<p class="bd-other"><a href="' . esc_url( DBD_Router::url( array( 'view' => 'draft', 'y' => $Y ) ) ) . '">The ' . $Y . ' draft</a></p>';
+echo DBD_Boards::next_link( 'combine', $Y );  /* the draft, big and obvious (2.23.1) */
 echo '</main>';
