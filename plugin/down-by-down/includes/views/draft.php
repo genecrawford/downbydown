@@ -21,7 +21,7 @@ $so = $newest ? 'So far' : 'Career';
 $say = 'The ' . esc_html( $nm( $first['f'] ) ) . ' took <b>' . esc_html( $first['n'] ) . '</b> first. ' . esc_html( $mp ) . 's went most often (<b>' . (int) $pos[ $mp ] . '</b>)'
 	. ( $ms ? ', and <b>' . esc_html( $ms ) . '</b> sent the most players (' . (int) $sch[ $ms ] . ')' : '' ) . '. The ' . esc_html( $nm( $mt ) ) . ' made the most picks (' . (int) $fr[ $mt ] . '). '
 	. ( $newest ? '<b>' . $played . '</b> of the ' . count( $rows ) . ' have played a snap so far.' : '<b>' . $played . '</b> of the ' . count( $rows ) . ' played in the NFL.' );
-echo '<div class="bd-head"><div><p class="dbd-kicker">The ' . $Y . ' NFL Draft · ' . count( $rows ) . ' picks · ' . count( $rounds ) . ' rounds</p><h1>The <em>' . $Y . '</em> draft</h1><p class="bd-say">' . $say . '</p></div>' . DBD_Boards::switcher( 'draft', $Y ) . '</div>';
+echo '<div class="bd-head"><div><p class="dbd-kicker">The ' . $Y . ' NFL Draft · ' . count( $rows ) . ' picks · ' . count( $rounds ) . ' rounds</p><h1>The <em>' . $Y . '</em> draft</h1><p class="bd-say">' . $say . '</p></div>' . DBD_Boards::controls( 'draft', $Y ) . '</div>';
 
 /* ---- filters (the §61 panel): round and position chips, a team list; boards.js applies them and writes the count */
 $chip = function ( $v, $label, $on = false ) { return '<button class="bd-chip" type="button" data-v="' . esc_attr( $v ) . '" aria-pressed="' . ( $on ? 'true' : 'false' ) . '">' . $label . '</button>'; };
@@ -61,5 +61,5 @@ $mx = max( $pos ); $bars = ''; $pp = $pos; arsort( $pp ); foreach ( array_slice(
 echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>By position</b></span></div><div class="dbd-pb"><div class="bd-bars">' . $bars . '</div></div></section>';
 $sl = ''; foreach ( array_slice( $sch, 0, 8, true ) as $s => $c ) { $sl .= '<li><span>' . esc_html( $s ) . '</span><b>' . (int) $c . '</b></li>'; }
 echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>By school</b></span></div><div class="dbd-pb"><ul class="bd-list">' . $sl . '</ul></div></section></aside></div>';
-echo '<p class="bd-other"><a href="' . esc_url( DBD_Router::url( array( 'view' => 'combine', 'y' => in_array( $Y, DBD_Boards::years( 'combine' ), true ) ? $Y : ( DBD_Boards::years( 'combine' )[0] ?? $Y ) ) ) ) . '">The ' . ( in_array( $Y, DBD_Boards::years( 'combine' ), true ) ? $Y : 'latest' ) . ' combine</a></p>';
+echo DBD_Boards::next_link( 'draft', $Y );  /* the combine, big and obvious (2.23.1) */
 echo '</main>';
