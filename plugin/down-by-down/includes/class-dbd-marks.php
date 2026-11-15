@@ -38,6 +38,37 @@ class DBD_Marks {
 		return '#121417';
 	}
 
+	/** Two colors mixed: $t of the way from $a to $b. */
+	private static function mix( $a, $b, $t ) {
+		$a = ltrim( $a, '#' ); $b = ltrim( $b, '#' ); $o = '#';
+		foreach ( array( 0, 2, 4 ) as $i ) { $o .= sprintf( '%02x', (int) round( hexdec( substr( $a, $i, 2 ) ) * ( 1 - $t ) + hexdec( substr( $b, $i, 2 ) ) * $t ) ); }
+		return $o;
+	}
+
+	/**
+	 * A team's dark panel and the accent that reads on it (SCOPE §55), as array( panel, accent ).
+	 * Panel: the first team color with 10:1 against white, else the main color mixed toward ink until it has it; pure black is ink.
+	 * Accent: the other color at 4.5:1 on the panel; else the panel deepens (to 15:1 at most) so the second color reads; else the main color lightened.
+	 */
+	public static function deep( $team ) {
+		$ink = '#121417';
+		if ( ! $team ) { return array( $ink, '#ffffff' ); }
+		$c1 = self::color( $team['c1'] ?? '', '#161e36' ); $c2 = self::color( $team['c2'] ?? '', $ink );
+		$bg = null;
+		foreach ( array( $c1, $c2 ) as $c ) { if ( self::contrast( $c, '#ffffff' ) >= 10 ) { $bg = $c; break; } }
+		if ( ! $bg ) { $bg = $c1; for ( $k = 0.05; self::contrast( $bg, '#ffffff' ) < 10 && $k <= 1.0001; $k += 0.05 ) { $bg = self::mix( $c1, $ink, $k ); } }
+		if ( self::lum( $bg ) < 0.004 ) { $bg = $ink; }
+		$ac = null;
+		foreach ( array( $c2, $c1 ) as $c ) { if ( strtolower( $c ) !== strtolower( $bg ) && self::contrast( $c, $bg ) >= 4.5 ) { $ac = $c; break; } }
+		if ( ! $ac && strtolower( $c2 ) !== strtolower( $bg ) ) {
+			$d = $bg;
+			for ( $k = 0.05; self::contrast( $c2, $d ) < 4.5 && self::contrast( $d, '#ffffff' ) < 15 && $k <= 1.0001; $k += 0.05 ) { $d = self::mix( $bg, $ink, $k ); }
+			if ( self::contrast( $c2, $d ) >= 4.5 ) { $bg = $d; $ac = $c2; }
+		}
+		if ( ! $ac ) { $ac = $c1; for ( $k = 0.05; self::contrast( $ac, $bg ) < 4.5 && $k <= 1.0001; $k += 0.05 ) { $ac = self::mix( $c1, '#ffffff', $k ); } }
+		return array( strtolower( $bg ), strtolower( $ac ) );
+	}
+
 	private static function color( $c, $fallback ) {
 		return preg_match( '/^#[0-9a-fA-F]{6}$/', (string) $c ) ? $c : $fallback;
 	}

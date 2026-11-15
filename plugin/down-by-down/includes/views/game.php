@@ -168,15 +168,17 @@ if ( ! $cards ) {
 if ( $early ) { echo '<div class="dbd-panel dbd-notice"><div class="dbd-pb">Fewer than three games for one or both teams. Ranks are shown, but treat every number as a small sample.</div></div>'; }
 
 /* ---- keys to the game (SCOPE §32, Takeaways renamed): the generated reads, and on an upcoming game the players to watch */
-echo '<section class="dbd-panel dbd-keys"><div class="dbd-ph"><span class="dbd-lab"><b>Keys to the game</b> · ' . ( $final ? 'from the season numbers, not this game alone' : 'where this matchup tilts, from the season numbers' ) . '</span><span class="dbd-badge">' . count( $cards ) . ' reads</span></div><div class="dbd-takes t-stagger">';
+/* SCOPE §55: the panel wears the offense's colors (DBD_Marks::deep), and flips with the toggle */
+list( $kBg, $kAc ) = DBD_Marks::deep( $Ot );
+echo '<section class="dbd-panel dbd-keys tm" style="--k-bg:' . esc_attr( $kBg ) . ';--k-ac:' . esc_attr( $kAc ) . '"><div class="dbd-ph"><span class="dbd-lab">' . DBD_Marks::tile( $O, 24 ) . '<span><b>Keys to the game</b> · <span class="kt">' . esc_html( $Ot['nick'] ) . ' offense</span>, ' . ( $final ? 'from the season numbers, not this game alone' : 'where this matchup tilts, from the season numbers' ) . '</span></span><span class="dbd-badge">' . count( $cards ) . ' reads</span></div><div class="dbd-takes t-stagger">';
 $n = 0;
 foreach ( $cards as $c ) {
 	$n++;
 	echo '<div class="dbd-take t-stagger-line t-stagger-line--' . $n . ' ' . esc_attr( $c[1] ) . '"><span class="n">' . sprintf( '%02d', $n ) . '</span><div class="tag">' . esc_html( $c[0] ) . '</div><h3>' . esc_html( $c[2] ) . '</h3><p>' . esc_html( $c[3] ) . '</p>' . ( $early ? '<span class="small">Early season: small samples</span>' : '' ) . '</div>';
 }
-echo '</div>';
-if ( ! $final ) { $pw = DBD_Lineup::watch( $AWAY ) . DBD_Lineup::watch( $HOME ); if ( $pw ) { echo '<h4 class="dbd-wph">Players to watch</h4><div class="dbd-pw2">' . $pw . '</div>'; } }
-echo '</section>';
+echo '</div></section>';
+/* players to watch covers both teams, so it sits in its own light panel under the offense's (SCOPE §55) */
+if ( ! $final ) { $pw = DBD_Lineup::watch( $AWAY ) . DBD_Lineup::watch( $HOME ); if ( $pw ) { echo '<section class="dbd-panel dbd-pwp"><div class="dbd-ph"><span class="dbd-lab"><b>Players to watch</b> · both teams</span></div><div class="dbd-pw2">' . $pw . '</div></section>'; } }
 /* ---- the series and the records (SCOPE §33): since 1999 from series.json, read from the away team's side, with both teams' records this season */
 $SR = DBD_Data::series( $AWAY, $HOME );
 if ( $SR && ! empty( $SR['n'] ) ) {

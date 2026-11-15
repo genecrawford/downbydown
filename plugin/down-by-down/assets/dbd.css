@@ -221,6 +221,23 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 .dbd .dbd-take h3{font:700 22px/1.05 var(--dbd-display);text-transform:uppercase;letter-spacing:.08em;margin:6px 0 8px;padding-right:44px;color:var(--dbd-ink)}
 .dbd .dbd-take p{font-size:13px;line-height:1.5;color:var(--dbd-ink-2)}
 .dbd .dbd-take .small{display:block;margin-top:8px;font:700 11px var(--dbd-display);text-transform:uppercase;letter-spacing:.14em;color:var(--dbd-red-ink)}
+/* SCOPE §55: Keys to the game in the offense's colors. --k-bg is the team's dark panel, --k-ac the color that reads on it (DBD_Marks::deep) */
+.dbd .dbd-keys.tm{--dbd-line:rgba(255,255,255,.14);background:var(--k-bg);border-color:var(--k-bg);color:#fff;overflow:hidden;padding-bottom:5px}  /* the line var too, so the stacked layouts' dividers read on the dark panel */
+.dbd .dbd-keys.tm::after{content:"";position:absolute;left:0;right:0;bottom:0;height:5px;background:var(--k-ac)}
+.dbd .dbd-keys.tm>.dbd-ph{padding-top:12px;padding-bottom:12px}
+.dbd .dbd-keys.tm>.dbd-ph .dbd-lab{display:flex;align-items:center;gap:10px;color:rgba(255,255,255,.66)}
+.dbd .dbd-keys.tm>.dbd-ph .dbd-lab>.dbd-lgw,.dbd .dbd-keys.tm>.dbd-ph .dbd-lab>svg{flex:0 0 auto}
+.dbd .dbd-keys.tm>.dbd-ph .dbd-lab b{color:#fff;font-size:15px}
+.dbd .dbd-keys.tm>.dbd-ph .dbd-lab .kt{color:var(--k-ac)}
+.dbd .dbd-keys.tm .dbd-badge{border-color:rgba(255,255,255,.3);color:rgba(255,255,255,.85)}
+.dbd .dbd-keys.tm .dbd-take{padding:18px 18px 20px}
+.dbd .dbd-keys.tm .dbd-take .n{color:var(--k-ac);opacity:.5}
+.dbd .dbd-keys.tm .dbd-take .tag,.dbd .dbd-keys.tm .dbd-take.opp .tag,.dbd .dbd-keys.tm .dbd-take.warn .tag{color:var(--k-ac)}
+.dbd .dbd-keys.tm .dbd-take.even .tag{color:rgba(255,255,255,.6)}
+.dbd .dbd-keys.tm .dbd-take h3{color:#fff}
+.dbd .dbd-keys.tm .dbd-take p{color:rgba(255,255,255,.8)}
+.dbd .dbd-keys.tm .dbd-take .small{color:var(--k-ac)}
+.dbd .dbd-pwp .dbd-pw2{padding-top:14px}
 
 /* ---- matchup: head to head ---- */
 .dbd .dbd-mgrid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:18px;align-items:start}
