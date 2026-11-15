@@ -347,7 +347,7 @@ def _wiki(pfids):
     try: cache_ = json.load(open(path_))
     except Exception: cache_ = {}
     if os.environ.get('DBD_WIKI') != '1': return {k: v[:3] for k, v in cache_.items() if k in pfids and v and v[0]}
-    import urllib.request, urllib.parse
+    import urllib.request, urllib.parse, urllib.error
     ua_ = {'User-Agent': 'DownByDown/2 (https://downbydown.com; https://github.com/genecrawford/downbydown) data build', 'Accept': 'application/json'}
     def get_(url_):
         with urllib.request.urlopen(urllib.request.Request(url_, headers=ua_), timeout=30) as f_: return json.load(f_)
@@ -356,7 +356,7 @@ def _wiki(pfids):
         q_ = 'SELECT ?id ?a WHERE { ?p wdt:P3561 ?id . ?a schema:about ?p ; schema:isPartOf <https://en.wikipedia.org/> }'
         for b_ in get_('https://query.wikidata.org/sparql?format=json&query=' + urllib.parse.quote(q_))['results']['bindings']:
             pid_ = b_['id']['value'].split('/')[-1]  # Wikidata writes "J/JeffJu00"
-            titles_[pid_] = urllib.parse.unquote(b_['a']['value'].rsplit('/', 1)[-1])
+            titles_[pid_] = urllib.parse.unquote(b_['a']['value'].rsplit('/', 1)[-1]).replace('_', ' ')
     except Exception as e_:
         print('wikipedia: Wikidata query failed, using the cache:', e_)
     today_ = datetime.date.today().isoformat(); stale_ = (datetime.date.today() - datetime.timedelta(days=30)).isoformat(); fetched_ = 0
@@ -364,12 +364,15 @@ def _wiki(pfids):
         t_ = titles_.get(pid_) or (cache_.get(pid_) or [None])[0]
         if not t_: continue
         have_ = cache_.get(pid_)
-        if have_ and have_[0] == t_ and len(have_) > 3 and have_[3] >= stale_: continue
+        if have_ and have_[0].replace('_', ' ') == t_ and len(have_) > 3 and have_[3] >= stale_: continue
         if fetched_ >= 600: break  # spread a cold cache over a few nights
         try:
             j_ = get_('https://en.wikipedia.org/api/rest_v1/page/summary/' + urllib.parse.quote(t_.replace(' ', '_'), safe=''))
-            if j_.get('type') == 'standard': cache_[pid_] = [j_.get('titles', {}).get('canonical', t_), j_.get('description') or '', (j_.get('extract') or '')[:900], today_]
-            fetched_ += 1; time.sleep(0.05)
+            if j_.get('type') == 'standard': cache_[pid_] = [(j_.get('titles', {}).get('normalized') or t_).replace('_', ' '), j_.get('description') or '', (j_.get('extract') or '')[:900], today_]
+            fetched_ += 1; time.sleep(0.25)  # well under Wikimedia's rate limit
+        except urllib.error.HTTPError as e_:
+            if e_.code == 429: print('wikipedia: rate limited after', fetched_, 'summaries; the rest wait for the next build'); break
+            print('wikipedia: summary failed for', pid_, e_)
         except Exception as e_:
             print('wikipedia: summary failed for', pid_, e_)
     os.makedirs(os.path.dirname(path_), exist_ok=True)
