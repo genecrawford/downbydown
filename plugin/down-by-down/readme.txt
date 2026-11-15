@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.17.1
+Stable tag: 2.18.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,9 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.18.0 =
+* Touchdowns stand out on the drive chart (SCOPE §58): every snap of a drive that ended in a touchdown sits on a light green wash, and the touchdown row itself gets a green band across the field, a thicker line, a ringed dot where the ball crossed the goal line, and a green TD block in the end zone. The defense tab marks the touchdowns it gave up the same way.
 
 = 2.17.1 =
 * The play explorer's Play detail box stays below the site's fixed header (and the admin bar when you're logged in) as you scroll, instead of sliding under it.
