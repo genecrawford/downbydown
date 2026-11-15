@@ -2632,3 +2632,8 @@ Gene: move "Who gets the ball", or a player picker, above the charts, since it f
 - **Who gets the ball stays at the bottom with every player**, counted the same way as the chips. The picked player's row is highlighted instead of being the only row.
 - **On a phone** the chips run in one row that scrolls sideways.
 - **Code:** all in team-explorer.js (`others()`, `touches()`, `drawPlayers()`, `render()` passes the unfiltered-by-player plays to `usage()`) and dbd.css (`.dbd-pstrip`, `.dbd-pchip`).
+- **Gene, 2026-11-15: "better, but it's still confusing"; "try each visual approach and mock each one".** Three mocks in `mockup-v36/`. All three keep the panel header ("21 of 447 snaps", Reset only when filtered), the receiver-chart highlight, and the team color for anything in use. All three open from disk.
+  - **A, a sentence** (`filters-a-sentence.html`): one line that reads like English, each underlined part a dropdown: "Show snaps by [anyone] in [all games], on [any down], [passes and runs], [anywhere on the field], from [any formation], in [any quarter]." A changed part turns the team color with a solid underline.
+  - **B, one row of dropdowns** (`filters-b-dropdowns.html`): seven labeled dropdowns in one row (Game, Player, Down, Type, Field zone, Formation, Quarter). One in use gets a team-color border and tint. It folds to four columns, then two, on narrower screens.
+  - **C, fewer at once** (`filters-c-fewer.html`): the game and player chips stay up front as two labeled rows. Down, type, zone, formation and quarter wait behind "More filters", which shows "1 on" and opens by itself when any are set.
+  - In A and B the game becomes one pick at a time (today's chips allow several games at once); C keeps multi-pick.
