@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.16.0
+Stable tag: 2.17.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,11 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.17.0 =
+* The offense and defense pages open with the team's own panel (SCOPE §57), in the colors and band of the game page: the logo, the season line, the title, the note, the Offense | Defense switch and the News and Videos links, with four numbers about the team on the right: its offense and defense ranks, its snaps, and its next game with a link to it (the last game once none are left).
+* The game chips are one line each (week, opponent, result) and the one you pick fills with the team's color. On a phone they run in one row that scrolls sideways.
+* The loose snaps badge is gone; the defense tab's EPA rank lives in the panel's numbers.
 
 = 2.16.0 =
 * The game page opens with a face-off (SCOPE §56): the offense's panel on the left and the defense's on the right, each in its team's colors with the same accent band as Keys to the game, the role and rank in the accent and the team name linking to its offense or defense page. The game card sits between them: status, the line, the total, kickoff and the preview or highlights, and the score once the game is final. On a phone the two panels sit side by side over the game card.
