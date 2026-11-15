@@ -161,6 +161,18 @@ jobs:
           php tools/view_harness.php data game 2026_08_MIN_DET
           grep -qF 'class="dbd-panel dbd-keys tm" style="--k-bg:#4f2683;--k-ac:#ffc62f"' pages/game-2026_08_MIN_DET.html || { echo "the keys panel is not in the Vikings colors"; exit 1; }
           grep -qF '<span class="kt">Vikings offense</span>' pages/game-2026_08_MIN_DET.html || { echo "the keys header does not name the offense"; exit 1; }
+          # SCOPE §62: Before the NFL on a player page, from a copy of the data with a draft, combine and Wikipedia record added
+          rm -rf /tmp/dd && cp -r data /tmp/dd
+          python3 -c "import json; f='/tmp/dd/players/MIN.json'; d=json.load(open(f)); p=[x for x in d['players'] if x['id']=='00-0036322'][0]; p['bf']={'dr':{'y':2020,'r':1,'p':22,'t':'MIN','sc':'LSU','pos':'WR','k':5,'n':35,'b':['Henry Ruggs III','Jerry Jeudy','CeeDee Lamb','Jalen Reagor'],'pb':4,'ap':2,'hof':False},'cb':{'y':2020,'g':'WR','d':[['ht',73,44],['wt',202,50],['forty',4.43,74],['bench',None,None],['vertical',37.5,72],['broad_jump',126,77],['cone',None,None],['shuttle',None,None]],'sc':74,'nr':3}}; p['wk']=['Justin Jefferson','American football player (born 1999)','Justin Jamal Jefferson is an American professional football wide receiver.']; json.dump(d, open(f,'w'))"
+          php tools/view_harness.php /tmp/dd player 00-0036322
+          f=$(ls -t pages/player-*.html | head -1)
+          grep -qF 'id="dbd-before"' $f && grep -qF 'Round 1 · Pick 22' $f && grep -qF '4.43s' $f && grep -qF 'Score 74 of 100' $f || { echo "the Before the NFL band is missing a piece"; exit 1; }
+          grep -qF 'href="https://en.wikipedia.org/wiki/Justin_Jefferson"' $f && grep -qF 'CC BY-SA 4.0' $f && grep -qF '>Draft and combine</a>' $f || { echo "the Wikipedia link or credit is missing"; exit 1; }
+          python3 -c "import sys; h=open('$f').read(); sys.exit(0 if 0 < h.find('id=\"dbd-career\"') < h.find('id=\"dbd-before\"') < h.find('id=\"dbd-more\"') else 'Before the NFL is not between Career and Intel')"
+          # without the record, no band and no pills
+          php tools/view_harness.php data player 00-0036322
+          f=$(ls -t pages/player-*.html | head -1)
+          if grep -q 'id="dbd-before"' $f; then grep -q '"bf"' data/players/MIN.json || { echo "a band showed with no record"; exit 1; }; fi
           # SCOPE §57: the team page header is the team's panel with the four numbers
           php tools/view_harness.php data team MIN
           f=pages/team-MIN.html
