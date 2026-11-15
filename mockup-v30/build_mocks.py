@@ -68,6 +68,20 @@ CSS = '''<style>
 .dbd .mb .foot{display:flex;flex-direction:column;align-items:center;gap:14px;padding:14px 0 6px}
 .dbd .mb .foot .dbd-sub{margin:0;text-align:center;max-width:70ch}
 @media (max-width:860px){.dbd .mb .face{grid-template-columns:1fr 1fr}.dbd .mb .mid{grid-column:1 / -1;grid-row:2}}
+
+/* B, team blocks: each side is the team's own dark panel, the same colors and bottom band as the Keys panel below (SCOPE §55) */
+.dbd .mbk .side{position:relative;background:var(--k-bg);border-radius:var(--dbd-r);padding:22px 16px 26px;color:#fff;overflow:hidden;align-self:stretch;justify-content:center}
+.dbd .mbk .side::after{content:"";position:absolute;left:0;right:0;bottom:0;height:5px;background:var(--k-ac)}
+.dbd .mbk .side h1,.dbd .mbk .side .h1{color:#fff}
+.dbd .mbk .side .u{box-shadow:none}
+.dbd .mbk .side .role{font:700 12px var(--dbd-display);text-transform:uppercase;letter-spacing:.18em;color:var(--k-ac)}
+.dbd .mbk .side .meta{color:rgba(255,255,255,.7)}
+.dbd .mbk .side .meta b{color:var(--k-ac)}
+.dbd .mbk .face{align-items:stretch}
+.dbd .mbk .mid{display:flex;flex-direction:column;justify-content:center;align-items:center}
+.dbd .mbk .mid .dbd-line{align-self:stretch}
+/* B, team bands: the sides stay light; the underline becomes the jersey band, the team's color with its accent under it */
+.dbd .mbb .side .u{box-shadow:none;padding-bottom:12px;background:linear-gradient(var(--k-bg),var(--k-bg)) left calc(100% - 5px)/100% 8px no-repeat,linear-gradient(var(--k-ac),var(--k-ac)) left bottom/100% 5px no-repeat}
 </style>'''
 
 A = ('<div class="ma"><div class="t-stagger">'
@@ -88,10 +102,26 @@ B = ('<div class="mb">'
      '</div>'
      f'<div class="foot"><p class="dbd-sub">{sub}</p>' + flip('mflip') + '</div></div>')
 
+
+def side(k, role, name, rank, rec, bg, ac, tag='div', cls='h1'):
+    return (f'<div class="side" style="--k-bg:{bg};--k-ac:{ac}">{logo(k, 72)}<span class="role">{role}</span>'
+            f'<{tag} class="{cls}"><span class="u">{name}</span></{tag}><span class="meta"><b>{rank}</b> · {rec}</span></div>')
+mid = f'<div class="mid"><span class="dbd-badge">Upcoming</span><span class="vs">VS</span>{line}{preview}</div>'
+BK = ('<div class="mb mbk">' f'<p class="dbd-kicker">{kick}</p><div class="face">'
+      + side(0, 'Offense', 'Vikings', 'OFF #31', '6-2', '#4f2683', '#ffc62f', 'h1', '') + mid
+      + side(1, 'Defense', 'Packers', 'DEF #7', '6-3', '#203731', '#ffb612')
+      + '</div>' f'<div class="foot"><p class="dbd-sub">{sub}</p>' + flip('mflip') + '</div></div>')
+BB = ('<div class="mb mbb">' f'<p class="dbd-kicker">{kick}</p><div class="face">'
+      + f'<div class="side" style="--k-bg:#4f2683;--k-ac:#ffc62f">{logo(0, 72)}<h1><span class="u">Vikings offense</span></h1><span class="meta"><b>OFF #31</b> · 6-2</span></div>' + mid
+      + f'<div class="side" style="--k-bg:#203731;--k-ac:#ffb612">{logo(1, 72)}<div class="h1"><span class="u">Packers defense</span></div><span class="meta"><b>DEF #7</b> · 6-3</span></div>'
+      + '</div>' f'<div class="foot"><p class="dbd-sub">{sub}</p>' + flip('mflip') + '</div></div>')
+
 note = lambda t: f'<div class="mock-note">{t}</div>'
 for name, new, say in (
     ('header-a.html', A, '<b>Option A: two columns that end level.</b> The logo pair above the headline goes (the game box already shows both teams). The box widens to 380px and runs the full height of the headline block, so both columns start and end together. Each team is one row that never wraps (the "6-/3" break is gone), ranks stacked on the right. The flip becomes a real switch with each team\'s logo.'),
     ('header-b.html', B, '<b>Option B: a face-off.</b> The offense on the left and the defense on the right, each with a big logo, its half of the headline underlined in its color, and the rank that matters for it (OFF for the offense, DEF for the defense). The game sits in the middle: status, the line, the total, kickoff and the preview. The note and the flip center underneath. On a phone the two teams sit side by side with the game under them.'),
+    ('header-b-blocks.html', BK, '<b>Option B with team blocks.</b> Each side is its team\'s own dark panel, the same colors and gold band as the Keys to the game panel below: Vikings purple for the offense, Packers green for the defense. The role sits above the name in the accent ("Offense", "Defense"), the rank in the accent under it. The game card stays light in the middle. Flip to the Packers offense and the two blocks swap sides with the Keys panel turning green.'),
+    ('header-b-bands.html', BB, '<b>Option B with team bands.</b> The sides stay light; the thin underline becomes the jersey band from the Keys panel, the team\'s dark color with its accent along the bottom.'),
 ):
     out = h[:i] + note(say) + new + '<div class="mock-old">' + note('Today, for comparison.') + OLD + '</div>' + h[j:]
     open(name, 'w').write(no_tracking(out.replace('</head>', CSS + '</head>', 1)))

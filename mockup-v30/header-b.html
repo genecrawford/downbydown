@@ -140,6 +140,20 @@ a,abbr,acronym,address,applet,b,big,blockquote,body,center,cite,code,dd,del,dfn,
 .dbd .mb .foot{display:flex;flex-direction:column;align-items:center;gap:14px;padding:14px 0 6px}
 .dbd .mb .foot .dbd-sub{margin:0;text-align:center;max-width:70ch}
 @media (max-width:860px){.dbd .mb .face{grid-template-columns:1fr 1fr}.dbd .mb .mid{grid-column:1 / -1;grid-row:2}}
+
+/* B, team blocks: each side is the team's own dark panel, the same colors and bottom band as the Keys panel below (SCOPE §55) */
+.dbd .mbk .side{position:relative;background:var(--k-bg);border-radius:var(--dbd-r);padding:22px 16px 26px;color:#fff;overflow:hidden;align-self:stretch;justify-content:center}
+.dbd .mbk .side::after{content:"";position:absolute;left:0;right:0;bottom:0;height:5px;background:var(--k-ac)}
+.dbd .mbk .side h1,.dbd .mbk .side .h1{color:#fff}
+.dbd .mbk .side .u{box-shadow:none}
+.dbd .mbk .side .role{font:700 12px var(--dbd-display);text-transform:uppercase;letter-spacing:.18em;color:var(--k-ac)}
+.dbd .mbk .side .meta{color:rgba(255,255,255,.7)}
+.dbd .mbk .side .meta b{color:var(--k-ac)}
+.dbd .mbk .face{align-items:stretch}
+.dbd .mbk .mid{display:flex;flex-direction:column;justify-content:center;align-items:center}
+.dbd .mbk .mid .dbd-line{align-self:stretch}
+/* B, team bands: the sides stay light; the underline becomes the jersey band, the team's color with its accent under it */
+.dbd .mbb .side .u{box-shadow:none;padding-bottom:12px;background:linear-gradient(var(--k-bg),var(--k-bg)) left calc(100% - 5px)/100% 8px no-repeat,linear-gradient(var(--k-ac),var(--k-ac)) left bottom/100% 5px no-repeat}
 </style></head>
 <body class="wp-singular page-template-default page page-id-130 wp-theme-Divi et-tb-has-template et-tb-has-header et-tb-has-footer et_pb_button_helper_class et_cover_background et_pb_gutter et_pb_gutters3 et_pb_pagebuilder_layout et_no_sidebar et_divi_theme et-db dbd-app dbd-view-game">
 	<div id="page-container">
