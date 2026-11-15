@@ -161,6 +161,12 @@ jobs:
           php tools/view_harness.php data game 2026_08_MIN_DET
           grep -qF 'class="dbd-panel dbd-keys tm" style="--k-bg:#4f2683;--k-ac:#ffc62f"' pages/game-2026_08_MIN_DET.html || { echo "the keys panel is not in the Vikings colors"; exit 1; }
           grep -qF '<span class="kt">Vikings offense</span>' pages/game-2026_08_MIN_DET.html || { echo "the keys header does not name the offense"; exit 1; }
+          # SCOPE §57: the team page header is the team's panel with the four numbers
+          php tools/view_harness.php data team MIN
+          f=pages/team-MIN.html
+          grep -qF '<header class="dbd-tpanel">' $f && grep -qF -- '--k-bg:#4f2683;--k-ac:#ffc62f' $f || { echo "the team page has no Vikings panel"; exit 1; }
+          grep -qF '<h1>Vikings <span>offense</span></h1>' $f || { echo "the team panel lost its h1"; exit 1; }
+          python3 -c "import sys, re; h=open('$f').read(); d=re.search(r'<dl class=\"tp-stats\">(.*?)</dl>', h, re.S); sys.exit(0 if d and d.group(1).count('<dt>') in (3, 4) and 'id=\"dbd-snaps\"' in d.group(1) and 'dbd-ttitle' not in h else 'the team panel numbers are wrong')"
           # SCOPE §56: the face-off, offense panel then game card then defense panel, each in its team's colors; the title stays the h1
           f=pages/game-2026_08_MIN_DET.html
           grep -qF '<h1 class="dbd-sr">Vikings offense vs Lions defense</h1>' $f || { echo "the game page lost its h1"; exit 1; }

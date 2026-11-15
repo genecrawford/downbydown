@@ -30,8 +30,8 @@
     var byes = RAW.byes || [];
     var PASSRATE = C.passrate || 0.57;
 
-    var snaps = document.getElementById('dbd-snaps'); if (snaps && !DEF) snaps.textContent = P.length + ' snaps';  /* the defense tab's badge carries its EPA rank */
-    var kick = document.getElementById('dbd-kicker'); if (kick && lastWeek) kick.textContent = SEASON + ' season · Weeks 1 to ' + lastWeek + (byes.length ? ' · bye week ' + byes.join(', ') : '') + ' · ' + W + '-' + L;
+    var snaps = document.getElementById('dbd-snaps'); if (snaps) snaps.textContent = P.length.toLocaleString('en-US');  /* the Snaps number in the team panel (SCOPE §57) */
+    var kick = document.getElementById('dbd-kicker'); if (kick && lastWeek) kick.textContent = SEASON + ' season · Weeks 1 to ' + lastWeek + (byes.length ? ' · Bye week ' + byes.join(', ') : '') + ' · ' + W + '-' + L;
 
     host.innerHTML =
       '<div class="dbd-gstrip" id="dbd-games" role="group" aria-label="Games"></div>' +
@@ -82,7 +82,7 @@
     function drawGames() {
       var all = st.games.size === 0;
       $('#dbd-games').innerHTML = '<button class="dbd-game" type="button" data-g="" aria-pressed="' + all + '"><span class="wk">SEASON</span><span class="opp">All games</span><span class="res">' + G.length + ' games · ' + W + '-' + L + '</span></button>' +
-        G.map(function (g) { return '<button class="dbd-game" type="button" data-g="' + g.id + '" aria-pressed="' + st.games.has(g.id) + '"><span class="wk">WK ' + g.week + ' ' + (g.home ? 'vs' : 'at') + '</span><span class="opp">' + window.dbdMark(g.opp, 22) + g.opp + '</span><span class="res"><b class="' + (g.pf > g.pa ? '' : 'l') + '">' + (g.pf > g.pa ? 'W' : g.pf < g.pa ? 'L' : 'T') + '</b> ' + g.pf + '-' + g.pa + '</span></button>'; }).join('');
+        G.map(function (g) { return '<button class="dbd-game" type="button" data-g="' + g.id + '" aria-pressed="' + st.games.has(g.id) + '"><span class="wk">WK ' + g.week + ' ' + (g.home ? 'vs' : 'at') + '</span><span class="opp">' + window.dbdMark(g.opp, 16) + g.opp + '</span><span class="res"><b class="' + (g.pf > g.pa ? '' : 'l') + '">' + (g.pf > g.pa ? 'W' : g.pf < g.pa ? 'L' : 'T') + '</b> ' + g.pf + '-' + g.pa + '</span></button>'; }).join('');
     }
     $('#dbd-games').onclick = function (e) { var b = e.target.closest('.dbd-game'); if (!b) return; var g = b.dataset.g; if (!g) st.games.clear(); else st.games.has(g) ? st.games.delete(g) : st.games.add(g); if (st.games.size === G.length) st.games.clear(); render(); };
     $('#f-q').onchange = function (e) { st.q = e.target.value; render(); };

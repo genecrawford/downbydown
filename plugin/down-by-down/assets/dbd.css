@@ -69,6 +69,35 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 .dbd h1 em{font-style:normal;color:var(--dbd-red-ink)}
 .dbd .dbd-sub{margin:14px 0 0;font-size:15px;max-width:52ch;color:var(--dbd-ink-2)}
 .dbd .dbd-sub a{color:var(--dbd-ink);font-weight:600;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px;text-decoration-color:var(--dbd-red)}
+/* the team page header (SCOPE §57): the team's own panel, the colors and band of the game page's face-off (--k-bg, --k-ac on main) */
+.dbd .dbd-tpanel{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr) minmax(220px,300px);gap:clamp(16px,2.4vw,32px);align-items:center;background:var(--k-bg);color:#fff;border-radius:var(--dbd-r);padding:26px clamp(18px,2.6vw,32px) 31px;overflow:hidden;margin:10px 0 4px}
+.dbd .dbd-tpanel::after{content:"";position:absolute;left:0;right:0;bottom:0;height:5px;background:var(--k-ac)}
+.dbd .dbd-tpanel .tp-mark{align-self:start}
+.dbd .dbd-tpanel .tp-kick{margin:0 0 8px;font:700 11px var(--dbd-display);text-transform:uppercase;letter-spacing:.2em;color:var(--k-ac)}
+.dbd .dbd-tpanel h1{margin:0;font:800 clamp(30px,4vw,52px)/1 var(--dbd-hero);text-transform:uppercase;letter-spacing:.02em;color:#fff}
+.dbd .dbd-tpanel h1 span{color:rgba(255,255,255,.55)}
+.dbd .dbd-tpanel .tp-sub{margin:12px 0 0;max-width:60ch;font-size:15px;line-height:1.5;color:rgba(255,255,255,.82)}
+.dbd .dbd-tpanel .tp-sub a{color:#fff;font-weight:600;text-decoration:underline;text-decoration-color:var(--k-ac);text-decoration-thickness:2px;text-underline-offset:3px}
+.dbd .dbd-tpanel .tp-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:16px}
+.dbd .dbd-tpanel .dbd-sideswitch{margin:0;background:rgba(0,0,0,.22);border-color:transparent}
+.dbd .dbd-tpanel .dbd-sideswitch a{color:rgba(255,255,255,.8)}
+.dbd .dbd-tpanel .dbd-sideswitch a:hover{color:#fff}
+.dbd .dbd-tpanel .dbd-sideswitch a[aria-current="page"]{background:var(--k-ac);color:var(--k-bg)}
+.dbd .dbd-tpanel .dbd-hop{margin:0}
+.dbd .dbd-tpanel .dbd-hop a{background:transparent;border-color:rgba(255,255,255,.4);color:#fff;font-size:13px}
+.dbd .dbd-tpanel .dbd-hop a:hover{border-color:#fff}
+.dbd .dbd-tpanel .dbd-hop a b{color:var(--k-ac)}
+.dbd .dbd-tpanel .tp-stats{display:grid;grid-template-columns:1fr 1fr;margin:0;border:1px solid rgba(255,255,255,.16);border-radius:var(--dbd-r)}
+.dbd .dbd-tpanel .tp-stats>div{padding:12px 14px;min-width:0}
+.dbd .dbd-tpanel .tp-stats>div:nth-child(even){border-left:1px solid rgba(255,255,255,.16)}
+.dbd .dbd-tpanel .tp-stats>div:nth-child(n+3){border-top:1px solid rgba(255,255,255,.16)}
+.dbd .dbd-tpanel .tp-stats dt{font:700 10px var(--dbd-display);text-transform:uppercase;letter-spacing:.18em;color:rgba(255,255,255,.6)}
+.dbd .dbd-tpanel .tp-stats dd{margin:4px 0 0;font:800 26px/1 var(--dbd-hero);color:var(--k-ac)}
+.dbd .dbd-tpanel .tp-stats dd a{color:inherit;text-decoration:none}
+.dbd .dbd-tpanel .tp-stats dd a:hover{text-decoration:underline;text-underline-offset:4px}
+.dbd .dbd-tpanel .tp-stats dd small{display:block;margin-top:4px;font:500 11px var(--dbd-mono);color:rgba(255,255,255,.65)}
+@container dbd (max-width:900px){.dbd .dbd-tpanel{grid-template-columns:auto minmax(0,1fr)}.dbd .dbd-tpanel .tp-stats{grid-column:1 / -1;grid-template-columns:repeat(4,minmax(0,1fr))}.dbd .dbd-tpanel .tp-stats>div:nth-child(n){border-top:0;border-left:1px solid rgba(255,255,255,.16)}.dbd .dbd-tpanel .tp-stats>div:first-child{border-left:0}}
+@container dbd (max-width:560px){.dbd .dbd-tpanel{grid-template-columns:minmax(0,1fr)}.dbd .dbd-tpanel .tp-mark .dbd-lgw,.dbd .dbd-tpanel .tp-mark .dbd-lgw img,.dbd .dbd-tpanel .tp-mark>svg{width:60px!important;height:60px!important}.dbd .dbd-tpanel .tp-stats{grid-template-columns:1fr 1fr}.dbd .dbd-tpanel .tp-stats>div:nth-child(odd){border-left:0}.dbd .dbd-tpanel .tp-stats>div:nth-child(n+3){border-top:1px solid rgba(255,255,255,.16)}}
 .dbd .dbd-ttitle{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:end;padding:10px 0 6px}
 @media (max-width:800px){.dbd .dbd-ttitle{grid-template-columns:1fr}}
 .dbd .dbd-ttitle h1{font-size:clamp(30px,4.2vw,54px);line-height:1}
@@ -302,12 +331,16 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 .dbd .dbd-skel{padding:var(--dbd-s3) 0;display:grid;gap:10px}
 .dbd .dbd-skel>.dbd-note{padding:26px 0;text-align:center}
 .dbd .dbd-gstrip{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;scrollbar-width:thin}
-.dbd .dbd-game{all:unset;cursor:pointer;flex:0 0 auto;display:flex;flex-direction:column;gap:3px;padding:8px 12px;min-width:104px;background:var(--dbd-panel);border:1px solid var(--dbd-line);border-radius:var(--dbd-r);font-family:var(--dbd-body);color:var(--dbd-ink);transition:border-color .12s,background .12s}
+/* the game chips (SCOPE §57): one line each, week, opponent, result; the picked one fills with the team's color (--k-bg, --k-ac on main) */
+.dbd .dbd-game{all:unset;cursor:pointer;flex:0 0 auto;display:flex;flex-direction:row;align-items:center;gap:8px;padding:5px 10px 5px 8px;background:var(--dbd-panel);border:1px solid var(--dbd-line);border-radius:999px;font-family:var(--dbd-body);color:var(--dbd-ink);white-space:nowrap;transition:border-color .12s,background .12s}
 .dbd .dbd-game:hover{border-color:var(--dbd-line-2);background:var(--dbd-panel-2)}
-.dbd .dbd-game .wk{font:600 11px var(--dbd-mono);color:var(--dbd-muted)}
-.dbd .dbd-game .opp{font:700 20px/1.1 var(--dbd-display);text-transform:uppercase;display:flex;align-items:center;gap:7px}
+.dbd .dbd-game:focus-visible{outline:2px solid var(--dbd-ink);outline-offset:2px}
+.dbd .dbd-game .wk{font:600 10px var(--dbd-mono);color:var(--dbd-muted);text-transform:uppercase}
+.dbd .dbd-game .opp{font:700 14px/1 var(--dbd-display);text-transform:uppercase;display:flex;align-items:center;gap:5px}
 .dbd .dbd-game .res{font:500 11px var(--dbd-mono);color:var(--dbd-muted)} .dbd .dbd-game .res b{color:var(--dbd-good)} .dbd .dbd-game .res b.l{color:var(--dbd-bad)}
-.dbd .dbd-game[aria-pressed="true"]{border-color:var(--dbd-red);box-shadow:0 0 0 1px var(--dbd-red) inset}
+.dbd .dbd-game[aria-pressed="true"]{background:var(--k-bg,var(--dbd-ink));border-color:var(--k-bg,var(--dbd-ink));color:#fff}
+.dbd .dbd-game[aria-pressed="true"] .wk,.dbd .dbd-game[aria-pressed="true"] .res{color:rgba(255,255,255,.75)}
+.dbd .dbd-game[aria-pressed="true"] .res b,.dbd .dbd-game[aria-pressed="true"] .res b.l{color:var(--k-ac,#fff)}
 .dbd .dbd-toolbar{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:end;padding:10px 14px}
 .dbd .dbd-fg{display:flex;flex-direction:column;gap:4px}
 .dbd .dbd-fg>span,.dbd .dbd-fg>label{font:700 11px var(--dbd-display);text-transform:uppercase;letter-spacing:.14em;color:var(--dbd-muted)}
@@ -721,6 +754,7 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 @container dbd (max-width:700px){.dbd .dbd-player .dbd-two{grid-template-columns:minmax(0,1fr)}}
 .dbd .dbd-strip{flex-wrap:wrap;overflow:visible;scroll-snap-type:none}.dbd .dbd-sc{flex:1 1 168px;max-width:240px}
 .dbd .dbd-gstrip{flex-wrap:wrap;overflow:visible}
+@container dbd (max-width:560px){.dbd .dbd-gstrip{flex-wrap:nowrap;overflow-x:auto;gap:6px}}  /* phones: one row of chips that scrolls sideways (SCOPE §57) */
 .dbd .dbd-mgrid>.dbd-span{grid-column:1/-1}
 .dbd #dbd-drive svg{width:100%!important;min-width:0!important;height:auto;max-width:100%}
 .dbd .dbd-usagep{margin-top:0}
