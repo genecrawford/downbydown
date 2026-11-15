@@ -179,7 +179,7 @@ jobs:
             DBD_HARNESS_VIDEOS=/tmp/videos-up.json php tools/view_harness.php data game "$UP"
             grep -qF '>Watch the NFL preview</a>' pages/game-$UP.html && grep -qF '<h2 class="ar-t">The NFL preview</h2>' pages/game-$UP.html || { echo "the upcoming game shows no preview"; exit 1; }
             # SCOPE §55: players to watch sits in its own panel after the offense's keys panel, not inside it
-            python3 -c "import sys; h=open('pages/game-$UP.html').read(); k=h.find('dbd-keys tm'); e=h.find('</section>', k); p=h.find('dbd-panel dbd-pwp'); sys.exit(0 if k > 0 and (p < 0 or p > e) and 'Players to watch' not in h[k:e] else 'players to watch is inside the keys panel')"
+            python3 -c "import sys, json; h=open('pages/game-$UP.html').read(); T=json.load(open('data/teams.json')); T=T.get('teams', T); a, b='$UP'.split('_')[2:4]; k=h.find('dbd-keys tm'); e=h.find('</section>', k); p=h.find('dbd-panel dbd-pwp'); q=h.find('</section>', p); w=h[p:q]; sys.exit(0 if 0 < k < e < p and 'Players to watch' not in h[k:e] and T[a]['nick'] in w and T[b]['nick'] in w else 'players to watch is missing, inside the keys panel, or short a team')"
           fi
           # the player page: the pill, the game log mark, the block at the end
           php tools/view_harness.php data player 00-0036322
