@@ -18,30 +18,38 @@ $cards = DBD_Takeaways::cards( $O, $D );
 echo DBD_Router::topbar( array( strtolower( $label ) => DBD_Router::url( array( 'view' => 'matchups', 'week' => $g['week'] ) ), DBD_Data::team( $AWAY )['nick'] . ' at ' . DBD_Data::team( $HOME )['nick'] => null ) );
 echo '<main class="dbd-content">';
 
-/* ---- title */
+/* ---- the face-off (SCOPE §56): the offense's panel, the game card, the defense's panel, each team in its colors from DBD_Marks::deep
+ *      like the Keys panel below (§55). The full title is the page's h1; the panels show it in two halves. */
 $day = '';
 try { $day = ( new DateTime( $g['date'] ) )->format( 'l' ); } catch ( Exception $e ) {}
-echo '<div class="dbd-mtitle"><div class="t-stagger">';
-echo '<p class="dbd-kicker t-stagger-line t-stagger-line--1">' . esc_html( $label . ' · ' . $day . ' ' . $k['et'] . ( ! empty( $g['stadium'] ) ? ' · ' . $g['stadium'] : '' ) ) . '</p>';
-echo '<div class="dbd-markpair t-stagger-line t-stagger-line--2">' . DBD_Marks::pennant( $O, 40 ) . '<span class="vs">vs</span>' . DBD_Marks::pennant( $D, 40 ) . '</div>';
-echo '<h1 class="t-stagger-line t-stagger-line--3"><span class="o" style="--u:' . esc_attr( $to ) . '">' . esc_html( $Ot['nick'] ) . ' offense</span><span class="vs">vs</span><span class="d" style="--u:' . esc_attr( $td ) . '">' . esc_html( $Dt['nick'] ) . ' defense</span></h1>';
+$fside = function ( $a, $t, $role ) {
+	list( $bg, $ac ) = DBD_Marks::deep( $t ); $off = $role === 'off';
+	$rank = $off ? 'OFF #' . (int) DBD_Data::rank( 'off', $a ) : 'DEF #' . (int) DBD_Data::rank( 'def', $a );
+	$href = DBD_Router::url( $off ? array( 'team' => $a ) : array( 'team' => $a, 'side' => 'def' ) );
+	return '<div class="dbd-fside" style="--k-bg:' . esc_attr( $bg ) . ';--k-ac:' . esc_attr( $ac ) . '">' . DBD_Marks::tile( $a, 72 )
+		. '<span class="role">' . ( $off ? 'Offense' : 'Defense' ) . '</span><a class="nm" href="' . esc_url( $href ) . '">' . esc_html( $t['nick'] ) . '</a>'
+		. '<span class="meta"><b>' . esc_html( $rank ) . '</b> · ' . esc_html( DBD_Data::record_text( $a ) ) . '</span></div>';
+};
+$gvid = DBD_Videos::game_video( $g );
+$score = $final ? '<span class="dbd-fscore"><b>' . (int) ( $O === $HOME ? $g['home_score'] : $g['away_score'] ) . '</b><i>–</i><b>' . (int) ( $D === $HOME ? $g['home_score'] : $g['away_score'] ) . '</b></span>' : '<span class="dbd-fvs">VS</span>';
+echo '<div class="dbd-face">';
+echo '<p class="dbd-kicker">' . esc_html( $label . ' · ' . $day . ' ' . $k['et'] . ( ! empty( $g['stadium'] ) ? ' · ' . $g['stadium'] : '' ) ) . '</p>';
+echo '<h1 class="dbd-sr">' . esc_html( $Ot['nick'] . ' offense vs ' . $Dt['nick'] . ' defense' ) . '</h1>';
+echo '<div class="dbd-face3">' . $fside( $O, $Ot, 'off' );
+echo '<div class="dbd-panel dbd-gamebox"><span class="dbd-badge' . ( $final ? ' fin' : '' ) . '">' . ( $final ? 'Final' : 'Upcoming' ) . '</span>' . $score
+	. '<div class="dbd-line"><span>' . esc_html( DBD_Router::line_text( $g ) ) . '</span><span>' . ( isset( $g['total'] ) ? 'O/U ' . esc_html( $g['total'] ) : '' ) . '</span><span>' . DBD_Router::kickoff_html( $g ) . '</span></div>'
+	. ( $gvid ? DBD_Videos::mark( $gvid[0], $gvid[1] === 'recap' ? 'Watch the highlights' : 'Watch the NFL preview', 'gb' ) : '' )  /* the one video hint near the top (SCOPE §54) */
+	. '</div>';
+echo $fside( $D, $Dt, 'def' ) . '</div>';
+echo '<div class="dbd-facefoot">';
 if ( $og || $dg ) {
-	echo '<p class="dbd-sub t-stagger-line t-stagger-line--4">Season numbers through Week ' . (int) DBD_Data::through_week() . ': ' . (int) $og . ' games for ' . esc_html( $Ot['nick'] ) . ', ' . (int) $dg . ' for ' . esc_html( $Dt['nick'] ) . '. Ranks are out of 32; #1 is the best offense or the stingiest defense.</p>';
+	echo '<p class="dbd-sub">Season numbers through Week ' . (int) DBD_Data::through_week() . ': ' . (int) $og . ' games for ' . esc_html( $Ot['nick'] ) . ', ' . (int) $dg . ' for ' . esc_html( $Dt['nick'] ) . '. Ranks are out of 32; #1 is the best offense or the stingiest defense.</p>';
 }
-echo '<div class="dbd-flipseg"><a href="' . esc_url( DBD_Router::url( array( 'game' => $g['id'] ) ) ) . '"' . ( $side === 'away' ? ' aria-current="page"' : '' ) . '>' . esc_html( $AWAY ) . ' offense</a><a href="' . esc_url( DBD_Router::url( array( 'game' => $g['id'], 'side' => 'home' ) ) ) . '"' . ( $side === 'home' ? ' aria-current="page"' : '' ) . '>' . esc_html( $HOME ) . ' offense</a></div>';
-echo '</div>';
-
-/* ---- the game box */
-echo '<aside class="dbd-panel dbd-gamebox"><div class="dbd-ph"><span class="dbd-lab"><b>The game</b></span><span class="dbd-badge' . ( $final ? ' fin' : '' ) . '">' . ( $final ? 'Final' : 'Upcoming' ) . '</span></div><div class="dbd-pb"><div class="dbd-teams">';
-foreach ( array( $AWAY, $HOME ) as $a ) {
-	$t = DBD_Data::team( $a ); $sc = $a === $AWAY ? ( $g['away_score'] ?? null ) : ( $g['home_score'] ?? null );
-	echo '<div class="dbd-t">' . DBD_Marks::tile( $a, 34 ) . '<b>' . esc_html( $a ) . '</b><span>' . esc_html( $t['nick'] . ' · ' . DBD_Data::record_text( $a ) ) . '</span></div>';
-	echo '<div class="dbd-rkline">' . ( $final ? '<b class="dbd-score">' . (int) $sc . '</b>' : 'OFF #' . (int) DBD_Data::rank( 'off', $a ) . ' · ' . DBD_Defense::link( $a, 'DEF #' . (int) DBD_Data::rank( 'def', $a ) ) ) . '</div>';  /* SCOPE §39: to the defense tab */
+echo '<div class="dbd-flipseg">';
+foreach ( array( 'away' => $AWAY, 'home' => $HOME ) as $fs => $fa ) {
+	echo '<a href="' . esc_url( DBD_Router::url( $fs === 'home' ? array( 'game' => $g['id'], 'side' => 'home' ) : array( 'game' => $g['id'] ) ) ) . '"' . ( $side === $fs ? ' aria-current="page"' : '' ) . '>' . DBD_Marks::tile( $fa, 20 ) . '<span>' . esc_html( DBD_Data::team( $fa )['nick'] ) . ' offense</span></a>';
 }
-echo '</div><div class="dbd-line"><span>' . esc_html( DBD_Router::line_text( $g ) ) . '</span><span>' . ( isset( $g['total'] ) ? 'O/U ' . esc_html( $g['total'] ) : '' ) . '</span><span>' . DBD_Router::kickoff_html( $g ) . '</span></div>'
-	. ( ( $gvid = DBD_Videos::game_video( $g ) ) ? DBD_Videos::mark( $gvid[0], $gvid[1] === 'recap' ? 'Watch the highlights' : 'Watch the NFL preview', 'gb' ) : '' )  /* the one video hint near the top (SCOPE §54) */
-	. '</div></aside>';
-echo '</div>';
+echo '</div></div></div>';
 
 /* ---- how it played out (SCOPE §30): win probability for a final game, from wp/w{week}.json. Regulation only; overtime shows its scoring plays. */
 $WP = $final ? DBD_Data::win_prob( $g ) : null;
