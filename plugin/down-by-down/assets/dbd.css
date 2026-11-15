@@ -757,6 +757,34 @@ body.dbd-standalone .dbd{--dbd-stick:var(--wp-admin--admin-bar--height, 0px)}  /
 @container dbd (max-width:700px){.dbd .dbd-player .dbd-two{grid-template-columns:minmax(0,1fr)}}
 .dbd .dbd-strip{flex-wrap:wrap;overflow:visible;scroll-snap-type:none}.dbd .dbd-sc{flex:1 1 168px;max-width:240px}
 .dbd .dbd-gstrip{flex-wrap:wrap;overflow:visible}
+/* SCOPE §61: one filter panel. The header says how many snaps the filters leave; games and players up front as labeled chip rows; the rest behind More filters. One selected color, the team's (--k-bg on main). The receiver chart lights the picked player among everyone. */
+.dbd .dbd-filters>.dbd-ph .dbd-lab span{text-transform:none;letter-spacing:0;font:500 13px var(--dbd-body);color:var(--dbd-ink-2)}
+.dbd .dbd-filters .dbd-reset[hidden]{display:none}
+.dbd .dbd-filters .dbd-hide{display:none}
+.dbd .dbd-ch .ct-series .ct-point.is-dim{stroke-opacity:.18}
+.dbd .dbd-ch .ct-series .ct-point.is-on{stroke-opacity:1;stroke:var(--k-bg)}
+.dbd .dbd-ch-lbl.is-dim{opacity:.4}.dbd .dbd-ch-lbl.is-on{font-weight:700;color:var(--dbd-ink)}
+.dbd .dbd-filters .fr{display:grid;grid-template-columns:76px minmax(0,1fr);gap:14px;align-items:center;padding:10px 14px;border-top:1px solid var(--dbd-line)}
+.dbd .dbd-filters>.dbd-ph+.fr{border-top:0}
+.dbd .dbd-filters .fl{font:700 11px var(--dbd-display);text-transform:uppercase;letter-spacing:.14em;color:var(--dbd-muted)}
+.dbd .dbd-filters .dbd-gstrip,.dbd .dbd-filters .dbd-pstrip{display:flex;flex-wrap:wrap;gap:6px;padding:0;margin:0}
+.dbd .dbd-filters .dbd-game,.dbd .dbd-filters .dbd-pchip{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 11px;border:1px solid var(--dbd-line);border-radius:999px;background:var(--dbd-panel);font:600 13px/1 var(--dbd-body);color:var(--dbd-ink);white-space:nowrap}
+.dbd .dbd-filters .dbd-game .wk{font:600 10px var(--dbd-mono);color:var(--dbd-muted)}
+.dbd .dbd-filters .dbd-game .opp{font:700 13px/1 var(--dbd-display);display:inline-flex;align-items:center;gap:4px}
+.dbd .dbd-filters .dbd-game .res,.dbd .dbd-filters .dbd-pchip small{font:500 11px var(--dbd-mono);color:var(--dbd-muted)}
+.dbd .dbd-filters .dbd-game[aria-pressed="true"],.dbd .dbd-filters .dbd-pchip[aria-pressed="true"]{background:var(--k-bg);border-color:var(--k-bg);color:#fff}
+.dbd .dbd-filters .dbd-game[aria-pressed="true"] .wk,.dbd .dbd-filters .dbd-game[aria-pressed="true"] .res{color:rgba(255,255,255,.75)}
+.dbd .dbd-filters .dbd-game[aria-pressed="true"] .res b,.dbd .dbd-filters .dbd-pchip[aria-pressed="true"] small{color:var(--k-ac)}
+.dbd .dbd-more{border-top:1px solid var(--dbd-line)}
+.dbd .dbd-more summary{cursor:pointer;padding:10px 14px;font:700 11px var(--dbd-display);text-transform:uppercase;letter-spacing:.14em;color:var(--dbd-ink-2);list-style:none}
+.dbd .dbd-more summary::after{content:" ▾"}.dbd .dbd-more[open] summary::after{content:" ▴"}
+.dbd .dbd-more summary b{margin-left:6px;padding:2px 7px;border-radius:999px;background:var(--k-bg);color:#fff;font:600 10px var(--dbd-mono);letter-spacing:0}
+.dbd .dbd-more summary b:empty{display:none}
+.dbd .dbd-more .dbd-toolbar{padding:0 14px 12px;gap:10px 18px;align-items:center}
+.dbd .dbd-more .dbd-fg{flex-direction:row;align-items:center;gap:8px}
+.dbd .dbd-filters .dbd-seg.t-tabs{background:var(--dbd-panel-2);border:1px solid var(--dbd-line)}
+.dbd .dbd-filters .dbd-seg .t-tabs-pill{background:var(--k-bg)}
+@container dbd (max-width:700px){.dbd .dbd-filters .fr{grid-template-columns:minmax(0,1fr);gap:6px}.dbd .dbd-filters .dbd-gstrip,.dbd .dbd-filters .dbd-pstrip{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px}}
 /* SCOPE §60, the player strip: one line of chips like the game chips; the picked one fills with the team's color */
 .dbd .dbd-pstrip{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:2px 0 0}
 .dbd .dbd-pstrip .lab{font:700 11px var(--dbd-display);text-transform:uppercase;letter-spacing:.14em;color:var(--dbd-muted);margin-right:4px}
