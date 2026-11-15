@@ -24,10 +24,11 @@ echo '</div></div>';
 $rk = function ( $sd ) use ( $a ) { $v = DBD_Data::rank( $sd, $a ); return $v ? '#' . (int) $v : '–'; };
 $nx = DBD_Fantasy::next_game( $a ); $ng = $nx ? DBD_Data::team_game( $a, $nx['wk'] ) : null; $nCell = '';
 if ( $ng ) {
-	$nk = DBD_Data::kickoff( $ng ); $nts = strtotime( $ng['date'] );
-	$nCell = '<div><dt>Next</dt><dd><a href="' . esc_url( DBD_Router::url( $ng['home'] === $a ? array( 'game' => $ng['id'], 'side' => 'home' ) : array( 'game' => $ng['id'] ) ) ) . '">' . ( $ng['home'] === $a ? 'vs ' : 'at ' ) . esc_html( $nx['opp'] ) . '</a><small>' . esc_html( ( $nts ? gmdate( 'D, M j', $nts ) . ' · ' : '' ) . str_replace( ' ET', '', $nk['et'] ) ) . '</small></dd></div>';
+	$nts = strtotime( $ng['date'] );  /* the time goes through kickoff_html, so it shows in the viewer's zone like the game card (Greptile, PR #98) */
+	$nCell = '<div><dt>Next</dt><dd><a href="' . esc_url( DBD_Router::url( $ng['home'] === $a ? array( 'game' => $ng['id'], 'side' => 'home' ) : array( 'game' => $ng['id'] ) ) ) . '">' . ( $ng['home'] === $a ? 'vs ' : 'at ' ) . esc_html( $nx['opp'] ) . '</a><small>' . esc_html( $nts ? gmdate( 'D, M j', $nts ) . ' · ' : '' ) . DBD_Router::kickoff_html( $ng ) . '</small></dd></div>';
 } else {
-	for ( $lw = (int) $through; $lw >= 1; $lw-- ) {
+	$lwl = DBD_Data::weeks();  /* from the schedule, not the plays: a final score can post before its plays do (Greptile, PR #98) */
+	for ( $lw = $lwl ? (int) max( $lwl ) : (int) $through; $lw >= 1; $lw-- ) {
 		$lg = DBD_Data::team_game( $a, $lw ); if ( ! $lg || ! DBD_Router::is_final( $lg ) ) { continue; }
 		$lh = $lg['home'] === $a; $pf = (int) ( $lh ? $lg['home_score'] : $lg['away_score'] ); $pa = (int) ( $lh ? $lg['away_score'] : $lg['home_score'] );
 		$nCell = '<div><dt>Last</dt><dd><a href="' . esc_url( DBD_Router::url( $lh ? array( 'game' => $lg['id'], 'side' => 'home' ) : array( 'game' => $lg['id'] ) ) ) . '">' . ( $lh ? 'vs ' : 'at ' ) . esc_html( $lh ? $lg['away'] : $lg['home'] ) . '</a><small>' . ( $pf > $pa ? 'W' : ( $pf < $pa ? 'L' : 'T' ) ) . ' ' . $pf . '-' . $pa . '</small></dd></div>';
