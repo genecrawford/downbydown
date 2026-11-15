@@ -2562,3 +2562,14 @@ Gene: brand the Keys to the game panel to the offense, on a dark background from
 - **The tags** all take the accent, except Wash, which is muted white. The word carries the meaning; green and red would fight a red or green team panel.
 - **Players to watch** (upcoming games) moves out of the panel to its own light panel right under it, labeled "Players to watch · both teams", since it covers both teams.
 - **Code:** `DBD_Marks::deep( $team )` returns the panel and accent pair; game.php sets them as `--k-bg` and `--k-ac` on the section, and `.dbd-keys.tm` styles it. Mocks: `keys-min.html` (in place, with today's panel under it), `keys-upcoming.html`, `keys-teams.html` (twelve offenses).
+
+## 56. The game page header, rebalanced (scoped and mocked 2026-11-15, `mockup-v30/`)
+
+Gene: the header "is now not balanced enough". Today the headline fills about half of a wide left column, the 300px game box sits bottom-right with a gap between them, the small logo pair above the headline repeats the box, the box's team rows wrap ("Packers · 6-" then "3"), and the flip is a small text toggle. Under it, the new dark Keys panel (§55) is now the heaviest thing on the page.
+
+- **Both options:** the flip becomes a real switch with each team's logo, "Vikings offense | Packers offense", the current one dark. Records never wrap.
+- **Option A, two columns that end level** (`header-a.html`): the logo pair above the headline goes. The game box widens to 380px and runs the full height of the headline block, so both columns start and end together. Each team is one row (logo, abbreviation over name and record, ranks stacked on the right).
+- **Option B, a face-off** (`header-b.html`): offense on the left, defense on the right, each with a 72px logo, its half of the headline underlined in its color, and the rank that matters for it (OFF for the offense, DEF for the defense) with the record. The middle card holds the status, the line, the total, kickoff and the preview (a final shows the score there). The note and the flip center underneath. On a phone the two teams sit side by side with the game card under them.
+- **Gene picked B (2026-11-15), without the thin underline:** the team treatment has to echo and balance the team-colored Keys panel below. Two takes:
+  - **Team blocks** (`header-b-blocks.html`, recommended): each side is its team's own dark panel from `DBD_Marks::deep`, with the same accent band along the bottom as the Keys panel. The role ("Offense", "Defense") and the rank are in the accent, the team name is white, and the logo is 72px. The light game card stays in the middle. With two team blocks above and one below, the page balances; on a phone the blocks sit side by side over the game card.
+  - **Team bands** (`header-b-bands.html`): the sides stay light, and the underline becomes the Keys panel's band (the team's dark color with its accent under it).
