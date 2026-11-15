@@ -2618,3 +2618,17 @@ Gene: make the pass and run map look more like a football play schematic. The mo
   - Each arrow is as long as the yards per carry (5, 10 and 15 yard lines marked) and as wide as the carries, colored as today.
   - The number at the tip is yards per carry. Carries and success rate sit under each gap.
 - **Unchanged:** the legend and "How this is measured". Only the two drawing functions in team-explorer.js change, so the defense tab gets the same diagrams of what offenses did against it.
+
+## 60. Player chips under the filters (scoped and mocked 2026-11-15, `mockup-v34/`)
+
+Gene: move "Who gets the ball", or a player picker, above the charts, since it filters them. The table sits at the bottom, under everything it controls. It also counts from the plays already filtered to the picked player, so after one click it shrinks to that player alone.
+
+- **A row of player chips** sits right under the filter bar, above the numbers, like the game chips.
+  - It shows "Players", an "All" chip, then the ten players with the most touches. Each chip shows name, position and his bigger number ("J.Jefferson · WR · 52 tgt", "A.Jones · RB · 115 car").
+  - The chips count from the plays every other filter allows (games, down, type, zone, formation, quarter), so the list follows those filters but never collapses to one name.
+  - A quarterback shows only with 5 or more carries.
+- **Picking a chip** filters the whole page to that player, and the chip fills with the team's color (--k-bg, accent text). Every other chip stays, so switching is one click. Picking him again, or All, clears the filter. A picked player outside the top ten is added to the end of the row.
+- **The Player dropdown leaves the filter bar.** It stays in the page as a hidden field, so Reset and the table click keep working.
+- **Who gets the ball stays at the bottom with every player**, counted the same way as the chips. The picked player's row is highlighted instead of being the only row.
+- **On a phone** the chips run in one row that scrolls sideways.
+- **Code:** all in team-explorer.js (`others()`, `touches()`, `drawPlayers()`, `render()` passes the unfiltered-by-player plays to `usage()`) and dbd.css (`.dbd-pstrip`, `.dbd-pchip`).
