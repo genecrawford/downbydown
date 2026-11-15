@@ -46,7 +46,10 @@ echo '<h1 class="t-stagger-line t-stagger-line--2 withmark">' . DBD_Marks::jerse
 $bio = array_filter( array( $p['age'] ? 'Age ' . (int) $p['age'] : '', $p['ht'] ?: '', $p['wt'] ? (int) $p['wt'] . ' lb' : '', $p['col'] ?: '', $p['draft'] ?: '' ) );
 echo '<p class="dbd-sub t-stagger-line t-stagger-line--3">' . esc_html( implode( ' · ', $bio ) ) . '.' . ( $depth ? ' Listed <b>' . esc_html( $depth ) . '</b> on the ' . esc_html( $p['depth']['grp'] ) . ' depth chart.' : '' ) . ' Snap share <b>' . round( $snapAvg ) . '%</b> across ' . $ng . ' ' . ( $ng === 1 ? 'game' : 'games' ) . '.</p>';
 $hwk = $arch ? array() : DBD_Videos::player_weeks( $pid );  /* his NFL highlights by week (SCOPE §54) */
-echo '<div class="dbd-pills">' . ( $hwk ? DBD_Videos::mark( end( $hwk ), DBD_Router::week_label( (int) array_key_last( $hwk ) ) . ' highlights', 'dbd-pill' ) : '' ) . ( $arch ? '' : ( $p['inj'] ? '<span class="dbd-pill ' . $icls . '">Week ' . (int) $p['inj']['week'] . ' report · ' . esc_html( $p['inj']['what'] ) . ' · ' . esc_html( str_ireplace( ' in practice', '', $st ) ) . '</span>' : '<span class="dbd-pill good">No injury listing</span>' ) ) . ( $depth ? '<span class="dbd-pill">' . esc_html( $depth ) . '</span>' : '' ) . '<a class="dbd-pill" href="' . esc_url( $tpurl ) . '">' . esc_html( $t['nick'] ) . ' players</a></div>';
+/* SCOPE §62: the draft and combine band and his Wikipedia article, from the data build */
+$BF = $p['bf'] ?? null; $WK = ! empty( $p['wk'][0] ) ? $p['wk'] : null; $wkUrl = $WK ? 'https://en.wikipedia.org/wiki/' . rawurlencode( str_replace( ' ', '_', (string) $WK[0] ) ) : '';
+$bfPills = ( $BF || $WK ? '<a class="dbd-pill" href="#dbd-before">Draft and combine</a>' : '' ) . ( $WK ? '<a class="dbd-pill" href="' . esc_url( $wkUrl ) . '" target="_blank" rel="noopener">Wikipedia ↗</a>' : '' );
+echo '<div class="dbd-pills">' . ( $hwk ? DBD_Videos::mark( end( $hwk ), DBD_Router::week_label( (int) array_key_last( $hwk ) ) . ' highlights', 'dbd-pill' ) : '' ) . ( $arch ? '' : ( $p['inj'] ? '<span class="dbd-pill ' . $icls . '">Week ' . (int) $p['inj']['week'] . ' report · ' . esc_html( $p['inj']['what'] ) . ' · ' . esc_html( str_ireplace( ' in practice', '', $st ) ) . '</span>' : '<span class="dbd-pill good">No injury listing</span>' ) ) . ( $depth ? '<span class="dbd-pill">' . esc_html( $depth ) . '</span>' : '' ) . '<a class="dbd-pill" href="' . esc_url( $tpurl ) . '">' . esc_html( $t['nick'] ) . ' players</a>' . $bfPills . '</div>';
 $sug = DBD_Grades::suggest( $row, 3 ); $cmp = function ( $ids ) { return DBD_Router::url( array( 'compare' => implode( ',', $ids ) ) ); };
 /* the side card (SCOPE §35): the team with his snap share, two equal actions, then players like him as a list */
 echo '</div>' . DBD_Marks::hero_photo( $a, $p['photo'] ?? null ) . '<div class="dbd-hdr dbd-hcard"><a class="dbd-pn-link" href="' . esc_url( $turl ) . '">' . DBD_Marks::pennant( $a, 40 ) . '<span class="t"><b>' . esc_html( $t['nick'] ) . ' offense</b><small id="dbd-psnaps">' . ( $p['snaps'] ? round( $snapAvg ) . '% of snaps' : 'no snap data' ) . '</small></span></a>';
@@ -141,7 +144,7 @@ if ( $mineAll ) {
 $weekHtml = ob_get_clean();
 
 /* ---- bands by question (SCOPE §20): a sticky jump nav, then five bands. The rail is gone. */
-echo '<nav class="dbd-jump" aria-label="On this page"><a href="#dbd-good">How good is he</a><a href="#dbd-used">How he\'s used</a><a href="#dbd-with" id="dbd-jump-with" hidden>Who he works with</a><a href="#dbd-weeks">Week by week</a>' . ( $CR ? '<a href="#dbd-career">Career</a>' : '' ) . '<a href="#dbd-more">Intel &amp; plays</a></nav>';
+echo '<nav class="dbd-jump" aria-label="On this page"><a href="#dbd-good">How good is he</a><a href="#dbd-used">How he\'s used</a><a href="#dbd-with" id="dbd-jump-with" hidden>Who he works with</a><a href="#dbd-weeks">Week by week</a>' . ( $CR ? '<a href="#dbd-career">Career</a>' : '' ) . ( $BF || $WK ? '<a href="#dbd-before">Before the NFL</a>' : '' ) . '<a href="#dbd-more">Intel &amp; plays</a></nav>';
 /* SCOPE §31: one panel per band question. Every pane is rendered (crawlers and the share card see it all); the tab picks which one shows.
    A pane loses its own title (the tab names it) and keeps its sub-label and badge. Empty panes are skipped. */
 $tabbed = function ( $panes ) {
@@ -686,6 +689,43 @@ if ( $CR ) {
 	echo '<div class="dbd-cr-line">' . $lineh . '</div><p class="dbd-cr-say">' . $csay . '</p><div class="dbd-cr-chart">' . $cg . '</div>';
 	echo '<div class="dbd-tw"><table class="dbd-glog dbd-stat dbd-sortable dbd-crtab"><thead><tr>' . $thead . '</tr></thead><tbody>' . $tbody . '</tbody><tfoot>' . $tfoot . '</tfoot></table></div>';
 	echo ( $chh ? '<div class="dbd-cr-highs">' . $chh . '</div>' : '' ) . '<p class="dbd-note">Regular season only, from nflverse weekly stats back to 1999. This season is partial and drawn hollow; the pace is his per-game rate over ' . $PG . ' games. Bold cells are career highs.</p></section>';
+	echo '</section>';
+}
+
+/* ---- before the NFL (SCOPE §62): the draft, the combine against every player at his position since 2000, and his Wikipedia article */
+if ( $BF || $WK ) {
+	echo $band( 'before', 'Before the NFL', 'the draft, the combine, and the rest of his story' );
+	$DR = $BF['dr'] ?? null; $CB = $BF['cb'] ?? null;
+	$posw = array( 'WR' => 'wide receivers', 'TE' => 'tight ends', 'RB' => 'running backs', 'FB' => 'fullbacks', 'QB' => 'quarterbacks' );
+	echo '<div class="dbd-bf2"><section class="dbd-panel dbd-draft"><div class="dbd-ph"><span class="dbd-lab"><b>The draft</b></span>' . ( $DR ? '<span class="dbd-badge">' . (int) $DR['y'] . ' class</span>' : '' ) . '</div><div class="dbd-pb">';
+	if ( $DR ) {
+		$dt = DBD_Data::team( (string) $DR['t'] ); $pw = $posw[ $DR['pos'] ] ?? strtolower( (string) $DR['pos'] ) . 's';
+		$among = ! $DR['k'] ? '' : ( (int) $DR['k'] === 1 ? 'the first of ' . (int) $DR['n'] . ' ' . $pw . ' taken' : '<b>' . esc_html( DBD_Grades::ordinal( (int) $DR['k'] ) ) . '</b> of ' . (int) $DR['n'] . ' taken' . ( ! empty( $DR['b'] ) ? ', after ' . esc_html( count( $DR['b'] ) > 1 ? implode( ', ', array_slice( $DR['b'], 0, -1 ) ) . ' and ' . end( $DR['b'] ) : $DR['b'][0] ) : '' ) );
+		$since = array(); if ( (int) $DR['pb'] ) { $since[] = '<b>' . (int) $DR['pb'] . '</b> Pro Bowl' . ( (int) $DR['pb'] === 1 ? '' : 's' ); } if ( (int) $DR['ap'] ) { $since[] = '<b>' . (int) $DR['ap'] . '</b> first-team All-Pro'; } if ( ! empty( $DR['hof'] ) ) { $since[] = 'Hall of Fame'; }
+		echo '<p class="df-big">Round ' . (int) $DR['r'] . ' · Pick ' . (int) $DR['p'] . '</p><p class="df-sub">' . (int) $DR['y'] . ' · ' . esc_html( $dt['name'] ?? (string) $DR['t'] ) . ( $DR['sc'] ? ' · from ' . esc_html( (string) $DR['sc'] ) : '' ) . '</p>';
+		echo '<dl class="dbd-kv">' . ( $among ? '<dt>Among ' . esc_html( (string) $DR['pos'] ) . 's</dt><dd>' . $among . '</dd>' : '' ) . '<dt>Since</dt><dd>' . ( $since ? implode( ' · ', $since ) : 'no Pro Bowls yet' ) . '</dd></dl>';
+	} else {
+		echo '<p class="df-big">Undrafted</p><p class="df-sub">' . ( ! empty( $BF['ud'] ) ? 'Came into the league in ' . (int) $BF['ud'] . ( $p['col'] ? ' from ' . esc_html( $p['col'] ) : '' ) : 'Not drafted' ) . '</p>';
+	}
+	echo '</div></section>';
+	echo '<section class="dbd-panel dbd-combine"><div class="dbd-ph"><span class="dbd-lab"><b>The combine</b>' . ( $CB ? ' · ' . (int) $CB['y'] . ', against every ' . esc_html( (string) $CB['g'] ) . ' tested since 2000' : '' ) . '</span>' . ( $CB && $CB['sc'] !== null ? '<span class="dbd-badge">Score ' . (int) $CB['sc'] . ' of 100</span>' : '' ) . '</div><div class="dbd-pb">';
+	if ( $CB ) {
+		$lab = array( 'ht' => 'Height', 'wt' => 'Weight', 'forty' => '40-yard dash', 'bench' => 'Bench press', 'vertical' => 'Vertical', 'broad_jump' => 'Broad jump', 'cone' => '3-cone', 'shuttle' => 'Shuttle' );
+		$fm = function ( $k, $v ) { $v = (float) $v; switch ( $k ) { case 'ht': return floor( $v / 12 ) . "'" . ( (int) $v % 12 ) . '"'; case 'wt': return (int) $v . ' lb'; case 'bench': return (int) $v . ' reps'; case 'broad_jump': return floor( $v / 12 ) . "'" . ( (int) $v % 12 ) . '"'; case 'vertical': return rtrim( rtrim( number_format( $v, 1 ), '0' ), '.' ) . '"'; default: return number_format( $v, 2 ) . 's'; } };
+		echo '<div class="cb-head"><span>Drill</span><span>Result</span><span>Percentile among ' . esc_html( (string) $CB['g'] ) . 's</span><span></span></div>';
+		foreach ( (array) $CB['d'] as $d ) { list( $k, $v, $pc ) = array_pad( (array) $d, 3, null ); if ( ! isset( $lab[ $k ] ) ) { continue; }
+			echo $v === null ? '<div class="cb-row none"><span class="cb-k">' . $lab[ $k ] . '</span><span class="cb-v">did not test</span><span class="cb-bar"></span><span class="cb-p"></span></div>'
+				: '<div class="cb-row"><span class="cb-k">' . $lab[ $k ] . '</span><span class="cb-v">' . esc_html( $fm( $k, $v ) ) . '</span><span class="cb-bar"><i style="width:' . (int) $pc . '%"></i></span><span class="cb-p">' . esc_html( DBD_Grades::ordinal( (int) $pc ) ) . '</span></div>'; }
+		echo '<p class="dbd-note">Percentile is the share of ' . esc_html( (string) $CB['g'] ) . 's at the combine since 2000 he beat: faster on the timed drills, higher, longer or stronger on the rest. The score averages the drills he ran (' . (int) $CB['nr'] . ' of 6' . ( (int) $CB['nr'] < 2 ? '; it needs two' : '' ) . '). Skipped drills are often run at his school\'s pro day, which isn\'t in this data.</p>';
+	} else {
+		echo '<p class="dbd-cb-none">No combine results on file for him. The data starts in 2000 and covers invited players only.</p>';
+	}
+	echo '</div></section></div>';
+	if ( $WK ) {
+		echo '<section class="dbd-panel dbd-wiki"><div class="dbd-ph"><span class="dbd-lab"><b>From Wikipedia</b>' . ( $WK[1] ? ' · ' . esc_html( (string) $WK[1] ) : '' ) . '</span><a class="dbd-badge" href="' . esc_url( $wkUrl ) . '" target="_blank" rel="noopener">Read on Wikipedia ↗</a></div><div class="dbd-pb">'
+			. ( $WK[2] ? '<p class="wk-x">' . esc_html( (string) $WK[2] ) . '</p>' : '' )
+			. '<p class="dbd-note">From the Wikipedia article <a href="' . esc_url( $wkUrl ) . '" target="_blank" rel="noopener">' . esc_html( (string) $WK[0] ) . '</a>, available under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>.</p></div></section>';
+	}
 	echo '</section>';
 }
 
