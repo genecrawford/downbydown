@@ -517,6 +517,17 @@ jobs:
           php tools/view_harness.php data joined
           # the admin page (2.11.0): every tab draws with its boxes, no form inside another
           DBD_HARNESS_HTML=admin php tools/view_harness.php data admin all
+          # Growth (2.25.0, SCOPE §65): the list-size change, the 90-day record, the email line, and no Brevo call without a key
+          php tools/view_harness.php data growth
+          grep -q "'down-by-down-growth', 'Growth'" plugin/down-by-down/includes/admin/settings.php
+          # the events: share from the card button and both copy-link buttons; sign_up once per session on the confirmed landing
+          grep -q "window.dbdTrack('share', { method: a.dataset.sheet === '1' ? 'share_sheet' : 'image'" plugin/down-by-down/assets/dbd-site.js
+          grep -q "dbdTrack('share', { method: 'copy_link', content_type: 'compare'" plugin/down-by-down/assets/compare.js
+          grep -q "dbdTrack('share', { method: 'copy_link', content_type: 'my_team'" plugin/down-by-down/assets/myteam.js
+          php tools/view_harness.php data joined_js | grep -q "gtag('event','sign_up',{method:'email'})"
+          node --check plugin/down-by-down/assets/growth.js
+          # growth.js against canned Site Kit answers and a refused read: the requests it makes and the figures it draws (Greptile, PR #119)
+          node tools/growth_test.js plugin/down-by-down/assets/growth.js
           # the send path (2.11.1) against a fake Brevo: no campaign tag, the one-day window, Try again and its guards
           php tools/view_harness.php data send 8
       - uses: actions/upload-artifact@v4

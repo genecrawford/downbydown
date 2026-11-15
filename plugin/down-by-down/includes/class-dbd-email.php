@@ -54,6 +54,7 @@ class DBD_Email {
 		add_action( self::HOOK, array( __CLASS__, 'send' ) );
 		add_action( 'template_redirect', array( __CLASS__, 'landing' ) );
 		add_filter( 'the_content', array( __CLASS__, 'joined' ), 8 );
+		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'joined_event' ) );
 		add_action( 'add_meta_boxes', array( __CLASS__, 'box' ), 10, 2 );
 		add_action( 'save_post_post', array( __CLASS__, 'save_box' ), 10, 2 );
 		add_action( 'admin_post_dbd_email_test', array( __CLASS__, 'test_action' ) );
@@ -130,6 +131,15 @@ class DBD_Email {
 		if ( strpos( (string) $content, 'dbd-post' ) === false || strpos( (string) $content, 'dbd-joined' ) !== false ) { return $content; }
 		$w = get_post_meta( get_the_ID(), DBD_Post::M_WEEK, true ); if ( $w === '' ) { return $content; }
 		return self::joined_note( (int) $w ) . $content;
+	}
+	/** A confirmed signup tells Analytics (SCOPE §65): sign_up once per browser session, only when Site Kit's gtag is on the page. */
+	public static function joined_event() {
+		if ( empty( $_GET['dbd_joined'] ) || ! is_singular( 'post' ) ) { return; }
+		wp_register_script( 'dbd-joined', false, array(), DBD_VERSION, true ); wp_enqueue_script( 'dbd-joined' );
+		wp_add_inline_script( 'dbd-joined', self::joined_js() );
+	}
+	public static function joined_js() {
+		return "(function(){try{if(sessionStorage.getItem('dbd-joined'))return;sessionStorage.setItem('dbd-joined','1');}catch(e){}if(typeof window.gtag==='function'){try{window.gtag('event','sign_up',{method:'email'});}catch(e){}}})();";
 	}
 	public static function joined_note( $w ) { return '<p class="dbd-joined"><b>You’re in.</b> The next one arrives Tuesday morning. This is the latest, ' . esc_html( DBD_Router::week_label( (int) $w ) ) . '.</p>'; }
 

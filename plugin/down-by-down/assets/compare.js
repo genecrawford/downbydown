@@ -34,7 +34,7 @@
   root.querySelectorAll('.dbd-creset').forEach(function (b) { b.addEventListener('click', function () { try { localStorage.removeItem('dbd-cmp'); } catch (e5) {} }); });
   /* copy the share link (the canonical, sorted ids) */
   root.querySelectorAll('.dbd-ccopy').forEach(function (b) { b.addEventListener('click', function () {
-    var link = url(ids.slice().sort()); var done = function () { var t0 = b.textContent; b.textContent = 'Copied'; b.classList.add('ok'); setTimeout(function () { b.textContent = t0; b.classList.remove('ok'); }, 1600); };
+    var link = url(ids.slice().sort()); if (window.dbdTrack) window.dbdTrack('share', { method: 'copy_link', content_type: 'compare', item_id: ids.slice().sort().join(',') }); var done = function () { var t0 = b.textContent; b.textContent = 'Copied'; b.classList.add('ok'); setTimeout(function () { b.textContent = t0; b.classList.remove('ok'); }, 1600); };
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(link).then(done, function () { prompt('Copy this link', link); });
     else prompt('Copy this link', link);
   }); });

@@ -75,7 +75,7 @@ function wp_schedule_single_event() {} function wp_next_scheduled() { return fal
 
 /* ---- the plugin, minus the bootstrap and admin. The SEO class extends a WordPress sitemap base class; an empty stand-in lets it load. */
 if ( ! class_exists( 'WP_Sitemaps_Provider' ) ) { class WP_Sitemaps_Provider { public $name = ''; public $object_type = ''; } }
-foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-kicker', 'class-dbd-defense', 'class-dbd-week', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-boards', 'class-dbd-sync', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo', 'class-dbd-blocks', 'class-dbd-post', 'class-dbd-news', 'class-dbd-email', 'class-dbd-videos' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
+foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-kicker', 'class-dbd-defense', 'class-dbd-week', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-boards', 'class-dbd-sync', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo', 'class-dbd-blocks', 'class-dbd-post', 'class-dbd-news', 'class-dbd-email', 'class-dbd-videos', 'class-dbd-growth' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
 
 if ( getenv( 'DBD_HARNESS_NOW' ) && class_exists( 'DBD_News' ) ) { DBD_News::$now = (int) getenv( 'DBD_HARNESS_NOW' ); }
 
@@ -291,6 +291,32 @@ if ( $view === 'send' ) {
 	} catch ( Throwable $e ) { fwrite( STDERR, 'FATAL in send: ' . $e->getMessage() . ' at ' . basename( $e->getFile() ) . ':' . $e->getLine() . "\n" ); exit( 1 ); }
 	echo "send: $bad problems, $warnings warnings\n"; exit( $bad || $warnings ? 1 : 0 );
 }
+/* ---- Growth (2.25.0, SCOPE §65): the list-size change from the saved daily sizes, and the last email's line */
+if ( $view === 'growth' ) {
+	$fails = 0; $t = function ( $what, $got, $want ) use ( &$fails ) { $ok = $got === $want; if ( ! $ok ) { $fails++; } echo ( $ok ? '  ok   ' : '  FAIL ' ) . $what . ': ' . json_encode( $got ) . ( $ok ? '' : ' (want ' . json_encode( $want ) . ')' ) . "\n"; };
+	$GLOBALS['dbd_opt'] = array();
+	$t( 'nothing saved', DBD_Growth::size_change( 10, 28, '2026-11-15', 4 ), null );
+	DBD_Growth::save_size( '2026-11-15', 10, 4 );
+	$t( 'only today saved', DBD_Growth::size_change( 10, 28, '2026-11-15', 4 ), null );
+	DBD_Growth::save_size( '2026-11-10', 4, 4 ); DBD_Growth::save_size( '2026-11-12', 6, 4 );
+	$t( 'younger than 28 days: from the oldest', DBD_Growth::size_change( 10, 28, '2026-11-15', 4 ), array( 6, '2026-11-10' ) );
+	DBD_Growth::save_size( '2026-10-01', 1, 4 ); DBD_Growth::save_size( '2026-10-17', 2, 4 ); DBD_Growth::save_size( '2026-10-19', 3, 4 );
+	$t( 'the newest day at least 28 back', DBD_Growth::size_change( 10, 28, '2026-11-15', 4 ), array( 8, '2026-10-17' ) );
+	DBD_Growth::save_size( '2026-11-10', 4, 4 ); $t( 'the same size saves nothing new', count( $GLOBALS['dbd_opt'][ DBD_Growth::OPT_SIZES ]['days'] ), 6 );
+	for ( $i = 0; $i < 120; $i++ ) { DBD_Growth::save_size( gmdate( 'Y-m-d', strtotime( '2026-01-01 +' . $i . ' days' ) ), $i, 4 ); }
+	$S = $GLOBALS['dbd_opt'][ DBD_Growth::OPT_SIZES ]['days']; $t( 'keeps the newest 90', array( count( $S ), array_key_last( $S ) ), array( 90, '2026-11-15' ) );
+	$t( 'another list has no record yet', DBD_Growth::size_change( 500, 28, '2026-11-15', 7 ), null );
+	DBD_Growth::save_size( '2026-11-15', 500, 7 );
+	$t( 'switching lists starts over', array( $GLOBALS['dbd_opt'][ DBD_Growth::OPT_SIZES ]['list'], count( $GLOBALS['dbd_opt'][ DBD_Growth::OPT_SIZES ]['days'] ), DBD_Growth::size_change( 500, 28, '2026-11-16', 7 ) ), array( 7, 1, array( 0, '2026-11-15' ) ) );
+	if ( ! function_exists( 'dbd_admin_when' ) ) { function dbd_admin_when( $ts, $f = 'M j, g:i A' ) { return gmdate( $f, (int) $ts ); } }
+	$row = array( 'title' => 'Week 9 in review', 'at' => 1794409200, 'n' => 139, 'camp' => 2, 'result' => 'sent' );
+	$t( 'email line with stats', DBD_Growth::email_line( $row, array( 'delivered' => 139, 'uniqueViews' => 81, 'uniqueClicks' => 29 ) ), 'Week 9 in review, Nov 11: delivered to 139, 58% opened, 21% clicked' );
+	$t( 'email line without stats', DBD_Growth::email_line( $row, null ), 'Week 9 in review, Nov 11: sent to 139' );
+	$GLOBALS['dbd_opt'] = array( 'dbd_email' => array( 'key' => '', 'list' => 4 ) );
+	$t( 'no Brevo key: no call', DBD_Growth::list_size(), array( null, 'Brevo isn’t set up' ) );
+	echo "growth: $fails failed\n"; exit( $fails ? 1 : 0 );
+}
+
 /* ---- the admin page (2.11.0, SCOPE §50): every tab drawn with stored settings, a sync that failed, a feed to check, an email sent and two week posts */
 if ( $view === 'admin' ) {
 	$season = (int) ( DBD_Data::root_manifest()['season'] ?? 2026 );
@@ -304,6 +330,8 @@ if ( $view === 'admin' ) {
 		'dbd_sync_log' => array( array( 'time' => '2026-11-11 11:04:00', 'trigger' => 'push', 'ok' => false, 'error' => 'manifest.json: HTTP 502', 'changed' => array(), 'seconds' => 2.1 ), array( 'time' => '2026-11-10 23:05:00', 'trigger' => 'push', 'ok' => true, 'error' => '', 'changed' => array( 'a', 'b' ), 'seconds' => 4.1 ) ),
 		'dbd_news_status' => array( 'at' => 1793900000, 'secs' => 7, 'feeds' => array( 'site:MIN' => array( 'ok' => true, 'n' => 5, 'err' => '' ), 'fan:WAS' => array( 'ok' => false, 'err' => 'HTTP 503', 'last' => 1793800000 ) ) ),
 		'dbd_sync_token' => 'harness-token',
+		'googlesitekit_analytics-4_settings' => array( 'propertyID' => '123456' ),
+		'googlesitekit_search-console_settings' => array( 'propertyID' => 'https://example.test/' ),
 	);
 	$GLOBALS['hposts'] = array( 101 => (object) array( 'ID' => 101, 'post_title' => 'Week ' . $last . ' in review', 'post_status' => 'future', 'post_date_gmt' => '2026-11-17 13:00:00', 'post_type' => 'post' ), 102 => (object) array( 'ID' => 102, 'post_title' => 'Week ' . ( $last - 1 ) . ' in review', 'post_status' => 'publish', 'post_date_gmt' => '2026-11-10 13:00:00', 'post_type' => 'post' ), 103 => (object) array( 'ID' => 103, 'post_title' => 'Week 0 in review', 'post_status' => 'publish', 'post_date_gmt' => '2026-11-03 13:00:00', 'post_type' => 'post' ) );
 	$GLOBALS['hmeta'] = array( 101 => array( '_dbd_week' => $last ), 102 => array( '_dbd_week' => $last - 1, '_dbd_email_state' => 'sent' ), 103 => array( '_dbd_week' => 0, '_dbd_email_state' => 'failed: Brevo answered 405' ) );
@@ -332,7 +360,9 @@ if ( $view === 'admin' ) {
 		'wk' => array( 'The weekly post', 'Weeks', 'The Tuesday email', 'Send log', 'sent to 198', 'won’t send until Brevo is set up', 'Waiting for the confirmation template', 'action=dbd_email_again&post=103', 'Try again' ),
 		'nw' => array( 'Fetching', 'Sources', 'HTTP 503', 'Fetch news and videos now', 'Videos', 'Game highlights' ),
 		'st' => array( 'Photos and logos', 'Addresses', 'Search and sharing', 'Using it in the theme', 'value="dbd"' ),
-		'dt' => array( 'Current data', 'Sync log', 'Seasons', 'Share cards', 'value="dbd_data"', 'harness-token' ) );
+		'dt' => array( 'Current data', 'Sync log', 'Seasons', 'Share cards', 'value="dbd_data"', 'harness-token' ),
+		'gr' => array( 'Visits by source', 'data-g="sources"', 'Google search', 'data-g="search"', 'Titles to tune', 'data-g="tune"', 'data-g="copy"', 'Top landing pages', 'data-g="landing"', 'Brevo isn’t set up', 'data-g="shares"', 'data-g="signups"', 'analytics.google.com/analytics/web/#/p123456/', 'resource_id=https%3A%2F%2Fexample.test%2F', 'page=googlesitekit-dashboard' ) );
+	$want['ov'][] = 'Open Growth'; $want['ov'][] = 'data-g="ov-visits"'; $want['ov'][] = 'data-g="ov-clicks"';
 	$bad = 0; $dir = getenv( 'DBD_HARNESS_HTML' ); if ( $dir && ! is_dir( $dir ) ) { mkdir( $dir, 0777, true ); }
 	foreach ( dbd_admin_tabs() as $k => $t ) {
 		if ( $arg && $arg !== 'all' && $arg !== $k ) { continue; }
@@ -347,6 +377,7 @@ if ( $view === 'admin' ) {
 	echo "admin: $bad problems, $warnings warnings\n"; exit( $bad || $warnings ? 1 : 0 );
 }
 /* ---- the "You're in" note (2.10.2): on the viewed week post's body only, once, and with no loop (Divi's Post Content module) */
+if ( $view === 'joined_js' ) { echo DBD_Email::joined_js(), "\n"; exit( 0 ); }  /* the sign_up event's script (2.25.0) */
 if ( $view === 'joined' ) {
 	$GLOBALS['hj'] = array( 'id' => 7, 'viewed' => 7, 'week' => '8' );
 	function get_the_ID() { return $GLOBALS['hj']['id']; } function get_queried_object_id() { return $GLOBALS['hj']['viewed']; }

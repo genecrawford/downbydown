@@ -76,6 +76,7 @@
   root.addEventListener('click', function (e) {
     var rm = e.target.closest('.mt-rm'); if (rm) { e.preventDefault(); go(ids.filter(function (x) { return x !== rm.dataset.id; })); return; }
     if (e.target.closest('#mt-copy')) {
+      if (window.dbdTrack) window.dbdTrack('share', { method: 'copy_link', content_type: 'my_team', item_id: String(ids.length) });
       var b = e.target.closest('#mt-copy'), done = function () { b.textContent = 'Link copied'; setTimeout(function () { b.textContent = 'Copy link'; }, 1800); };
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url(ids)).then(done, function () { window.prompt('Copy this link', url(ids)); });
       else window.prompt('Copy this link', url(ids));

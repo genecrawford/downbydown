@@ -1,11 +1,12 @@
 <?php
 /**
- * Down by Down in the admin (2.11.0, SCOPE §50): five tabs, each its own page in the sidebar under Down by Down.
+ * Down by Down in the admin (2.11.0, SCOPE §50): six tabs, each its own page in the sidebar under Down by Down.
  *   Overview        what needs a look, then a summary of each area with its main button
  *   Week in review  the weekly post, its weeks, the Tuesday email and its send log
  *   Team news       the fetch status and the sources
  *   Site            photos and logos, addresses, the home description, notes for the theme
  *   Data            the current data and Sync now, the sync log, seasons, share cards, the data source and GitHub push
+ *   Growth          visits by source, Google search, titles to tune, landing pages, email (2.25.0, SCOPE §65; assets/growth.js)
  * Each box that saves is its own form (its own settings group), so saving one tab never touches another's settings.
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
@@ -18,6 +19,7 @@ function dbd_admin_tabs() {
 		'nw' => array( 'down-by-down-news', 'News and videos' ),
 		'st' => array( 'down-by-down-site', 'Site' ),
 		'dt' => array( 'down-by-down-data', 'Data' ),
+		'gr' => array( 'down-by-down-growth', 'Growth' ),
 	);
 }
 function dbd_admin_url( $tab = 'ov', $args = array(), $hash = '' ) {
@@ -36,6 +38,14 @@ add_action( 'admin_menu', function () {
 	// Its own entry in the admin sidebar, just below Comments, with a pennant icon; each tab is also listed under it.
 	add_menu_page( 'Down by Down', 'Down by Down', 'manage_options', 'down-by-down', 'dbd_settings_page', 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMCAyMCI+PHBvbHlnb24gcG9pbnRzPSIyLDIgMTgsMTAgMiwxOCIgZmlsbD0iYmxhY2siLz48cmVjdCB4PSIyIiB5PSIyIiB3aWR0aD0iMyIgaGVpZ2h0PSIxNiIgZmlsbD0iYmxhY2siIG9wYWNpdHk9Ii41NSIvPjwvc3ZnPg==', 26 );
 	foreach ( dbd_admin_tabs() as $t ) { add_submenu_page( 'down-by-down', 'Down by Down: ' . $t[1], $t[1], 'manage_options', $t[0], 'dbd_settings_page' ); }
+} );
+
+/* the Growth numbers (SCOPE §65): growth.js on the Overview and the Growth tab, with Site Kit's REST root and a nonce */
+add_action( 'admin_enqueue_scripts', function () {
+	$page = sanitize_key( (string) ( $_GET['page'] ?? '' ) );
+	if ( $page !== 'down-by-down' && $page !== 'down-by-down-growth' ) { return; }
+	wp_enqueue_script( 'dbd-growth', DBD_URL . 'assets/growth.js', array(), DBD_VERSION, true );
+	wp_add_inline_script( 'dbd-growth', 'window.DBD_GROWTH=' . wp_json_encode( DBD_Growth::js_config() ) . ';', 'before' );
 } );
 
 add_action( 'admin_init', function () {
@@ -233,7 +243,19 @@ function dbd_settings_page() {
 		.dbd-admin details.dbd-box[open]>summary{border-bottom:1px solid #c3c4c7}
 		.dbd-admin .dbd-help details{margin:0 0 10px}.dbd-admin .dbd-help details>summary{font-weight:600}
 		.dbd-admin .dbd-help ul{list-style:disc;padding-left:20px}
-		@media (max-width:782px){.dbd-admin .dbd-grid{grid-template-columns:minmax(0,1fr)}.dbd-admin .dbd-rows td:first-child{width:110px}}
+		.dbd-admin .up{color:#007017}.dbd-admin .down{color:#b32d2e}.dbd-admin .flat{color:#646970}
+		.dbd-admin .g-t{width:100%;border-collapse:collapse}
+		.dbd-admin .g-t th{padding:8px 16px;text-align:left;font-weight:400;color:#50575e;border-bottom:1px solid #f0f0f1;white-space:nowrap}
+		.dbd-admin .g-t td{padding:8px 16px;border-top:1px solid #f0f0f1;vertical-align:middle}
+		.dbd-admin .g-t tbody tr:first-child td{border-top:0}
+		.dbd-admin .g-t .n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+		.dbd-admin .g-t .w{width:100%}
+		.dbd-admin .bar-c{display:block;height:8px;background:#f0f0f1;min-width:80px}.dbd-admin .bar-c i{display:block;height:8px;background:#2271b1}
+		.dbd-admin .g-t td.pg{max-width:0;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+		.dbd-admin .g-t td.pg a{text-decoration:none}
+		.dbd-admin .g-t td.pg small{display:block;color:#646970;font-size:12px;overflow:hidden;text-overflow:ellipsis}
+		.dbd-admin .g-wait{color:#646970}
+		@media (max-width:782px){.dbd-admin .dbd-grid{grid-template-columns:minmax(0,1fr)}.dbd-admin .dbd-rows td:first-child{width:110px}.dbd-admin .g-t th,.dbd-admin .g-t td{padding-left:10px;padding-right:10px}.dbd-admin .hide-sm{display:none}}
 		</style>
 		<h1>Down by Down</h1>
 		<p class="dbd-lede"><?php echo esc_html( 'Season ' . ( $m['season'] ?? '–' ) . ( isset( $m['week'] ) ? ' · Week ' . $m['week'] : '' ) . ( DBD_Data::updated_text() ? ' · data ' . lcfirst( DBD_Data::updated_text() ) : '' ) . ' · version ' . DBD_VERSION ); ?></p>
@@ -249,6 +271,7 @@ function dbd_settings_page() {
 			case 'nw': dbd_tab_news(); break;
 			case 'st': dbd_tab_site(); break;
 			case 'dt': dbd_tab_data(); break;
+			case 'gr': dbd_tab_growth(); break;
 			default:   dbd_tab_overview();
 		}
 		?>
@@ -313,7 +336,67 @@ function dbd_tab_overview() {
 			<tr><td>Addresses</td><td><?php echo DBD_Urls::on() ? 'Readable: <code>/team/min/</code>' : 'Query strings: <code>?team=MIN</code>'; ?></td></tr>
 		</tbody></table>
 		<div class="dbd-foot"><a class="button" href="<?php echo esc_url( dbd_admin_url( 'st' ) ); ?>">Open Site</a></div></div>
+
+		<div class="dbd-box"><h2>Growth <small>last 28 days</small></h2><table class="dbd-rows"><tbody>
+			<tr><td>Visits</td><td data-g="ov-visits"><span class="g-wait">Asking Site Kit…</span></td></tr>
+			<tr><td>Search clicks</td><td data-g="ov-clicks"><span class="g-wait">Asking Site Kit…</span></td></tr>
+			<tr><td>Subscribers</td><td><?php echo dbd_growth_subscribers(); ?></td></tr>
+		</tbody></table>
+		<div class="dbd-foot"><a class="button" href="<?php echo esc_url( dbd_admin_url( 'gr' ) ); ?>">Open Growth</a></div></div>
 	</div>
+	<?php
+}
+
+/* ------------------------------------------------------------------ Growth (2.25.0, SCOPE §65) */
+
+/** "142 +37 in 28 days" from Brevo, or why not. */
+function dbd_growth_subscribers() {
+	list( $n, $err ) = DBD_Growth::list_size();
+	if ( $n === null ) { return '<span class="g-wait">' . esc_html( $err ) . '.</span>' . ( DBD_Growth::email_on() ? '' : ' <a href="' . esc_url( dbd_admin_url( 'wk' ) ) . '">Set it up on Week in review</a>' ); }
+	$c = DBD_Growth::size_change( $n );
+	if ( ! $c ) { return esc_html( number_format( $n ) ) . ' <span class="flat">(the change shows from tomorrow)</span>'; }
+	$cls = $c[0] > 0 ? 'up' : ( $c[0] < 0 ? 'down' : 'flat' );
+	$since = $c[1] <= gmdate( 'Y-m-d', strtotime( wp_date( 'Y-m-d' ) . ' -' . DBD_Growth::DAYS . ' days' ) ) ? 'in 28 days' : 'since ' . wp_date( 'M j', strtotime( $c[1] . ' 12:00' ) );
+	return esc_html( number_format( $n ) ) . ' <span class="' . $cls . '">' . ( $c[0] > 0 ? '+' : ( $c[0] < 0 ? '−' : '±' ) ) . abs( (int) $c[0] ) . ' ' . esc_html( $since ) . '</span>';
+}
+
+function dbd_tab_growth() {
+	$L = DBD_Growth::links();
+	$a = function ( $k, $t ) use ( $L ) { return '<a class="button" href="' . esc_url( $L[ $k ] ) . '"' . ( $k === 'sitekit' ? '' : ' target="_blank" rel="noopener"' ) . '>' . esc_html( $t ) . '</a>'; };
+	$wait = '<span class="g-wait">Asking Site Kit…</span>';
+	$le = DBD_Growth::last_email();
+	?>
+	<p class="dbd-lede" style="max-width:980px">The last 28 days against the 28 before. Analytics and Search Console numbers come from Site Kit, read in your browser as you; email numbers come from Brevo. Shares and signups are counted from version 2.25.0.</p>
+	<div class="dbd-box"><h2>Visits by source <small data-g="range"></small></h2>
+		<div data-g="sources"><p class="dbd-in"><?php echo $wait; ?></p></div>
+		<div class="dbd-foot"><?php echo $a( 'analytics', 'Open in Analytics' ) . $a( 'sitekit', 'Open Site Kit' ); ?></div></div>
+
+	<div class="dbd-grid">
+		<div class="dbd-box"><h2>Google search</h2><table class="dbd-rows"><tbody data-g="search">
+			<tr><td>Clicks</td><td><?php echo $wait; ?></td></tr>
+		</tbody></table>
+		<div class="dbd-foot"><?php echo $a( 'search', 'Open in Search Console' ); ?></div></div>
+
+		<div class="dbd-box"><h2>Email</h2><table class="dbd-rows"><tbody>
+			<tr><td>Subscribers</td><td><?php echo dbd_growth_subscribers(); ?></td></tr>
+			<tr><td>Signups</td><td data-g="signups"><?php echo $wait; ?></td></tr>
+			<tr><td>Last email</td><td><?php echo $le ? esc_html( DBD_Growth::email_line( $le[0], $le[1] ) ) . ( $le[2] !== '' ? ' <span class="dbd-red">(' . esc_html( $le[2] ) . ')</span>' : '' ) : 'None sent yet.'; ?></td></tr>
+			<tr><td>Shares</td><td data-g="shares"><?php echo $wait; ?></td></tr>
+		</tbody></table>
+		<div class="dbd-foot"><?php echo $a( 'brevo', 'Open in Brevo' ); ?></div></div>
+	</div>
+
+	<div class="dbd-box"><h2>Titles to tune <small>seen often in Google, rarely clicked</small></h2>
+		<table class="g-t"><thead><tr><th>Page and its title</th><th class="n">Seen</th><th class="n">Clicks</th><th class="n">Rate</th></tr></thead><tbody data-g="tune">
+			<tr><td colspan="4"><?php echo $wait; ?></td></tr>
+		</tbody></table>
+		<div class="dbd-foot"><button type="button" class="button" data-g="copy" disabled>Copy the list for Claude</button><span class="description">Pages Google showed at least 100 times, with a click rate under the site's.</span></div></div>
+
+	<div class="dbd-box"><h2>Top landing pages <small>where visits start</small></h2>
+		<table class="g-t"><thead><tr><th>Page</th><th class="n">Visits</th><th class="n">Change</th></tr></thead><tbody data-g="landing">
+			<tr><td colspan="3"><?php echo $wait; ?></td></tr>
+		</tbody></table>
+		<div class="dbd-foot"><?php echo $a( 'analytics', 'Open in Analytics' ) . $a( 'sitekit', 'Open Site Kit' ); ?></div></div>
 	<?php
 }
 
