@@ -88,6 +88,11 @@ jobs:
           # the first build of a new season moves the finished one, playoffs and all, to data/archive/{season}/
           python3 tools/archive.py freeze data "$S"
 
+      - name: Build the draft and combine boards (SCOPE §63)
+        run: |
+          # before the main build, so its manifest lists these files; links to player pages use the last build's index
+          if [ -f in/draft.csv ] && [ -f in/combine.csv ]; then python3 tools/build_boards.py in/draft.csv in/combine.csv data; else echo "No draft or combine file; boards unchanged."; fi
+
       - name: Build data
         env:
           DBD_WIKI: '1'  # SCOPE §62: refresh the Wikipedia cache in tools/cache/wiki.json

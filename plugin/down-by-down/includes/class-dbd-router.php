@@ -195,6 +195,10 @@ class DBD_Router {
 			if ( $g === 'rec' ) { $g = 'wr'; }  /* 1.13.0's combined tab */
 			$r['lgroup'] = isset( DBD_Leaders::GROUPS[ $g ] ) ? $g : 'fan';
 			$r['lboard'] = preg_match( '/^[a-z]{1,3}\.[A-Za-z0-9_]{1,10}(\.[A-Za-z0-9_]{1,10})?$/', $b ) ? $b : '';  /* k.oe: the kickers' boards (SCOPE §47) */
+		} elseif ( $view === 'draft' || $view === 'combine' ) {  /* the season boards (SCOPE §63): a year they have, the newest by default */
+			$ys = DBD_Boards::years( $view ); $y = (int) self::q( 'y' );
+			$r['view'] = $ys ? $view : 'notfound'; $r['y'] = in_array( $y, $ys, true ) ? $y : ( $ys[0] ?? 0 );
+			if ( $y && ! in_array( $y, $ys, true ) ) { $r['view'] = 'notfound'; }
 		} elseif ( $view === 'week' ) {  /* the week in review (SCOPE §40): a week with a final game, the latest by default */
 			$r['view'] = 'week'; $ok = DBD_Week::weeks();
 			$r['week'] = ( $week && in_array( $week, $ok, true ) ) ? $week : DBD_Week::default_week();
@@ -279,6 +283,7 @@ class DBD_Router {
 		if ( $r['view'] === 'teams' ) { $args = array( 'view' => 'teams' ); }
 		if ( $r['view'] === 'myteam' ) { $args = ( $full && self::q( 'myteam' ) !== '' ) ? array( 'myteam' => self::q( 'myteam' ) ) : array( 'view' => 'myteam' ); }
 		if ( $r['view'] === 'week' ) { $args = array( 'view' => 'week', 'week' => $r['week'] ); }
+		if ( $r['view'] === 'draft' || $r['view'] === 'combine' ) { $args = array( 'view' => $r['view'], 'y' => $r['y'] ); }
 		if ( $r['view'] === 'leaders' ) { $args = array( 'view' => 'leaders' ); if ( $r['lboard'] !== '' ) { $args['b'] = $r['lboard']; } elseif ( $r['lgroup'] !== 'fan' ) { $args['g'] = $r['lgroup']; } }
 		if ( $r['view'] === 'player' ) { $args = array( 'player' => $r['player']['id'] ); }
 		if ( $r['view'] === 'players' ) { $args = array( 'view' => 'players' ); if ( $r['pteam'] ) { $args['pt'] = $r['pteam']; } if ( $r['pos'] ) { $args['pos'] = $r['pos']; } if ( $full && $r['q'] !== '' ) { $args['q'] = $r['q']; } }
@@ -317,6 +322,10 @@ class DBD_Router {
 				$g = $r['game']; $O = $r['side'] === 'away' ? $g['away'] : $g['home']; $D = $r['side'] === 'away' ? $g['home'] : $g['away'];
 				$o = DBD_Data::team( $O )['nick']; $d = DBD_Data::team( $D )['nick'];
 				return array( "$o offense vs $d defense, " . self::week_label( $g['week'] ), "How the $o offense matches up against the $d defense: EPA, success rate, explosive plays, third downs, red zone and where the ball goes, with the biggest edge and the risk." );
+			case 'draft':
+				return array( "{$r['y']} NFL Draft: every pick", "Every pick of the {$r['y']} NFL Draft, round by round: team, school, position, combine score and what each player has done since, filterable by round, position and team." );
+			case 'combine':
+				return array( "{$r['y']} NFL Combine results", "Every result from the {$r['y']} NFL Combine: the 40, vertical, broad jump, bench, 3-cone and shuttle, each against every player at the position since 2000, with the leaders and where each player was drafted." );
 			case 'matchups':
 				return array( self::week_label( $r['week'] ) . " matchups", "Every game of the $season NFL season with lines, totals, scores and a matchup read for each one." );
 			case 'teams':
@@ -458,6 +467,7 @@ class DBD_Router {
 			wp_localize_script( 'dbd-compare', 'DBD_CMP', array( 'base' => self::url(), 'group' => $r['cgroup'], 'players' => $pl, 'files' => $files, 'teams' => DBD_Data::teams(), 'heads' => DBD_Data::headshots(), 'series' => $series, 'labels' => $labels, 'yds' => array( 'rec' => 'Receiving yards', 'rb' => 'Scrimmage yards', 'qb' => 'Passing yards' )[ DBD_Grades::kind( $r['cgroup'] ) ] ?? 'Yards' ) );
 		}
 		if ( $r['view'] === 'leaders' ) { wp_enqueue_script( 'dbd-leaders', DBD_URL . 'assets/leaders.js', array(), DBD_VERSION, true ); }
+		if ( $r['view'] === 'draft' || $r['view'] === 'combine' ) { wp_enqueue_script( 'dbd-boards', DBD_URL . 'assets/boards.js', array(), DBD_VERSION, true ); }
 		if ( $r['view'] === 'week' ) { wp_enqueue_script( 'dbd-week', DBD_URL . 'assets/week.js', array(), DBD_VERSION, true ); }
 		if ( $r['view'] === 'hub' ) {  /* SCOPE §41: the My team card. Always loaded: right after an update the player list may not have synced yet, and a cached page without the script would keep the card empty; hub.js does nothing if the list is missing */
 			wp_enqueue_script( 'dbd-marks', DBD_URL . 'assets/marks.js', array(), DBD_VERSION, true );
@@ -513,7 +523,7 @@ class DBD_Router {
 	/** The top bar: breadcrumb trail plus the Updated stamp. $crumbs = array( 'label' => url|null ) */
 	/** The season switcher (SCOPE §44): every season the site holds, each link the same page in that season. Nothing with one season. */
 	public static function switcher() {
-		$all = DBD_Data::seasons(); if ( count( $all ) < 2 || ! self::$route ) { return ''; }
+		$all = DBD_Data::seasons(); if ( count( $all ) < 2 || ! self::$route || in_array( self::$route['view'] ?? '', array( 'draft', 'combine' ), true ) ) { return ''; }  /* the boards span every year and have their own switcher (SCOPE §63) */
 		$now = (int) DBD_Data::season(); $cur = DBD_Data::current_season(); $items = '';
 		foreach ( $all as $s ) {
 			$sub = $s === $cur ? 'this season' : 'final';
