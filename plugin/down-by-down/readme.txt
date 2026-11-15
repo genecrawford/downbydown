@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.18.0
+Stable tag: 2.19.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,11 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.19.0 =
+* The pass and run maps are drawn like a playbook page (SCOPE §59): the line of scrimmage, the five linemen (the center a square), the quarterback and the back in chalk.
+* Passes: a route from the quarterback to each of 12 zones (left, middle or right; behind the line, short, 10 to 19, 20+), as thick as its share of the throws, colored by how those throws went and labeled completions/targets and EPA per target. Every target is still a dot you can click to open the play.
+* Runs: one arrow from the back through each gap, as long as the yards per carry and as wide as the carries, with carries and success rate under each gap. The defense tab draws what offenses did against it.
 
 = 2.18.0 =
 * Touchdowns stand out on the drive chart (SCOPE §58): every snap of a drive that ended in a touchdown sits on a light green wash, and the touchdown row itself gets a green band across the field, a thicker line, a ringed dot where the ball crossed the goal line, and a green TD block in the end zone. The defense tab marks the touchdowns it gave up the same way.
