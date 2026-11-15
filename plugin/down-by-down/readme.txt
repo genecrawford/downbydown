@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.14.0
+Stable tag: 2.15.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,13 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.15.0 =
+* Keys to the game wears the offense's colors (SCOPE §55): white text on the team's dark color, its other color on the numbers, the tags, the offense's name and a band along the bottom, with the team tile in the header. Flip the page to the other offense and the colors flip with it.
+* One color rule for all 32 teams, from the two colors the build already ships: the panel is the first team color dark enough for white text (else the main color deepened), the accent the other color when it reads on that (else a lighter shade of the main one).
+* The tags take the team's accent (Wash stays muted): the word carries the meaning, and green or red would fight a green or red team.
+* Players to watch moves to its own panel under the keys, since it covers both teams.
+* The breadcrumb reads in title case: Week 10, Play Explorer, Vikings Offense. Joining words stay small (Vikings at Packers).
 
 = 2.14.0 =
 * Hints of the news and the NFL's weekly videos across the site (SCOPE §54). The NFL's Game Previews and Player Highlights playlists join its recaps. Everything opens on YouTube; anything bigger than a small link comes after the stats.
