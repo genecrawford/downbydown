@@ -319,6 +319,7 @@ def _pct(g_, k, v):
     return round(100 * beat / len(pool))
 def _before_nfl(r, pfid):
     """The player's draft and combine record for the player page, or None."""
+    if not len(DRAFT) and not len(COMB): return None  # no files this run (an archive build): no band, rather than a wrong one (Greptile, PR #110)
     out_ = {}
     d_ = DP.get(r.gsis_id)
     if d_ is not None:
@@ -329,10 +330,12 @@ def _before_nfl(r, pfid):
                           b=[str(x) for x in names_[:k_ - 1]] if k_ and k_ <= 5 else None,
                           pb=int(_num(d_.get('probowls'))), ap=int(_num(d_.get('allpro'))), hof=bool(_num(d_.get('hof'))))
     else:
-        ey_ = c(getattr(r, 'entry_year', None))
-        if ey_: out_['ud'] = int(ey_)  # undrafted, the year he came in
+        ey_ = c(getattr(r, 'entry_year', None)); dn_ = _num(getattr(r, 'draft_number', None), None)
+        if dn_: out_['dn'] = [int(dn_), int(ey_) if ey_ else None]  # drafted, but not in the draft file: the roster's overall pick
+        elif ey_: out_['ud'] = int(ey_)  # undrafted only when the roster has no pick either, the year he came in
     cb_ = CB_BY_PFR.get(pfid) if pfid else None
     if cb_ is None and c(getattr(r, 'entry_year', None)): cb_ = CB_BY_NAME.get((str(r.full_name), int(c(r.entry_year))))
+    if cb_ is None and len(COMB): out_['nc'] = 1  # the combine file has no row for him
     if cb_ is not None:
         g_ = CB_GRP(r.position); dr_ = []
         for k in CB_DRILLS:
@@ -365,19 +368,20 @@ def _wiki(pfids):
         if not t_: continue
         have_ = cache_.get(pid_)
         if have_ and have_[0].replace('_', ' ') == t_ and len(have_) > 3 and have_[3] >= stale_: continue
-        if fetched_ >= 600: break  # spread a cold cache over a few nights
+        if fetched_ >= 600: break  # spread a cold cache over a few nights; every attempt counts, failed or not (Greptile, PR #110)
+        fetched_ += 1
         try:
             j_ = get_('https://en.wikipedia.org/api/rest_v1/page/summary/' + urllib.parse.quote(t_.replace(' ', '_'), safe=''))
             if j_.get('type') == 'standard': cache_[pid_] = [(j_.get('titles', {}).get('normalized') or t_).replace('_', ' '), j_.get('description') or '', (j_.get('extract') or '')[:900], today_]
-            fetched_ += 1; time.sleep(0.25)  # well under Wikimedia's rate limit
         except urllib.error.HTTPError as e_:
-            if e_.code == 429: print('wikipedia: rate limited after', fetched_, 'summaries; the rest wait for the next build'); break
+            if e_.code == 429: print('wikipedia: rate limited after', fetched_, 'requests; the rest wait for the next build'); break
             print('wikipedia: summary failed for', pid_, e_)
         except Exception as e_:
             print('wikipedia: summary failed for', pid_, e_)
+        time.sleep(0.25)  # well under Wikimedia's rate limit, after failures too
     os.makedirs(os.path.dirname(path_), exist_ok=True)
     json.dump(cache_, open(path_, 'w'), indent=0, sort_keys=True, ensure_ascii=False)
-    print('wikipedia:', len(titles_), 'titles,', fetched_, 'summaries fetched,', len(cache_), 'cached')
+    print('wikipedia:', len(titles_), 'titles,', fetched_, 'requests,', len(cache_), 'cached')
     return {k: v[:3] for k, v in cache_.items() if k in pfids and v and v[0]}
 WIKI = _wiki({x for x in _rw.pfr_id if isinstance(x, str) and x} if 'pfr_id' in _rw.columns else set())
 print('before the NFL:', len(DP), 'draft picks,', len(CB_BY_PFR), 'combine rows,', len(WIKI), 'Wikipedia articles on these rosters')

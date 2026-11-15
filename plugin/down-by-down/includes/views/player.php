@@ -704,8 +704,12 @@ if ( $BF || $WK ) {
 		$since = array(); if ( (int) $DR['pb'] ) { $since[] = '<b>' . (int) $DR['pb'] . '</b> Pro Bowl' . ( (int) $DR['pb'] === 1 ? '' : 's' ); } if ( (int) $DR['ap'] ) { $since[] = '<b>' . (int) $DR['ap'] . '</b> first-team All-Pro'; } if ( ! empty( $DR['hof'] ) ) { $since[] = 'Hall of Fame'; }
 		echo '<p class="df-big">Round ' . (int) $DR['r'] . ' · Pick ' . (int) $DR['p'] . '</p><p class="df-sub">' . (int) $DR['y'] . ' · ' . esc_html( $dt['name'] ?? (string) $DR['t'] ) . ( $DR['sc'] ? ' · from ' . esc_html( (string) $DR['sc'] ) : '' ) . '</p>';
 		echo '<dl class="dbd-kv">' . ( $among ? '<dt>Among ' . esc_html( (string) $DR['pos'] ) . 's</dt><dd>' . $among . '</dd>' : '' ) . '<dt>Since</dt><dd>' . ( $since ? implode( ' · ', $since ) : 'no Pro Bowls yet' ) . '</dd></dl>';
+	} elseif ( ! empty( $BF['dn'][0] ) ) {  /* drafted, but missing from the draft file: the roster's overall pick */
+		echo '<p class="df-big">Pick ' . (int) $BF['dn'][0] . ' overall</p><p class="df-sub">' . ( ! empty( $BF['dn'][1] ) ? (int) $BF['dn'][1] . ( $p['col'] ? ' · from ' . esc_html( $p['col'] ) : '' ) : esc_html( (string) $p['col'] ) ) . '</p>';
+	} elseif ( ! empty( $BF['ud'] ) ) {
+		echo '<p class="df-big">Undrafted</p><p class="df-sub">Came into the league in ' . (int) $BF['ud'] . ( $p['col'] ? ' from ' . esc_html( $p['col'] ) : '' ) . '</p>';
 	} else {
-		echo '<p class="df-big">Undrafted</p><p class="df-sub">' . ( ! empty( $BF['ud'] ) ? 'Came into the league in ' . (int) $BF['ud'] . ( $p['col'] ? ' from ' . esc_html( $p['col'] ) : '' ) : 'Not drafted' ) . '</p>';
+		echo '<p class="df-sub">No draft record on file.</p>';
 	}
 	echo '</div></section>';
 	echo '<section class="dbd-panel dbd-combine"><div class="dbd-ph"><span class="dbd-lab"><b>The combine</b>' . ( $CB ? ' · ' . (int) $CB['y'] . ', against every ' . esc_html( (string) $CB['g'] ) . ' tested since 2000' : '' ) . '</span>' . ( $CB && $CB['sc'] !== null ? '<span class="dbd-badge">Score ' . (int) $CB['sc'] . ' of 100</span>' : '' ) . '</div><div class="dbd-pb">';
@@ -717,8 +721,10 @@ if ( $BF || $WK ) {
 			echo $v === null ? '<div class="cb-row none"><span class="cb-k">' . $lab[ $k ] . '</span><span class="cb-v">did not test</span><span class="cb-bar"></span><span class="cb-p"></span></div>'
 				: '<div class="cb-row"><span class="cb-k">' . $lab[ $k ] . '</span><span class="cb-v">' . esc_html( $fm( $k, $v ) ) . '</span><span class="cb-bar"><i style="width:' . (int) $pc . '%"></i></span><span class="cb-p">' . esc_html( DBD_Grades::ordinal( (int) $pc ) ) . '</span></div>'; }
 		echo '<p class="dbd-note">Percentile is the share of ' . esc_html( (string) $CB['g'] ) . 's at the combine since 2000 he beat: faster on the timed drills, higher, longer or stronger on the rest. The score averages the drills he ran (' . (int) $CB['nr'] . ' of 6' . ( (int) $CB['nr'] < 2 ? '; it needs two' : '' ) . '). Skipped drills are often run at his school\'s pro day, which isn\'t in this data.</p>';
-	} else {
+	} elseif ( ! empty( $BF['nc'] ) ) {
 		echo '<p class="dbd-cb-none">No combine results on file for him. The data starts in 2000 and covers invited players only.</p>';
+	} else {
+		echo '<p class="dbd-cb-none">Combine results aren\'t loaded for this season.</p>';
 	}
 	echo '</div></section></div>';
 	if ( $WK ) {
