@@ -32,6 +32,7 @@ Not affiliated with the NFL or any team. No team logos are used; team marks are 
 == Changelog ==
 
 = 2.17.1 =
+* The play explorer's Play detail box stays below the site's fixed header (and the admin bar when you're logged in) as you scroll, instead of sliding under it.
 * The logos at the top of the team panel and the game page's face-off load right away instead of lazily, so the drawn placeholder mark no longer lingers in their place (seen on the Bears defense page).
 
 = 2.17.0 =
