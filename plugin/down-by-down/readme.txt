@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.20.0
+Stable tag: 2.21.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,10 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.21.0 =
+* One filter panel on the team pages (SCOPE §61): its header says how many snaps the filters leave ("21 of 447 snaps"), with Reset beside it only when something is filtered. Games and players sit up front as labeled chip rows; down, type, zone, formation and quarter wait behind More filters, which shows how many are on and opens by itself when any are. Everything picked uses the team's color; the red is gone.
+* The receiver chart keeps every receiver when a player is picked, with him drawn solid in the team's color and labeled in bold, and the rest faded.
 
 = 2.20.0 =
 * Player chips under the filters (SCOPE §60): the ten players with the most touches in the plays the other filters allow, each with position and targets or carries. Pick one and the whole explorer follows him, his chip fills with the team color, and the other chips stay so switching is one click. The Player dropdown leaves the filter bar.
