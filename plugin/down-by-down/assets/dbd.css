@@ -2099,3 +2099,4 @@ html:not([data-fx]) .dbd [data-fx="half"],html[data-fx="std"] .dbd [data-fx="std
 .dbd .bd-t tr.rd td{padding:9px 10px;background:var(--dbd-ink);border-bottom:0;font:700 13px var(--dbd-display);letter-spacing:.14em;color:#fff}
 .dbd .bd-t tr.rd td span{margin-left:8px;font:500 11px var(--dbd-mono);letter-spacing:0;text-transform:none;color:rgba(255,255,255,.65)}
 .dbd .bd-t td.so{font-size:13px}
+.dbd .dbd-related{margin-top:14px}.dbd .dbd-related .dbd-pills{margin-top:0}

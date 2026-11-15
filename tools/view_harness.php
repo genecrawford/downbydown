@@ -370,7 +370,7 @@ if ( $view === 'joined' ) {
 	echo "joined: $bad problems, $warnings warnings\n"; exit( $bad || $warnings ? 1 : 0 );
 }
 if ( $view === 'sitemap' ) {
-	try { foreach ( DBD_Seo::urls() as $u ) { echo $u['loc'] . "\n"; } } catch ( Throwable $e ) { fwrite( STDERR, 'FATAL in sitemap: ' . $e->getMessage() . "\n" ); exit( 1 ); }
+	try { foreach ( DBD_Seo::urls() as $u ) { echo $u['loc'] . ( getenv( 'DBD_HARNESS_LASTMOD' ) ? ' ' . ( $u['lastmod'] ?? '-' ) : '' ) . "\n"; } } catch ( Throwable $e ) { fwrite( STDERR, 'FATAL in sitemap: ' . $e->getMessage() . "\n" ); exit( 1 ); }
 	exit( $warnings ? 1 : 0 );
 }
 
@@ -416,11 +416,13 @@ if ( ! is_readable( $file ) ) { fwrite( STDERR, "no view file for route '" . DBD
 ob_start();
 try { include $file; $html = ob_get_clean(); }
 catch ( Throwable $e ) { $partial = ob_get_clean(); fwrite( STDERR, "FATAL in $view: " . get_class( $e ) . ': ' . $e->getMessage() . ' at ' . basename( $e->getFile() ) . ':' . $e->getLine() . "\n  output before the error: " . strlen( $partial ) . " bytes, last tag: " . ( preg_match_all( '/<[a-z0-9-]+/i', $partial, $mm ) ? end( $mm[0] ) : '-' ) . "\n" ); exit( 1 ); }
+/* the page's head tags (title, description, share card, structured data; SCOPE §64), so CI can check them in the written page */
+ob_start(); try { echo '<title>' . esc_html( DBD_Router::title_string( '' ) ) . '</title>'; DBD_Router::head(); $headHtml = ob_get_clean(); } catch ( Throwable $e ) { ob_end_clean(); fwrite( STDERR, 'FATAL in head: ' . $e->getMessage() . ' at ' . basename( $e->getFile() ) . ':' . $e->getLine() . "\n" ); exit( 1 ); }
 echo "rendered $view " . ( $arg ?: '' ) . ": " . strlen( $html ) . " bytes, route " . DBD_Router::$route['view'] . ", $warnings warning" . ( $warnings === 1 ? '' : 's' ) . "\n";
 $out = getenv( 'DBD_HARNESS_HTML' );  /* a directory: write a standalone page that loads the plugin's stylesheet, with Divi's inline table rule on, for looking at */
 if ( $out ) { if ( ! is_dir( $out . '/assets' ) ) { mkdir( $out . '/assets', 0777, true ); } foreach ( array( 'dbd.css', 'transitions.css', 'marks.js' ) as $af ) { copy( DBD_PATH . 'assets/' . $af, $out . '/assets/' . $af ); } $name = $out . '/' . $view . ( $arg ? '-' . $arg : '' ) . '.html';
 	$fonts = '<link href="https://fonts.googleapis.com/css2?family=Tourney:wght@800&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">';
-	file_put_contents( $name, '<!doctype html><html class="no-js"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' . $fonts . '<style>.entry-content tr td{padding:6px 24px 24px}</style><link rel="stylesheet" href="assets/dbd.css"><link rel="stylesheet" href="assets/transitions.css"></head><body class="dbd-app"><div class="entry-content"><div class="dbd dbd-view-' . DBD_Router::$route['view'] . '">' . $html . '</div></div></body></html>' ); }
+	file_put_contents( $name, '<!doctype html><html class="no-js"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' . $fonts . '<style>.entry-content tr td{padding:6px 24px 24px}</style>' . $headHtml . '<link rel="stylesheet" href="assets/dbd.css"><link rel="stylesheet" href="assets/transitions.css"></head><body class="dbd-app"><div class="entry-content"><div class="dbd dbd-view-' . DBD_Router::$route['view'] . '">' . $html . '</div></div></body></html>' ); }
 /* the team and hub views are shells that the explorer script fills; the player and players views carry their tables */
 $floor = in_array( $view, array( 'player', 'players' ), true ) ? 20000 : 800;
 if ( strlen( $html ) < $floor ) { fwrite( STDERR, "suspiciously short output (under $floor bytes)\n" ); exit( 3 ); }
