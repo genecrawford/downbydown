@@ -2573,3 +2573,23 @@ Gene: the header "is now not balanced enough". Today the headline fills about ha
 - **Gene picked B (2026-11-15), without the thin underline:** the team treatment has to echo and balance the team-colored Keys panel below. Two takes:
   - **Team blocks** (`header-b-blocks.html`, recommended): each side is its team's own dark panel from `DBD_Marks::deep`, with the same accent band along the bottom as the Keys panel. The role ("Offense", "Defense") and the rank are in the accent, the team name is white, and the logo is 72px. The light game card stays in the middle. With two team blocks above and one below, the page balances; on a phone the blocks sit side by side over the game card.
   - **Team bands** (`header-b-bands.html`): the sides stay light, and the underline becomes the Keys panel's band (the team's dark color with its accent under it).
+
+## 57. The team page header in the team's colors, smaller game chips (scoped and mocked 2026-11-15, `mockup-v31/`)
+
+Gene: make the offense page's header "more specific to the team" and shrink the season game blocks.
+
+- **The header becomes the team's own panel**, the same colors and accent band as the game page's face-off (§56) and Keys (§55), from `DBD_Marks::deep`. It holds:
+  - the 96px logo;
+  - the season line in the accent ("2026 season · Weeks 1 to 10 · Bye week 6 · 6-2", still filled in by the explorer);
+  - the title in white, with "offense" or "defense" dimmed;
+  - the note in soft white;
+  - the Offense | Defense switch, with the current side in the accent;
+  - the News and Videos links as outlined buttons.
+- **Four numbers on the right**, all about this team:
+  - Offense rank (#31 of 32 in EPA).
+  - Defense rank (#2 of 32 in EPA allowed), linking to the defense tab.
+  - Snaps (the explorer's count). On the defense tab this cell shows snaps defended.
+  - Next game ("at SF", Sun, Nov 22 · 8:20 PM), linking to its game page. After the season it shows the last game instead.
+- **Layout by width:** below 900px the numbers drop under the title as one row of four; on a phone they become a 2 by 2 grid, and the logo shrinks to 60px. The loose "447 snaps" badge goes away.
+- **The game chips shrink to one line each** (week and home or away, a 16px logo and the opponent, then the result) as rounded pills. The chip you pick fills with the team's color, with the result in the accent. On a phone the chips run in one row that scrolls sideways.
+- **Code:** team.php builds the panel; dbd.css adds `.dbd-tpanel`, and the `.dbd-game` rules shrink. team-explorer.js keeps writing `#dbd-kicker` and `#dbd-snaps`, now inside the panel. The defense tab uses the same panel, and DBD_Defense's EPA badge moves into the numbers.
