@@ -757,6 +757,16 @@ body.dbd-standalone .dbd{--dbd-stick:var(--wp-admin--admin-bar--height, 0px)}  /
 @container dbd (max-width:700px){.dbd .dbd-player .dbd-two{grid-template-columns:minmax(0,1fr)}}
 .dbd .dbd-strip{flex-wrap:wrap;overflow:visible;scroll-snap-type:none}.dbd .dbd-sc{flex:1 1 168px;max-width:240px}
 .dbd .dbd-gstrip{flex-wrap:wrap;overflow:visible}
+/* SCOPE §60, the player strip: one line of chips like the game chips; the picked one fills with the team's color */
+.dbd .dbd-pstrip{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:2px 0 0}
+.dbd .dbd-pstrip .lab{font:700 11px var(--dbd-display);text-transform:uppercase;letter-spacing:.14em;color:var(--dbd-muted);margin-right:4px}
+.dbd .dbd-pchip{all:unset;cursor:pointer;display:inline-flex;align-items:baseline;gap:7px;padding:6px 12px;border:1px solid var(--dbd-line);border-radius:999px;background:var(--dbd-panel);font:600 13px/1 var(--dbd-body);color:var(--dbd-ink);white-space:nowrap}
+.dbd .dbd-pchip b{font-weight:600}
+.dbd .dbd-pchip small{font:500 11px var(--dbd-mono);color:var(--dbd-muted)}
+.dbd .dbd-pchip:hover{border-color:var(--dbd-line-2);background:var(--dbd-panel-2)}
+.dbd .dbd-pchip[aria-pressed="true"]{background:var(--k-bg,var(--dbd-ink));border-color:var(--k-bg,var(--dbd-ink));color:#fff}
+.dbd .dbd-pchip[aria-pressed="true"] small{color:var(--k-ac,#fff)}
+@container dbd (max-width:560px){.dbd .dbd-pstrip{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px}}
 @container dbd (max-width:560px){.dbd .dbd-gstrip{flex-wrap:nowrap;overflow-x:auto;gap:6px}}  /* phones: one row of chips that scrolls sideways (SCOPE §57) */
 .dbd .dbd-mgrid>.dbd-span{grid-column:1/-1}
 .dbd #dbd-drive svg{width:100%!important;min-width:0!important;height:auto;max-width:100%}
