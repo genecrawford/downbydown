@@ -41,9 +41,9 @@
       '<div class="dbd-fg"><span>Field zone</span><div class="dbd-seg" id="f-zone"></div></div>' +
       '<div class="dbd-fg"><span>Formation</span><div class="dbd-seg" id="f-sg"></div></div>' +
       '<div class="dbd-fg"><label for="f-q">Quarter</label><select id="f-q"><option value="">All</option><option>1</option><option>2</option><option>3</option><option>4</option><option value="5">OT</option></select></div>' +
-      '<div class="dbd-fg"><label for="f-pl">Player</label><select id="f-pl"></select></div>' +
+      '<select id="f-pl" hidden></select>' +
       '<button class="dbd-reset" id="dbd-reset" type="button">Reset</button></div></section>' +
-      '<div class="dbd-tiles" id="dbd-tiles"></div>' +
+      '<div class="dbd-pstrip" id="dbd-players" role="group" aria-label="Players"></div><div class="dbd-tiles" id="dbd-tiles"></div>' +
       '<div class="dbd-work">' +
       '<section class="dbd-panel dbd-sec-drive"><div class="dbd-ph"><span class="dbd-lab"><b>Drive chart</b> · every snap, left to right</span><span class="dbd-badge">Hover or click a play</span></div><div class="dbd-legend"><span><i style="background:' + COL.run + '"></i>Run</span><span><i style="background:' + COL.pass + '"></i>Completion</span><span><i style="background:' + COL.inc + '"></i>Incompletion (air yards)</span><span><i style="background:' + COL.bad + '"></i>Sack / INT</span><span><i style="background:' + COL.td + '"></i>Touchdown</span></div><div class="dbd-scroll" id="dbd-drive"></div><p class="dbd-note">Each row is one snap. ' + esc(T.nick) + ' always move left to right. Rows are grouped by game and drive; a dot marks the line of scrimmage.</p></section>' +
       '<section class="dbd-panel dbd-sec-spray"><div class="dbd-ph"><span class="dbd-lab"><b>Pass &amp; run map</b> · where the ball went</span></div><div class="dbd-sprays"><div><h4>Where the passes went</h4><div id="dbd-passmap"></div></div><div><h4>Runs by gap</h4><div id="dbd-runmap"></div></div></div><p class="dbd-note">Drawn like a playbook page. Passes: a route from the quarterback to each zone the ball was thrown (left, middle or right; behind the line, 0 to 9, 10 to 19 or 20+ air yards), as thick as its share of the throws and labeled completions/targets and EPA per target; every target is a faint dot you can click. Sacks and scrambles are left out. Runs: designed runs, one arrow through each gap, as long as the yards per carry and as wide as the carries.</p></section>' +
@@ -319,7 +319,23 @@
     host.addEventListener('mousemove', function (e) { if (tt.classList.contains('is-shown')) { tt.style.left = Math.min(e.clientX + 14, innerWidth - 330) + 'px'; tt.style.top = (e.clientY + 14) + 'px'; } });
     host.addEventListener('click', function (e) { var g = e.target.closest('.dbd-play'); if (!g) return; st.sel = +g.dataset.i; st.selAuto = false; render(); });
 
-    function render() { var F = filtered(); drawGames(); tiles(F); drive(F); passmap(F); runmap(F); tend(F); charts(F); usage(F); detail(F); }
+    /* SCOPE §60: the plays every other filter allows. The player chips and Who gets the ball count from these, so picking a player never hides the rest */
+    function others() { var keep = st.pl; st.pl = ''; var o = filtered(); st.pl = keep; return o; }
+    function touches(F) {
+      var m = {};
+      F.forEach(function (p) { if (!p.pl) return; var t = ['comp', 'inc', 'int'].indexOf(p.k) >= 0, c = p.k === 'run' || p.k === 'scramble'; if (!t && !c) return; var u = m[p.pl] || (m[p.pl] = { n: p.pl, pos: p.pos || '', tg: 0, car: 0 }); if (t) u.tg++; else u.car++; });
+      return Object.keys(m).map(function (k) { return m[k]; }).sort(function (x, y) { return (y.tg + y.car) - (x.tg + x.car); });
+    }
+    function drawPlayers(O) {
+      var a = touches(O).filter(function (u) { return u.pos !== 'QB' || u.car >= 5; }).slice(0, 10), on = st.pl;
+      if (on && !a.some(function (u) { return u.n === on; })) { var me = touches(O).filter(function (u) { return u.n === on; })[0]; if (me) a.push(me); }
+      $('#dbd-players').innerHTML = '<span class="lab">Players</span><button class="dbd-pchip" type="button" data-pl="" aria-pressed="' + !on + '">All</button>' + a.map(function (u) {
+        var big = u.tg >= u.car ? u.tg + ' tgt' : u.car + ' car';
+        return '<button class="dbd-pchip" type="button" data-pl="' + esc(u.n) + '" aria-pressed="' + (on === u.n) + '"><b>' + esc(u.n) + '</b><small>' + (u.pos ? esc(u.pos) + ' · ' : '') + big + '</small></button>';
+      }).join('');
+    }
+    $('#dbd-players').onclick = function (e) { var b = e.target.closest('.dbd-pchip'); if (!b) return; st.pl = b.dataset.pl === st.pl ? '' : b.dataset.pl; $('#f-pl').value = st.pl; render(); };
+    function render() { var F = filtered(), O = others(); drawGames(); drawPlayers(O); tiles(F); drive(F); passmap(F); runmap(F); tend(F); charts(F); usage(O); detail(F); }
     render();
   }
 })();
