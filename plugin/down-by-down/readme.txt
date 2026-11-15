@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.23.1
+Stable tag: 2.23.2
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,9 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.23.2 =
+* The draft board's pick list reads faster: the pick is one big number (the round shows beside it only when the list is sorted by something else), the team a fixed-size logo and its abbreviation, every player in one name style with his position and school on a line under it (the Pos and School columns are gone), and the round headings are white on near-black with their pick counts. Rows highlight on hover.
 
 = 2.23.1 =
 * The draft and combine boards point at each other plainly: a button beside the year dropdown ("2026 combine results", "2026 draft board") and a big dark link at the foot of each page. A draft before 2000 points at the newest combine and says the combine data starts in 2000.

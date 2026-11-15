@@ -47,6 +47,7 @@
       if (k === 'p' && dir === 'asc') { var byR = {}; rows.forEach(function (r) { (byR[r.dataset.r] = byR[r.dataset.r] || []).push(r); }); heads.forEach(function (h) { body.appendChild(h); (byR[h.dataset.rd] || []).forEach(function (r) { body.appendChild(r); }); }); }
       else { rows.forEach(function (r) { body.appendChild(r); }); }
       if (k === 'p' && dir === 'asc') sortKey = null;
+      table.classList.toggle('is-sorted', sortKey !== null);  /* the round shows beside each pick once its headings are hidden (2.23.2) */
       apply();
     };
     th.addEventListener('click', go); th.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
