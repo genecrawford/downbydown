@@ -132,10 +132,37 @@ class DBD_Seo {
 		return '<script type="application/ld+json">' . wp_json_encode( $ld, JSON_UNESCAPED_SLASHES ) . '</script>' . "\n";
 	}
 
+	/**
+	 * The Related panel at the end of a player's page, his and a kicker's alike (SCOPE §64): his next game, his team's offense and players,
+	 * his position's leaders, and his draft class and combine when the boards have them.
+	 */
+	public static function related_panel( $team, $pos, $bf ) {
+		$t = DBD_Data::team( $team ) ?: array( 'nick' => $team ); $rel = array();
+		if ( ! DBD_Data::archived() && ( $nx = DBD_Fantasy::next_game( $team ) ) && ( $ng = DBD_Data::team_game( $team, $nx['wk'] ) ) ) {
+			$on = DBD_Data::team( $nx['opp'] ); $home = $ng['home'] === $team;
+			$rel[] = array( DBD_Router::url( $home ? array( 'game' => $ng['id'], 'side' => 'home' ) : array( 'game' => $ng['id'] ) ), 'Next game: ' . ( $home ? 'vs ' : 'at ' ) . ( $on['nick'] ?? $nx['opp'] ) . ', ' . DBD_Router::week_label( $nx['wk'] ) );
+		}
+		$rel[] = array( DBD_Router::url( array( 'team' => $team ) ), $t['nick'] . ' offense' );
+		$rel[] = array( DBD_Router::url( array( 'view' => 'players', 'team' => $team ) ), $t['nick'] . ' players' );
+		$lg = array( 'QB' => 'qb', 'RB' => 'rb', 'FB' => 'rb', 'WR' => 'wr', 'TE' => 'te', 'K' => 'k' )[ (string) $pos ] ?? '';
+		if ( $lg ) { $rel[] = array( DBD_Router::url( array( 'view' => 'leaders', 'g' => $lg ) ), DBD_Leaders::GROUPS[ $lg ] . ' leaders' ); }
+		$dy = (int) ( $bf['dr']['y'] ?? 0 ); if ( $dy && in_array( $dy, DBD_Boards::years( 'draft' ), true ) ) { $rel[] = array( DBD_Router::url( array( 'view' => 'draft', 'y' => $dy ) ), 'The ' . $dy . ' draft class' ); }
+		$cy = (int) ( $bf['cb']['y'] ?? 0 ); if ( $cy && in_array( $cy, DBD_Boards::years( 'combine' ), true ) ) { $rel[] = array( DBD_Router::url( array( 'view' => 'combine', 'y' => $cy ) ), 'The ' . $cy . ' combine' ); }
+		$h = '<section class="dbd-panel dbd-related"><div class="dbd-ph"><span class="dbd-lab"><b>Related</b></span></div><div class="dbd-pb dbd-pills">';
+		foreach ( $rel as $x ) { $h .= '<a class="dbd-pill" href="' . esc_url( $x[0] ) . '">' . esc_html( $x[1] ) . '</a>'; }
+		return $h . '</div></section>';
+	}
+
 	/** JSON-LD for a draft or combine board (SCOPE §64): the board as an ItemList, each pick or player a Person, linked when he has a page here. */
 	public static function board_jsonld( $kind, $y ) {
 		$B = DBD_Boards::get( $kind, $y ); if ( ! $B || empty( $B['rows'] ) ) { return ''; }
-		$R = $B['rows'];
+		/* the head runs before the view resets the season, and a board's player pages are this season's: build in it, then put back (Greptile, PR #117) */
+		$prev = DBD_Data::archived() ? DBD_Data::season() : null; DBD_Data::use_season( null );
+		$out = self::board_ld( $kind, $y, $B['rows'] ); DBD_Data::use_season( $prev );
+		return $out;
+	}
+
+	private static function board_ld( $kind, $y, $R ) {
 		if ( $kind === 'draft' ) { usort( $R, function ( $a, $b ) { return (int) $a['p'] <=> (int) $b['p']; } ); }
 		$items = array();
 		foreach ( array_values( $R ) as $i => $x ) {

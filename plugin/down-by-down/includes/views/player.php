@@ -767,20 +767,7 @@ echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Te
 foreach ( $mates as $x ) { list( $m, $tc, $y, $td, $ep ) = $x; $href = DBD_Router::url( array( 'player' => $m['id'] ) );
 	echo '<tr class="dbd-trow" data-href="' . esc_url( $href ) . '"><td class="dbd-nm"><span class="dbd-nmi">' . DBD_Marks::player( $a, $m['num'], 30, $m['photo'] ?? null ) . '<a href="' . esc_url( $href ) . '">' . esc_html( $m['name'] ) . '</a><small>' . esc_html( $m['pos'] ) . '</small></span></td><td>' . (int) $tc . '</td><td data-v="' . (int) round( $y ) . '">' . (int) round( $y ) . ( (int) $td ? ' <small>· ' . (int) $td . ' TD</small>' : '' ) . '</td>' . $e( $ep ) . '</tr>'; }
 echo '</tbody></table></div></section>';
-/* ---- related pages (SCOPE §64): his next game, his team, his position's leaders and his draft class, so search and readers find the next page */
-$rel = array();
-if ( ! $arch && ( $nx = DBD_Fantasy::next_game( $a ) ) && ( $ng = DBD_Data::team_game( $a, $nx['wk'] ) ) ) {
-	$on = DBD_Data::team( $nx['opp'] ); $rel[] = array( DBD_Router::url( $ng['home'] === $a ? array( 'game' => $ng['id'], 'side' => 'home' ) : array( 'game' => $ng['id'] ) ), 'Next game: ' . ( $ng['home'] === $a ? 'vs ' : 'at ' ) . ( $on['nick'] ?? $nx['opp'] ) . ', ' . DBD_Router::week_label( $nx['wk'] ) );
-}
-$rel[] = array( $turl, $t['nick'] . ' offense' ); $rel[] = array( $tpurl, $t['nick'] . ' players' );
-$lg = array( 'QB' => 'qb', 'RB' => 'rb', 'FB' => 'rb', 'WR' => 'wr', 'TE' => 'te', 'K' => 'k' )[ $p['pos'] ] ?? '';
-if ( $lg ) { $rel[] = array( DBD_Router::url( array( 'view' => 'leaders', 'g' => $lg ) ), DBD_Leaders::GROUPS[ $lg ] . ' leaders' ); }
-$dy = (int) ( $BF['dr']['y'] ?? 0 ); if ( $dy && in_array( $dy, DBD_Boards::years( 'draft' ), true ) ) { $rel[] = array( DBD_Router::url( array( 'view' => 'draft', 'y' => $dy ) ), 'The ' . $dy . ' draft class' ); }
-$cy = (int) ( $BF['cb']['y'] ?? 0 ); if ( $cy && in_array( $cy, DBD_Boards::years( 'combine' ), true ) ) { $rel[] = array( DBD_Router::url( array( 'view' => 'combine', 'y' => $cy ) ), 'The ' . $cy . ' combine' ); }
-$relHtml = '<section class="dbd-panel dbd-related"><div class="dbd-ph"><span class="dbd-lab"><b>Related</b></span></div><div class="dbd-pb dbd-pills">';
-foreach ( $rel as $x ) { $relHtml .= '<a class="dbd-pill" href="' . esc_url( $x[0] ) . '">' . esc_html( $x[1] ) . '</a>'; }
-$relHtml .= '</div></section>';
-echo '</div>' . $relHtml . '</section>' . ( $arch ? '' : DBD_News::player_block( $pid, $p['name'], $a ) ) . '</main>';  /* the news naming him and his highlights, after the stats (SCOPE §54) */
+echo '</div>' . DBD_Seo::related_panel( $a, $p['pos'], $BF ) . '</section>' . ( $arch ? '' : DBD_News::player_block( $pid, $p['name'], $a ) ) . '</main>';  /* the related pages (SCOPE §64), then the news naming him and his highlights, after the stats (SCOPE §54) */
 
 /* ---- SCOPE §31: fold the methods notes, then put the short version under the tiles */
 $rest = ob_get_clean();

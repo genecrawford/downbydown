@@ -419,7 +419,7 @@ class DBD_Card {
 	public static function spec_board( $kind, $y ) {
 		$B = DBD_Boards::get( $kind, $y ); if ( ! $B || empty( $B['rows'] ) ) { return null; }
 		$R = $B['rows']; $n = count( $R );
-		$s = array( 'season' => $y, 'through' => 0, 'brand' => 'The ' . $y . ' NFL ' . $kind, 'say' => '', 'board' => null, 'dots' => null, 'big' => (string) $y, 'tiles' => array(), 'list' => array(), 'logos' => array() );
+		$s = array( 'season' => $y, 'through' => 0, 'brand' => 'The ' . $y . ' NFL ' . $kind, 'say' => '', 'board' => null, 'dots' => null, 'big' => '', 'tiles' => array(), 'list' => array(), 'logos' => array() );
 		$top = function ( $col ) use ( $R ) { $c = array(); foreach ( $R as $x ) { $v = (string) ( $x[ $col ] ?? '' ); if ( $v !== '' ) { $c[ $v ] = ( $c[ $v ] ?? 0 ) + 1; } } arsort( $c ); return $c ? array( (string) key( $c ), (int) current( $c ) ) : null; };
 		if ( $kind === 'draft' ) {
 			usort( $R, function ( $a, $b ) { return (int) $a['p'] <=> (int) $b['p']; } );
@@ -645,7 +645,7 @@ class DBD_Card {
 		/* the field */
 		$fx = 700; $fy = 100; $fw = 456; $fh = 458; $green = ( $K['col'] )( '#2c4a35' );
 		( $K['rect'] )( $fx, $fy, $fw, $fh, $green );
-		for ( $i = 1; $i < 10; $i++ ) { ( $K['rect'] )( $fx, $fy + $fh * $i / 10, $fw, $i === 5 ? 2 : 1, ( $K['mix'] )( '#ffffff', $i === 5 ? 0.26 : 0.15, '#2c4a35' ) ); }
+		if ( empty( $s['list'] ) ) { for ( $i = 1; $i < 10; $i++ ) { ( $K['rect'] )( $fx, $fy + $fh * $i / 10, $fw, $i === 5 ? 2 : 1, ( $K['mix'] )( '#ffffff', $i === 5 ? 0.26 : 0.15, '#2c4a35' ) ); } }  /* a list draws its own lines, between its rows */
 		if ( $s['big'] !== '' ) { $bp = strlen( $s['big'] ) <= 2 ? 300 : 150; ( $K['txt'] )( $F['hero'], $bp, $fx + $fw - 22, $fy + $fh + 10, ( $K['mix'] )( '#ffffff', 0.07, '#2c4a35' ), $s['big'], 'right' ); }
 		if ( $s['board'] ) {
 			$rows = $s['board']; $n = count( $rows ); $step = ( $fh - 32 ) / max( 1, $n ); $w = ( $K['col'] )( '#ffffff' ); $dim = ( $K['mix'] )( '#ffffff', 0.62, '#2c4a35' ); $dim2 = ( $K['mix'] )( '#ffffff', 0.5, '#2c4a35' ); $gold = ( $K['col'] )( '#ffd166' );
@@ -657,10 +657,12 @@ class DBD_Card {
 		} elseif ( ! empty( $s['list'] ) ) {  /* the boards (SCOPE §64): the top ten, one line each */
 			$rows = $s['list']; $step = ( $fh - 64 ) / max( 1, count( $rows ) ); $w = ( $K['col'] )( '#ffffff' ); $dim = ( $K['mix'] )( '#ffffff', 0.62, '#2c4a35' ); $dim2 = ( $K['mix'] )( '#ffffff', 0.5, '#2c4a35' );
 			( $K['spaced'] )( $F['disp'], 13, $fx + 22, $fy + 32, $dim, strtoupper( $s['list_cap'] ?? '' ), 0.2 );
+			$ln = ( $K['mix'] )( '#ffffff', 0.15, '#2c4a35' ); $chip = ( $K['col'] )( '#fffdf8' );
 			foreach ( $rows as $i => $r ) { $y = $fy + 48 + $step * $i + $step * 0.66; $nx = $fx + 70;
+				( $K['rect'] )( $fx, $fy + 48 + $step * $i, $fw, 1, $ln );
 				( $K['txt'] )( $F['mono2'], 18, $fx + 50, $y, $dim, $r[0], 'right' );
-				if ( ! empty( $s['marks'] ) ) { ( $K['mark'] )( $fx + 64, $y - 20, 24, $r[1], $L[ $r[1] ] ?? null ); ( $K['txt'] )( $F['disp'], 18, $fx + 96, $y, $dim, $r[4] ?? $r[1] ); $nx = $fx + 146; }
-				else { ( $K['txt'] )( $F['disp'], 18, $fx + 64, $y, $dim, $r[1] ); $nx = $fx + 112; }
+				if ( ! empty( $s['marks'] ) ) { ( $K['rect'] )( $fx + 62, $y - 22, 28, 28, $chip ); ( $K['mark'] )( $fx + 64, $y - 20, 24, $r[1], $L[ $r[1] ] ?? null ); ( $K['txt'] )( $F['disp'], 18, $fx + 100, $y, $dim, $r[4] ?? $r[1] ); $nx = $fx + 150; }  /* a light chip behind the mark, so a green logo shows on the field */
+				else { ( $K['txt'] )( $F['disp'], 18, $fx + 64, $y, $dim, $r[1] ); $nx = $fx + 124; }
 				$rw = ( $K['tw'] )( $F['mono2'], 16, $r[3] ); $px = ( $K['fit'] )( $F['body'], 19, $r[2], $fx + $fw - 22 - $rw - 14 - $nx );
 				( $K['txt'] )( $F['body'], $px, $nx, $y, $w, $r[2] );
 				( $K['txt'] )( $F['mono2'], 16, $fx + $fw - 22, $y, $dim2, $r[3], 'right' ); }

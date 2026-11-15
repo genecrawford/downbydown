@@ -44,6 +44,16 @@ jobs:
           grep -qF 'Brenen Thompson' $f && grep -qF 'LAC · R4 #105' $f || { echo "the combine board lost the fastest 40 or its draft slot"; exit 1; }
           grep -qF '>4.43<' pages/combine-2026.html || grep -qF '>4.26<' $f || { echo "combine times lost their hundredths"; exit 1; }
           python3 -c "import json,sys; m=json.load(open('data/manifest.json'))['files']; sys.exit(0 if 'draft/2026.json' in m and 'combine/2026.json' in m and 'boards.json' in m else 'the manifest does not list the board files, so sites would never download them')"
+          # the Related panel on a kicker's page, and an archived-season board keeps this season's player links (Greptile, PR #117)
+          K=$(python3 -c "import json; print(next(iter(json.load(open('data/players/kickers.json'))['kickers'])))")
+          php tools/view_harness.php data player "$K" > /dev/null
+          f=$(ls -t pages/player-*.html | head -1)
+          grep -qF 'class="dbd-panel dbd-related"' $f && grep -qF '>Kickers leaders</a>' $f || { echo "the kicker page lost its Related panel"; exit 1; }
+          if [ -d data/archive/2025 ]; then
+            php tools/view_harness.php data path 2025/draft/2026/ | grep -q 'route draft' || { echo "/2025/draft/2026/ should route"; exit 1; }
+            f=$(ls -t pages/*.html | head -1)
+            python3 -c "import json,re,sys; b=[json.loads(x) for x in re.findall(r'<script type=.application/ld.json.>(.*?)</script>', open('$f').read(), re.S)]; u=[i['item'].get('url','') for x in b if x.get('@type')=='ItemList' for i in x['itemListElement']]; sys.exit(0 if u and not any('2025' in x for x in u) else 'the archived board links players into 2025 or has no list')"
+          fi
           php tools/view_harness.php data draft 1970 | grep -q 'route notfound' || { echo "a year with no draft should be not found"; exit 1; }
           php tools/view_harness.php data path draft/ | grep -q 'route draft' || { echo "/draft/ should open the newest draft"; exit 1; }
           php tools/view_harness.php data path combine/2026/ | grep -q 'route combine' || { echo "/combine/2026/ should route"; exit 1; }
