@@ -2679,3 +2679,153 @@ Gene asked which data sources exist for the NFL draft and combine, and whether W
 **Decisions for Gene:**
 1. Show the Wikipedia paragraph, or only the link (pill) at a minimum? Default in the mock: both.
 2. Keep the combine score, or show the drills only?
+
+## 64. Growing traffic without ads: scope and plans (2026-11-15)
+
+Gene asked for ways to grow visitors without paying for ads, then for a scope and plan for each. Six plans follow. Each says where the site stands today (checked live on 2026-11-15), what to build in the plugin (each goes through the usual scope, mock and build), what is Gene's to do by hand, the effort, and how to tell if it's working.
+
+**Where the site stands:**
+- Every page type has a title, a description and a canonical URL.
+- Player and game pages carry share cards (og:image) and structured data (Person, SportsEvent).
+- The app's pages are in the WordPress sitemap, which robots.txt lists.
+- Google Analytics runs through Site Kit (tag GT-PB68KPF5).
+- The email signup (WPForms 63, Brevo) shows only under the weekly posts.
+
+**Gaps:**
+- The draft and combine boards have no share card or structured data.
+- Whether Search Console is connected isn't visible from outside.
+- Nothing yet helps posting to Reddit or X, and there are no embeds.
+
+**Suggested order** (by payoff for effort):
+1. Plan 6, measurement. It comes first so everything after it can be judged.
+2. Plan 1, search fixes.
+3. Plan 3, email signups.
+4. Plan 2, the share pack.
+5. Plan 5, fantasy.
+6. Plan 4, embeds and data stories.
+
+### Plan 1. Search: get the pages that already exist found
+
+**Goal:** more visits from Google for long-tail searches the big sites don't answer directly ("Justin Jefferson target share", "Vikings vs Packers matchup", "2026 combine 40 times").
+
+**Build (plugin):**
+- **1a. Search Console report (manual first):** pull the pages with many impressions but few clicks, and rewrite those titles and descriptions in `DBD_Router::seo_base()`. Titles lead with what people search ("Justin Jefferson stats 2026: targets, routes, EPA"), not the site's voice.
+- **1b. Structured data where it's missing:**
+  - The draft and combine boards get an `ItemList` (each pick or player as a `ListItem`) and a share card (the "page" card type with the year's headline).
+  - Player pages add `sameAs` to the Wikipedia article §62 already stores, which helps Google tie the page to the right person.
+- **1c. Internal links:** a "related" line at the end of each player page (his next game, his team's offense page, his draft class), and draft board names already link to player pages. The hub links to the newest draft and combine boards in the offseason (February to April).
+- **1d. Fresher pages in the sitemap:** the app sitemap entries get `lastmod` from the data build's `built_at`, so Google recrawls pages that changed overnight.
+- **1e. Seasonal prominence:** from mid-February to the draft, the home page's hero points at the combine, then the draft board. Gene's Divi home has a section for it, so this is a content change.
+
+**Gene's part:**
+- Confirm Search Console is connected in Site Kit, and submit `wp-sitemap.xml` there.
+- Once a month, look at the "pages with impressions, few clicks" list (or hand it to Claude).
+
+**Effort:** 1b plus 1d is one plugin release; 1c is a small one; 1a is ongoing, 30 minutes a month.
+
+**Measure:**
+- In Search Console: clicks and impressions for /player/, /game/, /draft/ and /combine/ pages, month over month.
+- The click-through rate on the pages whose titles were rewritten.
+
+### Plan 2. Communities: a weekly share pack for Reddit and X
+
+**Goal:** a steady stream of visitors from the places fans already talk (team subreddits, r/fantasyfootball, r/nfl, NFL analytics X and Bluesky), earned by posting one useful chart and takeaway, not a bare link.
+
+**Build (plugin): a "Share pack" tab in the Down by Down admin, refreshed each Tuesday from the week's data.**
+- Five ready-to-post items, each a share-card image (the card renderer already exists), a one-line takeaway, and the page link:
+  - the week's biggest win-probability swing;
+  - a usage riser;
+  - each team's "Keys to the game" read for its next opponent (one per team, for team subreddits);
+  - the week's best and worst offense by EPA;
+  - a fantasy target-share mover.
+- **Copy buttons** for the text and download buttons for the images.
+- **Nothing posts on its own.** Reddit and X rules and the community norms both call for a person posting.
+
+**Gene's part:**
+- Post two or three items a week by hand, image first with the link in a comment where a subreddit allows it.
+- Follow each subreddit's self-promotion rule; the common guide is to contribute far more than you link.
+- Use the same images on X and Bluesky, tagging the beat writers or analysts the chart is about.
+
+**Effort:** one plugin release for the tab; about 30 minutes a week of posting.
+
+**Measure:**
+- Referral visits from reddit.com, x.com and bsky.app in Analytics.
+- Which items get shared, so the weekly pack leans toward those.
+
+### Plan 3. The Tuesday email: turn visitors into regulars
+
+**Goal:** more signups from the people already visiting, and more forwards of each email.
+
+**Build (plugin):**
+- **3a. Signup in more places:** a quiet signup strip (the same WPForms form) at the end of game pages, player pages and the draft and combine boards, after the stats like the news blocks. Not a popup.
+- **3b. The draft and combine angle:** in the offseason the form's line changes to "Get the combine and draft boards the week they land".
+- **3c. A forward line in each email** ("Know someone who'd like this? Forward it; they can sign up at …"), plus one standout chart per email as the reason to forward.
+
+**Gene's part:** check the Brevo free plan limit (300 emails a day) as the list grows. The list can be split across days, or the plan raised when it's worth it.
+
+**Effort:** one small plugin release.
+
+**Measure:** weekly new subscribers (Brevo), the signup rate per page type (a GA4 event on form submit), and email open and click rates.
+
+### Plan 4. Things other sites link to: embeds and data stories
+
+**Goal:** backlinks, which lift every page's search ranking, plus referral visits from fan blogs and team sites.
+
+**Build (plugin):**
+- **4a. Embeddable widgets:**
+  - `/embed/player/{slug}/`, `/embed/team/{abbr}/` and `/embed/draft/{year}/{team}/` serve stripped-down versions (no site header) of a player's season card, a team's EPA card and a team's draft class.
+  - Each carries a small "Down by Down" credit link and an "Embed" button on the full page that copies the iframe code.
+  - Embeds load from the synced data like the pages do, cached the same way.
+- **4b. Data stories, posted as WordPress posts with charts.** Two or three a year, timed to search interest:
+  - "Which draft slots produce Pro Bowlers since 1980" (from the draft boards), in March and April.
+  - "Do combine numbers predict careers? Every 40-yard dash since 2000 against career AV", in February.
+  - "Every team's best and worst draft class since 2000", in the offseason.
+
+**Gene's part:**
+- Email a handful of fan blogs and podcasts in the fantasy and analytics space with a link to the embed or story most relevant to them. These are personal notes, not mass mail.
+- Post the stories to the communities in Plan 2.
+
+**Effort:** 4a is one plugin release; each story takes an afternoon with Claude doing the data and charts.
+
+**Measure:** referring domains in Search Console, embed views (a GA4 event from the embed page), and referral visits.
+
+### Plan 5. Fantasy: the biggest audience, every week
+
+**Goal:** fantasy players come back several times a week in season; give them a reason to make Down by Down one of their stops.
+
+**Build (plugin):**
+- **5a. A weekly fantasy page,** `/fantasy/week/{n}/`, built from data the site already has:
+  - target and carry share risers and fallers (the movers);
+  - red-zone usage leaders;
+  - matchup edges from "Keys to the game" (defenses that leak to tight ends, to the deep middle);
+  - each player linking to his page.
+- **5b. My team sharing:** a "Share my team's week" card that turns a saved lineup into a share image.
+- **5c. Fantasy titles:** search-friendly titles on that page ("Week 11 fantasy usage risers and matchups").
+
+**Gene's part:** the fantasy page is one of the share pack's weekly items (Plan 2); r/fantasyfootball's weekly threads are where it fits.
+
+**Effort:** 5a is a mid-size plugin release (the data exists, the page is new); 5b is a small one.
+
+**Measure:** visits to the fantasy page, returning visitors in season (Analytics), and My team shares.
+
+### Plan 6. Measurement: know what's working
+
+**Goal:** one monthly look that says which of these plans moves traffic, so time goes to what works.
+
+**Build (plugin):**
+- **GA4 events:**
+  - email signup submitted;
+  - share card downloaded or shared (the share buttons);
+  - embed code copied, and embed viewed;
+  - outbound clicks to YouTube and news (already links).
+- **A "Growth" box on the admin Overview tab:** this week's new email subscribers (from Brevo, which the plugin already talks to), the share pack items used, and links to Search Console and Analytics.
+
+**Gene's part:** confirm Search Console in Site Kit (also part of Plan 1), and keep a monthly half hour to look at the numbers, or hand them to Claude.
+
+**Effort:** one small plugin release.
+
+**Measure:** this plan is the measure. The monthly check covers:
+- visits by source (search, social, email, referral);
+- the top landing pages;
+- new subscribers;
+- referring domains.
