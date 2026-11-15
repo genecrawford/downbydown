@@ -1,6 +1,7 @@
 <?php
 /** The combine board (SCOPE §63): the year's leaders in each drill, then everyone who tested, shaded by percentile at his position since 2000. */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
+DBD_Data::use_season( null );  /* the boards span every year: links and the switcher stay in the current season even under an archived address (Greptile, PR #112) */
 $r = DBD_Router::$route; $Y = (int) $r['y']; $B = DBD_Boards::get( 'combine', $Y );
 echo DBD_Router::topbar( array( 'combine' => DBD_Router::url( array( 'view' => 'combine' ) ), (string) $Y => null ) );
 echo '<main class="dbd-content dbd-boards">';

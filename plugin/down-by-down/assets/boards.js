@@ -11,7 +11,7 @@
   function apply() {
     var f = filters(), keys = Object.keys(f), n = 0;
     rows.forEach(function (r) { var ok = keys.every(function (k) { return r.dataset[k] === f[k]; }); r.hidden = !ok; if (ok) n++; });
-    heads.forEach(function (h) { h.hidden = sortKey !== null && sortKey !== 'p' || !rows.some(function (r) { return !r.hidden && r.dataset.r === h.dataset.rd; }); });
+    heads.forEach(function (h) { h.hidden = sortKey !== null || !rows.some(function (r) { return !r.hidden && r.dataset.r === h.dataset.rd; }); });
     if (count) count.textContent = (n === rows.length ? 'all ' : n + ' of ') + rows.length + ' ' + count.dataset.unit;
     if (reset) reset.hidden = !keys.length;
   }
@@ -30,7 +30,7 @@
 
   /* sorting: numbers first-click biggest first, except the pick, the timed drills and the draft slot (smallest first); names A to Z. Blanks sink. */
   if (table) table.querySelectorAll('th[data-k]').forEach(function (th) {
-    th.setAttribute('role', 'button'); th.tabIndex = 0;
+    th.setAttribute('role', 'button'); th.tabIndex = 0;  /* round headings show only in pick order, ascending (Greptile, PR #112) */
     var go = function () {
       var k = th.dataset.k, num = rows.some(function (r) { return r.dataset[k] !== '' && !isNaN(parseFloat(r.dataset[k])); });
       var first = k === 'p' || th.hasAttribute('data-low') || !num ? 'asc' : 'desc';

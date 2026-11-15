@@ -15,7 +15,7 @@ class DBD_Urls {
 	const OPT_PAGE = 'dbd_app_page';      /* the page that holds the shortcode */
 	const OPT_SIG  = 'dbd_rewrite_sig';   /* what the rewrite rules were last flushed for */
 	const OPT_ROOT = 'dbd_root_paths';    /* app paths stay at the site root when the app page isn't the front page (/hub/); on by default */
-	const BASES    = 'team|game|player|compare|players|leaders|week|matchups|teams|my-team';
+	const BASES    = 'team|game|player|compare|players|leaders|week|matchups|teams|my-team|draft|combine';  /* draft, combine: the season boards (SCOPE §63; Greptile, PR #112) */
 	const ROUTE_KEYS = array( 'team', 'game', 'player', 'compare', 'view', 'side', 'week', 'g', 'y' );  /* a path decides these; the query string can't override them */
 
 	private static $on = null; private static $page = null; private static $players = null; private static $games = null;

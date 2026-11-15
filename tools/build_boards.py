@@ -67,7 +67,7 @@ def num(s):
         v = float(s or 0)
         return 0 if v != v else v
     except ValueError: return 0
-def n_(v): return int(v) if float(v).is_integer() else round(v, 1)
+def n_(v): return int(v) if float(v).is_integer() else round(v, 2)  # 4.43 stays 4.43 (Greptile, PR #112)
 
 def dump(rel, obj):
     p = os.path.join(out, rel); os.makedirs(os.path.dirname(p), exist_ok=True)

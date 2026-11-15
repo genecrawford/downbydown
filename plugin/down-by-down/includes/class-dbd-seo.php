@@ -84,7 +84,7 @@ class DBD_Seo {
 		$u    = function ( $args = array() ) { return DBD_Router::url( $args ); };  /* readable paths when the site uses them (SCOPE §43) */
 		$list = array( array( 'loc' => $u(), 'changefreq' => 'daily', 'priority' => 1.0 ), array( 'loc' => $u( array( 'view' => 'teams' ) ), 'changefreq' => 'daily' ), array( 'loc' => $u( array( 'view' => 'matchups' ) ), 'changefreq' => 'daily' ) );
 		foreach ( DBD_Data::weeks() as $w ) { $list[] = array( 'loc' => $u( array( 'view' => 'matchups', 'week' => $w ) ), 'changefreq' => 'weekly' ); }
-		foreach ( array( 'draft', 'combine' ) as $bk ) { foreach ( DBD_Boards::years( $bk ) as $i => $y ) { $list[] = array( 'loc' => $u( array( 'view' => $bk, 'y' => $y ) ), 'changefreq' => $i < 2 ? 'weekly' : 'yearly', 'priority' => $i < 2 ? 0.7 : 0.4 ); } }  /* the season boards (SCOPE §63) */
+		if ( ! DBD_Data::archived() ) foreach ( array( 'draft', 'combine' ) as $bk ) { foreach ( DBD_Boards::years( $bk ) as $i => $y ) { $list[] = array( 'loc' => $u( array( 'view' => $bk, 'y' => $y ) ), 'changefreq' => $i < 2 ? 'weekly' : 'yearly', 'priority' => $i < 2 ? 0.7 : 0.4 ); } }  /* the season boards (SCOPE §63) */
 		/* the week in review and the leaders (2.7.0): a week page once a game in it is final, the leaders index and each group's boards */
 		$wks = class_exists( 'DBD_Week' ) ? DBD_Week::weeks() : array();
 		if ( $wks ) { $list[] = array( 'loc' => $u( array( 'view' => 'week' ) ), 'changefreq' => 'daily', 'priority' => 0.8 ); }

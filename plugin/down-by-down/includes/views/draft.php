@@ -1,6 +1,7 @@
 <?php
 /** The draft board (SCOPE §63): every pick of one draft, filterable by round, position and team, every column sortable (assets/boards.js). */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
+DBD_Data::use_season( null );  /* the boards span every year: links and the switcher stay in the current season even under an archived address (Greptile, PR #112) */
 $r = DBD_Router::$route; $Y = (int) $r['y']; $B = DBD_Boards::get( 'draft', $Y );
 echo DBD_Router::topbar( array( 'draft' => DBD_Router::url( array( 'view' => 'draft' ) ), (string) $Y => null ) );
 echo '<main class="dbd-content dbd-boards">';
@@ -17,7 +18,7 @@ uksort( $pos, function ( $a, $b ) use ( $ORDER ) { $i = array_search( $a, $ORDER
 $so = $newest ? 'So far' : 'Career';
 
 /* ---- the head: a sentence from the data, and the year switcher */
-$say = 'The ' . esc_html( $nm( $first['f'] ) ) . ' took <b>' . esc_html( $first['n'] ) . '</b> first. ' . esc_html( $mp ) . 's went most often (<b>' . (int) reset( $pos ) . '</b>)'
+$say = 'The ' . esc_html( $nm( $first['f'] ) ) . ' took <b>' . esc_html( $first['n'] ) . '</b> first. ' . esc_html( $mp ) . 's went most often (<b>' . (int) $pos[ $mp ] . '</b>)'
 	. ( $ms ? ', and <b>' . esc_html( $ms ) . '</b> sent the most players (' . (int) $sch[ $ms ] . ')' : '' ) . '. The ' . esc_html( $nm( $mt ) ) . ' made the most picks (' . (int) $fr[ $mt ] . '). '
 	. ( $newest ? '<b>' . $played . '</b> of the ' . count( $rows ) . ' have played a snap so far.' : '<b>' . $played . '</b> of the ' . count( $rows ) . ' played in the NFL.' );
 echo '<div class="bd-head"><div><p class="dbd-kicker">The ' . $Y . ' NFL Draft · ' . count( $rows ) . ' picks · ' . count( $rounds ) . ' rounds</p><h1>The <em>' . $Y . '</em> draft</h1><p class="bd-say">' . $say . '</p></div>' . DBD_Boards::switcher( 'draft', $Y ) . '</div>';

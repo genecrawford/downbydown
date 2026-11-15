@@ -33,6 +33,8 @@ jobs:
           f=pages/combine-2026.html
           [ "$(grep -o 'class="dbd-panel bd-lead"' $f | wc -l)" -eq 6 ] || { echo "the combine board should have six leader lists"; exit 1; }
           grep -qF 'Brenen Thompson' $f && grep -qF 'LAC · R4 #105' $f || { echo "the combine board lost the fastest 40 or its draft slot"; exit 1; }
+          grep -qF '>4.43<' pages/combine-2026.html || grep -qF '>4.26<' $f || { echo "combine times lost their hundredths"; exit 1; }
+          python3 -c "import json,sys; m=json.load(open('data/manifest.json'))['files']; sys.exit(0 if 'draft/2026.json' in m and 'combine/2026.json' in m and 'boards.json' in m else 'the manifest does not list the board files, so sites would never download them')"
           php tools/view_harness.php data draft 1970 | grep -q 'route notfound' || { echo "a year with no draft should be not found"; exit 1; }
           php tools/view_harness.php data path draft/ | grep -q 'route draft' || { echo "/draft/ should open the newest draft"; exit 1; }
           php tools/view_harness.php data path combine/2026/ | grep -q 'route combine' || { echo "/combine/2026/ should route"; exit 1; }

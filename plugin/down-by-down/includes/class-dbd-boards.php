@@ -78,8 +78,7 @@ class DBD_Boards {
 
 	/** The team logo for a franchise, small. */
 	public static function logo( $f, $n = 18 ) {
-		$t = DBD_Data::team( (string) $f ); $u = $t['logo'] ?? '';
-		return $u ? '<img class="tl" src="' . esc_url( DBD_Marks::logo_src( $u, $n ) ) . '" width="' . (int) $n . '" height="' . (int) $n . '" alt="" loading="lazy" referrerpolicy="no-referrer">' : '';
+		return DBD_Data::team( (string) $f ) ? '<span class="tl">' . DBD_Marks::tile( (string) $f, $n ) . '</span>' : '';  /* the shared mark: the logo only when the logo setting is on (Greptile, PR #112) */
 	}
 
 	/** The year switcher: every year of this board, each linking to its page. */
