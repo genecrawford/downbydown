@@ -2632,3 +2632,15 @@ Gene: move "Who gets the ball", or a player picker, above the charts, since it f
 - **Who gets the ball stays at the bottom with every player**, counted the same way as the chips. The picked player's row is highlighted instead of being the only row.
 - **On a phone** the chips run in one row that scrolls sideways.
 - **Code:** all in team-explorer.js (`others()`, `touches()`, `drawPlayers()`, `render()` passes the unfiltered-by-player plays to `usage()`) and dbd.css (`.dbd-pstrip`, `.dbd-pchip`).
+
+## 61. One filter panel, and the receiver chart keeps everyone (scoped and mocked 2026-11-15, `mockup-v35/`)
+
+Gene: the area under the team panel "looks like a mess now visually and ux wise". Three separate blocks (game chips, the red filter bar, the player chips) each look different, two colors mean "selected" (the site red and the team's), and nothing says what is filtered. Also, picking a player left the receiver chart with one dot, which makes no sense: "show them all but just highlight the selected player more".
+
+- **One panel, "Filter the snaps":**
+  - The header says what you're looking at ("all 447 snaps", or "showing 53 of 447 snaps · J.Jefferson"). Reset sits beside it and only shows when something is filtered.
+  - Three labeled rows follow: Games (the game chips), Players (the player chips), and Situation (down, type, zone, formation, quarter, each with its label beside it).
+  - On a phone the labels sit above their rows and the chip rows scroll sideways.
+- **One selected color:** every picked chip and every switch fills with the team's color. The red pill goes. Chips are all one height (28px).
+- **The receiver chart keeps every receiver when a player is picked:** he is drawn solid in the team's color with a bold label, and the rest are faded. The caption reads his line ("J.Jefferson: 51 targets at 10.5 air yards each, the most of 11 receivers here. The rest are dimmed.").
+- **Code:** the host markup in team-explorer.js, a header line in `render()`, the receiver block in `drawCharts()` counting from `others()` when a player is picked, and `.dbd-filters` CSS. The mock carries its data inline, so it opens straight from disk.
