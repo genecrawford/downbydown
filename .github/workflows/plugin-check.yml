@@ -158,6 +158,7 @@ jobs:
           php tools/view_harness.php data game 2026_07_SF_ATL
           if grep -q 'The highlights</h2>\|Watch the highlights' pages/game-2026_07_SF_ATL.html; then echo "a game without its recap shows highlights"; exit 1; fi
           # SCOPE §55: Keys to the game in the offense's colors; the Vikings are the away offense here, purple and gold
+          php tools/view_harness.php data game 2026_08_MIN_DET
           grep -qF 'class="dbd-panel dbd-keys tm" style="--k-bg:#4f2683;--k-ac:#ffc62f"' pages/game-2026_08_MIN_DET.html || { echo "the keys panel is not in the Vikings colors"; exit 1; }
           grep -qF '<span class="kt">Vikings offense</span>' pages/game-2026_08_MIN_DET.html || { echo "the keys header does not name the offense"; exit 1; }
           # the breadcrumb in title case, joining words small
