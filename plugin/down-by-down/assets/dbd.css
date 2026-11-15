@@ -359,6 +359,7 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 .dbd .dbd-tile .s{font:500 11px var(--dbd-mono);color:var(--dbd-muted)}
 .dbd .dbd-work{display:grid;grid-template-columns:minmax(0,1fr) 360px;grid-template-areas:"drive rail" "spray rail" "situ rail" "charts rail";gap:18px;align-items:start}
 .dbd .dbd-sec-drive{grid-area:drive}.dbd .dbd-sec-spray{grid-area:spray}.dbd .dbd-sec-situ{grid-area:situ}.dbd .dbd-sec-charts{grid-area:charts}
+body.dbd-standalone .dbd{--dbd-stick:var(--wp-admin--admin-bar--height, 0px)}  /* the standalone template has no theme header (Greptile, PR #99) */
 .dbd .dbd-rail{grid-area:rail;position:sticky;top:calc(var(--dbd-stick) + 12px);max-height:calc(100vh - var(--dbd-stick) - 24px);overflow:auto;scrollbar-width:thin}
 @media (max-width:1000px){.dbd .dbd-work{grid-template-columns:minmax(0,1fr);grid-template-areas:"drive" "rail" "spray" "situ" "charts"}.dbd .dbd-rail{position:static;max-height:none;overflow:visible}}
 .dbd .dbd-legend{display:flex;flex-wrap:wrap;gap:6px 14px;font:500 11px var(--dbd-mono);color:var(--dbd-muted);padding:10px 14px 0}
