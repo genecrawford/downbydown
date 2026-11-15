@@ -2829,3 +2829,46 @@ Gene asked for ways to grow visitors without paying for ads, then for a scope an
 - the top landing pages;
 - new subscribers;
 - referring domains.
+
+## 65. Measurement: one monthly look at what's working (scoped and mocked 2026-11-15, `mockup-v40/`)
+
+SCOPE §64 Plan 6, in detail. The goal is one page in the admin that answers "is it growing, and from where?" once a month, without opening four other tools.
+
+**What's there today (checked live 2026-11-15):**
+- Google Analytics loads on every app page through Site Kit.
+- Search Console is connected in Site Kit. Its numbers can't be read from a server command (§64, 2.24.0), but Site Kit's own dashboard reads them in the browser as the signed-in user, and the new tab can do the same.
+- The plugin already talks to Brevo and logs each Tuesday email's campaign.
+- Nothing on the site sends its own Analytics events yet: share-card taps, copied links and signups aren't counted.
+
+**65a. Events sent to Analytics** (in `dbd-site.js`, `compare.js` and `myteam.js`; each only when Analytics is on the page):
+
+| Event | When | Details sent |
+|---|---|---|
+| `share` | the share-card button: the phone's share sheet, or the image opening | method (share sheet, image), type (player, team, game, page), id |
+| `share` | Copy link on Compare and My team | method (copy link), type (compare, my team) |
+| `sign_up` | a new subscriber lands on the post after confirming their email (`?dbd_joined=1`), once per browser session | method (email) |
+
+Outbound clicks to YouTube and news sites need nothing from the plugin: Analytics counts them itself when its "Enhanced measurement" is on. Embeds (Plan 4) and the share pack (Plan 2) bring their own events when they're built.
+
+**65b. A Growth tab in the plugin's admin,** the sixth tab, plus a small Growth box on the Overview linking to it. Everything compares the last 28 days with the 28 before:
+- **Visits by source:** search, direct, social, email, referral, with the change for each. From Analytics.
+- **Google search:** clicks, impressions and click rate.
+- **Titles to tune:** the five pages with the most impressions and the lowest click rate. This is §64's monthly Plan 1a job, ready to hand to Claude.
+- **Top landing pages:** the ten pages people arrive on.
+- **Email:** subscribers now, the change in 28 days, and the last Tuesday email's opens and clicks. From Brevo; the plugin saves the list size once a day so it can show the change.
+- **Shares and signups:** counts of the two new events.
+- **Links:** Site Kit, Analytics, Search Console and Brevo, each opening the full report.
+
+**How the numbers are read:**
+- Analytics and Search Console: the tab asks Site Kit from the browser, the way Site Kit's own dashboard does, so it works for anyone who can see the Site Kit dashboard. If Site Kit doesn't answer (signed out of Google, or a Site Kit update changes its routes), those rows say so and keep their link.
+- Brevo: from the server with the key the plugin already has, cached for an hour.
+- Nothing is stored except the daily list size (90 days kept).
+
+**Gene's part (about ten minutes, once):**
+- In Analytics, Admin → Data streams → the site → Enhanced measurement: check "Outbound clicks" is on.
+- After the release, in Analytics, Admin → Events: mark `sign_up` as a key event.
+- Once a month: open the Growth tab, or hand Claude the "Titles to tune" list.
+
+**Effort:** one small release, 2.25.0. It touches PHP (the tab, the Brevo reads), so Greptile reviews it.
+
+**Undo:** the tab only reads; the events only add to Analytics. Turning the release back removes both, and the stored list sizes go with the plugin's other settings.
