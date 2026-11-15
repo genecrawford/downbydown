@@ -124,11 +124,15 @@
       var Wd = 760, EZ = 40, FW = Wd - EZ * 2, s = FW / 100, RH = 9, HDR = 24, DH = 8, y = 8, rows = [], lastG = null, lastD = null;
       F.forEach(function (p) { if (p.g !== lastG) { if (lastG) y += 10; rows.push({ hdr: gIndex[p.g], y: y }); y += HDR; lastG = p.g; lastD = null; } if (p.drv !== lastD) { if (lastD != null) y += DH; lastD = p.drv; } rows.push({ p: p, y: y }); y += RH; });
       var H = Math.max(y + 12, 180), x = function (yd) { return EZ + yd * s; };
+      /* SCOPE §58: the drives that ended in a touchdown, each one's first and last row, for the light green wash behind the march */
+      var tdD = {}; rows.forEach(function (r) { if (r.p && r.p.td) tdD[r.p.g + '|' + r.p.drv] = { a: null, b: null }; });
+      rows.forEach(function (r) { if (!r.p) return; var d = tdD[r.p.g + '|' + r.p.drv]; if (!d) return; if (d.a == null) d.a = r.y; d.b = r.y + RH; });
       var g = '<svg viewBox="0 0 ' + Wd + ' ' + H + '" width="100%" style="display:block;min-width:560px" role="img" aria-label="Drive chart of ' + F.length + ' plays">';
       g += '<rect x="0" y="0" width="' + EZ + '" height="' + H + '" fill="' + (C.accent || '#121417') + '" fill-opacity=".35"/><rect x="' + (Wd - EZ) + '" y="0" width="' + EZ + '" height="' + H + '" fill="rgba(0,0,0,.18)"/>';
       for (var i = 0; i <= 100; i += 10) g += '<line x1="' + x(i) + '" x2="' + x(i) + '" y1="0" y2="' + H + '" stroke="' + FL + '" stroke-width="' + (i === 50 ? 2 : 1) + '"/>';
       for (i = 10; i < 100; i += 10) { var lab = i <= 50 ? i : 100 - i; g += '<text x="' + x(i) + '" y="' + (H - 4) + '" fill="' + FI + '" font-size="10" text-anchor="middle">' + lab + '</text>'; }
       g += '<text x="' + (EZ / 2) + '" y="' + (H / 2) + '" fill="' + FI + '" font-size="11" text-anchor="middle" transform="rotate(-90 ' + (EZ / 2) + ' ' + (H / 2) + ')">' + (DEF ? 'OFFENSE' : TEAM) + ' GOAL</text><text x="' + (Wd - EZ / 2) + '" y="' + (H / 2) + '" fill="' + FI + '" font-size="11" text-anchor="middle" transform="rotate(90 ' + (Wd - EZ / 2) + ' ' + (H / 2) + ')">' + (DEF ? TEAM + ' END ZONE' : 'OPPONENT END ZONE') + '</text>';
+      Object.keys(tdD).forEach(function (k) { var d = tdD[k]; g += '<rect x="' + x(0) + '" y="' + (d.a - 2) + '" width="' + (x(100) - x(0)) + '" height="' + (d.b - d.a + 4) + '" fill="' + COL.td + '" fill-opacity=".1" pointer-events="none"/>'; });
       rows.forEach(function (r) {
         if (r.hdr) { var h = r.hdr; g += '<text x="' + (EZ + 6) + '" y="' + (r.y + 15) + '" fill="#fff" font-size="12" font-weight="600">WEEK ' + h.week + ' ' + (h.home ? 'VS' : 'AT') + ' ' + h.opp + '  ·  ' + (h.pf > h.pa ? 'W' : 'L') + ' ' + h.pf + '-' + h.pa + '</text>'; return; }
         var p = r.p, los = 100 - p.yl, cy = r.y + RH / 2, end = (p.k === 'inc' || p.k === 'int') ? los + (p.air == null ? 0 : p.air) : los + (p.yds == null ? 0 : p.yds);
@@ -137,7 +141,14 @@
         g += '<g class="dbd-play' + sel + '" data-i="' + p.i + '"><rect x="0" y="' + r.y + '" width="' + Wd + '" height="' + RH + '" fill="transparent"/>';
         if (p.k === 'comp' && p.air != null) { var ca = Math.max(-2, Math.min(102, los + p.air)); g += '<line x1="' + x(los) + '" x2="' + x(ca) + '" y1="' + cy + '" y2="' + cy + '" stroke="' + color(p) + '" stroke-width="2" stroke-opacity=".55" stroke-dasharray="2 2"/><line x1="' + x(ca) + '" x2="' + x(end) + '" y1="' + cy + '" y2="' + cy + '" stroke="' + color(p) + '" stroke-width="3" stroke-linecap="round"/>'; }
         else g += '<line x1="' + x(los) + '" x2="' + x(end) + '" y1="' + cy + '" y2="' + cy + '" stroke="' + color(p) + '" stroke-width="3" stroke-linecap="round"' + dash + '/>';
-        g += '<circle cx="' + x(los) + '" cy="' + cy + '" r="2.2" fill="#fff"/></g>';
+        g += '<circle cx="' + x(los) + '" cy="' + cy + '" r="2.2" fill="#fff"/>';
+        /* SCOPE §58: a touchdown stands out. A band across the field, a thicker line, a ringed dot where the ball crossed, and TD in the end zone on its row */
+        if (p.td) { var tx = x(Math.min(100, end)); g += '<rect x="' + x(0) + '" y="' + (r.y - 1) + '" width="' + (x(100) - x(0)) + '" height="' + (RH + 2) + '" fill="' + COL.td + '" fill-opacity=".14" pointer-events="none"/>'
+          + '<line x1="' + x(los) + '" x2="' + tx + '" y1="' + cy + '" y2="' + cy + '" stroke="' + COL.td + '" stroke-width="5" stroke-linecap="round"/>'
+          + '<circle cx="' + tx + '" cy="' + cy + '" r="4" fill="' + COL.td + '" stroke="#fff" stroke-width="1.5"/><circle cx="' + x(los) + '" cy="' + cy + '" r="2.2" fill="#fff"/>'
+          + '<rect x="' + (Wd - EZ + 3) + '" y="' + (r.y - 2) + '" width="' + (EZ - 6) + '" height="' + (RH + 4) + '" rx="2" fill="' + COL.td + '"/>'
+          + '<text x="' + (Wd - EZ / 2) + '" y="' + (cy + 3.5) + '" fill="#0d2a1b" font-size="10" font-weight="800" text-anchor="middle" letter-spacing=".06em">TD</text>'; }
+        g += '</g>';
       });
       if (!F.length) g += '<text x="' + (Wd / 2) + '" y="90" fill="#fff" text-anchor="middle" font-size="14">No plays match these filters.</text>';
       $('#dbd-drive').innerHTML = g + '</svg>';
