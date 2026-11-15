@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.23.2
+Stable tag: 2.24.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,12 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.24.0 =
+* Search (SCOPE §64, plan 1): page titles lead with what people search ("Justin Jefferson stats 2026: targets, snaps, EPA", "Vikings vs Packers, Week 11: Vikings offense matchup", "2026 NFL Draft results: every pick by round").
+* The draft and combine boards get share cards (the year's first pick, most picks and Pro Bowlers, or the fastest 40, top vertical and most bench reps, with the top ten on the field) and ItemList structured data.
+* Player pages name their Wikipedia article in their structured data (sameAs), and end with a Related panel: the next game, the team's offense and players, the position's leaders, and the draft class and combine.
+* The sitemap carries lastmod: the data build's time on this season's pages, the day after for a final game, none on archived seasons and old board years.
 
 = 2.23.2 =
 * The draft board's pick list reads faster: the pick is one big number (the round shows beside it only when the list is sorted by something else), the team a fixed-size logo and its abbreviation, every player in one name style with his position and school on a line under it (the Pos and School columns are gone), and the round headings are white on near-black with their pick counts. Rows highlight on hover.

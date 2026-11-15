@@ -84,7 +84,7 @@ class DBD_Seo {
 		$u    = function ( $args = array() ) { return DBD_Router::url( $args ); };  /* readable paths when the site uses them (SCOPE §43) */
 		$list = array( array( 'loc' => $u(), 'changefreq' => 'daily', 'priority' => 1.0 ), array( 'loc' => $u( array( 'view' => 'teams' ) ), 'changefreq' => 'daily' ), array( 'loc' => $u( array( 'view' => 'matchups' ) ), 'changefreq' => 'daily' ) );
 		foreach ( DBD_Data::weeks() as $w ) { $list[] = array( 'loc' => $u( array( 'view' => 'matchups', 'week' => $w ) ), 'changefreq' => 'weekly' ); }
-		if ( ! DBD_Data::archived() ) foreach ( array( 'draft', 'combine' ) as $bk ) { foreach ( DBD_Boards::years( $bk ) as $i => $y ) { $list[] = array( 'loc' => $u( array( 'view' => $bk, 'y' => $y ) ), 'changefreq' => $i < 2 ? 'weekly' : 'yearly', 'priority' => $i < 2 ? 0.7 : 0.4 ); } }  /* the season boards (SCOPE §63) */
+		if ( ! DBD_Data::archived() ) foreach ( array( 'draft', 'combine' ) as $bk ) { foreach ( DBD_Boards::years( $bk ) as $i => $y ) { $list[] = array( 'loc' => $u( array( 'view' => $bk, 'y' => $y ) ), 'changefreq' => $i < 2 ? 'weekly' : 'yearly', 'priority' => $i < 2 ? 0.7 : 0.4 ) + ( $i < 2 ? array() : array( 'lastmod' => null ) ); } }  /* the season boards (SCOPE §63) */
 		/* the week in review and the leaders (2.7.0): a week page once a game in it is final, the leaders index and each group's boards */
 		$wks = class_exists( 'DBD_Week' ) ? DBD_Week::weeks() : array();
 		if ( $wks ) { $list[] = array( 'loc' => $u( array( 'view' => 'week' ) ), 'changefreq' => 'daily', 'priority' => 0.8 ); }
@@ -101,11 +101,19 @@ class DBD_Seo {
 		}
 		foreach ( ( DBD_Data::schedule()['weeks'] ?? array() ) as $games ) {
 			foreach ( $games as $g ) {
-				$list[] = array( 'loc' => $u( array( 'game' => $g['id'] ) ), 'changefreq' => 'weekly', 'priority' => 0.7 );
-				$list[] = array( 'loc' => $u( array( 'game' => $g['id'], 'side' => 'home' ) ), 'changefreq' => 'weekly', 'priority' => 0.6 );
+				$gm = DBD_Router::is_final( $g ) && ! empty( $g['date'] ) && strtotime( $g['date'] ) ? array( 'lastmod' => gmdate( 'Y-m-d', strtotime( $g['date'] . ' +1 day' ) ) ) : array();  /* a final game settles the day after (SCOPE §64) */
+				$list[] = array( 'loc' => $u( array( 'game' => $g['id'] ) ), 'changefreq' => 'weekly', 'priority' => 0.7 ) + $gm;
+				$list[] = array( 'loc' => $u( array( 'game' => $g['id'], 'side' => 'home' ) ), 'changefreq' => 'weekly', 'priority' => 0.6 ) + $gm;
 			}
 		}
-		return $list;
+		/* lastmod (SCOPE §64): this season's pages change with every data build, so they carry its time and Google recrawls what changed
+		   overnight. A final game keeps its own date; an archived season and the old board years carry none. */
+		$m = DBD_Data::manifest(); $bt = ! DBD_Data::archived() && ! empty( $m['built_at'] ) && strtotime( $m['built_at'] ) ? gmdate( 'c', strtotime( $m['built_at'] ) ) : null;
+		foreach ( $list as $i => $e ) {
+			if ( ! array_key_exists( 'lastmod', $e ) && $bt ) { $list[ $i ]['lastmod'] = $bt; }
+			if ( array_key_exists( 'lastmod', $list[ $i ] ) && ( $list[ $i ]['lastmod'] === null || DBD_Data::archived() ) ) { unset( $list[ $i ]['lastmod'] ); }
+		}
+		return array_values( $list );
 	}
 
 	/** JSON-LD for a player page: the player as a Person on a SportsTeam. */
@@ -118,6 +126,62 @@ class DBD_Seo {
 			'jobTitle'    => 'American football player',
 			'affiliation' => array( '@type' => 'SportsTeam', 'name' => $t['name'] ?? $p['team'] ),
 			'url'         => DBD_Router::url( array( 'player' => $p['id'] ) ),
+		);
+		$rec = DBD_Data::player_record( $p['team'], $p['id'] );  /* his Wikipedia article (SCOPE §62), so search ties the page to the right person (§64) */
+		if ( ! empty( $rec['wk'][0] ) ) { $ld['sameAs'] = array( 'https://en.wikipedia.org/wiki/' . rawurlencode( str_replace( ' ', '_', (string) $rec['wk'][0] ) ) ); }
+		return '<script type="application/ld+json">' . wp_json_encode( $ld, JSON_UNESCAPED_SLASHES ) . '</script>' . "\n";
+	}
+
+	/**
+	 * The Related panel at the end of a player's page, his and a kicker's alike (SCOPE §64): his next game, his team's offense and players,
+	 * his position's leaders, and his draft class and combine when the boards have them.
+	 */
+	public static function related_panel( $team, $pos, $bf ) {
+		$t = DBD_Data::team( $team ) ?: array( 'nick' => $team ); $rel = array();
+		if ( ! DBD_Data::archived() && ( $nx = DBD_Fantasy::next_game( $team ) ) && ( $ng = DBD_Data::team_game( $team, $nx['wk'] ) ) ) {
+			$on = DBD_Data::team( $nx['opp'] ); $home = $ng['home'] === $team;
+			$rel[] = array( DBD_Router::url( $home ? array( 'game' => $ng['id'], 'side' => 'home' ) : array( 'game' => $ng['id'] ) ), 'Next game: ' . ( $home ? 'vs ' : 'at ' ) . ( $on['nick'] ?? $nx['opp'] ) . ', ' . DBD_Router::week_label( $nx['wk'] ) );
+		}
+		$rel[] = array( DBD_Router::url( array( 'team' => $team ) ), $t['nick'] . ' offense' );
+		$rel[] = array( DBD_Router::url( array( 'view' => 'players', 'team' => $team ) ), $t['nick'] . ' players' );
+		$lg = array( 'QB' => 'qb', 'RB' => 'rb', 'FB' => 'rb', 'WR' => 'wr', 'TE' => 'te', 'K' => 'k' )[ (string) $pos ] ?? '';
+		if ( $lg ) { $rel[] = array( DBD_Router::url( array( 'view' => 'leaders', 'g' => $lg ) ), DBD_Leaders::GROUPS[ $lg ] . ' leaders' ); }
+		$dy = (int) ( $bf['dr']['y'] ?? 0 ); if ( $dy && in_array( $dy, DBD_Boards::years( 'draft' ), true ) ) { $rel[] = array( DBD_Router::url( array( 'view' => 'draft', 'y' => $dy ) ), 'The ' . $dy . ' draft class' ); }
+		$cy = (int) ( $bf['cb']['y'] ?? 0 ); if ( $cy && in_array( $cy, DBD_Boards::years( 'combine' ), true ) ) { $rel[] = array( DBD_Router::url( array( 'view' => 'combine', 'y' => $cy ) ), 'The ' . $cy . ' combine' ); }
+		$h = '<section class="dbd-panel dbd-related"><div class="dbd-ph"><span class="dbd-lab"><b>Related</b></span></div><div class="dbd-pb dbd-pills">';
+		foreach ( $rel as $x ) { $h .= '<a class="dbd-pill" href="' . esc_url( $x[0] ) . '">' . esc_html( $x[1] ) . '</a>'; }
+		return $h . '</div></section>';
+	}
+
+	/** JSON-LD for a draft or combine board (SCOPE §64): the board as an ItemList, each pick or player a Person, linked when he has a page here. */
+	public static function board_jsonld( $kind, $y ) {
+		$B = DBD_Boards::get( $kind, $y ); if ( ! $B || empty( $B['rows'] ) ) { return ''; }
+		/* the head runs before the view resets the season, and a board's player pages are this season's: build in it, then put back (Greptile, PR #117) */
+		$prev = DBD_Data::archived() ? DBD_Data::season() : null; DBD_Data::use_season( null );
+		$out = self::board_ld( $kind, $y, $B['rows'] ); DBD_Data::use_season( $prev );
+		return $out;
+	}
+
+	private static function board_ld( $kind, $y, $R ) {
+		if ( $kind === 'draft' ) { usort( $R, function ( $a, $b ) { return (int) $a['p'] <=> (int) $b['p']; } ); }
+		$items = array();
+		foreach ( array_values( $R ) as $i => $x ) {
+			$who = array( '@type' => 'Person', 'name' => (string) $x['n'] );
+			if ( $kind === 'draft' ) {
+				$t = $x['t'] === $x['f'] ? DBD_Data::team( (string) $x['f'] ) : null; if ( $t ) {  /* only when the team then is the team now (the 1983 Colts are not today's BAL) */ $who['affiliation'] = array( '@type' => 'SportsTeam', 'name' => $t['name'] ); }
+				if ( ! empty( $x['pg'] ) && ! empty( $x['id'] ) ) { $who['url'] = DBD_Router::url( array( 'player' => $x['id'] ) ); }
+			}
+			$who['description'] = trim( (string) $x['pos'] . ( (string) $x['sc'] !== '' ? ', ' . $x['sc'] : '' ), ', ' );
+			$items[] = array( '@type' => 'ListItem', 'position' => $kind === 'draft' ? (int) $x['p'] : $i + 1, 'item' => $who );
+		}
+		$ld = array(
+			'@context'        => 'https://schema.org',
+			'@type'           => 'ItemList',
+			'name'            => $kind === 'draft' ? $y . ' NFL Draft' : $y . ' NFL Combine',
+			'url'             => DBD_Router::url( array( 'view' => $kind, 'y' => $y ) ),
+			'itemListOrder'   => $kind === 'draft' ? 'https://schema.org/ItemListOrderAscending' : 'https://schema.org/ItemListUnordered',
+			'numberOfItems'   => count( $items ),
+			'itemListElement' => $items,
 		);
 		return '<script type="application/ld+json">' . wp_json_encode( $ld, JSON_UNESCAPED_SLASHES ) . '</script>' . "\n";
 	}

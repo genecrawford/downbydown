@@ -313,46 +313,50 @@ class DBD_Router {
 		switch ( $r['view'] ?? 'hub' ) {
 			case 'season':
 				$sb = DBD_Season::super_bowl(); $T = DBD_Data::teams(); $w = $sb ? ( $sb['home_score'] > $sb['away_score'] ? $sb['home'] : $sb['away'] ) : null;
-				return array( "The $season NFL season", "How the $season NFL season ended" . ( $w ? ': the ' . ( $T[ $w ]['name'] ?? $w ) . ' won the Super Bowl' : '' ) . '. The playoffs, final standings, who led, and every team, player and week, kept as it finished.' );
+				return array( "$season NFL season recap: playoffs, standings, leaders", "How the $season NFL season ended" . ( $w ? ': the ' . ( $T[ $w ]['name'] ?? $w ) . ' won the Super Bowl' : '' ) . '. The playoffs, final standings, who led, and every team, player and week, kept as it finished.' );
 			case 'team':
 				$t = DBD_Data::team( $r['team'] );
-				if ( ( $r['tside'] ?? 'off' ) === 'def' ) { return array( $t['nick'] . ' defense', "How the {$t['name']} defense plays in $season: EPA and success allowed, pressure and blitz rate, where offenses find room by zone, run lane and position, situations, and every defender's season." ); }
-				return array( $t['nick'] . ' offense play explorer', "Every {$t['name']} offensive snap of the $season season, drawn on the field. Filter by down, play type, field zone, formation, quarter and player." );
+				if ( ( $r['tside'] ?? 'off' ) === 'def' ) { return array( "{$t['nick']} defense $season: stats, EPA allowed, pressure", "How the {$t['name']} defense plays in $season: EPA and success allowed, pressure and blitz rate, where offenses find room by zone, run lane and position, situations, and every defender's season." ); }
+				return array( "{$t['nick']} offense $season: every play, EPA, tendencies", "Every {$t['name']} offensive snap of the $season season, drawn on the field. Filter by down, play type, field zone, formation, quarter and player." );
 			case 'game':
 				$g = $r['game']; $O = $r['side'] === 'away' ? $g['away'] : $g['home']; $D = $r['side'] === 'away' ? $g['home'] : $g['away'];
 				$o = DBD_Data::team( $O )['nick']; $d = DBD_Data::team( $D )['nick'];
-				return array( "$o offense vs $d defense, " . self::week_label( $g['week'] ), "How the $o offense matches up against the $d defense: EPA, success rate, explosive plays, third downs, red zone and where the ball goes, with the biggest edge and the risk." );
+				$A = DBD_Data::team( $g['away'] )['nick']; $H = DBD_Data::team( $g['home'] )['nick'];  /* leads with the search ("Vikings vs Packers"), each side its own title (SCOPE §64) */
+				return array( "$A vs $H, " . self::week_label( $g['week'] ) . ": $o offense matchup", "How the $o offense matches up against the $d defense: EPA, success rate, explosive plays, third downs, red zone and where the ball goes, with the biggest edge and the risk." );
 			case 'draft':
-				return array( "{$r['y']} NFL Draft: every pick", "Every pick of the {$r['y']} NFL Draft, round by round: team, school, position, combine score and what each player has done since, filterable by round, position and team." );
+				return array( "{$r['y']} NFL Draft results: every pick by round", "Every pick of the {$r['y']} NFL Draft, round by round: team, school, position, combine score and what each player has done since, filterable by round, position and team." );
 			case 'combine':
-				return array( "{$r['y']} NFL Combine results", "Every result from the {$r['y']} NFL Combine: the 40, vertical, broad jump, bench, 3-cone and shuttle, each against every player at the position since 2000, with the leaders and where each player was drafted." );
+				return array( "{$r['y']} NFL Combine results: 40 times and every drill", "Every result from the {$r['y']} NFL Combine: the 40, vertical, broad jump, bench, 3-cone and shuttle, each against every player at the position since 2000, with the leaders and where each player was drafted." );
 			case 'matchups':
-				return array( self::week_label( $r['week'] ) . " matchups", "Every game of the $season NFL season with lines, totals, scores and a matchup read for each one." );
+				return array( "NFL " . self::week_label( $r['week'] ) . " $season matchups: lines, scores, reads", "Every game of the $season NFL season with lines, totals, scores and a matchup read for each one." );
 			case 'teams':
-				return array( 'Pick a team', "All 32 NFL offenses ranked by EPA per play, each with a play explorer showing every snap of the $season season." );
+				return array( "NFL offense rankings $season: all 32 teams by EPA", "All 32 NFL offenses ranked by EPA per play, each with a play explorer showing every snap of the $season season." );
 			case 'player':
 				$p = $r['player']; $t = DBD_Data::team( $p['team'] );
-				if ( DBD_Kicker::is( $p ) ) { return array( "{$p['name']}, {$t['nick']} K", "Every field goal {$p['name']} has tried in $season, drawn on the field: makes over expected for his distances, range, extra points, kickoffs, the kicks that swung games, the game log with conditions, and his career." ); }
-				return array( "{$p['name']}, {$t['nick']} {$p['pos']}", "Where the ball finds {$p['name']}: every target and carry of the $season season on the field, the game log, snap share, usage by down, quarter and score, and the latest injury report." );
+				if ( DBD_Kicker::is( $p ) ) { return array( "{$p['name']} stats $season: field goals, range, kicks", "Every field goal {$p['name']} has tried in $season, drawn on the field: makes over expected for his distances, range, extra points, kickoffs, the kicks that swung games, the game log with conditions, and his career." ); }
+				$what = array( 'QB' => 'passing, EPA, game log', 'RB' => 'carries, targets, snaps' )[ $p['pos'] ] ?? 'targets, snaps, EPA';  /* what people search first, then what the page has (SCOPE §64) */
+				return array( "{$p['name']} stats $season: $what", "Where the ball finds {$p['name']}: every target and carry of the $season season on the field, the game log, snap share, usage by down, quarter and score, and the latest injury report." );
 			case 'compare':
 				$names = array_map( function ( $p ) { return $p['name']; }, $r['compare'] );
 				return array( $names ? implode( ' vs ', $names ) : 'Compare players', $names ? 'Side by side: where each grades against the league, where the ball finds each of them, and how their weeks line up.' : 'Pick two or three players of one position and see them side by side.' );
 			case 'teamplayers':
 			case 'players':
-				if ( $r['pteam'] ) { $t = DBD_Data::team( $r['pteam'] ); return array( "{$t['nick']} players", "Every {$t['name']} skill player who has taken an offensive snap in $season, with snap share, targets, carries, yards, EPA and this week's injury status." ); }
-				return array( 'Pick a player', "Every NFL skill player who has taken an offensive snap in $season: snap share, targets, carries, yards, touchdowns, EPA and injury status, by team and position." );
+				if ( $r['pteam'] ) { $t = DBD_Data::team( $r['pteam'] ); return array( "{$t['nick']} player stats $season: snaps, targets, carries", "Every {$t['name']} skill player who has taken an offensive snap in $season, with snap share, targets, carries, yards, EPA and this week's injury status." ); }
+				return array( "NFL player stats $season: snaps, targets, carries", "Every NFL skill player who has taken an offensive snap in $season: snap share, targets, carries, yards, touchdowns, EPA and injury status, by team and position." );
 			case 'leaders':
-				if ( $r['lboard'] !== '' && ( $B = DBD_Leaders::board( $r['lboard'] ) ) ) { return array( $B['title'] . ' leaders', "Every NFL player ranked by {$B['title']} in $season" . ( $B['sub'] !== '' ? " ({$B['sub']})" : '' ) . ', with position and minimum-usage filters.' ); }
-				return array( ( DBD_Leaders::GROUPS[ $r['lgroup'] ] ?? 'League' ) . ' leaders', "Who leads the NFL in $season: fantasy points by position, target share, EPA, yards after the catch, sack rate and every other stat on Down by Down, the top ten on each board." );
+				if ( $r['lboard'] !== '' && ( $B = DBD_Leaders::board( $r['lboard'] ) ) ) { $bt = preg_match( '/^[A-Z][a-z]/', $B['title'] ) ? lcfirst( $B['title'] ) : $B['title'];
+					return array( "NFL $bt leaders $season", "Every NFL player ranked by {$B['title']} in $season" . ( $B['sub'] !== '' ? " ({$B['sub']})" : '' ) . ', with position and minimum-usage filters.' ); }
+				$gw = array( 'fan' => 'fantasy', 'wr' => 'receiving', 'te' => 'tight end', 'rb' => 'rushing', 'qb' => 'passing', 'k' => 'kicking', 'def' => 'defense' )[ $r['lgroup'] ] ?? 'stat';
+				return array( "NFL $gw leaders $season", "Who leads the NFL in $season: fantasy points by position, target share, EPA, yards after the catch, sack rate and every other stat on Down by Down, the top ten on each board." );
 			case 'week':
 				$wl = DBD_Router::week_label( $r['week'] );
-				return array( "$wl in review", "What happened in $wl of the $season NFL season: every game's win-probability swings, the biggest plays by WPA and EPA, the best offenses, defenses and players, fantasy leaders and the week's movers." );
+				return array( "NFL $wl $season recap: biggest plays and swings", "What happened in $wl of the $season NFL season: every game's win-probability swings, the biggest plays by WPA and EPA, the best offenses, defenses and players, fantasy leaders and the week's movers." );
 			case 'myteam':
 				return array( 'My team', 'Your fantasy lineup on one page: this week\'s matchup, injury status, snap trend and points a game for every player you follow.' );
 			case 'notfound':
 				return array( 'Not found', '' );
 			default:
-				return array( "Every snap, drawn on the field", "How every NFL offense actually plays, from public play-by-play, updated every night. This week's slate, every matchup, every team." );
+				return array( "NFL play-by-play stats $season: every snap, drawn", "How every NFL offense actually plays, from public play-by-play, updated every night. This week's slate, every matchup, every team." );
 		}
 	}
 
@@ -386,6 +390,7 @@ class DBD_Router {
 		if ( $r['view'] === 'notfound' ) { echo '<meta name="robots" content="noindex">' . "\n"; }
 		if ( $r['view'] === 'game' && class_exists( 'DBD_Seo' ) ) { echo DBD_Seo::game_jsonld( $r['game'] ); }
 		if ( $r['view'] === 'player' && class_exists( 'DBD_Seo' ) ) { echo DBD_Seo::player_jsonld( $r['player'] ); }
+		if ( ( $r['view'] === 'draft' || $r['view'] === 'combine' ) && class_exists( 'DBD_Seo' ) ) { echo DBD_Seo::board_jsonld( $r['view'], $r['y'] ); }
 		if ( $r['view'] === 'players' && $r['q'] !== '' ) { echo '<meta name="robots" content="noindex,follow">' . "\n"; }
 		if ( $r['view'] === 'compare' ) { echo '<meta name="robots" content="noindex,follow">' . "\n"; }
 		if ( $r['view'] === 'myteam' ) { echo '<meta name="robots" content="noindex,follow">' . "\n"; }  /* personal */

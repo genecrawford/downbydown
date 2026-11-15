@@ -142,7 +142,7 @@ class DBD_Card {
 
 	/** Card keys: a player id, team-MIN, game-2026_08_MIN_DET, page-hub / page-week-8 / page-leaders … */
 	public static function valid( $key ) {
-		return (bool) preg_match( '/^(\d{2}-\d{7}|team-[A-Z]{2,3}|game-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}|page-(hub|season|matchups|teams|players|leaders|myteam|week-\d{1,2}))$/', (string) $key );
+		return (bool) preg_match( '/^(\d{2}-\d{7}|team-[A-Z]{2,3}|game-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}|page-(hub|season|matchups|teams|players|leaders|myteam|week-\d{1,2}|draft-\d{4}|combine-\d{4}))$/', (string) $key );
 	}
 
 	/** The card a route shares: the player's, the team's, the game's, the first compared player's, or the page card. */
@@ -154,6 +154,7 @@ class DBD_Card {
 			case 'teamplayers': return 'team-' . $r['pteam'];
 			case 'game': return 'game-' . $r['game']['id'];
 			case 'week': return 'page-week-' . (int) $r['week'];
+			case 'draft': case 'combine': return 'page-' . $r['view'] . '-' . (int) $r['y'];  /* the season boards (SCOPE §64) */
 			case 'hub': case 'season': case 'matchups': case 'teams': case 'players': case 'leaders': case 'myteam': return 'page-' . $r['view'];
 		}
 		return null;
@@ -211,6 +212,7 @@ class DBD_Card {
 		if ( strpos( $key, 'team-' ) === 0 ) { $s = self::spec_team( substr( $key, 5 ) ); if ( ! $s ) { return null; } foreach ( $s['logos'] as $t ) { $assets['logos'][ $t ] = $logo( $t ); } return self::draw_team( $s, $assets ); }
 		if ( strpos( $key, 'game-' ) === 0 ) { $g = DBD_Data::game( substr( $key, 5 ) ); if ( ! $g ) { return null; } $s = self::spec_game( $g ); foreach ( $s['logos'] as $t ) { $assets['logos'][ $t ] = $logo( $t ); } return self::draw_game( $s, $assets ); }
 		$s = self::spec_page( substr( $key, 5 ) ); if ( ! $s ) { return null; }
+		foreach ( (array) ( $s['logos'] ?? array() ) as $t ) { $assets['logos'][ $t ] = $logo( $t ); }
 		return self::draw_page( $s, $assets );
 	}
 
@@ -343,6 +345,7 @@ class DBD_Card {
 	}
 
 	public static function spec_page( $k ) {
+		if ( preg_match( '/^(draft|combine)-(\d{4})$/', $k, $bm ) ) { return self::spec_board( $bm[1], (int) $bm[2] ); }
 		$T = DBD_Data::teams(); $season = (int) DBD_Data::season(); $cw = (int) DBD_Data::current_week(); $m = DBD_Data::metrics();
 		$titles = array( 'hub' => array( 'Every snap,', 'drawn on the', '!field.' ), 'matchups' => array( 'Week ' . $cw, '!matchups' ), 'teams' => array( 'All 32', '!teams' ),
 			'players' => array( 'Every', '!player' ), 'leaders' => array( 'The', '!leaders' ), 'myteam' => array( 'My', '!team' ) );
@@ -406,6 +409,49 @@ class DBD_Card {
 			unset( $j );
 		}
 		$s['dots'] = $dots; $s['dots_cap'] = 'Every pass of week ' . $cw . ': ' . count( $dots ) . ' throws'; $s['big'] = '';
+		return $s;
+	}
+
+	/**
+	 * The draft or combine board's card (SCOPE §64): the year's headline numbers in the tiles, the top of the board on the field.
+	 * The boards read the current data folder whatever season is in use, like their pages.
+	 */
+	public static function spec_board( $kind, $y ) {
+		$B = DBD_Boards::get( $kind, $y ); if ( ! $B || empty( $B['rows'] ) ) { return null; }
+		$R = $B['rows']; $n = count( $R );
+		$s = array( 'season' => $y, 'through' => 0, 'brand' => 'The ' . $y . ' NFL ' . $kind, 'say' => '', 'board' => null, 'dots' => null, 'big' => '', 'tiles' => array(), 'list' => array(), 'logos' => array() );
+		$top = function ( $col ) use ( $R ) { $c = array(); foreach ( $R as $x ) { $v = (string) ( $x[ $col ] ?? '' ); if ( $v !== '' ) { $c[ $v ] = ( $c[ $v ] ?? 0 ) + 1; } } arsort( $c ); return $c ? array( (string) key( $c ), (int) current( $c ) ) : null; };
+		if ( $kind === 'draft' ) {
+			usort( $R, function ( $a, $b ) { return (int) $a['p'] <=> (int) $b['p']; } );
+			$rounds = max( array_map( function ( $x ) { return (int) $x['r']; }, $R ) );
+			$s['kicker'] = $n . ' picks · ' . $rounds . ' rounds'; $s['title'] = array( 'The ' . $y, '!draft' );
+			$s['say'] = 'Every pick, round by round: team, school, combine score and what each player has done since.';
+			/* the team as it was then (t: BAL for the 1983 Colts) with today's franchise's mark (f) */
+			$fr = array(); foreach ( $R as $x ) { $fr[ (string) $x['t'] ] = (string) $x['f']; }
+			$f = $R[0]; $s['tiles'][] = array( 'First pick', (string) $f['t'], $f['n'] . ', ' . $f['pos'], (string) $f['f'] );
+			$mt = $top( 't' ); if ( $mt ) { $s['tiles'][] = array( 'Most picks', $mt[0], $mt[1] . ' players taken', $fr[ $mt[0] ] ?? '' ); }
+			$pb = count( array_filter( $R, function ( $x ) { return (int) $x['pb'] > 0; } ) );
+			if ( $pb ) { $s['tiles'][] = array( 'Pro Bowlers', (string) $pb, 'from this class so far' ); }
+			else { $tp = $top( 'pos' ); if ( $tp ) { $s['tiles'][] = array( 'Top position', $tp[0], $tp[1] . ' taken' ); } }
+			foreach ( array_slice( $R, 0, 10 ) as $x ) { $s['list'][] = array( (string) (int) $x['p'], (string) $x['f'], (string) $x['n'], (string) $x['pos'], (string) $x['t'] ); }
+			$s['list_cap'] = 'The first ten picks';
+		} else {
+			$s['kicker'] = $n . ' players tested'; $s['title'] = array( 'The ' . $y, '!combine' );
+			$s['say'] = 'Every result: the 40, vertical, broad jump, bench, 3-cone and shuttle, each against every player at the position since 2000.';
+			$L = (array) ( $B['lead'] ?? array() );
+			foreach ( array( 'forty' => 'Fastest 40', 'vertical' => 'Top vertical', 'bench' => 'Most bench reps' ) as $dk => $lab ) {
+				$i = $L[ $dk ][0][0] ?? null; if ( $i === null || ! isset( $R[ $i ] ) || $R[ $i ][ $dk ] === null ) { continue; }
+				$s['tiles'][] = array( $lab, DBD_Boards::fmt( $dk, $R[ $i ][ $dk ] ), $R[ $i ]['n'] . ', ' . $R[ $i ]['pos'] );
+			}
+			$sc = array_values( array_filter( $R, function ( $x ) { return $x['cs'] !== null; } ) );
+			usort( $sc, function ( $a, $b ) { return (float) $b['cs'] <=> (float) $a['cs']; } );
+			foreach ( array_slice( $sc, 0, 10 ) as $i => $x ) { $s['list'][] = array( (string) ( $i + 1 ), (string) $x['pos'], (string) $x['n'], (string) (int) round( (float) $x['cs'] ) ); }
+			$s['list_cap'] = 'Top combine scores';
+		}
+		foreach ( $s['tiles'] as $t ) { if ( ! empty( $t[3] ) ) { $s['logos'][] = $t[3]; } }
+		if ( $kind === 'draft' ) { foreach ( $s['list'] as $x ) { $s['logos'][] = $x[1]; } }
+		$s['logos'] = array_values( array_unique( array_filter( $s['logos'], function ( $t ) { return (bool) DBD_Data::team( $t ); } ) ) );
+		$s['marks'] = $kind === 'draft';
 		return $s;
 	}
 
@@ -586,7 +632,8 @@ class DBD_Card {
 
 	public static function draw_page( $s, $assets ) {
 		$K = self::kit( $assets ); if ( ! $K ) { return null; } $F = $K['F'];
-		( $K['brand'] )( $s['season'] . ' season · ' . ( DBD_Data::archived() || DBD_Season::super_bowl() ? 'final' : 'through week ' . $s['through'] ), array(), self::RED );
+		( $K['brand'] )( $s['brand'] ?? ( $s['season'] . ' season · ' . ( DBD_Data::archived() || DBD_Season::super_bowl() ? 'final' : 'through week ' . $s['through'] ) ), array(), self::RED );
+		$L = $assets['logos'] ?? array();
 		( $K['spaced'] )( $F['disp'], 14, 44, 124, $K['red'], strtoupper( $s['kicker'] ), 0.2 );
 		$lines = $s['title']; $n = count( $lines ); $px = $n >= 3 ? 56 : 72;
 		foreach ( $lines as $l ) { $px = min( $px, ( $K['fit'] )( $F['hero'], $px, strtoupper( ltrim( $l, '!' ) ), 610 ) ); }
@@ -594,11 +641,11 @@ class DBD_Card {
 		foreach ( $lines as $l ) { $red = $l[0] === '!'; ( $K['txt'] )( $F['hero'], $px, 44, $y, $red ? $K['red'] : $K['ink'], strtoupper( ltrim( $l, '!' ) ) ); $last = $y; $y += $px * 1.0; }
 		if ( $s['say'] !== '' ) { foreach ( array_slice( ( $K['wrap'] )( $F['body'], 18, $s['say'], 600 ), 0, 2 ) as $j => $l ) { ( $K['txt'] )( $F['body'], 18, 44, $last + 48 + $j * 26, $K['ink2'], $l ); } }
 		$tw3 = ( 610 - 24 ) / 3;
-		foreach ( $s['tiles'] as $i => $t ) { ( $K['tile'] )( 44 + $i * ( $tw3 + 12 ), 430, $tw3, 120, $t[0], $t[1], $t[2], 'hero', 34 ); }
+		foreach ( $s['tiles'] as $i => $t ) { ( $K['tile'] )( 44 + $i * ( $tw3 + 12 ), 430, $tw3, 120, $t[0], $t[1], $t[2], 'hero', 34, ! empty( $t[3] ) ? array( $t[3], $L[ $t[3] ] ?? null ) : null ); }
 		/* the field */
 		$fx = 700; $fy = 100; $fw = 456; $fh = 458; $green = ( $K['col'] )( '#2c4a35' );
 		( $K['rect'] )( $fx, $fy, $fw, $fh, $green );
-		for ( $i = 1; $i < 10; $i++ ) { ( $K['rect'] )( $fx, $fy + $fh * $i / 10, $fw, $i === 5 ? 2 : 1, ( $K['mix'] )( '#ffffff', $i === 5 ? 0.26 : 0.15, '#2c4a35' ) ); }
+		if ( empty( $s['list'] ) ) { for ( $i = 1; $i < 10; $i++ ) { ( $K['rect'] )( $fx, $fy + $fh * $i / 10, $fw, $i === 5 ? 2 : 1, ( $K['mix'] )( '#ffffff', $i === 5 ? 0.26 : 0.15, '#2c4a35' ) ); } }  /* a list draws its own lines, between its rows */
 		if ( $s['big'] !== '' ) { $bp = strlen( $s['big'] ) <= 2 ? 300 : 150; ( $K['txt'] )( $F['hero'], $bp, $fx + $fw - 22, $fy + $fh + 10, ( $K['mix'] )( '#ffffff', 0.07, '#2c4a35' ), $s['big'], 'right' ); }
 		if ( $s['board'] ) {
 			$rows = $s['board']; $n = count( $rows ); $step = ( $fh - 32 ) / max( 1, $n ); $w = ( $K['col'] )( '#ffffff' ); $dim = ( $K['mix'] )( '#ffffff', 0.62, '#2c4a35' ); $dim2 = ( $K['mix'] )( '#ffffff', 0.5, '#2c4a35' ); $gold = ( $K['col'] )( '#ffd166' );
@@ -607,6 +654,18 @@ class DBD_Card {
 				( $K['txt'] )( $F['disp'], 22, $fx + 22, $y, $aw ? $w : $dim, $r[0] ); if ( $r[1] !== null ) { ( $K['txt'] )( $F['mono2'], 20, $fx + 140, $y, $aw ? $w : $dim, (string) $r[1], 'right' ); }
 				( $K['txt'] )( $F['disp'], 22, $fx + 176, $y, $hw ? $w : $dim, $r[2] ); if ( $r[3] !== null ) { ( $K['txt'] )( $F['mono2'], 20, $fx + 294, $y, $hw ? $w : $dim, (string) $r[3], 'right' ); }
 				( $K['txt'] )( $F['mono'], 13, $fx + $fw - 22, $y, $r[1] === null ? $gold : $dim2, $r[4], 'right' ); }
+		} elseif ( ! empty( $s['list'] ) ) {  /* the boards (SCOPE §64): the top ten, one line each */
+			$rows = $s['list']; $step = ( $fh - 64 ) / max( 1, count( $rows ) ); $w = ( $K['col'] )( '#ffffff' ); $dim = ( $K['mix'] )( '#ffffff', 0.62, '#2c4a35' ); $dim2 = ( $K['mix'] )( '#ffffff', 0.5, '#2c4a35' );
+			( $K['spaced'] )( $F['disp'], 13, $fx + 22, $fy + 32, $dim, strtoupper( $s['list_cap'] ?? '' ), 0.2 );
+			$ln = ( $K['mix'] )( '#ffffff', 0.15, '#2c4a35' ); $chip = ( $K['col'] )( '#fffdf8' );
+			foreach ( $rows as $i => $r ) { $y = $fy + 48 + $step * $i + $step * 0.66; $nx = $fx + 70;
+				( $K['rect'] )( $fx, $fy + 48 + $step * $i, $fw, 1, $ln );
+				( $K['txt'] )( $F['mono2'], 18, $fx + 50, $y, $dim, $r[0], 'right' );
+				if ( ! empty( $s['marks'] ) ) { ( $K['rect'] )( $fx + 62, $y - 22, 28, 28, $chip ); ( $K['mark'] )( $fx + 64, $y - 20, 24, $r[1], $L[ $r[1] ] ?? null ); ( $K['txt'] )( $F['disp'], 18, $fx + 100, $y, $dim, $r[4] ?? $r[1] ); $nx = $fx + 150; }  /* a light chip behind the mark, so a green logo shows on the field */
+				else { ( $K['txt'] )( $F['disp'], 18, $fx + 64, $y, $dim, $r[1] ); $nx = $fx + 124; }
+				$rw = ( $K['tw'] )( $F['mono2'], 16, $r[3] ); $px = ( $K['fit'] )( $F['body'], 19, $r[2], $fx + $fw - 22 - $rw - 14 - $nx );
+				( $K['txt'] )( $F['body'], $px, $nx, $y, $w, $r[2] );
+				( $K['txt'] )( $F['mono2'], 16, $fx + $fw - 22, $y, $dim2, $r[3], 'right' ); }
 		} elseif ( $s['dots'] ) {
 			$cols = array( 'left' => array( 0, 1 / 3 ), 'middle' => array( 1 / 3, 2 / 3 ), 'right' => array( 2 / 3, 1 ) ); $pal = array( ( $K['mix'] )( '#ffffff', 0.35, '#2c4a35' ), ( $K['col'] )( '#5b9cf6' ), ( $K['col'] )( '#4fd18b' ) );
 			$x0 = $fx + 14; $w0 = $fw - 28; $y0 = $fy + 14; $h0 = $fh - 54; $S = $K['S']; $im = $K['im'];
