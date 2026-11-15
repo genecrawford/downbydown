@@ -2603,3 +2603,18 @@ Both options change only `drive()` in team-explorer.js, so they show on the offe
 - **Option A, the touchdown play** (`td-a.html`): on each touchdown row, a green band across the field, a 5px green line, a ringed dot where the ball crossed, and a green "TD" block filling the end zone on that row. Nothing else changes.
 - **Option B, the scoring drive** (`td-b.html`): every snap of a drive that ended in a touchdown sits on a light green wash, so the march reads, not just the last play. The touchdown play gets the 5px line and the "TD" tag in the end zone.
 - On the defense tab the same marks show the touchdowns the defense gave up.
+
+## 59. The pass and run maps as a playbook page (scoped and mocked 2026-11-15, `mockup-v33/`)
+
+Gene: make the pass and run map look more like a football play schematic. The mock (`schematic.html`) runs the live explorer on the Vikings' real plays, with `passmap()` and `runmap()` swapped for the versions in `schematic.js`. Filters and game chips redraw both, as today.
+
+- **Chalk on the field, both maps:** the line of scrimmage is a white line. The five linemen are O's with the center as a square. The quarterback (pass map) and the back (run map) are filled circles.
+- **Passes become routes.** Every target falls in one of 12 zones: left, middle or right, by four depths (behind the line, short 0 to 9, 10 to 19, 20 plus). Each zone with throws gets a route from the quarterback: a short stem, then the break to the spot.
+  - Behind-the-line throws swing out to the flat.
+  - Each route is as thick as its share of the throws and colored like the run map: green for positive EPA, amber for negative EPA with 40% or better success, red below that.
+  - The arrowhead carries "completions/targets · EPA per target".
+  - Every target stays as a faint dot on the field you can click to open the play. Yard lines every 5, hash marks, and the side totals at the top stay.
+- **Runs become arrows through the gaps.** The tight end spots are drawn dashed outside the tackles. One arrow per gap (L End, L Tackle, L Guard, Middle, R Guard, R Tackle, R End) curves from the back through its gap.
+  - Each arrow is as long as the yards per carry (5, 10 and 15 yard lines marked) and as wide as the carries, colored as today.
+  - The number at the tip is yards per carry. Carries and success rate sit under each gap.
+- **Unchanged:** the legend and "How this is measured". Only the two drawing functions in team-explorer.js change, so the defense tab gets the same diagrams of what offenses did against it.
