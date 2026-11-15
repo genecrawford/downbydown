@@ -67,21 +67,22 @@
 <li><a href="https://downbydown.com/hub/#dbd-slate">Slate</a></li>
 <li><a href="https://downbydown.com/hub/#dbd-teams">Teams</a></li>
 <li><a href="https://downbydown.com/players/">Players</a></li>
-<li><a href="https://downbydown.com/my-team/">My team</a></li>
 <li><a href="https://downbydown.com/matchups/">Matchups</a></li>
 <li><a href="https://downbydown.com/week/">Week in review</a></li>
 <li><a href="https://downbydown.com/teams/">Play explorer</a></li>
 <li><a href="https://downbydown.com/leaders/">Leaders</a></li>
-<li><a href="https://downbydown.com/about/">About</a></li>
+<li><a href="https://downbydown.com/draft/">Draft</a></li>
+<li><a href="https://downbydown.com/my-team/">My team</a></li>
+<li><a href="https://downbydown.com/news/">News</a></li>
 </ul>
 </nav>
 </div>
 </header>
 <script>
-/* underline the menu link for the page you're on (a team, player or game page lights up its section) */
+/* underline the menu link for the page you're on (a team, player or game page lights up its section; a combine page lights up Draft) */
 (function(){var p=location.pathname.replace(/\/+$/,'/').replace(/^\/(19|20)\d\d\//,'/'),best=null,len=0;  /* a past season's page counts as its section */
 document.querySelectorAll('.dxd-head nav a').forEach(function(a){var u=new URL(a.href,location.href);if(u.hash)return;var q=u.pathname;
-var hit=p===q||(q!=='/'&&p.indexOf(q)===0)||(q==='/teams/'&&/^\/team\//.test(p))||(q==='/players/'&&/^\/(player|compare)\//.test(p))||(q==='/matchups/'&&/^\/game\//.test(p));
+var hit=p===q||(q!=='/'&&p.indexOf(q)===0)||(q==='/teams/'&&/^\/team\//.test(p))||(q==='/players/'&&/^\/(player|compare)\//.test(p))||(q==='/matchups/'&&/^\/game\//.test(p))||(q==='/draft/'&&/^\/combine\//.test(p));
 if(hit&&q.length>len){best=a;len=q.length;}});
 if(best)best.setAttribute('aria-current','page');})();
 /* the phone menu: the button opens and closes it; a link, Escape or a tap outside closes it */
