@@ -2548,3 +2548,17 @@ Size: M.
 - §54 as scoped, with Gene's decisions: the recap moved to the end of a finished game's page, team defense videos on the defense page's block, and Highlights links in the Tuesday email.
 - The roster's depth slot (QB1) became a small chip a gap after the name, dark for the starter and light for a backup, explained on hover (`mockup-v28/roster-slot.html`, option A).
 - Fixed on the way: 2.13.0's jump links reused `.dbd-jump`, the player page's sticky section bar, and restyled it. The new links are `.dbd-hop`.
+
+## 55. Keys to the game in the offense's colors (scoped and mocked 2026-11-15, `mockup-v29/`)
+
+Gene: brand the Keys to the game panel to the offense, on a dark background from the team's colors.
+
+- **The panel** takes the offense's colors: the page's offense (the toggle at the top flips it, and the colors flip with it). White text on the team's dark color; the team's other color picks out the numbers 01 to 04, the tags, the offense's name in the header and a 5px band along the bottom, like the band on the jersey tiles.
+- **The header** gets the team tile and reads "Keys to the game · Vikings offense, where this matchup tilts, from the season numbers".
+- **The color rule**, one for all 32 teams, computed from the two colors in teams.json (no hand-picked table):
+  - Panel: the team's first color with 10:1 contrast against white text. If neither has it, the main color is mixed toward ink until it does. Pure black becomes the site's ink (#121417).
+  - Accent: the other team color if it reads on the panel at 4.5:1. If not, the panel deepens further (to 15:1 at most) so the second color can read. Failing that, a lighter shade of the main color.
+  - Results: Vikings purple and gold, Packers green and gold, Chiefs deep red and gold, 49ers deep red and gold, Bengals black and orange, Saints black and gold, Browns brown and orange, Raiders black and silver, Titans deep blue and light blue, Dolphins deep teal and orange, Chargers deep blue and gold, Bills navy and light blue (their red doesn't read on navy).
+- **The tags** all take the accent, except Wash, which is muted white. The word carries the meaning; green and red would fight a red or green team panel.
+- **Players to watch** (upcoming games) moves out of the panel to its own light panel right under it, labeled "Players to watch · both teams", since it covers both teams.
+- **Code:** `DBD_Marks::deep( $team )` returns the panel and accent pair; game.php sets them as `--k-bg` and `--k-ac` on the section, and `.dbd-keys.tm` styles it. Mocks: `keys-min.html` (in place, with today's panel under it), `keys-upcoming.html`, `keys-teams.html` (twelve offenses).
