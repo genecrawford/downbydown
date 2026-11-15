@@ -12,6 +12,7 @@
   --dbd-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   --dbd-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
   --dbd-r:6px;
+  --dbd-stick:calc(var(--wp-admin--admin-bar--height, 0px) + 72px);  /* what covers the top of the window: the WordPress admin bar (logged in) and Divi's fixed 71px header; sticky bits sit below it */
   --dbd-s1:4px; --dbd-s2:8px; --dbd-s3:14px; --dbd-s4:22px;  /* the spacing scale (SCOPE §28) */
   background:var(--dbd-bg);color:var(--dbd-ink);font:14px/1.5 var(--dbd-body);min-height:100vh;
   -webkit-font-smoothing:antialiased;
@@ -358,7 +359,8 @@ body.dbd-app .et_pb_column:has(.dbd) .et_pb_module,body.dbd-app .et_pb_column:ha
 .dbd .dbd-tile .s{font:500 11px var(--dbd-mono);color:var(--dbd-muted)}
 .dbd .dbd-work{display:grid;grid-template-columns:minmax(0,1fr) 360px;grid-template-areas:"drive rail" "spray rail" "situ rail" "charts rail";gap:18px;align-items:start}
 .dbd .dbd-sec-drive{grid-area:drive}.dbd .dbd-sec-spray{grid-area:spray}.dbd .dbd-sec-situ{grid-area:situ}.dbd .dbd-sec-charts{grid-area:charts}
-.dbd .dbd-rail{grid-area:rail;position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto;scrollbar-width:thin}
+body.dbd-standalone .dbd{--dbd-stick:var(--wp-admin--admin-bar--height, 0px)}  /* the standalone template has no theme header (Greptile, PR #99) */
+.dbd .dbd-rail{grid-area:rail;position:sticky;top:calc(var(--dbd-stick) + 12px);max-height:calc(100vh - var(--dbd-stick) - 24px);overflow:auto;scrollbar-width:thin}
 @media (max-width:1000px){.dbd .dbd-work{grid-template-columns:minmax(0,1fr);grid-template-areas:"drive" "rail" "spray" "situ" "charts"}.dbd .dbd-rail{position:static;max-height:none;overflow:visible}}
 .dbd .dbd-legend{display:flex;flex-wrap:wrap;gap:6px 14px;font:500 11px var(--dbd-mono);color:var(--dbd-muted);padding:10px 14px 0}
 .dbd .dbd-legend i{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle}

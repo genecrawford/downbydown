@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.17.0
+Stable tag: 2.17.1
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,10 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.17.1 =
+* The play explorer's Play detail box stays below the site's fixed header (and the admin bar when you're logged in) as you scroll, instead of sliding under it.
+* The logos at the top of the team panel and the game page's face-off load right away instead of lazily, so the drawn placeholder mark no longer lingers in their place (seen on the Bears defense page).
 
 = 2.17.0 =
 * The offense and defense pages open with the team's own panel (SCOPE §57), in the colors and band of the game page: the logo, the season line, the title, the note, the Offense | Defense switch and the News and Videos links, with four numbers about the team on the right: its offense and defense ranks, its snaps, and its next game with a link to it (the last game once none are left).

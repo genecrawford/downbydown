@@ -73,17 +73,18 @@ class DBD_Marks {
 		return preg_match( '/^#[0-9a-fA-F]{6}$/', (string) $c ) ? $c : $fallback;
 	}
 
-	public static function tile( $abbr, $size = 24 ) {
+	/** $eager for a logo at the top of a page (the team panel, the game face-off): it loads at once instead of waiting on lazy loading, which can leave the drawn mark showing. */
+	public static function tile( $abbr, $size = 24, $eager = false ) {
 		$svg = self::tile_svg( $abbr, $size );
 		$logo = $svg ? DBD_Data::logo( $abbr ) : null;
-		return $logo ? self::with_logo( $svg, $logo, $size, $size, DBD_Data::team( $abbr )['name'] ?? $abbr, DBD_Data::team( $abbr )['logo_s'] ?? 1 ) : $svg;
+		return $logo ? self::with_logo( $svg, $logo, $size, $size, DBD_Data::team( $abbr )['name'] ?? $abbr, DBD_Data::team( $abbr )['logo_s'] ?? 1, $eager ) : $svg;
 	}
 
 	/** The real logo over the drawn mark: the mark shows until the image loads, then hides; a failed image removes itself (SCOPE §28). */
-	public static function with_logo( $svg, $logo, $w, $h, $alt, $scale = 1 ) {
+	public static function with_logo( $svg, $logo, $w, $h, $alt, $scale = 1, $eager = false ) {
 		$sc = max( 0.7, min( 1.5, (float) $scale ) );  /* optical scale from the build (1.4.1), clamped */
 		$logo = self::logo_src( $logo, (int) $h );
-		return '<span class="dbd-lgw" style="width:' . (int) $w . 'px;height:' . (int) $h . 'px;--lgs:' . round( $sc, 2 ) . '">' . $svg . '<img class="dbd-logo" src="' . esc_url( $logo ) . '" alt="' . esc_attr( $alt ) . '" width="' . (int) $h . '" height="' . (int) $h . '" loading="lazy" decoding="async" referrerpolicy="no-referrer" onload="this.previousElementSibling.style.visibility=\'hidden\'" onerror="this.remove()"></span>';
+		return '<span class="dbd-lgw" style="width:' . (int) $w . 'px;height:' . (int) $h . 'px;--lgs:' . round( $sc, 2 ) . '">' . $svg . '<img class="dbd-logo" src="' . esc_url( $logo ) . '" alt="' . esc_attr( $alt ) . '" width="' . (int) $h . '" height="' . (int) $h . '" ' . ( $eager ? 'fetchpriority="high"' : 'loading="lazy"' ) . ' decoding="async" referrerpolicy="no-referrer" onload="this.previousElementSibling.style.visibility=\'hidden\'" onerror="this.remove()"></span>';
 	}
 
 	/** ESPN's resizer serves a transparent PNG at the asked size (the Jets file is 4096 px and 130 KB otherwise); ask for 3x the box so the optical scale stays sharp. Other hosts pass through. */
