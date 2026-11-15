@@ -26,7 +26,7 @@ $fside = function ( $a, $t, $role ) {
 	list( $bg, $ac ) = DBD_Marks::deep( $t ); $off = $role === 'off';
 	$rank = $off ? 'OFF #' . (int) DBD_Data::rank( 'off', $a ) : 'DEF #' . (int) DBD_Data::rank( 'def', $a );
 	$href = DBD_Router::url( $off ? array( 'team' => $a ) : array( 'team' => $a, 'side' => 'def' ) );
-	return '<div class="dbd-fside" style="--k-bg:' . esc_attr( $bg ) . ';--k-ac:' . esc_attr( $ac ) . '">' . DBD_Marks::tile( $a, 72 )
+	return '<div class="dbd-fside" style="--k-bg:' . esc_attr( $bg ) . ';--k-ac:' . esc_attr( $ac ) . '">' . DBD_Marks::tile( $a, 72, true )
 		. '<span class="role">' . ( $off ? 'Offense' : 'Defense' ) . '</span><a class="nm" href="' . esc_url( $href ) . '">' . esc_html( $t['nick'] ) . '</a>'
 		. '<span class="meta"><b>' . esc_html( $rank ) . '</b> · ' . esc_html( DBD_Data::record_text( $a ) ) . '</span></div>';
 };

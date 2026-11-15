@@ -9,7 +9,7 @@ echo DBD_Router::topbar( array( 'play explorer' => DBD_Router::url( array( 'view
  * further down pick up --k-bg and --k-ac from main. */
 list( $kBg, $kAc ) = DBD_Marks::deep( $t );
 echo '<main class="dbd-content' . ( $def ? ' dbd-defview' : '' ) . '" style="--dbd-team:' . esc_attr( DBD_Marks::accent( $t ) ) . ';--k-bg:' . esc_attr( $kBg ) . ';--k-ac:' . esc_attr( $kAc ) . '">';
-echo '<header class="dbd-tpanel"><div class="tp-mark">' . DBD_Marks::tile( $a, 96 ) . '</div><div class="tp-main">';
+echo '<header class="dbd-tpanel"><div class="tp-mark">' . DBD_Marks::tile( $a, 96, true ) . '</div><div class="tp-main">';
 echo '<p class="tp-kick" id="dbd-kicker">' . esc_html( $through ? "$season season · Weeks 1 to $through · " . DBD_Data::record_text( $a ) : "$season season · Preseason" ) . '</p>';
 echo '<h1>' . esc_html( $t['nick'] ) . ' <span>' . $side . '</span></h1>';
 $town = esc_html( preg_replace( '/\s+\S+$/', '', $t['name'] ) );
