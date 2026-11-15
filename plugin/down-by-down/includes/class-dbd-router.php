@@ -522,9 +522,19 @@ class DBD_Router {
 		return '<details class="dbd-season"><summary aria-label="Season">' . $now . ' <span aria-hidden="true">▾</span></summary><div class="dbd-season-menu">' . $items . '</div></details>';
 	}
 
+	/** A breadcrumb label in title case (Gene, 2026-11-15): "week 10" reads "Week 10", "play explorer" "Play Explorer". Joining words
+	 *  stay small inside a label ("Vikings at Packers", "Week 10 in Review"); only a word's first letter changes, so names keep their spelling. */
+	public static function crumb_case( $label ) {
+		$small = array( 'a', 'an', 'and', 'at', 'by', 'for', 'in', 'of', 'on', 'or', 'the', 'to', 'vs' );
+		$w = explode( ' ', $label );
+		foreach ( $w as $i => $x ) { if ( $x === '' || ( $i > 0 && in_array( $x, $small, true ) ) ) { continue; } $w[ $i ] = ucfirst( $x ); }
+		return implode( ' ', $w );
+	}
+
 	public static function topbar( $crumbs ) {
 		$out = '<div class="dbd-top"><div class="dbd-crumb"><a href="' . esc_url( self::url() ) . '" class="dbd-brand">DOWN X DOWN</a>';
 		foreach ( $crumbs as $label => $href ) {
+			$label = self::crumb_case( (string) $label );
 			$out .= ' <span>›</span> ' . ( $href ? '<a href="' . esc_url( $href ) . '">' . esc_html( $label ) . '</a>' : '<b>' . esc_html( $label ) . '</b>' );
 		}
 		$out .= '</div><div class="dbd-r"><span class="dbd-upd">' . esc_html( DBD_Data::archived() ? 'Season over · final' : DBD_Data::updated_text() ) . '</span>' . self::switcher() . '</div></div>';

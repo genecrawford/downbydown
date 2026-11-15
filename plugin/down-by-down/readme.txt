@@ -36,6 +36,7 @@ Not affiliated with the NFL or any team. No team logos are used; team marks are 
 * One color rule for all 32 teams, from the two colors the build already ships: the panel is the first team color dark enough for white text (else the main color deepened), the accent the other color when it reads on that (else a lighter shade of the main one).
 * The tags take the team's accent (Wash stays muted): the word carries the meaning, and green or red would fight a green or red team.
 * Players to watch moves to its own panel under the keys, since it covers both teams.
+* The breadcrumb reads in title case: Week 10, Play Explorer, Vikings Offense. Joining words stay small (Vikings at Packers).
 
 = 2.14.0 =
 * Hints of the news and the NFL's weekly videos across the site (SCOPE §54). The NFL's Game Previews and Player Highlights playlists join its recaps. Everything opens on YouTube; anything bigger than a small link comes after the stats.
