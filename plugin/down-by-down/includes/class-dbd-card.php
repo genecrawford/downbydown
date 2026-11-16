@@ -142,7 +142,7 @@ class DBD_Card {
 
 	/** Card keys: a player id, team-MIN, game-2026_08_MIN_DET, page-hub / page-week-8 / page-leaders … */
 	public static function valid( $key ) {
-		return (bool) preg_match( '/^(\d{2}-\d{7}|team-[A-Z]{2,3}|game-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}|page-(hub|season|matchups|teams|players|leaders|myteam|week-\d{1,2}|draft-\d{4}|combine-\d{4}))$/', (string) $key );
+		return (bool) preg_match( '/^(\d{2}-\d{7}|team-[A-Z]{2,3}|game-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}|page-(hub|season|matchups|teams|players|leaders|myteam|week-\d{1,2}|draft-\d{4}|combine-\d{4})|pack-week-\d{1,2}-(snaps|targets|offense))$/', (string) $key );
 	}
 
 	/** The card a route shares: the player's, the team's, the game's, the first compared player's, or the page card. */
@@ -210,6 +210,10 @@ class DBD_Card {
 			return self::draw( $spec, $assets );
 		}
 		if ( strpos( $key, 'team-' ) === 0 ) { $s = self::spec_team( substr( $key, 5 ) ); if ( ! $s ) { return null; } foreach ( $s['logos'] as $t ) { $assets['logos'][ $t ] = $logo( $t ); } return self::draw_team( $s, $assets ); }
+		if ( strpos( $key, 'pack-' ) === 0 && preg_match( '/^pack-week-(\d+)-(\w+)$/', $key, $pm ) ) {  /* the share pack's cards (SCOPE §68) */
+			if ( $pm[2] === 'offense' ) { $s = DBD_Pack::spec_offense( (int) $pm[1] ); if ( ! $s ) { return null; } foreach ( $s['logos'] as $t ) { $assets['logos'][ $t ] = $logo( $t ); } return self::draw_offense( $s, $assets ); }
+			$s = DBD_Pack::spec_riser( (int) $pm[1], $pm[2] ); if ( ! $s ) { return null; } $assets['logos'][ $s['team'] ] = $logo( $s['team'] ); return self::draw_riser( $s, $assets );
+		}
 		if ( strpos( $key, 'game-' ) === 0 ) { $g = DBD_Data::game( substr( $key, 5 ) ); if ( ! $g ) { return null; } $s = self::spec_game( $g ); foreach ( $s['logos'] as $t ) { $assets['logos'][ $t ] = $logo( $t ); } return self::draw_game( $s, $assets ); }
 		$s = self::spec_page( substr( $key, 5 ) ); if ( ! $s ) { return null; }
 		foreach ( (array) ( $s['logos'] ?? array() ) as $t ) { $assets['logos'][ $t ] = $logo( $t ); }
@@ -678,4 +682,72 @@ class DBD_Card {
 		( $K['foot'] )( 'Data: nflverse' );
 		return ( $K['finish'] )();
 	}
+
+	/* ================================================================== the share pack's cards (2.27.0, SCOPE §68) */
+
+	/** The riser card: the name, this week's share in team color, the sentence, and the share game by game with his earlier average dashed. */
+	public static function draw_riser( $s, $assets ) {
+		$K = self::kit( $assets ); if ( ! $K ) { return null; } $F = $K['F']; $L = $assets['logos'] ?? array(); $S = $K['S']; $im = $K['im'];
+		$c1 = $s['c1']; $tc = ( $K['col'] )( DBD_Marks::accent( DBD_Data::team( $s['team'] ) ?: null, self::BG ) );
+		( $K['brand'] )( $s['meta'], array( array( $s['team'], $L[ $s['team'] ] ?? null ) ), $c1 );
+		( $K['spaced'] )( $F['disp'], 15, 44, 124, $K['red'], strtoupper( $s['kicker'] ), 0.2 );
+		$first = strtoupper( $s['first'] ); $last = strtoupper( $s['last'] );
+		$px = min( 62, ( $K['fit'] )( $F['hero'], 62, $first, 540 ), $last !== '' ? ( $K['fit'] )( $F['hero'], 62, $last, 540 ) : 62 );
+		( $K['txt'] )( $F['hero'], $px, 44, 140 + $px, $K['ink'], $first );
+		if ( $last !== '' ) { ( $K['txt'] )( $F['hero'], $px, 44, 140 + $px * 2.05, $tc, $last ); }
+		$by = 140 + $px * ( $last !== '' ? 2.05 : 1 );
+		( $K['txt'] )( $F['hero'], 96, 44, $by + 116, $tc, (int) round( $s['now'] ) . '%' );
+		foreach ( array_slice( ( $K['wrap'] )( $F['body'], 21, $s['say'], 520 ), 0, 3 ) as $j => $l ) { ( $K['txt'] )( $F['body'], 21, 44, $by + 156 + $j * 29, $K['ink2'], $l ); }
+		/* the chart */
+		( $K['spaced'] )( $F['disp'], 14, 648, 119, $K['muted'], strtoupper( $s['chart'] ), 0.18 );
+		$ser = $s['series']; $n = max( 1, count( $ser ) ); $vals = array_filter( $ser, function ( $v ) { return $v !== null; } );
+		$hi = $s['kind'] === 'snaps' ? 100 : max( 40, ( $vals ? max( $vals ) : 0 ) * 1.15 );
+		$x0 = 648; $x1 = 1156; $y0 = 170; $y1 = 520; $bw = ( $x1 - $x0 ) / $n; $grey = ( $K['col'] )( '#cfcabd' ); $bar = ( $K['col'] )( $c1 );
+		foreach ( $ser as $i => $v ) {
+			$cx = $x0 + $i * $bw + min( 8, $bw * 0.15 ); $w = $bw - 2 * min( 8, $bw * 0.15 ); $mid = $cx + $w / 2; $last_i = $i === $n - 1;
+			if ( $v === null ) { ( $K['txt'] )( $F['mono'], 14, $mid, $y1 - 8, $K['muted'], '–', 'center' ); }
+			else { $h = max( 2, (float) $v / $hi * ( $y1 - $y0 ) ); ( $K['rect'] )( $cx, $y1 - $h, $w, $h, $last_i ? $bar : $grey );
+				( $K['txt'] )( $F['disp'], $n > 12 ? 13 : 17, $mid, $y1 - $h - 8, $last_i ? $K['ink'] : $K['ink2'], (int) round( (float) $v ) . '%', 'center' ); }
+			if ( $n <= 12 || $i % 2 === 0 || $last_i ) { ( $K['txt'] )( $F['mono'], 13, $mid, $y1 + 24, $K['muted'], 'W' . ( $i + 1 ), 'center' ); }
+		}
+		( $K['rect'] )( $x0, $y1, $x1 - $x0, 1, $K['ink'] );
+		$ay = $y1 - $s['before'] / $hi * ( $y1 - $y0 ); for ( $x = $x0; $x < $x1; $x += 12 ) { ( $K['rect'] )( $x, $ay - 1, 6, 2, $K['ink'] ); }
+		( $K['foot'] )( $s['foot'] );
+		return ( $K['finish'] )();
+	}
+
+	/** The offense card: the best and worst as tiles, and every offense that played as a bar from zero. */
+	public static function draw_offense( $s, $assets ) {
+		$K = self::kit( $assets ); if ( ! $K ) { return null; } $F = $K['F']; $L = $assets['logos'] ?? array();
+		( $K['brand'] )( $s['meta'], array(), self::RED );
+		( $K['spaced'] )( $F['disp'], 15, 44, 124, $K['red'], strtoupper( $s['kicker'] ), 0.2 );
+		( $K['txt'] )( $F['hero'], 60, 44, 200, $K['ink'], 'WHO MOVED' ); ( $K['txt'] )( $F['hero'], 60, 44, 266, $K['red'], 'THE BALL' );
+		$rows = $s['rows']; $n = count( $rows ); $best = $rows[0]; $worst = $rows[ $n - 1 ];
+		foreach ( array( array( 'Best', $best ), array( 'Worst', $worst ) ) as $i => $tl ) {
+			list( $lab, $r ) = $tl; $x = 44 + $i * 272; $y = 330; $w = 256; $h = 200; $tc = DBD_Data::team( $r[0] ) ?: array();
+			( $K['box'] )( $x, $y, $w, $h ); ( $K['rect'] )( $x, $y, $w, 5, ( $K['col'] )( $tc['c1'] ?? '#121417' ) );
+			( $K['spaced'] )( $F['disp'], 13, $x + 16, $y + 34, $K['muted'], strtoupper( $lab ), 0.2 );
+			( $K['mark'] )( $x + 16, $y + 48, 32, $r[0], $L[ $r[0] ] ?? null );
+			( $K['txt'] )( $F['disp'], ( $K['fit'] )( $F['disp'], 26, strtoupper( $tc['nick'] ?? $r[0] ), $w - 76 ), $x + 56, $y + 74, $K['ink'], strtoupper( $tc['nick'] ?? $r[0] ) );
+			( $K['txt'] )( $F['hero'], 46, $x + 16, $y + 136, ( $K['col'] )( DBD_Marks::accent( $tc ?: null, self::PANEL ) ), self::sgn( $r[1] ) );
+			$res = 'EPA a play · ' . $r[2] . '-' . $r[3] . ' ' . ( $r[2] > $r[3] ? 'over' : ( $r[2] < $r[3] ? 'to' : 'with' ) ) . ' the ' . self::nick( $r[4] );
+			foreach ( array_slice( ( $K['wrap'] )( $F['mono'], 13, $res, $w - 32 ), 0, 2 ) as $j => $l ) { ( $K['txt'] )( $F['mono'], 13, $x + 16, $y + 164 + $j * 18, $K['muted'], $l ); }
+		}
+		( $K['spaced'] )( $F['disp'], 14, 600, 119, $K['muted'], 'EPA A PLAY · EVERY OFFENSE THAT PLAYED', 0.18 );
+		$top = 134; $rh = min( 18, 430 / $n ); $zx = 900; $hi = 0; foreach ( $rows as $r ) { $hi = max( $hi, abs( $r[1] ) ); } $sc = $hi > 0 ? 190 / $hi : 0;
+		$pos = ( $K['col'] )( '#9fb8a6' ); $neg = ( $K['col'] )( '#d7a9a4' ); $fs = $rh >= 16 ? 13 : 11;
+		foreach ( $rows as $i => $r ) {
+			$y = $top + $i * $rh; $w = abs( $r[1] ) * $sc; $edge = $i === 0 || $i === $n - 1; $up = $r[1] >= 0;
+			$fill = $edge ? ( $K['col'] )( DBD_Data::team( $r[0] )['c1'] ?? '#121417' ) : ( $up ? $pos : $neg );
+			( $K['rect'] )( $up ? $zx : $zx - $w, $y + 2, max( 1, $w ), $rh - 4, $fill );
+			$lc = $edge ? $K['ink'] : $K['ink2']; $ty = $y + $rh - 4;
+			( $K['txt'] )( $edge ? $F['mono2'] : $F['mono'], $fs, $up ? $zx - 8 : $zx + 8, $ty, $lc, $r[0], $up ? 'right' : 'left' );
+			( $K['txt'] )( $edge ? $F['mono2'] : $F['mono'], $fs, $up ? $zx + $w + 6 : $zx - $w - 6, $ty, $edge ? $K['ink'] : $K['muted'], self::sgn( $r[1] ), $up ? 'left' : 'right' );
+		}
+		( $K['rect'] )( $zx, $top - 4, 1, $n * $rh + 8, $K['ink'] );
+		( $K['foot'] )( 'Data: nflverse · expected points added a play' );
+		return ( $K['finish'] )();
+	}
+
+	private static function sgn( $v ) { return ( $v < 0 ? '-' : '+' ) . number_format( abs( (float) $v ), 2 ); }
 }

@@ -7,6 +7,7 @@
  *   Site            photos and logos, addresses, the home description, notes for the theme
  *   Data            the current data and Sync now, the sync log, seasons, share cards, the data source and GitHub push
  *   Growth          visits by source, Google search, titles to tune, landing pages, email (2.25.0, SCOPE §65; assets/growth.js)
+ *   Share pack      five things to post each week, with their cards and texts (2.27.0, SCOPE §68; assets/pack.js)
  * Each box that saves is its own form (its own settings group), so saving one tab never touches another's settings.
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
@@ -20,6 +21,7 @@ function dbd_admin_tabs() {
 		'st' => array( 'down-by-down-site', 'Site' ),
 		'dt' => array( 'down-by-down-data', 'Data' ),
 		'gr' => array( 'down-by-down-growth', 'Growth' ),
+		'sp' => array( 'down-by-down-share', 'Share pack' ),
 	);
 }
 function dbd_admin_url( $tab = 'ov', $args = array(), $hash = '' ) {
@@ -46,6 +48,11 @@ add_action( 'admin_enqueue_scripts', function () {
 	if ( $page !== 'down-by-down' && $page !== 'down-by-down-growth' ) { return; }
 	wp_enqueue_script( 'dbd-growth', DBD_URL . 'assets/growth.js', array(), DBD_VERSION, true );
 	wp_add_inline_script( 'dbd-growth', 'window.DBD_GROWTH=' . wp_json_encode( DBD_Growth::js_config() ) . ';', 'before' );
+} );
+/* the Share pack's copy buttons (SCOPE §68) */
+add_action( 'admin_enqueue_scripts', function () {
+	if ( sanitize_key( (string) ( $_GET['page'] ?? '' ) ) !== 'down-by-down-share' ) { return; }
+	wp_enqueue_script( 'dbd-pack', DBD_URL . 'assets/pack.js', array(), DBD_VERSION, true );
 } );
 
 add_action( 'admin_init', function () {
@@ -256,6 +263,26 @@ function dbd_settings_page() {
 		.dbd-admin .g-t td.pg small{display:block;color:#646970;font-size:12px;overflow:hidden;text-overflow:ellipsis}
 		.dbd-admin .g-wait{color:#646970}
 		@media (max-width:782px){.dbd-admin .dbd-grid{grid-template-columns:minmax(0,1fr)}.dbd-admin .dbd-rows td:first-child{width:110px}.dbd-admin .g-t th,.dbd-admin .g-t td{padding-left:10px;padding-right:10px}.dbd-admin .hide-sm{display:none}}
+		/* the Share pack (SCOPE §68) */
+		.dbd-admin .sp-head{max-width:1180px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin:0 0 16px}.dbd-admin .sp-head form{margin:0}.dbd-admin .sp-head p{margin:0;color:#50575e;flex:1;min-width:260px}
+		.dbd-admin .sp-item{max-width:1180px}
+		.dbd-admin .sp-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;padding:16px}
+		.dbd-admin .sp-card img{display:block;width:100%;height:auto;aspect-ratio:1200/630;border:1px solid #dcdcde;background:#f4f1ea}
+		.dbd-admin .sp-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+		.dbd-admin .sp-fits{margin:8px 0 0;color:#50575e}
+		.dbd-admin .sp-f{margin:0 0 14px}
+		.dbd-admin .sp-fh{display:flex;align-items:center;gap:10px;margin-bottom:4px}.dbd-admin .sp-fh b{flex:1}.dbd-admin .sp-fh .cnt{color:#646970;font-size:12px}.dbd-admin .sp-fh .cnt.over{color:#b32d2e}
+		.dbd-admin .sp-f textarea{width:100%;box-sizing:border-box;padding:6px 8px;font-size:13px;line-height:1.5;resize:vertical;field-sizing:content;min-height:3.2em}
+		.dbd-admin .sp-cp.ok{border-color:#00a32a;color:#007017}
+		.dbd-admin .sp-keys{padding:0 16px}
+		.dbd-admin .sp-g{display:grid;grid-template-columns:260px minmax(0,1fr);gap:20px;padding:16px 0;border-top:1px solid #f0f0f1}.dbd-admin .sp-g:first-child{border-top:0}
+		.dbd-admin .sp-gc img{display:block;width:100%;height:auto;aspect-ratio:1200/630;border:1px solid #dcdcde;background:#f4f1ea;margin-bottom:8px}
+		.dbd-admin .sp-gs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-content:start}.dbd-admin .sp-gt{grid-column:1/-1;font-size:14px}
+		.dbd-admin .sp-kh{display:flex;align-items:center;gap:6px}.dbd-admin .sp-kh span{margin-left:auto;color:#646970}
+		.dbd-admin .sp-k p{margin:6px 0 8px;line-height:1.5}
+		.dbd-admin .sp-kb{display:flex;flex-wrap:wrap;gap:6px}.dbd-admin .sp-kb .button{font-size:12px;min-height:26px;line-height:24px}
+		@media (max-width:1000px){.dbd-admin .sp-body,.dbd-admin .sp-g{grid-template-columns:minmax(0,1fr)}.dbd-admin .sp-gc img{max-width:360px}}
+		@media (max-width:640px){.dbd-admin .sp-gs{grid-template-columns:minmax(0,1fr)}.dbd-admin .sp-body{padding:12px}.dbd-admin .sp-keys{padding:0 12px}}
 		</style>
 		<h1>Down by Down</h1>
 		<p class="dbd-lede"><?php echo esc_html( 'Season ' . ( $m['season'] ?? '–' ) . ( isset( $m['week'] ) ? ' · Week ' . $m['week'] : '' ) . ( DBD_Data::updated_text() ? ' · data ' . lcfirst( DBD_Data::updated_text() ) : '' ) . ' · version ' . DBD_VERSION ); ?></p>
@@ -272,6 +299,7 @@ function dbd_settings_page() {
 			case 'st': dbd_tab_site(); break;
 			case 'dt': dbd_tab_data(); break;
 			case 'gr': dbd_tab_growth(); break;
+			case 'sp': dbd_tab_share(); break;
 			default:   dbd_tab_overview();
 		}
 		?>
@@ -399,6 +427,58 @@ function dbd_tab_growth() {
 		</tbody></table>
 		<div class="dbd-foot"><?php echo $a( 'analytics', 'Open in Analytics' ) . $a( 'sitekit', 'Open Site Kit' ); ?></div></div>
 	<?php
+}
+
+/* ------------------------------------------------------------------ Share pack (2.27.0, SCOPE §68) */
+
+/** One text with its Copy button; X and Bluesky shows its length against 280. */
+function dbd_pack_field( $lab, $text, $count = false ) {
+	$n = $count ? DBD_Pack::xlen( $text ) : 0;
+	return '<div class="sp-f"><div class="sp-fh"><b>' . esc_html( $lab ) . '</b>' . ( $count ? '<span class="cnt' . ( $n > DBD_Pack::X_MAX ? ' over' : '' ) . '">' . (int) $n . ' of ' . DBD_Pack::X_MAX . '</span>' : '' )
+		. '<button type="button" class="button sp-cp">Copy</button></div><textarea readonly rows="2" class="large-text">' . esc_textarea( $text ) . '</textarea></div>';
+}
+
+function dbd_tab_share() {
+	$weeks = DBD_Pack::weeks();
+	if ( ! $weeks ) { echo '<div class="dbd-box"><h2>Share pack</h2><p class="dbd-in" style="padding:12px 16px;margin:0">The pack starts after Week 1’s games are all in.</p></div>'; return; }
+	$want = (int) ( $_GET['week'] ?? 0 ); $n = in_array( $want, $weeks, true ) ? $want : $weeks[0];
+	$items = DBD_Pack::items( $n ); $keys = DBD_Pack::keys( $n );
+	$tue = DBD_Post::tuesday( $n );
+	?>
+	<div class="sp-head">
+		<form method="get" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>"><input type="hidden" name="page" value="down-by-down-share">
+			<select name="week" aria-label="Week" onchange="this.form.submit()"><?php foreach ( $weeks as $w ) { echo '<option value="' . (int) $w . '"' . ( $w === $n ? ' selected' : '' ) . '>Week ' . (int) $w . '</option>'; } ?></select>
+			<noscript><button class="button">Show</button></noscript></form>
+		<p><?php echo esc_html( 'Week ' . $n . ' pack' . ( $tue ? ', for ' . wp_date( 'l, M j', $tue ) : '' ) . '. Post two or three a week by hand: the image first, and the link in a comment where a subreddit asks for that. Visits from reddit.com, x.com and bsky.app show on the Growth tab.' ); ?></p>
+	</div>
+	<?php
+	$i = 0;
+	foreach ( $items as $it ) {
+		$i++; $img = DBD_Card::url( $it['card'] );
+		echo '<div class="dbd-box sp-item" data-k="' . esc_attr( $it['k'] ) . '"><h2><span>' . (int) $i . '. ' . esc_html( $it['h'] ) . '</span><small>' . esc_html( $it['why'] ) . '</small></h2><div class="sp-body">'
+			. '<div class="sp-l"><div class="sp-card"><img src="' . esc_url( $img ) . '" width="1200" height="630" alt="" loading="lazy"></div>'
+			. '<div class="sp-acts"><a class="button button-primary" href="' . esc_url( $img ) . '" download="' . esc_attr( $it['file'] ) . '">Download image</a><a class="button" href="' . esc_url( $it['link'] ) . '" target="_blank" rel="noopener">Open the page</a></div>'
+			. '<p class="sp-fits">Fits: ' . esc_html( implode( ' · ', $it['fits'] ) ) . '</p></div>'
+			. '<div class="sp-r">' . dbd_pack_field( 'Reddit title', $it['title'] ) . dbd_pack_field( 'Reddit comment, with the link', $it['comment'] ) . dbd_pack_field( 'X and Bluesky', $it['post'], true ) . '</div></div></div>';
+	}
+	if ( $keys ) {
+		$i++;
+		echo '<div class="dbd-box sp-item" data-k="keys"><h2><span>' . (int) $i . '. Keys to the game, Week ' . (int) ( $n + 1 ) . '</span><small>Each team’s biggest edge against its next opponent, for its own subreddit. The image is the game’s card, which shows both sides.</small></h2><div class="sp-keys">';
+		foreach ( $keys as $kg ) {
+			$g = $kg['g']; $img = DBD_Card::url( $kg['card'] ); $nk = function ( $t ) { return DBD_Data::team( $t )['nick'] ?? $t; };
+			echo '<div class="sp-g"><div class="sp-gc"><img src="' . esc_url( $img ) . '" width="1200" height="630" alt="" loading="lazy"><a class="button" href="' . esc_url( $img ) . '" download="' . esc_attr( $kg['file'] ) . '">Download</a></div>'
+				. '<div class="sp-gs"><b class="sp-gt"><a href="' . esc_url( $kg['link'] ) . '" target="_blank" rel="noopener">' . esc_html( $nk( $g['away'] ) . ' at ' . $nk( $g['home'] ) ) . '</a></b>';
+			foreach ( $kg['sides'] as $sd ) {
+				echo '<div class="sp-k"><div class="sp-kh">' . DBD_Marks::tile_svg( $sd['t'], 22 ) . '<b>' . esc_html( $nk( $sd['t'] ) . ' offense' ) . '</b><span>' . esc_html( $sd['fits'] ) . '</span></div>'
+					. '<p><b>' . esc_html( rtrim( $sd['head'], '.' ) ) . '.</b> ' . esc_html( $sd['say'] ) . '</p><div class="sp-kb">'
+					. '<button type="button" class="button sp-cp" data-t="' . esc_attr( $sd['title'] ) . '">Copy title</button>'
+					. '<button type="button" class="button sp-cp" data-t="' . esc_attr( $sd['comment'] ) . '">Copy comment</button>'
+					. '<button type="button" class="button sp-cp" data-t="' . esc_attr( $sd['post'] ) . '">Copy for X and Bluesky</button></div></div>';
+			}
+			echo '</div></div>';
+		}
+		echo '</div></div>';
+	}
 }
 
 /* ------------------------------------------------------------------ Week in review */
