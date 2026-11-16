@@ -1,0 +1,106 @@
+{
+ "2026_11_IND_HOU:IND": [
+  "Run it at them",
+  "Colts' run game is 6th in EPA per carry (+0.01). Texans allow -0.06 (20th)."
+ ],
+ "2026_11_IND_HOU:HOU": [
+  "Wideouts feast",
+  "Colts give up 149 yards a game to wide receivers (16th), against a league average of 148. Texans' wide receivers produce 196 (4th)."
+ ],
+ "2026_11_MIA_BUF:MIA": [
+  "Backs catch passes",
+  "Bills give up 44 yards a game to running backs (30th), against a league average of 33. Dolphins' running backs produce 23 (26th)."
+ ],
+ "2026_11_MIA_BUF:BUF": [
+  "Throw it",
+  "Bills gain +0.20 EPA per dropback (5th). Dolphins allow +0.18 (28th)."
+ ],
+ "2026_11_BAL_CAR:BAL": [
+  "Red zone touchdowns",
+  "Ravens score a touchdown on 59% of red zone trips (16th). Panthers allow 77% (31st)."
+ ],
+ "2026_11_BAL_CAR:CAR": [
+  "Wideouts feast",
+  "Ravens give up 172 yards a game to wide receivers (28th), against a league average of 148. Panthers' wide receivers produce 159 (11th)."
+ ],
+ "2026_11_NO_CHI:NO": [
+  "Backs catch passes",
+  "Bears give up 39 yards a game to running backs (24th), against a league average of 33. Saints' running backs produce 32 (15th)."
+ ],
+ "2026_11_NO_CHI:CHI": [
+  "Third downs favor Bears",
+  "Bears convert 45% of third downs (5th). Saints allow 48% (30th)."
+ ],
+ "2026_11_TEN_DAL:TEN": [
+  "Ground game edge",
+  "Titans average 4.2 yards per carry (13th). Cowboys allow 5.2 (32nd)."
+ ],
+ "2026_11_TEN_DAL:DAL": [
+  "Wideouts feast",
+  "Titans give up 206 yards a game to wide receivers (32nd), against a league average of 148. Cowboys' wide receivers produce 222 (2nd)."
+ ],
+ "2026_11_TB_DET:TB": [
+  "Ground game edge",
+  "Buccaneers average 5.0 yards per carry (3rd). Lions allow 3.8 (10th)."
+ ],
+ "2026_11_TB_DET:DET": [
+  "Clean pockets",
+  "Lions take a sack on 6% of dropbacks (15th). Buccaneers get home on 5% (26th). League average is 7%."
+ ],
+ "2026_11_ARI_KC:ARI": [
+  "Tight ends feast",
+  "Chiefs give up 9.1 targets a game to tight ends (30th), against a league average of 7.5. Cardinals' tight ends produce 12.6 (2nd)."
+ ],
+ "2026_11_ARI_KC:KC": [
+  "Throw it",
+  "Chiefs gain +0.17 EPA per dropback (6th). Cardinals allow +0.26 (32nd)."
+ ],
+ "2026_11_JAX_NYG:JAX": [
+  "Red zone touchdowns",
+  "Jaguars score a touchdown on 64% of red zone trips (12th). Giants allow 85% (32nd)."
+ ],
+ "2026_11_JAX_NYG:NYG": [
+  "Wideouts feast",
+  "Jaguars give up 170 yards a game to wide receivers (27th), against a league average of 148. Giants' wide receivers produce 143 (15th)."
+ ],
+ "2026_11_NYJ_LAC:NYJ": [
+  "Ground game edge",
+  "Jets average 4.2 yards per carry (11th). Chargers allow 4.3 (23rd)."
+ ],
+ "2026_11_NYJ_LAC:LAC": [
+  "Tight ends feast",
+  "Jets give up 63 yards a game to tight ends (26th), against a league average of 54. Chargers' tight ends produce 47 (22nd)."
+ ],
+ "2026_11_LV_DEN:LV": [
+  "Tight ends feast",
+  "Broncos give up 9.8 targets a game to tight ends (31st), against a league average of 7.5. Raiders' tight ends produce 12.6 (1st)."
+ ],
+ "2026_11_LV_DEN:DEN": [
+  "Red zone touchdowns",
+  "Broncos score a touchdown on 65% of red zone trips (11th). Raiders allow 70% (28th)."
+ ],
+ "2026_11_PIT_PHI:PIT": [
+  "Run it at them",
+  "Steelers' run game is 1st in EPA per carry (+0.11). Eagles allow +0.00 (30th)."
+ ],
+ "2026_11_PIT_PHI:PHI": [
+  "Red zone touchdowns",
+  "Eagles score a touchdown on 73% of red zone trips (3rd). Steelers allow 50% (7th)."
+ ],
+ "2026_11_MIN_SF:MIN": [
+  "Tight ends feast",
+  "49ers give up 55 yards a game to tight ends (22nd), against a league average of 54. Vikings' tight ends produce 56 (15th)."
+ ],
+ "2026_11_MIN_SF:SF": [
+  "Ground game edge",
+  "49ers average 4.8 yards per carry (6th). Vikings allow 4.2 (21st)."
+ ],
+ "2026_11_CIN_WAS:CIN": [
+  "Red zone touchdowns",
+  "Bengals score a touchdown on 73% of red zone trips (2nd). Commanders allow 72% (29th)."
+ ],
+ "2026_11_CIN_WAS:WAS": [
+  "Run it at them",
+  "Commanders' run game is 21st in EPA per carry (-0.13). Bengals allow -0.03 (27th)."
+ ]
+}
