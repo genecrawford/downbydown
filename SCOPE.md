@@ -2916,3 +2916,41 @@ Gene, on the live combine board: put the next-board block and the signup side by
 - **The plugin's signup (2.26.1):** the strip becomes a dark box built like the next-board block: a small red line ("The email: every Tuesday", or "the week they land" from February 15 to April 30), the big headline, the sentence, then the field and button on one line. The form's label is hidden from sight but kept for screen readers, and the field says "Your email". The red bar runs along the bottom.
 - **On the draft and combine boards:** the next-board block and the signup sit side by side, the same height, and stack below 860px. Alone everywhere else (game, player and kicker pages).
 - **Gene's Divi newsletter section** (the home page and under each weekly post, `divi/home-newsletter.html`): the same dark look, the field and button on one line, the email preview on the right unchanged. Claude sends the full updated code for its Code module; Gene pastes it.
+
+## 68. The share pack: five things to post each week (scoped and mocked 2026-11-16, `mockup-v43/`)
+
+Plan 2 of §64. Gene asked to scope it after 2.26.1. The goal is visits from the places fans already talk (team subreddits, r/nfl, r/fantasyfootball, X, Bluesky), earned by posting one useful chart and a plain takeaway, not a bare link. Gene posts by hand; nothing posts by itself.
+
+**Where it lives:** a new Share pack tab in the Down by Down admin (the seventh, after Growth), its own submenu page like the others. Plugin 2.27.0.
+
+**When it fills:** from the newest finished week (the week file with `complete` and its movers), the moment the sync brings in the last game, so it's ready Tuesday morning. A week picker shows earlier weeks of the season. Before Week 1 the tab says the pack starts after Week 1's games. Nothing is stored: the tab reads the week file each time it opens.
+
+**The five items**, each with an image, three texts and buttons:
+1. **The biggest swing.** The week's largest one-play change in win probability (`swings[0]`, the same one the weekly post uses). Image: the game's card, which already draws the win-probability line with the swing marked.
+2. **A usage riser.** The biggest jump in snap share against his own earlier games (`movers.snaps.up`), quarterbacks left out (a new starter is the debut list's story). Image: a new card (below).
+3. **Best and worst offense.** Every offense that played, by EPA a play for the week (`teams`). Image: a new card (below).
+4. **A target-share mover.** The biggest jump in share of the team's targets (`movers.targets.up`), skipping the usage riser if he's the same player. Image: the riser card in its target-share version.
+5. **Keys to the game, next week.** For every team playing next week, its offense's Biggest edge read against that opponent (`DBD_Takeaways::cards()`, the first card), for its own subreddit. Image: the game's preview card, which already shows both sides. Teams on a bye are left out; in the playoffs it follows the next round once it's scheduled.
+
+An item whose data is missing (no swing, no mover) is left out, and the rest keep their numbers.
+
+**The texts for each item:**
+- **Reddit title:** the takeaway as one plain sentence, no link.
+- **Reddit comment, with the link:** one line of context (the play, or what the page shows) and the page link, for subreddits that want the link in a comment.
+- **X and Bluesky:** the takeaway and the link, with a count against 280 (a link counts as 23 on X). If it runs over, the result clause is dropped.
+- **Copy** buttons on each; **Download image** (the card, saved with a file name like `dbd-week-9-swing-den-car.png`); **Open the page**.
+- **Fits:** a hint of where it suits (r/nfl, r/fantasyfootball, the teams' subreddits), from a stored map of the 32 team subreddits.
+- The writing follows the weekly post's rules: plain sentences, numbers from the data, no hype, hashtags or emoji. A play description loses its bracketed notes and any sentence nflverse cut off with an ellipsis.
+- Links stay clean, with no tracking tags. Reddit readers distrust them, and the Growth tab already shows visits from reddit.com, x.com and bsky.app and the pages they landed on.
+
+**Two new cards** (`DBD_Card`, drawn with the same kit and fonts as the others, 1200 × 630, served through `?card=` and cached and pruned the same way):
+- **The riser card** (`pack-{season}-{week}-snaps` or `-targets`): the player's name, the share this week in his team's color, the sentence ("of the Giants' snaps against the Eagles, up from 33% in his 4 earlier games"), and a bar chart of that share game by game, this week's bar in team color, a dash where he didn't play, a dashed line at his earlier average.
+- **The offense card** (`pack-{season}-{week}-offense`): "Who moved the ball", the best and worst offenses as two tiles (team, EPA a play, the score), and every offense that played as a bar from zero, best and worst in their team colors, the rest in quiet green and red.
+
+**Not in this release:** posting for Gene, a log of what was posted, and tracking tags on the links.
+
+**Tests:** a harness mode `pack` renders the tab in CI from a fixture week (all five items, the X count under 280, a missing mover leaves its item out), and the card harness draws both new cards.
+
+**Gene's part:** post two or three items a week by hand, image first. Follow each subreddit's self-promotion rule (contribute far more than you link). Use the same images on X and Bluesky, tagging the beat writers or analysts the chart is about.
+
+**Measure:** visits from reddit.com, x.com and bsky.app on the Growth tab, and which landing pages they reached, so the pack can lean toward what gets shared.
