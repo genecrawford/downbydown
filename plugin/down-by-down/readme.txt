@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.25.0
+Stable tag: 2.26.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,11 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.26.0 =
+* More signups (SCOPE §66): the Tuesday email's signup strip at the end of game, player and kicker pages and the draft and combine boards, with a line that follows the calendar (the combine and draft boards from February 15 to April 30). Someone who confirmed on the device sees "You're on the list". Sending a signup form tells Analytics (generate_lead), and the Growth tab counts the forms sent.
+* Board emails: the Tuesday after a new combine's results or draft board settles, the list gets a short email with the board's card, its headline numbers, the top ten and a button to the board. On by default, with a switch, tests and Try again on the Week in review tab. The boards already on the site are never emailed.
+* Every Tuesday email: the swing game's win-probability card under "The swing and the play" (in the weekly post too, for posts written from now on), and a forward line with a link to the signup form.
 
 = 2.25.0 =
 * Measurement (SCOPE §65): a Growth tab in the admin (visits by source, Google search, titles to tune, top landing pages, email) and a Growth box on the Overview. Analytics and Search Console numbers are read in the browser through Site Kit; email numbers come from Brevo, with the list's size saved once a day.

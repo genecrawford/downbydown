@@ -163,4 +163,4 @@ if ( $CR ) {
 		. '<p class="dbd-cr-say">' . $say . '</p><div class="dbd-tw"><table class="dbd-stat"><thead><tr><th>Season</th><th>G</th><th>FG</th><th>%</th><th>Long</th><th>50+</th><th>XP</th></tr></thead><tbody>' . $rows . '</tbody></table></div></section></section>';
 }
 $kr = DBD_Data::player_record( $a, $row['id'] );  /* the Related panel, as on every player page (SCOPE §64; Greptile, PR #117) */
-echo DBD_Seo::related_panel( $a, 'K', $kr['bf'] ?? null ) . '</main>';
+echo DBD_Seo::related_panel( $a, 'K', $kr['bf'] ?? null ) . DBD_Signup::strip( 'kicker' ) . '</main>';

@@ -45,4 +45,4 @@ foreach ( $rows as $x ) {
 }
 echo '</tbody></table></div><p class="dbd-note">Results from nflverse\'s combine data (Pro Football Reference). Shading compares each result with every player at the same position at the combine since 2000: faster is better on the 40, 3-cone and shuttle, more is better on the rest. The score averages those percentiles over the drills he ran (two at least). Pro day results aren\'t included.</p></section>';
 echo DBD_Boards::next_link( 'combine', $Y );  /* the draft, big and obvious (2.23.1) */
-echo '</main>';
+echo DBD_Signup::strip( 'combine' ) . '</main>';  /* the signup strip, last (SCOPE §66) */

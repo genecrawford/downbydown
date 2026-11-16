@@ -115,6 +115,7 @@ class DBD_Post {
 	private static function write_locked( $n, $W, $backfill ) {
 		$known = isset( self::map()[ (int) $n ] ); $p = self::post_for( $n );
 		if ( $known && ( ! $p || $p->post_status === 'trash' ) ) { return 'deleted'; }
+		self::swing_card( $n, $W );  /* drawn before the words, so the post can show it (SCOPE §66) */
 		$doc = self::compose( $n, $W, ! $backfill ); if ( ! $doc ) { return 'not ready'; }
 		if ( $p ) {
 			if ( ! in_array( $p->post_status, array( 'future', 'draft' ), true ) || self::edited( $p ) ) { return 'kept'; }
@@ -175,6 +176,27 @@ class DBD_Post {
 	private static function author() {
 		$u = get_users( array( 'role' => 'administrator', 'orderby' => 'ID', 'order' => 'ASC', 'number' => 1, 'fields' => 'ID' ) );
 		return $u ? (int) $u[0] : 1;
+	}
+
+	/**
+	 * Where week n's swing card lives (SCOPE §66): array( path, URL ) under uploads, beside the share-card cache but never pruned with it,
+	 * since a published post keeps pointing at it. The game is in the name, so a later swing in a refreshed post draws its own.
+	 */
+	public static function swing_file( $n, $gid ) {
+		$gid = preg_replace( '/[^A-Za-z0-9_]/', '', (string) $gid ); if ( $gid === '' ) { return array( '', '' ); }
+		$up = wp_upload_dir(); $f = 'down-by-down/swing/' . (int) DBD_Data::season() . '-w' . (int) $n . '-' . $gid . '.png';
+		return array( trailingslashit( $up['basedir'] ) . $f, trailingslashit( $up['baseurl'] ) . $f );
+	}
+
+	/** Draw week n's swing card once, from the week's biggest swing. A failure leaves the post without it. */
+	private static function swing_card( $n, $W ) {
+		$gid = (string) ( $W['swings'][0]['g'] ?? '' ); if ( $gid === '' || ! DBD_Card::available() ) { return; }
+		list( $path ) = self::swing_file( $n, $gid ); if ( $path === '' || file_exists( $path ) ) { return; }
+		$fetch = function ( $url ) { $r = wp_remote_get( $url, array( 'timeout' => 5 ) ); return ( ! is_wp_error( $r ) && (int) wp_remote_retrieve_response_code( $r ) === 200 ) ? wp_remote_retrieve_body( $r ) : null; };
+		$im = DBD_Card::render( 'game-' . $gid, $fetch ); if ( ! $im ) { return; }
+		wp_mkdir_p( dirname( $path ) ); $tmp = $path . '.' . wp_generate_password( 8, false ) . '.tmp';
+		$ok = imagepng( $im, $tmp, 6 ); imagedestroy( $im );
+		if ( ! $ok || ! @rename( $tmp, $path ) ) { @unlink( $tmp ); }
 	}
 
 	/** The week's share card as the featured image, drawn straight to a file and added to the media library. */
@@ -303,6 +325,9 @@ class DBD_Post {
 			$ck = self::clock( $sw['c'] );
 			$ps .= '<p>' . ( $v ? 'The biggest swing of the week' : 'The week’s biggest swing' ) . ' came in the ' . esc_html( self::poss( self::nick( $t ) ) ) . ' game against the ' . esc_html( self::nick( $o ) ) . ( $ck !== '' ? ', ' . $ck : '' ) . ': ' . esc_html( self::clean( $sw['d'] ) )
 				. ' It moved the ' . esc_html( self::poss( self::nick( $t ) ) ) . ' chance of winning by ' . (int) round( (float) $sw['v'] ) . ' points' . $res . ' ' . self::a( array( 'game' => $sw['g'] ), 'Open the game' ) . '</p>';
+			/* the standout chart (SCOPE §66): the swing game's card, its win-probability line with the biggest swing marked, once it's drawn */
+			list( $sfp, $sfu ) = self::swing_file( $n, $sw['g'] );
+			if ( $sfp !== '' && file_exists( $sfp ) ) { $wn = $gw !== '' ? $gw : $t; $ps .= '<p class="swing"><a href="' . self::u( array( 'game' => $sw['g'] ) ) . '"><img src="' . esc_url( $sfu ) . '" width="1200" height="630" alt="' . esc_attr( 'The ' . self::poss( self::nick( $wn ) ) . ' win probability against the ' . self::nick( $wn === $g['away'] ? $g['home'] : $g['away'] ) . ', with the biggest swing marked' ) . '"></a></p>'; }
 		}
 		$tp = $W['plays'][0] ?? null;
 		if ( $tp ) {
@@ -434,7 +459,7 @@ class DBD_Post {
 		if ( is_feed() || ! in_the_loop() || ! is_main_query() || ! self::ours() ) { return $content; }
 		$sc = trim( (string) get_option( self::OPT_FORM, self::FORM ) );
 		if ( $sc === '' || ! preg_match( '/^\[([a-z0-9_-]+)/i', $sc, $m ) || ! shortcode_exists( $m[1] ) ) { return $content; }
-		return $content . '<div class="dbd-post-sign"><h3>Get this every Tuesday</h3><p>One email after every week. Free.</p>' . do_shortcode( $sc ) . '</div>';
+		return $content . '<div class="dbd-post-sign" id="dbd-sign"><h3>Get this every Tuesday</h3><p>One email after every week. Free.</p>' . do_shortcode( $sc ) . '</div>';
 	}
 
 	public static function assets() {
@@ -443,6 +468,7 @@ class DBD_Post {
 		if ( ! $p || ( strpos( (string) $p->post_content, 'dbd-post' ) === false && ! self::ours() ) ) { return; }
 		wp_enqueue_style( 'dbd-fonts', 'https://fonts.googleapis.com/css2?family=Tourney:wght@800&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap', array(), null );
 		wp_enqueue_style( 'dbd-post', DBD_URL . 'assets/post.css', array( 'dbd-fonts' ), DBD_VERSION );
+		DBD_Signup::enqueue();  /* counts the signup under the post, and remembers a confirmed signup (SCOPE §66) */
 	}
 
 	/** The weekly post's description and share tags: the opening as the description, the week card as the image. */

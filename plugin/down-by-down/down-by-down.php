@@ -3,7 +3,7 @@
  * Plugin Name: Down by Down
  * Plugin URI:  https://downbydown.com
  * Description: How every NFL offense actually plays, drawn on the field from public play-by-play. Put [down_by_down] on a page and that page becomes the app.
- * Version:     2.25.0
+ * Version:     2.26.0
  * Author:      Period Three
  * Author URI:  https://period-three.com
  * License:     GPL-2.0-or-later
@@ -14,7 +14,7 @@
 
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-define( 'DBD_VERSION', '2.25.0' );
+define( 'DBD_VERSION', '2.26.0' );
 define( 'DBD_FILE', __FILE__ );
 define( 'DBD_PATH', plugin_dir_path( __FILE__ ) );
 define( 'DBD_URL', plugin_dir_url( __FILE__ ) );
@@ -46,6 +46,8 @@ require_once DBD_PATH . 'includes/class-dbd-post.php';
 require_once DBD_PATH . 'includes/class-dbd-news.php';
 require_once DBD_PATH . 'includes/class-dbd-videos.php';
 require_once DBD_PATH . 'includes/class-dbd-email.php';
+require_once DBD_PATH . 'includes/class-dbd-signup.php';
+require_once DBD_PATH . 'includes/class-dbd-board-mail.php';
 require_once DBD_PATH . 'includes/class-dbd-growth.php';
 if ( is_admin() ) {
 	require_once DBD_PATH . 'includes/admin/settings.php';
@@ -62,6 +64,7 @@ register_deactivation_hook( __FILE__, function () {
 	DBD_News::unschedule();
 	wp_clear_scheduled_hook( DBD_Videos::HOOK_FIRST );
 	DBD_Growth::unschedule();
+	DBD_Board_Mail::unschedule();
 } );
 
 add_action( 'plugins_loaded', function () {
@@ -74,4 +77,5 @@ add_action( 'plugins_loaded', function () {
 	DBD_Videos::init();
 	DBD_Email::init();
 	DBD_Growth::init();
+	DBD_Board_Mail::init();
 } );

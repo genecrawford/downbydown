@@ -40,6 +40,7 @@ class DBD_Email {
 			'on' => false, 'key' => '', 'list' => 0, 'tpl' => 0,
 			'from_name' => 'Down by Down', 'from_email' => 'week@downbydown.com', 'reply' => 'week@downbydown.com',
 			'address' => '808 Lady Street, Suite D, Columbia, SC 29201', 'form' => 63, 'test' => '',
+			'boards' => true,  /* the combine and draft board emails (SCOPE §66) */
 		);
 	}
 	public static function opts() { $o = get_option( self::OPT, array() ); return array_merge( self::defaults(), is_array( $o ) ? $o : array() ); }
@@ -222,8 +223,12 @@ class DBD_Email {
 	}
 
 	private static function log( $p, $result, $camp = 0, $n = 0 ) {
+		self::log_row( html_entity_decode( $p->post_title, ENT_QUOTES, 'UTF-8' ), $result, $camp, $n, (int) $p->ID );
+	}
+	/** A send log row: a week post's ($post) or a board email's ($board, "combine-2027"; SCOPE §66). */
+	public static function log_row( $title, $result, $camp = 0, $n = 0, $post = 0, $board = '' ) {
 		$l = get_option( self::OPT_LOG, array() ); $l = is_array( $l ) ? $l : array();
-		array_unshift( $l, array( 'at' => time(), 'post' => (int) $p->ID, 'title' => html_entity_decode( $p->post_title, ENT_QUOTES, 'UTF-8' ), 'result' => $result, 'camp' => (int) $camp, 'n' => (int) $n ) );
+		array_unshift( $l, array( 'at' => time(), 'post' => (int) $post, 'title' => (string) $title, 'result' => $result, 'camp' => (int) $camp, 'n' => (int) $n, 'board' => (string) $board ) );
 		update_option( self::OPT_LOG, array_slice( $l, 0, 30 ), false );
 	}
 
@@ -314,6 +319,10 @@ class DBD_Email {
 		$c = (string) preg_replace_callback( '#<p class="next">(.*?)</p>#s', function ( $m ) use ( $INK, $SANS ) {
 			return '<p' . self::s( "margin:0 0 8px;font:700 17px/1.4 $SANS;color:$INK" ) . '>' . preg_replace( '#<img[^>]*src="([^"]*)"[^>]*>#', '<img src="$1" width="26" height="26" alt=""' . self::s( 'vertical-align:-7px;margin:0 6px;border:0' ) . '>', $m[1] ) . '</p>';
 		}, $c );
+		/* the standout chart (SCOPE §66): the swing card, full width in the email (544 = 600 less the padding) */
+		$c = (string) preg_replace_callback( '#<p class="swing"><a href="([^"]+)"><img src="([^"]+)"[^>]*?alt="([^"]*)"[^>]*></a></p>#', function ( $m ) use ( $LINE ) {
+			return '<p' . self::s( 'margin:4px 0 18px' ) . '><a href="' . $m[1] . '"><img src="' . $m[2] . '" width="544" alt="' . $m[3] . '"' . self::s( "display:block;width:100%;height:auto;border:1px solid $LINE" ) . '></a></p>';
+		}, $c );
 		$c = (string) preg_replace( '#<p class="cta">#', '<p' . self::s( "margin:0 0 6px;font:600 14px/1.5 $SANS" ) . '>', $c );
 		$c = (string) preg_replace( '#<h2[^>]*>#', '<h2' . self::s( "margin:26px 0 10px;padding-top:14px;border-top:2px solid $INK;font:700 19px/1.2 " . self::COND . ";letter-spacing:.05em;text-transform:uppercase;color:$INK" ) . '>', $c );
 		$c = (string) preg_replace( '#<h3[^>]*>#', '<h3' . self::s( "margin:20px 0 8px;font:700 16px/1.3 $SANS;color:$INK" ) . '>', $c );
@@ -329,13 +338,34 @@ class DBD_Email {
 
 	/** The whole email. $n is the week, $card the share card, $date the day it goes. Returns array( subject, pre, html ). */
 	public static function compose( $title, $content, $link, $card, $date, $n, $o = null, $hl = array() ) {
-		$o = $o ?: self::opts(); $INK = self::INK; $MUT = self::MUT; $SANS = self::SANS; $e = 'esc_html';
+		$INK = self::INK; $e = 'esc_html';
 		$week = ''; $body = self::body( (string) $content, (int) $n, $week, (array) $hl );
 		$week = $week !== '' ? $week : DBD_Router::url( array( 'view' => 'week', 'week' => (int) $n ) );
 		$open = preg_match( '#<p class="open">(.*?)</p>#s', (string) $content, $m ) ? trim( html_entity_decode( wp_strip_all_tags( $m[1] ), ENT_QUOTES, 'UTF-8' ) ) : '';
 		$pre = preg_match( '/^(.+?[.!?])(\s|$)/u', $open, $m ) ? $m[1] : $open;
 		$wk = DBD_Router::week_label( (int) $n );
-		$html = '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="x-apple-disable-message-reformatting">'
+		$top = $card !== '' ? '<tr><td' . self::s( 'padding:0' ) . '><a href="' . esc_url( $link ) . '"><img src="' . esc_url( $card ) . '" width="600" alt="' . esc_attr( $title ) . '"' . self::s( 'display:block;width:100%;height:auto;border:0' ) . '></a></td></tr>' : '';
+		$inner = '<h1 class="dxh"' . self::s( "margin:0 0 16px;font:900 26px/1.15 " . self::HEAVY . ";text-transform:uppercase;color:$INK" ) . '>' . $e( $title ) . '</h1>'
+			. $body . self::button( $week, 'Every play from ' . $wk ) . self::forward( $link . '#dbd-sign' );
+		return array( 'subject' => $title, 'pre' => $pre, 'html' => self::frame( $title, $pre, $date, $top, $inner, $link, $o ) );
+	}
+
+	/** The email's main button. */
+	public static function button( $url, $text ) {
+		return '<table role="presentation" cellpadding="0" cellspacing="0"' . self::s( 'margin:22px 0 18px' ) . '><tr><td' . self::s( 'background:' . self::RED . ';border-radius:4px' ) . '>'
+			. '<a href="' . esc_url( $url ) . '"' . self::s( 'display:inline-block;padding:13px 22px;font:700 15px/1 ' . self::SANS . ';color:#ffffff;text-decoration:none' ) . '>' . esc_html( $text ) . '</a></td></tr></table>';
+	}
+
+	/** "Know someone who'd like this?" (SCOPE §66), linking to a signup form on the site. */
+	public static function forward( $url ) {
+		return '<p' . self::s( 'margin:0 0 26px;padding:14px 16px;background:#f4f1ea;border:1px solid ' . self::LINE . ';font:15px/1.5 ' . self::SANS . ';color:' . self::INK ) . '><b>Know someone who’d like this?</b> Forward it. They can sign up at '
+			. '<a href="' . esc_url( $url ) . '"' . self::s( 'color:' . self::REDINK . ';font-weight:600;text-decoration:underline' ) . '>downbydown.com</a>.</p>';
+	}
+
+	/** The email around its content: the header, an optional top image row, the content cell and the footer. $link is "View in browser". */
+	public static function frame( $title, $pre, $date, $top, $inner, $link, $o = null ) {
+		$o = $o ?: self::opts(); $MUT = self::MUT; $SANS = self::SANS; $e = 'esc_html';
+		return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="x-apple-disable-message-reformatting">'
 			. '<title>' . $e( $title ) . '</title><style>@media (max-width:620px){.dxp{padding-left:18px!important;padding-right:18px!important}.dxh{font-size:22px!important}}</style></head>'
 			. '<body' . self::s( 'margin:0;padding:0;background:' . self::BG ) . '>'
 			. '<div' . self::s( 'display:none;max-height:0;overflow:hidden;mso-hide:all' ) . '>' . $e( $pre ) . '</div>'
@@ -344,19 +374,13 @@ class DBD_Email {
 			. '<tr><td class="dxp"' . self::s( 'background:#0f1311;padding:16px 24px' ) . '><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>'
 			. '<td' . self::s( 'font:900 20px/1 ' . self::HEAVY . ';letter-spacing:.03em;color:#ffffff' ) . '><a href="' . esc_url( home_url( '/' ) ) . '"' . self::s( 'color:#ffffff;text-decoration:none' ) . '>DOWN <span' . self::s( 'color:' . self::RED ) . '>X</span> DOWN</a></td>'
 			. '<td align="right"' . self::s( "font:12px/1.2 $SANS;color:#b9bcc2" ) . '>' . $e( $date ) . '</td></tr></table></td></tr>'
-			. ( $card !== '' ? '<tr><td' . self::s( 'padding:0' ) . '><a href="' . esc_url( $link ) . '"><img src="' . esc_url( $card ) . '" width="600" alt="' . esc_attr( $title ) . '"' . self::s( 'display:block;width:100%;height:auto;border:0' ) . '></a></td></tr>' : '' )
-			. '<tr><td class="dxp"' . self::s( 'padding:26px 28px 8px' ) . '>'
-			. '<h1 class="dxh"' . self::s( "margin:0 0 16px;font:900 26px/1.15 " . self::HEAVY . ";text-transform:uppercase;color:$INK" ) . '>' . $e( $title ) . '</h1>'
-			. $body
-			. '<table role="presentation" cellpadding="0" cellspacing="0"' . self::s( 'margin:22px 0 26px' ) . '><tr><td' . self::s( 'background:' . self::RED . ';border-radius:4px' ) . '>'
-			. '<a href="' . esc_url( $week ) . '"' . self::s( "display:inline-block;padding:13px 22px;font:700 15px/1 $SANS;color:#ffffff;text-decoration:none" ) . '>Every play from ' . $e( $wk ) . '</a></td></tr></table>'
-			. '</td></tr>'
+			. $top
+			. '<tr><td class="dxp"' . self::s( 'padding:26px 28px 8px' ) . '>' . $inner . '</td></tr>'
 			. '<tr><td class="dxp"' . self::s( 'background:#f4f1ea;padding:20px 28px;border-top:1px solid ' . self::LINE . ";font:12px/1.6 $SANS;color:$MUT" ) . '>'
 			. 'You’re getting this because you signed up for the week in review at <a href="' . esc_url( home_url( '/' ) ) . '"' . self::s( "color:$MUT" ) . '>downbydown.com</a>.<br>'
 			. '<a href="' . esc_url( $link ) . '"' . self::s( "color:$MUT" ) . '>View in browser</a> · <a href="{{ unsubscribe }}"' . self::s( "color:$MUT" ) . '>Unsubscribe</a><br>'
 			. 'Down by Down · ' . $e( $o['address'] ) . '<br>Not affiliated with the NFL. Data: nflverse.</td></tr>'
 			. '</table></td></tr></table></body></html>';
-		return array( 'subject' => $title, 'pre' => $pre, 'html' => $html );
 	}
 
 	/** The confirmation email Brevo sends a new signup, as HTML to paste into a Brevo template tagged "optin". */
@@ -483,6 +507,7 @@ class DBD_Email {
 			'reply' => sanitize_email( (string) ( $v['reply'] ?? '' ) ) ?: $d['reply'],
 			'address' => sanitize_text_field( (string) ( $v['address'] ?? '' ) ) ?: $d['address'],
 			'form' => absint( $v['form'] ?? 0 ) ?: $d['form'], 'test' => sanitize_email( (string) ( $v['test'] ?? '' ) ),
+			'boards' => ! empty( $v['boards'] ),
 		);
 		if ( ! empty( $v['forget'] ) ) { $out['key'] = ''; $out['on'] = false; }
 		self::forget_reads( array( $old['key'], $out['key'] ) );

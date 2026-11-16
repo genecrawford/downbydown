@@ -37,6 +37,7 @@ function wp_json_encode( $v ) { return json_encode( $v ); }
 function trailingslashit( $s ) { return rtrim( $s, '/\\' ) . '/'; }
 function untrailingslashit( $s ) { return rtrim( $s, '/\\' ); }
 function wp_mkdir_p( $d ) { return is_dir( $d ) || @mkdir( $d, 0777, true ); }
+function do_shortcode( $s ) { return '<div class="wpforms-container">[form ' . htmlspecialchars( (string) $s, ENT_QUOTES ) . ']</div>'; }  /* the signup strip's form (SCOPE §66) */
 function wp_upload_dir() { global $tmp; return array( 'basedir' => $tmp, 'baseurl' => 'https://example.test/uploads' ); }
 function get_option( $k, $d = false ) { if ( isset( $GLOBALS['dbd_opt'] ) && array_key_exists( $k, $GLOBALS['dbd_opt'] ) ) { return $GLOBALS['dbd_opt'][ $k ]; }  /* the admin mode's stored settings */
 	if ( $k === 'dbd_headshots' || $k === 'dbd_logos' ) { return (bool) getenv( 'DBD_HARNESS_MEDIA' ); }
@@ -75,8 +76,9 @@ function wp_schedule_single_event() {} function wp_next_scheduled() { return fal
 
 /* ---- the plugin, minus the bootstrap and admin. The SEO class extends a WordPress sitemap base class; an empty stand-in lets it load. */
 if ( ! class_exists( 'WP_Sitemaps_Provider' ) ) { class WP_Sitemaps_Provider { public $name = ''; public $object_type = ''; } }
-foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-kicker', 'class-dbd-defense', 'class-dbd-week', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-boards', 'class-dbd-sync', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo', 'class-dbd-blocks', 'class-dbd-post', 'class-dbd-news', 'class-dbd-email', 'class-dbd-videos', 'class-dbd-growth' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
+foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-kicker', 'class-dbd-defense', 'class-dbd-week', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-boards', 'class-dbd-sync', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo', 'class-dbd-blocks', 'class-dbd-post', 'class-dbd-news', 'class-dbd-email', 'class-dbd-videos', 'class-dbd-growth', 'class-dbd-signup', 'class-dbd-board-mail' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
 
+if ( getenv( 'DBD_HARNESS_SIGN' ) ) { $GLOBALS['dbd_opt'] = array( 'dbd_email' => array( 'on' => true, 'key' => 'harness', 'list' => 4 ) ); }  /* the email set up, so pages draw the signup strip (SCOPE §66) */
 if ( getenv( 'DBD_HARNESS_NOW' ) && class_exists( 'DBD_News' ) ) { DBD_News::$now = (int) getenv( 'DBD_HARNESS_NOW' ); }
 
 /* ---- team news (SCOPE §49): the fixture feeds through the matching step, with no network. A feed key's file is the key with ':' and spaces as '-';
@@ -199,6 +201,8 @@ if ( $view === 'redirect' ) {
 }
 
 /* ---- the weekly post: week N composed as the plugin would write it, inside a stand-in for Divi's post column */
+/* the swing card (SCOPE §66): DBD_HARNESS_SWING stands in a drawn card, so the post and email show it */
+if ( ( $view === 'post' || $view === 'email' ) && getenv( 'DBD_HARNESS_SWING' ) ) { $sw = DBD_Week::file( (int) $arg )['swings'][0]['g'] ?? ''; list( $swp ) = DBD_Post::swing_file( (int) $arg, $sw ); if ( $swp !== '' ) { wp_mkdir_p( dirname( $swp ) ); file_put_contents( $swp, 'png' ); } }
 if ( $view === 'post' ) {
 	try { $doc = DBD_Post::compose( (int) $arg, null, getenv( 'DBD_HARNESS_AHEAD' ) !== '0' ); }
 	catch ( Throwable $e ) { fwrite( STDERR, "FATAL in post $arg: " . get_class( $e ) . ': ' . $e->getMessage() . ' at ' . basename( $e->getFile() ) . ':' . $e->getLine() . "\n" ); exit( 1 ); }
@@ -291,6 +295,51 @@ if ( $view === 'send' ) {
 	} catch ( Throwable $e ) { fwrite( STDERR, 'FATAL in send: ' . $e->getMessage() . ' at ' . basename( $e->getFile() ) . ':' . $e->getLine() . "\n" ); exit( 1 ); }
 	echo "send: $bad problems, $warnings warnings\n"; exit( $bad || $warnings ? 1 : 0 );
 }
+/* ---- the signup strip and board emails (2.26.0, SCOPE §66) */
+if ( $view === 'signup' ) {
+	$fails = 0; $t = function ( $what, $ok, $got = '' ) use ( &$fails ) { if ( ! $ok ) { $fails++; } echo ( $ok ? '  ok   ' : '  FAIL ' ) . $what . ( $ok ? '' : ': ' . $got ) . "\n"; };
+	$at = function ( $d ) { return strtotime( $d . ' 15:00 UTC' ); };
+	foreach ( array( '2026-02-14' => 'The week in review|every Tuesday', '2026-02-15' => 'The combine and draft boards', '2026-04-30' => 'The combine and draft boards', '2026-05-01' => 'every Tuesday from September', '2026-08-31' => 'every Tuesday from September', '2026-09-01' => 'The week in review|every Tuesday', '2026-11-15' => 'The week in review|every Tuesday' ) as $d => $want ) {
+		$L = DBD_Signup::line( $at( $d ) ); $got = $L[0] . '|' . $L[1];
+		$t( "the line on $d", strpos( $got, $want ) === 0 && ( strpos( $want, '|' ) === false || $got === $want ), $got );
+	}
+	$GLOBALS['dbd_opt'] = array( 'dbd_email' => array( 'on' => false, 'key' => 'k', 'list' => 4 ) );
+	$t( 'no strip while the email is off', DBD_Signup::strip( 'game' ) === '' );
+	$GLOBALS['dbd_opt'] = array( 'dbd_email' => array( 'on' => true, 'key' => 'k', 'list' => 4 ), 'dbd_post_form' => '' );
+	$t( 'no strip without a form', DBD_Signup::strip( 'game' ) === '' );
+	$GLOBALS['dbd_opt'] = array( 'dbd_email' => array( 'on' => true, 'key' => 'k', 'list' => 4 ) );
+	$h = DBD_Signup::strip( 'draft' );
+	$t( 'the strip: id, type, the form, the on-the-list line', strpos( $h, 'id="dbd-sign" data-type="draft"' ) !== false && strpos( $h, '[form [wpforms id=&quot;63&quot; title=&quot;false&quot;]]' ) !== false && strpos( $h, 'class="dbd-sg-on"' ) !== false, $h );
+	/* board emails: the decision, step by step */
+	$s = array( 'sent' => array(), 'seen' => array(), 'jobs' => array() ); $D = 86400; $now = 1800000000;
+	list( $s, $ok ) = DBD_Board_Mail::decide( $s, 'combine', 2026, 'h1', 319, $now ); $t( 'first look: 2026 is old news', ! $ok && $s['sent']['combine'] === 2026 && ! $s['seen'] );
+	list( $s, $ok ) = DBD_Board_Mail::decide( $s, 'combine', 2026, 'h1', 319, $now + 9 * $D ); $t( 'the same year again: nothing', ! $ok );
+	list( $s, $ok ) = DBD_Board_Mail::decide( $s, 'combine', 2027, 'a', 150, $now ); $t( '2027 arrives: noted, not yet', ! $ok && $s['seen']['combine'] === array( 2027, 'a', $now ) );
+	list( $s, $ok ) = DBD_Board_Mail::decide( $s, 'combine', 2027, 'b', 320, $now + $D ); $t( 'it changed: the clock restarts', ! $ok && $s['seen']['combine'][2] === $now + $D );
+	list( $s, $ok ) = DBD_Board_Mail::decide( $s, 'combine', 2027, 'b', 320, $now + 2 * $D ); $t( 'a day unchanged: not yet', ! $ok );
+	list( $s, $ok ) = DBD_Board_Mail::decide( $s, 'combine', 2027, 'b', 320, $now + 3 * $D ); $t( 'two days unchanged: ready', $ok );
+	list( , $ok ) = DBD_Board_Mail::decide( $s, 'draft', 2027, 'd', 120, $now ); $t( 'a draft board noted first', ! $ok );
+	$s['sent']['draft'] = 2026; list( $s, $ok ) = DBD_Board_Mail::decide( $s, 'draft', 2027, 'd', 120, $now ); list( $s, $ok ) = DBD_Board_Mail::decide( $s, 'draft', 2027, 'd', 120, $now + 5 * $D );
+	$t( 'a draft still filling in (120 picks): not yet', ! $ok );
+	$s['jobs']['combine-2027'] = array( 'state' => 'sent' ); list( , $ok ) = DBD_Board_Mail::decide( $s, 'combine', 2027, 'b', 320, $now + 9 * $D ); $t( 'already sent: never twice', ! $ok );
+	$nt = DBD_Board_Mail::next_tuesday( strtotime( '2027-03-04 12:00 UTC' ) ); $d = new DateTime( '@' . $nt ); $d->setTimezone( new DateTimeZone( 'America/New_York' ) );
+	$t( 'the next Tuesday, 8:00 AM Eastern', $d->format( 'D Y-m-d H:i' ) === 'Tue 2027-03-09 08:00', $d->format( 'D Y-m-d H:i' ) );
+	/* the two emails, from this year's boards */
+	$dir = getenv( 'DBD_HARNESS_HTML' );
+	foreach ( array( 'combine' => array( 'The 2026 combine results', 'Fastest 40', 'The top ten by combine score', 'See every drill' ), 'draft' => array( 'The 2026 draft, every pick', 'First pick', 'The first ten picks', 'See every pick' ) ) as $k => $want ) {
+		$y = DBD_Boards::years( $k )[0] ?? 0; $m = $y ? DBD_Board_Mail::build( $k, $y, 'Tuesday, March 3', 'https://example.test/uploads/board.png' ) : null;
+		if ( ! $m ) { $t( "the $k email", false, 'no board' ); continue; }
+		$h = $m['html']; $u = esc_url( DBD_Router::url( array( 'view' => $k, 'y' => $y ) ) );
+		$miss = array_filter( $want, function ( $w ) use ( $h ) { return strpos( $h, $w ) === false; } );
+		$t( "the $k email: its pieces", ! $miss, implode( ' | ', $miss ) );
+		$t( "the $k email: ten rows", substr_count( $h, '<td width="30"' ) === 10, substr_count( $h, '<td width="30"' ) );
+		$t( "the $k email: the button and View in browser open the board, the forward line its strip", strpos( $h, 'href="' . $u . '"' ) !== false && strpos( $h, '>View in browser</a>' ) !== false && strpos( $h, 'href="' . $u . '#dbd-sign"' ) !== false && strpos( $h, 'Know someone who’d like this?' ) !== false, $u );
+		$t( "the $k email: preview text", $m['pre'] !== '' && strpos( $m['pre'], '.' ) !== false, $m['pre'] );
+		if ( $dir ) { if ( ! is_dir( $dir ) ) { mkdir( $dir, 0777, true ); } file_put_contents( "$dir/board-$k-$y.html", $h ); }
+	}
+	echo "signup: $fails failed\n"; exit( $fails ? 1 : 0 );
+}
+
 /* ---- Growth (2.25.0, SCOPE §65): the list-size change from the saved daily sizes, and the last email's line */
 if ( $view === 'growth' ) {
 	$fails = 0; $t = function ( $what, $got, $want ) use ( &$fails ) { $ok = $got === $want; if ( ! $ok ) { $fails++; } echo ( $ok ? '  ok   ' : '  FAIL ' ) . $what . ': ' . json_encode( $got ) . ( $ok ? '' : ' (want ' . json_encode( $want ) . ')' ) . "\n"; };
@@ -357,7 +406,7 @@ if ( $view === 'admin' ) {
 	) as $fn => $body ) { if ( ! function_exists( $fn ) ) { $GLOBALS['hfn'][ $fn ] = $body; eval( 'function ' . $fn . '( ...$a ) { return $GLOBALS["hfn"]["' . $fn . '"]( ...$a ); }' ); } }
 	require DBD_PATH . 'includes/admin/settings.php';
 	$want = array( 'ov' => array( 'Needs a look', 'The last data sync failed', 'needs a Brevo API key', 'The last signup didn’t reach Brevo', 'Its send log row has Try again', 'Open Week in review', 'Sync now', 'Fetch news and videos now', 'news feed' ),
-		'wk' => array( 'The weekly post', 'Weeks', 'The Tuesday email', 'Send log', 'sent to 198', 'won’t send until Brevo is set up', 'Waiting for the confirmation template', 'action=dbd_email_again&post=103', 'Try again' ),
+		'wk' => array( 'The weekly post', 'Weeks', 'The Tuesday email', 'Send log', 'sent to 198', 'won’t send until Brevo is set up', 'Waiting for the confirmation template', 'action=dbd_email_again&post=103', 'Try again', 'id="dbd-boards"', 'Board emails', 'name="dbd_email[boards]"', 'Add the Brevo API key above to send a test.' ),
 		'nw' => array( 'Fetching', 'Sources', 'HTTP 503', 'Fetch news and videos now', 'Videos', 'Game highlights' ),
 		'st' => array( 'Photos and logos', 'Addresses', 'Search and sharing', 'Using it in the theme', 'value="dbd"' ),
 		'dt' => array( 'Current data', 'Sync log', 'Seasons', 'Share cards', 'value="dbd_data"', 'harness-token' ),
