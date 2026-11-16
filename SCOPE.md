@@ -2908,3 +2908,11 @@ SCOPE §64 Plan 3, in detail. Today the signup form (WPForms #63, `[wpforms id="
 **Effort:** one release, 2.26.0. The board emails are most of it. It touches PHP, so Greptile reviews it.
 
 **Undo:** the strip only shows while the email is on; board emails have their own switch; the chart and forward line only affect posts written after the update.
+
+## 67. One dark signup box across the site (scoped and mocked 2026-11-15, `mockup-v42/`)
+
+Gene, on the live combine board: put the next-board block and the signup side by side, both dark like the combine block, then make the newsletter signup look the same across the site.
+
+- **The plugin's signup (2.26.1):** the strip becomes a dark box built like the next-board block: a small red line ("The email: every Tuesday", or "the week they land" from February 15 to April 30), the big headline, the sentence, then the field and button on one line. The form's label is hidden from sight but kept for screen readers, and the field says "Your email". The red bar runs along the bottom.
+- **On the draft and combine boards:** the next-board block and the signup sit side by side, the same height, and stack below 860px. Alone everywhere else (game, player and kicker pages).
+- **Gene's Divi newsletter section** (the home page and under each weekly post, `divi/home-newsletter.html`): the same dark look, the field and button on one line, the email preview on the right unchanged. Claude sends the full updated code for its Code module; Gene pastes it.
