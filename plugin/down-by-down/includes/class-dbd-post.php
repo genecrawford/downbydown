@@ -125,6 +125,7 @@ class DBD_Post {
 			$r = wp_update_post( array( 'ID' => $p->ID, 'post_title' => $doc['title'], 'post_content' => $doc['html'], 'post_excerpt' => $doc['excerpt'] ), true );
 			if ( is_wp_error( $r ) ) { return $r->get_error_message(); }
 			self::stamp( $p->ID, $doc['title'] . "\x1f" . $doc['html'] . "\x1f" . $doc['excerpt'] );
+			self::swing_prune( $n, $W );
 			return 'refreshed';
 		}
 		$gmt = self::tuesday( $n ); $now = time();  /* dated the Tuesday after its week: scheduled when that's ahead, published (with that date) when it has passed */
@@ -144,6 +145,7 @@ class DBD_Post {
 		self::remember( $n, $id );
 		self::stamp( $id, $doc['title'] . "\x1f" . $doc['html'] . "\x1f" . $doc['excerpt'] );
 		self::thumbnail( $id, $n, $doc['title'] );
+		self::swing_prune( $n, $W );
 		return 'new';
 	}
 
@@ -199,9 +201,13 @@ class DBD_Post {
 		$im = DBD_Card::render( 'game-' . $gid, $fetch ); if ( ! $im ) { return; }
 		wp_mkdir_p( dirname( $path ) ); $tmp = $path . '.' . wp_generate_password( 8, false ) . '.tmp';
 		$ok = imagepng( $im, $tmp, 6 ); imagedestroy( $im );
-		if ( ! $ok || ! @rename( $tmp, $path ) ) { @unlink( $tmp ); return; }
-		/* the week's earlier drafts of the card go: only a post that hasn't published draws one */
-		foreach ( (array) glob( dirname( $path ) . '/' . (int) DBD_Data::season() . '-w' . (int) $n . '-*.png' ) as $old ) { if ( $old !== $path ) { @unlink( $old ); } }
+		if ( ! $ok || ! @rename( $tmp, $path ) ) { @unlink( $tmp ); }
+	}
+
+	/** After the post saves: the week's other swing cards go, so only the one it points at stays (Greptile, PR #121). */
+	private static function swing_prune( $n, $W ) {
+		list( $keep ) = self::swing_file( $n, (string) ( $W['swings'][0]['g'] ?? '' ) ); if ( $keep === '' || ! file_exists( $keep ) ) { return; }
+		foreach ( (array) glob( dirname( $keep ) . '/' . (int) DBD_Data::season() . '-w' . (int) $n . '-*.png' ) as $old ) { if ( $old !== $keep ) { @unlink( $old ); } }
 	}
 
 	/** The week's share card as the featured image, drawn straight to a file and added to the media library. */
