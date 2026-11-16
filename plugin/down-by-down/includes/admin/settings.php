@@ -286,6 +286,7 @@ function dbd_admin_notices() {
 	if ( isset( $_GET['cleared'] ) ) { $n[] = array( 'success', (int) $_GET['cleared'] . ' cached cards cleared. They are drawn again the next time a page is shared.' ); }
 	if ( isset( $_GET['written'] ) ) { $wn = (int) $_GET['written']; $n[] = array( 'success', $wn ? $wn . ' weekly post' . ( $wn === 1 ? '' : 's' ) . ' written.' : 'No new posts: every finished week already has one, or was deleted.' ); }
 	if ( isset( $_GET['news'] ) ) { $ns = get_option( DBD_News::OPT_STATUS ); $n[] = array( 'success', is_array( $ns ) ? 'News fetched in ' . $ns['secs'] . ' seconds.' : 'News fetched.' ); }
+	if ( isset( $_GET['board'] ) ) { $bw = (string) $_GET['board']; $n[] = $bw === 'tested' ? array( 'success', 'Board email test sent to ' . DBD_Email::test_to() . '.' ) : ( $bw === 'again' ? array( 'success', 'The board email is going again.' ) : array( 'error', 'The board email test didn’t send: ' . sanitize_text_field( rawurldecode( (string) ( $_GET['board_err'] ?? '' ) ) ) ) ); }
 	if ( isset( $_GET['token'] ) ) { $n[] = array( 'warning', 'New token made. Update the DBD_SYNC_TOKEN secret in the GitHub repo or the nightly push will stop working.' ); }
 	foreach ( $n as $x ) { echo '<div class="notice notice-' . esc_attr( $x[0] ) . ' is-dismissible"><p>' . esc_html( $x[1] ) . '</p></div>'; }
 }
@@ -491,6 +492,9 @@ function dbd_tab_week() {
 				<td><input name="<?php echo esc_attr( $opt ); ?>[address]" id="dbd_e_ad" type="text" class="large-text" value="<?php echo esc_attr( $eo['address'] ); ?>"><p class="description">In every email's footer, as US law requires.</p></td></tr>
 			<tr><th scope="row"><label for="dbd_e_fm">Signup form</label></th>
 				<td><input name="<?php echo esc_attr( $opt ); ?>[form]" id="dbd_e_fm" type="number" min="1" class="small-text" value="<?php echo (int) $eo['form']; ?>"> <span class="description">The WPForms form's ID.</span></td></tr>
+			<tr><th scope="row">Board emails</th>
+				<td><label><input type="checkbox" name="<?php echo esc_attr( $opt ); ?>[boards]" value="1" <?php checked( $eo['boards'] !== false ); ?>> Email the list when a new combine's results or draft board lands</label>
+				<p class="description">The Tuesday after its data stops changing for two days, at 8:00 AM Eastern. Twice a year; the boards already on the site are never emailed.</p></td></tr>
 			<tr><th scope="row"><label for="dbd_e_te">Tests go to</label></th>
 				<td><input name="<?php echo esc_attr( $opt ); ?>[test]" id="dbd_e_te" type="email" class="regular-text" value="<?php echo esc_attr( $eo['test'] ); ?>" placeholder="<?php echo esc_attr( DBD_Email::test_to() ); ?>"> <span class="description">Empty uses the reply-to.</span></td></tr>
 		</table>
@@ -498,13 +502,30 @@ function dbd_tab_week() {
 			<?php if ( $lp && $eo['key'] !== '' ) : ?><a class="button" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=dbd_email_test' ), 'dbd_email_test' ) ); ?>">Send a test of <?php echo esc_html( DBD_Router::week_label( (int) get_post_meta( $lp->ID, DBD_Post::M_WEEK, true ) ) ); ?> to <?php echo esc_html( DBD_Email::test_to() ); ?></a><?php endif; ?></div>
 	</form>
 
+	<?php $bm = DBD_Board_Mail::state(); ?>
+	<div class="dbd-box" id="dbd-boards"><h2>Board emails <small>the combine and the draft, twice a year (SCOPE §66)</small></h2>
+		<table class="dbd-rows"><tbody>
+		<?php foreach ( DBD_Board_Mail::KINDS as $bk ) :
+			$bys = DBD_Boards::years( $bk ); $bnew = $bys[0] ?? 0; $bsent = (int) ( $bm['sent'][ $bk ] ?? 0 ); $bseen = $bm['seen'][ $bk ] ?? null; $bjob = $bnew ? ( $bm['jobs'][ $bk . '-' . $bnew ] ?? null ) : null;
+			if ( ! $bnew ) { $btxt = 'No board yet.'; }
+			elseif ( $bjob ) { $btxt = 'The ' . $bnew . ' email: ' . $bjob['state'] . '.'; }
+			elseif ( $bnew > $bsent && $bseen && (int) $bseen[0] === $bnew ) { $btxt = 'The ' . $bnew . ' ' . $bk . ' is in, unchanged since ' . dbd_admin_when( $bseen[2] ) . '. It goes the first Tuesday after two days unchanged.'; }
+			elseif ( $bsent ) { $btxt = 'Up to date through ' . $bsent . '. The next one goes the Tuesday after the ' . ( $bsent + 1 ) . ' ' . ( $bk === 'draft' ? 'draft' : 'combine results' ) . ' land.'; }
+			else { $btxt = 'Waiting for the first sync to note the boards on the site.'; }
+		?>
+			<tr><td><?php echo esc_html( ucfirst( $bk ) ); ?></td><td><?php echo esc_html( $btxt ); ?></td></tr>
+		<?php endforeach; ?>
+		</tbody></table>
+		<div class="dbd-foot"><?php if ( $eo['key'] !== '' ) : foreach ( DBD_Board_Mail::KINDS as $bk ) : $bys = DBD_Boards::years( $bk ); if ( ! $bys ) { continue; } ?><a class="button" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=dbd_board_test&kind=' . $bk ), 'dbd_board_test' ) ); ?>">Send a test of the <?php echo (int) $bys[0] . ' ' . esc_html( $bk ); ?> email</a><?php endforeach; ?><span class="description">Tests go to <?php echo esc_html( DBD_Email::test_to() ); ?>.</span><?php else : ?><span class="description">Add the Brevo API key above to send a test.</span><?php endif; ?></div></div>
+
 	<?php $again = array(); ?>
 	<div class="dbd-box"><h2>Send log</h2>
 		<table class="widefat striped"><thead><tr><th>When</th><th>Post</th><th>Result</th><th>To</th></tr></thead><tbody>
 			<?php foreach ( $el as $r ) : ?>
 			<tr><td><?php echo esc_html( dbd_admin_when( $r['at'] ) ); ?></td>
-				<td><a href="<?php echo esc_url( (string) get_edit_post_link( (int) $r['post'] ) ); ?>"><?php echo esc_html( $r['title'] ); ?></a></td>
-				<td><?php echo esc_html( $r['result'] . ( $r['camp'] ? ' (Brevo campaign ' . $r['camp'] . ')' : '' ) ); ?><?php if ( strpos( (string) $r['result'], 'failed' ) === 0 && DBD_Email::failed( $r['post'] ) && ! isset( $again[ $r['post'] ] ) ) : $again[ $r['post'] ] = 1; ?> <a class="button button-small" href="<?php echo esc_url( DBD_Email::again_url( $r['post'] ) ); ?>">Try again</a><?php endif; ?></td><td><?php echo $r['n'] ? (int) $r['n'] : '–'; ?></td></tr>
+				<?php $rb = (string) ( $r['board'] ?? '' ); $rbk = $rb !== '' ? explode( '-', $rb ) : null; ?>
+				<td><a href="<?php echo esc_url( $rbk ? DBD_Router::url( array( 'view' => $rbk[0], 'y' => (int) $rbk[1] ) ) : (string) get_edit_post_link( (int) $r['post'] ) ); ?>"><?php echo esc_html( $r['title'] ); ?></a></td>
+				<td><?php echo esc_html( $r['result'] . ( $r['camp'] ? ' (Brevo campaign ' . $r['camp'] . ')' : '' ) ); ?><?php if ( strpos( (string) $r['result'], 'failed' ) === 0 ) : $ak = $rb !== '' ? $rb : 'p' . (int) $r['post']; if ( ! isset( $again[ $ak ] ) && ( $rb !== '' ? DBD_Board_Mail::failed( $rb ) : DBD_Email::failed( $r['post'] ) ) ) : $again[ $ak ] = 1; ?> <a class="button button-small" href="<?php echo esc_url( $rb !== '' ? DBD_Board_Mail::again_url( $rb ) : DBD_Email::again_url( $r['post'] ) ); ?>">Try again</a><?php endif; endif; ?></td><td><?php echo $r['n'] ? (int) $r['n'] : '–'; ?></td></tr>
 			<?php endforeach; ?>
 			<?php if ( ! $el ) : ?><tr><td colspan="4">Nothing sent yet.</td></tr><?php endif; ?>
 		</tbody></table></div>

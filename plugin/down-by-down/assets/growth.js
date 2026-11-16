@@ -94,12 +94,12 @@
   }, function (e) { fail($('search'), e, 2); });
 
   /* ---- shares and signups: the events this plugin sends. The method breakdown needs Analytics' "method" dimension; without it, totals. */
-  var ev = function (rep) { var o = {}; rows(rep).forEach(function (r) { var n = r.d[0], m = r.d.length > 1 ? r.d[1] : ''; if (n !== 'share' && n !== 'sign_up') return; o[n] = o[n] || { all: 0 }; o[n].all += r.m[0]; if (m && m !== '(not set)') o[n][m] = (o[n][m] || 0) + r.m[0]; }); return o; };
+  var ev = function (rep) { var o = {}; rows(rep).forEach(function (r) { var n = r.d[0], m = r.d.length > 1 ? r.d[1] : ''; if (n !== 'share' && n !== 'sign_up' && n !== 'generate_lead') return; o[n] = o[n] || { all: 0 }; o[n].all += r.m[0]; if (m && m !== '(not set)') o[n][m] = (o[n][m] || 0) + r.m[0]; }); return o; };
   ga({ metrics: 'eventCount', dimensions: 'eventName,method', limit: 200 }, cur).catch(function () { return ga({ metrics: 'eventCount', dimensions: 'eventName', limit: 200 }, cur); }).then(function (rep) {
-    var o = ev(rep), s = o.share || { all: 0 }, u = o.sign_up || { all: 0 };
+    var o = ev(rep), s = o.share || { all: 0 }, u = o.sign_up || { all: 0 }, g = o.generate_lead || { all: 0 };
     var parts = [['share_sheet', 'share sheet'], ['image', 'card image'], ['copy_link', 'copied links']].filter(function (x) { return s[x[0]]; }).map(function (x) { return num(s[x[0]]) + ' ' + x[1]; });
     $('shares').innerHTML = num(s.all) + (parts.length ? ': ' + parts.join(', ') : '') + (s.all ? '' : ' <span class="description">(counted from version 2.25.0)</span>');
-    $('signups').innerHTML = num(u.all) + ' confirmed on the site' + (u.all ? '' : ' <span class="description">(counted from version 2.25.0)</span>');
+    $('signups').innerHTML = num(u.all) + ' confirmed on the site' + (g.all ? ', from ' + num(g.all) + ' form' + (g.all === 1 ? '' : 's') + ' sent' : '') + (u.all || g.all ? '' : ' <span class="description">(counted from version 2.25.0)</span>');  /* forms sent: SCOPE §66 */
   }, function (e) { $('shares').innerHTML = $('signups').innerHTML = '<span class="dbd-red">' + esc(e.message) + '</span>'; });
 
   /* ---- titles to tune: pages Google showed at least 100 times with a click rate under the site's, the most seen first */

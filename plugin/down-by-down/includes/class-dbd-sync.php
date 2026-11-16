@@ -134,6 +134,7 @@ class DBD_Sync {
 			$out['archive'] = self::sync_archive( $remote, $base, $start );
 			/* the weekly post (SCOPE §46): a newly complete week gets its post; a failure there never fails the sync */
 			if ( class_exists( 'DBD_Post' ) ) { try { $p = DBD_Post::after_sync(); if ( $p ) { $out['posts'] = $p; } } catch ( Throwable $e ) { $out['post_error'] = $e->getMessage(); } DBD_Data::use_season( null ); }
+			try { do_action( 'dbd_synced', $out ); } catch ( Throwable $e ) { $out['hook_error'] = $e->getMessage(); }  /* the board emails note the newest boards (SCOPE §66) */
 		}
 		return self::finish( $out, $start );
 	}

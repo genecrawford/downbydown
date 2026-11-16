@@ -170,7 +170,7 @@ if ( ! $final ) { $luB = DBD_Lineup::board( $O, $D );
 
 if ( ! $cards ) {
 	echo $luHtml;
-	echo '<div class="dbd-empty"><h2>Numbers appear after Week 1</h2><p>Takeaways, the head-to-head table and the pass zones fill in once both teams have played.</p></div>' . DBD_News::game_block( $g ) . '</main>';
+	echo '<div class="dbd-empty"><h2>Numbers appear after Week 1</h2><p>Takeaways, the head-to-head table and the pass zones fill in once both teams have played.</p></div>' . DBD_News::game_block( $g ) . DBD_Signup::strip( 'game' ) . '</main>';
 	return;
 }
 if ( $early ) { echo '<div class="dbd-panel dbd-notice"><div class="dbd-pb">Fewer than three games for one or both teams. Ranks are shown, but treat every number as a small sample.</div></div>'; }
@@ -266,4 +266,4 @@ $zone_grid = function ( $abbr, $side, $title ) {
 echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Where the ball goes</b> · EPA per throw</span><span class="dbd-badge">Deep is 15+ air yds</span></div><div class="dbd-pb"><div class="dbd-zones">';
 echo $zone_grid( $O, 'off', $Ot['nick'] . ': EPA per throw' ) . $zone_grid( $D, 'def', $Dt['nick'] . ': EPA allowed per throw' );
 echo '</div><p class="dbd-note">Green gains more than expected, red loses value. Cells with fewer than 5 throws are grayed out.</p></div></section>';
-echo '</div>' . DBD_News::game_block( $g ) . '</main>';  /* the news naming both teams and the preview or recap, after the stats (SCOPE §54) */
+echo '</div>' . DBD_News::game_block( $g ) . DBD_Signup::strip( 'game' ) . '</main>';  /* the news naming both teams and the preview or recap, after the stats (SCOPE §54) */

@@ -19,7 +19,7 @@ function run(refuse) {
     if (p.endsWith('analytics-4/data/report')) {
       const d = q.get('dimensions');
       if (d === 'sessionDefaultChannelGroup') return now ? ga([[['Organic Search'], [2318]], [['Direct'], [946]], [['Organic Social'], [402]], [['Email'], [214]], [['Referral'], [118]], [['Unassigned'], [10]]]) : ga([[['Organic Search'], [1770]], [['Direct'], [876]], [['Organic Social'], [457]], [['Email'], [130]], [['Referral'], [118]]]);
-      if (d === 'eventName,method') return ga([[['share', 'share_sheet'], [38]], [['share', 'image'], [17]], [['share', 'copy_link'], [8]], [['sign_up', 'email'], [41]], [['page_view', '(not set)'], [9000]]]);
+      if (d === 'eventName,method') return ga([[['share', 'share_sheet'], [38]], [['share', 'image'], [17]], [['share', 'copy_link'], [8]], [['sign_up', 'email'], [41]], [['generate_lead', '(not set)'], [55]], [['page_view', '(not set)'], [9000]]]);
       if (d === 'landingPage') return now ? ga([[['/'], [612]], [['(not set)'], [50]], [['/draft/2026/'], [241]]]) : ga([[['/'], [546]]]);
     }
     if (p.endsWith('search-console/data/searchanalytics')) {
@@ -71,7 +71,7 @@ function run(refuse) {
   t('search: click rate down 0.3 pts', /2\.4% <span class="down">−0\.3 pts/.test(els.search.innerHTML));
   t('search: position from 22.1, better', /18\.6 <span class="up">from 22\.1/.test(els.search.innerHTML));
   t('shares broken down by method', els.shares.innerHTML === '63: 38 share sheet, 17 card image, 8 copied links', els.shares.innerHTML);
-  t('signups', els.signups.innerHTML === '41 confirmed on the site', els.signups.innerHTML);
+  t('signups, from the forms sent', els.signups.innerHTML === '41 confirmed on the site, from 55 forms sent', els.signups.innerHTML);
   t('titles to tune: the low-rate page with its title, not the good one or the tiny one', /team\/kc\/defense\/.*Chiefs defense 2026: stats<\/small>.*6,210.*0\.5%/.test(els.tune.innerHTML) && !/tiny/.test(els.tune.innerHTML) && !/>\/<\/a>/.test(els.tune.innerHTML), els.tune.innerHTML);
   t('the copy button is ready', els.copy.disabled === false);
   t('landing: (not set) left out, new page marked new', /\/draft\/2026\/.*new/.test(els.landing.innerHTML) && !/not set/.test(els.landing.innerHTML), els.landing.innerHTML);

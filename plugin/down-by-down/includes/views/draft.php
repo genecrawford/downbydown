@@ -64,4 +64,4 @@ echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>By
 $sl = ''; foreach ( array_slice( $sch, 0, 8, true ) as $s => $c ) { $sl .= '<li><span>' . esc_html( $s ) . '</span><b>' . (int) $c . '</b></li>'; }
 echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>By school</b></span></div><div class="dbd-pb"><ul class="bd-list">' . $sl . '</ul></div></section></aside></div>';
 echo DBD_Boards::next_link( 'draft', $Y );  /* the combine, big and obvious (2.23.1) */
-echo '</main>';
+echo DBD_Signup::strip( 'draft' ) . '</main>';  /* the signup strip, last (SCOPE §66) */

@@ -404,6 +404,7 @@ class DBD_Router {
 		wp_enqueue_style( 'dbd', DBD_URL . 'assets/dbd.css', array( 'dbd-fonts' ), DBD_VERSION );
 		wp_enqueue_style( 'dbd-transitions', DBD_URL . 'assets/transitions.css', array( 'dbd' ), DBD_VERSION );
 		wp_enqueue_script( 'dbd-site', DBD_URL . 'assets/dbd-site.js', array(), DBD_VERSION, true );
+		DBD_Signup::enqueue();  /* the signup strip's script (SCOPE §66) */
 		/* links the scripts draw (dbdUrl() in dbd-site.js, SCOPE §43): the paths' base, and the slugs of the players this page links to */
 		$ids = array();
 		if ( in_array( $r['view'], array( 'team', 'teamplayers' ), true ) || $r['view'] === 'player' ) { foreach ( DBD_Data::team_players( $r['view'] === 'teamplayers' ? $r['pteam'] : $r['team'] ) as $x ) { if ( ! empty( $x['id'] ) ) { $ids[] = $x['id']; } } }

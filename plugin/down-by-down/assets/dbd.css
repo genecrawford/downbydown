@@ -2100,3 +2100,11 @@ html:not([data-fx]) .dbd [data-fx="half"],html[data-fx="std"] .dbd [data-fx="std
 .dbd .bd-t tr.rd td span{margin-left:8px;font:500 11px var(--dbd-mono);letter-spacing:0;text-transform:none;color:rgba(255,255,255,.65)}
 .dbd .bd-t td.so{font-size:13px}
 .dbd .dbd-related{margin-top:14px}.dbd .dbd-related .dbd-pills{margin-top:0}
+/* the signup strip (SCOPE §66): the Tuesday email's WPForms form, last on game, player and board pages; "on the list" once confirmed here */
+.dbd .dbd-sign .dbd-sg{padding:16px 18px 18px}
+.dbd .dbd-sign .dbd-sg-p{margin:0 0 12px;font:400 15px/1.5 var(--dbd-body);color:var(--dbd-ink-2);max-width:62ch}
+.dbd .dbd-sign .dbd-sg-on{display:none;margin:0;font:400 15px/1.5 var(--dbd-body);color:var(--dbd-ink-2)}
+.dbd .dbd-sign.is-on .dbd-sg-p,.dbd .dbd-sign.is-on .dbd-sg-f{display:none}.dbd .dbd-sign.is-on .dbd-sg-on{display:block}
+.dbd .dbd-sign .wpforms-container{margin:0!important;max-width:560px}
+.dbd .dbd-sign input[type=email],.dbd .dbd-sign input[type=text]{height:44px!important;border:1px solid var(--dbd-line-2)!important;border-radius:6px!important;box-shadow:none!important;background:#fff!important;font:400 15px var(--dbd-body)!important;color:var(--dbd-ink)!important}
+.dbd .dbd-sign button[type=submit]{height:44px!important;padding:0 20px!important;background:var(--dbd-red)!important;border:0!important;border-radius:6px!important;color:#fff!important;font:700 15px var(--dbd-display)!important;letter-spacing:.1em!important;text-transform:uppercase}
