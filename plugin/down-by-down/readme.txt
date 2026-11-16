@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.27.0
+Stable tag: 2.28.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,9 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.28.0 =
+* The share pack by email (SCOPE §69): each new pack goes to the people who post it, Tuesday at 7:00 AM Eastern, through Brevo with one copy per person (never the subscriber list). The Share pack tab has a new box: on or off, who gets it (one address per line, up to ten), "Send the pack now", and the last sends with Try again. A failed send retries for an hour, only for the people it didn't reach.
 
 = 2.27.0 =
 * The share pack (SCOPE §68): a Share pack tab in the admin with five things to post each week, from the newest finished week: the biggest swing, a usage riser, the best and worst offense, a target-share mover, and each team's Biggest edge for next week. Each has its card to download, a Reddit title, a Reddit comment with the link and a post for X and Bluesky (counted against 280), with Copy buttons. Nothing posts by itself.
