@@ -2954,3 +2954,37 @@ An item whose data is missing (no swing, no mover) is left out, and the rest kee
 **Gene's part:** post two or three items a week by hand, image first. Follow each subreddit's self-promotion rule (contribute far more than you link). Use the same images on X and Bluesky, tagging the beat writers or analysts the chart is about.
 
 **Measure:** visits from reddit.com, x.com and bsky.app on the Growth tab, and which landing pages they reached, so the pack can lean toward what gets shared.
+
+## 69. The share pack by email, Tuesday morning (scoped and mocked 2026-11-16, `mockup-v44/`)
+
+Gene, after 2.27.0: "Build the email." This is the first step toward automating the share pack. Bluesky, a Facebook Page and X come later, once Gene has the accounts. Reddit stays by hand.
+
+**What:** one email to Gene each Tuesday at 7:00 AM Eastern, an hour before the weekly post and the Tuesday email go out. It holds the newest share pack, so he can post from his phone.
+
+**How it sends:** through Brevo's transactional email, with the API key the Tuesday email already uses (the same way the board-email tests send). It goes to one address and is not a campaign, so it never touches the subscriber list. It counts toward Brevo's 300-a-day free limit as one email.
+
+**When:**
+- When a sync brings in a finished week that hasn't had its pack emailed, the plugin books one send for that week's Tuesday at 7:00 AM Eastern, or a minute later if that time has passed.
+- Each pack week goes out once.
+- A failed send tries again on the Tuesday email's schedule (`DBD_Email::TRIES` and `RETRY`). After the last try, the Share pack tab shows the error and offers Try again.
+- Before Week 1, or with the email turned off, nothing is booked.
+
+**What's in it** (light, plain, built from the same `DBD_Pack` items as the tab):
+- **Subject:** "Week 9 share pack: Broncos’ 43-point swing, Singletary’s 93%". The two lead items, each kept short.
+- **Opening line:** "Five things to post this week. Long-press any text to copy it; tap an image to open it full size and save it."
+- **Items 1 to 4,** each with:
+  - its number and name;
+  - the card image, linked to the full-size card;
+  - the Reddit title, the Reddit comment and the X and Bluesky post as three labeled blocks, with the post's length against 280;
+  - "Fits:" and an "Open the page" link.
+- **Item 5,** keys to the game: each game's matchup, then a line for each offense (its subreddit, its read and its link), so a team's text can be copied straight into its subreddit. The game cards aren't in the email, to keep it short; the tab has them.
+- **Footer:** an "Open the Share pack" button (the admin tab) and "Turn this email off on the Share pack tab."
+
+**On the Share pack tab,** a new box at the top, "The Tuesday email to you":
+- An on/off switch, on by default.
+- The address it goes to, defaulting to the test address on Week in review.
+- A "Send this week’s pack now" button, which sends the week shown.
+- A status line: "Week 9 pack sent Tuesday, Nov 10, 7:00 AM", "Week 10 pack booked for Tuesday, Nov 17, 7:00 AM", or the last error with Try again.
+- If Brevo isn't set up, the box says so and links to Week in review.
+
+**Tests:** the harness builds the email from the newest pack (subject, the four items, the keys, no unescaped text, every link absolute). It checks the booking rule (a new week books once; a sent week doesn't book again; the time is Tuesday 7:00 AM Eastern, or a minute after now when that's passed) and that the admin box renders.
