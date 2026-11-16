@@ -703,15 +703,16 @@ class DBD_Card {
 		$ser = $s['series']; $n = max( 1, count( $ser ) ); $vals = array_filter( $ser, function ( $v ) { return $v !== null; } );
 		$hi = $s['kind'] === 'snaps' ? 100 : max( 40, ( $vals ? max( $vals ) : 0 ) * 1.15 );
 		$x0 = 648; $x1 = 1156; $y0 = 170; $y1 = 520; $bw = ( $x1 - $x0 ) / $n; $grey = ( $K['col'] )( '#cfcabd' ); $bar = ( $K['col'] )( $c1 );
+		$ay = $y1 - $s['before'] / $hi * ( $y1 - $y0 ); for ( $x = $x0; $x < $x1; $x += 12 ) { ( $K['rect'] )( $x, $ay - 1, 6, 2, $K['ink'] ); }  /* under the bars and their labels */
 		foreach ( $ser as $i => $v ) {
 			$cx = $x0 + $i * $bw + min( 8, $bw * 0.15 ); $w = $bw - 2 * min( 8, $bw * 0.15 ); $mid = $cx + $w / 2; $last_i = $i === $n - 1;
 			if ( $v === null ) { ( $K['txt'] )( $F['mono'], 14, $mid, $y1 - 8, $K['muted'], '–', 'center' ); }
 			else { $h = max( 2, (float) $v / $hi * ( $y1 - $y0 ) ); ( $K['rect'] )( $cx, $y1 - $h, $w, $h, $last_i ? $bar : $grey );
-				( $K['txt'] )( $F['disp'], $n > 12 ? 13 : 17, $mid, $y1 - $h - 8, $last_i ? $K['ink'] : $K['ink2'], (int) round( (float) $v ) . '%', 'center' ); }
+				$vl = (int) round( (float) $v ) . '%'; $vp = $n > 12 ? 13 : 17; $vw = ( $K['tw'] )( $F['disp'], $vp, $vl ); ( $K['rect'] )( $mid - $vw / 2 - 4, $y1 - $h - 8 - $vp, $vw + 8, $vp + 6, $K['bg'] );  /* a clear patch, so the dashed line never runs through a label */
+				( $K['txt'] )( $F['disp'], $vp, $mid, $y1 - $h - 8, $last_i ? $K['ink'] : $K['ink2'], $vl, 'center' ); }
 			if ( $n <= 12 || $i % 2 === 0 || $last_i ) { ( $K['txt'] )( $F['mono'], 13, $mid, $y1 + 24, $K['muted'], 'W' . ( $i + 1 ), 'center' ); }
 		}
 		( $K['rect'] )( $x0, $y1, $x1 - $x0, 1, $K['ink'] );
-		$ay = $y1 - $s['before'] / $hi * ( $y1 - $y0 ); for ( $x = $x0; $x < $x1; $x += 12 ) { ( $K['rect'] )( $x, $ay - 1, 6, 2, $K['ink'] ); }
 		( $K['foot'] )( $s['foot'] );
 		return ( $K['finish'] )();
 	}
@@ -730,7 +731,7 @@ class DBD_Card {
 			( $K['mark'] )( $x + 16, $y + 48, 32, $r[0], $L[ $r[0] ] ?? null );
 			( $K['txt'] )( $F['disp'], ( $K['fit'] )( $F['disp'], 26, strtoupper( $tc['nick'] ?? $r[0] ), $w - 76 ), $x + 56, $y + 74, $K['ink'], strtoupper( $tc['nick'] ?? $r[0] ) );
 			( $K['txt'] )( $F['hero'], 46, $x + 16, $y + 136, ( $K['col'] )( DBD_Marks::accent( $tc ?: null, self::PANEL ) ), self::sgn( $r[1] ) );
-			$res = 'EPA a play · ' . $r[2] . '-' . $r[3] . ' ' . ( $r[2] > $r[3] ? 'over' : ( $r[2] < $r[3] ? 'to' : 'with' ) ) . ' the ' . self::nick( $r[4] );
+			$res = 'EPA a play · ' . ( $r[2] > $r[3] ? 'won ' . $r[2] . '-' . $r[3] . ' over' : ( $r[2] < $r[3] ? 'lost ' . $r[3] . '-' . $r[2] . ' to' : 'tied ' . $r[2] . '-' . $r[3] . ' with' ) ) . ' the ' . self::nick( $r[4] );
 			foreach ( array_slice( ( $K['wrap'] )( $F['mono'], 13, $res, $w - 32 ), 0, 2 ) as $j => $l ) { ( $K['txt'] )( $F['mono'], 13, $x + 16, $y + 164 + $j * 18, $K['muted'], $l ); }
 		}
 		( $K['spaced'] )( $F['disp'], 14, 600, 119, $K['muted'], 'EPA A PLAY · EVERY OFFENSE THAT PLAYED', 0.18 );
