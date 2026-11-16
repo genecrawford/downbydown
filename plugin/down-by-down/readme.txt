@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.26.0
+Stable tag: 2.26.1
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,9 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.26.1 =
+* One dark signup box (SCOPE §67): the signup is a dark box built like the next-board block, with the field and button on one line and "Your email" in the field. On the draft and combine boards it sits beside the next-board block, the same height.
 
 = 2.26.0 =
 * More signups (SCOPE §66): the Tuesday email's signup strip at the end of game, player and kicker pages and the draft and combine boards, with a line that follows the calendar (the combine and draft boards from February 15 to April 30). Someone who confirmed on the device sees "You're on the list". Sending a signup form tells Analytics (generate_lead), and the Growth tab counts the forms sent.
