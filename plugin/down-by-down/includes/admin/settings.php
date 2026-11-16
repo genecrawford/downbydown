@@ -452,9 +452,8 @@ function dbd_tab_share() {
 		<p><?php echo esc_html( 'Week ' . $n . ' pack' . ( $tue ? ', for ' . wp_date( 'l, M j', $tue ) : '' ) . '. Post two or three a week by hand: the image first, and the link in a comment where a subreddit asks for that. Visits from reddit.com, x.com and bsky.app show on the Growth tab.' ); ?></p>
 	</div>
 	<?php
-	$i = 0;
 	foreach ( $items as $it ) {
-		$i++; $img = DBD_Card::url( $it['card'] );
+		$i = DBD_Pack::NUM[ $it['k'] ] ?? 0; $img = DBD_Card::url( $it['card'] );
 		echo '<div class="dbd-box sp-item" data-k="' . esc_attr( $it['k'] ) . '"><h2><span>' . (int) $i . '. ' . esc_html( $it['h'] ) . '</span><small>' . esc_html( $it['why'] ) . '</small></h2><div class="sp-body">'
 			. '<div class="sp-l"><div class="sp-card"><img src="' . esc_url( $img ) . '" width="1200" height="630" alt="" loading="lazy"></div>'
 			. '<div class="sp-acts"><a class="button button-primary" href="' . esc_url( $img ) . '" download="' . esc_attr( $it['file'] ) . '">Download image</a><a class="button" href="' . esc_url( $it['link'] ) . '" target="_blank" rel="noopener">Open the page</a></div>'
@@ -462,7 +461,7 @@ function dbd_tab_share() {
 			. '<div class="sp-r">' . dbd_pack_field( 'Reddit title', $it['title'] ) . dbd_pack_field( 'Reddit comment, with the link', $it['comment'] ) . dbd_pack_field( 'X and Bluesky', $it['post'], true ) . '</div></div></div>';
 	}
 	if ( $keys ) {
-		$i++;
+		$i = DBD_Pack::NUM['keys'];
 		echo '<div class="dbd-box sp-item" data-k="keys"><h2><span>' . (int) $i . '. Keys to the game, Week ' . (int) ( $n + 1 ) . '</span><small>Each team’s biggest edge against its next opponent, for its own subreddit. The image is the game’s card, which shows both sides.</small></h2><div class="sp-keys">';
 		foreach ( $keys as $kg ) {
 			$g = $kg['g']; $img = DBD_Card::url( $kg['card'] ); $nk = function ( $t ) { return DBD_Data::team( $t )['nick'] ?? $t; };

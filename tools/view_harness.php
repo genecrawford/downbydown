@@ -370,11 +370,15 @@ if ( $view === 'growth' ) {
 
 /* ---- the admin page (2.11.0, SCOPE §50): every tab drawn with stored settings, a sync that failed, a feed to check, an email sent and two week posts */
 /* ---- the share pack (2.27.0, SCOPE §68): the newest pack's items and keys, the X length, the play cleanup, the mover picks, both card specs */
+if ( $view === 'pack_cards' ) { $n = DBD_Pack::newest(); echo implode( ' ', DBD_Pack::cards( $n ) ), "\n"; exit( $n ? 0 : 1 ); }  /* the newest pack's cards, for CI to draw */
 if ( $view === 'pack' ) {
 	$bad = 0; $ck = function ( $ok, $what ) use ( &$bad ) { if ( ! $ok ) { $bad++; echo "  FAIL: $what\n"; } };
 	$n = DBD_Pack::newest(); $ck( $n > 0, 'a finished week with movers' );
 	$items = DBD_Pack::items( $n ); $ks = array_map( function ( $x ) { return $x['k']; }, $items );
-	$ck( $ks === array( 'swing', 'snaps', 'offense', 'targets' ), 'the four items in order, got ' . implode( ',', $ks ) );
+	/* a week may lack a mover (items() leaves it out), so the items must be the fixed order minus any missing mover, never the swing or offense (Greptile, PR #125) */
+	$ck( $ks === array_values( array_intersect( array( 'swing', 'snaps', 'offense', 'targets' ), $ks ) ) && in_array( 'swing', $ks, true ) && in_array( 'offense', $ks, true ), 'the items in their fixed order, got ' . implode( ',', $ks ) );
+	foreach ( $items as $it ) { $ck( isset( DBD_Pack::NUM[ $it['k'] ] ), $it['k'] . ': a fixed number' ); }
+	$ck( DBD_Pack::NUM === array( 'swing' => 1, 'snaps' => 2, 'offense' => 3, 'targets' => 4, 'keys' => 5 ), 'the fixed numbers' );
 	foreach ( $items as $it ) {
 		$ck( $it['title'] !== '' && strpos( $it['title'], 'http' ) === false, $it['k'] . ': a title without a link' );
 		$ck( strpos( $it['comment'], $it['link'] ) !== false && strpos( $it['comment'], '[' ) === false, $it['k'] . ': the comment carries the link and no bracketed note' );
@@ -383,9 +387,11 @@ if ( $view === 'pack' ) {
 		$ck( count( $it['fits'] ) >= 2, $it['k'] . ': where it fits' );
 		echo '  ' . $it['k'] . ' (' . DBD_Pack::xlen( $it['post'] ) . '): ' . $it['title'] . "\n";
 	}
-	$sn = $items[1] ?? null; $tg = $items[3] ?? null; $ck( ! $sn || ! $tg || $sn['link'] !== $tg['link'], 'the target mover is not the usage riser' );
+	$by = array(); foreach ( $items as $it ) { $by[ $it['k'] ] = $it; } $ck( ! isset( $by['snaps'], $by['targets'] ) || $by['snaps']['link'] !== $by['targets']['link'], 'the target mover is not the usage riser' );
 	$keys = DBD_Pack::keys( $n ); $sides = 0;
-	foreach ( $keys as $kg ) { foreach ( $kg['sides'] as $sd ) { $sides++; $ck( DBD_Pack::xlen( $sd['post'] ) <= 280 && strpos( $sd['post'], $kg['link'] ) !== false && strpos( $sd['comment'], $kg['link'] ) !== false, 'keys ' . $kg['g']['id'] . ' ' . $sd['t'] ); $ck( strpos( $sd['fits'], 'r/' ) === 0, 'keys ' . $sd['t'] . ': a subreddit' ); } }
+	foreach ( $keys as $kg ) { foreach ( $kg['sides'] as $sd ) { $sides++; $home = $sd['t'] === $kg['g']['home'];
+		$ck( DBD_Pack::xlen( $sd['post'] ) <= 280 && strpos( $sd['post'], $sd['link'] ) !== false && strpos( $sd['comment'], $sd['link'] ) !== false, 'keys ' . $kg['g']['id'] . ' ' . $sd['t'] );
+		$ck( $sd['link'] === DBD_Router::url( $home ? array( 'game' => $kg['g']['id'], 'side' => 'home' ) : array( 'game' => $kg['g']['id'] ) ), 'keys ' . $sd['t'] . ': the link opens its own offense' ); $ck( strpos( $sd['fits'], 'r/' ) === 0, 'keys ' . $sd['t'] . ': a subreddit' ); } }
 	echo '  keys for week ' . ( $n + 1 ) . ': ' . count( $keys ) . ' games, ' . $sides . " sides\n";
 	/* the helpers */
 	$ck( DBD_Pack::play( 'B.Young sacked at DEN 44 for -8 yards (N.Bonitto). FUMBLES (N.Bonitto) [N.Bonitto], RECOVERED by DEN-N.Bonitto at DEN 44. The Replay Official…' ) === 'B.Young sacked at DEN 44 for -8 yards (N.Bonitto). FUMBLES (N.Bonitto), RECOVERED by DEN-N.Bonitto at DEN 44.', 'play(): brackets and the cut-off sentence out' );
@@ -400,7 +406,8 @@ if ( $view === 'pack' ) {
 	$ck( DBD_Pack::mover( array( 'movers' => array( 'snaps' => array( 'up' => array( array( 'id' => 'q', 'pos' => 'QB' ) ) ) ) ), 'snaps' ) === null, 'mover(): none left means no item' );
 	$ck( DBD_Pack::sub( 'MIN' ) === 'r/minnesotavikings' && count( DBD_Pack::SUBS ) === 32, 'the 32 subreddits' );
 	$sr = DBD_Pack::spec_riser( $n, 'snaps' ); $so = DBD_Pack::spec_offense( $n );
-	$ck( $sr && $sr['series'] && $sr['now'] > $sr['before'], 'spec_riser(): a rise with its series' );
+	$ck( ! isset( $by['snaps'] ) || ( $sr && $sr['series'] && $sr['now'] > $sr['before'] ), 'spec_riser(): a rise with its series' );
+	$ck( isset( $by['snaps'] ) === (bool) $sr && isset( $by['targets'] ) === (bool) DBD_Pack::spec_riser( $n, 'targets' ), 'a riser card exactly when its item is there' );
 	$ck( $so && $so['rows'][0][1] >= $so['rows'][ count( $so['rows'] ) - 1 ][1], 'spec_offense(): best first' );
 	$ck( DBD_Pack::spec_riser( 99, 'snaps' ) === null && DBD_Pack::items( 99 ) === array(), 'a week that isn\'t there gives nothing' );
 	echo "pack week $n: $bad problems, $warnings warnings\n"; exit( $bad || $warnings ? 1 : 0 );

@@ -306,9 +306,9 @@ jobs:
           php tools/view_harness.php data card page-combine-2026 card-page-combine.png
           for k in team-ZZZ game-2026_99_AAA_BBB page-nope page-draft-1970 page-combine-1990; do if php tools/view_harness.php data card "$k" /tmp/x.png 2>/dev/null; then echo "card $k should not render"; exit 1; fi; done
           # the share pack's cards (2.27.0, SCOPE §68)
-          PK=$(python3 -c "import json,glob,re; print(max(int(re.findall(r'w(\d+)',f)[0]) for f in glob.glob('data/week/w*.json') if json.load(open(f)).get('complete') and json.load(open(f)).get('movers')))")
-          for k in snaps targets offense; do php tools/view_harness.php data card "pack-week-$PK-$k" "card-pack-$k.png"; done
-          DBD_HARNESS_LOGOS= DBD_HARNESS_MEDIA= php tools/view_harness.php data card "pack-week-$PK-offense" card-pack-offense-nologos.png
+          PC=$(php tools/view_harness.php data pack_cards); echo "pack cards: $PC"; echo "$PC" | grep -q -- '-offense'
+          for k in $PC; do php tools/view_harness.php data card "$k" "card-${k#pack-week-*-}.png"; done
+          PO=$(echo "$PC" | tr ' ' '\n' | grep -- '-offense'); DBD_HARNESS_LOGOS= DBD_HARNESS_MEDIA= php tools/view_harness.php data card "$PO" card-offense-nologos.png
           for k in pack-week-99-snaps pack-week-1-nope pack-week-123-offense; do if php tools/view_harness.php data card "$k" /tmp/x.png 2>/dev/null; then echo "card $k should not render"; exit 1; fi; done
       - uses: actions/upload-artifact@v4
         with:

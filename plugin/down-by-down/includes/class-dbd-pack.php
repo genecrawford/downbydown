@@ -59,6 +59,12 @@ class DBD_Pack {
 		return null;
 	}
 
+	/** Each item's fixed number on the tab, so a week missing one doesn't renumber the rest (Greptile, PR #125). */
+	const NUM = array( 'swing' => 1, 'snaps' => 2, 'offense' => 3, 'targets' => 4, 'keys' => 5 );
+
+	/** The cards week $n's pack draws (for the harness): the item keys that have a pack card. */
+	public static function cards( $n ) { $o = array(); foreach ( self::items( $n ) as $it ) { if ( strpos( $it['card'], 'pack-' ) === 0 ) { $o[] = $it['card']; } } return $o; }
+
 	/** The five items' first four for week $n (the keys are keys()). Each: k, h, why, card, file, fits, title, comment, post, link. */
 	public static function items( $n ) {
 		$W = DBD_Week::file( $n ); if ( ! $W || empty( $W['complete'] ) ) { return array(); }
@@ -122,13 +128,14 @@ class DBD_Pack {
 			$link = DBD_Router::url( array( 'game' => $g['id'] ) ); $sides = array();
 			foreach ( array( array( $a, $h ), array( $h, $a ) ) as $p ) {
 				$c = DBD_Takeaways::cards( $p[0], $p[1] )[0] ?? null; if ( ! $c ) { continue; }
+				$link = DBD_Router::url( $p[0] === $h ? array( 'game' => $g['id'], 'side' => 'home' ) : array( 'game' => $g['id'] ) );  /* each offense's own keys (Greptile, PR #125) */
 				$head = self::nick( $a ) . ' at ' . self::nick( $h );
 				$sides[] = array( 't' => $p[0], 'fits' => self::sub( $p[0] ), 'head' => $c[2], 'say' => $c[3],
 					'title' => $head . ': where the matchup tilts for the ' . self::nick( $p[0] ) . ' offense',
 					'comment' => rtrim( $c[2], '.' ) . '. ' . $c[3] . ' The other keys and the head to head: ' . $link,
-					'post' => self::post( $head . ': ' . $c[3], $head . ': ' . $c[3], $link ) );
+					'post' => self::post( $head . ': ' . $c[3], $head . ': ' . $c[3], $link ), 'link' => $link );
 			}
-			if ( $sides ) { $out[] = array( 'g' => $g, 'card' => 'game-' . $g['id'], 'file' => 'dbd-week-' . $next . '-' . strtolower( $a . '-' . $h ) . '.png', 'link' => $link, 'sides' => $sides ); }
+			if ( $sides ) { $out[] = array( 'g' => $g, 'card' => 'game-' . $g['id'], 'file' => 'dbd-week-' . $next . '-' . strtolower( $a . '-' . $h ) . '.png', 'link' => DBD_Router::url( array( 'game' => $g['id'] ) ), 'sides' => $sides ); }
 		}
 		return $out;
 	}
