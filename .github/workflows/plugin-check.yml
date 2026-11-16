@@ -536,7 +536,11 @@ jobs:
           for v in "game game 2026_09_DEN_CAR" "player player 00-0036322" "draft path draft/2026/" "combine path combine/2026/"; do
             set -- $v; DBD_HARNESS_SIGN=1 DBD_HARNESS_HTML=signpages/$1 php tools/view_harness.php data $2 $3 > /dev/null
             grep -q 'id="dbd-sign" data-type="'$1'"' signpages/$1/*.html || { echo "no signup strip on $1"; exit 1; }
-            grep -q '<section class="dbd-panel dbd-sign" id="dbd-sign" data-type="'$1'">.*</section></main>' signpages/$1/*.html || { echo "the strip isn't last on $1"; exit 1; }
+            grep -q '<section class="dbd-sign" id="dbd-sign" data-type="'$1'"><span class="k">The email: ' signpages/$1/*.html || { echo "the signup isn't the dark box on $1"; exit 1; }
+            case $1 in
+              draft|combine) grep -q '<div class="bd-pair"><a class="bd-next" [^>]*>.*</a><section class="dbd-sign" id="dbd-sign" data-type="'$1'">.*</section></div></main>' signpages/$1/*.html || { echo "the next board and the signup aren't paired last on $1"; exit 1; } ;;
+              *) grep -q '<section class="dbd-sign" id="dbd-sign" data-type="'$1'">.*</section></main>' signpages/$1/*.html || { echo "the signup isn't last on $1"; exit 1; } ;;
+            esac
           done
           DBD_HARNESS_HTML=nosign php tools/view_harness.php data game 2026_09_DEN_CAR > /dev/null
           if grep -q 'id="dbd-sign"' nosign/*.html; then echo "a strip without the email set up"; exit 1; fi

@@ -44,5 +44,6 @@ foreach ( $rows as $x ) {
 	echo '<td class="dr">' . ( $dr ? esc_html( ( $dr[2] ? $dr[2] . ' · ' : '' ) . 'R' . (int) $dr[0] . ' #' . (int) $dr[1] ) : 'Undrafted' ) . '</td></tr>';
 }
 echo '</tbody></table></div><p class="dbd-note">Results from nflverse\'s combine data (Pro Football Reference). Shading compares each result with every player at the same position at the combine since 2000: faster is better on the 40, 3-cone and shuttle, more is better on the rest. The score averages those percentiles over the drills he ran (two at least). Pro day results aren\'t included.</p></section>';
-echo DBD_Boards::next_link( 'combine', $Y );  /* the draft, big and obvious (2.23.1) */
-echo DBD_Signup::strip( 'combine' ) . '</main>';  /* the signup strip, last (SCOPE §66) */
+$sg = DBD_Signup::strip( 'combine' );  /* the next board and the signup, side by side and both dark (SCOPE §67) */
+$nl = DBD_Boards::next_link( 'combine', $Y );
+echo ( $sg !== '' && $nl !== '' ? '<div class="bd-pair">' . $nl . $sg . '</div>' : $nl . $sg ) . '</main>';

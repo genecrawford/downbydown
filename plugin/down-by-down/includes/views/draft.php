@@ -63,5 +63,6 @@ $mx = max( $pos ); $bars = ''; $pp = $pos; arsort( $pp ); foreach ( array_slice(
 echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>By position</b></span></div><div class="dbd-pb"><div class="bd-bars">' . $bars . '</div></div></section>';
 $sl = ''; foreach ( array_slice( $sch, 0, 8, true ) as $s => $c ) { $sl .= '<li><span>' . esc_html( $s ) . '</span><b>' . (int) $c . '</b></li>'; }
 echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>By school</b></span></div><div class="dbd-pb"><ul class="bd-list">' . $sl . '</ul></div></section></aside></div>';
-echo DBD_Boards::next_link( 'draft', $Y );  /* the combine, big and obvious (2.23.1) */
-echo DBD_Signup::strip( 'draft' ) . '</main>';  /* the signup strip, last (SCOPE §66) */
+$sg = DBD_Signup::strip( 'draft' );  /* the next board and the signup, side by side and both dark (SCOPE §67) */
+$nl = DBD_Boards::next_link( 'draft', $Y );
+echo ( $sg !== '' && $nl !== '' ? '<div class="bd-pair">' . $nl . $sg . '</div>' : $nl . $sg ) . '</main>';

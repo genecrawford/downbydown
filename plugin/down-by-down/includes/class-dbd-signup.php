@@ -31,9 +31,10 @@ class DBD_Signup {
 	public static function strip( $type ) {
 		$sc = self::form(); if ( $sc === '' || ! function_exists( 'do_shortcode' ) ) { return ''; }
 		list( $lab, $sub, $say, $on ) = self::line();
-		return '<section class="dbd-panel dbd-sign" id="dbd-sign" data-type="' . esc_attr( $type ) . '"><div class="dbd-ph"><span class="dbd-lab"><b>' . esc_html( $lab ) . '</b> · ' . esc_html( $sub ) . '</span></div>'
-			. '<div class="dbd-sg"><p class="dbd-sg-p">' . esc_html( $say ) . '</p><div class="dbd-sg-f">' . do_shortcode( $sc ) . '</div>'
-			. '<p class="dbd-sg-on"><b>You’re on the list.</b> ' . esc_html( $on ) . '</p></div></section>';
+		/* dark, built like the next-board block (SCOPE §67): a small red line, the headline, the sentence, then the form */
+		return '<section class="dbd-sign" id="dbd-sign" data-type="' . esc_attr( $type ) . '"><span class="k">The email: ' . esc_html( $sub ) . '</span><b class="h">' . esc_html( $lab ) . '</b>'
+			. '<span class="s">' . esc_html( $say ) . '</span><div class="dbd-sg-f">' . do_shortcode( $sc ) . '</div>'
+			. '<p class="dbd-sg-on"><b>You’re on the list.</b> ' . esc_html( $on ) . '</p></section>';
 	}
 
 	/** sign.js: on every app page and the weekly posts. */
