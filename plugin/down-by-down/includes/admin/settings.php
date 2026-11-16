@@ -69,6 +69,7 @@ add_action( 'admin_init', function () {
 	register_setting( 'dbd_posts', DBD_Post::OPT_FORM, array( 'type' => 'string', 'sanitize_callback' => 'sanitize_text_field', 'default' => DBD_Post::FORM ) );
 	/* the Tuesday email (SCOPE §48): one array; a blank API key keeps the saved one */
 	register_setting( 'dbd_email', DBD_Email::OPT, array( 'type' => 'array', 'sanitize_callback' => array( 'DBD_Email', 'sanitize' ) ) );
+	register_setting( 'dbd_pack', DBD_Pack_Mail::OPT_SET, array( 'type' => 'array', 'sanitize_callback' => array( 'DBD_Pack_Mail', 'sanitize' ) ) );  /* the share pack email (SCOPE §69) */
 	/* team news (SCOPE §49): the source groups switched on; an empty save switches every source off */
 	/* team videos and highlights (SCOPE §51): on by default */
 	register_setting( 'dbd_videos', DBD_Videos::OPT_ON, array( 'type' => 'boolean', 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => true ) );
@@ -315,6 +316,7 @@ function dbd_admin_notices() {
 	if ( isset( $_GET['written'] ) ) { $wn = (int) $_GET['written']; $n[] = array( 'success', $wn ? $wn . ' weekly post' . ( $wn === 1 ? '' : 's' ) . ' written.' : 'No new posts: every finished week already has one, or was deleted.' ); }
 	if ( isset( $_GET['news'] ) ) { $ns = get_option( DBD_News::OPT_STATUS ); $n[] = array( 'success', is_array( $ns ) ? 'News fetched in ' . $ns['secs'] . ' seconds.' : 'News fetched.' ); }
 	if ( isset( $_GET['board'] ) ) { $bw = (string) $_GET['board']; $n[] = $bw === 'tested' ? array( 'success', 'Board email test sent to ' . DBD_Email::test_to() . '.' ) : ( $bw === 'again' ? array( 'success', 'The board email is going again.' ) : array( 'error', 'The board email test didn’t send: ' . sanitize_text_field( rawurldecode( (string) ( $_GET['board_err'] ?? '' ) ) ) ) ); }
+	if ( isset( $_GET['pack'] ) ) { $pk = (string) $_GET['pack']; $pn = (int) ( $_GET['pack_n'] ?? 0 ); $n[] = $pk === 'sent' ? array( 'success', 'The pack went to ' . $pn . ( $pn === 1 ? ' person.' : ' people.' ) ) : ( $pk === 'again' ? array( 'success', 'The pack email is going again.' ) : array( 'error', 'The pack email didn’t send: ' . sanitize_text_field( wp_unslash( rawurldecode( (string) ( $_GET['pack_err'] ?? '' ) ) ) ) ) ); }
 	if ( isset( $_GET['token'] ) ) { $n[] = array( 'warning', 'New token made. Update the DBD_SYNC_TOKEN secret in the GitHub repo or the nightly push will stop working.' ); }
 	foreach ( $n as $x ) { echo '<div class="notice notice-' . esc_attr( $x[0] ) . ' is-dismissible"><p>' . esc_html( $x[1] ) . '</p></div>'; }
 }
@@ -431,6 +433,33 @@ function dbd_tab_growth() {
 
 /* ------------------------------------------------------------------ Share pack (2.27.0, SCOPE §68) */
 
+/** The Tuesday email to the people who post (2.28.0, SCOPE §69): on/off, who gets it, send the week shown now, and how the last sends went. */
+function dbd_pack_mail_box( $n ) {
+	$ps = DBD_Pack_Mail::settings(); $key = (string) DBD_Email::get( 'key' ) !== '';
+	?>
+	<div class="dbd-box" id="dbd-pack-mail" style="max-width:1180px"><h2><span>The Tuesday email</span><small>Each new pack, Tuesday 7:00 AM Eastern, through Brevo, one copy to each person below</small></h2>
+		<form method="post" action="options.php"><?php settings_fields( 'dbd_pack' ); ?>
+		<table class="dbd-rows"><tbody>
+			<tr><td>Send it</td><td><label><input type="checkbox" name="<?php echo esc_attr( DBD_Pack_Mail::OPT_SET ); ?>[on]" value="1"<?php echo $ps['on'] ? ' checked' : ''; ?>> Email each week’s pack</label></td></tr>
+			<tr><td><label for="dbd-pack-to">Send to</label></td><td><textarea id="dbd-pack-to" name="<?php echo esc_attr( DBD_Pack_Mail::OPT_SET ); ?>[to]" rows="3" class="regular-text" style="width:340px;max-width:100%"><?php echo esc_textarea( implode( "\n", $ps['to'] ) ); ?></textarea>
+				<p class="description" style="margin:4px 0 0">One address per line, up to <?php echo (int) DBD_Pack_Mail::MAX_TO; ?>. Each person gets their own copy.</p></td></tr>
+			<tr><td>Status</td><td><?php
+				if ( ! $key ) { echo '<span class="dbd-dot bad"></span>Brevo isn’t set up. <a href="' . esc_url( dbd_admin_url( 'wk' ) ) . '">Add the API key on Week in review</a>.'; }
+				else { $st = DBD_Pack_Mail::status();
+					if ( ! $st ) { echo '<span class="dbd-dot' . ( $ps['on'] && $ps['to'] ? ' ok' : '' ) . '"></span>' . ( $ps['on'] && $ps['to'] ? 'The next finished week’s pack will be booked for its Tuesday.' : 'Off.' ); }
+					foreach ( $st as $i => $l ) { echo ( $i ? '<br>' : '' ) . '<span class="dbd-dot ' . esc_attr( $l[0] ) . '"></span>' . esc_html( $l[1] ) . ( $l[2] !== '' ? ' <a class="button button-small" href="' . esc_url( DBD_Pack_Mail::again_url( $l[2] ) ) . '">Try again</a>' : '' ); } }
+			?></td></tr>
+		</tbody></table>
+		<div class="dbd-foot"><?php submit_button( 'Save', 'primary', 'submit', false ); ?></div>
+		</form>
+		<?php if ( $key && $ps['to'] ) : ?>
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="dbd-foot" style="border-top:0;padding-top:0"><input type="hidden" name="action" value="dbd_pack_now"><input type="hidden" name="week" value="<?php echo (int) $n; ?>"><?php wp_nonce_field( 'dbd_pack_now' ); ?>
+			<button class="button"><?php echo esc_html( 'Send the Week ' . $n . ' pack now' ); ?></button><span class="description"><?php echo esc_html( 'To ' . count( $ps['to'] ) . ( count( $ps['to'] ) === 1 ? ' person' : ' people' ) . ', right away. Save any change to the list first.' ); ?></span></form>
+		<?php endif; ?>
+	</div>
+	<?php
+}
+
 /** One text with its Copy button; X and Bluesky shows its length against 280. */
 function dbd_pack_field( $lab, $text, $count = false ) {
 	$n = $count ? DBD_Pack::xlen( $text ) : 0;
@@ -444,6 +473,7 @@ function dbd_tab_share() {
 	$want = (int) ( $_GET['week'] ?? 0 ); $n = in_array( $want, $weeks, true ) ? $want : $weeks[0];
 	$items = DBD_Pack::items( $n ); $keys = DBD_Pack::keys( $n );
 	$tue = DBD_Post::tuesday( $n );
+	dbd_pack_mail_box( $n );
 	?>
 	<div class="sp-head">
 		<form method="get" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>"><input type="hidden" name="page" value="down-by-down-share">

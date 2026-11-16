@@ -30,6 +30,8 @@ class DBD_Pack {
 	private static function nick( $t ) { return DBD_Data::team( (string) $t )['nick'] ?? (string) $t; }
 	private static function poss( $t ) { return self::nick( $t ) . '’'; }  /* every NFL nickname is plural */
 	private static function epa( $v ) { return ( $v < 0 ? '−' : '+' ) . number_format( abs( (float) $v ), 2 ); }
+	/** A player's last name for a subject line, keeping a suffix with it: Singletary, Cooper Jr. */
+	public static function last( $name ) { $p = preg_split( '/\s+/', trim( (string) $name ) ); $n = count( $p ); if ( $n < 2 ) { return (string) $name; } return preg_match( '/^(Jr\.?|Sr\.?|II|III|IV|V)$/', $p[ $n - 1 ] ) && $n > 2 ? $p[ $n - 2 ] . ' ' . $p[ $n - 1 ] : $p[ $n - 1 ]; }
 	private static function slug( $s ) { return trim( (string) preg_replace( '/[^a-z0-9]+/', '-', strtolower( (string) $s ) ), '-' ); }
 
 	/** How long a post is on X: every link counts as 23. */
@@ -82,7 +84,7 @@ class DBD_Pack {
 			$out[] = array( 'k' => 'swing', 'h' => 'The biggest swing', 'why' => 'The week’s largest one-play change in win probability, on the game’s card with the swing marked.',
 				'card' => 'game-' . $g['id'], 'file' => 'dbd-week-' . (int) $n . '-swing-' . strtolower( $t . '-' . $o ) . '.png', 'fits' => array_filter( array( 'r/nfl', self::sub( $t ), self::sub( $o ) ) ),
 				'title' => $title, 'comment' => 'The play: ' . self::play( $sw['d'] ?? '' ) . ' The whole game’s win probability, play by play: ' . $link,
-				'post' => self::post( $title, $short, $link ), 'link' => $link );
+				'post' => self::post( $title, $short, $link ), 'link' => $link, 'lead' => self::poss( $t ) . ' ' . (int) round( (float) $sw['v'] ) . '-point swing' );
 		}
 
 		/* 2. a usage riser: snap share, quarterbacks out */
@@ -99,7 +101,8 @@ class DBD_Pack {
 			$link = DBD_Router::url( array( 'view' => 'week', 'week' => (int) $n ) );
 			$out[] = array( 'k' => 'offense', 'h' => 'Best and worst offense', 'why' => 'Every offense that played, by EPA a play for the week, in one chart.',
 				'card' => 'pack-week-' . (int) $n . '-offense', 'file' => 'dbd-week-' . (int) $n . '-offense.png', 'fits' => array_filter( array( 'r/nfl', self::sub( $bo['t'] ) ) ),
-				'title' => $title, 'comment' => 'Every team’s week, with the usual for each side: ' . $link, 'post' => self::post( $title, $short, $link ), 'link' => $link );
+				'title' => $title, 'comment' => 'Every team’s week, with the usual for each side: ' . $link, 'post' => self::post( $title, $short, $link ), 'link' => $link,
+				'lead' => self::poss( $bo['t'] ) . ' ' . self::epa( $bo['epa'] ) . ' a play' );
 		}
 
 		/* 4. a target-share mover, not the usage riser again */
@@ -117,7 +120,8 @@ class DBD_Pack {
 			'why' => $kind === 'snaps' ? 'The biggest jump in snap share against his own earlier games, quarterbacks left out.' : 'The biggest jump in share of the team’s targets against his own earlier games.',
 			'card' => 'pack-week-' . (int) $n . '-' . $kind, 'file' => 'dbd-week-' . (int) $n . '-' . $kind . '-' . self::slug( $m['name'] ) . '.png', 'fits' => array_filter( array( 'r/fantasyfootball', self::sub( $t ) ) ),
 			'title' => $short, 'comment' => ( $kind === 'snaps' ? 'His snap share and targets game by game: ' : 'His target share and routes game by game: ' ) . $link,
-			'post' => self::post( $short, $short, $link ), 'link' => $link );
+			'post' => self::post( $short, $short, $link ), 'link' => $link,
+			'lead' => self::last( $m['name'] ) . '’s ' . $now . '%' );
 	}
 
 	/** Keys to the game for the week after $n: per game, each offense's Biggest edge, ready to post in that team's subreddit. */

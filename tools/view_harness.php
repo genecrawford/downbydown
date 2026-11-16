@@ -76,7 +76,7 @@ function wp_schedule_single_event() {} function wp_next_scheduled() { return fal
 
 /* ---- the plugin, minus the bootstrap and admin. The SEO class extends a WordPress sitemap base class; an empty stand-in lets it load. */
 if ( ! class_exists( 'WP_Sitemaps_Provider' ) ) { class WP_Sitemaps_Provider { public $name = ''; public $object_type = ''; } }
-foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-kicker', 'class-dbd-defense', 'class-dbd-week', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-boards', 'class-dbd-sync', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo', 'class-dbd-blocks', 'class-dbd-post', 'class-dbd-news', 'class-dbd-email', 'class-dbd-videos', 'class-dbd-growth', 'class-dbd-signup', 'class-dbd-pack', 'class-dbd-board-mail' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
+foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-kicker', 'class-dbd-defense', 'class-dbd-week', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-boards', 'class-dbd-sync', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo', 'class-dbd-blocks', 'class-dbd-post', 'class-dbd-news', 'class-dbd-email', 'class-dbd-videos', 'class-dbd-growth', 'class-dbd-signup', 'class-dbd-pack', 'class-dbd-pack-mail', 'class-dbd-board-mail' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
 
 if ( getenv( 'DBD_HARNESS_SIGN' ) ) { $GLOBALS['dbd_opt'] = array( 'dbd_email' => array( 'on' => true, 'key' => 'harness', 'list' => 4, 'tpl' => 5 ) ); }  /* the email set up, so pages draw the signup strip (SCOPE §66) */
 if ( getenv( 'DBD_HARNESS_NOW' ) && class_exists( 'DBD_News' ) ) { DBD_News::$now = (int) getenv( 'DBD_HARNESS_NOW' ); }
@@ -370,6 +370,75 @@ if ( $view === 'growth' ) {
 
 /* ---- the admin page (2.11.0, SCOPE §50): every tab drawn with stored settings, a sync that failed, a feed to check, an email sent and two week posts */
 /* ---- the share pack (2.27.0, SCOPE §68): the newest pack's items and keys, the X length, the play cleanup, the mover picks, both card specs */
+/* ---- the share pack email (2.28.0, SCOPE §69): booking, the email, one copy per person, a retry for only the one Brevo refused */
+if ( $view === 'packmail' ) {
+	$GLOBALS['dbd_opt'] = array( 'dbd_email' => array( 'on' => true, 'key' => 'xkeysib-test', 'list' => 3, 'tpl' => 5, 'test' => 'gene@example.test' ) );
+	$GLOBALS['hcalls'] = array(); $GLOBALS['hmail'] = array(); $GLOBALS['refuse'] = array();
+	foreach ( array(
+		'is_email' => function ( $e ) { return (bool) filter_var( $e, FILTER_VALIDATE_EMAIL ); },
+		'sanitize_email' => function ( $e ) { return preg_replace( '/[^a-z0-9@._+\-]/i', '', (string) $e ); },
+		'admin_url' => function ( $p = '' ) { return 'https://example.test/wp-admin/' . $p; },
+		'add_option' => function ( $k, $v = '' ) { if ( isset( $GLOBALS['dbd_opt'][ $k ] ) ) { return false; } $GLOBALS['dbd_opt'][ $k ] = $v; return true; },
+		'delete_option' => function ( $k ) { unset( $GLOBALS['dbd_opt'][ $k ] ); return true; },
+		'wp_mail' => function ( $to, $sub ) { $GLOBALS['hmail'][] = $sub; return true; },
+		'wp_remote_request' => function ( $url, $a ) {
+			$path = substr( $url, strlen( DBD_Email::API ) ); $b = isset( $a['body'] ) ? json_decode( $a['body'], true ) : null; $GLOBALS['hcalls'][] = array( $a['method'], $path, $b );
+			$to = $b['to'][0]['email'] ?? ''; if ( in_array( $to, $GLOBALS['refuse'], true ) ) { return array( 'response' => array( 'code' => 400 ), 'body' => '{"message":"invalid email"}' ); }
+			return array( 'response' => array( 'code' => 201 ), 'body' => '{"messageId":"<x@smtp>"}' );
+		},
+	) as $fn => $body ) { if ( ! function_exists( $fn ) ) { $GLOBALS['hfn'][ $fn ] = $body; eval( 'function ' . $fn . '( ...$a ) { return $GLOBALS["hfn"]["' . $fn . '"]( ...$a ); }' ); } }
+	$bad = 0; $ck = function ( $what, $ok, $got = '' ) use ( &$bad ) { echo '  ' . ( $ok ? 'ok' : 'WRONG' ) . ": $what" . ( $ok ? '' : " (got: $got)" ) . "\n"; $bad += ! $ok; };
+	try {
+		/* who gets it */
+		$ck( 'before saving: on, to the test address', DBD_Pack_Mail::settings() === array( 'on' => true, 'to' => array( 'gene@example.test' ) ), json_encode( DBD_Pack_Mail::settings() ) );
+		$to = DBD_Pack_Mail::parse_to( " Gene@Example.test\nerik@example.test, not-an-address;erik@example.test\n\n" );
+		$ck( 'addresses: one per line or commas, valid only, no repeats', $to === array( 'gene@example.test', 'erik@example.test' ), json_encode( $to ) );
+		$ck( 'at most ten', count( DBD_Pack_Mail::parse_to( implode( "\n", array_map( function ( $i ) { return "p$i@example.test"; }, range( 1, 14 ) ) ) ) ) === 10 );
+		$ck( 'unchecked switch saves off', DBD_Pack_Mail::sanitize( array( 'to' => 'a@example.test' ) ) === array( 'on' => false, 'to' => array( 'a@example.test' ) ) );
+		/* booking (decide: no side effects) */
+		$tue = 1795000000; $s0 = array( 'sent' => array(), 'jobs' => array() );
+		list( $s1, $at ) = DBD_Pack_Mail::decide( $s0, 2026, 9, $tue, $tue - 86400 ); $ck( 'a new week books its Tuesday', $at === $tue && ( $s1['jobs']['2026-w9']['state'] ?? '' ) === 'booked' );
+		list( , $at2 ) = DBD_Pack_Mail::decide( $s1, 2026, 9, $tue, $tue - 3600 ); $ck( 'a booked week never books again', $at2 === null );
+		list( , $at3 ) = DBD_Pack_Mail::decide( $s0, 2026, 9, $tue, $tue + 3600 ); $ck( 'after its Tuesday: a minute from now', $at3 === $tue + 3600 + 60, (string) $at3 );
+		list( $s4, $at4 ) = DBD_Pack_Mail::decide( $s0, 2026, 9, $tue, $tue + 3 * 86400 ); $ck( 'more than two days late: marked, not sent', $at4 === null && ( $s4['sent'][2026] ?? 0 ) === 9 && strpos( $s4['jobs']['2026-w9']['state'], 'skipped' ) === 0 );
+		list( , $at5 ) = DBD_Pack_Mail::decide( array( 'sent' => array( 2026 => 10 ), 'jobs' => array() ), 2026, 9, $tue, $tue - 60 ); $ck( 'an older week than the last sent never books', $at5 === null );
+		list( , $at6 ) = DBD_Pack_Mail::decide( $s0, 2026, 0, $tue, $tue ); $ck( 'no pack, no booking', $at6 === null );
+		$n = DBD_Pack::newest(); $t7 = DBD_Pack_Mail::tuesday( $n ); $d = new DateTime( '@' . $t7 ); $d->setTimezone( new DateTimeZone( 'America/New_York' ) );
+		$ck( 'the send time is Tuesday 7:00 AM Eastern', $d->format( 'D H:i' ) === 'Tue 07:00', $d->format( 'D H:i' ) );
+		/* the email */
+		$doc = DBD_Pack_Mail::build( $n ); $h = $doc['html'] ?? '';
+		$ck( 'the subject leads with the swing and the riser', (bool) preg_match( '/^Week ' . $n . ' share pack: .+-point swing, .+’s \d+%$/u', $doc['subject'] ?? '' ), $doc['subject'] ?? '' );
+		foreach ( array( '1 · The biggest swing', '3 · Best and worst offense', '5 · Keys to the game, Week ' . ( $n + 1 ), 'Reddit title', 'Reddit comment, with the link', 'X and Bluesky', ' of 280', 'Open the Share pack', 'page=down-by-down-share&#038;week=' . $n ) as $w ) {
+			$ck( 'the email has ' . $w, strpos( $h, $w ) !== false || strpos( $h, str_replace( '&#038;', '&', $w ) ) !== false ); }
+		preg_match_all( '#(?:href|src)="([^"]*)"#', $h, $m ); $rel = array_filter( $m[1], function ( $u ) { return ! preg_match( '#^https?://#', $u ); } );
+		$ck( 'every link and image is absolute', ! $rel, implode( ' ', $rel ) );
+		$ck( 'no raw angle brackets from the data', ! preg_match( '/<(?!\/?(?:html|head|meta|title|body|table|tr|td|div|span|a|img|b)\b|!doctype)/i', $h ) );
+		$ck( 'no pack, no email', DBD_Pack_Mail::build( 99 ) === null );
+		/* sending: one copy each; Erik refused, retried alone; then sent */
+		$GLOBALS['dbd_opt'][ DBD_Pack_Mail::OPT_SET ] = array( 'on' => true, 'to' => array( 'gene@example.test', 'erik@example.test' ) );
+		$key = DBD_Pack_Mail::key( DBD_Data::season(), $n ); $GLOBALS['dbd_opt'][ DBD_Pack_Mail::OPT ] = array( 'sent' => array(), 'jobs' => array( $key => array( 'state' => 'booked', 'at' => time(), 'tries' => 0, 'done' => array() ) ) );
+		$GLOBALS['refuse'] = array( 'erik@example.test' ); DBD_Pack_Mail::send( $key ); $j = DBD_Pack_Mail::job( $key );
+		$smtp = array_values( array_filter( $GLOBALS['hcalls'], function ( $c ) { return $c[1] === 'smtp/email'; } ) );
+		$ck( 'one copy per person, each to one address', count( $smtp ) === 2 && count( $smtp[0][2]['to'] ) === 1 && $smtp[0][2]['to'][0]['email'] === 'gene@example.test', (string) count( $smtp ) );
+		$ck( 'never the list, no campaign', ! array_filter( $GLOBALS['hcalls'], function ( $c ) { return strpos( $c[1], 'emailCampaigns' ) === 0; } ) && ! isset( $smtp[0][2]['recipients'] ) );
+		$ck( 'a refusal retries, Gene marked reached', strpos( $j['state'], 'retrying: erik@example.test: Brevo answered 400' ) === 0 && $j['done'] === array( 'gene@example.test' ) && (int) $j['tries'] === 1, json_encode( $j ) );
+		$GLOBALS['refuse'] = array(); $GLOBALS['hcalls'] = array(); DBD_Pack_Mail::send( $key ); $j = DBD_Pack_Mail::job( $key );
+		$smtp = array_values( array_filter( $GLOBALS['hcalls'], function ( $c ) { return $c[1] === 'smtp/email'; } ) );
+		$ck( 'the retry goes to Erik only', count( $smtp ) === 1 && $smtp[0][2]['to'][0]['email'] === 'erik@example.test' );
+		$ck( 'then sent, and the week recorded', $j['state'] === 'sent' && count( $j['done'] ) === 2 && (int) DBD_Pack_Mail::state()['sent'][ DBD_Data::season() ] === $n );
+		$GLOBALS['hcalls'] = array(); DBD_Pack_Mail::send( $key ); $ck( 'a sent week never sends again', ! $GLOBALS['hcalls'] );
+		$st = DBD_Pack_Mail::status(); $ck( 'the status line says sent to 2 people', strpos( end( $st )[1] ?? '', 'to 2 people' ) !== false, json_encode( $st ) );
+		/* the last try fails: failed, Try again, and a note */
+		$GLOBALS['refuse'] = array( 'erik@example.test' ); $GLOBALS['dbd_opt'][ DBD_Pack_Mail::OPT ]['jobs'][ $key ] = array( 'state' => 'retrying: x', 'at' => time(), 'tries' => DBD_Email::TRIES - 1, 'done' => array( 'gene@example.test' ) );
+		DBD_Pack_Mail::send( $key ); $ck( 'the seventh refusal is final, with a note', DBD_Pack_Mail::failed( $key ) && count( $GLOBALS['hmail'] ) === 1 );
+		$st = DBD_Pack_Mail::status(); $ck( 'the status offers Try again', ( end( $st )[2] ?? '' ) === $key, json_encode( $st ) );
+		/* switched off: nothing sends */
+		$GLOBALS['dbd_opt'][ DBD_Pack_Mail::OPT_SET ]['on'] = false; $GLOBALS['dbd_opt'][ DBD_Pack_Mail::OPT ]['jobs'][ $key ] = array( 'state' => 'booked', 'at' => time(), 'tries' => 0, 'done' => array() ); $GLOBALS['hcalls'] = array();
+		DBD_Pack_Mail::send( $key ); $ck( 'switched off: not sent', ! $GLOBALS['hcalls'] && strpos( DBD_Pack_Mail::job( $key )['state'], 'not sent' ) === 0 );
+		if ( ( $dir = getenv( 'DBD_HARNESS_HTML' ) ) ) { if ( ! is_dir( $dir ) ) { mkdir( $dir, 0777, true ); } file_put_contents( $dir . '/pack-email.html', $h ); }
+	} catch ( Throwable $e ) { fwrite( STDERR, 'FATAL in packmail: ' . $e->getMessage() . ' at ' . basename( $e->getFile() ) . ':' . $e->getLine() . "\n" ); exit( 1 ); }
+	echo "packmail week $n: $bad problems, $warnings warnings\n"; exit( $bad || $warnings ? 1 : 0 );
+}
 if ( $view === 'pack_cards' ) { $n = DBD_Pack::newest(); echo implode( ' ', DBD_Pack::cards( $n ) ), "\n"; exit( $n ? 0 : 1 ); }  /* the newest pack's cards, for CI to draw */
 if ( $view === 'pack' ) {
 	$bad = 0; $ck = function ( $ok, $what ) use ( &$bad ) { if ( ! $ok ) { $bad++; echo "  FAIL: $what\n"; } };
@@ -456,7 +525,7 @@ if ( $view === 'admin' ) {
 		'st' => array( 'Photos and logos', 'Addresses', 'Search and sharing', 'Using it in the theme', 'value="dbd"' ),
 		'dt' => array( 'Current data', 'Sync log', 'Seasons', 'Share cards', 'value="dbd_data"', 'harness-token' ),
 		'gr' => array( 'Visits by source', 'data-g="sources"', 'Google search', 'data-g="search"', 'Titles to tune', 'data-g="tune"', 'data-g="copy"', 'Top landing pages', 'data-g="landing"', 'Brevo isn’t set up', 'data-g="shares"', 'data-g="signups"', 'analytics.google.com/analytics/web/#/p123456/', 'resource_id=https%3A%2F%2Fexample.test%2F', 'page=googlesitekit-dashboard' ) );
-	$want['sp'] = array( 'Share pack', 'name="week"', 'The biggest swing', 'A usage riser', 'Best and worst offense', 'A target-share mover', 'class="button sp-cp"', 'download="dbd-week-', 'card=pack-week-', 'of 280', 'Fits: r/' );  /* SCOPE §68 */
+	$want['sp'] = array( 'The Tuesday email', 'value="dbd_pack"', 'name="dbd_pack_mail_set[to]"', 'Brevo isn’t set up', 'Share pack', 'name="week"', 'The biggest swing', 'A usage riser', 'Best and worst offense', 'A target-share mover', 'class="button sp-cp"', 'download="dbd-week-', 'card=pack-week-', 'of 280', 'Fits: r/' );  /* SCOPE §68 */
 	$want['ov'][] = 'Open Growth'; $want['ov'][] = 'data-g="ov-visits"'; $want['ov'][] = 'data-g="ov-clicks"';
 	$bad = 0; $dir = getenv( 'DBD_HARNESS_HTML' ); if ( $dir && ! is_dir( $dir ) ) { mkdir( $dir, 0777, true ); }
 	foreach ( dbd_admin_tabs() as $k => $t ) {

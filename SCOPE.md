@@ -2959,15 +2959,17 @@ An item whose data is missing (no swing, no mover) is left out, and the rest kee
 
 Gene, after 2.27.0: "Build the email." This is the first step toward automating the share pack. Bluesky, a Facebook Page and X come later, once Gene has the accounts. Reddit stays by hand.
 
-**What:** one email to Gene each Tuesday at 7:00 AM Eastern, an hour before the weekly post and the Tuesday email go out. It holds the newest share pack, so he can post from his phone.
+**Who gets it (Gene, building it):** several people, since Erik is helping post. The "Send to" box takes up to ten addresses, one per line. Each person gets their own copy, so nobody sees the others' addresses, and a retry goes only to whoever Brevo refused.
 
-**How it sends:** through Brevo's transactional email, with the API key the Tuesday email already uses (the same way the board-email tests send). It goes to one address and is not a campaign, so it never touches the subscriber list. It counts toward Brevo's 300-a-day free limit as one email.
+**What:** one email to each of them every Tuesday at 7:00 AM Eastern, an hour before the weekly post and the Tuesday email go out. It holds the newest share pack, so he can post from his phone.
+
+**How it sends:** through Brevo's transactional email, with the API key the Tuesday email already uses (the same way the board-email tests send). It goes to each address on the list and is not a campaign, so it never touches the subscriber list. It counts toward Brevo's 300-a-day free limit as one email.
 
 **When:**
 - When a sync brings in a finished week that hasn't had its pack emailed, the plugin books one send for that week's Tuesday at 7:00 AM Eastern, or a minute later if that time has passed.
 - Each pack week goes out once.
 - A failed send tries again on the Tuesday email's schedule (`DBD_Email::TRIES` and `RETRY`). After the last try, the Share pack tab shows the error and offers Try again.
-- Before Week 1, or with the email turned off, nothing is booked.
+- Before Week 1, or with the email turned off, nothing is booked. A week more than two days past its Tuesday (the plugin installed late, or the data came in late) is marked and never sent.
 
 **What's in it** (light, plain, built from the same `DBD_Pack` items as the tab):
 - **Subject:** "Week 9 share pack: Broncos’ 43-point swing, Singletary’s 93%". The two lead items, each kept short.
@@ -2982,8 +2984,8 @@ Gene, after 2.27.0: "Build the email." This is the first step toward automating 
 
 **On the Share pack tab,** a new box at the top, "The Tuesday email to you":
 - An on/off switch, on by default.
-- The address it goes to, defaulting to the test address on Week in review.
-- A "Send this week’s pack now" button, which sends the week shown.
+- Who it goes to: one address per line, up to ten, defaulting to the test address on Week in review.
+- A "Send the Week 9 pack now" button, which sends the week shown to everyone on the list right away without changing the Tuesday booking.
 - A status line: "Week 9 pack sent Tuesday, Nov 10, 7:00 AM", "Week 10 pack booked for Tuesday, Nov 17, 7:00 AM", or the last error with Try again.
 - If Brevo isn't set up, the box says so and links to Week in review.
 
