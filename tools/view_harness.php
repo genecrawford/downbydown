@@ -78,7 +78,7 @@ function wp_schedule_single_event() {} function wp_next_scheduled() { return fal
 if ( ! class_exists( 'WP_Sitemaps_Provider' ) ) { class WP_Sitemaps_Provider { public $name = ''; public $object_type = ''; } }
 foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-kicker', 'class-dbd-defense', 'class-dbd-week', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-boards', 'class-dbd-sync', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo', 'class-dbd-blocks', 'class-dbd-post', 'class-dbd-news', 'class-dbd-email', 'class-dbd-videos', 'class-dbd-growth', 'class-dbd-signup', 'class-dbd-board-mail' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
 
-if ( getenv( 'DBD_HARNESS_SIGN' ) ) { $GLOBALS['dbd_opt'] = array( 'dbd_email' => array( 'on' => true, 'key' => 'harness', 'list' => 4 ) ); }  /* the email set up, so pages draw the signup strip (SCOPE §66) */
+if ( getenv( 'DBD_HARNESS_SIGN' ) ) { $GLOBALS['dbd_opt'] = array( 'dbd_email' => array( 'on' => true, 'key' => 'harness', 'list' => 4, 'tpl' => 5 ) ); }  /* the email set up, so pages draw the signup strip (SCOPE §66) */
 if ( getenv( 'DBD_HARNESS_NOW' ) && class_exists( 'DBD_News' ) ) { DBD_News::$now = (int) getenv( 'DBD_HARNESS_NOW' ); }
 
 /* ---- team news (SCOPE §49): the fixture feeds through the matching step, with no network. A feed key's file is the key with ':' and spaces as '-';
@@ -299,15 +299,17 @@ if ( $view === 'send' ) {
 if ( $view === 'signup' ) {
 	$fails = 0; $t = function ( $what, $ok, $got = '' ) use ( &$fails ) { if ( ! $ok ) { $fails++; } echo ( $ok ? '  ok   ' : '  FAIL ' ) . $what . ( $ok ? '' : ': ' . $got ) . "\n"; };
 	$at = function ( $d ) { return strtotime( $d . ' 15:00 UTC' ); };
-	foreach ( array( '2026-02-14' => 'The week in review|every Tuesday', '2026-02-15' => 'The combine and draft boards', '2026-04-30' => 'The combine and draft boards', '2026-05-01' => 'every Tuesday from September', '2026-08-31' => 'every Tuesday from September', '2026-09-01' => 'The week in review|every Tuesday', '2026-11-15' => 'The week in review|every Tuesday' ) as $d => $want ) {
+	foreach ( array( '2026-02-14' => 'The week in review|every Tuesday', '2026-02-15' => 'The combine and draft boards', '2026-04-30' => 'The combine and draft boards', '2026-05-01' => 'The week in review|every Tuesday from September', '2026-08-31' => 'The week in review|every Tuesday from September', '2026-09-01' => 'The week in review|every Tuesday', '2026-11-15' => 'The week in review|every Tuesday' ) as $d => $want ) {
 		$L = DBD_Signup::line( $at( $d ) ); $got = $L[0] . '|' . $L[1];
 		$t( "the line on $d", strpos( $got, $want ) === 0 && ( strpos( $want, '|' ) === false || $got === $want ), $got );
 	}
 	$GLOBALS['dbd_opt'] = array( 'dbd_email' => array( 'on' => false, 'key' => 'k', 'list' => 4 ) );
 	$t( 'no strip while the email is off', DBD_Signup::strip( 'game' ) === '' );
-	$GLOBALS['dbd_opt'] = array( 'dbd_email' => array( 'on' => true, 'key' => 'k', 'list' => 4 ), 'dbd_post_form' => '' );
+	$GLOBALS['dbd_opt'] = array( 'dbd_email' => array( 'on' => true, 'key' => 'k', 'list' => 4, 'tpl' => 0 ) );
+	$t( 'no strip without the confirmation template', DBD_Signup::strip( 'game' ) === '' );
+	$GLOBALS['dbd_opt'] = array( 'dbd_email' => array( 'on' => true, 'key' => 'k', 'list' => 4, 'tpl' => 5 ), 'dbd_post_form' => '' );
 	$t( 'no strip without a form', DBD_Signup::strip( 'game' ) === '' );
-	$GLOBALS['dbd_opt'] = array( 'dbd_email' => array( 'on' => true, 'key' => 'k', 'list' => 4 ) );
+	$GLOBALS['dbd_opt'] = array( 'dbd_email' => array( 'on' => true, 'key' => 'k', 'list' => 4, 'tpl' => 5 ) );
 	$h = DBD_Signup::strip( 'draft' );
 	$t( 'the strip: id, type, the form, the on-the-list line', strpos( $h, 'id="dbd-sign" data-type="draft"' ) !== false && strpos( $h, '[form [wpforms id=&quot;63&quot; title=&quot;false&quot;]]' ) !== false && strpos( $h, 'class="dbd-sg-on"' ) !== false, $h );
 	/* board emails: the decision, step by step */

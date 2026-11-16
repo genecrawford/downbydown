@@ -115,7 +115,9 @@ class DBD_Post {
 	private static function write_locked( $n, $W, $backfill ) {
 		$known = isset( self::map()[ (int) $n ] ); $p = self::post_for( $n );
 		if ( $known && ( ! $p || $p->post_status === 'trash' ) ) { return 'deleted'; }
-		self::swing_card( $n, $W );  /* drawn before the words, so the post can show it (SCOPE §66) */
+		/* the swing card, drawn before the words so the post can show it (SCOPE §66): only for a post that can still change, so a published
+		   post's image is never replaced (Greptile, PR #121) */
+		if ( ! $p || ( in_array( $p->post_status, array( 'future', 'draft' ), true ) && ! self::edited( $p ) ) ) { self::swing_card( $n, $W ); }
 		$doc = self::compose( $n, $W, ! $backfill ); if ( ! $doc ) { return 'not ready'; }
 		if ( $p ) {
 			if ( ! in_array( $p->post_status, array( 'future', 'draft' ), true ) || self::edited( $p ) ) { return 'kept'; }
@@ -180,11 +182,12 @@ class DBD_Post {
 
 	/**
 	 * Where week n's swing card lives (SCOPE §66): array( path, URL ) under uploads, beside the share-card cache but never pruned with it,
-	 * since a published post keeps pointing at it. The game is in the name, so a later swing in a refreshed post draws its own.
+	 * since a published post keeps pointing at it. The game and the data version are in the name, so a refreshed post with a different
+	 * swing, or corrected data, draws its own (Greptile, PR #121).
 	 */
 	public static function swing_file( $n, $gid ) {
 		$gid = preg_replace( '/[^A-Za-z0-9_]/', '', (string) $gid ); if ( $gid === '' ) { return array( '', '' ); }
-		$up = wp_upload_dir(); $f = 'down-by-down/swing/' . (int) DBD_Data::season() . '-w' . (int) $n . '-' . $gid . '.png';
+		$up = wp_upload_dir(); $f = 'down-by-down/swing/' . (int) DBD_Data::season() . '-w' . (int) $n . '-' . $gid . '-' . substr( md5( DBD_Card::stamp() ), 0, 8 ) . '.png';
 		return array( trailingslashit( $up['basedir'] ) . $f, trailingslashit( $up['baseurl'] ) . $f );
 	}
 
@@ -196,7 +199,9 @@ class DBD_Post {
 		$im = DBD_Card::render( 'game-' . $gid, $fetch ); if ( ! $im ) { return; }
 		wp_mkdir_p( dirname( $path ) ); $tmp = $path . '.' . wp_generate_password( 8, false ) . '.tmp';
 		$ok = imagepng( $im, $tmp, 6 ); imagedestroy( $im );
-		if ( ! $ok || ! @rename( $tmp, $path ) ) { @unlink( $tmp ); }
+		if ( ! $ok || ! @rename( $tmp, $path ) ) { @unlink( $tmp ); return; }
+		/* the week's earlier drafts of the card go: only a post that hasn't published draws one */
+		foreach ( (array) glob( dirname( $path ) . '/' . (int) DBD_Data::season() . '-w' . (int) $n . '-*.png' ) as $old ) { if ( $old !== $path ) { @unlink( $old ); } }
 	}
 
 	/** The week's share card as the featured image, drawn straight to a file and added to the media library. */

@@ -25,7 +25,8 @@ class DBD_Board_Mail {
 		add_action( self::HOOK_SEND, array( __CLASS__, 'send' ) );
 		add_action( 'admin_post_dbd_board_test', array( __CLASS__, 'test_action' ) );
 		add_action( 'admin_post_dbd_board_again', array( __CLASS__, 'again_action' ) );
-		if ( ! wp_next_scheduled( self::HOOK_WEEK ) ) { wp_schedule_event( self::next_tuesday(), 'weekly', self::HOOK_WEEK ); }
+		/* one event at a time, each run booking the next Tuesday at 8:00 Eastern, so daylight saving never shifts it (Greptile, PR #121) */
+		if ( ! wp_next_scheduled( self::HOOK_WEEK ) ) { wp_schedule_single_event( self::next_tuesday(), self::HOOK_WEEK ); }
 	}
 	public static function unschedule() { wp_clear_scheduled_hook( self::HOOK_WEEK ); wp_clear_scheduled_hook( self::HOOK_SEND ); }
 
@@ -80,6 +81,7 @@ class DBD_Board_Mail {
 
 	/** Tuesday, 8:00 AM Eastern: queue what has settled. */
 	public static function tuesday() {
+		if ( ! wp_next_scheduled( self::HOOK_WEEK ) ) { wp_schedule_single_event( self::next_tuesday( time() + 60 ), self::HOOK_WEEK ); }
 		$due = self::note(); if ( ! $due || ! self::on() ) { return; }
 		foreach ( $due as $key ) { self::queue( $key ); }
 	}

@@ -23,7 +23,7 @@ class DBD_Signup {
 
 	/** The form's shortcode, or '' when there's nothing to sign up for. */
 	public static function form() {
-		if ( ! DBD_Email::ready() ) { return ''; }
+		if ( ! DBD_Email::ready() || (int) DBD_Email::get( 'tpl' ) < 1 ) { return ''; }  /* no confirmation template: a signup would go nowhere (Greptile, PR #121) */
 		return trim( (string) get_option( DBD_Post::OPT_FORM, DBD_Post::FORM ) );
 	}
 
