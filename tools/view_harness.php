@@ -415,8 +415,20 @@ if ( $view === 'packmail' ) {
 		$ck( 'no raw angle brackets from the data', ! preg_match( '/<(?!\/?(?:html|head|meta|title|body|table|tr|td|div|span|a|img|b)\b|!doctype)/i', $h ) );
 		$ck( 'no pack, no email', DBD_Pack_Mail::build( 99 ) === null );
 		/* sending: one copy each; Erik refused, retried alone; then sent */
+		$key = DBD_Pack_Mail::key( DBD_Data::season(), $n );
+		/* a booked first send that runs more than two days after its Tuesday: old news (Greptile, PR #127) */
+		$GLOBALS['dbd_opt'][ DBD_Pack_Mail::OPT ] = array( 'sent' => array(), 'jobs' => array( $key => array( 'state' => 'booked', 'at' => time(), 'tries' => 0, 'done' => array() ) ) );
+		$late = DBD_Pack_Mail::late( $n, time() ); DBD_Pack_Mail::send( $key );
+		$ck( 'a booked send run late is not sent; on time it is', $late ? ( ! $GLOBALS['hcalls'] && DBD_Pack_Mail::job( $key )['state'] === 'not sent: more than two days late' ) : DBD_Pack_Mail::job( $key )['state'] === 'sent', DBD_Pack_Mail::job( $key )['state'] );
+		$ck( 'late() is two days past Tuesday 7:00', ! DBD_Pack_Mail::late( $n, DBD_Pack_Mail::tuesday( $n ) + 2 * 86400 ) && DBD_Pack_Mail::late( $n, DBD_Pack_Mail::tuesday( $n ) + 2 * 86400 + 1 ) );
+		/* a booking whose event is gone is booked again on the next sync (Greptile, PR #127) */
+		$GLOBALS['dbd_opt'][ DBD_Pack_Mail::OPT ] = array( 'sent' => array(), 'jobs' => array( $key => array( 'state' => 'booked', 'at' => 1000, 'tries' => 0, 'done' => array() ) ) );
+		$GLOBALS['dbd_opt'][ DBD_Pack_Mail::OPT_SET ] = array( 'on' => true, 'to' => array( 'gene@example.test' ) ); $rb = DBD_Pack_Mail::note( null, 5000 );
+		$ck( 'a lost booking is booked again', $rb === 5060, (string) $rb );
+		/* retries (and Try again) send whatever the date */
+		$GLOBALS['hcalls'] = array();
+		$GLOBALS['dbd_opt'][ DBD_Pack_Mail::OPT ] = array( 'sent' => array(), 'jobs' => array( $key => array( 'state' => 'retrying: again', 'at' => time(), 'tries' => 0, 'done' => array() ) ) );
 		$GLOBALS['dbd_opt'][ DBD_Pack_Mail::OPT_SET ] = array( 'on' => true, 'to' => array( 'gene@example.test', 'erik@example.test' ) );
-		$key = DBD_Pack_Mail::key( DBD_Data::season(), $n ); $GLOBALS['dbd_opt'][ DBD_Pack_Mail::OPT ] = array( 'sent' => array(), 'jobs' => array( $key => array( 'state' => 'booked', 'at' => time(), 'tries' => 0, 'done' => array() ) ) );
 		$GLOBALS['refuse'] = array( 'erik@example.test' ); DBD_Pack_Mail::send( $key ); $j = DBD_Pack_Mail::job( $key );
 		$smtp = array_values( array_filter( $GLOBALS['hcalls'], function ( $c ) { return $c[1] === 'smtp/email'; } ) );
 		$ck( 'one copy per person, each to one address', count( $smtp ) === 2 && count( $smtp[0][2]['to'] ) === 1 && $smtp[0][2]['to'][0]['email'] === 'gene@example.test', (string) count( $smtp ) );

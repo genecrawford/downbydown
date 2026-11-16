@@ -452,7 +452,7 @@ function dbd_pack_mail_box( $n ) {
 		</tbody></table>
 		<div class="dbd-foot"><?php submit_button( 'Save', 'primary', 'submit', false ); ?></div>
 		</form>
-		<?php if ( $key && $ps['to'] ) : ?>
+		<?php if ( $key && $ps['to'] && $n ) : ?>
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="dbd-foot" style="border-top:0;padding-top:0"><input type="hidden" name="action" value="dbd_pack_now"><input type="hidden" name="week" value="<?php echo (int) $n; ?>"><?php wp_nonce_field( 'dbd_pack_now' ); ?>
 			<button class="button"><?php echo esc_html( 'Send the Week ' . $n . ' pack now' ); ?></button><span class="description"><?php echo esc_html( 'To ' . count( $ps['to'] ) . ( count( $ps['to'] ) === 1 ? ' person' : ' people' ) . ', right away. Save any change to the list first.' ); ?></span></form>
 		<?php endif; ?>
@@ -469,7 +469,7 @@ function dbd_pack_field( $lab, $text, $count = false ) {
 
 function dbd_tab_share() {
 	$weeks = DBD_Pack::weeks();
-	if ( ! $weeks ) { echo '<div class="dbd-box"><h2>Share pack</h2><p class="dbd-in" style="padding:12px 16px;margin:0">The pack starts after Week 1’s games are all in.</p></div>'; return; }
+	if ( ! $weeks ) { dbd_pack_mail_box( 0 ); echo '<div class="dbd-box"><h2>Share pack</h2><p class="dbd-in" style="padding:12px 16px;margin:0">The pack starts after Week 1’s games are all in.</p></div>'; return; }  /* the email's settings show before Week 1 too (Greptile, PR #127) */
 	$want = (int) ( $_GET['week'] ?? 0 ); $n = in_array( $want, $weeks, true ) ? $want : $weeks[0];
 	$items = DBD_Pack::items( $n ); $keys = DBD_Pack::keys( $n );
 	$tue = DBD_Post::tuesday( $n );

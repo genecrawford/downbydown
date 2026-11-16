@@ -16,6 +16,9 @@ wp_clear_scheduled_hook( 'dbd_videos_first' );
 /* the Tuesday email (SCOPE §48): its settings, send log and signup counts; any queued sends */
 foreach ( array( 'dbd_email', 'dbd_email_log', 'dbd_email_signups' ) as $o ) { delete_option( $o ); }
 wp_unschedule_hook( 'dbd_email_send' );
+/* the share pack email (SCOPE §69): who gets it and the send record; any booked sends */
+foreach ( array( 'dbd_pack_mail', 'dbd_pack_mail_set' ) as $o ) { delete_option( $o ); }
+wp_unschedule_hook( 'dbd_pack_mail_send' );
 
 $u   = wp_upload_dir();
 $dir = trailingslashit( $u['basedir'] ) . 'down-by-down';

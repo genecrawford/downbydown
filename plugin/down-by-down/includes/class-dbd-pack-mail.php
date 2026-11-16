@@ -60,6 +60,9 @@ class DBD_Pack_Mail {
 	public static function key( $season, $n ) { return (int) $season . '-w' . (int) $n; }
 	private static function parse( $key ) { return preg_match( '/^(\d{4})-w(\d{1,2})$/', (string) $key, $m ) ? array( (int) $m[1], (int) $m[2] ) : null; }
 
+	/** More than two days past week $n's Tuesday send time. */
+	public static function late( $n, $now ) { return (int) $now > self::tuesday( $n ) + self::LATE; }
+
 	/** Week $n's send time: 7:00 AM Eastern on its Tuesday (the weekly post's Tuesday, an hour earlier). */
 	public static function tuesday( $n ) { return DBD_Post::tuesday( $n ) - HOUR_IN_SECONDS; }
 
@@ -84,8 +87,14 @@ class DBD_Pack_Mail {
 		$now = $now ?? time(); $season = (int) DBD_Data::season();
 		$s0 = self::state(); list( $s, $at ) = self::decide( $s0, $season, $n, self::tuesday( $n ), $now );
 		if ( $s !== $s0 ) { self::save( $s ); }
-		if ( $at ) { wp_schedule_single_event( $at, self::HOOK, array( self::key( $season, $n ) ) ); }
-		return $at;
+		$key = self::key( $season, $n );
+		if ( $at ) { wp_schedule_single_event( $at, self::HOOK, array( $key ) ); return $at; }
+		/* a booking whose event is gone (the plugin was off when it came due): book it again, and send() decides if it's too late (Greptile, PR #127) */
+		$st = (string) ( $s['jobs'][ $key ]['state'] ?? '' );
+		if ( ( $st === 'booked' || strpos( $st, 'retrying' ) === 0 ) && ! wp_next_scheduled( self::HOOK, array( $key ) ) ) {
+			$at = max( (int) $now + 60, (int) ( $s['jobs'][ $key ]['at'] ?? 0 ) ); wp_schedule_single_event( $at, self::HOOK, array( $key ) ); return $at;
+		}
+		return null;
 	}
 
 	/* ------------------------------------------------------------------ the email */
@@ -165,6 +174,8 @@ class DBD_Pack_Mail {
 		if ( ! self::on() ) { self::job_set( $key, array( 'state' => 'not sent: the email is switched off or Brevo isn’t set up' ) ); return; }
 		list( $season, $n ) = $kp;
 		if ( (int) DBD_Data::season() !== $season ) { self::job_set( $key, array( 'state' => 'not sent: a new season started' ) ); return; }
+		/* the first automatic send, run more than two days after its Tuesday (a late cron): old news, not sent; Try again still sends (Greptile, PR #127) */
+		if ( $st === 'booked' && self::late( $n, time() ) ) { self::job_set( $key, array( 'state' => 'not sent: more than two days late' ) ); return; }
 		$lock = 'dbd_pack_lock_' . $key;
 		if ( ! add_option( $lock, time(), '', false ) ) { if ( time() - (int) get_option( $lock, 0 ) < 300 ) { return; } update_option( $lock, time(), false ); }
 		try {
