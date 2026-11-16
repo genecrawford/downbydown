@@ -305,6 +305,11 @@ jobs:
           php tools/view_harness.php data card page-draft-1983 card-page-draft-1983.png
           php tools/view_harness.php data card page-combine-2026 card-page-combine.png
           for k in team-ZZZ game-2026_99_AAA_BBB page-nope page-draft-1970 page-combine-1990; do if php tools/view_harness.php data card "$k" /tmp/x.png 2>/dev/null; then echo "card $k should not render"; exit 1; fi; done
+          # the share pack's cards (2.27.0, SCOPE §68)
+          PC=$(php tools/view_harness.php data pack_cards); echo "pack cards: $PC"; echo "$PC" | grep -q -- '-offense'
+          for k in $PC; do php tools/view_harness.php data card "$k" "card-${k#pack-week-*-}.png"; done
+          PO=$(echo "$PC" | tr ' ' '\n' | grep -- '-offense'); DBD_HARNESS_LOGOS= DBD_HARNESS_MEDIA= php tools/view_harness.php data card "$PO" card-offense-nologos.png
+          for k in pack-week-99-snaps pack-week-1-nope pack-week-123-offense; do if php tools/view_harness.php data card "$k" /tmp/x.png 2>/dev/null; then echo "card $k should not render"; exit 1; fi; done
       - uses: actions/upload-artifact@v4
         with:
           name: share-cards
@@ -520,6 +525,10 @@ jobs:
           # Growth (2.25.0, SCOPE §65): the list-size change, the 90-day record, the email line, and no Brevo call without a key
           php tools/view_harness.php data growth
           grep -q "'down-by-down-growth', 'Growth'" plugin/down-by-down/includes/admin/settings.php
+          # the share pack (2.27.0, SCOPE §68): the items, keys, X lengths and helpers; both new cards draw, with and without logos; bad keys don't
+          php tools/view_harness.php data pack
+          grep -q "'down-by-down-share', 'Share pack'" plugin/down-by-down/includes/admin/settings.php
+          node --check plugin/down-by-down/assets/pack.js
           # the events: share from the card button and both copy-link buttons; sign_up once per session on the confirmed landing
           grep -q "window.dbdTrack('share', { method: a.dataset.sheet === '1' ? 'share_sheet' : 'image'" plugin/down-by-down/assets/dbd-site.js
           grep -q "dbdTrack('share', { method: 'copy_link', content_type: 'compare'" plugin/down-by-down/assets/compare.js

@@ -76,7 +76,7 @@ function wp_schedule_single_event() {} function wp_next_scheduled() { return fal
 
 /* ---- the plugin, minus the bootstrap and admin. The SEO class extends a WordPress sitemap base class; an empty stand-in lets it load. */
 if ( ! class_exists( 'WP_Sitemaps_Provider' ) ) { class WP_Sitemaps_Provider { public $name = ''; public $object_type = ''; } }
-foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-kicker', 'class-dbd-defense', 'class-dbd-week', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-boards', 'class-dbd-sync', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo', 'class-dbd-blocks', 'class-dbd-post', 'class-dbd-news', 'class-dbd-email', 'class-dbd-videos', 'class-dbd-growth', 'class-dbd-signup', 'class-dbd-board-mail' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
+foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-kicker', 'class-dbd-defense', 'class-dbd-week', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-boards', 'class-dbd-sync', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo', 'class-dbd-blocks', 'class-dbd-post', 'class-dbd-news', 'class-dbd-email', 'class-dbd-videos', 'class-dbd-growth', 'class-dbd-signup', 'class-dbd-pack', 'class-dbd-board-mail' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
 
 if ( getenv( 'DBD_HARNESS_SIGN' ) ) { $GLOBALS['dbd_opt'] = array( 'dbd_email' => array( 'on' => true, 'key' => 'harness', 'list' => 4, 'tpl' => 5 ) ); }  /* the email set up, so pages draw the signup strip (SCOPE §66) */
 if ( getenv( 'DBD_HARNESS_NOW' ) && class_exists( 'DBD_News' ) ) { DBD_News::$now = (int) getenv( 'DBD_HARNESS_NOW' ); }
@@ -369,6 +369,49 @@ if ( $view === 'growth' ) {
 }
 
 /* ---- the admin page (2.11.0, SCOPE §50): every tab drawn with stored settings, a sync that failed, a feed to check, an email sent and two week posts */
+/* ---- the share pack (2.27.0, SCOPE §68): the newest pack's items and keys, the X length, the play cleanup, the mover picks, both card specs */
+if ( $view === 'pack_cards' ) { $n = DBD_Pack::newest(); echo implode( ' ', DBD_Pack::cards( $n ) ), "\n"; exit( $n ? 0 : 1 ); }  /* the newest pack's cards, for CI to draw */
+if ( $view === 'pack' ) {
+	$bad = 0; $ck = function ( $ok, $what ) use ( &$bad ) { if ( ! $ok ) { $bad++; echo "  FAIL: $what\n"; } };
+	$n = DBD_Pack::newest(); $ck( $n > 0, 'a finished week with movers' );
+	$items = DBD_Pack::items( $n ); $ks = array_map( function ( $x ) { return $x['k']; }, $items );
+	/* a week may lack a mover (items() leaves it out), so the items must be the fixed order minus any missing mover, never the swing or offense (Greptile, PR #125) */
+	$ck( $ks === array_values( array_intersect( array( 'swing', 'snaps', 'offense', 'targets' ), $ks ) ) && in_array( 'swing', $ks, true ) && in_array( 'offense', $ks, true ), 'the items in their fixed order, got ' . implode( ',', $ks ) );
+	foreach ( $items as $it ) { $ck( isset( DBD_Pack::NUM[ $it['k'] ] ), $it['k'] . ': a fixed number' ); }
+	$ck( DBD_Pack::NUM === array( 'swing' => 1, 'snaps' => 2, 'offense' => 3, 'targets' => 4, 'keys' => 5 ), 'the fixed numbers' );
+	foreach ( $items as $it ) {
+		$ck( $it['title'] !== '' && strpos( $it['title'], 'http' ) === false, $it['k'] . ': a title without a link' );
+		$ck( strpos( $it['comment'], $it['link'] ) !== false && strpos( $it['comment'], '[' ) === false, $it['k'] . ': the comment carries the link and no bracketed note' );
+		$ck( strpos( $it['post'], $it['link'] ) !== false && DBD_Pack::xlen( $it['post'] ) <= 280, $it['k'] . ': the post carries the link within 280 (' . DBD_Pack::xlen( $it['post'] ) . ')' );
+		$ck( DBD_Card::valid( $it['card'] ) && preg_match( '/^dbd-week-\d+-[a-z0-9-]+\.png$/', $it['file'] ), $it['k'] . ': a valid card and file name' );
+		$ck( count( $it['fits'] ) >= 2, $it['k'] . ': where it fits' );
+		echo '  ' . $it['k'] . ' (' . DBD_Pack::xlen( $it['post'] ) . '): ' . $it['title'] . "\n";
+	}
+	$by = array(); foreach ( $items as $it ) { $by[ $it['k'] ] = $it; } $ck( ! isset( $by['snaps'], $by['targets'] ) || $by['snaps']['link'] !== $by['targets']['link'], 'the target mover is not the usage riser' );
+	$keys = DBD_Pack::keys( $n ); $sides = 0;
+	foreach ( $keys as $kg ) { foreach ( $kg['sides'] as $sd ) { $sides++; $home = $sd['t'] === $kg['g']['home'];
+		$ck( DBD_Pack::xlen( $sd['post'] ) <= 280 && strpos( $sd['post'], $sd['link'] ) !== false && strpos( $sd['comment'], $sd['link'] ) !== false, 'keys ' . $kg['g']['id'] . ' ' . $sd['t'] );
+		$ck( $sd['link'] === DBD_Router::url( $home ? array( 'game' => $kg['g']['id'], 'side' => 'home' ) : array( 'game' => $kg['g']['id'] ) ), 'keys ' . $sd['t'] . ': the link opens its own offense' ); $ck( strpos( $sd['fits'], 'r/' ) === 0, 'keys ' . $sd['t'] . ': a subreddit' ); } }
+	echo '  keys for week ' . ( $n + 1 ) . ': ' . count( $keys ) . ' games, ' . $sides . " sides\n";
+	/* the helpers */
+	$ck( DBD_Pack::play( 'B.Young sacked at DEN 44 for -8 yards (N.Bonitto). FUMBLES (N.Bonitto) [N.Bonitto], RECOVERED by DEN-N.Bonitto at DEN 44. The Replay Official…' ) === 'B.Young sacked at DEN 44 for -8 yards (N.Bonitto). FUMBLES (N.Bonitto), RECOVERED by DEN-N.Bonitto at DEN 44.', 'play(): brackets and the cut-off sentence out' );
+	$ck( DBD_Pack::play( 'J.Allen pass deep left to K.Coleman for 40 yards, TOUCHDOWN' ) === 'J.Allen pass deep left to K.Coleman for 40 yards, TOUCHDOWN.', 'play(): a period at the end' );
+	$L = 'https://example.test/game/a-very-long-address-that-counts-as-twenty-three/';
+	$ck( DBD_Pack::xlen( 'abc ' . $L ) === 27, 'xlen(): a link counts 23' );
+	$p = DBD_Pack::post( str_repeat( 'long words here ', 20 ), 'The short one.', $L ); $ck( $p === 'The short one. ' . $L, 'post(): the short takeaway when the long runs over' );
+	$p = DBD_Pack::post( str_repeat( 'long words here ', 20 ), str_repeat( 'still too long ', 20 ), $L ); $ck( DBD_Pack::xlen( $p ) <= 280 && strpos( $p, '… ' . $L ) !== false, 'post(): cut at a word with an ellipsis when both run over' );
+	$W = array( 'movers' => array( 'snaps' => array( 'up' => array( array( 'id' => 'q', 'pos' => 'QB' ), array( 'id' => 'r', 'pos' => 'RB' ) ) ), 'targets' => array( 'up' => array( array( 'id' => 'r', 'pos' => 'RB' ), array( 'id' => 'w', 'pos' => 'WR' ) ) ) ) );
+	$ck( ( DBD_Pack::mover( $W, 'snaps' )['id'] ?? '' ) === 'r', 'mover(): quarterbacks out of snaps' );
+	$ck( ( DBD_Pack::mover( $W, 'targets', 'r' )['id'] ?? '' ) === 'w', 'mover(): the target mover skips the usage riser' );
+	$ck( DBD_Pack::mover( array( 'movers' => array( 'snaps' => array( 'up' => array( array( 'id' => 'q', 'pos' => 'QB' ) ) ) ) ), 'snaps' ) === null, 'mover(): none left means no item' );
+	$ck( DBD_Pack::sub( 'MIN' ) === 'r/minnesotavikings' && count( DBD_Pack::SUBS ) === 32, 'the 32 subreddits' );
+	$sr = DBD_Pack::spec_riser( $n, 'snaps' ); $so = DBD_Pack::spec_offense( $n );
+	$ck( ! isset( $by['snaps'] ) || ( $sr && $sr['series'] && $sr['now'] > $sr['before'] ), 'spec_riser(): a rise with its series' );
+	$ck( isset( $by['snaps'] ) === (bool) $sr && isset( $by['targets'] ) === (bool) DBD_Pack::spec_riser( $n, 'targets' ), 'a riser card exactly when its item is there' );
+	$ck( $so && $so['rows'][0][1] >= $so['rows'][ count( $so['rows'] ) - 1 ][1], 'spec_offense(): best first' );
+	$ck( DBD_Pack::spec_riser( 99, 'snaps' ) === null && DBD_Pack::items( 99 ) === array(), 'a week that isn\'t there gives nothing' );
+	echo "pack week $n: $bad problems, $warnings warnings\n"; exit( $bad || $warnings ? 1 : 0 );
+}
 if ( $view === 'admin' ) {
 	$season = (int) ( DBD_Data::root_manifest()['season'] ?? 2026 );
 	$wks = array_values( array_filter( DBD_Week::weeks(), function ( $w ) { $f = DBD_Week::file( $w ); return $f && ! empty( $f['complete'] ); } ) );
@@ -413,6 +456,7 @@ if ( $view === 'admin' ) {
 		'st' => array( 'Photos and logos', 'Addresses', 'Search and sharing', 'Using it in the theme', 'value="dbd"' ),
 		'dt' => array( 'Current data', 'Sync log', 'Seasons', 'Share cards', 'value="dbd_data"', 'harness-token' ),
 		'gr' => array( 'Visits by source', 'data-g="sources"', 'Google search', 'data-g="search"', 'Titles to tune', 'data-g="tune"', 'data-g="copy"', 'Top landing pages', 'data-g="landing"', 'Brevo isn’t set up', 'data-g="shares"', 'data-g="signups"', 'analytics.google.com/analytics/web/#/p123456/', 'resource_id=https%3A%2F%2Fexample.test%2F', 'page=googlesitekit-dashboard' ) );
+	$want['sp'] = array( 'Share pack', 'name="week"', 'The biggest swing', 'A usage riser', 'Best and worst offense', 'A target-share mover', 'class="button sp-cp"', 'download="dbd-week-', 'card=pack-week-', 'of 280', 'Fits: r/' );  /* SCOPE §68 */
 	$want['ov'][] = 'Open Growth'; $want['ov'][] = 'data-g="ov-visits"'; $want['ov'][] = 'data-g="ov-clicks"';
 	$bad = 0; $dir = getenv( 'DBD_HARNESS_HTML' ); if ( $dir && ! is_dir( $dir ) ) { mkdir( $dir, 0777, true ); }
 	foreach ( dbd_admin_tabs() as $k => $t ) {

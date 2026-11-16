@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.26.1
+Stable tag: 2.27.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,10 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.27.0 =
+* The share pack (SCOPE §68): a Share pack tab in the admin with five things to post each week, from the newest finished week: the biggest swing, a usage riser, the best and worst offense, a target-share mover, and each team's Biggest edge for next week. Each has its card to download, a Reddit title, a Reddit comment with the link and a post for X and Bluesky (counted against 280), with Copy buttons. Nothing posts by itself.
+* Two new share cards: the riser card (a player's snap or target share game by game) and the offense card (every offense that played, by EPA a play).
 
 = 2.26.1 =
 * One dark signup box (SCOPE §67): the signup is a dark box built like the next-board block, with the field and button on one line and "Your email" in the field. On the draft and combine boards it sits beside the next-board block, the same height.

@@ -229,7 +229,7 @@ class DBD_Post {
 	private static function nick( $a ) { return DBD_Data::team( $a )['nick'] ?? (string) $a; }
 	private static function u( $args ) { return esc_url( DBD_Router::url( $args ) ); }
 	private static function a( $args, $text ) { return '<a href="' . self::u( $args ) . '">' . $text . '</a>'; }
-	private static function clean( $d ) { $d = trim( (string) preg_replace( '/\s*\[[^\]]*\]/', '', (string) $d ) ); return $d === '' || preg_match( '/[.!?]$/', $d ) ? $d : $d . '.'; }
+	public static function clean( $d ) { $d = trim( (string) preg_replace( '/\s*\[[^\]]*\]/', '', (string) $d ) ); return $d === '' || preg_match( '/[.!?]$/', $d ) ? $d : $d . '.'; }
 	private static function tags( $g ) { $o = array(); foreach ( (array) ( $g['tags'] ?? array() ) as $t ) { $o[ $t[0] ] = $t[1]; } return $o; }
 	private static function word( $n ) { $w = array( 'no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten' ); return $w[ $n ] ?? (string) $n; }
 	private static function count_of( $n, $one, $many ) { return self::word( $n ) . ' ' . ( $n === 1 ? $one : $many ); }
@@ -248,7 +248,7 @@ class DBD_Post {
 	}
 
 	/** "Q4 0:28" as "with 0:28 left in the fourth quarter"; overtime and a missing clock read plainly. */
-	private static function clock( $c ) {
+	public static function clock( $c ) {
 		if ( ! preg_match( '/^(Q(\d)|OT)\s*(\d{1,2}:\d{2})?/', (string) $c, $m ) ) { return ''; }
 		$q = $m[1] === 'OT' || (int) ( $m[2] ?? 0 ) >= 5 ? 'overtime' : array( 1 => 'the first quarter', 2 => 'the second quarter', 3 => 'the third quarter', 4 => 'the fourth quarter' )[ (int) $m[2] ];
 		return ! empty( $m[3] ) ? 'with ' . $m[3] . ' left in ' . $q : 'in ' . $q;
