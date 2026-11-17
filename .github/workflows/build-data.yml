@@ -59,6 +59,10 @@ jobs:
           echo "day $(date -u +%F)" > "$fp"
           # a manual run that forces a week gets its own key, so the hourly runs (which derive the week) don't skip after it
           echo "week ${WEEK:-auto}" >> "$fp"
+          # and the week /data was last built for: after a forced-week run publishes another week, the next hourly run
+          # no longer matches its old key, so it builds and puts the schedule's week back
+          built=$(gh api "repos/$GITHUB_REPOSITORY/contents/data/manifest.json?ref=$GITHUB_SHA" -H "Accept: application/vnd.github.raw" | python3 -c "import json,sys; print(json.load(sys.stdin).get('week'))") || ok=0
+          echo "built for week $built" >> "$fp"
           ok=1
           # our own build code and this workflow: a change to either builds once
           code=$(gh api "repos/$GITHUB_REPOSITORY/contents/?ref=$GITHUB_SHA" --jq '.[] | select(.name=="tools") | .sha') || ok=0
