@@ -49,6 +49,7 @@ jobs:
         id: fp
         env:
           GH_TOKEN: ${{ github.token }}
+          WEEK: ${{ github.event.inputs.week }}
         run: |
           # The NFL season is named for the year it starts; before March we are still in last year's season.
           S=$(date -u +%Y); M=$(date -u +%-m)
@@ -56,6 +57,8 @@ jobs:
           echo "season=$S" >> "$GITHUB_OUTPUT"
           mkdir -p in; fp=in/inputs.txt
           echo "day $(date -u +%F)" > "$fp"
+          # a manual run that forces a week gets its own key, so the hourly runs (which derive the week) don't skip after it
+          echo "week ${WEEK:-auto}" >> "$fp"
           ok=1
           # our own build code and this workflow: a change to either builds once
           code=$(gh api "repos/$GITHUB_REPOSITORY/contents/?ref=$GITHUB_SHA" --jq '.[] | select(.name=="tools") | .sha') || ok=0
@@ -132,7 +135,8 @@ jobs:
             echo "ok=false" >> "$GITHUB_OUTPUT"; exit 0
           }
           # get URL FILE: prints the final HTTP status (000 = no answer). curl retries timeouts and 5xx on its own.
-          get() { local c; c=$(curl -sSL -f --retry 3 --retry-delay 15 -o "$2" -w '%{http_code}' "$1" 2>/dev/null) || true; [ -n "$c" ] || c=000; [ "$c" = 200 ] || rm -f "$2"; echo "$c"; }
+          # A transfer cut off after a 200 (curl exits non-zero) reports "partial", so a truncated file never reaches the build.
+          get() { local c rc=0; c=$(curl -sSL -f --retry 3 --retry-delay 15 -o "$2" -w '%{http_code}' "$1" 2>/dev/null) || rc=$?; [ -n "$c" ] || c=000; if [ "$rc" != 0 ] && [ "$c" = 200 ]; then c=partial; fi; [ "$c" = 200 ] || rm -f "$2"; echo "$c"; }
           # In a season that already has games in /data, play-by-play and weekly stats must be there; missing means
           # nflverse is mid-upload, and building without them would empty the site.
           live=$(python3 -c "import json,sys; m=json.load(open('data/manifest.json')); print(1 if m.get('season')==int(sys.argv[1]) and (m.get('through_week') or 0)>=1 else 0)" "$S" 2>/dev/null || echo 0)
