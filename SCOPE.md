@@ -2990,3 +2990,15 @@ Gene, after 2.27.0: "Build the email." This is the first step toward automating 
 - If Brevo isn't set up, the box says so and links to Week in review.
 
 **Tests:** the harness builds the email from the newest pack (subject, the four items, the keys, no unescaped text, every link absolute). It checks the booking rule (a new week books once; a sent week doesn't book again; the time is Tuesday 7:00 AM Eastern, or a minute after now when that's passed) and that the admin box renders.
+
+## 70. The data build checks every hour (built 2026-11-17)
+
+**Why:** GitHub starts scheduled runs late and sometimes drops them. Over Nov 16–17 only 4 of 11 scheduled builds ran, and both Tuesday-morning builds after Monday night never started, so the Chargers–Ravens game wasn't on the site at 6 AM even though nflverse had posted it at 12:30 and 5:00 AM ET. nflverse itself avoids this by starting its builds from outside GitHub.
+
+**What changed** (`.github/workflows/build-data.yml`, no plugin change):
+
+1. **Hourly at :37** from September to February, in place of the three daily runs and the game-night extras. A dropped run now costs an hour.
+2. **A cheap first check.** A `check` job reads the upload time and size of every nflverse file the build uses, the last commit of nfldata's `games.csv`, today's date, and our own `tools/` and workflow file, and hashes them. If a finished build already saw that hash (kept in the Actions cache), the run stops in seconds: nothing downloaded, committed or synced. A new day always builds once, since player ages and the Wikipedia cache depend on the date. A manual run always builds unless "force" is unticked.
+3. **Outages stop quietly.** If a download fails (no answer, or a server error after curl's retries), or play-by-play or weekly stats are missing in a season that already has games in `/data` (nflverse can drop a file for a moment while re-uploading it, and building without it would empty the site), the run leaves `/data` alone with a warning and the next hour tries again. It fails (and GitHub emails) only when `/data`'s `built_at` is more than two days old, or our own build breaks.
+
+Everything after the downloads is unchanged: commit only when the data changed, then ping the site.
