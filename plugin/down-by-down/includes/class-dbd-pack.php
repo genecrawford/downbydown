@@ -79,6 +79,50 @@ class DBD_Pack {
 	public static function x_url( $text ) { return self::our_x() === '' ? '' : 'https://x.com/intent/post?text=' . rawurlencode( (string) $text ); }
 	public static function bsky_url( $text ) { return self::our_bsky() === '' ? '' : 'https://bsky.app/intent/compose?text=' . rawurlencode( (string) $text ); }
 
+	/* ---- Share on Facebook, the Instagram caption and the Instagram square (2.31.0, SCOPE §73) */
+
+	const OPT_FB = 'dbd_pack_fb'; const FB_DEFAULT = 'https://www.facebook.com/groups/988685080499981';
+	const OPT_IG = 'dbd_pack_ig'; const IG_DEFAULT = 'down_by_down';
+
+	/** The Facebook group's address: only a facebook.com address, kept as https://www.facebook.com/…; anything else gives ''. */
+	public static function sanitize_fb( $v ) {
+		$v = trim( (string) $v ); if ( $v === '' ) { return ''; }
+		if ( ! preg_match( '#^(?:https?://)?(?:www\.|m\.|web\.)?facebook\.com(/[A-Za-z0-9._/\-]*)?#i', $v, $m ) ) { return ''; }
+		$path = rtrim( (string) ( $m[1] ?? '' ), '/' ); return $path === '' ? '' : 'https://www.facebook.com' . $path;
+	}
+	/** An Instagram handle: a pasted @name or profile address gives the name; letters, digits, dots, underscores, up to 30. */
+	public static function sanitize_ig( $v ) {
+		$v = trim( (string) $v ); $v = (string) preg_replace( '#^(https?://)?(www\.)?instagram\.com/#i', '', $v ); $v = ltrim( $v, '@' );
+		$v = (string) preg_replace( '#[/?].*$#', '', $v );
+		return substr( (string) preg_replace( '/[^A-Za-z0-9._]/', '', $v ), 0, 30 );
+	}
+	public static function our_fb() { return self::sanitize_fb( get_option( self::OPT_FB, self::FB_DEFAULT ) ); }
+	public static function our_ig() { return self::sanitize_ig( get_option( self::OPT_IG, self::IG_DEFAULT ) ); }
+
+	/** Facebook's share box for an item or keys side (its share link, so the pack card is the preview), or '' when no group is set. */
+	public static function fb_url( $it ) { return self::our_fb() === '' ? '' : 'https://www.facebook.com/sharer/sharer.php?u=' . rawurlencode( self::share_link( $it ) ); }
+	/** The text the Facebook button copies: the takeaway, no link (the card carries it). */
+	public static function fb_text( $it ) { return (string) ( $it['tl'] ?? $it['title'] ?? '' ); }
+
+	/** A team's hashtag: its nickname without spaces (#49ers, #Commanders). */
+	public static function tag( $t ) { return '#' . preg_replace( '/[^A-Za-z0-9]/', '', self::nick( $t ) ); }
+	/** The Instagram caption: the takeaway, the bio line, then #NFL, the teams, and #FantasyFootball on the usage items; '' when no account is set. */
+	public static function ig_caption( $it ) {
+		if ( self::our_ig() === '' ) { return ''; }
+		$tags = array( '#NFL' ); foreach ( (array) ( $it['teams'] ?? array() ) as $t ) { $tags[] = self::tag( $t ); } if ( ! empty( $it['ff'] ) ) { $tags[] = '#FantasyFootball'; }
+		$host = (string) preg_replace( '#^https?://(www\.)?#', '', untrailingslashit( home_url( '/' ) ) );
+		return self::fb_text( $it ) . "\n\nFull chart: link in bio (" . $host . ")\n\n" . implode( ' ', array_unique( $tags ) );
+	}
+
+	/** What a square draws: the headline and the card under it, from its key (ig-week-N-swing, … or ig-week-N-keys-{game}-{team}), or null. */
+	public static function spec_square( $key ) {
+		if ( ! preg_match( '/^ig-week-(\d{1,2})-(swing|snaps|offense|targets|keys-(\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3})-([A-Z]{2,3}))$/', (string) $key, $m ) ) { return null; }
+		$n = (int) $m[1];
+		if ( empty( $m[3] ) ) { foreach ( self::items( $n ) as $it ) { if ( $it['k'] === $m[2] ) { return array( 'head' => (string) $it['ts'], 'card' => $it['card'] ); } } return null; }
+		foreach ( self::keys( $n ) as $kg ) { if ( $kg['g']['id'] !== $m[3] ) { continue; } foreach ( $kg['sides'] as $sd ) { if ( $sd['t'] === $m[4] ) { return array( 'head' => (string) $sd['ts'], 'card' => $kg['card'] ); } } }
+		return null;
+	}
+
 	/** twitter:site for every page, so links shared on X credit the account. */
 	public static function twitter_site_tag() { $x = self::our_x(); return $x === '' ? '' : '<meta name="twitter:site" content="@' . esc_attr( $x ) . '">' . "\n"; }
 
@@ -153,7 +197,8 @@ class DBD_Pack {
 			$out[] = array( 'k' => 'swing', 'h' => 'The biggest swing', 'why' => 'The week’s largest one-play change in win probability, on the game’s card with the swing marked.',
 				'card' => 'game-' . $g['id'], 'file' => 'dbd-week-' . (int) $n . '-swing-' . strtolower( $t . '-' . $o ) . '.png', 'fits' => array_filter( array( 'r/nfl', self::sub( $t ), self::sub( $o ) ) ),
 				'title' => $title, 'comment' => 'The play: ' . self::play( $sw['d'] ?? '' ) . ' The whole game’s win probability, play by play: ' . $link,
-				'post' => self::post( $title, $short, $link ), 'tl' => $title, 'ts' => $short, 'link' => $link, 'lead' => self::poss( $t ) . ' ' . (int) round( (float) $sw['v'] ) . '-point swing' );
+				'post' => self::post( $title, $short, $link ), 'tl' => $title, 'ts' => $short, 'link' => $link, 'lead' => self::poss( $t ) . ' ' . (int) round( (float) $sw['v'] ) . '-point swing',
+				'teams' => array( $t, $o ), 'sq' => 'ig-week-' . (int) $n . '-swing', 'sqfile' => 'dbd-week-' . (int) $n . '-swing-' . strtolower( $t . '-' . $o ) . '-square.png' );
 		}
 
 		/* 2. a usage riser: snap share, quarterbacks out */
@@ -171,7 +216,8 @@ class DBD_Pack {
 			$out[] = array( 'k' => 'offense', 'h' => 'Best and worst offense', 'why' => 'Every offense that played, by EPA a play for the week, in one chart.',
 				'card' => 'pack-week-' . (int) $n . '-offense', 'file' => 'dbd-week-' . (int) $n . '-offense.png', 'fits' => array_filter( array( 'r/nfl', self::sub( $bo['t'] ) ) ),
 				'title' => $title, 'comment' => 'Every team’s week, with the usual for each side: ' . $link, 'post' => self::post( $title, $short, $link ), 'tl' => $title, 'ts' => $short, 'link' => $link,
-				'lead' => self::poss( $bo['t'] ) . ' ' . self::epa( $bo['epa'] ) . ' a play' );
+				'lead' => self::poss( $bo['t'] ) . ' ' . self::epa( $bo['epa'] ) . ' a play',
+				'teams' => array( $bo['t'], $wo['t'] ), 'sq' => 'ig-week-' . (int) $n . '-offense', 'sqfile' => 'dbd-week-' . (int) $n . '-offense-square.png' );
 		}
 
 		/* 4. a target-share mover, not the usage riser again */
@@ -190,7 +236,8 @@ class DBD_Pack {
 			'card' => 'pack-week-' . (int) $n . '-' . $kind, 'file' => 'dbd-week-' . (int) $n . '-' . $kind . '-' . self::slug( $m['name'] ) . '.png', 'fits' => array_filter( array( 'r/fantasyfootball', self::sub( $t ) ) ),
 			'title' => $short, 'comment' => ( $kind === 'snaps' ? 'His snap share and targets game by game: ' : 'His target share and routes game by game: ' ) . $link,
 			'post' => self::post( $short, $short, $link ), 'tl' => $short, 'ts' => $short, 'link' => $link,
-			'lead' => self::last( $m['name'] ) . '’s ' . $now . '%' );
+			'lead' => self::last( $m['name'] ) . '’s ' . $now . '%',
+			'teams' => array( $t ), 'ff' => true, 'sq' => 'ig-week-' . (int) $n . '-' . $kind, 'sqfile' => 'dbd-week-' . (int) $n . '-' . $kind . '-' . self::slug( $m['name'] ) . '-square.png' );
 	}
 
 	/** Keys to the game for the week after $n: per game, each offense's Biggest edge, ready to post in that team's subreddit. */
@@ -206,7 +253,8 @@ class DBD_Pack {
 				$sides[] = array( 't' => $p[0], 'fits' => self::sub( $p[0] ), 'head' => $c[2], 'say' => $c[3],
 					'title' => $head . ': where the matchup tilts for the ' . self::nick( $p[0] ) . ' offense',
 					'comment' => rtrim( $c[2], '.' ) . '. ' . $c[3] . ' The other keys and the head to head: ' . $link,
-					'post' => self::post( $head . ': ' . $c[3], $head . ': ' . $c[3], $link ), 'tl' => $head . ': ' . $c[3], 'ts' => $head . ': ' . $c[3], 'link' => $link );
+					'post' => self::post( $head . ': ' . $c[3], $head . ': ' . $c[3], $link ), 'tl' => $head . ': ' . $c[3], 'ts' => $head . ': ' . $c[3], 'link' => $link,
+					'teams' => array( $p[0], $p[1] ), 'sq' => 'ig-week-' . (int) $n . '-keys-' . $g['id'] . '-' . $p[0], 'sqfile' => 'dbd-week-' . $next . '-' . strtolower( $a . '-' . $h . '-' . $p[0] ) . '-square.png' );
 			}
 			if ( $sides ) { $out[] = array( 'g' => $g, 'card' => 'game-' . $g['id'], 'file' => 'dbd-week-' . $next . '-' . strtolower( $a . '-' . $h ) . '.png', 'link' => DBD_Router::url( array( 'game' => $g['id'] ) ), 'sides' => $sides ); }
 		}

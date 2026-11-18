@@ -113,7 +113,7 @@ class DBD_Pack_Mail {
 		$font = "font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 		$block = function ( $lab, $text, $extra = '' ) use ( $font, $MUTED, $INK, $LINE ) {
 			return '<tr><td style="padding:0 0 10px"><div style="' . $font . ';font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:' . $MUTED . ';padding:0 0 4px">' . self::e( $lab ) . $extra . '</div>'
-				. '<div style="' . $font . ';font-size:15px;line-height:1.5;color:' . $INK . ';background:#f6f5f1;border:1px solid ' . $LINE . ';border-radius:6px;padding:10px 12px">' . self::e( $text ) . '</div></td></tr>';
+				. '<div style="' . $font . ';font-size:15px;line-height:1.5;color:' . $INK . ';background:#f6f5f1;border:1px solid ' . $LINE . ';border-radius:6px;padding:10px 12px">' . nl2br( self::e( $text ) ) . '</div></td></tr>';
 		};
 		/* Post to r/… (SCOPE §71): Reddit's new-post form, filled in, so whoever posts can do it from the email */
 		$sub = DBD_Pack::our_sub();
@@ -122,6 +122,8 @@ class DBD_Pack_Mail {
 		$soc = function ( $it ) use ( $RED ) { $t = DBD_Pack::social( $it ); $o = '';
 			if ( ( $u = DBD_Pack::x_url( $t['x'] ) ) !== '' ) { $o .= ' · <a href="' . esc_url( $u ) . '" style="color:' . $RED . ';font-weight:600">Post on X</a>'; }
 			if ( ( $u = DBD_Pack::bsky_url( $t['bsky'] ) ) !== '' ) { $o .= ' · <a href="' . esc_url( $u ) . '" style="color:' . $RED . ';font-weight:600">Post on Bluesky</a>'; }
+			if ( ( $u = DBD_Pack::fb_url( $it ) ) !== '' ) { $o .= ' · <a href="' . esc_url( $u ) . '" style="color:' . $RED . ';font-weight:600">Share on Facebook</a>'; }  /* SCOPE §73: opens the share box; paste the Reddit title there */
+			if ( DBD_Pack::our_ig() !== '' && ! empty( $it['sq'] ) ) { $o .= ' · <a href="' . esc_url( DBD_Card::url( $it['sq'] ) ) . '" style="color:' . $RED . ';font-weight:600">Square for Instagram</a>'; }
 			return $o; };
 		$rows = '';
 		foreach ( $items as $it ) {
@@ -131,6 +133,7 @@ class DBD_Pack_Mail {
 				. '<tr><td style="padding:0 0 14px"><a href="' . $img . '"><img src="' . $img . '" width="544" alt="' . esc_attr( $it['h'] ) . '" style="display:block;width:100%;max-width:544px;height:auto;border:1px solid ' . $LINE . '"></a></td></tr>'
 				. $block( 'Reddit title', $it['title'] ) . $block( 'Reddit comment, with the link', $it['comment'] )
 				. $block( 'X and Bluesky', $it['post'], ' <span style="font-weight:400;letter-spacing:0;text-transform:none">· ' . DBD_Pack::xlen( $it['post'] ) . ' of ' . DBD_Pack::X_MAX . '</span>' )
+				. ( ( $cap = DBD_Pack::ig_caption( $it ) ) !== '' ? $block( 'Instagram caption, with the square', $cap ) : '' )
 				. '<tr><td style="' . $font . ';font-size:14px;color:' . $MUTED . ';padding:2px 0 0">Fits: ' . self::e( implode( ' · ', $it['fits'] ) ) . ' · <a href="' . esc_url( $it['link'] ) . '" style="color:' . $RED . ';font-weight:600">Open the page</a>'
 				. $post( $it['title'], DBD_Pack::share_link( $it ) ) . $soc( $it ) . '</td></tr></table></td></tr>';
 		}
@@ -139,7 +142,8 @@ class DBD_Pack_Mail {
 			$g = $kg['g']; $lines = '';
 			foreach ( $kg['sides'] as $sd ) {
 				$lines .= '<div style="' . $font . ';font-size:14px;line-height:1.5;color:' . $INK . ';padding:6px 0 0"><span style="color:' . $MUTED . '">' . self::e( $sd['fits'] ) . '</span> · <b>' . self::e( rtrim( $sd['head'], '.' ) ) . '.</b> ' . self::e( $sd['say'] )
-					. ' <a href="' . esc_url( $sd['link'] ) . '" style="color:' . $RED . ';font-weight:600">Link</a>' . $post( $sd['title'], $sd['link'] ) . $post( $sd['title'], $sd['link'], $sd['fits'] ) . $soc( $sd ) . '</div>';  /* ours, then the team's (2.29.1) */
+					. ' <a href="' . esc_url( $sd['link'] ) . '" style="color:' . $RED . ';font-weight:600">Link</a>' . $post( $sd['title'], $sd['link'] ) . $post( $sd['title'], $sd['link'], $sd['fits'] ) . $soc( $sd )
+					. ( ( $cap = DBD_Pack::ig_caption( $sd ) ) !== '' ? '<div style="' . $font . ';font-size:13px;line-height:1.5;color:' . $MUTED . ';background:#f6f5f1;border:1px solid ' . $LINE . ';border-radius:6px;padding:6px 10px;margin-top:6px">' . nl2br( self::e( $cap ) ) . '</div>' : '' ) . '</div>';  /* ours, then the team's (2.29.1) */
 			}
 			$nk = function ( $t ) { return DBD_Data::team( $t )['nick'] ?? $t; };
 			$kh .= '<div style="padding:12px 0;border-top:1px solid ' . $LINE . '"><div style="' . $font . ';font-size:15px;font-weight:700;color:' . $INK . '">' . self::e( $nk( $g['away'] ) . ' at ' . $nk( $g['home'] ) ) . '</div>' . $lines . '</div>';

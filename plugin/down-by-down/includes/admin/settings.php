@@ -73,6 +73,8 @@ add_action( 'admin_init', function () {
 	register_setting( 'dbd_pack_sub', DBD_Pack::OPT_SUB, array( 'type' => 'string', 'default' => DBD_Pack::SUB_DEFAULT, 'sanitize_callback' => array( 'DBD_Pack', 'sanitize_sub' ) ) );  /* Post to r/… (SCOPE §71); its own group, so saving it leaves the email list alone */
 	register_setting( 'dbd_pack_sub', DBD_Pack::OPT_X, array( 'type' => 'string', 'default' => DBD_Pack::X_DEFAULT, 'sanitize_callback' => array( 'DBD_Pack', 'sanitize_x' ) ) );  /* Post on X (SCOPE §72), saved with the subreddit */
 	register_setting( 'dbd_pack_sub', DBD_Pack::OPT_BSKY, array( 'type' => 'string', 'default' => DBD_Pack::BSKY_DEFAULT, 'sanitize_callback' => array( 'DBD_Pack', 'sanitize_bsky' ) ) );  /* Post on Bluesky (SCOPE §72) */
+	register_setting( 'dbd_pack_sub', DBD_Pack::OPT_FB, array( 'type' => 'string', 'default' => DBD_Pack::FB_DEFAULT, 'sanitize_callback' => array( 'DBD_Pack', 'sanitize_fb' ) ) );  /* Share on Facebook (SCOPE §73) */
+	register_setting( 'dbd_pack_sub', DBD_Pack::OPT_IG, array( 'type' => 'string', 'default' => DBD_Pack::IG_DEFAULT, 'sanitize_callback' => array( 'DBD_Pack', 'sanitize_ig' ) ) );  /* the Instagram caption (SCOPE §73) */
 	/* team news (SCOPE §49): the source groups switched on; an empty save switches every source off */
 	/* team videos and highlights (SCOPE §51): on by default */
 	register_setting( 'dbd_videos', DBD_Videos::OPT_ON, array( 'type' => 'boolean', 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => true ) );
@@ -285,7 +287,7 @@ function dbd_settings_page() {
 		.dbd-admin .sp-kh{display:flex;align-items:center;gap:6px}.dbd-admin .sp-kh span{margin-left:auto;color:#646970}
 		.dbd-admin .sp-k p{margin:6px 0 8px;line-height:1.5}
 		.dbd-admin .sp-sub{max-width:1180px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 16px}.dbd-admin .sp-sub .description{color:#646970}
-		.dbd-admin .sp-rd{border-color:#cb2026;color:#cb2026}.dbd-admin .sp-x{border-color:#0f1419;color:#0f1419}.dbd-admin .sp-bs{border-color:#1185fe;color:#1185fe}.dbd-admin .sp-so{margin:-6px 0 14px}
+		.dbd-admin .sp-rd{border-color:#cb2026;color:#cb2026}.dbd-admin .sp-x{border-color:#0f1419;color:#0f1419}.dbd-admin .sp-bs{border-color:#1185fe;color:#1185fe}.dbd-admin .sp-fb{border-color:#0866ff;color:#0866ff}.dbd-admin .sp-ig{border-color:#c13584;color:#c13584}.dbd-admin .sp-so{margin:-6px 0 14px}
 		.dbd-admin .sp-kb{display:flex;flex-wrap:wrap;gap:6px}.dbd-admin .sp-kb .button{font-size:12px;min-height:26px;line-height:24px}
 		@media (max-width:1000px){.dbd-admin .sp-body,.dbd-admin .sp-g{grid-template-columns:minmax(0,1fr)}.dbd-admin .sp-gc img{max-width:360px}}
 		@media (max-width:640px){.dbd-admin .sp-gs{grid-template-columns:minmax(0,1fr)}.dbd-admin .sp-body{padding:12px}.dbd-admin .sp-keys{padding:0 12px}}
@@ -473,7 +475,9 @@ function dbd_pack_sub_form() {
 		<label for="dbd-pack-sub">Your subreddit</label> r/<input id="dbd-pack-sub" name="<?php echo esc_attr( DBD_Pack::OPT_SUB ); ?>" value="<?php echo esc_attr( $sub ); ?>" maxlength="200" class="regular-text" style="width:160px">
 		<label for="dbd-pack-x">X account</label> @<input id="dbd-pack-x" name="<?php echo esc_attr( DBD_Pack::OPT_X ); ?>" value="<?php echo esc_attr( DBD_Pack::our_x() ); ?>" maxlength="200" class="regular-text" style="width:160px">
 		<label for="dbd-pack-bsky">Bluesky</label> <input id="dbd-pack-bsky" name="<?php echo esc_attr( DBD_Pack::OPT_BSKY ); ?>" value="<?php echo esc_attr( DBD_Pack::our_bsky() ); ?>" maxlength="300" class="regular-text" style="width:200px">
-		<?php submit_button( 'Save', 'secondary', 'submit', false ); ?><span class="description">Each Post button opens that site with the post filled in. Clear one to hide its buttons. The X account also goes in every page’s share tags.</span>
+		<label for="dbd-pack-fb">Facebook group</label> <input id="dbd-pack-fb" name="<?php echo esc_attr( DBD_Pack::OPT_FB ); ?>" value="<?php echo esc_attr( DBD_Pack::our_fb() ); ?>" maxlength="300" class="regular-text" style="width:300px"><?php if ( DBD_Pack::our_fb() !== '' ) { echo '<a href="' . esc_url( DBD_Pack::our_fb() ) . '" target="_blank" rel="noopener">Open the group</a>'; } ?>
+		<label for="dbd-pack-ig">Instagram</label> @<input id="dbd-pack-ig" name="<?php echo esc_attr( DBD_Pack::OPT_IG ); ?>" value="<?php echo esc_attr( DBD_Pack::our_ig() ); ?>" maxlength="200" class="regular-text" style="width:160px">
+		<?php submit_button( 'Save', 'secondary', 'submit', false ); ?><span class="description">Each Post button opens that site with the post filled in; Share on Facebook copies the text and opens Facebook’s share box (choose Share to a group). Clear one to hide its buttons. The X account also goes in every page’s share tags.</span>
 	</form>
 	<?php
 }
@@ -489,14 +493,21 @@ function dbd_pack_social( $it ) {
 	$t = DBD_Pack::social( $it ); $o = '';
 	if ( ( $u = DBD_Pack::x_url( $t['x'] ) ) !== '' ) { $o .= '<a class="button sp-x" href="' . esc_url( $u ) . '" target="_blank" rel="noopener">Post on X</a>'; }
 	if ( ( $u = DBD_Pack::bsky_url( $t['bsky'] ) ) !== '' ) { $o .= '<a class="button sp-bs" href="' . esc_url( $u ) . '" target="_blank" rel="noopener">Post on Bluesky</a>'; }
+	if ( ( $u = DBD_Pack::fb_url( $it ) ) !== '' ) { $o .= '<a class="button sp-fb" href="' . esc_url( $u ) . '" target="_blank" rel="noopener" data-t="' . esc_attr( DBD_Pack::fb_text( $it ) ) . '">Share on Facebook</a>'; }  /* SCOPE §73: copies the text (pack.js), then opens the share box */
 	return $o;
 }
 
+/** The square's Download button (SCOPE §73), when Instagram is set. */
+function dbd_pack_square( $it, $label = 'Download square' ) {
+	if ( DBD_Pack::our_ig() === '' || empty( $it['sq'] ) ) { return ''; }
+	return '<a class="button sp-ig" href="' . esc_url( DBD_Card::url( $it['sq'] ) ) . '" download="' . esc_attr( $it['sqfile'] ?? 'dbd-square.png' ) . '">' . esc_html( $label ) . '</a>';
+}
+
 /** One text with its Copy button; X and Bluesky shows its length against 280. */
-function dbd_pack_field( $lab, $text, $count = false ) {
+function dbd_pack_field( $lab, $text, $count = false, $rows = 2 ) {
 	$n = $count ? DBD_Pack::xlen( $text ) : 0;
 	return '<div class="sp-f"><div class="sp-fh"><b>' . esc_html( $lab ) . '</b>' . ( $count ? '<span class="cnt' . ( $n > DBD_Pack::X_MAX ? ' over' : '' ) . '">' . (int) $n . ' of ' . DBD_Pack::X_MAX . '</span>' : '' )
-		. '<button type="button" class="button sp-cp">Copy</button></div><textarea readonly rows="2" class="large-text">' . esc_textarea( $text ) . '</textarea></div>';
+		. '<button type="button" class="button sp-cp">Copy</button></div><textarea readonly rows="' . (int) $rows . '" class="large-text">' . esc_textarea( $text ) . '</textarea></div>';
 }
 
 function dbd_tab_share() {
@@ -520,10 +531,11 @@ function dbd_tab_share() {
 		echo '<div class="dbd-box sp-item" data-k="' . esc_attr( $it['k'] ) . '"><h2><span>' . (int) $i . '. ' . esc_html( $it['h'] ) . '</span><small>' . esc_html( $it['why'] ) . '</small></h2><div class="sp-body">'
 			. '<div class="sp-l"><div class="sp-card"><img src="' . esc_url( $img ) . '" width="1200" height="630" alt="" loading="lazy"></div>'
 			. '<div class="sp-acts"><a class="button button-primary" href="' . esc_url( $img ) . '" download="' . esc_attr( $it['file'] ) . '">Download image</a><a class="button" href="' . esc_url( $it['link'] ) . '" target="_blank" rel="noopener">Open the page</a>'
-			. dbd_pack_reddit( $it['title'], DBD_Pack::share_link( $it ) ) . '</div>'
+			. dbd_pack_reddit( $it['title'], DBD_Pack::share_link( $it ) ) . dbd_pack_square( $it ) . '</div>'
 			. '<p class="sp-fits">Fits: ' . esc_html( implode( ' · ', $it['fits'] ) ) . '</p></div>'
 			. '<div class="sp-r">' . dbd_pack_field( 'Reddit title', $it['title'] ) . dbd_pack_field( 'Reddit comment, with the link', $it['comment'] ) . dbd_pack_field( 'X and Bluesky', $it['post'], true )
-			. ( ( $so = dbd_pack_social( $it ) ) !== '' ? '<div class="sp-acts sp-so">' . $so . '</div>' : '' ) . '</div></div></div>';
+			. ( ( $so = dbd_pack_social( $it ) ) !== '' ? '<div class="sp-acts sp-so">' . $so . '</div>' : '' )
+			. ( ( $cap = DBD_Pack::ig_caption( $it ) ) !== '' ? dbd_pack_field( 'Instagram caption, with the square', $cap, false, 6 ) : '' ) . '</div></div></div>';
 	}
 	if ( $keys ) {
 		$i = DBD_Pack::NUM['keys'];
@@ -537,7 +549,8 @@ function dbd_tab_share() {
 					. '<p><b>' . esc_html( rtrim( $sd['head'], '.' ) ) . '.</b> ' . esc_html( $sd['say'] ) . '</p><div class="sp-kb">'
 					. '<button type="button" class="button sp-cp" data-t="' . esc_attr( $sd['title'] ) . '">Copy title</button>'
 					. '<button type="button" class="button sp-cp" data-t="' . esc_attr( $sd['comment'] ) . '">Copy comment</button>'
-					. '<button type="button" class="button sp-cp" data-t="' . esc_attr( $sd['post'] ) . '">Copy for X and Bluesky</button>' . dbd_pack_reddit( $sd['title'], $sd['link'] ) . dbd_pack_reddit( $sd['title'], $sd['link'], $sd['fits'] ) . dbd_pack_social( $sd ) . '</div></div>';  /* ours, then the team's own subreddit (2.29.1) */
+					. '<button type="button" class="button sp-cp" data-t="' . esc_attr( $sd['post'] ) . '">Copy for X and Bluesky</button>' . dbd_pack_reddit( $sd['title'], $sd['link'] ) . dbd_pack_reddit( $sd['title'], $sd['link'], $sd['fits'] ) . dbd_pack_social( $sd )
+					. ( ( $cap = DBD_Pack::ig_caption( $sd ) ) !== '' ? '<button type="button" class="button sp-cp sp-ig" data-t="' . esc_attr( $cap ) . '">Copy for Instagram</button>' : '' ) . dbd_pack_square( $sd, 'Square' ) . '</div></div>';  /* ours, then the team's own subreddit (2.29.1) */
 			}
 			echo '</div></div>';
 		}

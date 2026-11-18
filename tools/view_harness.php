@@ -183,7 +183,8 @@ if ( $view === 'card' ) {
 	if ( ! $im ) { fwrite( STDERR, "render( $arg ) returned nothing\n" ); exit( 4 ); }
 	imagepng( $im, $out, 6 ); imagedestroy( $im ); $sz = getimagesize( $out );
 	echo "card $arg: {$sz[0]}x{$sz[1]}, " . round( microtime( true ) - $t0, 2 ) . "s, $warnings warnings -> $out\n";
-	exit( $sz[0] === 1200 && $sz[1] === 630 && ! $warnings ? 0 : 5 );
+	$want = strpos( (string) $arg, 'ig-' ) === 0 ? array( 1080, 1080 ) : array( 1200, 630 );  /* the Instagram squares (SCOPE §73) */
+	exit( $sz[0] === $want[0] && $sz[1] === $want[1] && ! $warnings ? 0 : 5 );
 }
 
 /* ---- an old link's redirect (SCOPE §43): php tools/view_harness.php data redirect '/?player=…&utm_source=x' prints "redirect 301 <to>" or "stays" */
@@ -412,7 +413,7 @@ if ( $view === 'packmail' ) {
 			$ck( 'the email has ' . $w, strpos( $h, $w ) !== false || strpos( $h, str_replace( '&#038;', '&', $w ) ) !== false ); }
 		preg_match_all( '#(?:href|src)="([^"]*)"#', $h, $m ); $rel = array_filter( $m[1], function ( $u ) { return ! preg_match( '#^https?://#', $u ); } );
 		$ck( 'every link and image is absolute', ! $rel, implode( ' ', $rel ) );
-		$ck( 'no raw angle brackets from the data', ! preg_match( '/<(?!\/?(?:html|head|meta|title|body|table|tr|td|div|span|a|img|b)\b|!doctype)/i', $h ) );
+		$ck( 'no raw angle brackets from the data', ! preg_match( '/<(?!\/?(?:html|head|meta|title|body|table|tr|td|div|span|a|img|b|br)\b|!doctype)/i', $h ) );
 		$ck( 'no pack, no email', DBD_Pack_Mail::build( 99 ) === null );
 		/* Post to r/downbydown links (SCOPE §71): one per item and keys side, with ?share= on the pack's own cards; none when no subreddit is set */
 		$nk = 0; foreach ( DBD_Pack::keys( $n ) as $kg ) { $nk += count( $kg['sides'] ); }
@@ -421,6 +422,8 @@ if ( $view === 'packmail' ) {
 		$ck( 'a team-subreddit Post link on every keys side (2.29.1)', $nt === $nk && substr_count( $h, '>Post to r/' ) === count( DBD_Pack::items( $n ) ) + 2 * $nk, $nt . ' of ' . $nk );
 		$ck( 'the email\'s Post links carry ?share= for the pack cards', strpos( $h, 'reddit.com/r/downbydown/submit?url=' ) !== false && strpos( $h, 'share%3Dpack-week-' . $n . '-' ) !== false );
 		$ck( 'a Post on X and a Post on Bluesky link for every item and keys side (2.30.0)', substr_count( $h, '>Post on X</a>' ) === count( DBD_Pack::items( $n ) ) + $nk && substr_count( $h, '>Post on Bluesky</a>' ) === count( DBD_Pack::items( $n ) ) + $nk, substr_count( $h, '>Post on X</a>' ) . ' X, ' . substr_count( $h, '>Post on Bluesky</a>' ) . ' Bluesky' );
+		$ck( 'Share on Facebook and Square for Instagram on every item and keys side (2.31.0)', substr_count( $h, '>Share on Facebook</a>' ) === count( DBD_Pack::items( $n ) ) + $nk && substr_count( $h, '>Square for Instagram</a>' ) === count( DBD_Pack::items( $n ) ) + $nk, substr_count( $h, '>Share on Facebook</a>' ) . ' Facebook, ' . substr_count( $h, '>Square for Instagram</a>' ) . ' squares' );
+		$ck( 'an Instagram caption for every item and keys side', substr_count( $h, 'Full chart: link in bio' ) === count( DBD_Pack::items( $n ) ) + $nk && substr_count( $h, 'Instagram caption, with the square' ) === count( DBD_Pack::items( $n ) ) && strpos( $h, 'card=ig-week-' . $n . '-' ) !== false && strpos( $h, 'sharer.php?u=' ) !== false );
 		$ck( 'the X and Bluesky links carry the share link', strpos( $h, 'https://x.com/intent/post?text=' ) !== false && strpos( $h, 'https://bsky.app/intent/compose?text=' ) !== false && strpos( $h, 'share%3Dpack-week-' . $n . '-snaps' ) !== false );
 		$keep = $GLOBALS['dbd_opt']; $GLOBALS['dbd_opt'][ DBD_Pack::OPT_X ] = ''; $GLOBALS['dbd_opt'][ DBD_Pack::OPT_BSKY ] = '';
 		$hx = DBD_Pack_Mail::build( $n )['html'] ?? ''; $ck( 'cleared accounts: no X or Bluesky links', strpos( $hx, 'Post on X' ) === false && strpos( $hx, 'Post on Bluesky' ) === false );
@@ -536,6 +539,29 @@ if ( $view === 'pack' ) {
 	$bp = DBD_Pack::bpost( str_repeat( 'long words here ', 20 ), str_repeat( 'still too long ', 20 ), $L2 ); $ck( mb_strlen( $bp ) <= 300 && strpos( $bp, '… ' . $L2 ) !== false, 'bpost(): cut at a word when both run over 300 with the whole link' );
 	$ck( DBD_Pack::bpost( 'Short.', 'Short.', $L2 ) === 'Short. ' . $L2, 'bpost(): the long text when it fits' );
 	$ck( DBD_Pack::twitter_site_tag() === '<meta name="twitter:site" content="@dxd_NFLfootball">' . "\n", 'twitter:site' );
+	/* Share on Facebook, the Instagram caption and the square (2.31.0, SCOPE §73) */
+	$ck( DBD_Pack::our_fb() === 'https://www.facebook.com/groups/988685080499981' && DBD_Pack::our_ig() === 'down_by_down', 'the Facebook and Instagram defaults' );
+	foreach ( array( 'facebook.com/groups/988685080499981/' => 'https://www.facebook.com/groups/988685080499981', 'https://m.facebook.com/groups/12?ref=share' => 'https://www.facebook.com/groups/12', 'https://evil.test/facebook.com/x' => '', 'https://www.facebook.com/' => '', '' => '' ) as $in => $want ) { $ck( DBD_Pack::sanitize_fb( $in ) === $want, "sanitize_fb('$in') gives '$want', got '" . DBD_Pack::sanitize_fb( $in ) . "'" ); }
+	foreach ( array( '@down_by_down' => 'down_by_down', 'https://www.instagram.com/down_by_down/' => 'down_by_down', 'instagram.com/a.b_c?igsh=1' => 'a.b_c', '' => '' ) as $in => $want ) { $ck( DBD_Pack::sanitize_ig( $in ) === $want, "sanitize_ig('$in') gives '$want', got '" . DBD_Pack::sanitize_ig( $in ) . "'" ); }
+	foreach ( $all as $it ) {
+		$nm = $it['k'] ?? ( 'keys ' . $it['t'] );
+		parse_str( (string) parse_url( DBD_Pack::fb_url( $it ), PHP_URL_QUERY ), $q ); $ck( strpos( DBD_Pack::fb_url( $it ), 'https://www.facebook.com/sharer/sharer.php?u=' ) === 0 && ( $q['u'] ?? '' ) === DBD_Pack::share_link( $it ), $nm . ': the Facebook share box gets its share link' );
+		$ft = DBD_Pack::fb_text( $it ); $ck( $ft !== '' && strpos( $ft, 'http' ) === false, $nm . ': the Facebook text has no link' );
+		$cap = DBD_Pack::ig_caption( $it ); $tags = array( '#NFL' ); foreach ( $it['teams'] as $t ) { $tags[] = DBD_Pack::tag( $t ); }
+		$ck( strpos( $cap, $ft . "\n\nFull chart: link in bio (" ) === 0 && substr( $cap, -strlen( implode( ' ', array_unique( array_merge( $tags, empty( $it['ff'] ) ? array() : array( '#FantasyFootball' ) ) ) ) ) ) === implode( ' ', array_unique( array_merge( $tags, empty( $it['ff'] ) ? array() : array( '#FantasyFootball' ) ) ) ), $nm . ': the caption (' . str_replace( "\n", ' / ', $cap ) . ')' );
+		$ck( ( strpos( $cap, '#FantasyFootball' ) !== false ) === in_array( $it['k'] ?? '', array( 'snaps', 'targets' ), true ), $nm . ': #FantasyFootball only on the usage items' );
+		$sq = DBD_Pack::spec_square( $it['sq'] ); $ck( DBD_Card::valid( $it['sq'] ) && $sq && $sq['head'] === $it['ts'] && DBD_Card::valid( $sq['card'] ) && preg_match( '/-square\.png$/', $it['sqfile'] ), $nm . ': its square key (' . $it['sq'] . ')' );
+	}
+	$ck( DBD_Pack::tag( 'SF' ) === '#49ers' && DBD_Pack::tag( 'WAS' ) === '#Commanders', 'team hashtags' );
+	foreach ( array( 'ig-week-10-nope', 'ig-week-123-swing', 'ig-week-10-keys-2026_11_IND_HOU', 'ig-week-10-keys-x-IND' ) as $bk ) { $ck( ! DBD_Card::valid( $bk ), "card key $bk is not valid" ); }
+	$ck( DBD_Pack::spec_square( 'ig-week-99-swing' ) === null && DBD_Pack::spec_square( 'ig-week-' . $n . '-keys-2026_01_XXX_YYY-XXX' ) === null, 'a square for nothing gives nothing' );
+	if ( DBD_Card::available() ) {
+		$draw = array( $items[0]['sq'], $items[ count( $items ) - 1 ]['sq'] ); if ( $keys ) { $draw[] = $keys[0]['sides'][0]['sq']; }
+		foreach ( $draw as $sk ) { $im = DBD_Card::render( $sk ); $ck( $im && imagesx( $im ) === 1080 && imagesy( $im ) === 1080, "the square $sk draws at 1080x1080" ); if ( $im ) { imagedestroy( $im ); } }
+		$ck( DBD_Card::render( 'ig-week-99-swing' ) === null, 'a square for a week that isn\'t there draws nothing' );
+	}
+	$GLOBALS['dbd_opt'] = array( DBD_Pack::OPT_FB => '', DBD_Pack::OPT_IG => '' );
+	$ck( DBD_Pack::fb_url( $items[0] ) === '' && DBD_Pack::ig_caption( $items[0] ) === '', 'cleared Facebook and Instagram: no share box, no caption' );
 	$GLOBALS['dbd_opt'] = array( DBD_Pack::OPT_X => '', DBD_Pack::OPT_BSKY => '' );
 	$ck( DBD_Pack::x_url( 'x' ) === '' && DBD_Pack::bsky_url( 'x' ) === '' && DBD_Pack::twitter_site_tag() === '', 'cleared accounts: no buttons, no twitter:site' );
 	unset( $GLOBALS['dbd_opt'] );
@@ -608,7 +634,7 @@ if ( $view === 'admin' ) {
 		'st' => array( 'Photos and logos', 'Addresses', 'Search and sharing', 'Using it in the theme', 'value="dbd"' ),
 		'dt' => array( 'Current data', 'Sync log', 'Seasons', 'Share cards', 'value="dbd_data"', 'harness-token' ),
 		'gr' => array( 'Visits by source', 'data-g="sources"', 'Google search', 'data-g="search"', 'Titles to tune', 'data-g="tune"', 'data-g="copy"', 'Top landing pages', 'data-g="landing"', 'Brevo isn’t set up', 'data-g="shares"', 'data-g="signups"', 'analytics.google.com/analytics/web/#/p123456/', 'resource_id=https%3A%2F%2Fexample.test%2F', 'page=googlesitekit-dashboard' ) );
-	$want['sp'] = array( 'The Tuesday email', 'value="dbd_pack"', 'name="dbd_pack_mail_set[to]"', 'Brevo isn’t set up', 'Share pack', 'name="week"', 'The biggest swing', 'A usage riser', 'Best and worst offense', 'A target-share mover', 'class="button sp-cp"', 'download="dbd-week-', 'card=pack-week-', 'of 280', 'Fits: r/', 'value="dbd_pack_sub"', 'name="dbd_pack_sub"', 'Your subreddit', 'class="button sp-rd"', 'https://www.reddit.com/r/downbydown/submit?url=', 'share%3Dpack-week-', 'Post to r/downbydown', 'name="dbd_pack_x"', 'name="dbd_pack_bsky"', 'class="button sp-x"', 'class="button sp-bs"', 'https://x.com/intent/post?text=', 'https://bsky.app/intent/compose?text=' );  /* SCOPE §68, §71, §72 */
+	$want['sp'] = array( 'The Tuesday email', 'value="dbd_pack"', 'name="dbd_pack_mail_set[to]"', 'Brevo isn’t set up', 'Share pack', 'name="week"', 'The biggest swing', 'A usage riser', 'Best and worst offense', 'A target-share mover', 'class="button sp-cp"', 'download="dbd-week-', 'card=pack-week-', 'of 280', 'Fits: r/', 'value="dbd_pack_sub"', 'name="dbd_pack_sub"', 'Your subreddit', 'class="button sp-rd"', 'https://www.reddit.com/r/downbydown/submit?url=', 'share%3Dpack-week-', 'Post to r/downbydown', 'name="dbd_pack_x"', 'name="dbd_pack_bsky"', 'class="button sp-x"', 'class="button sp-bs"', 'https://x.com/intent/post?text=', 'https://bsky.app/intent/compose?text=', 'name="dbd_pack_fb"', 'name="dbd_pack_ig"', 'Open the group', 'class="button sp-fb"', 'Share on Facebook', 'sharer.php?u=', 'Instagram caption, with the square', 'Download square', 'card=ig-week-', 'Copy for Instagram' );  /* SCOPE §68, §71–73 */
 	$want['ov'][] = 'Open Growth'; $want['ov'][] = 'data-g="ov-visits"'; $want['ov'][] = 'data-g="ov-clicks"';
 	$bad = 0; $dir = getenv( 'DBD_HARNESS_HTML' ); if ( $dir && ! is_dir( $dir ) ) { mkdir( $dir, 0777, true ); }
 	foreach ( dbd_admin_tabs() as $k => $t ) {

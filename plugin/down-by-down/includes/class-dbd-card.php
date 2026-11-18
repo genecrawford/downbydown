@@ -142,7 +142,7 @@ class DBD_Card {
 
 	/** Card keys: a player id, team-MIN, game-2026_08_MIN_DET, page-hub / page-week-8 / page-leaders … */
 	public static function valid( $key ) {
-		return (bool) preg_match( '/^(\d{2}-\d{7}|team-[A-Z]{2,3}|game-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}|page-(hub|season|matchups|teams|players|leaders|myteam|week-\d{1,2}|draft-\d{4}|combine-\d{4})|pack-week-\d{1,2}-(snaps|targets|offense))$/', (string) $key );
+		return (bool) preg_match( '/^(\d{2}-\d{7}|team-[A-Z]{2,3}|game-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}|page-(hub|season|matchups|teams|players|leaders|myteam|week-\d{1,2}|draft-\d{4}|combine-\d{4})|pack-week-\d{1,2}-(snaps|targets|offense)|ig-week-\d{1,2}-(swing|snaps|offense|targets|keys-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}-[A-Z]{2,3}))$/', (string) $key );
 	}
 
 	/** The card a route shares: the player's, the team's, the game's, the first compared player's, or the page card. */
@@ -213,6 +213,11 @@ class DBD_Card {
 		if ( strpos( $key, 'pack-' ) === 0 && preg_match( '/^pack-week-(\d+)-(\w+)$/', $key, $pm ) ) {  /* the share pack's cards (SCOPE §68) */
 			if ( $pm[2] === 'offense' ) { $s = DBD_Pack::spec_offense( (int) $pm[1] ); if ( ! $s ) { return null; } foreach ( $s['logos'] as $t ) { $assets['logos'][ $t ] = $logo( $t ); } return self::draw_offense( $s, $assets ); }
 			$s = DBD_Pack::spec_riser( (int) $pm[1], $pm[2] ); if ( ! $s ) { return null; } $assets['logos'][ $s['team'] ] = $logo( $s['team'] ); return self::draw_riser( $s, $assets );
+		}
+		if ( strpos( $key, 'ig-' ) === 0 ) {  /* the Instagram square (SCOPE §73): the headline over the item's own card */
+			$sq = DBD_Pack::spec_square( $key ); if ( ! $sq || ! self::valid( $sq['card'] ) ) { return null; }
+			$inner = self::render( $sq['card'], $fetch ); if ( ! $inner ) { return null; }
+			return self::draw_square( $sq['head'], $inner, $assets );
 		}
 		if ( strpos( $key, 'game-' ) === 0 ) { $g = DBD_Data::game( substr( $key, 5 ) ); if ( ! $g ) { return null; } $s = self::spec_game( $g ); foreach ( $s['logos'] as $t ) { $assets['logos'][ $t ] = $logo( $t ); } return self::draw_game( $s, $assets ); }
 		$s = self::spec_page( substr( $key, 5 ) ); if ( ! $s ) { return null; }
@@ -748,6 +753,38 @@ class DBD_Card {
 		( $K['rect'] )( $zx, $top - 4, 1, $n * $rh + 8, $K['ink'] );
 		( $K['foot'] )( 'Data: nflverse · expected points added a play' );
 		return ( $K['finish'] )();
+	}
+
+	/**
+	 * The 1080×1080 Instagram square (SCOPE §73): on the cards' cream, the headline in Barlow Condensed (as large as fits four lines,
+	 * set to sit on the card), the item's own card scaled to 960 wide, and a red rule with the site's address and "Link in bio".
+	 * Drawn at 2× and downsampled, like the other cards. Takes the inner card as a GD image and frees it.
+	 */
+	const SQ = 1080;
+	public static function draw_square( $head, $inner, $assets ) {
+		$S = self::SS; $Z = self::SQ * $S; $fd = rtrim( $assets['fonts'], '/' ) . '/';
+		$F = array( 'disp' => $fd . 'BarlowCondensed-Bold.ttf', 'mono' => $fd . 'IBMPlexMono-Medium.ttf', 'mono2' => $fd . 'IBMPlexMono-SemiBold.ttf' );
+		foreach ( $F as $f ) { if ( ! is_readable( $f ) ) { imagedestroy( $inner ); return null; } }
+		$im = imagecreatetruecolor( $Z, $Z ); if ( ! $im ) { imagedestroy( $inner ); return null; }
+		$col = function ( $hex ) use ( $im ) { $hex = ltrim( $hex, '#' ); return imagecolorallocate( $im, hexdec( substr( $hex, 0, 2 ) ), hexdec( substr( $hex, 2, 2 ) ), hexdec( substr( $hex, 4, 2 ) ) ); };
+		$pt = function ( $px ) use ( $S ) { return $px * $S * 0.75; };
+		$tw = function ( $font, $px, $t ) use ( $pt, $S ) { $b = imagettfbbox( $pt( $px ), 0, $font, (string) $t ); return $b ? abs( $b[2] - $b[0] ) / $S : 0; };
+		$txt = function ( $font, $px, $x, $y, $c, $t, $right = false ) use ( $im, $pt, $S, $tw ) { $x0 = $right ? $x - $tw( $font, $px, $t ) : $x; imagettftext( $im, $pt( $px ), 0, (int) round( $x0 * $S ), (int) round( $y * $S ), $c, $font, (string) $t ); };
+		$rect = function ( $x, $y, $w, $h, $c ) use ( $im, $S ) { imagefilledrectangle( $im, (int) round( $x * $S ), (int) round( $y * $S ), (int) round( ( $x + $w ) * $S ) - 1, (int) round( ( $y + $h ) * $S ) - 1, $c ); };
+		$wrap = function ( $px, $text, $max ) use ( $tw, $F ) { $out = array(); $cur = ''; foreach ( preg_split( '/\s+/', trim( (string) $text ) ) as $w ) { $try = $cur === '' ? $w : $cur . ' ' . $w; if ( $cur !== '' && $tw( $F['disp'], $px, $try ) > $max ) { $out[] = $cur; $cur = $w; } else { $cur = $try; } } if ( $cur !== '' ) { $out[] = $cur; } return $out; };
+		imagefilledrectangle( $im, 0, 0, $Z, $Z, $col( self::BG ) );
+		$L = 60; $Wd = 960; $top = 64; $box = 340;  /* the headline sits in 64..404, bottom-aligned */
+		$px = 72; $lines = $wrap( $px, $head, $Wd );
+		while ( $px > 40 && ( count( $lines ) > 4 || count( $lines ) * $px * 1.02 > $box ) ) { $px -= 2; $lines = $wrap( $px, $head, $Wd ); }
+		$lh = $px * 1.02; $base = $top + $box - ( count( $lines ) - 1 ) * $lh - $px * 0.2;
+		foreach ( $lines as $i => $l ) { $txt( $F['disp'], $px, $L, $base + $i * $lh, $col( self::INK ), $l ); }
+		$cy = $top + $box + 38; $ch = (int) round( $Wd * self::H / self::W );  /* the card, 960 × 504, with a 2px line round it */
+		$rect( $L - 2, $cy - 2, $Wd + 4, $ch + 4, $col( '#dcd7cc' ) );
+		imagecopyresampled( $im, $inner, $L * $S, $cy * $S, 0, 0, $Wd * $S, $ch * $S, imagesx( $inner ), imagesy( $inner ) ); imagedestroy( $inner );
+		$ry = self::SQ - 50 - 26 - 22 - 6; $rect( $L, $ry, $Wd, 6, $col( self::RED ) );
+		$host = (string) preg_replace( '#^https?://(www\.)?#', '', untrailingslashit( home_url( '/' ) ) );
+		$txt( $F['mono2'], 26, $L, self::SQ - 52, $col( self::INK ), $host ); $txt( $F['mono'], 26, $L + $Wd, self::SQ - 52, $col( self::MUTED ), 'Link in bio', true );
+		$out = imagecreatetruecolor( self::SQ, self::SQ ); imagecopyresampled( $out, $im, 0, 0, 0, 0, self::SQ, self::SQ, $Z, $Z ); imagedestroy( $im ); return $out;
 	}
 
 	private static function sgn( $v ) { return ( $v < 0 ? '-' : '+' ) . number_format( abs( (float) $v ), 2 ); }
