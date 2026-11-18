@@ -1,0 +1,103 @@
+{
+    "n": 10,
+    "items": [
+        {
+            "k": "swing",
+            "h": "The biggest swing",
+            "card": "game-2026_10_WAS_NYG",
+            "file": "dbd-week-10-swing-was-nyg.png",
+            "title": "Week 10’s biggest swing: one play with 1:05 left in the fourth quarter moved the Commanders’ chance of beating the Giants by 39 points. They won 24-21.",
+            "comment": "The play: J.Daniels pass short middle to S.Diggs for 32 yards, TOUCHDOWN. The whole game’s win probability, play by play: https://downbydown.com/game/2026-week-10-commanders-at-giants/",
+            "link": "https://downbydown.com/game/2026-week-10-commanders-at-giants/",
+            "lead": "Commanders’ 39-point swing"
+        },
+        {
+            "k": "snaps",
+            "h": "A usage riser",
+            "card": "pack-week-10-snaps",
+            "file": "dbd-week-10-snaps-chimere-dike.png",
+            "title": "Chimere Dike played 95% of the Titans’ snaps against the Jaguars in Week 10, up from 21% in his 8 earlier games.",
+            "comment": "His snap share and targets game by game: https://downbydown.com/player/chimere-dike/",
+            "link": "https://downbydown.com/player/chimere-dike/",
+            "lead": "Dike’s 95%"
+        },
+        {
+            "k": "offense",
+            "h": "Best and worst offense",
+            "card": "pack-week-10-offense",
+            "file": "dbd-week-10-offense.png",
+            "title": "Week 10 offenses by EPA a play: the 49ers were best (+0.45 in a 46-40 win over the Cowboys), the Cardinals worst (−0.52 in a 34-6 loss to the Rams).",
+            "comment": "Every team’s week, with the usual for each side: https://downbydown.com/week/10/",
+            "link": "https://downbydown.com/week/10/",
+            "lead": "49ers’ +0.45 a play"
+        },
+        {
+            "k": "targets",
+            "h": "A target-share mover",
+            "card": "pack-week-10-targets",
+            "file": "dbd-week-10-targets-nico-collins.png",
+            "title": "Nico Collins drew 44% of the Texans’ targets against the Browns in Week 10, up from 21% in his 6 earlier games.",
+            "comment": "His target share and routes game by game: https://downbydown.com/player/nico-collins/",
+            "link": "https://downbydown.com/player/nico-collins/",
+            "lead": "Collins’s 44%"
+        }
+    ],
+    "keys": [
+        {
+            "card": "game-2026_11_IND_HOU",
+            "link": "https://downbydown.com/game/2026-week-11-colts-at-texans/",
+            "away": "IND",
+            "home": "HOU",
+            "sides": [
+                {
+                    "title": "Colts at Texans: where the matchup tilts for the Colts offense",
+                    "comment": "Red zone touchdowns. Colts score a touchdown on 65% of red zone trips (10th). Texans allow 68% (23rd). The other keys and the head to head: https://downbydown.com/game/2026-week-11-colts-at-texans/",
+                    "link": "https://downbydown.com/game/2026-week-11-colts-at-texans/"
+                },
+                {
+                    "title": "Colts at Texans: where the matchup tilts for the Texans offense",
+                    "comment": "Wideouts feast. Colts give up 149 yards a game to wide receivers (16th), against a league average of 148. Texans' wide receivers produce 196 (4th). The other keys and the head to head: https://downbydown.com/game/2026-week-11-colts-at-texans/texans/",
+                    "link": "https://downbydown.com/game/2026-week-11-colts-at-texans/texans/"
+                }
+            ]
+        },
+        {
+            "card": "game-2026_11_MIA_BUF",
+            "link": "https://downbydown.com/game/2026-week-11-dolphins-at-bills/",
+            "away": "MIA",
+            "home": "BUF",
+            "sides": [
+                {
+                    "title": "Dolphins at Bills: where the matchup tilts for the Dolphins offense",
+                    "comment": "Backs catch passes. Bills give up 44 yards a game to running backs (30th), against a league average of 33. Dolphins' running backs produce 23 (27th). The other keys and the head to head: https://downbydown.com/game/2026-week-11-dolphins-at-bills/",
+                    "link": "https://downbydown.com/game/2026-week-11-dolphins-at-bills/"
+                },
+                {
+                    "title": "Dolphins at Bills: where the matchup tilts for the Bills offense",
+                    "comment": "Throw it. Bills gain +0.16 EPA per dropback (5th). Dolphins allow +0.16 (28th). The other keys and the head to head: https://downbydown.com/game/2026-week-11-dolphins-at-bills/bills/",
+                    "link": "https://downbydown.com/game/2026-week-11-dolphins-at-bills/bills/"
+                }
+            ]
+        },
+        {
+            "card": "game-2026_11_BAL_CAR",
+            "link": "https://downbydown.com/game/2026-week-11-ravens-at-panthers/",
+            "away": "BAL",
+            "home": "CAR",
+            "sides": [
+                {
+                    "title": "Ravens at Panthers: where the matchup tilts for the Ravens offense",
+                    "comment": "Red zone touchdowns. Ravens score a touchdown on 60% of red zone trips (16th). Panthers allow 77% (31st). The other keys and the head to head: https://downbydown.com/game/2026-week-11-ravens-at-panthers/",
+                    "link": "https://downbydown.com/game/2026-week-11-ravens-at-panthers/"
+                },
+                {
+                    "title": "Ravens at Panthers: where the matchup tilts for the Panthers offense",
+                    "comment": "Wideouts feast. Ravens give up 164 yards a game to wide receivers (25th), against a league average of 148. Panthers' wide receivers produce 159 (11th). The other keys and the head to head: https://downbydown.com/game/2026-week-11-ravens-at-panthers/panthers/",
+                    "link": "https://downbydown.com/game/2026-week-11-ravens-at-panthers/panthers/"
+                }
+            ]
+        }
+    ],
+    "nkeys": 13,
+    "cardbase": "https://downbydown.com/?card=pack-week-10-snaps"
+}
