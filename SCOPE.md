@@ -3062,7 +3062,7 @@ Everything after the downloads is unchanged: commit only when the data changed, 
 
 **Tests:** the harness checks every square key is valid and draws at 1080×1080 (CI renders them, with and without logos, and a bad key fails), the share address decodes to the share link, the Facebook text has no link, every caption has the takeaway, the bio line and its hashtags (#FantasyFootball only on snaps and targets), cleared settings hide each, the email counts, and pack.js copies the text from the Facebook button.
 
-## 74. The Share pack tab, simplified (scoped and mocked 2026-11-18, `mockup-v48/`)
+## 74. The Share pack tab, simplified (scoped and mocked 2026-11-18, `mockup-v48/`; built as 2.32.0)
 
 **Why:** after §68–73 the tab does a lot, and it reads like it. Before the first item, Gene meets the email box, a row of five account fields that wraps, a week picker and a paragraph of instructions. Each item then shows four text boxes and seven buttons in two places, and each keys side has nine buttons. Gene: "make it much simpler to understand." Same features, less to read.
 
@@ -3077,6 +3077,6 @@ Everything after the downloads is unchanged: commit only when the data changed, 
 
 **Under the hood:** the email list and the accounts save in one form. They're two settings groups today (the list is in `dbd_pack`, the accounts in `dbd_pack_sub`, kept apart because options.php resets a group's unposted options); one form posting both groups' options to one handler (admin-post `dbd_pack_settings`, with a nonce) that sanitizes each with its existing callback. The Send-now and Try-again forms stay as they are, inside the box. The page's notices move into the box.
 
-**Decision:** none yet beyond sign-off on the mock.
+**Built as mocked (Gene: "Build it", 2026-11-18).** Small additions: the card links to its page (the old "Open the page" button), and a Try again button sits on the status line at the top when a send failed.
 
 **Tests:** the admin harness checks the new order of the post row, the folds closed by default, the settings box with every field name, one Save, and that the settings box is open when `?pack=` or `settings-updated` is in the address; the admin-post handler saves both groups' fields with their sanitizers and refuses a bad nonce.
