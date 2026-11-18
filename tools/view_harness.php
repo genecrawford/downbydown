@@ -417,9 +417,11 @@ if ( $view === 'packmail' ) {
 		/* Post to r/downbydown links (SCOPE §71): one per item and keys side, with ?share= on the pack's own cards; none when no subreddit is set */
 		$nk = 0; foreach ( DBD_Pack::keys( $n ) as $kg ) { $nk += count( $kg['sides'] ); }
 		$ck( 'a Post link for every item and keys side', substr_count( $h, '>Post to r/downbydown</a>' ) === count( DBD_Pack::items( $n ) ) + $nk, substr_count( $h, '>Post to r/downbydown</a>' ) . ' vs ' . ( count( DBD_Pack::items( $n ) ) + $nk ) );
+		$nt = 0; foreach ( DBD_Pack::keys( $n ) as $kg ) { foreach ( $kg['sides'] as $sd ) { $nt += strpos( $h, '>Post to ' . $sd['fits'] . '</a>' ) !== false ? 1 : 0; } }
+		$ck( 'a team-subreddit Post link on every keys side (2.29.1)', $nt === $nk && substr_count( $h, '>Post to r/' ) === count( DBD_Pack::items( $n ) ) + 2 * $nk, $nt . ' of ' . $nk );
 		$ck( 'the email\'s Post links carry ?share= for the pack cards', strpos( $h, 'reddit.com/r/downbydown/submit?url=' ) !== false && strpos( $h, 'share%3Dpack-week-' . $n . '-' ) !== false );
 		$keep = $GLOBALS['dbd_opt']; $GLOBALS['dbd_opt'][ DBD_Pack::OPT_SUB ] = '';
-		$h0 = DBD_Pack_Mail::build( $n )['html'] ?? ''; $ck( 'no subreddit, no Post links', strpos( $h0, 'Post to r/' ) === false && strpos( $h0, 'reddit.com' ) === false );
+		$h0 = DBD_Pack_Mail::build( $n )['html'] ?? ''; $ck( 'no subreddit of ours, no r/downbydown links (the team ones stay)', strpos( $h0, 'Post to r/downbydown' ) === false && strpos( $h0, 'reddit.com/r/downbydown/' ) === false && substr_count( $h0, '>Post to r/' ) === $nk );
 		$GLOBALS['dbd_opt'] = $keep;
 		/* sending: one copy each; Erik refused, retried alone; then sent */
 		$key = DBD_Pack_Mail::key( DBD_Data::season(), $n );
@@ -509,6 +511,10 @@ if ( $view === 'pack' ) {
 		parse_str( (string) parse_url( $u, PHP_URL_QUERY ), $q ); $ck( ( $q['title'] ?? '' ) === $it['title'] && ( $q['url'] ?? '' ) === $sl, $it['k'] . ': title and link decode back exactly' );
 	}
 	foreach ( $keys as $kg ) { foreach ( $kg['sides'] as $sd ) { parse_str( (string) parse_url( DBD_Pack::reddit_url( $sd['title'], $sd['link'] ), PHP_URL_QUERY ), $q ); $ck( ( $q['url'] ?? '' ) === $sd['link'] && ( $q['title'] ?? '' ) === $sd['title'], 'keys ' . $sd['t'] . ': its Reddit address' ); } }
+	/* 2.29.1: each keys side also posts to its team's own subreddit */
+	foreach ( $keys as $kg ) { foreach ( $kg['sides'] as $sd ) { $tu = DBD_Pack::reddit_url( $sd['title'], $sd['link'], $sd['fits'] ); parse_str( (string) parse_url( $tu, PHP_URL_QUERY ), $q );
+		$ck( strpos( $tu, 'https://www.reddit.com/' . $sd['fits'] . '/submit?url=' ) === 0 && ( $q['url'] ?? '' ) === $sd['link'] && ( $q['title'] ?? '' ) === $sd['title'], 'keys ' . $sd['t'] . ': its team subreddit address (' . substr( $tu, 0, 60 ) . ')' ); } }
+	$ck( DBD_Pack::reddit_url( 'x', 'https://example.test/', '' ) === '' && strpos( DBD_Pack::reddit_url( 'x', 'https://example.test/', 'r/raiders' ), 'https://www.reddit.com/r/raiders/submit?' ) === 0, 'a team subreddit as given, none when empty' );
 	$long = DBD_Pack::reddit_url( str_repeat( 'word ', 80 ), 'https://example.test/x/' ); parse_str( (string) parse_url( $long, PHP_URL_QUERY ), $q );
 	$ck( mb_strlen( $q['title'] ?? '' ) <= 300 && substr( $q['title'] ?? '', -3 ) === '…', 'a title over 300 is cut at a word with an ellipsis' );
 	foreach ( array( 'pack-week-10-snaps' => 'pack-week-10-snaps', 'pack-week-3-offense' => 'pack-week-3-offense', 'team-MIN' => '', 'pack-week-1-nope' => '', '<x>' => '', 'pack-week-123-snaps' => '' ) as $in => $want ) { $ck( DBD_Pack::share_key( $in ) === $want, "share_key('$in')" ); }

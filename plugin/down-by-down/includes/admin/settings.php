@@ -475,9 +475,9 @@ function dbd_pack_sub_form() {
 }
 
 /** The Post to r/… button (SCOPE §71): Reddit's new-post form in a new tab, title and link filled in. Nothing when no subreddit is set. */
-function dbd_pack_reddit( $title, $link ) {
-	$u = DBD_Pack::reddit_url( $title, $link ); if ( $u === '' ) { return ''; }
-	return '<a class="button sp-rd" href="' . esc_url( $u ) . '" target="_blank" rel="noopener">' . esc_html( 'Post to r/' . DBD_Pack::our_sub() ) . '</a>';
+function dbd_pack_reddit( $title, $link, $sub = null ) {
+	$u = DBD_Pack::reddit_url( $title, $link, $sub ); if ( $u === '' ) { return ''; }
+	return '<a class="button sp-rd" href="' . esc_url( $u ) . '" target="_blank" rel="noopener">' . esc_html( 'Post to r/' . ( $sub === null ? DBD_Pack::our_sub() : DBD_Pack::sanitize_sub( $sub ) ) ) . '</a>';
 }
 
 /** One text with its Copy button; X and Bluesky shows its length against 280. */
@@ -524,7 +524,7 @@ function dbd_tab_share() {
 					. '<p><b>' . esc_html( rtrim( $sd['head'], '.' ) ) . '.</b> ' . esc_html( $sd['say'] ) . '</p><div class="sp-kb">'
 					. '<button type="button" class="button sp-cp" data-t="' . esc_attr( $sd['title'] ) . '">Copy title</button>'
 					. '<button type="button" class="button sp-cp" data-t="' . esc_attr( $sd['comment'] ) . '">Copy comment</button>'
-					. '<button type="button" class="button sp-cp" data-t="' . esc_attr( $sd['post'] ) . '">Copy for X and Bluesky</button>' . dbd_pack_reddit( $sd['title'], $sd['link'] ) . '</div></div>';
+					. '<button type="button" class="button sp-cp" data-t="' . esc_attr( $sd['post'] ) . '">Copy for X and Bluesky</button>' . dbd_pack_reddit( $sd['title'], $sd['link'] ) . dbd_pack_reddit( $sd['title'], $sd['link'], $sd['fits'] ) . '</div></div>';  /* ours, then the team's own subreddit (2.29.1) */
 			}
 			echo '</div></div>';
 		}

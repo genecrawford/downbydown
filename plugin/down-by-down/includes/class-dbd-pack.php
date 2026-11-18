@@ -36,9 +36,9 @@ class DBD_Pack {
 		return strpos( $card, 'pack-' ) === 0 && DBD_Card::valid( $card ) ? add_query_arg( array( 'share' => $card ), (string) $it['link'] ) : (string) $it['link'];
 	}
 
-	/** Reddit's new-post form for our subreddit with the title and link filled in, or '' when no subreddit is set. */
-	public static function reddit_url( $title, $link ) {
-		$sub = self::our_sub(); if ( $sub === '' ) { return ''; }
+	/** Reddit's new-post form with the title and link filled in: our subreddit, or $sub (a team's, 2.29.1), or '' when there's none. */
+	public static function reddit_url( $title, $link, $sub = null ) {
+		$sub = $sub === null ? self::our_sub() : self::sanitize_sub( $sub ); if ( $sub === '' ) { return ''; }
 		$title = (string) $title;
 		if ( mb_strlen( $title ) > self::REDDIT_TITLE_MAX ) { $title = rtrim( (string) preg_replace( '/\s+\S*$/u', '', mb_substr( $title, 0, self::REDDIT_TITLE_MAX - 1 ) ), ' ,;:' ) . '…'; }
 		return 'https://www.reddit.com/r/' . $sub . '/submit?url=' . rawurlencode( (string) $link ) . '&title=' . rawurlencode( $title );

@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.29.0
+Stable tag: 2.29.1
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,9 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.29.1 =
+* Each keys side gets a second Post button for its team's own subreddit (Post to r/raiders and so on), next to Post to r/downbydown, on the Share pack tab and in the Tuesday pack email.
 
 = 2.29.0 =
 * Post to r/downbydown (SCOPE §71): each Share pack item and every keys side gets a button that opens Reddit's new-post form for your subreddit with the title and link filled in. The Tuesday pack email carries the same links.
