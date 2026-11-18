@@ -3042,7 +3042,7 @@ Everything after the downloads is unchanged: commit only when the data changed, 
 
 **Tests:** the harness checks both addresses decode back to the post text with the share link, the Bluesky text stays within 300 with the full link, empty handles hide the buttons, the email carries one X and one Bluesky link per item and keys side, and `twitter:site` is on every app page.
 
-## 73. Share on Facebook and a caption for Instagram (scoped and mocked 2026-11-18, `mockup-v47/`)
+## 73. Share on Facebook, a caption and a square for Instagram (scoped and mocked 2026-11-18, `mockup-v47/`)
 
 **Why:** Gene set up Instagram (@down_by_down) and a Facebook group (facebook.com/groups/988685080499981). Neither takes a fully prefilled post: Facebook's share link fills in only the link (it dropped prefilled text years ago, and has allowed no posting to groups through its API since 2024), and Instagram has no compose link at all (and caption links aren't clickable). So: get as close to one click as each allows.
 
@@ -3053,10 +3053,11 @@ Everything after the downloads is unchanged: commit only when the data changed, 
 3. **Settings,** with the other accounts: **Facebook group** (default the group's address; empty hides the Facebook buttons, and when set the tab shows an "Open the group" link) and **Instagram** (default `down_by_down`; empty hides the captions).
 4. **The Tuesday pack email** gets "Share on Facebook" links (the email can't copy to the clipboard, so its link only opens the share box, and the Facebook text sits in the email to copy by hand) and the Instagram caption under each item and keys side.
 5. **Gene, once:** put downbydown.com in the Instagram bio, so "link in bio" leads somewhere.
+6. **Instagram squares (added by Gene, 2026-11-18; `mockup-v47/squares.html`):** a 1080×1080 graphic for each of the four main items and every keys side, with a **Download square** button next to Download image (and in the email, a "Square for Instagram" link next to each image). Each square is drawn by `DBD_Card` on the cards' cream: the takeaway set large in Barlow Condensed (the item's short takeaway; a keys side's headline and line), the item's own 1200×630 card scaled to 960 wide under it, and a red rule with "downbydown.com" and "Link in bio" at the foot. No second logo: the card inside carries it. Card keys `ig-week-{N}-{swing|snaps|offense|targets}` and `ig-week-{N}-keys-{game id}-{team}`, cached and pruned like the other cards; the headline shrinks to fit four lines.
 
-**Before building, one test (Gene, signed in to Facebook, from his own browser):** the chat's test link opens Facebook's share box for this week's snaps item. Confirm the link card shows, and that **Share to a group** lets you pick Down by Down. Don't post.
+**Facebook test PASSED (Gene, 2026-11-18):** the share link opened Facebook's share box with the link card, and Share to a group let him pick Down by Down.
 
 **Decisions:**
 1. Keys sides get Share on Facebook and an Instagram caption too, like the main items? (Recommend yes.)
 
-**Tests:** the harness checks the share address decodes to the share link, the Facebook text has no link, every caption has the takeaway, the bio line and its hashtags (#FantasyFootball only on snaps and targets), cleared settings hide each, the email counts, and pack.js copies the text from the Facebook button.
+**Tests:** the harness checks every square key is valid and draws at 1080×1080 (CI renders them, with and without logos, and a bad key fails), the share address decodes to the share link, the Facebook text has no link, every caption has the takeaway, the bio line and its hashtags (#FantasyFootball only on snaps and targets), cleared settings hide each, the email counts, and pack.js copies the text from the Facebook button.
