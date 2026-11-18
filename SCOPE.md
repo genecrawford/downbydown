@@ -3061,3 +3061,22 @@ Everything after the downloads is unchanged: commit only when the data changed, 
 1. Keys sides get Share on Facebook, the Instagram caption and a square too, like the main items: **yes**.
 
 **Tests:** the harness checks every square key is valid and draws at 1080×1080 (CI renders them, with and without logos, and a bad key fails), the share address decodes to the share link, the Facebook text has no link, every caption has the takeaway, the bio line and its hashtags (#FantasyFootball only on snaps and targets), cleared settings hide each, the email counts, and pack.js copies the text from the Facebook button.
+
+## 74. The Share pack tab, simplified (scoped and mocked 2026-11-18, `mockup-v48/`)
+
+**Why:** after §68–73 the tab does a lot, and it reads like it. Before the first item, Gene meets the email box, a row of five account fields that wraps, a week picker and a paragraph of instructions. Each item then shows four text boxes and seven buttons in two places, and each keys side has nine buttons. Gene: "make it much simpler to understand." Same features, less to read.
+
+**What changes (no new features, nothing removed):**
+
+1. **The top is three lines:** "Week 10 pack" with the week picker and when it was ready; one sentence on how the buttons work; and the email's status in one line ("Emailed to 2 people Tuesday, Nov 17 at 7:00 AM", or what's wrong) with a "Change the list" link to the settings.
+2. **Each item:** its number and name; the card with **Download image** and **Download square for Instagram** under it; the takeaway as plain text; then **Post it** with one button per place, in one row and always in this order: **r/downbydown, X, Bluesky, Facebook, Instagram**. The Instagram button copies the caption (the square is under the card). A line under the row names the other subreddits it fits, to post by hand.
+3. **The four texts** (Reddit title, Reddit first comment, X and Bluesky, Instagram caption) fold away under **Texts to copy**, closed by default, each still with its Copy button. The X count stays on the X and Bluesky box.
+4. **Keys to the game:** each game is a heading with "Download the game card"; each side is one line (team mark, its edge in bold, the numbers) with one row of small buttons in the same order, plus the team's own subreddit after r/downbydown and **Square** at the end. Each game's texts fold under its own "Texts to copy".
+5. **Settings go to the bottom,** in one box that opens on click: "Settings: the Tuesday email and your accounts", with the email (on/off, the list, the last sends, Send now) and the five accounts in labelled rows, and one **Save settings** button for all of it. It opens on its own after a save, an error, or a send, so the notice is next to what changed.
+6. **Buttons all look the same** apart from each site's color: one size per row, the labels are just the site's name.
+
+**Under the hood:** the email list and the accounts save in one form. They're two settings groups today (the list is in `dbd_pack`, the accounts in `dbd_pack_sub`, kept apart because options.php resets a group's unposted options); one form posting both groups' options to one handler (admin-post `dbd_pack_settings`, with a nonce) that sanitizes each with its existing callback. The Send-now and Try-again forms stay as they are, inside the box. The page's notices move into the box.
+
+**Decision:** none yet beyond sign-off on the mock.
+
+**Tests:** the admin harness checks the new order of the post row, the folds closed by default, the settings box with every field name, one Save, and that the settings box is open when `?pack=` or `settings-updated` is in the address; the admin-post handler saves both groups' fields with their sanitizers and refuses a bad nonce.
