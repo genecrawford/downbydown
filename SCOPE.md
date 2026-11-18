@@ -3002,3 +3002,22 @@ Gene, after 2.27.0: "Build the email." This is the first step toward automating 
 3. **Outages stop quietly.** If a download fails (no answer, or a server error after curl's retries), or play-by-play or weekly stats are missing in a season that already has games in `/data` (nflverse can drop a file for a moment while re-uploading it, and building without it would empty the site), the run leaves `/data` alone with a warning and the next hour tries again. It fails (and GitHub emails) only when `/data`'s `built_at` is more than two days old, or our own build breaks.
 
 Everything after the downloads is unchanged: commit only when the data changed, then ping the site.
+
+## 71. Post to r/downbydown from the Share pack tab (scoped and mocked 2026-11-18, `mockup-v45/`)
+
+**Why:** Gene set up r/downbydown. Reddit closed open API sign-ups in November 2025 (new apps need approval under its Responsible Builder Policy), so posting for him isn't dependable. What does work without any API: Reddit's new-post form takes the title and link in the address, the way X's share link does. One click opens the form filled in; Gene or Erik clicks Post.
+
+**What it does:**
+
+1. **A "Post to r/downbydown" button on every pack item** (swing, snaps, offense, targets) and on **every keys side** (13 games × 2 this week; post the few you like). Opens `https://www.reddit.com/r/{sub}/submit?url={link}&title={title}` in a new tab. Title = the item's Reddit title (already under Reddit's 300-character limit); link = the item's page.
+2. **It's a link post, so the card is the preview.** Reddit can't take an image file through the address, but a link post shows the page's `og:image`. The swing and keys already point at game pages whose share image is the game card. For the three pack-only cards (snaps, targets, offense) the link adds `?share={card key}`; a page asked for with a valid `pack-week-N-…` key prints that card as its `og:image` / `twitter:image` and puts the same address in `og:url`. `rel=canonical` stays the clean address, so search engines see one page. Any other `share` value is ignored. Each week's key differs, so Reddit never shows last week's preview.
+3. **One setting on the tab: "Your subreddit"** (default `downbydown`). Empty hides the buttons. Stored as `dbd_pack_sub`, letters, digits and underscores only.
+4. **Nothing else on the tab changes:** the Copy buttons, the X and Bluesky text, and the "Fits" line for team subreddits stay. Team subreddits stay manual (automated self-links there read as spam).
+
+**Before building, one test (Gene, signed in to Reddit, from his own browser):** the mock's test link opens a prefilled r/downbydown post for this week's snaps item. It confirms that Reddit's current site still fills in the title and the link from the address. If it doesn't, the button falls back to copying the title and opening the empty form.
+
+**Decisions:**
+1. Keys: a button on every side (26 this week), or only the four main items? (Recommend every side; you choose which to post.)
+2. The Tuesday pack email gets the same "Post to r/downbydown" links, so Erik can post from his inbox? (Recommend yes.)
+
+**Tests:** the harness checks each button's address (right subreddit, encoded title and link, `?share=` only on pack-only cards), that a page with a valid `share` key prints that card in `og:image` and `og:url` but keeps the clean canonical, and that an invalid key changes nothing.
