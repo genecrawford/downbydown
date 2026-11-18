@@ -463,6 +463,17 @@ function dbd_pack_mail_box( $n ) {
 	<?php
 }
 
+/** Your subreddit (SCOPE §71). Shown before Week 1 too (Greptile, PR #130). The box takes a pasted address or r/name; sanitize_sub() keeps the name, up to 21. */
+function dbd_pack_sub_form() {
+	$sub = DBD_Pack::our_sub();
+	?>
+	<form method="post" action="options.php" class="sp-sub"><?php settings_fields( 'dbd_pack_sub' ); ?>
+		<label for="dbd-pack-sub">Your subreddit</label> r/<input id="dbd-pack-sub" name="<?php echo esc_attr( DBD_Pack::OPT_SUB ); ?>" value="<?php echo esc_attr( $sub ); ?>" maxlength="200" class="regular-text" style="width:180px">
+		<?php submit_button( 'Save', 'secondary', 'submit', false ); ?><span class="description"><?php echo esc_html( $sub !== '' ? 'Each item’s Post button opens Reddit’s new-post form for r/' . $sub . ', filled in. Clear it to hide the buttons.' : 'Set one to get a Post button on each item.' ); ?></span>
+	</form>
+	<?php
+}
+
 /** The Post to r/… button (SCOPE §71): Reddit's new-post form in a new tab, title and link filled in. Nothing when no subreddit is set. */
 function dbd_pack_reddit( $title, $link ) {
 	$u = DBD_Pack::reddit_url( $title, $link ); if ( $u === '' ) { return ''; }
@@ -478,17 +489,13 @@ function dbd_pack_field( $lab, $text, $count = false ) {
 
 function dbd_tab_share() {
 	$weeks = DBD_Pack::weeks();
-	if ( ! $weeks ) { dbd_pack_mail_box( 0 ); echo '<div class="dbd-box"><h2>Share pack</h2><p class="dbd-in" style="padding:12px 16px;margin:0">The pack starts after Week 1’s games are all in.</p></div>'; return; }  /* the email's settings show before Week 1 too (Greptile, PR #127) */
+	if ( ! $weeks ) { dbd_pack_mail_box( 0 ); dbd_pack_sub_form(); echo '<div class="dbd-box"><h2>Share pack</h2><p class="dbd-in" style="padding:12px 16px;margin:0">The pack starts after Week 1’s games are all in.</p></div>'; return; }  /* the email's settings show before Week 1 too (Greptile, PR #127) */
 	$want = (int) ( $_GET['week'] ?? 0 ); $n = in_array( $want, $weeks, true ) ? $want : $weeks[0];
 	$items = DBD_Pack::items( $n ); $keys = DBD_Pack::keys( $n );
 	$tue = DBD_Post::tuesday( $n );
 	dbd_pack_mail_box( $n );
-	$sub = DBD_Pack::our_sub();
+	dbd_pack_sub_form();
 	?>
-	<form method="post" action="options.php" class="sp-sub"><?php settings_fields( 'dbd_pack_sub' ); ?>
-		<label for="dbd-pack-sub">Your subreddit</label> r/<input id="dbd-pack-sub" name="<?php echo esc_attr( DBD_Pack::OPT_SUB ); ?>" value="<?php echo esc_attr( $sub ); ?>" maxlength="21" class="regular-text" style="width:180px">
-		<?php submit_button( 'Save', 'secondary', 'submit', false ); ?><span class="description"><?php echo esc_html( $sub !== '' ? 'Each item’s Post button opens Reddit’s new-post form for r/' . $sub . ', filled in. Clear it to hide the buttons.' : 'Set one to get a Post button on each item.' ); ?></span>
-	</form>
 	<div class="sp-head">
 		<form method="get" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>"><input type="hidden" name="page" value="down-by-down-share">
 			<select name="week" aria-label="Week" onchange="this.form.submit()"><?php foreach ( $weeks as $w ) { echo '<option value="' . (int) $w . '"' . ( $w === $n ? ' selected' : '' ) . '>Week ' . (int) $w . '</option>'; } ?></select>
