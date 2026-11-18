@@ -625,6 +625,7 @@ if ( $view === 'admin' ) {
 		'current_user_can' => function () { return true; },
 		'sanitize_key' => function ( $k ) { return preg_replace( '/[^a-z0-9_\-]/', '', strtolower( (string) $k ) ); },
 		'is_email' => function ( $e ) { return (bool) filter_var( $e, FILTER_VALIDATE_EMAIL ); },
+		'sanitize_email' => function ( $e ) { return preg_replace( '/[^a-z0-9@._+\-]/i', '', (string) $e ); },  /* the Share pack's one Save (SCOPE §74) */
 		'add_menu_page' => function () {}, 'add_submenu_page' => function () {}, 'register_setting' => function () {},
 	) as $fn => $body ) { if ( ! function_exists( $fn ) ) { $GLOBALS['hfn'][ $fn ] = $body; eval( 'function ' . $fn . '( ...$a ) { return $GLOBALS["hfn"]["' . $fn . '"]( ...$a ); }' ); } }
 	require DBD_PATH . 'includes/admin/settings.php';
@@ -634,7 +635,15 @@ if ( $view === 'admin' ) {
 		'st' => array( 'Photos and logos', 'Addresses', 'Search and sharing', 'Using it in the theme', 'value="dbd"' ),
 		'dt' => array( 'Current data', 'Sync log', 'Seasons', 'Share cards', 'value="dbd_data"', 'harness-token' ),
 		'gr' => array( 'Visits by source', 'data-g="sources"', 'Google search', 'data-g="search"', 'Titles to tune', 'data-g="tune"', 'data-g="copy"', 'Top landing pages', 'data-g="landing"', 'Brevo isn’t set up', 'data-g="shares"', 'data-g="signups"', 'analytics.google.com/analytics/web/#/p123456/', 'resource_id=https%3A%2F%2Fexample.test%2F', 'page=googlesitekit-dashboard' ) );
-	$want['sp'] = array( 'The Tuesday email', 'value="dbd_pack"', 'name="dbd_pack_mail_set[to]"', 'Brevo isn’t set up', 'Share pack', 'name="week"', 'The biggest swing', 'A usage riser', 'Best and worst offense', 'A target-share mover', 'class="button sp-cp"', 'download="dbd-week-', 'card=pack-week-', 'of 280', 'Fits: r/', 'value="dbd_pack_sub"', 'name="dbd_pack_sub"', 'Your subreddit', 'class="button sp-rd"', 'https://www.reddit.com/r/downbydown/submit?url=', 'share%3Dpack-week-', 'Post to r/downbydown', 'name="dbd_pack_x"', 'name="dbd_pack_bsky"', 'class="button sp-x"', 'class="button sp-bs"', 'https://x.com/intent/post?text=', 'https://bsky.app/intent/compose?text=', 'name="dbd_pack_fb"', 'name="dbd_pack_ig"', 'Open the group', 'class="button sp-fb"', 'Share on Facebook', 'sharer.php?u=', 'Instagram caption, with the square', 'Download square', 'card=ig-week-', 'Copy for Instagram' );  /* SCOPE §68, §71–73 */
+	$want['sp'] = array( 'Week ', ' pack</h2>', 'name="week"', 'Click where you want to post.', 'Change the list', 'class="sp-open"',
+		'The biggest swing', 'A usage riser', 'Best and worst offense', 'A target-share mover', 'Keys to the game, Week ', 'Post it', 'Also fits r/',
+		'<details class="sp-tx"><summary>Texts to copy</summary>', 'Reddit title', 'Reddit first comment, with the link', 'X and Bluesky', ' of 280', 'Instagram caption', 'class="button button-small sp-cp"',
+		'download="dbd-week-', 'card=pack-week-', 'Download square for Instagram', 'card=ig-week-', 'Download the game card',
+		'class="button sp-rd" aria-label="Post to r/downbydown"', 'https://www.reddit.com/r/downbydown/submit?url=', 'share%3Dpack-week-', '>r/downbydown</a>',
+		'class="button sp-x" aria-label="Post on X"', 'https://x.com/intent/post?text=', 'class="button sp-bs" aria-label="Post on Bluesky"', 'https://bsky.app/intent/compose?text=',
+		'class="button sp-fb"', 'sharer.php?u=', '>Facebook</a>', 'class="button sp-cp sp-ig"', '>Instagram</button>', 'aria-label="Download square for Instagram">Square</a>',
+		'<details class="dbd-box sp-set" id="dbd-pack-settings"', 'Settings: the Tuesday email and your accounts', 'value="dbd_pack_settings"', 'name="dbd_pack_mail_set[on]"', 'name="dbd_pack_mail_set[to]"', 'Brevo isn’t set up',
+		'name="dbd_pack_sub"', 'name="dbd_pack_x"', 'name="dbd_pack_bsky"', 'name="dbd_pack_fb"', 'name="dbd_pack_ig"', 'Open the group', 'Save settings', 'id="dbd-pack-settings"><summary>' );  /* SCOPE §68, §71–74; the settings box starts closed */
 	$want['ov'][] = 'Open Growth'; $want['ov'][] = 'data-g="ov-visits"'; $want['ov'][] = 'data-g="ov-clicks"';
 	$bad = 0; $dir = getenv( 'DBD_HARNESS_HTML' ); if ( $dir && ! is_dir( $dir ) ) { mkdir( $dir, 0777, true ); }
 	foreach ( dbd_admin_tabs() as $k => $t ) {
@@ -646,6 +655,19 @@ if ( $view === 'admin' ) {
 		echo "  admin $k (" . $t[1] . '): ' . strlen( $h ) . " bytes, $forms forms" . ( $miss ? ', MISSING: ' . implode( ' | ', $miss ) : '' ) . ( $nested ? ', A FORM INSIDE A FORM' : '' ) . "\n";
 		$bad += count( $miss ) + $nested;
 		if ( $dir ) { file_put_contents( "$dir/admin-$k.html", '<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="https://example.test/wp-admin/css/common.css">' . $h ); }
+	}
+	/* the Share pack's one Save (SCOPE §74): every field through its own sanitizer, the list kept apart from the accounts */
+	if ( ! $arg || $arg === 'all' || $arg === 'sp' ) {
+		$to = dbd_pack_settings_save( array( 'week' => '9', 'dbd_pack_mail_set' => array( 'on' => '1', 'to' => "Erik@Example.test\nbad\ngene@example.test, gene@example.test" ), 'dbd_pack_sub' => 'https://www.reddit.com/r/DownByDown/', 'dbd_pack_x' => '@dxd_NFLfootball', 'dbd_pack_bsky' => '@DownByDown.bsky.social', 'dbd_pack_fb' => 'facebook.com/groups/42/', 'dbd_pack_ig' => 'https://instagram.com/down_by_down/' ) );
+		$got = array( get_option( 'dbd_pack_mail_set' ), get_option( 'dbd_pack_sub' ), get_option( 'dbd_pack_x' ), get_option( 'dbd_pack_bsky' ), get_option( 'dbd_pack_fb' ), get_option( 'dbd_pack_ig' ) );
+		$ok = $got === array( array( 'on' => true, 'to' => array( 'erik@example.test', 'gene@example.test' ) ), 'DownByDown', 'dxd_NFLfootball', 'downbydown.bsky.social', 'https://www.facebook.com/groups/42', 'down_by_down' );
+		$ok2 = strpos( $to, 'page=down-by-down-share' ) !== false && strpos( $to, 'week=9' ) !== false && strpos( $to, 'pack=saved' ) !== false && substr( $to, -strlen( '#dbd-pack-settings' ) ) === '#dbd-pack-settings';
+		dbd_pack_settings_save( array( 'dbd_pack_mail_set' => array( 'to' => 'a@example.test' ), 'dbd_pack_sub' => '', 'dbd_pack_fb' => 'https://evil.test/' ) );
+		$ok3 = get_option( 'dbd_pack_mail_set' ) === array( 'on' => false, 'to' => array( 'a@example.test' ) ) && get_option( 'dbd_pack_sub' ) === '' && get_option( 'dbd_pack_fb' ) === '';
+		echo '  sp save: ' . ( $ok && $ok2 && $ok3 ? 'ok' : 'WRONG ' . json_encode( array( $ok, $ok2, $ok3, $got ) ) . ' ' . $to ) . "\n"; $bad += $ok && $ok2 && $ok3 ? 0 : 1;
+		$_GET = array( 'page' => 'down-by-down-share', 'pack' => 'saved' ); ob_start(); dbd_settings_page(); $h2 = ob_get_clean();
+		$open = strpos( $h2, 'id="dbd-pack-settings" open>' ) !== false && strpos( $h2, 'Settings saved.' ) !== false;
+		echo '  sp after a save: ' . ( $open ? 'the settings box is open with its notice' : 'WRONG: the settings box should open with "Settings saved."' ) . "\n"; $bad += $open ? 0 : 1;
 	}
 	echo "admin: $bad problems, $warnings warnings\n"; exit( $bad || $warnings ? 1 : 0 );
 }

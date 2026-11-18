@@ -1,5 +1,6 @@
 /* The Share pack's Copy buttons (SCOPE §68): a button copies its own data-t, or the text box beside it, then says Copied for a moment.
    Share on Facebook (SCOPE §73) copies its data-t too, says "Copied, now paste", and still opens Facebook's share box (the link's own target).
+   "Change the list" opens the settings box at the bottom (SCOPE §74).
    The clipboard API first; a hidden text box and execCommand where it isn't there. No dependencies. */
 (function () {
   function fallback(s) {
@@ -16,8 +17,11 @@
     b.textContent = ok ? (yes || 'Copied') : 'Select and copy'; b.classList.toggle('ok', ok);
     clearTimeout(b._t); b._t = setTimeout(function () { b.textContent = was; b.classList.remove('ok'); }, ms || 1400);
   }
+  if (location.hash === '#dbd-pack-settings') { var sb0 = document.getElementById('dbd-pack-settings'); if (sb0) { sb0.open = true; } }
   document.addEventListener('click', function (e) {
     var t = e.target && e.target.closest ? e.target : null; if (!t) return;
+    var op = t.closest('.sp-open');  /* "Change the list" opens the settings box (SCOPE §74) */
+    if (op) { var sb = document.getElementById('dbd-pack-settings'); if (sb) { sb.open = true; } return; }
     var fb = t.closest('.sp-fb');
     if (fb) { var ft = fb.getAttribute('data-t'); if (ft) { copy(ft, function (ok) { done(fb, ok, 'Copied, now paste', 4000); }); } return; }  /* no preventDefault: the share box opens */
     var b = t.closest('.sp-cp'); if (!b) return;

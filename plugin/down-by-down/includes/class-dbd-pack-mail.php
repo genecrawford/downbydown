@@ -228,7 +228,7 @@ class DBD_Pack_Mail {
 
 	/* ------------------------------------------------------------------ the tab's buttons */
 
-	private static function back( $args ) { wp_safe_redirect( add_query_arg( array_merge( array( 'page' => 'down-by-down-share' ), $args ), admin_url( 'admin.php' ) ) ); exit; }
+	private static function back( $args ) { wp_safe_redirect( add_query_arg( array_merge( array( 'page' => 'down-by-down-share' ), $args ), admin_url( 'admin.php' ) ) . '#dbd-pack-settings' ); exit; }  /* the notice shows in the settings box (SCOPE §74) */
 
 	/** "Send this week's pack now": the week shown, to everyone on the list, right away. It doesn't change the Tuesday booking. */
 	public static function now_action() {
