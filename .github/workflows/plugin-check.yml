@@ -533,6 +533,8 @@ jobs:
           php tools/view_harness.php data pack
           # the share pack email (2.28.0, SCOPE §69): booking, the email, one copy per person, retries for whoever Brevo refused
           DBD_HARNESS_HTML=emails php tools/view_harness.php data packmail
+          # Instagram posts itself (2.34.0, SCOPE §76): slots, captions, booking, a fake API, no double posts, retries, the token, JPEG squares
+          php tools/view_harness.php data igpost
           grep -q "'down-by-down-share', 'Share pack'" plugin/down-by-down/includes/admin/settings.php
           node --check plugin/down-by-down/assets/pack.js
           # the events: share from the card button and both copy-link buttons; sign_up once per session on the confirmed landing

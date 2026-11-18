@@ -76,7 +76,7 @@ function wp_schedule_single_event() {} function wp_next_scheduled() { return fal
 
 /* ---- the plugin, minus the bootstrap and admin. The SEO class extends a WordPress sitemap base class; an empty stand-in lets it load. */
 if ( ! class_exists( 'WP_Sitemaps_Provider' ) ) { class WP_Sitemaps_Provider { public $name = ''; public $object_type = ''; } }
-foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-kicker', 'class-dbd-defense', 'class-dbd-week', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-boards', 'class-dbd-sync', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo', 'class-dbd-blocks', 'class-dbd-post', 'class-dbd-news', 'class-dbd-email', 'class-dbd-videos', 'class-dbd-growth', 'class-dbd-signup', 'class-dbd-pack', 'class-dbd-pack-mail', 'class-dbd-board-mail' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
+foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-kicker', 'class-dbd-defense', 'class-dbd-week', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-boards', 'class-dbd-sync', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo', 'class-dbd-blocks', 'class-dbd-post', 'class-dbd-news', 'class-dbd-email', 'class-dbd-videos', 'class-dbd-growth', 'class-dbd-signup', 'class-dbd-pack', 'class-dbd-pack-mail', 'class-dbd-instagram', 'class-dbd-board-mail' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
 
 if ( getenv( 'DBD_HARNESS_SIGN' ) ) { $GLOBALS['dbd_opt'] = array( 'dbd_email' => array( 'on' => true, 'key' => 'harness', 'list' => 4, 'tpl' => 5 ) ); }  /* the email set up, so pages draw the signup strip (SCOPE §66) */
 if ( getenv( 'DBD_HARNESS_NOW' ) && class_exists( 'DBD_News' ) ) { DBD_News::$now = (int) getenv( 'DBD_HARNESS_NOW' ); }
@@ -371,6 +371,102 @@ if ( $view === 'growth' ) {
 
 /* ---- the admin page (2.11.0, SCOPE §50): every tab drawn with stored settings, a sync that failed, a feed to check, an email sent and two week posts */
 /* ---- the share pack (2.27.0, SCOPE §68): the newest pack's items and keys, the X length, the play cleanup, the mover picks, both card specs */
+/* ---- Instagram posts itself (2.34.0, SCOPE §76): the week's slots, the captions, the booking, posting a carousel and a single image through a fake
+   Instagram API (no double post after a lost reply), retries and the note, the token's connect and renewal, the JPEG squares */
+if ( $view === 'igpost' ) {
+	$now0 = time();
+	$GLOBALS['dbd_opt'] = array( 'dbd_email' => array( 'on' => true, 'key' => 'k', 'list' => 3, 'tpl' => 5, 'test' => 'gene@example.test' ),
+		'dbd_ig_token' => array( 'token' => 'tok', 'user_id' => '178', 'username' => 'down_by_down', 'expires' => $now0 + 50 * 86400, 'checked' => $now0, 'err' => '' ) );
+	$GLOBALS['hcalls'] = array(); $GLOBALS['hmail'] = array(); $GLOBALS['ig'] = array( 'status' => array(), 'failpub' => false, 'n' => 0, 'refresh' => 'ok' );
+	foreach ( array(
+		'admin_url' => function ( $p = '' ) { return 'https://example.test/wp-admin/' . $p; },
+		'add_option' => function ( $k, $v = '' ) { if ( isset( $GLOBALS['dbd_opt'][ $k ] ) ) { return false; } $GLOBALS['dbd_opt'][ $k ] = $v; return true; },
+		'delete_option' => function ( $k ) { unset( $GLOBALS['dbd_opt'][ $k ] ); return true; },
+		'wp_mail' => function ( $to, $sub ) { $GLOBALS['hmail'][] = $sub; return true; },
+		'wp_clear_scheduled_hook' => function () { return 0; },
+		'wp_remote_request' => function ( $url, $a ) {
+			$u = parse_url( $url ); parse_str( (string) ( $u['query'] ?? '' ), $q ); $b = (array) ( $a['body'] ?? array() ); $path = preg_replace( '#^/(v\d+\.\d+/)?#', '', $u['path'] );
+			$GLOBALS['hcalls'][] = array( $a['method'], $path, $a['method'] === 'GET' ? $q : $b );
+			$ok = function ( $j ) { return array( 'response' => array( 'code' => 200 ), 'body' => json_encode( $j ) ); };
+			$no = function ( $m ) { return array( 'response' => array( 'code' => 400 ), 'body' => json_encode( array( 'error' => array( 'message' => $m ) ) ) ); };
+			$tok = $a['method'] === 'GET' ? ( $q['access_token'] ?? '' ) : ( $b['access_token'] ?? '' );
+			if ( $path === 'me' ) { return $tok === 'bad' ? $no( 'Invalid OAuth access token' ) : $ok( array( 'user_id' => '178', 'username' => 'down_by_down', 'id' => '99' ) ); }
+			if ( $path === 'refresh_access_token' ) { return $GLOBALS['ig']['refresh'] === 'ok' ? $ok( array( 'access_token' => 'tok2', 'token_type' => 'bearer', 'expires_in' => 5184000 ) ) : $no( 'Session has expired' ); }
+			if ( $path === '178/media' ) { $GLOBALS['ig']['n']++; return $ok( array( 'id' => ( ( $b['media_type'] ?? '' ) === 'CAROUSEL' ? 'car' : 'c' ) . $GLOBALS['ig']['n'] ) ); }
+			if ( $path === '178/media_publish' ) { return $GLOBALS['ig']['failpub'] ? $no( 'Fatal' ) : $ok( array( 'id' => 'm' . $b['creation_id'] ) ); }
+			if ( ( $q['fields'] ?? '' ) === 'status_code' ) { return $ok( array( 'status_code' => $GLOBALS['ig']['status'][ $path ] ?? 'FINISHED' ) ); }
+			if ( ( $q['fields'] ?? '' ) === 'permalink' ) { return $ok( array( 'permalink' => 'https://www.instagram.com/p/' . $path . '/' ) ); }
+			return $no( 'unknown ' . $path );
+		},
+	) as $fn => $body ) { if ( ! function_exists( $fn ) ) { $GLOBALS['hfn'][ $fn ] = $body; eval( 'function ' . $fn . '( ...$a ) { return $GLOBALS["hfn"]["' . $fn . '"]( ...$a ); }' ); } }
+	DBD_Instagram::$wait = function () {};
+	$bad = 0; $ck = function ( $what, $ok, $got = '' ) use ( &$bad ) { echo '  ' . ( $ok ? 'ok' : 'WRONG' ) . ": $what" . ( $ok ? '' : " (got: $got)" ) . "\n"; $bad += ! $ok; };
+	$calls = function ( $m, $p ) { return array_values( array_filter( $GLOBALS['hcalls'], function ( $c ) use ( $m, $p ) { return $c[0] === $m && $c[1] === $p; } ) ); };
+	try {
+		$n = DBD_Pack::newest(); $season = (int) DBD_Data::season(); $ny = new DateTimeZone( 'America/New_York' );
+		/* the slots: Tuesday 9:00 AM Eastern, then a day each */
+		$day = function ( $sl ) use ( $n, $ny ) { $d = new DateTime( '@' . DBD_Instagram::slot_time( $n, $sl ) ); $d->setTimezone( $ny ); return $d->format( 'D H:i' ); };
+		$ck( 'the slots fall Tuesday to Sunday at 9:00 AM Eastern', $day( 'carousel' ) === 'Tue 09:00' && $day( 'swing' ) === 'Wed 09:00' && $day( 'snaps' ) === 'Thu 09:00' && $day( 'offense' ) === 'Fri 09:00' && $day( 'targets' ) === 'Sat 09:00' && $day( 'leaders' ) === 'Sun 09:00', $day( 'carousel' ) . ' / ' . $day( 'leaders' ) );
+		$plan = DBD_Instagram::plan( $n ); $items = array_values( array_filter( DBD_Pack::items( $n ), function ( $i ) { return ! empty( $i['sq'] ); } ) );
+		$ck( 'the plan: the carousel with every item, then each item on its own', isset( $plan['carousel'] ) && count( $plan['carousel'] ) === count( $items ) && count( $plan ) === count( $items ) + 1, implode( ',', array_keys( $plan ) ) );
+		$cap = DBD_Instagram::carousel_caption( $n, $plan['carousel'] ); preg_match_all( '/#\w+/', $cap, $tg );
+		$ck( 'the carousel caption', strpos( $cap, 'Week ' . $n . ' in ' ) === 0 && strpos( $cap, "\n1. " ) !== false && strpos( $cap, 'Full charts: link in bio (' ) !== false && mb_strlen( $cap ) <= 2200 && count( $tg[0] ) <= 15 && in_array( '#NFL', $tg[0], true ), str_replace( "\n", ' / ', $cap ) );
+		$c1 = DBD_Instagram::caption( $n, 'swing', $plan['swing'] ); $ck( 'a daily caption is the item’s Instagram caption', strpos( $c1, 'Full chart: link in bio' ) !== false && strpos( $c1, '#NFL' ) !== false, $c1 );
+		/* booking */
+		$tm = array(); foreach ( array_keys( $plan ) as $sl ) { $tm[ $sl ] = 1800000000 + DBD_Instagram::SLOTS[ $sl ] * 86400; }
+		list( $s1, $b1 ) = DBD_Instagram::decide( array( 'jobs' => array() ), $season, $n, array_keys( $plan ), $tm, 1800000000 - 3600 );
+		$ck( 'a new week books each post at its slot', count( $b1 ) === count( $plan ) && reset( $b1 ) === 1800000000, json_encode( $b1 ) );
+		list( $s2, $b2 ) = DBD_Instagram::decide( $s1, $season, $n, array_keys( $plan ), $tm, 1800000000 ); $ck( 'it books once', ! $b2 && $s2 === $s1 );
+		list( $s3, $b3 ) = DBD_Instagram::decide( array( 'jobs' => array() ), $season, $n, array_keys( $plan ), $tm, 1800000000 + 2 * 86400 + 60 );
+		$ck( 'posts more than a day past their slot are skipped, the rest booked', strpos( $s3['jobs'][ DBD_Instagram::key( $season, $n, 'carousel' ) ]['state'], 'skipped' ) === 0 && ! isset( $b3[ DBD_Instagram::key( $season, $n, 'swing' ) ] ) && isset( $b3[ DBD_Instagram::key( $season, $n, 'snaps' ) ] ), json_encode( $b3 ) );
+		$GLOBALS['dbd_opt']['dbd_ig_post'] = array( 'jobs' => array() );
+		$bk = DBD_Instagram::note( null, DBD_Instagram::slot_time( $n, 'carousel' ) - 600 ); $ck( 'after a sync, the newest week’s posts are booked', count( $bk ) === count( $plan ), json_encode( $bk ) );
+		/* posting the carousel */
+		$kc = DBD_Instagram::key( $season, $n, 'carousel' ); $GLOBALS['hcalls'] = array();
+		DBD_Instagram::send( $kc, true ); $j = DBD_Instagram::job( $kc ); $kids = array_values( array_filter( $calls( 'POST', '178/media' ), function ( $c ) { return ( $c[2]['is_carousel_item'] ?? '' ) === 'true'; } ) );
+		$car = array_values( array_filter( $calls( 'POST', '178/media' ), function ( $c ) { return ( $c[2]['media_type'] ?? '' ) === 'CAROUSEL'; } ) );
+		$ck( 'the carousel: a JPEG slide per square, then the carousel with its caption, then publish', count( $kids ) === count( $plan['carousel'] ) && strpos( $kids[0][2]['image_url'], 'fmt=jpg' ) !== false && strpos( $kids[0][2]['image_url'], 'card=ig-week-' . $n . '-' ) !== false
+			&& count( $car ) === 1 && $car[0][2]['children'] === implode( ',', array_map( function ( $i ) { return 'c' . $i; }, range( 1, count( $kids ) ) ) ) && $car[0][2]['caption'] === $cap && count( $calls( 'POST', '178/media_publish' ) ) === 1 && ( $car[0][2]['access_token'] ?? '' ) === 'tok', json_encode( $car ) );
+		$ck( 'it’s marked posted with its link', ( $j['state'] ?? '' ) === 'sent' && strpos( (string) ( $j['link'] ?? '' ), 'https://www.instagram.com/p/' ) === 0, json_encode( $j ) );
+		$GLOBALS['hcalls'] = array(); DBD_Instagram::send( $kc, true ); $ck( 'a posted carousel never posts again', ! $GLOBALS['hcalls'] );
+		/* a daily post: one image; a lost publish reply is not posted twice */
+		$ks = DBD_Instagram::key( $season, $n, 'swing' ); $GLOBALS['ig']['failpub'] = true; $GLOBALS['hcalls'] = array();
+		DBD_Instagram::send( $ks ); $j = DBD_Instagram::job( $ks );
+		$ck( 'a failed publish retries and keeps its container', strpos( (string) $j['state'], 'retrying: Instagram answered 400: Fatal' ) === 0 && ! empty( $j['container'] ) && count( $calls( 'POST', '178/media' ) ) === 1 && strpos( $calls( 'POST', '178/media' )[0][2]['image_url'], 'card=ig-week-' . $n . '-swing' ) !== false, json_encode( $j ) );
+		$GLOBALS['ig']['failpub'] = false; $GLOBALS['ig']['status'][ $j['container'] ] = 'PUBLISHED'; $GLOBALS['hcalls'] = array();
+		DBD_Instagram::send( $ks ); $j = DBD_Instagram::job( $ks );
+		$ck( 'when the container already went out, the retry marks it posted without posting again', ( $j['state'] ?? '' ) === 'sent' && ! $calls( 'POST', '178/media' ) && ! $calls( 'POST', '178/media_publish' ), json_encode( array( $j, $GLOBALS['hcalls'] ) ) );
+		/* late, failing, Try again */
+		$kn = DBD_Instagram::key( $season, $n, 'snaps' ); $GLOBALS['dbd_opt']['dbd_ig_post']['jobs'][ $kn ] = array( 'state' => 'booked', 'at' => 1000, 'slot_at' => 1000, 'tries' => 0 );
+		$GLOBALS['hcalls'] = array(); DBD_Instagram::send( $kn ); $ck( 'a booked post run more than a day late is not posted', DBD_Instagram::job( $kn )['state'] === 'not posted: more than a day late' && ! $GLOBALS['hcalls'], DBD_Instagram::job( $kn )['state'] );
+		$GLOBALS['ig']['failpub'] = true; $GLOBALS['dbd_opt']['dbd_ig_post']['jobs'][ $kn ] = array( 'state' => 'retrying: x', 'at' => time(), 'slot_at' => time(), 'tries' => DBD_Instagram::TRIES - 1, 'container' => 'gone' );
+		$GLOBALS['ig']['status']['gone'] = 'EXPIRED'; DBD_Instagram::send( $kn ); $j = DBD_Instagram::job( $kn );
+		$ck( 'the last try fails it, makes a new container for an expired one, and sends the note', strpos( $j['state'], 'failed: ' ) === 0 && $j['container'] !== 'gone' && count( $GLOBALS['hmail'] ) === 1 && strpos( $GLOBALS['hmail'][0], 'Instagram didn’t take the usage riser' ) !== false, json_encode( array( $j, $GLOBALS['hmail'] ) ) );
+		$GLOBALS['ig']['failpub'] = false;
+		$line = DBD_Instagram::line( $n ); $ck( 'the status line names a failed post with Try again', $line[0] === 'bad' && $line[3] === $kn && strpos( $line[1], 'Instagram didn’t take the usage riser' ) === 0, json_encode( $line ) );
+		$GLOBALS['dbd_opt']['dbd_ig_post']['jobs'][ $kn ]['state'] = 'sent';
+		$line = DBD_Instagram::line( $n ); $ck( 'the status line: the last post and the next one', $line[0] === 'ok' && strpos( $line[1], 'Instagram: posted the usage riser ' ) === 0 && strpos( $line[1], ' Next: best and worst offense, ' ) !== false, $line[1] );
+		$ck( 'the next post for Post now', DBD_Instagram::next_key() === DBD_Instagram::key( $season, $n, 'offense' ), DBD_Instagram::next_key() );
+		/* switched off: nothing posts */
+		$GLOBALS['dbd_opt']['dbd_ig_set'] = array( 'on' => false ); $ko = DBD_Instagram::key( $season, $n, 'offense' ); $GLOBALS['hcalls'] = array();
+		DBD_Instagram::send( $ko ); $ck( 'switched off, a booked post isn’t posted', strpos( (string) ( DBD_Instagram::job( $ko )['state'] ?? '' ), 'not posted: Instagram posting is off' ) === 0 && ! $GLOBALS['hcalls'], (string) ( DBD_Instagram::job( $ko )['state'] ?? '' ) );
+		$ck( 'switched off, the status line is gone', DBD_Instagram::line( $n ) === null );
+		$GLOBALS['dbd_opt']['dbd_ig_set'] = array( 'on' => true );
+		/* the token */
+		$ck( 'a bad token isn’t kept', strpos( DBD_Instagram::connect( 'bad' ), 'That token didn’t work. Instagram answered 400: Invalid OAuth access token' ) === 0 && DBD_Instagram::token()['token'] === 'tok' );
+		$ck( 'a good token is kept with its account', DBD_Instagram::connect( ' good ' ) === '' && DBD_Instagram::token()['token'] === 'good' && DBD_Instagram::token()['user_id'] === '178' && DBD_Instagram::token()['username'] === 'down_by_down' );
+		$ck( 'the renewal keeps the new token for 60 days', DBD_Instagram::refresh() && DBD_Instagram::token()['token'] === 'tok2' && abs( DBD_Instagram::token()['expires'] - ( time() + 5184000 ) ) < 5 && $calls( 'GET', 'refresh_access_token' )[0][2]['grant_type'] === 'ig_refresh_token' );
+		$GLOBALS['ig']['refresh'] = 'no'; $ck( 'a failed renewal is kept and warned about', ! DBD_Instagram::refresh() && DBD_Instagram::token()['err'] !== '' && strpos( DBD_Instagram::warning(), 'The Instagram token didn’t renew' ) === 0, DBD_Instagram::warning() );
+		$GLOBALS['dbd_opt']['dbd_ig_token']['expires'] = time() - 10; $ck( 'a token that ran out: not connected, nothing posts', ! DBD_Instagram::connected() && ! DBD_Instagram::on() && strpos( DBD_Instagram::warning(), 'ran out' ) !== false );
+		DBD_Instagram::disconnect(); $ck( 'disconnect forgets it', DBD_Instagram::token() === null && DBD_Instagram::warning() === '' );
+		/* the JPEG square */
+		$ck( 'a square asks for JPEG with &fmt=jpg', strpos( DBD_Card::jpg_url( 'ig-week-' . $n . '-swing' ), 'card=ig-week-' . $n . '-swing' ) !== false && substr( DBD_Card::jpg_url( 'ig-week-' . $n . '-swing' ), -8 ) === '&fmt=jpg' );
+		$_GET = array( 'fmt' => 'jpg' ); $ck( 'only the squares come as JPEG', DBD_Card::wants_jpg( 'ig-week-' . $n . '-swing' ) && ! DBD_Card::wants_jpg( 'pack-week-' . $n . '-snaps' ) ); $_GET = array();
+		if ( DBD_Card::available() ) { $im = DBD_Card::render( 'ig-week-' . $n . '-swing' ); ob_start(); imagejpeg( $im, null, 90 ); $jb = ob_get_clean(); imagedestroy( $im ); $sz = getimagesizefromstring( $jb );
+			$ck( 'the JPEG square is 1080x1080', $sz && $sz[0] === 1080 && $sz[1] === 1080 && $sz['mime'] === 'image/jpeg' ); }
+	} catch ( Throwable $e ) { fwrite( STDERR, 'FATAL in igpost: ' . $e->getMessage() . ' at ' . basename( $e->getFile() ) . ':' . $e->getLine() . "\n" ); exit( 1 ); }
+	echo "igpost week $n: $bad problems, $warnings warnings\n"; exit( $bad || $warnings ? 1 : 0 );
+}
 /* ---- the share pack email (2.28.0, SCOPE §69): booking, the email, one copy per person, a retry for only the one Brevo refused */
 if ( $view === 'packmail' ) {
 	$GLOBALS['dbd_opt'] = array( 'dbd_email' => array( 'on' => true, 'key' => 'xkeysib-test', 'list' => 3, 'tpl' => 5, 'test' => 'gene@example.test' ) );
@@ -658,7 +754,7 @@ if ( $view === 'admin' ) {
 		'class="button sp-x" aria-label="Post on X"', 'https://x.com/intent/post?text=', 'class="button sp-bs" aria-label="Post on Bluesky"', 'https://bsky.app/intent/compose?text=',
 		'class="button sp-fb"', 'sharer.php?u=', '>Facebook</a>', 'class="button sp-cp sp-ig"', '>Instagram</button>', 'aria-label="Download square for Instagram">Square</a>',
 		'<details class="dbd-box sp-set" id="dbd-pack-settings"', 'Settings: the Tuesday email and your accounts', 'value="dbd_pack_settings"', 'name="dbd_pack_mail_set[on]"', 'name="dbd_pack_mail_set[to]"', 'Brevo isn’t set up',
-		'name="dbd_pack_sub"', 'name="dbd_pack_x"', 'name="dbd_pack_bsky"', 'name="dbd_pack_fb"', 'name="dbd_pack_ig"', 'Open the group', 'Save settings', 'id="dbd-pack-settings"><summary>' );  /* SCOPE §68, §71–74; the settings box starts closed */
+		'name="dbd_pack_sub"', 'name="dbd_pack_x"', 'name="dbd_pack_bsky"', 'name="dbd_pack_fb"', 'name="dbd_pack_ig"', 'Open the group', 'Save settings', 'id="dbd-pack-settings"><summary>', 'Instagram posting', 'name="dbd_ig_set[on]"', 'name="dbd_ig_token_new"', 'Paste the token from your Meta app', 'Instagram isn’t connected yet.' );  /* SCOPE §68, §71–74; the settings box starts closed */
 	$want['ov'][] = 'Open Growth'; $want['ov'][] = 'data-g="ov-visits"'; $want['ov'][] = 'data-g="ov-clicks"';
 	$bad = 0; $dir = getenv( 'DBD_HARNESS_HTML' ); if ( $dir && ! is_dir( $dir ) ) { mkdir( $dir, 0777, true ); }
 	foreach ( dbd_admin_tabs() as $k => $t ) {

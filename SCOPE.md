@@ -3103,7 +3103,7 @@ Everything after the downloads is unchanged: commit only when the data changed, 
 
 **Tests:** the harness checks the five leaders against the box score for the newest week (the top passing yards, rushing yards, receiving yards, touchdowns and team defense), the card and its square draw (CI renders both, with and without logos), the texts' lengths and links, the item's place in the fixed order, and the email's count.
 
-## 76. Instagram posts itself (scoped and mocked 2026-11-18, `mockup-v50/`; decided)
+## 76. Instagram posts itself (scoped and mocked 2026-11-18, `mockup-v50/`; decided; built as 2.34.0)
 
 **Why:** Instagram is the one place a link can't fill in a post (§73), so every week Gene downloads squares and pastes captions by hand. Meta's posting API (Instagram API with Instagram Login, `instagram_business_content_publish`) lets the plugin publish for the account it's connected to; for your own account the app needs no Meta review. Gene: "How can we automate the IG stuff?"
 

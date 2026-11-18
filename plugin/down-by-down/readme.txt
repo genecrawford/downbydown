@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.33.0
+Stable tag: 2.34.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,10 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.34.0 =
+* Instagram posts itself (SCOPE §76), through the Instagram API with Instagram Login: Tuesday 9:00 AM Eastern a carousel of the week's squares with one caption, then one item a day Wednesday to Sunday at 9:00 AM, each its square and caption. Squares go as JPEG (&fmt=jpg). Booked after each sync; a post more than a day late is skipped; retries every 10 minutes, then a note and Try again; a container that already went out is never posted twice.
+* Share pack settings: Instagram posting on/off and the access token (checked when saved, never shown again, renewed weekly); the week's posts with Post the next one now; a status line at the top; the Overview warns when the token didn't renew or is about to run out.
 
 = 2.33.0 =
 * Week leaders (SCOPE §75): a new Share pack item, number 5 (keys to the game is now 6). A card with five panels: passing, rushing and receiving yards, touchdowns, and the team defense that allowed the fewest EPA a play, each leader big with the next two under; its Instagram square; the Post it row and texts; and in the Tuesday pack email. From the weekly box scores.
