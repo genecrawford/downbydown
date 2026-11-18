@@ -419,8 +419,11 @@ if ( $view === 'igpost' ) {
 		list( $s2, $b2 ) = DBD_Instagram::decide( $s1, $season, $n, array_keys( $plan ), $tm, 1800000000 ); $ck( 'it books once', ! $b2 && $s2 === $s1 );
 		list( $s3, $b3 ) = DBD_Instagram::decide( array( 'jobs' => array() ), $season, $n, array_keys( $plan ), $tm, 1800000000 + 2 * 86400 + 60 );
 		$ck( 'posts more than a day past their slot are skipped, the rest booked', strpos( $s3['jobs'][ DBD_Instagram::key( $season, $n, 'carousel' ) ]['state'], 'skipped' ) === 0 && ! isset( $b3[ DBD_Instagram::key( $season, $n, 'swing' ) ] ) && isset( $b3[ DBD_Instagram::key( $season, $n, 'snaps' ) ] ), json_encode( $b3 ) );
-		$GLOBALS['dbd_opt']['dbd_ig_post'] = array( 'jobs' => array() );
-		$bk = DBD_Instagram::note( null, DBD_Instagram::slot_time( $n, 'carousel' ) - 600 ); $ck( 'after a sync, the newest week’s posts are booked', count( $bk ) === count( $plan ), json_encode( $bk ) );
+		$bk = DBD_Instagram::note( null, DBD_Instagram::slot_time( $n, 'carousel' ) - 600 ); $ck( 'after a sync, the newest week’s posts are booked, each in its own record', count( $bk ) === count( $plan ) && isset( $GLOBALS['dbd_opt'][ 'dbd_ig_job_' . DBD_Instagram::key( $season, $n, 'leaders' ) ] ), json_encode( $bk ) );
+		$nj = function () { return count( array_filter( array_keys( $GLOBALS['dbd_opt'] ), function ( $k ) { return strpos( $k, 'dbd_ig_job_' ) === 0; } ) ); }; $before = $nj();
+		$at0 = $GLOBALS['dbd_opt'][ 'dbd_ig_job_' . DBD_Instagram::key( $season, $n, 'carousel' ) ]['at'];
+		DBD_Instagram::note( null, DBD_Instagram::slot_time( $n, 'carousel' ) - 300 );
+		$ck( 'a second sync adds no records and keeps the bookings', $nj() === $before && $GLOBALS['dbd_opt'][ 'dbd_ig_job_' . DBD_Instagram::key( $season, $n, 'carousel' ) ]['at'] === $at0 );
 		/* posting the carousel */
 		$kc = DBD_Instagram::key( $season, $n, 'carousel' ); $GLOBALS['hcalls'] = array();
 		DBD_Instagram::send( $kc, true ); $j = DBD_Instagram::job( $kc ); $kids = array_values( array_filter( $calls( 'POST', '178/media' ), function ( $c ) { return ( $c[2]['is_carousel_item'] ?? '' ) === 'true'; } ) );
@@ -436,17 +439,28 @@ if ( $view === 'igpost' ) {
 		$GLOBALS['ig']['failpub'] = false; $GLOBALS['ig']['status'][ $j['container'] ] = 'PUBLISHED'; $GLOBALS['hcalls'] = array();
 		DBD_Instagram::send( $ks ); $j = DBD_Instagram::job( $ks );
 		$ck( 'when the container already went out, the retry marks it posted without posting again', ( $j['state'] ?? '' ) === 'sent' && ! $calls( 'POST', '178/media' ) && ! $calls( 'POST', '178/media_publish' ), json_encode( array( $j, $GLOBALS['hcalls'] ) ) );
+		/* a container whose status Instagram won't give: kept, nothing new made (Greptile, PR #144) */
+		$kt = DBD_Instagram::key( $season, $n, 'targets' ); $GLOBALS['dbd_opt'][ 'dbd_ig_job_' . $kt ] = array( 'state' => 'retrying: x', 'at' => time(), 'slot_at' => time(), 'tries' => 1, 'container' => 'mystery' );
+		$GLOBALS['ig']['status']['mystery'] = ''; $GLOBALS['hcalls'] = array(); DBD_Instagram::send( $kt ); $j = DBD_Instagram::job( $kt );
+		$ck( 'an unknown status keeps the container and makes nothing new', $j['container'] === 'mystery' && strpos( $j['state'], 'retrying: Instagram didn’t say' ) === 0 && ! $calls( 'POST', '178/media' ), json_encode( $j ) );
+		$GLOBALS['dbd_opt'][ 'dbd_ig_job_' . $kt ] = array( 'state' => 'retrying: x', 'at' => 1000, 'slot_at' => 1000, 'tries' => 1 ); $GLOBALS['hcalls'] = array(); DBD_Instagram::send( $kt );
+		$ck( 'an automatic retry past the cutoff isn’t posted', DBD_Instagram::job( $kt )['state'] === 'not posted: more than a day late' && ! $GLOBALS['hcalls'], DBD_Instagram::job( $kt )['state'] );
+		$GLOBALS['dbd_opt'][ 'dbd_ig_job_' . $kt ] = array( 'state' => 'retrying: again', 'at' => 1000, 'slot_at' => 1000, 'tries' => 0, 'force' => true ); DBD_Instagram::send( $kt );
+		$ck( 'Try again on the tab overrides the cutoff', DBD_Instagram::job( $kt )['state'] === 'sent' && DBD_Instagram::job( $kt )['force'] === false, json_encode( DBD_Instagram::job( $kt ) ) );
 		/* late, failing, Try again */
-		$kn = DBD_Instagram::key( $season, $n, 'snaps' ); $GLOBALS['dbd_opt']['dbd_ig_post']['jobs'][ $kn ] = array( 'state' => 'booked', 'at' => 1000, 'slot_at' => 1000, 'tries' => 0 );
+		$kn = DBD_Instagram::key( $season, $n, 'snaps' ); $GLOBALS['dbd_opt'][ 'dbd_ig_job_' . $kn ] = array( 'state' => 'booked', 'at' => 1000, 'slot_at' => 1000, 'tries' => 0 );
 		$GLOBALS['hcalls'] = array(); DBD_Instagram::send( $kn ); $ck( 'a booked post run more than a day late is not posted', DBD_Instagram::job( $kn )['state'] === 'not posted: more than a day late' && ! $GLOBALS['hcalls'], DBD_Instagram::job( $kn )['state'] );
-		$GLOBALS['ig']['failpub'] = true; $GLOBALS['dbd_opt']['dbd_ig_post']['jobs'][ $kn ] = array( 'state' => 'retrying: x', 'at' => time(), 'slot_at' => time(), 'tries' => DBD_Instagram::TRIES - 1, 'container' => 'gone' );
+		$GLOBALS['ig']['failpub'] = true; $GLOBALS['dbd_opt'][ 'dbd_ig_job_' . $kn ] = array( 'state' => 'retrying: x', 'at' => time(), 'slot_at' => time(), 'tries' => DBD_Instagram::TRIES - 1, 'container' => 'gone' );
 		$GLOBALS['ig']['status']['gone'] = 'EXPIRED'; DBD_Instagram::send( $kn ); $j = DBD_Instagram::job( $kn );
 		$ck( 'the last try fails it, makes a new container for an expired one, and sends the note', strpos( $j['state'], 'failed: ' ) === 0 && $j['container'] !== 'gone' && count( $GLOBALS['hmail'] ) === 1 && strpos( $GLOBALS['hmail'][0], 'Instagram didn’t take the usage riser' ) !== false, json_encode( array( $j, $GLOBALS['hmail'] ) ) );
 		$GLOBALS['ig']['failpub'] = false;
 		$line = DBD_Instagram::line( $n ); $ck( 'the status line names a failed post with Try again', $line[0] === 'bad' && $line[3] === $kn && strpos( $line[1], 'Instagram didn’t take the usage riser' ) === 0, json_encode( $line ) );
-		$GLOBALS['dbd_opt']['dbd_ig_post']['jobs'][ $kn ]['state'] = 'sent';
+		$GLOBALS['dbd_opt'][ 'dbd_ig_job_' . $kn ]['state'] = 'sent';
 		$line = DBD_Instagram::line( $n ); $ck( 'the status line: the last post and the next one', $line[0] === 'ok' && strpos( $line[1], 'Instagram: posted the usage riser ' ) === 0 && strpos( $line[1], ' Next: best and worst offense, ' ) !== false, $line[1] );
 		$ck( 'the next post for Post now', DBD_Instagram::next_key() === DBD_Instagram::key( $season, $n, 'offense' ), DBD_Instagram::next_key() );
+		/* a lost booking past its cutoff isn't brought back (Greptile, PR #144) */
+		$GLOBALS['dbd_opt'][ 'dbd_ig_job_' . DBD_Instagram::key( $season, $n, 'leaders' ) ] = array( 'state' => 'retrying: x', 'at' => 1000, 'slot_at' => 1000, 'tries' => 1 );
+		$ck( 'a lost retry past its cutoff isn’t booked again', ! isset( DBD_Instagram::note()[ DBD_Instagram::key( $season, $n, 'leaders' ) ] ) );
 		/* switched off: nothing posts */
 		$GLOBALS['dbd_opt']['dbd_ig_set'] = array( 'on' => false ); $ko = DBD_Instagram::key( $season, $n, 'offense' ); $GLOBALS['hcalls'] = array();
 		DBD_Instagram::send( $ko ); $ck( 'switched off, a booked post isn’t posted', strpos( (string) ( DBD_Instagram::job( $ko )['state'] ?? '' ), 'not posted: Instagram posting is off' ) === 0 && ! $GLOBALS['hcalls'], (string) ( DBD_Instagram::job( $ko )['state'] ?? '' ) );
@@ -753,7 +767,7 @@ if ( $view === 'admin' ) {
 		'class="button sp-rd" aria-label="Post to r/downbydown"', 'https://www.reddit.com/r/downbydown/submit?url=', 'share%3Dpack-week-', '>r/downbydown</a>',
 		'class="button sp-x" aria-label="Post on X"', 'https://x.com/intent/post?text=', 'class="button sp-bs" aria-label="Post on Bluesky"', 'https://bsky.app/intent/compose?text=',
 		'class="button sp-fb"', 'sharer.php?u=', '>Facebook</a>', 'class="button sp-cp sp-ig"', '>Instagram</button>', 'aria-label="Download square for Instagram">Square</a>',
-		'<details class="dbd-box sp-set" id="dbd-pack-settings"', 'Settings: the Tuesday email and your accounts', 'value="dbd_pack_settings"', 'name="dbd_pack_mail_set[on]"', 'name="dbd_pack_mail_set[to]"', 'Brevo isn’t set up',
+		'<details class="dbd-box sp-set" id="dbd-pack-settings"', 'Settings: the Tuesday email, your accounts and Instagram posting', 'value="dbd_pack_settings"', 'name="dbd_pack_mail_set[on]"', 'name="dbd_pack_mail_set[to]"', 'Brevo isn’t set up',
 		'name="dbd_pack_sub"', 'name="dbd_pack_x"', 'name="dbd_pack_bsky"', 'name="dbd_pack_fb"', 'name="dbd_pack_ig"', 'Open the group', 'Save settings', 'id="dbd-pack-settings"><summary>', 'Instagram posting', 'name="dbd_ig_set[on]"', 'name="dbd_ig_token_new"', 'Paste the token from your Meta app', 'Instagram isn’t connected yet.' );  /* SCOPE §68, §71–74; the settings box starts closed */
 	$want['ov'][] = 'Open Growth'; $want['ov'][] = 'data-g="ov-visits"'; $want['ov'][] = 'data-g="ov-clicks"';
 	$bad = 0; $dir = getenv( 'DBD_HARNESS_HTML' ); if ( $dir && ! is_dir( $dir ) ) { mkdir( $dir, 0777, true ); }

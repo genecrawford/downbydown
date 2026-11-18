@@ -96,7 +96,7 @@ function dbd_pack_settings_save( $p ) {
 	if ( ! empty( $p['dbd_ig_disconnect'] ) ) { DBD_Instagram::disconnect(); }
 	elseif ( is_scalar( $p['dbd_ig_token_new'] ?? null ) && trim( (string) $p['dbd_ig_token_new'] ) !== '' ) { $ierr = DBD_Instagram::connect( (string) $p['dbd_ig_token_new'] ); }
 	$w = (int) ( $p['week'] ?? 0 );
-	return add_query_arg( array_filter( array( 'page' => 'down-by-down-share', 'week' => $w ?: null, 'pack' => $ierr === '' ? 'saved' : 'error', 'pack_err' => $ierr === '' ? null : rawurlencode( 'Settings saved, but ' . lcfirst( $ierr ) ) ) ), admin_url( 'admin.php' ) ) . '#dbd-pack-settings';
+	return add_query_arg( array_filter( array( 'page' => 'down-by-down-share', 'week' => $w ?: null, 'pack' => $ierr === '' ? 'saved' : 'saveerr', 'pack_err' => $ierr === '' ? null : rawurlencode( 'Settings saved, but ' . lcfirst( $ierr ) ) ) ), admin_url( 'admin.php' ) ) . '#dbd-pack-settings';
 }
 add_action( 'admin_post_dbd_pack_settings', function () {
 	check_admin_referer( 'dbd_pack_settings' ); if ( ! current_user_can( 'manage_options' ) ) { wp_die( 'No.' ); }
@@ -547,7 +547,9 @@ function dbd_pack_settings_box( $n ) {
 function dbd_pack_notices() {
 	if ( ! isset( $_GET['pack'] ) ) { return; }
 	$pk = (string) $_GET['pack']; $pn = (int) ( $_GET['pack_n'] ?? 0 );
-	if ( $pk === 'igposted' ) { $x = array( 'success', 'Posted to Instagram.' ); } elseif ( $pk === 'igagain' ) { $x = array( 'success', 'Instagram is trying that post again.' ); } else {
+	if ( $pk === 'igposted' ) { $x = array( 'success', 'Posted to Instagram.' ); } elseif ( $pk === 'igagain' ) { $x = array( 'success', 'Instagram is trying that post again.' ); }
+	elseif ( $pk === 'igerror' || $pk === 'saveerr' ) { $x = array( 'error', sanitize_text_field( wp_unslash( rawurldecode( (string) ( $_GET['pack_err'] ?? '' ) ) ) ) ); }  /* not the email's wording (Greptile, PR #144) */
+	else {
 	$x = $pk === 'saved' ? array( 'success', 'Settings saved.' ) : ( $pk === 'sent' ? array( 'success', 'The pack went to ' . $pn . ( $pn === 1 ? ' person.' : ' people.' ) ) : ( $pk === 'again' ? array( 'success', 'The pack email is going again.' ) : array( 'error', 'The pack email didn’t send: ' . sanitize_text_field( wp_unslash( rawurldecode( (string) ( $_GET['pack_err'] ?? '' ) ) ) ) ) ) );
 	}
 	echo '<div class="notice notice-' . esc_attr( $x[0] ) . ' inline sp-note"><p>' . esc_html( $x[1] ) . '</p></div>';

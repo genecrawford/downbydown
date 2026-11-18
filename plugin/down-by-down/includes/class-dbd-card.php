@@ -172,6 +172,7 @@ class DBD_Card {
 	}
 
 	/** A square as a JPEG (SCOPE §76): Instagram's API takes JPEG only. Only the Instagram squares come this way. */
+	public static function jpg_ok() { return function_exists( 'imagejpeg' ) && function_exists( 'imagetypes' ) && ( imagetypes() & IMG_JPG ); }  /* Greptile, PR #144 */
 	public static function wants_jpg( $key ) { return strpos( (string) $key, 'ig-' ) === 0 && isset( $_GET['fmt'] ) && $_GET['fmt'] === 'jpg'; }
 	public static function jpg_url( $key ) { return add_query_arg( array( 'fmt' => 'jpg' ), self::url( $key ) ); }
 
@@ -181,7 +182,7 @@ class DBD_Card {
 	public static function serve( $key ) {
 		$fail = function ( $code ) { status_header( $code ); nocache_headers(); exit; };
 		if ( ! self::available() || ! self::valid( $key ) ) { $fail( 404 ); }
-		$jpg = self::wants_jpg( $key );
+		$jpg = self::wants_jpg( $key ); if ( $jpg && ! self::jpg_ok() ) { $fail( 404 ); }
 		$dir = self::dir(); wp_mkdir_p( $dir ); $file = $dir . '/' . self::file_name( $key, $jpg );
 		if ( ! file_exists( $file ) ) {
 			$fetch = function ( $url ) { $r = wp_remote_get( $url, array( 'timeout' => 5 ) ); return ( ! is_wp_error( $r ) && (int) wp_remote_retrieve_response_code( $r ) === 200 ) ? wp_remote_retrieve_body( $r ) : null; };

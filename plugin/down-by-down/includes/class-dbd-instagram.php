@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 class DBD_Instagram {
 
-	const OPT       = 'dbd_ig_post';   /* the record: array( 'jobs' => 'season-wN-slot' => job ) */
+	const OPT_JOB   = 'dbd_ig_job_';   /* one record per post, 'dbd_ig_job_2026-w10-carousel', so posts never overwrite each other's (Greptile, PR #144) */
 	const OPT_SET   = 'dbd_ig_set';    /* the switch: array( 'on' => bool ) */
 	const OPT_TOKEN = 'dbd_ig_token';  /* the connection: token, user_id, username, expires, checked, err (not autoloaded) */
 	const HOOK      = 'dbd_ig_send';
@@ -56,7 +56,7 @@ class DBD_Instagram {
 	/** The kept connection, or null: array( token, user_id, username, expires, checked, err ). */
 	public static function token() { $t = get_option( self::OPT_TOKEN, null ); return is_array( $t ) && ! empty( $t['token'] ) ? $t : null; }
 	public static function connected() { $t = self::token(); return $t && ! empty( $t['user_id'] ) && (int) ( $t['expires'] ?? 0 ) > time(); }
-	public static function on() { return self::settings()['on'] && self::connected(); }
+	public static function on() { return self::settings()['on'] && self::connected() && DBD_Card::jpg_ok(); }
 
 	/** One call to the API: array( HTTP code, JSON, error text ('' when fine) ). GETs carry their fields in the address, POSTs in the body. */
 	public static function api( $method, $path, $args = array(), $token = null, $versioned = true ) {
@@ -97,6 +97,7 @@ class DBD_Instagram {
 	/** A line for the Overview's "Needs a look", or '': a failed renewal, or a token within a week of running out. */
 	public static function warning() {
 		$t = self::token(); if ( ! $t ) { return ''; }
+		if ( ! DBD_Card::jpg_ok() ) { return 'This server’s PHP can’t make JPEG images, which Instagram needs, so nothing posts. Ask the host to turn on JPEG in GD.'; }  /* Greptile, PR #144 */
 		$left = (int) ( $t['expires'] ?? 0 ) - time();
 		if ( $left <= 0 ) { return 'The Instagram token ran out. Paste a new one on the Share pack tab.'; }
 		if ( ! empty( $t['err'] ) ) { return 'The Instagram token didn’t renew (' . $t['err'] . '). It runs out ' . wp_date( 'M j', (int) $t['expires'] ) . '.'; }
@@ -136,10 +137,10 @@ class DBD_Instagram {
 	}
 	public static function caption( $n, $slot, $items ) { return $slot === 'carousel' ? self::carousel_caption( $n, $items ) : DBD_Pack::ig_caption( $items[0], true ); }
 
-	public static function state() { $s = get_option( self::OPT, array() ); return is_array( $s ) ? $s + array( 'jobs' => array() ) : array( 'jobs' => array() ); }
-	private static function save( $s ) { update_option( self::OPT, $s, false ); }
-	public static function job( $key ) { return self::state()['jobs'][ $key ] ?? null; }
-	private static function job_set( $key, $fields ) { $s = self::state(); $s['jobs'][ $key ] = array_merge( $s['jobs'][ $key ] ?? array(), $fields ); self::save( $s ); }
+	public static function job( $key ) { $j = get_option( self::OPT_JOB . $key, null ); return is_array( $j ) ? $j : null; }
+	private static function job_set( $key, $fields ) { update_option( self::OPT_JOB . $key, array_merge( self::job( $key ) ?: array(), $fields ), false ); }
+	/** The record for week $n's slots, as decide() reads it. */
+	public static function state_for( $season, $n, $slots ) { $s = array( 'jobs' => array() ); foreach ( $slots as $sl ) { $k = self::key( $season, $n, $sl ); if ( ( $j = self::job( $k ) ) ) { $s['jobs'][ $k ] = $j; } } return $s; }
 
 	/**
 	 * One step, with no side effects: the record after seeing week $n at $now, and the bookings to make (key => when). Each post books
@@ -162,12 +163,14 @@ class DBD_Instagram {
 		$n = DBD_Pack::newest(); if ( ! $n ) { return array(); }
 		$now = $now ?? time(); $season = (int) DBD_Data::season(); $slots = array_keys( self::plan( $n ) ); $times = array();
 		foreach ( $slots as $sl ) { $times[ $sl ] = self::slot_time( $n, $sl ); }
-		$s0 = self::state(); list( $s, $book ) = self::decide( $s0, $season, $n, $slots, $times, $now );
-		if ( $s !== $s0 ) { self::save( $s ); }
+		$s0 = self::state_for( $season, $n, $slots ); list( $s, $book ) = self::decide( $s0, $season, $n, $slots, $times, $now );
+		/* each new record is added once (add_option fails when another request got there first), and only then booked */
+		foreach ( $s['jobs'] as $key => $j ) { if ( ! isset( $s0['jobs'][ $key ] ) && ! add_option( self::OPT_JOB . $key, $j, '', false ) ) { unset( $book[ $key ] ); } }
 		foreach ( $book as $key => $at ) { wp_schedule_single_event( $at, self::HOOK, array( $key ) ); }
 		foreach ( $slots as $sl ) {
 			$key = self::key( $season, $n, $sl ); $st = (string) ( $s['jobs'][ $key ]['state'] ?? '' );
-			if ( ! isset( $book[ $key ] ) && ( $st === 'booked' || strpos( $st, 'retrying' ) === 0 ) && ! wp_next_scheduled( self::HOOK, array( $key ) ) ) {
+			$late = empty( $s['jobs'][ $key ]['force'] ) && $now > (int) ( $s['jobs'][ $key ]['slot_at'] ?? $s['jobs'][ $key ]['at'] ?? 0 ) + self::LATE;  /* no bringing back a post past its cutoff (Greptile, PR #144) */
+			if ( ! isset( $book[ $key ] ) && ! $late && ( $st === 'booked' || strpos( $st, 'retrying' ) === 0 ) && ! wp_next_scheduled( self::HOOK, array( $key ) ) ) {
 				$at = max( (int) $now + 60, (int) ( $s['jobs'][ $key ]['at'] ?? 0 ) ); wp_schedule_single_event( $at, self::HOOK, array( $key ) ); $book[ $key ] = $at;
 			}
 		}
@@ -198,7 +201,8 @@ class DBD_Instagram {
 		if ( $cid !== '' ) {
 			$st = self::status_of( $cid );
 			if ( $st === 'PUBLISHED' ) { return array( (string) ( $job['media'] ?? '' ), '' ); }
-			if ( $st !== 'FINISHED' && $st !== 'IN_PROGRESS' ) { $cid = ''; }
+			if ( $st === '' ) { return array( '', 'Instagram didn’t say whether the last try went out; checking again later' ); }  /* never a second post while the first is unknown (Greptile, PR #144) */
+			if ( $st === 'ERROR' || $st === 'EXPIRED' ) { $cid = ''; }  /* only a container Instagram says can't be used is replaced */
 		}
 		if ( $cid === '' ) {
 			$cap = self::caption( $n, $slot, $items );
@@ -231,17 +235,18 @@ class DBD_Instagram {
 		$kp = self::parse( $key ); $job = self::job( $key ); if ( ! $kp || ! $job ) { return; }
 		$st = (string) $job['state']; if ( ! $force && $st !== 'booked' && strpos( $st, 'retrying' ) !== 0 ) { return; }
 		if ( $st === 'sent' ) { return; }
+		$force = $force || ! empty( $job['force'] );  /* Try again on the tab overrides the cutoff */
 		if ( ! self::on() ) { self::job_set( $key, array( 'state' => 'not posted: Instagram posting is off or not connected' ) ); return; }
 		list( $season, $n, $slot ) = $kp;
 		if ( (int) DBD_Data::season() !== $season ) { self::job_set( $key, array( 'state' => 'not posted: a new season started' ) ); return; }
-		if ( ! $force && $st === 'booked' && time() > (int) ( $job['slot_at'] ?? $job['at'] ?? 0 ) + self::LATE ) { self::job_set( $key, array( 'state' => 'not posted: more than a day late' ) ); return; }
+		if ( ! $force && time() > (int) ( $job['slot_at'] ?? $job['at'] ?? 0 ) + self::LATE ) { self::job_set( $key, array( 'state' => 'not posted: more than a day late' ) ); return; }  /* retries too (Greptile, PR #144) */
 		$lock = 'dbd_ig_lock_' . $key;
 		if ( ! add_option( $lock, time(), '', false ) ) { if ( time() - (int) get_option( $lock, 0 ) < 600 ) { return; } update_option( $lock, time(), false ); }
 		try {
 			list( $media, $err ) = self::publish( $key );
 			if ( $err !== '' ) { return self::retry( $key, $err ); }
 			$link = ''; if ( $media !== '' ) { list( , $j ) = self::api( 'GET', $media, array( 'fields' => 'permalink' ) ); $link = (string) ( $j['permalink'] ?? '' ); }
-			self::job_set( $key, array( 'state' => 'sent', 'media' => $media, 'link' => $link, 'sent_at' => time() ) );
+			self::job_set( $key, array( 'state' => 'sent', 'media' => $media, 'link' => $link, 'sent_at' => time(), 'force' => false ) );
 		} finally { delete_option( $lock ); }
 	}
 	private static function retry( $key, $err ) {
@@ -273,6 +278,7 @@ class DBD_Instagram {
 	/** The status line at the top of the tab: array( dot, text, link, try-again key ), or null when posting is off. */
 	public static function line( $n ) {
 		if ( ! self::settings()['on'] ) { return null; }
+		if ( self::token() && ! DBD_Card::jpg_ok() ) { return array( 'bad', 'Instagram: ' . lcfirst( self::warning() ), '', '' ); }
 		if ( ! self::connected() ) { return self::token() ? array( 'bad', 'Instagram: the token ran out. Paste a new one in the settings.', '', '' ) : array( '', 'Instagram isn’t connected yet. Paste a token in the settings.', '', '' ); }
 		$season = (int) DBD_Data::season(); $when = function ( $ts ) { return wp_date( 'l, M j, g:i A', (int) $ts ); }; $last = null; $next = null;
 		foreach ( array_keys( self::plan( $n ) ) as $sl ) {
@@ -292,11 +298,11 @@ class DBD_Instagram {
 	/** "Post the next one now": the newest week's first post not yet out, right away. */
 	public static function now_action() {
 		check_admin_referer( 'dbd_ig_now' ); if ( ! current_user_can( 'manage_options' ) ) { wp_die( 'No.' ); }
-		if ( ! self::on() ) { self::back( array( 'pack' => 'error', 'pack_err' => rawurlencode( 'Switch Instagram posting on and connect it first.' ) ) ); }
-		$key = self::next_key(); if ( ! $key ) { self::back( array( 'pack' => 'error', 'pack_err' => rawurlencode( 'Every post for this week is out.' ) ) ); }
-		if ( ! self::job( $key ) ) { self::job_set( $key, array( 'state' => 'booked', 'at' => time(), 'slot_at' => time(), 'tries' => 0 ) ); }
+		if ( ! self::on() ) { self::back( array( 'pack' => 'igerror', 'pack_err' => rawurlencode( 'Switch Instagram posting on and connect it first.' ) ) ); }
+		$key = self::next_key(); if ( ! $key ) { self::back( array( 'pack' => 'igerror', 'pack_err' => rawurlencode( 'Every post for this week is out.' ) ) ); }
+		if ( ! self::job( $key ) ) { add_option( self::OPT_JOB . $key, array( 'state' => 'booked', 'at' => time(), 'slot_at' => time(), 'tries' => 0 ), '', false ); }
 		self::send( $key, true ); $j = self::job( $key );
-		self::back( ( $j['state'] ?? '' ) === 'sent' ? array( 'pack' => 'igposted' ) : array( 'pack' => 'error', 'pack_err' => rawurlencode( 'Instagram didn’t take it: ' . (string) ( $j['state'] ?? '' ) ) ) );
+		self::back( ( $j['state'] ?? '' ) === 'sent' ? array( 'pack' => 'igposted' ) : array( 'pack' => 'igerror', 'pack_err' => rawurlencode( 'Instagram didn’t take it: ' . (string) ( $j['state'] ?? '' ) ) ) );
 	}
 	/** The newest week's first post that isn't out yet, or ''. */
 	public static function next_key() {
@@ -307,8 +313,8 @@ class DBD_Instagram {
 	public static function again_url( $key ) { return wp_nonce_url( admin_url( 'admin-post.php?action=dbd_ig_again&key=' . rawurlencode( $key ) ), 'dbd_ig_again_' . $key ); }
 	public static function again_action() {
 		$key = sanitize_text_field( wp_unslash( (string) ( $_GET['key'] ?? '' ) ) ); check_admin_referer( 'dbd_ig_again_' . $key ); if ( ! current_user_can( 'manage_options' ) ) { wp_die( 'No.' ); }
-		if ( ! self::parse( $key ) || ! self::job( $key ) ) { self::back( array( 'pack' => 'error', 'pack_err' => rawurlencode( 'That post isn’t there.' ) ) ); }
-		self::job_set( $key, array( 'state' => 'retrying: again', 'tries' => 0 ) ); wp_schedule_single_event( time(), self::HOOK, array( $key ) );
+		if ( ! self::parse( $key ) || ! self::job( $key ) ) { self::back( array( 'pack' => 'igerror', 'pack_err' => rawurlencode( 'That post isn’t there.' ) ) ); }
+		self::job_set( $key, array( 'state' => 'retrying: again', 'tries' => 0, 'force' => true ) ); wp_schedule_single_event( time(), self::HOOK, array( $key ) );
 		self::back( array( 'pack' => 'igagain' ) );
 	}
 }
