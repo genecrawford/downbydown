@@ -3057,7 +3057,7 @@ Everything after the downloads is unchanged: commit only when the data changed, 
 
 **Facebook test PASSED (Gene, 2026-11-18):** the share link opened Facebook's share box with the link card, and Share to a group let him pick Down by Down.
 
-**Decisions:**
-1. Keys sides get Share on Facebook and an Instagram caption too, like the main items? (Recommend yes.)
+**Decisions (decided 2026-11-18):**
+1. Keys sides get Share on Facebook, the Instagram caption and a square too, like the main items: **yes**.
 
 **Tests:** the harness checks every square key is valid and draws at 1080×1080 (CI renders them, with and without logos, and a bad key fails), the share address decodes to the share link, the Facebook text has no link, every caption has the takeaway, the bio line and its hashtags (#FantasyFootball only on snaps and targets), cleared settings hide each, the email counts, and pack.js copies the text from the Facebook button.
