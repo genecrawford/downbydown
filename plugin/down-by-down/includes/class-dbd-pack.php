@@ -289,7 +289,7 @@ class DBD_Pack {
 		$link = DBD_Router::url( array( 'view' => 'week', 'week' => (int) $n ) );
 		return array( 'k' => 'leaders', 'h' => 'Week leaders', 'why' => 'The week’s top passer, rusher, receiver and scorer, and the defense that allowed the least.',
 			'card' => 'pack-week-' . (int) $n . '-leaders', 'file' => 'dbd-week-' . (int) $n . '-leaders.png', 'fits' => array( 'r/nfl', 'r/fantasyfootball' ),
-			'title' => $title, 'comment' => 'The whole week, game by game, with every big play: ' . $link, 'post' => self::post( $title, $short, $link ), 'tl' => $title, 'ts' => $short, 'link' => $link,
+			'title' => $title, 'comment' => 'The whole week, game by game, with every big play: ' . $link, 'post' => self::post( $short, $short, $link ), 'tl' => $short, 'ts' => $short, 'link' => $link,  /* X, Bluesky, Facebook, Instagram and the square take the short version; Reddit the full title (SCOPE §75, Greptile PR #140) */
 			'lead' => self::last( $pa['full'] ) . '’s ' . (int) $pa['passing_yards'],
 			'teams' => array_values( array_unique( array( $pa['t'], $ru['t'], $re['t'], $d['t'] ) ) ), 'sq' => 'ig-week-' . (int) $n . '-leaders', 'sqfile' => 'dbd-week-' . (int) $n . '-leaders-square.png' );
 	}

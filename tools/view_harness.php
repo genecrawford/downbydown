@@ -490,7 +490,8 @@ if ( $view === 'pack' ) {
 		foreach ( $PN as $pk => $pp ) { $ck( count( $pp[6] ) <= 2 && $pp[2] !== '' && strpos( $pp[2], '.' ) !== 1, $pk . ': a full name and at most two more (' . $pp[2] . ')' ); }
 		$ck( DBD_Pack::spec_leaders( 99 ) === null, 'no leaders for a week that isn\'t there' );
 	}
-	$LI = null; foreach ( $items as $it0 ) { if ( $it0['k'] === 'leaders' ) { $LI = $it0; } } if ( $LI ) { $ck( strpos( $LI['title'], 'Week ' . $n . ' leaders: ' ) === 0 && mb_strlen( $LI['title'] ) <= 300 && strpos( $LI['title'], ' held the ' ) !== false && $LI['card'] === 'pack-week-' . $n . '-leaders' && $LI['sq'] === 'ig-week-' . $n . '-leaders', 'the leaders item (' . $LI['title'] . ')' ); }
+	$LI = null; foreach ( $items as $it0 ) { if ( $it0['k'] === 'leaders' ) { $LI = $it0; } } if ( $LI ) { $ck( strpos( $LI['title'], 'Week ' . $n . ' leaders: ' ) === 0 && mb_strlen( $LI['title'] ) <= 300 && strpos( $LI['title'], ' held the ' ) !== false && $LI['card'] === 'pack-week-' . $n . '-leaders' && $LI['sq'] === 'ig-week-' . $n . '-leaders', 'the leaders item (' . $LI['title'] . ')' );
+		$ck( strpos( $LI['post'], $LI['ts'] ) === 0 && strpos( DBD_Pack::social( $LI )['x'], $LI['ts'] ) === 0 && strpos( $LI['ts'], ' scored ' ) === false, 'X and Bluesky take the short version (passing, rushing, receiving, defense)' ); }
 	foreach ( $items as $it ) {
 		$ck( $it['title'] !== '' && strpos( $it['title'], 'http' ) === false, $it['k'] . ': a title without a link' );
 		$ck( strpos( $it['comment'], $it['link'] ) !== false && strpos( $it['comment'], '[' ) === false, $it['k'] . ': the comment carries the link and no bracketed note' );
