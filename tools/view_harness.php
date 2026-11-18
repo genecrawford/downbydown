@@ -379,6 +379,7 @@ if ( $view === 'igpost' ) {
 		'dbd_ig_token' => array( 'token' => 'tok', 'user_id' => '178', 'username' => 'down_by_down', 'expires' => $now0 + 50 * 86400, 'checked' => $now0, 'err' => '' ) );
 	$GLOBALS['hcalls'] = array(); $GLOBALS['hmail'] = array(); $GLOBALS['ig'] = array( 'status' => array(), 'failpub' => false, 'n' => 0, 'refresh' => 'ok' );
 	foreach ( array(
+		'is_email' => function ( $e ) { return (bool) filter_var( $e, FILTER_VALIDATE_EMAIL ); },
 		'admin_url' => function ( $p = '' ) { return 'https://example.test/wp-admin/' . $p; },
 		'add_option' => function ( $k, $v = '' ) { if ( isset( $GLOBALS['dbd_opt'][ $k ] ) ) { return false; } $GLOBALS['dbd_opt'][ $k ] = $v; return true; },
 		'delete_option' => function ( $k ) { unset( $GLOBALS['dbd_opt'][ $k ] ); return true; },
