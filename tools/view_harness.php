@@ -457,7 +457,7 @@ if ( $view === 'igpost' ) {
 		$GLOBALS['ig']['failpub'] = false;
 		$line = DBD_Instagram::line( $n ); $ck( 'the status line names a failed post with Try again', $line[0] === 'bad' && $line[3] === $kn && strpos( $line[1], 'Instagram didn’t take the usage riser' ) === 0, json_encode( $line ) );
 		$GLOBALS['dbd_opt'][ 'dbd_ig_job_' . $kn ]['state'] = 'sent';
-		$line = DBD_Instagram::line( $n ); $ck( 'the status line: the last post and the next one', $line[0] === 'ok' && strpos( $line[1], 'Instagram: posted the usage riser ' ) === 0 && strpos( $line[1], ' Next: best and worst offense, ' ) !== false, $line[1] );
+		$line = DBD_Instagram::line( $n ); $ck( 'the status line: the last post and the next one', $line[0] === 'ok' && strpos( $line[1], 'Instagram: posted the target-share mover ' ) === 0 && strpos( $line[1], ' Next: best and worst offense, ' ) !== false, $line[1] );
 		$ck( 'the next post for Post now', DBD_Instagram::next_key() === DBD_Instagram::key( $season, $n, 'offense' ), DBD_Instagram::next_key() );
 		/* a lost booking past its cutoff isn't brought back (Greptile, PR #144) */
 		$GLOBALS['dbd_opt'][ 'dbd_ig_job_' . DBD_Instagram::key( $season, $n, 'leaders' ) ] = array( 'state' => 'retrying: x', 'at' => 1000, 'slot_at' => 1000, 'tries' => 1 );
