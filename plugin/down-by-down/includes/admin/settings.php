@@ -7,7 +7,7 @@
  *   Site            photos and logos, addresses, the home description, notes for the theme
  *   Data            the current data and Sync now, the sync log, seasons, share cards, the data source and GitHub push
  *   Growth          visits by source, Google search, titles to tune, landing pages, email (2.25.0, SCOPE §65; assets/growth.js)
- *   Share pack      five things to post each week, with their cards and texts (2.27.0, SCOPE §68; assets/pack.js)
+ *   Share pack      six things to post each week, with their cards and texts (2.27.0, SCOPE §68; assets/pack.js)
  * Each box that saves is its own form (its own settings group), so saving one tab never touches another's settings.
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }

@@ -142,7 +142,7 @@ class DBD_Card {
 
 	/** Card keys: a player id, team-MIN, game-2026_08_MIN_DET, page-hub / page-week-8 / page-leaders … */
 	public static function valid( $key ) {
-		return (bool) preg_match( '/^(\d{2}-\d{7}|team-[A-Z]{2,3}|game-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}|page-(hub|season|matchups|teams|players|leaders|myteam|week-\d{1,2}|draft-\d{4}|combine-\d{4})|pack-week-\d{1,2}-(snaps|targets|offense)|ig-week-\d{1,2}-(swing|snaps|offense|targets|keys-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}-[A-Z]{2,3}))$/', (string) $key );
+		return (bool) preg_match( '/^(\d{2}-\d{7}|team-[A-Z]{2,3}|game-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}|page-(hub|season|matchups|teams|players|leaders|myteam|week-\d{1,2}|draft-\d{4}|combine-\d{4})|pack-week-\d{1,2}-(snaps|targets|offense|leaders)|ig-week-\d{1,2}-(swing|snaps|offense|targets|leaders|keys-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}-[A-Z]{2,3}))$/', (string) $key );
 	}
 
 	/** The card a route shares: the player's, the team's, the game's, the first compared player's, or the page card. */
@@ -212,6 +212,7 @@ class DBD_Card {
 		if ( strpos( $key, 'team-' ) === 0 ) { $s = self::spec_team( substr( $key, 5 ) ); if ( ! $s ) { return null; } foreach ( $s['logos'] as $t ) { $assets['logos'][ $t ] = $logo( $t ); } return self::draw_team( $s, $assets ); }
 		if ( strpos( $key, 'pack-' ) === 0 && preg_match( '/^pack-week-(\d+)-(\w+)$/', $key, $pm ) ) {  /* the share pack's cards (SCOPE §68) */
 			if ( $pm[2] === 'offense' ) { $s = DBD_Pack::spec_offense( (int) $pm[1] ); if ( ! $s ) { return null; } foreach ( $s['logos'] as $t ) { $assets['logos'][ $t ] = $logo( $t ); } return self::draw_offense( $s, $assets ); }
+			if ( $pm[2] === 'leaders' ) { $s = DBD_Pack::spec_leaders( (int) $pm[1] ); if ( ! $s ) { return null; } foreach ( $s['logos'] as $t ) { $assets['logos'][ $t ] = $logo( $t ); } return self::draw_leaders( $s, $assets ); }  /* SCOPE §75 */
 			$s = DBD_Pack::spec_riser( (int) $pm[1], $pm[2] ); if ( ! $s ) { return null; } $assets['logos'][ $s['team'] ] = $logo( $s['team'] ); return self::draw_riser( $s, $assets );
 		}
 		if ( strpos( $key, 'ig-' ) === 0 ) {  /* the Instagram square (SCOPE §73): the headline over the item's own card */
@@ -752,6 +753,40 @@ class DBD_Card {
 		}
 		( $K['rect'] )( $zx, $top - 4, 1, $n * $rh + 8, $K['ink'] );
 		( $K['foot'] )( 'Data: nflverse · expected points added a play' );
+		return ( $K['finish'] )();
+	}
+
+	/**
+	 * Week leaders (SCOPE §75): "WEEK N LEADERS", then five panels side by side (passing, rushing, receiving, touchdowns, defense),
+	 * each with the leader's team color across the top, the mark and name, the number big with its unit, a detail line, and the next two under a rule.
+	 */
+	public static function draw_leaders( $s, $assets ) {
+		$K = self::kit( $assets ); if ( ! $K ) { return null; } $F = $K['F']; $L = $assets['logos'] ?? array();
+		( $K['brand'] )( $s['meta'], array(), self::RED );
+		$tw = ( $K['tw'] )( $F['hero'], 40, strtoupper( $s['title'] ) . ' ' );
+		( $K['txt'] )( $F['hero'], 40, 44, 126, $K['ink'], strtoupper( $s['title'] ) . ' ' ); ( $K['txt'] )( $F['hero'], 40, 44 + $tw, 126, $K['red'], 'LEADERS' );
+		$x0 = 44; $gap = 14; $n = count( $s['panels'] ); $w = ( 1112 - $gap * ( $n - 1 ) ) / $n; $y = 148; $h = 422;
+		$i = 0;
+		foreach ( $s['panels'] as $p ) {
+			list( $lab, $t, $name, $big, $unit, $sub, $rest ) = $p; $x = $x0 + $i * ( $w + $gap ); $i++; $tc = DBD_Data::team( $t ) ?: array();
+			( $K['box'] )( $x, $y, $w, $h ); ( $K['rect'] )( $x, $y, $w, 5, ( $K['col'] )( $tc['c1'] ?? '#121417' ) );
+			( $K['spaced'] )( $F['disp'], 13, $x + 14, $y + 32, $K['muted'], strtoupper( $lab ), 0.16 );
+			( $K['mark'] )( $x + 14, $y + 48, 34, $t, $L[ $t ] ?? null );
+			$nl = array_slice( ( $K['wrap'] )( $F['disp'], 22, strtoupper( $name ), $w - 64 ), 0, 2 );
+			foreach ( $nl as $j => $l ) { ( $K['txt'] )( $F['disp'], 22, $x + 56, $y + ( count( $nl ) === 1 ? 72 : 61 + $j * 22 ), $K['ink'], $l ); }
+			$bp = ( $K['fit'] )( $F['hero'], 60, $big, $w - 28 - ( $K['tw'] )( $F['mono'], 15, ' ' . $unit ) );
+			( $K['txt'] )( $F['hero'], $bp, $x + 14, $y + 168, ( $K['col'] )( DBD_Marks::accent( $tc ?: null, self::PANEL ) ), $big );
+			( $K['txt'] )( $F['mono'], 15, $x + 14 + ( $K['tw'] )( $F['hero'], $bp, $big ) + 6, $y + 168, $K['muted'], $unit );
+			foreach ( array_slice( ( $K['wrap'] )( $F['mono'], 13, $sub, $w - 28 ), 0, 3 ) as $j => $l ) { ( $K['txt'] )( $F['mono'], 13, $x + 14, $y + 198 + $j * 19, $K['ink2'], $l ); }
+			$ry = $y + $h - 88; ( $K['rect'] )( $x + 14, $ry, $w - 28, 1, $K['line'] );
+			foreach ( $rest as $j => $r ) {
+				$ly = $ry + 30 + $j * 30; ( $K['mark'] )( $x + 14, $ly - 15, 20, $r[1], $L[ $r[1] ] ?? null );
+				$vw = ( $K['tw'] )( $F['mono2'], 14, $r[2] ); $room = $w - 28 - 26 - $vw - 8;
+				( $K['txt'] )( $F['body'], ( $K['fit'] )( $F['body'], 14, $r[0], $room ), $x + 40, $ly, $K['ink'], $r[0] );
+				( $K['txt'] )( $F['mono2'], 14, $x + $w - 14, $ly, $K['ink'], $r[2], 'right' );
+			}
+		}
+		( $K['foot'] )( 'Data: nflverse · defense by EPA a play allowed' );
 		return ( $K['finish'] )();
 	}
 

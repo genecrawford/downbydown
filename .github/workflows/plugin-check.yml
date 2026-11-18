@@ -310,10 +310,10 @@ jobs:
           for k in $PC; do php tools/view_harness.php data card "$k" "card-${k#pack-week-*-}.png"; done
           # the Instagram squares (2.31.0, SCOPE §73): the swing and the snaps at 1080x1080; a square for a missing week doesn't draw
           PN=$(echo "$PC" | head -1 | sed -E 's/^pack-week-([0-9]+)-.*/\1/')
-          for k in "ig-week-$PN-swing" "ig-week-$PN-snaps"; do php tools/view_harness.php data card "$k" "card-square-${k##*-}.png"; done
+          for k in "ig-week-$PN-swing" "ig-week-$PN-snaps" "ig-week-$PN-leaders"; do php tools/view_harness.php data card "$k" "card-square-${k##*-}.png"; done
           if php tools/view_harness.php data card ig-week-99-swing /tmp/x.png 2>/dev/null; then echo "ig-week-99-swing should not render"; exit 1; fi
           PO=$(echo "$PC" | tr ' ' '\n' | grep -- '-offense'); DBD_HARNESS_LOGOS= DBD_HARNESS_MEDIA= php tools/view_harness.php data card "$PO" card-offense-nologos.png
-          for k in pack-week-99-snaps pack-week-1-nope pack-week-123-offense; do if php tools/view_harness.php data card "$k" /tmp/x.png 2>/dev/null; then echo "card $k should not render"; exit 1; fi; done
+          for k in pack-week-99-snaps pack-week-1-nope pack-week-123-offense pack-week-99-leaders; do if php tools/view_harness.php data card "$k" /tmp/x.png 2>/dev/null; then echo "card $k should not render"; exit 1; fi; done
       - uses: actions/upload-artifact@v4
         with:
           name: share-cards

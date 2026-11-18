@@ -3081,7 +3081,7 @@ Everything after the downloads is unchanged: commit only when the data changed, 
 
 **Tests:** the admin harness checks the new order of the post row, the folds closed by default, the settings box with every field name, one Save, and that the settings box is open when `?pack=` or `settings-updated` is in the address; the admin-post handler saves both groups' fields with their sanitizers and refuses a bad nonce.
 
-## 75. Week leaders in the Share pack (scoped and mocked 2026-11-18, `mockup-v49/leaders.html`)
+## 75. Week leaders in the Share pack (scoped and mocked 2026-11-18, `mockup-v49/leaders.html`; built as 2.33.0)
 
 **Why:** Gene: "how about some weekly stat leaders? Like leading QB's, TD, Rushing, Receiving and defense?" The pack has the week's biggest swing and its risers, but not the simple leaderboard fans share most.
 
@@ -3097,8 +3097,8 @@ Everything after the downloads is unchanged: commit only when the data changed, 
 3. **Where the numbers come from:** the week's box scores (`data/box/wN.json`, every offensive player's line, already built nightly) and the week file's team defense (`depa`). No new data. Full names from the players index, falling back to the box score's short name. A week only gets the item once all its games are final, like the rest of the pack.
 4. **The texts:** Reddit title "Week 10 leaders: Joe Burrow threw for 409 yards and 4 TDs, James Cook ran for 157, Ja'Marr Chase caught 11 for 231, Christian McCaffrey and George Pickens scored 3 each, and the Rams held the Cardinals to 6." (under 300); the X and Bluesky text and the square's headline use the short version (passing, rushing, receiving, defense); the first comment links the week page.
 
-**Decisions:**
-1. Defense: the **team** that allowed the fewest EPA a play (recommend; one week of individual sacks and interceptions is mostly ties: five players had 2 sacks in Week 10, and a dozen had 1 interception), or individual sacks and interceptions?
-2. Where it sits: **item 5, before Keys to the game** (which becomes 6), or last?
+**Decisions (decided 2026-11-18, built as 2.33.0):**
+1. Defense: the **team** that allowed the fewest EPA a play (one week of individual sacks and interceptions is mostly ties).
+2. Where it sits: **item 5, before Keys to the game**, which becomes 6.
 
 **Tests:** the harness checks the five leaders against the box score for the newest week (the top passing yards, rushing yards, receiving yards, touchdowns and team defense), the card and its square draw (CI renders both, with and without logos), the texts' lengths and links, the item's place in the fixed order, and the email's count.
