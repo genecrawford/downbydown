@@ -3023,3 +3023,21 @@ Everything after the downloads is unchanged: commit only when the data changed, 
 **Tests:** the harness checks each button's address (right subreddit, encoded title and link, `?share=` only on pack-only cards), that a page with a valid `share` key prints that card in `og:image` and `og:url` but keeps the clean canonical, and that an invalid key changes nothing.
 
 **2.29.1 (Gene, 2026-11-18):** each keys side also gets **Post to r/{team subreddit}** next to Post to r/downbydown, using the team's subreddit from `DBD_Pack::SUBS` (the same one the "Fits" hint shows), on the tab and in the Tuesday email. `reddit_url()` takes an optional subreddit. The team buttons don't depend on the "Your subreddit" setting. The four main items keep only the r/downbydown button.
+
+## 72. Post on X and Post on Bluesky buttons (scoped and mocked 2026-11-18, `mockup-v46/`)
+
+**Why:** Gene set up X (@dxd_NFLfootball) and Bluesky (downbydown.bsky.social). Same idea as §71: one click opens the site's compose box with the post written, link included; Gene or Erik clicks Post. Bluesky auto-posting is a later scope; X stays on buttons (its posting API now costs money).
+
+**What it does:**
+
+1. **Post on X** and **Post on Bluesky** buttons next to the "X and Bluesky" text on each of the four main items, and on every keys side (next to its Reddit buttons). Each opens the site's official compose link in a new tab:
+   - X: `https://x.com/intent/post?text={text}`
+   - Bluesky: `https://bsky.app/intent/compose?text={text}`
+2. **The text is the pack's existing "X and Bluesky" post,** with the item's link swapped for its `share_link()` (§71), so the snaps, targets and offense posts preview their own pack card. X shows the card from the page's `twitter:image` (already `summary_large_image`); Bluesky's composer turns the link into a link card from `og:image`.
+3. **Bluesky's 300-character count includes the link** (X counts any link as 23). Where the text plus the full link runs over 300, the Bluesky button uses the same fallback the X text already has: the short takeaway, then a cut at a word.
+4. **The Tuesday pack email** gets the same "Post on X · Post on Bluesky" links on every item and keys side.
+5. **Your accounts:** next to "Your subreddit", an **X account** field (default `dxd_NFLfootball`) and a **Bluesky** field (default `downbydown.bsky.social`). The X handle goes in every page's `twitter:site` tag, so links shared on X credit the account. Either field empty hides that site's buttons.
+
+**Before building, two tests (Gene, signed in, from his own browser):** the mock's test links open X's and Bluesky's compose boxes with this week's snaps post. Don't post; confirm the text and link are filled in, and whether a preview card appears. (Today the preview is Chimere Dike's snaps card, since `?share=` is live.)
+
+**Tests:** the harness checks both addresses decode back to the post text with the share link, the Bluesky text stays within 300 with the full link, empty handles hide the buttons, the email carries one X and one Bluesky link per item and keys side, and `twitter:site` is on every app page.
