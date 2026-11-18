@@ -409,7 +409,7 @@ if ( $view === 'packmail' ) {
 		/* the email */
 		$doc = DBD_Pack_Mail::build( $n ); $h = $doc['html'] ?? '';
 		$ck( 'the subject leads with the swing and the riser', (bool) preg_match( '/^Week ' . $n . ' share pack: .+-point swing, .+’s \d+%$/u', $doc['subject'] ?? '' ), $doc['subject'] ?? '' );
-		foreach ( array( '1 · The biggest swing', '3 · Best and worst offense', '5 · Keys to the game, Week ' . ( $n + 1 ), 'Reddit title', 'Reddit comment, with the link', 'X and Bluesky', ' of 280', 'Open the Share pack', 'page=down-by-down-share&#038;week=' . $n ) as $w ) {
+		foreach ( array( '1 · The biggest swing', '3 · Best and worst offense', '5 · Week leaders', '6 · Keys to the game, Week ' . ( $n + 1 ), 'Reddit title', 'Reddit comment, with the link', 'X and Bluesky', ' of 280', 'Open the Share pack', 'page=down-by-down-share&#038;week=' . $n ) as $w ) {
 			$ck( 'the email has ' . $w, strpos( $h, $w ) !== false || strpos( $h, str_replace( '&#038;', '&', $w ) ) !== false ); }
 		preg_match_all( '#(?:href|src)="([^"]*)"#', $h, $m ); $rel = array_filter( $m[1], function ( $u ) { return ! preg_match( '#^https?://#', $u ); } );
 		$ck( 'every link and image is absolute', ! $rel, implode( ' ', $rel ) );
@@ -474,9 +474,23 @@ if ( $view === 'pack' ) {
 	$n = DBD_Pack::newest(); $ck( $n > 0, 'a finished week with movers' );
 	$items = DBD_Pack::items( $n ); $ks = array_map( function ( $x ) { return $x['k']; }, $items );
 	/* a week may lack a mover (items() leaves it out), so the items must be the fixed order minus any missing mover, never the swing or offense (Greptile, PR #125) */
-	$ck( $ks === array_values( array_intersect( array( 'swing', 'snaps', 'offense', 'targets' ), $ks ) ) && in_array( 'swing', $ks, true ) && in_array( 'offense', $ks, true ), 'the items in their fixed order, got ' . implode( ',', $ks ) );
+	$ck( $ks === array_values( array_intersect( array( 'swing', 'snaps', 'offense', 'targets', 'leaders' ), $ks ) ) && in_array( 'swing', $ks, true ) && in_array( 'offense', $ks, true ) && in_array( 'leaders', $ks, true ), 'the items in their fixed order, got ' . implode( ',', $ks ) );
 	foreach ( $items as $it ) { $ck( isset( DBD_Pack::NUM[ $it['k'] ] ), $it['k'] . ': a fixed number' ); }
-	$ck( DBD_Pack::NUM === array( 'swing' => 1, 'snaps' => 2, 'offense' => 3, 'targets' => 4, 'keys' => 5 ), 'the fixed numbers' );
+	$ck( DBD_Pack::NUM === array( 'swing' => 1, 'snaps' => 2, 'offense' => 3, 'targets' => 4, 'leaders' => 5, 'keys' => 6 ), 'the fixed numbers' );
+	/* Week leaders (2.33.0, SCOPE §75): each panel's leader is the box score's top, worked out here on its own */
+	$bx = DBD_Data::get( 'box/w' . $n . '.json' ); $br = array();
+	foreach ( (array) ( $bx['games'] ?? array() ) as $g ) { foreach ( array( 'away', 'home' ) as $sd ) { foreach ( (array) ( $g[ $sd ]['off'] ?? array() ) as $r ) { $x = array_combine( $bx['keys'], $r ); $x['td'] = $x['rushing_tds'] + $x['receiving_tds']; $x['t'] = $g[ $sd ]['team']; $br[] = $x; } } }
+	$mx = function ( $k ) use ( $br ) { $m = 0; foreach ( $br as $x ) { $m = max( $m, (float) $x[ $k ] ); } return $m; };
+	$SL = DBD_Pack::spec_leaders( $n ); $ck( (bool) $SL && count( $SL['panels'] ) === 5, 'spec_leaders(): five panels' );
+	if ( $SL ) {
+		$PN = $SL['panels'];
+		$ck( (float) $PN['pass'][3] === (float) $mx( 'passing_yards' ) && (float) $PN['rush'][3] === (float) $mx( 'rushing_yards' ) && (float) $PN['rec'][3] === (float) $mx( 'receiving_yards' ) && (float) $PN['td'][3] === (float) $mx( 'td' ), 'the leaders are the box score\'s tops (' . $PN['pass'][3] . ', ' . $PN['rush'][3] . ', ' . $PN['rec'][3] . ', ' . $PN['td'][3] . ')' );
+		$dmin = null; foreach ( (array) DBD_Week::file( $n )['teams'] as $x ) { if ( isset( $x['depa'] ) && ( $dmin === null || $x['depa'] < $dmin['depa'] ) ) { $dmin = $x; } }
+		$ck( $dmin && $PN['def'][1] === $dmin['t'], 'the defense is the team that allowed the fewest EPA a play (' . $PN['def'][1] . ')' );
+		foreach ( $PN as $pk => $pp ) { $ck( count( $pp[6] ) <= 2 && $pp[2] !== '' && strpos( $pp[2], '.' ) !== 1, $pk . ': a full name and at most two more (' . $pp[2] . ')' ); }
+		$ck( DBD_Pack::spec_leaders( 99 ) === null, 'no leaders for a week that isn\'t there' );
+	}
+	$LI = null; foreach ( $items as $it0 ) { if ( $it0['k'] === 'leaders' ) { $LI = $it0; } } if ( $LI ) { $ck( strpos( $LI['title'], 'Week ' . $n . ' leaders: ' ) === 0 && mb_strlen( $LI['title'] ) <= 300 && strpos( $LI['title'], ' held the ' ) !== false && $LI['card'] === 'pack-week-' . $n . '-leaders' && $LI['sq'] === 'ig-week-' . $n . '-leaders', 'the leaders item (' . $LI['title'] . ')' ); }
 	foreach ( $items as $it ) {
 		$ck( $it['title'] !== '' && strpos( $it['title'], 'http' ) === false, $it['k'] . ': a title without a link' );
 		$ck( strpos( $it['comment'], $it['link'] ) !== false && strpos( $it['comment'], '[' ) === false, $it['k'] . ': the comment carries the link and no bracketed note' );
@@ -636,7 +650,7 @@ if ( $view === 'admin' ) {
 		'dt' => array( 'Current data', 'Sync log', 'Seasons', 'Share cards', 'value="dbd_data"', 'harness-token' ),
 		'gr' => array( 'Visits by source', 'data-g="sources"', 'Google search', 'data-g="search"', 'Titles to tune', 'data-g="tune"', 'data-g="copy"', 'Top landing pages', 'data-g="landing"', 'Brevo isn’t set up', 'data-g="shares"', 'data-g="signups"', 'analytics.google.com/analytics/web/#/p123456/', 'resource_id=https%3A%2F%2Fexample.test%2F', 'page=googlesitekit-dashboard' ) );
 	$want['sp'] = array( 'Week ', ' pack</h2>', 'name="week"', 'Click where you want to post.', 'Change the list', 'class="sp-open"',
-		'The biggest swing', 'A usage riser', 'Best and worst offense', 'A target-share mover', 'Keys to the game, Week ', 'Post it', 'Also fits r/',
+		'The biggest swing', 'A usage riser', 'Best and worst offense', 'A target-share mover', 'Week leaders', '-leaders.png"', 'Keys to the game, Week ', 'Post it', 'Also fits r/',
 		'<details class="sp-tx"><summary>Texts to copy</summary>', 'Reddit title', 'Reddit first comment, with the link', 'X and Bluesky', ' of 280', 'Instagram caption', 'class="button button-small sp-cp"',
 		'download="dbd-week-', 'card=pack-week-', 'Download square for Instagram', 'card=ig-week-', 'Download the game card',
 		'class="button sp-rd" aria-label="Post to r/downbydown"', 'https://www.reddit.com/r/downbydown/submit?url=', 'share%3Dpack-week-', '>r/downbydown</a>',

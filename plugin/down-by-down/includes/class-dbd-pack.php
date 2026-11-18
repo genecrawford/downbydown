@@ -1,6 +1,6 @@
 <?php
 /**
- * The share pack (2.27.0, SCOPE §68): five things to post each week, for the Share pack tab in the admin. Built from the newest
+ * The share pack (2.27.0, SCOPE §68; six since §75): the things to post each week, for the Share pack tab in the admin. Built from the newest
  * finished week each time the tab opens (nothing is stored): the biggest swing, a usage riser, the best and worst offense, a
  * target-share mover, and each team's Biggest edge for next week. Each item carries a card to download, a Reddit title, a Reddit
  * comment with the link and a post for X and Bluesky. Nothing posts by itself: Gene posts by hand.
@@ -116,7 +116,7 @@ class DBD_Pack {
 
 	/** What a square draws: the headline and the card under it, from its key (ig-week-N-swing, … or ig-week-N-keys-{game}-{team}), or null. */
 	public static function spec_square( $key ) {
-		if ( ! preg_match( '/^ig-week-(\d{1,2})-(swing|snaps|offense|targets|keys-(\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3})-([A-Z]{2,3}))$/', (string) $key, $m ) ) { return null; }
+		if ( ! preg_match( '/^ig-week-(\d{1,2})-(swing|snaps|offense|targets|leaders|keys-(\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3})-([A-Z]{2,3}))$/', (string) $key, $m ) ) { return null; }
 		$n = (int) $m[1];
 		if ( empty( $m[3] ) ) { foreach ( self::items( $n ) as $it ) { if ( $it['k'] === $m[2] ) { return array( 'head' => (string) $it['ts'], 'card' => $it['card'] ); } } return null; }
 		foreach ( self::keys( $n ) as $kg ) { if ( $kg['g']['id'] !== $m[3] ) { continue; } foreach ( $kg['sides'] as $sd ) { if ( $sd['t'] === $m[4] ) { return array( 'head' => (string) $sd['ts'], 'card' => $kg['card'] ); } } }
@@ -129,7 +129,7 @@ class DBD_Pack {
 	/** A share key a page may take for its preview: one of the pack's own cards. */
 	public static function share_key( $v ) {
 		$v = (string) $v;
-		return preg_match( '/^pack-week-\d{1,2}-(snaps|targets|offense)$/', $v ) && DBD_Card::valid( $v ) ? $v : '';
+		return preg_match( '/^pack-week-\d{1,2}-(snaps|targets|offense|leaders)$/', $v ) && DBD_Card::valid( $v ) ? $v : '';
 	}
 
 	/** The finished weeks that have their movers, newest first. */
@@ -175,12 +175,12 @@ class DBD_Pack {
 	}
 
 	/** Each item's fixed number on the tab, so a week missing one doesn't renumber the rest (Greptile, PR #125). */
-	const NUM = array( 'swing' => 1, 'snaps' => 2, 'offense' => 3, 'targets' => 4, 'keys' => 5 );
+	const NUM = array( 'swing' => 1, 'snaps' => 2, 'offense' => 3, 'targets' => 4, 'leaders' => 5, 'keys' => 6 );  /* Week leaders went in as 5 (SCOPE §75) */
 
 	/** The cards week $n's pack draws (for the harness): the item keys that have a pack card. */
 	public static function cards( $n ) { $o = array(); foreach ( self::items( $n ) as $it ) { if ( strpos( $it['card'], 'pack-' ) === 0 ) { $o[] = $it['card']; } } return $o; }
 
-	/** The five items' first four for week $n (the keys are keys()). Each: k, h, why, card, file, fits, title, comment, post, link. */
+	/** The items for week $n before the keys (the keys are keys()): swing, snaps, offense, targets, leaders. Each: k, h, why, card, file, fits, title, comment, post, link. */
 	public static function items( $n ) {
 		$W = DBD_Week::file( $n ); if ( ! $W || empty( $W['complete'] ) ) { return array(); }
 		$out = array(); $lab = 'Week ' . (int) $n;
@@ -223,7 +223,75 @@ class DBD_Pack {
 		/* 4. a target-share mover, not the usage riser again */
 		$tg = self::mover( $W, 'targets', $sn['id'] ?? '' );
 		if ( $tg ) { $out[] = self::riser_item( $n, 'targets', $tg ); }
+
+		/* 5. the week's leaders (SCOPE §75) */
+		$ld = self::leaders_item( $n ); if ( $ld ) { $out[] = $ld; }
 		return $out;
+	}
+
+	/* ---- Week leaders (2.33.0, SCOPE §75): passing, rushing and receiving yards, touchdowns, and the team defense that allowed the fewest EPA a play */
+
+	/** Every offensive line of week $n's box scores as named rows (team, opponent, the box columns, the player's full name), or null before the file is there. */
+	private static function box_rows( $n ) {
+		$f = DBD_Data::get( 'box/w' . (int) $n . '.json' ); if ( ! $f || empty( $f['games'] ) ) { return null; }
+		$K = (array) ( $f['keys'] ?? array() ); $rows = array();
+		foreach ( (array) $f['games'] as $g ) {
+			foreach ( array( 'away' => 'home', 'home' => 'away' ) as $sd => $os ) {
+				$t = (string) ( $g[ $sd ]['team'] ?? '' ); $o = (string) ( $g[ $os ]['team'] ?? '' ); if ( $t === '' ) { continue; }
+				foreach ( (array) ( $g[ $sd ]['off'] ?? array() ) as $r ) {
+					if ( count( $r ) !== count( $K ) ) { continue; }
+					$x = array_combine( $K, $r ); $p = DBD_Data::player( (string) $x['id'] );
+					$x['full'] = ! empty( $p['name'] ) ? (string) $p['name'] : (string) $x['name']; $x['t'] = $t; $x['o'] = $o;
+					$x['td'] = (int) $x['rushing_tds'] + (int) $x['receiving_tds']; $x['scrim'] = (int) $x['rushing_yards'] + (int) $x['receiving_yards'];
+					$rows[] = $x;
+				}
+			}
+		}
+		return $rows;
+	}
+
+	/** The leaders card's spec: five panels [ label, team, name, the number, its unit, the detail line, the next two as [ name, team, value ] ], or null. */
+	public static function spec_leaders( $n ) {
+		$W = DBD_Week::file( $n ); if ( ! $W || empty( $W['complete'] ) ) { return null; }
+		$rows = self::box_rows( $n ); if ( ! $rows ) { return null; }
+		$top = function ( $key, $tie = null ) use ( $rows ) {
+			$r = array_values( array_filter( $rows, function ( $x ) use ( $key ) { return (float) $x[ $key ] > 0; } ) );
+			usort( $r, function ( $a, $b ) use ( $key, $tie ) { $c = (float) $b[ $key ] <=> (float) $a[ $key ]; return $c !== 0 || ! $tie ? $c : (float) $b[ $tie ] <=> (float) $a[ $tie ]; } );
+			return array_slice( $r, 0, 3 );
+		};
+		$rest = function ( $L, $key ) { $o = array(); foreach ( array_slice( $L, 1, 2 ) as $x ) { $o[] = array( $x['full'], $x['t'], (string) (int) $x[ $key ] ); } return $o; };
+		$pl = function ( $k, $one, $many ) { return (int) $k . ' ' . ( (int) $k === 1 ? $one : $many ); };
+		$P = array(); $logos = array();
+		if ( ( $L = $top( 'passing_yards' ) ) ) { $x = $L[0]; $P['pass'] = array( 'Passing', $x['t'], $x['full'], (string) (int) $x['passing_yards'], 'yds', (int) $x['completions'] . ' of ' . (int) $x['attempts'] . ' · ' . (int) $x['passing_tds'] . ' TD · ' . (int) $x['passing_interceptions'] . ' INT', $rest( $L, 'passing_yards' ), $x ); }
+		if ( ( $L = $top( 'rushing_yards' ) ) ) { $x = $L[0]; $P['rush'] = array( 'Rushing', $x['t'], $x['full'], (string) (int) $x['rushing_yards'], 'yds', $pl( $x['carries'], 'carry', 'carries' ) . ' · ' . (int) $x['rushing_tds'] . ' TD', $rest( $L, 'rushing_yards' ), $x ); }
+		if ( ( $L = $top( 'receiving_yards' ) ) ) { $x = $L[0]; $P['rec'] = array( 'Receiving', $x['t'], $x['full'], (string) (int) $x['receiving_yards'], 'yds', $pl( $x['receptions'], 'catch', 'catches' ) . ' · ' . (int) $x['receiving_tds'] . ' TD', $rest( $L, 'receiving_yards' ), $x ); }
+		if ( ( $L = $top( 'td', 'scrim' ) ) ) { $x = $L[0]; $P['td'] = array( 'Touchdowns', $x['t'], $x['full'], (string) (int) $x['td'], 'TD', (int) $x['rushing_tds'] . ' rushing · ' . (int) $x['receiving_tds'] . ' receiving', $rest( $L, 'td' ), $x, $L ); }
+		$tm = array_values( array_filter( (array) ( $W['teams'] ?? array() ), function ( $x ) { return isset( $x['depa'], $x['t'] ); } ) );
+		usort( $tm, function ( $a, $b ) { return (float) $a['depa'] <=> (float) $b['depa']; } );
+		if ( $tm ) { $d = $tm[0]; $o = array(); foreach ( array_slice( $tm, 1, 2 ) as $x ) { $o[] = array( self::nick( $x['t'] ), $x['t'], self::epa( $x['depa'] ) ); }
+			$P['def'] = array( 'Defense', $d['t'], self::nick( $d['t'] ), self::epa( $d['depa'] ), 'EPA', 'a play allowed · held the ' . self::nick( $d['o'] ?? '' ) . ' to ' . (int) ( $d['pa'] ?? 0 ), $o, $d ); }
+		if ( count( $P ) < 5 ) { return null; }
+		foreach ( $P as $p ) { $logos[] = $p[1]; foreach ( $p[6] as $r ) { $logos[] = $r[1]; } }
+		return array( 'week' => (int) $n, 'meta' => DBD_Data::season() . ' · week ' . (int) $n . ' · leaders', 'title' => 'Week ' . (int) $n, 'panels' => $P, 'logos' => array_values( array_unique( $logos ) ) );
+	}
+
+	private static function leaders_item( $n ) {
+		$s = self::spec_leaders( $n ); if ( ! $s ) { return null; }
+		$P = $s['panels']; $lab = 'Week ' . (int) $n;
+		$pa = $P['pass'][7]; $ru = $P['rush'][7]; $re = $P['rec'][7]; $d = $P['def'][7];
+		$tds = array_values( array_filter( $P['td'][8], function ( $x ) use ( $P ) { return (int) $x['td'] === (int) $P['td'][7]['td']; } ) );
+		$names = array_map( function ( $x ) { return $x['full']; }, array_slice( $tds, 0, 2 ) );
+		$tdl = count( $names ) > 1 ? implode( ' and ', $names ) . ' scored ' . (int) $tds[0]['td'] . ' each' : $names[0] . ' scored ' . (int) $tds[0]['td'];
+		$pass = $pa['full'] . ' threw for ' . (int) $pa['passing_yards'] . ' yards'; $rush = $ru['full'] . ' ran for ' . (int) $ru['rushing_yards']; $rec = $re['full'] . ' caught ' . (int) $re['receptions'] . ' for ' . (int) $re['receiving_yards'];
+		$def = 'the ' . self::nick( $d['t'] ) . ' held the ' . self::nick( $d['o'] ?? '' ) . ' to ' . (int) ( $d['pa'] ?? 0 );
+		$title = $lab . ' leaders: ' . $pass . ( (int) $pa['passing_tds'] > 0 ? ' and ' . (int) $pa['passing_tds'] . ( (int) $pa['passing_tds'] === 1 ? ' TD' : ' TDs' ) : '' ) . ', ' . $rush . ', ' . $rec . ', ' . $tdl . ', and ' . $def . '.';
+		$short = $lab . ' leaders: ' . $pass . ', ' . $rush . ', ' . $rec . ', and ' . $def . '.';
+		$link = DBD_Router::url( array( 'view' => 'week', 'week' => (int) $n ) );
+		return array( 'k' => 'leaders', 'h' => 'Week leaders', 'why' => 'The week’s top passer, rusher, receiver and scorer, and the defense that allowed the least.',
+			'card' => 'pack-week-' . (int) $n . '-leaders', 'file' => 'dbd-week-' . (int) $n . '-leaders.png', 'fits' => array( 'r/nfl', 'r/fantasyfootball' ),
+			'title' => $title, 'comment' => 'The whole week, game by game, with every big play: ' . $link, 'post' => self::post( $title, $short, $link ), 'tl' => $title, 'ts' => $short, 'link' => $link,
+			'lead' => self::last( $pa['full'] ) . '’s ' . (int) $pa['passing_yards'],
+			'teams' => array_values( array_unique( array( $pa['t'], $ru['t'], $re['t'], $d['t'] ) ) ), 'sq' => 'ig-week-' . (int) $n . '-leaders', 'sqfile' => 'dbd-week-' . (int) $n . '-leaders-square.png' );
 	}
 
 	private static function riser_item( $n, $kind, $m ) {
