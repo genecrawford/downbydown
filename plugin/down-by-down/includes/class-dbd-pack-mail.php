@@ -117,7 +117,7 @@ class DBD_Pack_Mail {
 		};
 		/* Post to r/… (SCOPE §71): Reddit's new-post form, filled in, so whoever posts can do it from the email */
 		$sub = DBD_Pack::our_sub();
-		$post = function ( $title, $link ) use ( $sub, $RED ) { $u = DBD_Pack::reddit_url( $title, $link ); return $u === '' ? '' : ' · <a href="' . esc_url( $u ) . '" style="color:' . $RED . ';font-weight:600">Post to r/' . self::e( $sub ) . '</a>'; };
+		$post = function ( $title, $link, $to = null ) use ( $sub, $RED ) { $u = DBD_Pack::reddit_url( $title, $link, $to ); return $u === '' ? '' : ' · <a href="' . esc_url( $u ) . '" style="color:' . $RED . ';font-weight:600">Post to r/' . self::e( $to === null ? $sub : DBD_Pack::sanitize_sub( $to ) ) . '</a>'; };
 		$rows = '';
 		foreach ( $items as $it ) {
 			$img = esc_url( DBD_Card::url( $it['card'] ) ); $no = DBD_Pack::NUM[ $it['k'] ] ?? 0;
@@ -134,7 +134,7 @@ class DBD_Pack_Mail {
 			$g = $kg['g']; $lines = '';
 			foreach ( $kg['sides'] as $sd ) {
 				$lines .= '<div style="' . $font . ';font-size:14px;line-height:1.5;color:' . $INK . ';padding:6px 0 0"><span style="color:' . $MUTED . '">' . self::e( $sd['fits'] ) . '</span> · <b>' . self::e( rtrim( $sd['head'], '.' ) ) . '.</b> ' . self::e( $sd['say'] )
-					. ' <a href="' . esc_url( $sd['link'] ) . '" style="color:' . $RED . ';font-weight:600">Link</a>' . $post( $sd['title'], $sd['link'] ) . '</div>';
+					. ' <a href="' . esc_url( $sd['link'] ) . '" style="color:' . $RED . ';font-weight:600">Link</a>' . $post( $sd['title'], $sd['link'] ) . $post( $sd['title'], $sd['link'], $sd['fits'] ) . '</div>';  /* ours, then the team's (2.29.1) */
 			}
 			$nk = function ( $t ) { return DBD_Data::team( $t )['nick'] ?? $t; };
 			$kh .= '<div style="padding:12px 0;border-top:1px solid ' . $LINE . '"><div style="' . $font . ';font-size:15px;font-weight:700;color:' . $INK . '">' . self::e( $nk( $g['away'] ) . ' at ' . $nk( $g['home'] ) ) . '</div>' . $lines . '</div>';

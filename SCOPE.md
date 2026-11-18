@@ -3021,3 +3021,5 @@ Everything after the downloads is unchanged: commit only when the data changed, 
 2. The Tuesday pack email gets the same **"Post to r/downbydown" links** on every item and every keys side, so Erik can post from his inbox. Hidden when the subreddit setting is empty.
 
 **Tests:** the harness checks each button's address (right subreddit, encoded title and link, `?share=` only on pack-only cards), that a page with a valid `share` key prints that card in `og:image` and `og:url` but keeps the clean canonical, and that an invalid key changes nothing.
+
+**2.29.1 (Gene, 2026-11-18):** each keys side also gets **Post to r/{team subreddit}** next to Post to r/downbydown, using the team's subreddit from `DBD_Pack::SUBS` (the same one the "Fits" hint shows), on the tab and in the Tuesday email. `reddit_url()` takes an optional subreddit. The team buttons don't depend on the "Your subreddit" setting. The four main items keep only the r/downbydown button.
