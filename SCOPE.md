@@ -3041,3 +3041,22 @@ Everything after the downloads is unchanged: commit only when the data changed, 
 **Before building, two tests (Gene, signed in, from his own browser):** the mock's test links open X's and Bluesky's compose boxes with this week's snaps post. Don't post; confirm the text and link are filled in, and whether a preview card appears. (Today the preview is Chimere Dike's snaps card, since `?share=` is live.)
 
 **Tests:** the harness checks both addresses decode back to the post text with the share link, the Bluesky text stays within 300 with the full link, empty handles hide the buttons, the email carries one X and one Bluesky link per item and keys side, and `twitter:site` is on every app page.
+
+## 73. Share on Facebook and a caption for Instagram (scoped and mocked 2026-11-18, `mockup-v47/`)
+
+**Why:** Gene set up Instagram (@down_by_down) and a Facebook group (facebook.com/groups/988685080499981). Neither takes a fully prefilled post: Facebook's share link fills in only the link (it dropped prefilled text years ago, and has allowed no posting to groups through its API since 2024), and Instagram has no compose link at all (and caption links aren't clickable). So: get as close to one click as each allows.
+
+**What it does:**
+
+1. **Share on Facebook**, on each of the four main items and every keys side, after the X and Bluesky buttons. One click does two things: it copies the post text, and it opens `https://www.facebook.com/sharer/sharer.php?u={share link}` in a new tab. Facebook's share box shows the link with its card (the pack card for snaps, targets and offense, via `?share=`). Gene picks **Share to a group**, chooses Down by Down, and pastes. The button's label changes to "Copied, now paste" for a moment so it's clear the text is on the clipboard. The text is the takeaway without the link (the card carries it).
+2. **Copy for Instagram**: a caption field on each main item and keys side, with its own Copy button. The caption is the takeaway, a blank line, "Full chart: link in bio (downbydown.com)", a blank line, then hashtags: `#NFL`, the teams' nicknames (`#Commanders #Giants`), plus `#FantasyFootball` on the snaps and targets items. Post it with the item's Download image. The 1200×630 card is within Instagram's widest feed shape (1.91:1); tall 1080×1350 cards are a separate step later, if Instagram earns it.
+3. **Settings,** with the other accounts: **Facebook group** (default the group's address; empty hides the Facebook buttons, and when set the tab shows an "Open the group" link) and **Instagram** (default `down_by_down`; empty hides the captions).
+4. **The Tuesday pack email** gets "Share on Facebook" links (the email can't copy to the clipboard, so its link only opens the share box, and the Facebook text sits in the email to copy by hand) and the Instagram caption under each item and keys side.
+5. **Gene, once:** put downbydown.com in the Instagram bio, so "link in bio" leads somewhere.
+
+**Before building, one test (Gene, signed in to Facebook, from his own browser):** the chat's test link opens Facebook's share box for this week's snaps item. Confirm the link card shows, and that **Share to a group** lets you pick Down by Down. Don't post.
+
+**Decisions:**
+1. Keys sides get Share on Facebook and an Instagram caption too, like the main items? (Recommend yes.)
+
+**Tests:** the harness checks the share address decodes to the share link, the Facebook text has no link, every caption has the takeaway, the bio line and its hashtags (#FantasyFootball only on snaps and targets), cleared settings hide each, the email counts, and pack.js copies the text from the Facebook button.
