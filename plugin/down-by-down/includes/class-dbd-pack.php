@@ -19,6 +19,37 @@ class DBD_Pack {
 
 	public static function sub( $t ) { return isset( self::SUBS[ $t ] ) ? 'r/' . self::SUBS[ $t ] : ''; }
 
+	/* ---- Post to r/downbydown (2.29.0, SCOPE §71): Reddit's new-post form, filled in from its address. A link post, so the page's share card is the preview. */
+
+	const OPT_SUB = 'dbd_pack_sub'; const SUB_DEFAULT = 'downbydown'; const REDDIT_TITLE_MAX = 300;
+
+	/** Gene's subreddit: letters, digits and underscores, up to 21 (Reddit's own rule). '' turns the buttons off. */
+	public static function sanitize_sub( $v ) {
+		$v = trim( (string) $v ); $v = (string) preg_replace( '#^(https?://)?(www\.|old\.)?(reddit\.com)?/*(r/)?#i', '', $v );
+		return substr( (string) preg_replace( '/[^A-Za-z0-9_]/', '', $v ), 0, 21 );
+	}
+	public static function our_sub() { return self::sanitize_sub( get_option( self::OPT_SUB, self::SUB_DEFAULT ) ); }
+
+	/** The address an item's post points at: the page, plus ?share= for the cards only the pack has, so the page's preview is that card. */
+	public static function share_link( $it ) {
+		$card = (string) ( $it['card'] ?? '' );
+		return strpos( $card, 'pack-' ) === 0 && DBD_Card::valid( $card ) ? add_query_arg( array( 'share' => $card ), (string) $it['link'] ) : (string) $it['link'];
+	}
+
+	/** Reddit's new-post form for our subreddit with the title and link filled in, or '' when no subreddit is set. */
+	public static function reddit_url( $title, $link ) {
+		$sub = self::our_sub(); if ( $sub === '' ) { return ''; }
+		$title = (string) $title;
+		if ( mb_strlen( $title ) > self::REDDIT_TITLE_MAX ) { $title = rtrim( (string) preg_replace( '/\s+\S*$/u', '', mb_substr( $title, 0, self::REDDIT_TITLE_MAX - 1 ) ), ' ,;:' ) . '…'; }
+		return 'https://www.reddit.com/r/' . $sub . '/submit?url=' . rawurlencode( (string) $link ) . '&title=' . rawurlencode( $title );
+	}
+
+	/** A share key a page may take for its preview: one of the pack's own cards. */
+	public static function share_key( $v ) {
+		$v = (string) $v;
+		return preg_match( '/^pack-week-\d{1,2}-(snaps|targets|offense)$/', $v ) && DBD_Card::valid( $v ) ? $v : '';
+	}
+
 	/** The finished weeks that have their movers, newest first. */
 	public static function weeks() {
 		$o = array();

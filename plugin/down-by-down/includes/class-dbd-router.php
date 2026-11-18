@@ -380,12 +380,15 @@ class DBD_Router {
 		echo '<meta property="og:title" content="' . esc_attr( $t . ' | Down by Down' ) . '">' . "\n";
 		echo '<meta property="og:description" content="' . esc_attr( $d ) . '">' . "\n";
 		$ck = DBD_Card::available() ? DBD_Card::key_for( $r ) : null;
+		/* a post from the Share pack (SCOPE §71) asks for one of the pack's own cards with ?share=; the canonical stays the clean address */
+		$sh = ( $ck && class_exists( 'DBD_Pack' ) && isset( $_GET['share'] ) ) ? DBD_Pack::share_key( sanitize_text_field( wp_unslash( $_GET['share'] ) ) ) : '';
+		if ( $sh !== '' ) { $ck = $sh; }
 		if ( $ck && DBD_Card::valid( $ck ) ) {  /* the share card: the player's (SCOPE §26), or since 1.19.0 the game's, the team's or the page's (§43) */
 			$img = DBD_Card::url( $ck );
 			echo '<meta property="og:image" content="' . esc_url( $img ) . '">' . "\n" . '<meta property="og:image:width" content="1200">' . "\n" . '<meta property="og:image:height" content="630">' . "\n";
 			echo '<meta name="twitter:card" content="summary_large_image">' . "\n" . '<meta name="twitter:image" content="' . esc_url( $img ) . '">' . "\n";
 		}
-		echo '<meta property="og:url" content="' . esc_url( $url ) . '">' . "\n";
+		echo '<meta property="og:url" content="' . esc_url( $sh !== '' ? add_query_arg( array( 'share' => $sh ), $url ) : $url ) . '">' . "\n";
 		echo '<meta property="og:type" content="website">' . "\n";
 		if ( $r['view'] === 'notfound' ) { echo '<meta name="robots" content="noindex">' . "\n"; }
 		if ( $r['view'] === 'game' && class_exists( 'DBD_Seo' ) ) { echo DBD_Seo::game_jsonld( $r['game'] ); }
