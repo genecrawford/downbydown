@@ -44,6 +44,44 @@ class DBD_Pack {
 		return 'https://www.reddit.com/r/' . $sub . '/submit?url=' . rawurlencode( (string) $link ) . '&title=' . rawurlencode( $title );
 	}
 
+	/* ---- Post on X and Post on Bluesky (2.30.0, SCOPE §72): each site's official compose link, the post written, link included */
+
+	const OPT_X = 'dbd_pack_x'; const X_DEFAULT = 'dxd_NFLfootball';
+	const OPT_BSKY = 'dbd_pack_bsky'; const BSKY_DEFAULT = 'downbydown.bsky.social'; const BSKY_MAX = 300;
+
+	/** An X handle: a pasted @name or profile address gives the name; letters, digits, underscores, up to 15. */
+	public static function sanitize_x( $v ) {
+		$v = trim( (string) $v ); $v = (string) preg_replace( '#^(https?://)?(www\.)?(x|twitter)\.com/#i', '', $v ); $v = ltrim( $v, '@' );
+		$v = (string) preg_replace( '#[/?].*$#', '', $v );
+		return substr( (string) preg_replace( '/[^A-Za-z0-9_]/', '', $v ), 0, 15 );
+	}
+	/** A Bluesky handle: a pasted @handle or profile address gives the handle; lowercase letters, digits, dots and hyphens. */
+	public static function sanitize_bsky( $v ) {
+		$v = trim( (string) $v ); $v = (string) preg_replace( '#^(https?://)?(www\.)?bsky\.app/profile/#i', '', $v ); $v = ltrim( $v, '@' );
+		$v = (string) preg_replace( '#[/?].*$#', '', $v );
+		return substr( trim( (string) preg_replace( '/[^a-z0-9.\-]/', '', strtolower( $v ) ), '.-' ), 0, 253 );
+	}
+	public static function our_x() { return self::sanitize_x( get_option( self::OPT_X, self::X_DEFAULT ) ); }
+	public static function our_bsky() { return self::sanitize_bsky( get_option( self::OPT_BSKY, self::BSKY_DEFAULT ) ); }
+
+	/** The Bluesky post: like post(), but Bluesky counts the whole link against its 300. */
+	public static function bpost( $long, $short, $link ) {
+		foreach ( array( $long, $short ) as $t ) { $p = $t . ' ' . $link; if ( mb_strlen( $p ) <= self::BSKY_MAX ) { return $p; } }
+		$room = max( 20, self::BSKY_MAX - mb_strlen( $link ) - 2 ); $t = mb_substr( (string) $short, 0, $room ); $t = preg_replace( '/\s+\S*$/u', '', $t );
+		return rtrim( (string) $t, ' ,;:' ) . '… ' . $link;
+	}
+
+	/** An item's or keys side's two compose texts, with the share link (so the pack-only cards are the preview): array( 'x' => …, 'bsky' => … ). */
+	public static function social( $it ) {
+		$l = self::share_link( $it ); $tl = (string) ( $it['tl'] ?? $it['title'] ?? '' ); $ts = (string) ( $it['ts'] ?? $tl );
+		return array( 'x' => self::post( $tl, $ts, $l ), 'bsky' => self::bpost( $tl, $ts, $l ) );
+	}
+	public static function x_url( $text ) { return self::our_x() === '' ? '' : 'https://x.com/intent/post?text=' . rawurlencode( (string) $text ); }
+	public static function bsky_url( $text ) { return self::our_bsky() === '' ? '' : 'https://bsky.app/intent/compose?text=' . rawurlencode( (string) $text ); }
+
+	/** twitter:site for every page, so links shared on X credit the account. */
+	public static function twitter_site_tag() { $x = self::our_x(); return $x === '' ? '' : '<meta name="twitter:site" content="@' . esc_attr( $x ) . '">' . "\n"; }
+
 	/** A share key a page may take for its preview: one of the pack's own cards. */
 	public static function share_key( $v ) {
 		$v = (string) $v;
@@ -115,7 +153,7 @@ class DBD_Pack {
 			$out[] = array( 'k' => 'swing', 'h' => 'The biggest swing', 'why' => 'The week’s largest one-play change in win probability, on the game’s card with the swing marked.',
 				'card' => 'game-' . $g['id'], 'file' => 'dbd-week-' . (int) $n . '-swing-' . strtolower( $t . '-' . $o ) . '.png', 'fits' => array_filter( array( 'r/nfl', self::sub( $t ), self::sub( $o ) ) ),
 				'title' => $title, 'comment' => 'The play: ' . self::play( $sw['d'] ?? '' ) . ' The whole game’s win probability, play by play: ' . $link,
-				'post' => self::post( $title, $short, $link ), 'link' => $link, 'lead' => self::poss( $t ) . ' ' . (int) round( (float) $sw['v'] ) . '-point swing' );
+				'post' => self::post( $title, $short, $link ), 'tl' => $title, 'ts' => $short, 'link' => $link, 'lead' => self::poss( $t ) . ' ' . (int) round( (float) $sw['v'] ) . '-point swing' );
 		}
 
 		/* 2. a usage riser: snap share, quarterbacks out */
@@ -132,7 +170,7 @@ class DBD_Pack {
 			$link = DBD_Router::url( array( 'view' => 'week', 'week' => (int) $n ) );
 			$out[] = array( 'k' => 'offense', 'h' => 'Best and worst offense', 'why' => 'Every offense that played, by EPA a play for the week, in one chart.',
 				'card' => 'pack-week-' . (int) $n . '-offense', 'file' => 'dbd-week-' . (int) $n . '-offense.png', 'fits' => array_filter( array( 'r/nfl', self::sub( $bo['t'] ) ) ),
-				'title' => $title, 'comment' => 'Every team’s week, with the usual for each side: ' . $link, 'post' => self::post( $title, $short, $link ), 'link' => $link,
+				'title' => $title, 'comment' => 'Every team’s week, with the usual for each side: ' . $link, 'post' => self::post( $title, $short, $link ), 'tl' => $title, 'ts' => $short, 'link' => $link,
 				'lead' => self::poss( $bo['t'] ) . ' ' . self::epa( $bo['epa'] ) . ' a play' );
 		}
 
@@ -151,7 +189,7 @@ class DBD_Pack {
 			'why' => $kind === 'snaps' ? 'The biggest jump in snap share against his own earlier games, quarterbacks left out.' : 'The biggest jump in share of the team’s targets against his own earlier games.',
 			'card' => 'pack-week-' . (int) $n . '-' . $kind, 'file' => 'dbd-week-' . (int) $n . '-' . $kind . '-' . self::slug( $m['name'] ) . '.png', 'fits' => array_filter( array( 'r/fantasyfootball', self::sub( $t ) ) ),
 			'title' => $short, 'comment' => ( $kind === 'snaps' ? 'His snap share and targets game by game: ' : 'His target share and routes game by game: ' ) . $link,
-			'post' => self::post( $short, $short, $link ), 'link' => $link,
+			'post' => self::post( $short, $short, $link ), 'tl' => $short, 'ts' => $short, 'link' => $link,
 			'lead' => self::last( $m['name'] ) . '’s ' . $now . '%' );
 	}
 
@@ -168,7 +206,7 @@ class DBD_Pack {
 				$sides[] = array( 't' => $p[0], 'fits' => self::sub( $p[0] ), 'head' => $c[2], 'say' => $c[3],
 					'title' => $head . ': where the matchup tilts for the ' . self::nick( $p[0] ) . ' offense',
 					'comment' => rtrim( $c[2], '.' ) . '. ' . $c[3] . ' The other keys and the head to head: ' . $link,
-					'post' => self::post( $head . ': ' . $c[3], $head . ': ' . $c[3], $link ), 'link' => $link );
+					'post' => self::post( $head . ': ' . $c[3], $head . ': ' . $c[3], $link ), 'tl' => $head . ': ' . $c[3], 'ts' => $head . ': ' . $c[3], 'link' => $link );
 			}
 			if ( $sides ) { $out[] = array( 'g' => $g, 'card' => 'game-' . $g['id'], 'file' => 'dbd-week-' . $next . '-' . strtolower( $a . '-' . $h ) . '.png', 'link' => DBD_Router::url( array( 'game' => $g['id'] ) ), 'sides' => $sides ); }
 		}

@@ -490,5 +490,6 @@ class DBD_Post {
 		echo '<meta property="og:title" content="' . esc_attr( get_the_title( $p ) ) . '">' . "\n" . '<meta property="og:type" content="article">' . "\n" . '<meta property="og:url" content="' . esc_url( get_permalink( $p ) ) . '">' . "\n";
 		$img = get_the_post_thumbnail_url( $p, 'full' );
 		if ( $img ) { echo '<meta property="og:image" content="' . esc_url( $img ) . '">' . "\n" . '<meta name="twitter:card" content="summary_large_image">' . "\n" . '<meta name="twitter:image" content="' . esc_url( $img ) . '">' . "\n"; }
+		echo DBD_Pack::twitter_site_tag();  /* SCOPE §72 */
 	}
 }

@@ -390,6 +390,7 @@ class DBD_Router {
 		}
 		echo '<meta property="og:url" content="' . esc_url( $sh !== '' ? add_query_arg( array( 'share' => $sh ), $url ) : $url ) . '">' . "\n";
 		echo '<meta property="og:type" content="website">' . "\n";
+		if ( class_exists( 'DBD_Pack' ) ) { echo DBD_Pack::twitter_site_tag(); }  /* links shared on X credit the account (SCOPE §72) */
 		if ( $r['view'] === 'notfound' ) { echo '<meta name="robots" content="noindex">' . "\n"; }
 		if ( $r['view'] === 'game' && class_exists( 'DBD_Seo' ) ) { echo DBD_Seo::game_jsonld( $r['game'] ); }
 		if ( $r['view'] === 'player' && class_exists( 'DBD_Seo' ) ) { echo DBD_Seo::player_jsonld( $r['player'] ); }
