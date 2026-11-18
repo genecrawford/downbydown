@@ -3102,3 +3102,27 @@ Everything after the downloads is unchanged: commit only when the data changed, 
 2. Where it sits: **item 5, before Keys to the game**, which becomes 6.
 
 **Tests:** the harness checks the five leaders against the box score for the newest week (the top passing yards, rushing yards, receiving yards, touchdowns and team defense), the card and its square draw (CI renders both, with and without logos), the texts' lengths and links, the item's place in the fixed order, and the email's count.
+
+## 76. Instagram posts itself (scoped and mocked 2026-11-18, `mockup-v50/`)
+
+**Why:** Instagram is the one place a link can't fill in a post (§73), so every week Gene downloads squares and pastes captions by hand. Meta's posting API (Instagram API with Instagram Login, `instagram_business_content_publish`) lets the plugin publish for the account it's connected to; for your own account the app needs no Meta review. Gene: "How can we automate the IG stuff?"
+
+**What it does:**
+
+1. **One carousel a week.** Tuesday at 9:00 AM Eastern (two hours after the pack email, so Gene and Erik see the week first), the plugin posts one carousel to @down_by_down: the five item squares in pack order (swing, usage riser, best and worst offense, target-share mover, week leaders), with one caption. A carousel counts as one post. Keys to the game stay manual (26 a week is too many for one account's feed).
+2. **The caption:** "Week 10 in five charts:" then one short line per slide (the item's short takeaway), a blank line, "Full charts: link in bio (downbydown.com)", a blank line, and hashtags (#NFL, #FantasyFootball, and the teams in the slides, no more than 15). Under Instagram's 2,200 characters.
+3. **JPEG copies of the squares.** The API takes JPEG only. A square asked for with `&fmt=jpg` is served as a JPEG (quality 90), cached beside the PNG and pruned with it. Instagram fetches each image from its public address.
+4. **Publishing, the way Meta asks:** a container per square (`is_carousel_item=true`), a carousel container (`media_type=CAROUSEL`, `children`), then `media_publish`; when publish doesn't return an id, check the container's `status_code` once a minute for up to five minutes. Retries like the Tuesday email (every 10 minutes, 7 tries); after the last, an email note to the test address and **Try again** on the tab. A week more than two days past its Tuesday is skipped, as with the email. A week is posted once (`dbd_ig_post` keeps season-week → state and the media id).
+5. **On the Share pack tab:** the status line at the top gains Instagram ("Week 10 carousel posted Tuesday, Nov 17, 9:00 AM · View on Instagram"), and the settings box gets an **Instagram posting** section: on/off, the access token (pasted once, shown as "connected as @down_by_down" after a check against the API, never printed back), and **Post the Week 10 carousel now**. The token is kept in a non-autoloaded option.
+6. **The token stays alive.** Instagram's long-lived token lasts 60 days. Every week the plugin refreshes it (`refresh_access_token`); if a refresh fails, the tab and the Overview's "Needs a look" say so, with a week of the old token's time left to paste a new one.
+
+**Gene, once (about 15 minutes):**
+1. In Instagram, switch @down_by_down to a professional account (Creator or Business).
+2. At developers.facebook.com, create an app, add the **Instagram** product, and choose **API setup with Instagram login**.
+3. Under **Generate access tokens**, add @down_by_down, accept the tester invite in Instagram (Settings → Website permissions → Apps and websites), then **Generate token** and paste it into the plugin.
+
+**Decisions:**
+1. **One carousel a week** (recommend: the account is new and Instagram flagged it once), or one item a day, Tuesday to Saturday?
+2. **Tuesday 9:00 AM Eastern**, or another time?
+
+**Tests:** the harness builds the carousel's caption and order for the newest week (five slides, the bio line, at most 15 hashtags, under 2,200), checks the JPEG square is 1080×1080 JPEG, runs the publish flow against a fake API (containers, carousel, publish; a missing id answered by status polling; an error retried; a late week skipped; a week posted once), the token refresh (a good refresh saves the new expiry; a failed one raises the warning), and the tab's new strings.
