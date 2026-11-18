@@ -17,7 +17,7 @@ wp_clear_scheduled_hook( 'dbd_videos_first' );
 foreach ( array( 'dbd_email', 'dbd_email_log', 'dbd_email_signups' ) as $o ) { delete_option( $o ); }
 wp_unschedule_hook( 'dbd_email_send' );
 /* the share pack email (SCOPE §69): who gets it and the send record; any booked sends */
-foreach ( array( 'dbd_pack_mail', 'dbd_pack_mail_set', 'dbd_pack_sub' ) as $o ) { delete_option( $o ); }
+foreach ( array( 'dbd_pack_mail', 'dbd_pack_mail_set', 'dbd_pack_sub', 'dbd_pack_x', 'dbd_pack_bsky' ) as $o ) { delete_option( $o ); }
 wp_unschedule_hook( 'dbd_pack_mail_send' );
 
 $u   = wp_upload_dir();

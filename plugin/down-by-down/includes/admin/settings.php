@@ -71,6 +71,8 @@ add_action( 'admin_init', function () {
 	register_setting( 'dbd_email', DBD_Email::OPT, array( 'type' => 'array', 'sanitize_callback' => array( 'DBD_Email', 'sanitize' ) ) );
 	register_setting( 'dbd_pack', DBD_Pack_Mail::OPT_SET, array( 'type' => 'array', 'sanitize_callback' => array( 'DBD_Pack_Mail', 'sanitize' ) ) );  /* the share pack email (SCOPE §69) */
 	register_setting( 'dbd_pack_sub', DBD_Pack::OPT_SUB, array( 'type' => 'string', 'default' => DBD_Pack::SUB_DEFAULT, 'sanitize_callback' => array( 'DBD_Pack', 'sanitize_sub' ) ) );  /* Post to r/… (SCOPE §71); its own group, so saving it leaves the email list alone */
+	register_setting( 'dbd_pack_sub', DBD_Pack::OPT_X, array( 'type' => 'string', 'default' => DBD_Pack::X_DEFAULT, 'sanitize_callback' => array( 'DBD_Pack', 'sanitize_x' ) ) );  /* Post on X (SCOPE §72), saved with the subreddit */
+	register_setting( 'dbd_pack_sub', DBD_Pack::OPT_BSKY, array( 'type' => 'string', 'default' => DBD_Pack::BSKY_DEFAULT, 'sanitize_callback' => array( 'DBD_Pack', 'sanitize_bsky' ) ) );  /* Post on Bluesky (SCOPE §72) */
 	/* team news (SCOPE §49): the source groups switched on; an empty save switches every source off */
 	/* team videos and highlights (SCOPE §51): on by default */
 	register_setting( 'dbd_videos', DBD_Videos::OPT_ON, array( 'type' => 'boolean', 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => true ) );
@@ -283,7 +285,7 @@ function dbd_settings_page() {
 		.dbd-admin .sp-kh{display:flex;align-items:center;gap:6px}.dbd-admin .sp-kh span{margin-left:auto;color:#646970}
 		.dbd-admin .sp-k p{margin:6px 0 8px;line-height:1.5}
 		.dbd-admin .sp-sub{max-width:1180px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 16px}.dbd-admin .sp-sub .description{color:#646970}
-		.dbd-admin .sp-rd{border-color:#cb2026;color:#cb2026}
+		.dbd-admin .sp-rd{border-color:#cb2026;color:#cb2026}.dbd-admin .sp-x{border-color:#0f1419;color:#0f1419}.dbd-admin .sp-bs{border-color:#1185fe;color:#1185fe}.dbd-admin .sp-so{margin:-6px 0 14px}
 		.dbd-admin .sp-kb{display:flex;flex-wrap:wrap;gap:6px}.dbd-admin .sp-kb .button{font-size:12px;min-height:26px;line-height:24px}
 		@media (max-width:1000px){.dbd-admin .sp-body,.dbd-admin .sp-g{grid-template-columns:minmax(0,1fr)}.dbd-admin .sp-gc img{max-width:360px}}
 		@media (max-width:640px){.dbd-admin .sp-gs{grid-template-columns:minmax(0,1fr)}.dbd-admin .sp-body{padding:12px}.dbd-admin .sp-keys{padding:0 12px}}
@@ -468,8 +470,10 @@ function dbd_pack_sub_form() {
 	$sub = DBD_Pack::our_sub();
 	?>
 	<form method="post" action="options.php" class="sp-sub"><?php settings_fields( 'dbd_pack_sub' ); ?>
-		<label for="dbd-pack-sub">Your subreddit</label> r/<input id="dbd-pack-sub" name="<?php echo esc_attr( DBD_Pack::OPT_SUB ); ?>" value="<?php echo esc_attr( $sub ); ?>" maxlength="200" class="regular-text" style="width:180px">
-		<?php submit_button( 'Save', 'secondary', 'submit', false ); ?><span class="description"><?php echo esc_html( $sub !== '' ? 'Each item’s Post button opens Reddit’s new-post form for r/' . $sub . ', filled in. Clear it to hide the buttons.' : 'Set one to get a Post button on each item.' ); ?></span>
+		<label for="dbd-pack-sub">Your subreddit</label> r/<input id="dbd-pack-sub" name="<?php echo esc_attr( DBD_Pack::OPT_SUB ); ?>" value="<?php echo esc_attr( $sub ); ?>" maxlength="200" class="regular-text" style="width:160px">
+		<label for="dbd-pack-x">X account</label> @<input id="dbd-pack-x" name="<?php echo esc_attr( DBD_Pack::OPT_X ); ?>" value="<?php echo esc_attr( DBD_Pack::our_x() ); ?>" maxlength="200" class="regular-text" style="width:160px">
+		<label for="dbd-pack-bsky">Bluesky</label> <input id="dbd-pack-bsky" name="<?php echo esc_attr( DBD_Pack::OPT_BSKY ); ?>" value="<?php echo esc_attr( DBD_Pack::our_bsky() ); ?>" maxlength="300" class="regular-text" style="width:200px">
+		<?php submit_button( 'Save', 'secondary', 'submit', false ); ?><span class="description">Each Post button opens that site with the post filled in. Clear one to hide its buttons. The X account also goes in every page’s share tags.</span>
 	</form>
 	<?php
 }
@@ -478,6 +482,14 @@ function dbd_pack_sub_form() {
 function dbd_pack_reddit( $title, $link, $sub = null ) {
 	$u = DBD_Pack::reddit_url( $title, $link, $sub ); if ( $u === '' ) { return ''; }
 	return '<a class="button sp-rd" href="' . esc_url( $u ) . '" target="_blank" rel="noopener">' . esc_html( 'Post to r/' . ( $sub === null ? DBD_Pack::our_sub() : DBD_Pack::sanitize_sub( $sub ) ) ) . '</a>';
+}
+
+/** Post on X and Post on Bluesky (SCOPE §72): each site's compose box in a new tab, the post written with the share link. Nothing for a site whose account is cleared. */
+function dbd_pack_social( $it ) {
+	$t = DBD_Pack::social( $it ); $o = '';
+	if ( ( $u = DBD_Pack::x_url( $t['x'] ) ) !== '' ) { $o .= '<a class="button sp-x" href="' . esc_url( $u ) . '" target="_blank" rel="noopener">Post on X</a>'; }
+	if ( ( $u = DBD_Pack::bsky_url( $t['bsky'] ) ) !== '' ) { $o .= '<a class="button sp-bs" href="' . esc_url( $u ) . '" target="_blank" rel="noopener">Post on Bluesky</a>'; }
+	return $o;
 }
 
 /** One text with its Copy button; X and Bluesky shows its length against 280. */
@@ -510,7 +522,8 @@ function dbd_tab_share() {
 			. '<div class="sp-acts"><a class="button button-primary" href="' . esc_url( $img ) . '" download="' . esc_attr( $it['file'] ) . '">Download image</a><a class="button" href="' . esc_url( $it['link'] ) . '" target="_blank" rel="noopener">Open the page</a>'
 			. dbd_pack_reddit( $it['title'], DBD_Pack::share_link( $it ) ) . '</div>'
 			. '<p class="sp-fits">Fits: ' . esc_html( implode( ' · ', $it['fits'] ) ) . '</p></div>'
-			. '<div class="sp-r">' . dbd_pack_field( 'Reddit title', $it['title'] ) . dbd_pack_field( 'Reddit comment, with the link', $it['comment'] ) . dbd_pack_field( 'X and Bluesky', $it['post'], true ) . '</div></div></div>';
+			. '<div class="sp-r">' . dbd_pack_field( 'Reddit title', $it['title'] ) . dbd_pack_field( 'Reddit comment, with the link', $it['comment'] ) . dbd_pack_field( 'X and Bluesky', $it['post'], true )
+			. ( ( $so = dbd_pack_social( $it ) ) !== '' ? '<div class="sp-acts sp-so">' . $so . '</div>' : '' ) . '</div></div></div>';
 	}
 	if ( $keys ) {
 		$i = DBD_Pack::NUM['keys'];
@@ -524,7 +537,7 @@ function dbd_tab_share() {
 					. '<p><b>' . esc_html( rtrim( $sd['head'], '.' ) ) . '.</b> ' . esc_html( $sd['say'] ) . '</p><div class="sp-kb">'
 					. '<button type="button" class="button sp-cp" data-t="' . esc_attr( $sd['title'] ) . '">Copy title</button>'
 					. '<button type="button" class="button sp-cp" data-t="' . esc_attr( $sd['comment'] ) . '">Copy comment</button>'
-					. '<button type="button" class="button sp-cp" data-t="' . esc_attr( $sd['post'] ) . '">Copy for X and Bluesky</button>' . dbd_pack_reddit( $sd['title'], $sd['link'] ) . dbd_pack_reddit( $sd['title'], $sd['link'], $sd['fits'] ) . '</div></div>';  /* ours, then the team's own subreddit (2.29.1) */
+					. '<button type="button" class="button sp-cp" data-t="' . esc_attr( $sd['post'] ) . '">Copy for X and Bluesky</button>' . dbd_pack_reddit( $sd['title'], $sd['link'] ) . dbd_pack_reddit( $sd['title'], $sd['link'], $sd['fits'] ) . dbd_pack_social( $sd ) . '</div></div>';  /* ours, then the team's own subreddit (2.29.1) */
 			}
 			echo '</div></div>';
 		}

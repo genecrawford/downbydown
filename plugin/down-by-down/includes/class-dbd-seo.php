@@ -55,6 +55,7 @@ class DBD_Seo {
 		echo '<meta name="description" content="' . esc_attr( $d ) . '">' . "\n";
 		echo '<meta property="og:title" content="' . esc_attr( $t ) . '">' . "\n" . '<meta property="og:description" content="' . esc_attr( $d ) . '">' . "\n";
 		echo '<meta property="og:url" content="' . esc_url( $url ) . '">' . "\n" . '<meta property="og:type" content="website">' . "\n" . '<meta property="og:site_name" content="' . esc_attr( $name ) . '">' . "\n";
+		if ( class_exists( 'DBD_Pack' ) ) { echo DBD_Pack::twitter_site_tag(); }  /* SCOPE §72 */
 		if ( class_exists( 'DBD_Card' ) && DBD_Card::available() && DBD_Data::has_data() ) {
 			$img = DBD_Card::url( 'page-hub' );
 			echo '<meta property="og:image" content="' . esc_url( $img ) . '">' . "\n" . '<meta property="og:image:width" content="1200">' . "\n" . '<meta property="og:image:height" content="630">' . "\n";

@@ -420,6 +420,11 @@ if ( $view === 'packmail' ) {
 		$nt = 0; foreach ( DBD_Pack::keys( $n ) as $kg ) { foreach ( $kg['sides'] as $sd ) { $nt += strpos( $h, '>Post to ' . $sd['fits'] . '</a>' ) !== false ? 1 : 0; } }
 		$ck( 'a team-subreddit Post link on every keys side (2.29.1)', $nt === $nk && substr_count( $h, '>Post to r/' ) === count( DBD_Pack::items( $n ) ) + 2 * $nk, $nt . ' of ' . $nk );
 		$ck( 'the email\'s Post links carry ?share= for the pack cards', strpos( $h, 'reddit.com/r/downbydown/submit?url=' ) !== false && strpos( $h, 'share%3Dpack-week-' . $n . '-' ) !== false );
+		$ck( 'a Post on X and a Post on Bluesky link for every item and keys side (2.30.0)', substr_count( $h, '>Post on X</a>' ) === count( DBD_Pack::items( $n ) ) + $nk && substr_count( $h, '>Post on Bluesky</a>' ) === count( DBD_Pack::items( $n ) ) + $nk, substr_count( $h, '>Post on X</a>' ) . ' X, ' . substr_count( $h, '>Post on Bluesky</a>' ) . ' Bluesky' );
+		$ck( 'the X and Bluesky links carry the share link', strpos( $h, 'https://x.com/intent/post?text=' ) !== false && strpos( $h, 'https://bsky.app/intent/compose?text=' ) !== false && strpos( $h, 'share%3Dpack-week-' . $n . '-snaps' ) !== false );
+		$keep = $GLOBALS['dbd_opt']; $GLOBALS['dbd_opt'][ DBD_Pack::OPT_X ] = ''; $GLOBALS['dbd_opt'][ DBD_Pack::OPT_BSKY ] = '';
+		$hx = DBD_Pack_Mail::build( $n )['html'] ?? ''; $ck( 'cleared accounts: no X or Bluesky links', strpos( $hx, 'Post on X' ) === false && strpos( $hx, 'Post on Bluesky' ) === false );
+		$GLOBALS['dbd_opt'] = $keep;
 		$keep = $GLOBALS['dbd_opt']; $GLOBALS['dbd_opt'][ DBD_Pack::OPT_SUB ] = '';
 		$h0 = DBD_Pack_Mail::build( $n )['html'] ?? ''; $ck( 'no subreddit of ours, no r/downbydown links (the team ones stay)', strpos( $h0, 'Post to r/downbydown' ) === false && strpos( $h0, 'reddit.com/r/downbydown/' ) === false && substr_count( $h0, '>Post to r/' ) === $nk );
 		$GLOBALS['dbd_opt'] = $keep;
@@ -515,6 +520,25 @@ if ( $view === 'pack' ) {
 	foreach ( $keys as $kg ) { foreach ( $kg['sides'] as $sd ) { $tu = DBD_Pack::reddit_url( $sd['title'], $sd['link'], $sd['fits'] ); parse_str( (string) parse_url( $tu, PHP_URL_QUERY ), $q );
 		$ck( strpos( $tu, 'https://www.reddit.com/' . $sd['fits'] . '/submit?url=' ) === 0 && ( $q['url'] ?? '' ) === $sd['link'] && ( $q['title'] ?? '' ) === $sd['title'], 'keys ' . $sd['t'] . ': its team subreddit address (' . substr( $tu, 0, 60 ) . ')' ); } }
 	$ck( DBD_Pack::reddit_url( 'x', 'https://example.test/', '' ) === '' && strpos( DBD_Pack::reddit_url( 'x', 'https://example.test/', 'r/raiders' ), 'https://www.reddit.com/r/raiders/submit?' ) === 0, 'a team subreddit as given, none when empty' );
+	/* Post on X and Post on Bluesky (2.30.0, SCOPE §72) */
+	$ck( DBD_Pack::our_x() === 'dxd_NFLfootball' && DBD_Pack::our_bsky() === 'downbydown.bsky.social', 'the account defaults' );
+	foreach ( array( '@dxd_NFLfootball' => 'dxd_NFLfootball', 'https://x.com/dxd_NFLfootball?s=21' => 'dxd_NFLfootball', 'twitter.com/Foo_Bar/' => 'Foo_Bar', '' => '' ) as $in => $want ) { $ck( DBD_Pack::sanitize_x( $in ) === $want, "sanitize_x('$in') gives '$want', got '" . DBD_Pack::sanitize_x( $in ) . "'" ); }
+	foreach ( array( '@DownByDown.bsky.social' => 'downbydown.bsky.social', 'https://bsky.app/profile/downbydown.bsky.social' => 'downbydown.bsky.social', 'downbydown.com' => 'downbydown.com', '' => '' ) as $in => $want ) { $ck( DBD_Pack::sanitize_bsky( $in ) === $want, "sanitize_bsky('$in') gives '$want', got '" . DBD_Pack::sanitize_bsky( $in ) . "'" ); }
+	$all = $items; foreach ( $keys as $kg ) { foreach ( $kg['sides'] as $sd ) { $all[] = $sd; } }
+	foreach ( $all as $it ) {
+		$so = DBD_Pack::social( $it ); $sl = DBD_Pack::share_link( $it ); $nm = $it['k'] ?? ( 'keys ' . $it['t'] );
+		$ck( DBD_Pack::xlen( $so['x'] ) <= 280 && substr( $so['x'], -strlen( $sl ) ) === $sl, $nm . ': the X text ends with its share link within 280' );
+		$ck( mb_strlen( $so['bsky'] ) <= 300 && substr( $so['bsky'], -strlen( $sl ) ) === $sl, $nm . ': the Bluesky text ends with its share link within 300 counting the whole link (' . mb_strlen( $so['bsky'] ) . ')' );
+		parse_str( (string) parse_url( DBD_Pack::x_url( $so['x'] ), PHP_URL_QUERY ), $q ); $ck( strpos( DBD_Pack::x_url( $so['x'] ), 'https://x.com/intent/post?text=' ) === 0 && ( $q['text'] ?? '' ) === $so['x'], $nm . ': the X address decodes back' );
+		parse_str( (string) parse_url( DBD_Pack::bsky_url( $so['bsky'] ), PHP_URL_QUERY ), $q ); $ck( strpos( DBD_Pack::bsky_url( $so['bsky'] ), 'https://bsky.app/intent/compose?text=' ) === 0 && ( $q['text'] ?? '' ) === $so['bsky'], $nm . ': the Bluesky address decodes back' );
+	}
+	$L2 = 'https://example.test/player/a-long-name/?share=pack-week-10-snaps&and=a-much-longer-tail-to-push-it-over';
+	$bp = DBD_Pack::bpost( str_repeat( 'long words here ', 20 ), str_repeat( 'still too long ', 20 ), $L2 ); $ck( mb_strlen( $bp ) <= 300 && strpos( $bp, '… ' . $L2 ) !== false, 'bpost(): cut at a word when both run over 300 with the whole link' );
+	$ck( DBD_Pack::bpost( 'Short.', 'Short.', $L2 ) === 'Short. ' . $L2, 'bpost(): the long text when it fits' );
+	$ck( DBD_Pack::twitter_site_tag() === '<meta name="twitter:site" content="@dxd_NFLfootball">' . "\n", 'twitter:site' );
+	$GLOBALS['dbd_opt'] = array( DBD_Pack::OPT_X => '', DBD_Pack::OPT_BSKY => '' );
+	$ck( DBD_Pack::x_url( 'x' ) === '' && DBD_Pack::bsky_url( 'x' ) === '' && DBD_Pack::twitter_site_tag() === '', 'cleared accounts: no buttons, no twitter:site' );
+	unset( $GLOBALS['dbd_opt'] );
 	$long = DBD_Pack::reddit_url( str_repeat( 'word ', 80 ), 'https://example.test/x/' ); parse_str( (string) parse_url( $long, PHP_URL_QUERY ), $q );
 	$ck( mb_strlen( $q['title'] ?? '' ) <= 300 && substr( $q['title'] ?? '', -3 ) === '…', 'a title over 300 is cut at a word with an ellipsis' );
 	foreach ( array( 'pack-week-10-snaps' => 'pack-week-10-snaps', 'pack-week-3-offense' => 'pack-week-3-offense', 'team-MIN' => '', 'pack-week-1-nope' => '', '<x>' => '', 'pack-week-123-snaps' => '' ) as $in => $want ) { $ck( DBD_Pack::share_key( $in ) === $want, "share_key('$in')" ); }
@@ -535,6 +559,7 @@ if ( $view === 'pack' ) {
 		preg_match( '/rel="canonical" href="([^"]*)"/', $with, $c1 ); preg_match( '/rel="canonical" href="([^"]*)"/', $plain, $c2 );
 		$ck( ( $c1[1] ?? 'x' ) === ( $c2[1] ?? 'y' ) && strpos( $c1[1] ?? '', 'share' ) === false, 'share=: the canonical stays clean' );
 		$ck( $bad2 === $plain, 'a share key that isn\'t a pack card changes nothing' );
+		$ck( strpos( $plain, '<meta name="twitter:site" content="@dxd_NFLfootball">' ) !== false, 'app pages carry twitter:site' );
 		$_GET = array();
 	} else { echo "  (no GD or no riser: ?share= head checks skipped)\n"; }
 	echo "pack week $n: $bad problems, $warnings warnings\n"; exit( $bad || $warnings ? 1 : 0 );
@@ -583,7 +608,7 @@ if ( $view === 'admin' ) {
 		'st' => array( 'Photos and logos', 'Addresses', 'Search and sharing', 'Using it in the theme', 'value="dbd"' ),
 		'dt' => array( 'Current data', 'Sync log', 'Seasons', 'Share cards', 'value="dbd_data"', 'harness-token' ),
 		'gr' => array( 'Visits by source', 'data-g="sources"', 'Google search', 'data-g="search"', 'Titles to tune', 'data-g="tune"', 'data-g="copy"', 'Top landing pages', 'data-g="landing"', 'Brevo isn’t set up', 'data-g="shares"', 'data-g="signups"', 'analytics.google.com/analytics/web/#/p123456/', 'resource_id=https%3A%2F%2Fexample.test%2F', 'page=googlesitekit-dashboard' ) );
-	$want['sp'] = array( 'The Tuesday email', 'value="dbd_pack"', 'name="dbd_pack_mail_set[to]"', 'Brevo isn’t set up', 'Share pack', 'name="week"', 'The biggest swing', 'A usage riser', 'Best and worst offense', 'A target-share mover', 'class="button sp-cp"', 'download="dbd-week-', 'card=pack-week-', 'of 280', 'Fits: r/', 'value="dbd_pack_sub"', 'name="dbd_pack_sub"', 'Your subreddit', 'class="button sp-rd"', 'https://www.reddit.com/r/downbydown/submit?url=', 'share%3Dpack-week-', 'Post to r/downbydown' );  /* SCOPE §68, §71 */
+	$want['sp'] = array( 'The Tuesday email', 'value="dbd_pack"', 'name="dbd_pack_mail_set[to]"', 'Brevo isn’t set up', 'Share pack', 'name="week"', 'The biggest swing', 'A usage riser', 'Best and worst offense', 'A target-share mover', 'class="button sp-cp"', 'download="dbd-week-', 'card=pack-week-', 'of 280', 'Fits: r/', 'value="dbd_pack_sub"', 'name="dbd_pack_sub"', 'Your subreddit', 'class="button sp-rd"', 'https://www.reddit.com/r/downbydown/submit?url=', 'share%3Dpack-week-', 'Post to r/downbydown', 'name="dbd_pack_x"', 'name="dbd_pack_bsky"', 'class="button sp-x"', 'class="button sp-bs"', 'https://x.com/intent/post?text=', 'https://bsky.app/intent/compose?text=' );  /* SCOPE §68, §71, §72 */
 	$want['ov'][] = 'Open Growth'; $want['ov'][] = 'data-g="ov-visits"'; $want['ov'][] = 'data-g="ov-clicks"';
 	$bad = 0; $dir = getenv( 'DBD_HARNESS_HTML' ); if ( $dir && ! is_dir( $dir ) ) { mkdir( $dir, 0777, true ); }
 	foreach ( dbd_admin_tabs() as $k => $t ) {
