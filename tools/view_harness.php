@@ -661,10 +661,10 @@ if ( $view === 'admin' ) {
 		$to = dbd_pack_settings_save( array( 'week' => '9', 'dbd_pack_mail_set' => array( 'on' => '1', 'to' => "Erik@Example.test\nbad\ngene@example.test, gene@example.test" ), 'dbd_pack_sub' => 'https://www.reddit.com/r/DownByDown/', 'dbd_pack_x' => '@dxd_NFLfootball', 'dbd_pack_bsky' => '@DownByDown.bsky.social', 'dbd_pack_fb' => 'facebook.com/groups/42/', 'dbd_pack_ig' => 'https://instagram.com/down_by_down/' ) );
 		$got = array( get_option( 'dbd_pack_mail_set' ), get_option( 'dbd_pack_sub' ), get_option( 'dbd_pack_x' ), get_option( 'dbd_pack_bsky' ), get_option( 'dbd_pack_fb' ), get_option( 'dbd_pack_ig' ) );
 		$ok = $got === array( array( 'on' => true, 'to' => array( 'erik@example.test', 'gene@example.test' ) ), 'DownByDown', 'dxd_NFLfootball', 'downbydown.bsky.social', 'https://www.facebook.com/groups/42', 'down_by_down' );
-		$ok2 = strpos( $to, 'page=down-by-down-share' ) !== false && strpos( $to, 'week=9' ) !== false && strpos( $to, 'pack=saved' ) !== false && substr( $to, -19 ) === '#dbd-pack-settings';
+		$ok2 = strpos( $to, 'page=down-by-down-share' ) !== false && strpos( $to, 'week=9' ) !== false && strpos( $to, 'pack=saved' ) !== false && substr( $to, -strlen( '#dbd-pack-settings' ) ) === '#dbd-pack-settings';
 		dbd_pack_settings_save( array( 'dbd_pack_mail_set' => array( 'to' => 'a@example.test' ), 'dbd_pack_sub' => '', 'dbd_pack_fb' => 'https://evil.test/' ) );
 		$ok3 = get_option( 'dbd_pack_mail_set' ) === array( 'on' => false, 'to' => array( 'a@example.test' ) ) && get_option( 'dbd_pack_sub' ) === '' && get_option( 'dbd_pack_fb' ) === '';
-		echo '  sp save: ' . ( $ok && $ok2 && $ok3 ? 'ok' : 'WRONG ' . json_encode( array( $ok, $ok2, $ok3, $got, get_option( 'dbd_pack_mail_set' ), get_option( 'dbd_pack_sub' ), get_option( 'dbd_pack_fb' ) ) ) . ' ' . $to ) . "\n"; $bad += $ok && $ok2 && $ok3 ? 0 : 1;
+		echo '  sp save: ' . ( $ok && $ok2 && $ok3 ? 'ok' : 'WRONG ' . json_encode( array( $ok, $ok2, $ok3, $got ) ) . ' ' . $to ) . "\n"; $bad += $ok && $ok2 && $ok3 ? 0 : 1;
 		$_GET = array( 'page' => 'down-by-down-share', 'pack' => 'saved' ); ob_start(); dbd_settings_page(); $h2 = ob_get_clean();
 		$open = strpos( $h2, 'id="dbd-pack-settings" open>' ) !== false && strpos( $h2, 'Settings saved.' ) !== false;
 		echo '  sp after a save: ' . ( $open ? 'the settings box is open with its notice' : 'WRONG: the settings box should open with "Settings saved."' ) . "\n"; $bad += $open ? 0 : 1;
