@@ -90,8 +90,13 @@ function dbd_pack_settings_save( $p ) {
 	foreach ( array( DBD_Pack::OPT_SUB => 'sanitize_sub', DBD_Pack::OPT_X => 'sanitize_x', DBD_Pack::OPT_BSKY => 'sanitize_bsky', DBD_Pack::OPT_FB => 'sanitize_fb', DBD_Pack::OPT_IG => 'sanitize_ig' ) as $o => $fn ) {
 		update_option( $o, call_user_func( array( 'DBD_Pack', $fn ), is_scalar( $p[ $o ] ?? '' ) ? (string) ( $p[ $o ] ?? '' ) : '' ) );
 	}
+	/* Instagram posting (SCOPE §76): the switch, a new token checked against the API, or disconnecting */
+	update_option( DBD_Instagram::OPT_SET, DBD_Instagram::sanitize( is_array( $p[ DBD_Instagram::OPT_SET ] ?? null ) ? $p[ DBD_Instagram::OPT_SET ] : array() ) );
+	$ierr = '';
+	if ( ! empty( $p['dbd_ig_disconnect'] ) ) { DBD_Instagram::disconnect(); }
+	elseif ( is_scalar( $p['dbd_ig_token_new'] ?? null ) && trim( (string) $p['dbd_ig_token_new'] ) !== '' ) { $ierr = DBD_Instagram::connect( (string) $p['dbd_ig_token_new'] ); }
 	$w = (int) ( $p['week'] ?? 0 );
-	return add_query_arg( array_filter( array( 'page' => 'down-by-down-share', 'week' => $w ?: null, 'pack' => 'saved' ) ), admin_url( 'admin.php' ) ) . '#dbd-pack-settings';
+	return add_query_arg( array_filter( array( 'page' => 'down-by-down-share', 'week' => $w ?: null, 'pack' => $ierr === '' ? 'saved' : 'saveerr', 'pack_err' => $ierr === '' ? null : rawurlencode( 'Settings saved, but ' . lcfirst( $ierr ) ) ) ), admin_url( 'admin.php' ) ) . '#dbd-pack-settings';
 }
 add_action( 'admin_post_dbd_pack_settings', function () {
 	check_admin_referer( 'dbd_pack_settings' ); if ( ! current_user_can( 'manage_options' ) ) { wp_die( 'No.' ); }
@@ -193,6 +198,7 @@ function dbd_admin_attention() {
 	$miss = count( array_filter( $s['weeks'], function ( $w ) use ( $s ) { return ! isset( $s['pmap'][ $w ] ); } ) );
 	if ( $miss && DBD_Post::on() ) { $a[] = array( 'warn', $miss . ' finished week' . ( $miss === 1 ? ' has' : 's have' ) . ' no post.', 'wk' ); }
 	if ( $s['nprob'] ) { $n = count( $s['nprob'] ); $a[] = array( 'warn', $n . ' news feed' . ( $n === 1 ? '' : 's' ) . ' didn’t answer properly on the last fetch.', 'nw' ); }
+	if ( class_exists( 'DBD_Instagram' ) && ( $iw = DBD_Instagram::warning() ) !== '' ) { $a[] = array( 'warn', $iw, 'sp' ); }  /* SCOPE §76 */
 	if ( DBD_Videos::on() ) {
 		$vs = get_option( DBD_Videos::OPT_STATUS ); $vp = is_array( $vs ) ? array_filter( (array) $vs['feeds'], function ( $x ) { return empty( $x['ok'] ) || ! empty( $x['err'] ); } ) : array();
 		if ( $vp ) { $n = count( $vp ); $a[] = array( 'warn', $n . ' YouTube channel' . ( $n === 1 ? '' : 's' ) . ' to check after the last fetch.', 'nw' ); }
@@ -486,7 +492,7 @@ function dbd_pack_settings_box( $n ) {
 			. ( $note !== '' ? '<p class="description">' . $note . '</p>' : '' ) . '</div>';
 	};
 	?>
-	<details class="dbd-box sp-set" id="dbd-pack-settings"<?php echo $open ? ' open' : ''; ?>><summary>Settings: the Tuesday email and your accounts</summary>
+	<details class="dbd-box sp-set" id="dbd-pack-settings"<?php echo $open ? ' open' : ''; ?>><summary>Settings: the Tuesday email, your accounts and Instagram posting</summary>
 		<?php dbd_pack_notices(); ?>
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="dbd_pack_settings"><input type="hidden" name="week" value="<?php echo (int) $n; ?>"><?php wp_nonce_field( 'dbd_pack_settings' ); ?>
 		<div class="sp-sg">
@@ -502,6 +508,17 @@ function dbd_pack_settings_box( $n ) {
 			<label for="dbd-pack-fb">Facebook group</label><?php echo $fld( 'dbd-pack-fb', DBD_Pack::OPT_FB, DBD_Pack::our_fb(), '', 420, DBD_Pack::our_fb() !== '' ? '<a href="' . esc_url( DBD_Pack::our_fb() ) . '" target="_blank" rel="noopener">Open the group</a>' : '' ); ?>
 			<label for="dbd-pack-ig">Instagram</label><?php echo $fld( 'dbd-pack-ig', DBD_Pack::OPT_IG, DBD_Pack::our_ig(), '@' ); ?>
 			<span></span><p class="description" style="margin:0">Clear an account to hide its button.</p>
+			<div class="sp-sh">Instagram posting</div>
+			<span>Post it</span><div><label><input type="checkbox" name="<?php echo esc_attr( DBD_Instagram::OPT_SET ); ?>[on]" value="1"<?php echo DBD_Instagram::settings()['on'] ? ' checked' : ''; ?>> Post the carousel on Tuesday, then one item a day Wednesday to Sunday, 9:00 AM Eastern</label></div>
+			<label for="dbd-ig-token">Access token</label><div><input type="password" id="dbd-ig-token" name="dbd_ig_token_new" value="" autocomplete="off" placeholder="<?php echo esc_attr( DBD_Instagram::token() ? 'Paste a new token to replace it' : 'Paste the token from your Meta app' ); ?>" style="width:420px;max-width:100%">
+				<?php $it = DBD_Instagram::token();
+				if ( $it ) {
+					echo '<p class="description">' . ( DBD_Instagram::connected() ? '<span class="dbd-dot ok"></span>Connected as @' . esc_html( $it['username'] !== '' ? $it['username'] : $it['user_id'] ) . '. Good until ' . esc_html( wp_date( 'M j, Y', (int) $it['expires'] ) ) . '; renewed every week.' : '<span class="dbd-dot bad"></span>The token ran out on ' . esc_html( wp_date( 'M j', (int) $it['expires'] ) ) . '. Paste a new one.' )
+						. ( ! empty( $it['err'] ) ? ' <br><span class="dbd-dot warn"></span>The last renewal failed: ' . esc_html( $it['err'] ) : '' ) . '</p>';
+					echo '<label class="description" style="display:block;margin-top:4px"><input type="checkbox" name="dbd_ig_disconnect" value="1"> Disconnect (forget the token)</label>';
+				} else {
+					echo '<p class="description">In your Meta app (Instagram, API setup with Instagram login), add @' . esc_html( DBD_Pack::our_ig() !== '' ? DBD_Pack::our_ig() : 'your account' ) . ' as a tester, then Generate token and paste it here. It’s checked when you save, and never shown again.</p>';
+				} ?></div>
 		</div>
 		<div class="dbd-foot"><button class="button button-primary">Save settings</button></div>
 		</form>
@@ -514,6 +531,14 @@ function dbd_pack_settings_box( $n ) {
 				<button class="button"><?php echo esc_html( 'Send the Week ' . $n . ' pack now' ); ?></button> <span class="description"><?php echo esc_html( 'To ' . count( $ps['to'] ) . ( count( $ps['to'] ) === 1 ? ' person' : ' people' ) . ', right away. Save any change to the list first.' ); ?></span></form>
 			<?php } ?></div></div>
 		<?php endif; ?>
+		<?php if ( $n && DBD_Instagram::connected() ) : ?>
+		<div class="sp-sg sp-last"><div class="sp-sh">Instagram this week</div><span></span><div><?php
+			foreach ( DBD_Instagram::week_rows( $n ) as $r ) { echo '<span class="dbd-dot ' . esc_attr( $r[0] ) . '"></span>' . esc_html( $r[1] ) . ( $r[2] !== '' ? ' <a href="' . esc_url( $r[2] ) . '" target="_blank" rel="noopener">View</a>' : '' ) . ( $r[3] !== '' ? ' <a class="button button-small" href="' . esc_url( DBD_Instagram::again_url( $r[3] ) ) . '">Try again</a>' : '' ) . '<br>'; }
+			if ( DBD_Instagram::on() && DBD_Instagram::next_key() !== '' ) { ?>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top:10px"><input type="hidden" name="action" value="dbd_ig_now"><?php wp_nonce_field( 'dbd_ig_now' ); ?>
+				<button class="button">Post the next one now</button> <span class="description">Posts the first one not out yet, right away.</span></form>
+			<?php } ?></div></div>
+		<?php endif; ?>
 	</details>
 	<?php
 }
@@ -522,7 +547,11 @@ function dbd_pack_settings_box( $n ) {
 function dbd_pack_notices() {
 	if ( ! isset( $_GET['pack'] ) ) { return; }
 	$pk = (string) $_GET['pack']; $pn = (int) ( $_GET['pack_n'] ?? 0 );
+	if ( $pk === 'igposted' ) { $x = array( 'success', 'Posted to Instagram.' ); } elseif ( $pk === 'igagain' ) { $x = array( 'success', 'Instagram is trying that post again.' ); }
+	elseif ( $pk === 'igerror' || $pk === 'saveerr' ) { $x = array( 'error', sanitize_text_field( wp_unslash( rawurldecode( (string) ( $_GET['pack_err'] ?? '' ) ) ) ) ); }  /* not the email's wording (Greptile, PR #144) */
+	else {
 	$x = $pk === 'saved' ? array( 'success', 'Settings saved.' ) : ( $pk === 'sent' ? array( 'success', 'The pack went to ' . $pn . ( $pn === 1 ? ' person.' : ' people.' ) ) : ( $pk === 'again' ? array( 'success', 'The pack email is going again.' ) : array( 'error', 'The pack email didn’t send: ' . sanitize_text_field( wp_unslash( rawurldecode( (string) ( $_GET['pack_err'] ?? '' ) ) ) ) ) ) );
+	}
 	echo '<div class="notice notice-' . esc_attr( $x[0] ) . ' inline sp-note"><p>' . esc_html( $x[1] ) . '</p></div>';
 }
 
@@ -574,7 +603,8 @@ function dbd_tab_share() {
 		<?php if ( $tue ) { echo '<span class="sp-when">ready ' . esc_html( wp_date( 'l, M j', $tue ) ) . '</span>'; } ?>
 	</div>
 	<p class="sp-how">Click where you want to post. Reddit, X and Bluesky open with the post filled in. Facebook copies the text and opens its share box: choose Share to a group, then paste. Instagram copies the caption: post it with the square.</p>
-	<p class="sp-mail"><span class="dbd-dot <?php echo esc_attr( $ml[0] ); ?>"></span><?php echo esc_html( $ml[1] ); ?><?php if ( $ml[2] !== '' ) { echo ' <a class="button button-small" href="' . esc_url( DBD_Pack_Mail::again_url( $ml[2] ) ) . '">Try again</a>'; } ?> <a href="#dbd-pack-settings" class="sp-open">Change the list</a></p>
+	<p class="sp-mail"><span class="dbd-dot <?php echo esc_attr( $ml[0] ); ?>"></span><?php echo esc_html( $ml[1] ); ?><?php if ( $ml[2] !== '' ) { echo ' <a class="button button-small" href="' . esc_url( DBD_Pack_Mail::again_url( $ml[2] ) ) . '">Try again</a>'; } ?> <a href="#dbd-pack-settings" class="sp-open">Change the list</a>
+		<?php $il = DBD_Instagram::line( $n ); if ( $il ) { echo '<br><span class="dbd-dot ' . esc_attr( $il[0] ) . '"></span>' . esc_html( $il[1] ) . ( $il[2] !== '' ? ' <a href="' . esc_url( $il[2] ) . '" target="_blank" rel="noopener">View on Instagram</a>' : '' ) . ( $il[3] !== '' ? ' <a class="button button-small" href="' . esc_url( DBD_Instagram::again_url( $il[3] ) ) . '">Try again</a>' : '' ) . ( ! DBD_Instagram::connected() ? ' <a href="#dbd-pack-settings" class="sp-open">Connect it</a>' : '' ); } ?></p>
 	<?php
 	foreach ( $items as $it ) {
 		$i = DBD_Pack::NUM[ $it['k'] ] ?? 0; $img = DBD_Card::url( $it['card'] );

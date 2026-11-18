@@ -167,9 +167,14 @@ class DBD_Card {
 	}
 
 	/** The cache file's name: the subject, the stamp, and -l with logos. */
-	public static function file_name( $key ) {
-		return $key . self::stamp() . ( DBD_Data::logos() ? '-l' : '' ) . '.png';
+	public static function file_name( $key, $jpg = false ) {
+		return $key . self::stamp() . ( DBD_Data::logos() ? '-l' : '' ) . ( $jpg ? '.jpg' : '.png' );
 	}
+
+	/** A square as a JPEG (SCOPE §76): Instagram's API takes JPEG only. Only the Instagram squares come this way. */
+	public static function jpg_ok() { return function_exists( 'imagejpeg' ) && function_exists( 'imagetypes' ) && ( imagetypes() & IMG_JPG ); }  /* Greptile, PR #144 */
+	public static function wants_jpg( $key ) { return strpos( (string) $key, 'ig-' ) === 0 && isset( $_GET['fmt'] ) && $_GET['fmt'] === 'jpg'; }
+	public static function jpg_url( $key ) { return add_query_arg( array( 'fmt' => 'jpg' ), self::url( $key ) ); }
 
 	public static function dir() { $up = wp_upload_dir(); return trailingslashit( $up['basedir'] ) . 'down-by-down/cards'; }
 
@@ -177,15 +182,16 @@ class DBD_Card {
 	public static function serve( $key ) {
 		$fail = function ( $code ) { status_header( $code ); nocache_headers(); exit; };
 		if ( ! self::available() || ! self::valid( $key ) ) { $fail( 404 ); }
-		$dir = self::dir(); wp_mkdir_p( $dir ); $file = $dir . '/' . self::file_name( $key );
+		$jpg = self::wants_jpg( $key ); if ( $jpg && ! self::jpg_ok() ) { $fail( 404 ); }
+		$dir = self::dir(); wp_mkdir_p( $dir ); $file = $dir . '/' . self::file_name( $key, $jpg );
 		if ( ! file_exists( $file ) ) {
 			$fetch = function ( $url ) { $r = wp_remote_get( $url, array( 'timeout' => 5 ) ); return ( ! is_wp_error( $r ) && (int) wp_remote_retrieve_response_code( $r ) === 200 ) ? wp_remote_retrieve_body( $r ) : null; };
 			$im = self::render( $key, $fetch ); if ( ! $im ) { $fail( 404 ); }
 			/* write beside the final name, then rename into place, so a request arriving mid-write never streams a half-written PNG */
-			$tmp = $dir . '/.' . wp_generate_password( 12, false ) . '.tmp'; $ok = imagepng( $im, $tmp, 6 ); imagedestroy( $im );
+			$tmp = $dir . '/.' . wp_generate_password( 12, false ) . '.tmp'; $ok = $jpg ? imagejpeg( $im, $tmp, 90 ) : imagepng( $im, $tmp, 6 ); imagedestroy( $im );
 			if ( ! $ok || ! file_exists( $tmp ) || filesize( $tmp ) < 1000 || ! @rename( $tmp, $file ) ) { @unlink( $tmp ); $fail( 500 ); }
 		}
-		header( 'Content-Type: image/png' ); header( 'Content-Length: ' . filesize( $file ) ); header( 'Cache-Control: public, max-age=86400' ); header( 'X-Content-Type-Options: nosniff' );
+		header( 'Content-Type: ' . ( $jpg ? 'image/jpeg' : 'image/png' ) ); header( 'Content-Length: ' . filesize( $file ) ); header( 'Cache-Control: public, max-age=86400' ); header( 'X-Content-Type-Options: nosniff' );
 		readfile( $file ); exit;
 	}
 
@@ -243,11 +249,11 @@ class DBD_Card {
 		$was = DBD_Data::archived() ? DBD_Data::season() : null; $tags = array( self::stamp() );
 		foreach ( DBD_Data::archived_seasons() as $s ) { DBD_Data::use_season( $s ); $tags[] = self::stamp(); }
 		DBD_Data::use_season( $was ); $n = 0; $bytes = 0; $old = time() - 14 * DAY_IN_SECONDS;
-		foreach ( array_merge( (array) glob( $dir . '/*.png' ), (array) glob( $dir . '/.*.tmp' ) ) as $f ) {
+		foreach ( array_merge( (array) glob( $dir . '/*.png' ), (array) glob( $dir . '/*.jpg' ), (array) glob( $dir . '/.*.tmp' ) ) as $f ) {
 			if ( ! is_file( $f ) ) { continue; }
 			$b = basename( $f );
 			$arch = false; $cur = strpos( $b, $tags[0] ) !== false; foreach ( array_slice( $tags, 1 ) as $t ) { if ( strpos( $b, $t ) !== false ) { $arch = true; } }
-			$keep = ! $all && substr( $b, -4 ) === '.png' && ( $arch || ( $cur && filemtime( $f ) >= $old ) );
+			$keep = ! $all && in_array( substr( $b, -4 ), array( '.png', '.jpg' ), true ) && ( $arch || ( $cur && filemtime( $f ) >= $old ) );
 			if ( substr( $b, -4 ) === '.tmp' ) { $keep = filemtime( $f ) > time() - HOUR_IN_SECONDS; }
 			if ( $keep ) { continue; }
 			$sz = (int) filesize( $f ); if ( @unlink( $f ) ) { $n++; $bytes += $sz; }
@@ -259,7 +265,7 @@ class DBD_Card {
 	/** How many cards are cached and their size, for the admin box. */
 	public static function stats() {
 		$dir = self::dir(); $n = 0; $bytes = 0;
-		foreach ( (array) glob( $dir . '/*.png' ) as $f ) { if ( is_file( $f ) ) { $n++; $bytes += (int) filesize( $f ); } }
+		foreach ( array_merge( (array) glob( $dir . '/*.png' ), (array) glob( $dir . '/*.jpg' ) ) as $f ) { if ( is_file( $f ) ) { $n++; $bytes += (int) filesize( $f ); } }
 		return array( $n, $bytes );
 	}
 

@@ -107,8 +107,8 @@ class DBD_Pack {
 	/** A team's hashtag: its nickname without spaces (#49ers, #Commanders). */
 	public static function tag( $t ) { return '#' . preg_replace( '/[^A-Za-z0-9]/', '', self::nick( $t ) ); }
 	/** The Instagram caption: the takeaway, the bio line, then #NFL, the teams, and #FantasyFootball on the usage items; '' when no account is set. */
-	public static function ig_caption( $it ) {
-		if ( self::our_ig() === '' ) { return ''; }
+	public static function ig_caption( $it, $force = false ) {
+		if ( ! $force && self::our_ig() === '' ) { return ''; }  /* $force: the plugin's own Instagram posts (SCOPE §76) */
 		$tags = array( '#NFL' ); foreach ( (array) ( $it['teams'] ?? array() ) as $t ) { $tags[] = self::tag( $t ); } if ( ! empty( $it['ff'] ) ) { $tags[] = '#FantasyFootball'; }
 		$host = (string) preg_replace( '#^https?://(www\.)?#', '', untrailingslashit( home_url( '/' ) ) );
 		return self::fb_text( $it ) . "\n\nFull chart: link in bio (" . $host . ")\n\n" . implode( ' ', array_unique( $tags ) );
