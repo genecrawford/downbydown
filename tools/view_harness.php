@@ -417,7 +417,7 @@ if ( $view === 'packmail' ) {
 		/* Post to r/downbydown links (SCOPE §71): one per item and keys side, with ?share= on the pack's own cards; none when no subreddit is set */
 		$nk = 0; foreach ( DBD_Pack::keys( $n ) as $kg ) { $nk += count( $kg['sides'] ); }
 		$ck( 'a Post link for every item and keys side', substr_count( $h, '>Post to r/downbydown</a>' ) === count( DBD_Pack::items( $n ) ) + $nk, substr_count( $h, '>Post to r/downbydown</a>' ) . ' vs ' . ( count( DBD_Pack::items( $n ) ) + $nk ) );
-		$ck( 'the email\'s Post links carry ?share= for the pack cards', strpos( $h, 'reddit.com/r/downbydown/submit?url=' ) !== false && strpos( $h, '%3Fshare%3Dpack-week-' . $n . '-' ) !== false );
+		$ck( 'the email\'s Post links carry ?share= for the pack cards', strpos( $h, 'reddit.com/r/downbydown/submit?url=' ) !== false && strpos( $h, 'share%3Dpack-week-' . $n . '-' ) !== false );
 		$keep = $GLOBALS['dbd_opt']; $GLOBALS['dbd_opt'][ DBD_Pack::OPT_SUB ] = '';
 		$h0 = DBD_Pack_Mail::build( $n )['html'] ?? ''; $ck( 'no subreddit, no Post links', strpos( $h0, 'Post to r/' ) === false && strpos( $h0, 'reddit.com' ) === false );
 		$GLOBALS['dbd_opt'] = $keep;
@@ -577,7 +577,7 @@ if ( $view === 'admin' ) {
 		'st' => array( 'Photos and logos', 'Addresses', 'Search and sharing', 'Using it in the theme', 'value="dbd"' ),
 		'dt' => array( 'Current data', 'Sync log', 'Seasons', 'Share cards', 'value="dbd_data"', 'harness-token' ),
 		'gr' => array( 'Visits by source', 'data-g="sources"', 'Google search', 'data-g="search"', 'Titles to tune', 'data-g="tune"', 'data-g="copy"', 'Top landing pages', 'data-g="landing"', 'Brevo isn’t set up', 'data-g="shares"', 'data-g="signups"', 'analytics.google.com/analytics/web/#/p123456/', 'resource_id=https%3A%2F%2Fexample.test%2F', 'page=googlesitekit-dashboard' ) );
-	$want['sp'] = array( 'The Tuesday email', 'value="dbd_pack"', 'name="dbd_pack_mail_set[to]"', 'Brevo isn’t set up', 'Share pack', 'name="week"', 'The biggest swing', 'A usage riser', 'Best and worst offense', 'A target-share mover', 'class="button sp-cp"', 'download="dbd-week-', 'card=pack-week-', 'of 280', 'Fits: r/', 'value="dbd_pack_sub"', 'name="dbd_pack_sub"', 'Your subreddit', 'class="button sp-rd"', 'https://www.reddit.com/r/downbydown/submit?url=', '%3Fshare%3Dpack-week-', 'Post to r/downbydown' );  /* SCOPE §68, §71 */
+	$want['sp'] = array( 'The Tuesday email', 'value="dbd_pack"', 'name="dbd_pack_mail_set[to]"', 'Brevo isn’t set up', 'Share pack', 'name="week"', 'The biggest swing', 'A usage riser', 'Best and worst offense', 'A target-share mover', 'class="button sp-cp"', 'download="dbd-week-', 'card=pack-week-', 'of 280', 'Fits: r/', 'value="dbd_pack_sub"', 'name="dbd_pack_sub"', 'Your subreddit', 'class="button sp-rd"', 'https://www.reddit.com/r/downbydown/submit?url=', 'share%3Dpack-week-', 'Post to r/downbydown' );  /* SCOPE §68, §71 */
 	$want['ov'][] = 'Open Growth'; $want['ov'][] = 'data-g="ov-visits"'; $want['ov'][] = 'data-g="ov-clicks"';
 	$bad = 0; $dir = getenv( 'DBD_HARNESS_HTML' ); if ( $dir && ! is_dir( $dir ) ) { mkdir( $dir, 0777, true ); }
 	foreach ( dbd_admin_tabs() as $k => $t ) {
