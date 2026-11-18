@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.28.0
+Stable tag: 2.29.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,11 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.29.0 =
+* Post to r/downbydown (SCOPE §71): each Share pack item and every keys side gets a button that opens Reddit's new-post form for your subreddit with the title and link filled in. The Tuesday pack email carries the same links.
+* A link post shows the page's share card; for the snaps, targets and offense cards the link adds ?share=, which makes that page's preview the pack card (canonical unchanged).
+* New setting on the Share pack tab: Your subreddit (default downbydown; empty hides the buttons).
 
 = 2.28.0 =
 * The share pack by email (SCOPE §69): each new pack goes to the people who post it, Tuesday at 7:00 AM Eastern, through Brevo with one copy per person (never the subscriber list). The Share pack tab has a new box: on or off, who gets it (one address per line, up to ten), "Send the pack now", and the last sends with Try again. A failed send retries for an hour, only for the people it didn't reach.

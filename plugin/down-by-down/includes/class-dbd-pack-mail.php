@@ -115,6 +115,9 @@ class DBD_Pack_Mail {
 			return '<tr><td style="padding:0 0 10px"><div style="' . $font . ';font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:' . $MUTED . ';padding:0 0 4px">' . self::e( $lab ) . $extra . '</div>'
 				. '<div style="' . $font . ';font-size:15px;line-height:1.5;color:' . $INK . ';background:#f6f5f1;border:1px solid ' . $LINE . ';border-radius:6px;padding:10px 12px">' . self::e( $text ) . '</div></td></tr>';
 		};
+		/* Post to r/… (SCOPE §71): Reddit's new-post form, filled in, so whoever posts can do it from the email */
+		$sub = DBD_Pack::our_sub();
+		$post = function ( $title, $link ) use ( $sub, $RED ) { $u = DBD_Pack::reddit_url( $title, $link ); return $u === '' ? '' : ' · <a href="' . esc_url( $u ) . '" style="color:' . $RED . ';font-weight:600">Post to r/' . self::e( $sub ) . '</a>'; };
 		$rows = '';
 		foreach ( $items as $it ) {
 			$img = esc_url( DBD_Card::url( $it['card'] ) ); $no = DBD_Pack::NUM[ $it['k'] ] ?? 0;
@@ -123,14 +126,15 @@ class DBD_Pack_Mail {
 				. '<tr><td style="padding:0 0 14px"><a href="' . $img . '"><img src="' . $img . '" width="544" alt="' . esc_attr( $it['h'] ) . '" style="display:block;width:100%;max-width:544px;height:auto;border:1px solid ' . $LINE . '"></a></td></tr>'
 				. $block( 'Reddit title', $it['title'] ) . $block( 'Reddit comment, with the link', $it['comment'] )
 				. $block( 'X and Bluesky', $it['post'], ' <span style="font-weight:400;letter-spacing:0;text-transform:none">· ' . DBD_Pack::xlen( $it['post'] ) . ' of ' . DBD_Pack::X_MAX . '</span>' )
-				. '<tr><td style="' . $font . ';font-size:14px;color:' . $MUTED . ';padding:2px 0 0">Fits: ' . self::e( implode( ' · ', $it['fits'] ) ) . ' · <a href="' . esc_url( $it['link'] ) . '" style="color:' . $RED . ';font-weight:600">Open the page</a></td></tr></table></td></tr>';
+				. '<tr><td style="' . $font . ';font-size:14px;color:' . $MUTED . ';padding:2px 0 0">Fits: ' . self::e( implode( ' · ', $it['fits'] ) ) . ' · <a href="' . esc_url( $it['link'] ) . '" style="color:' . $RED . ';font-weight:600">Open the page</a>'
+				. $post( $it['title'], DBD_Pack::share_link( $it ) ) . '</td></tr></table></td></tr>';
 		}
 		$kh = '';
 		foreach ( $keys as $kg ) {
 			$g = $kg['g']; $lines = '';
 			foreach ( $kg['sides'] as $sd ) {
 				$lines .= '<div style="' . $font . ';font-size:14px;line-height:1.5;color:' . $INK . ';padding:6px 0 0"><span style="color:' . $MUTED . '">' . self::e( $sd['fits'] ) . '</span> · <b>' . self::e( rtrim( $sd['head'], '.' ) ) . '.</b> ' . self::e( $sd['say'] )
-					. ' <a href="' . esc_url( $sd['link'] ) . '" style="color:' . $RED . ';font-weight:600">Link</a></div>';
+					. ' <a href="' . esc_url( $sd['link'] ) . '" style="color:' . $RED . ';font-weight:600">Link</a>' . $post( $sd['title'], $sd['link'] ) . '</div>';
 			}
 			$nk = function ( $t ) { return DBD_Data::team( $t )['nick'] ?? $t; };
 			$kh .= '<div style="padding:12px 0;border-top:1px solid ' . $LINE . '"><div style="' . $font . ';font-size:15px;font-weight:700;color:' . $INK . '">' . self::e( $nk( $g['away'] ) . ' at ' . $nk( $g['home'] ) ) . '</div>' . $lines . '</div>';
@@ -145,7 +149,7 @@ class DBD_Pack_Mail {
 			. '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:#ffffff;border:1px solid ' . $LINE . '">'
 			. '<tr><td style="padding:22px 28px 16px;border-bottom:5px solid ' . $RED . '"><img src="' . esc_url( DBD_URL . 'assets/card-logo.png' ) . '" height="30" alt="Down x Down" style="display:block;height:30px"></td></tr>'
 			. '<tr><td style="padding:24px 28px 20px"><div style="' . $font . ';font-size:26px;font-weight:800;line-height:1.15;color:' . $INK . '">Week ' . (int) $n . ' share pack</div>'
-			. '<div style="' . $font . ';font-size:15px;line-height:1.55;color:#3b4255;padding-top:8px">Five things to post this week. Long-press any text to copy it; tap an image to open it full size and save it. On Reddit, post the image with the title, then the comment with the link.</div></td></tr>'
+			. '<div style="' . $font . ';font-size:15px;line-height:1.55;color:#3b4255;padding-top:8px">Five things to post this week. Long-press any text to copy it; tap an image to open it full size and save it. On Reddit, post the image with the title, then the comment with the link.' . ( $sub !== '' ? ' For r/' . self::e( $sub ) . ', each Post link opens Reddit with the title and link filled in.' : '' ) . '</div></td></tr>'
 			. $rows . $kh
 			. '<tr><td style="padding:20px 28px 28px;border-top:1px solid ' . $LINE . '"><a href="' . $admin . '" style="display:inline-block;background:' . $RED . ';color:#ffffff;' . $font . ';font-size:15px;font-weight:700;text-decoration:none;padding:12px 20px;border-radius:6px">Open the Share pack</a>'
 			. '<div style="' . $font . ';font-size:13px;color:' . $MUTED . ';padding-top:14px">Sent to the people who post for Down by Down. Change who gets it, or turn it off, on the Share pack tab.</div></td></tr>'

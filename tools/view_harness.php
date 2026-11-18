@@ -414,6 +414,13 @@ if ( $view === 'packmail' ) {
 		$ck( 'every link and image is absolute', ! $rel, implode( ' ', $rel ) );
 		$ck( 'no raw angle brackets from the data', ! preg_match( '/<(?!\/?(?:html|head|meta|title|body|table|tr|td|div|span|a|img|b)\b|!doctype)/i', $h ) );
 		$ck( 'no pack, no email', DBD_Pack_Mail::build( 99 ) === null );
+		/* Post to r/downbydown links (SCOPE §71): one per item and keys side, with ?share= on the pack's own cards; none when no subreddit is set */
+		$nk = 0; foreach ( DBD_Pack::keys( $n ) as $kg ) { $nk += count( $kg['sides'] ); }
+		$ck( 'a Post link for every item and keys side', substr_count( $h, '>Post to r/downbydown</a>' ) === count( DBD_Pack::items( $n ) ) + $nk, substr_count( $h, '>Post to r/downbydown</a>' ) . ' vs ' . ( count( DBD_Pack::items( $n ) ) + $nk ) );
+		$ck( 'the email\'s Post links carry ?share= for the pack cards', strpos( $h, 'reddit.com/r/downbydown/submit?url=' ) !== false && strpos( $h, 'share%3Dpack-week-' . $n . '-' ) !== false );
+		$keep = $GLOBALS['dbd_opt']; $GLOBALS['dbd_opt'][ DBD_Pack::OPT_SUB ] = '';
+		$h0 = DBD_Pack_Mail::build( $n )['html'] ?? ''; $ck( 'no subreddit, no Post links', strpos( $h0, 'Post to r/' ) === false && strpos( $h0, 'reddit.com' ) === false );
+		$GLOBALS['dbd_opt'] = $keep;
 		/* sending: one copy each; Erik refused, retried alone; then sent */
 		$key = DBD_Pack_Mail::key( DBD_Data::season(), $n );
 		/* a booked first send that runs more than two days after its Tuesday: old news (Greptile, PR #127) */
@@ -491,6 +498,39 @@ if ( $view === 'pack' ) {
 	$ck( isset( $by['snaps'] ) === (bool) $sr && isset( $by['targets'] ) === (bool) DBD_Pack::spec_riser( $n, 'targets' ), 'a riser card exactly when its item is there' );
 	$ck( $so && $so['rows'][0][1] >= $so['rows'][ count( $so['rows'] ) - 1 ][1], 'spec_offense(): best first' );
 	$ck( DBD_Pack::spec_riser( 99, 'snaps' ) === null && DBD_Pack::items( 99 ) === array(), 'a week that isn\'t there gives nothing' );
+	/* Post to r/downbydown (2.29.0, SCOPE §71) */
+	$ck( DBD_Pack::our_sub() === 'downbydown', 'the subreddit defaults to downbydown' );
+	foreach ( array( 'r/DownByDown' => 'DownByDown', 'https://www.reddit.com/r/downbydown/' => 'downbydown', ' down by-down! ' => 'downbydown', '' => '', 'a_very_long_name_over_twenty_one' => 'a_very_long_name_over' ) as $in => $want ) { $ck( DBD_Pack::sanitize_sub( $in ) === $want, "sanitize_sub('$in') gives '$want', got '" . DBD_Pack::sanitize_sub( $in ) . "'" ); }
+	foreach ( $items as $it ) {
+		$sl = DBD_Pack::share_link( $it ); $pack = strpos( $it['card'], 'pack-' ) === 0;
+		$ck( $pack ? $sl === $it['link'] . ( strpos( $it['link'], '?' ) === false ? '?' : '&' ) . 'share=' . $it['card'] : $sl === $it['link'], $it['k'] . ': ?share= only on the pack\'s own cards (' . $sl . ')' );
+		$u = DBD_Pack::reddit_url( $it['title'], $sl );
+		$ck( strpos( $u, 'https://www.reddit.com/r/downbydown/submit?url=' . rawurlencode( $sl ) . '&title=' ) === 0, $it['k'] . ': the Reddit address carries the link' );
+		parse_str( (string) parse_url( $u, PHP_URL_QUERY ), $q ); $ck( ( $q['title'] ?? '' ) === $it['title'] && ( $q['url'] ?? '' ) === $sl, $it['k'] . ': title and link decode back exactly' );
+	}
+	foreach ( $keys as $kg ) { foreach ( $kg['sides'] as $sd ) { parse_str( (string) parse_url( DBD_Pack::reddit_url( $sd['title'], $sd['link'] ), PHP_URL_QUERY ), $q ); $ck( ( $q['url'] ?? '' ) === $sd['link'] && ( $q['title'] ?? '' ) === $sd['title'], 'keys ' . $sd['t'] . ': its Reddit address' ); } }
+	$long = DBD_Pack::reddit_url( str_repeat( 'word ', 80 ), 'https://example.test/x/' ); parse_str( (string) parse_url( $long, PHP_URL_QUERY ), $q );
+	$ck( mb_strlen( $q['title'] ?? '' ) <= 300 && substr( $q['title'] ?? '', -3 ) === '…', 'a title over 300 is cut at a word with an ellipsis' );
+	foreach ( array( 'pack-week-10-snaps' => 'pack-week-10-snaps', 'pack-week-3-offense' => 'pack-week-3-offense', 'team-MIN' => '', 'pack-week-1-nope' => '', '<x>' => '', 'pack-week-123-snaps' => '' ) as $in => $want ) { $ck( DBD_Pack::share_key( $in ) === $want, "share_key('$in')" ); }
+	$GLOBALS['dbd_opt'] = array( DBD_Pack::OPT_SUB => '' );
+	$ck( DBD_Pack::reddit_url( 'x', 'https://example.test/' ) === '', 'no subreddit, no Reddit address' );
+	$GLOBALS['dbd_opt'] = array( DBD_Pack::OPT_SUB => 'r/Other_Sub' );
+	$ck( strpos( DBD_Pack::reddit_url( 'x', 'https://example.test/' ), 'https://www.reddit.com/r/Other_Sub/submit?' ) === 0, 'another subreddit is used as set' );
+	unset( $GLOBALS['dbd_opt'] );
+	/* a page asked for with ?share= shows that pack card as its preview; the canonical stays clean; a bad key changes nothing */
+	if ( DBD_Card::available() && isset( $by['snaps'] ) ) {
+		$head = function ( $get ) { $_GET = $get; DBD_Router::$route = DBD_Router::route(); ob_start(); DBD_Router::head(); return ob_get_clean(); };
+		$pid = $by['snaps']['card'];
+		$pl = (string) ( DBD_Pack::mover( DBD_Week::file( $n ), 'snaps' )['id'] ?? '' );
+		$plain = $head( array( 'player' => $pl ) ); $with = $head( array( 'player' => $pl, 'share' => $pid ) ); $bad2 = $head( array( 'player' => $pl, 'share' => 'team-MIN' ) );
+		$ck( $pl !== '' && strpos( $with, 'og:image" content="' ) !== false && strpos( $with, 'card=' . $pid ) !== false, 'share=: og:image is the pack card' );
+		$ck( strpos( $with, 'twitter:image" content="' ) !== false && substr_count( $with, 'card=' . $pid ) === 2, 'share=: twitter:image too' );
+		$ck( (bool) preg_match( '/og:url" content="[^"]*share=' . preg_quote( $pid, '/' ) . '"/', $with ), 'share=: og:url carries it' );
+		preg_match( '/rel="canonical" href="([^"]*)"/', $with, $c1 ); preg_match( '/rel="canonical" href="([^"]*)"/', $plain, $c2 );
+		$ck( ( $c1[1] ?? 'x' ) === ( $c2[1] ?? 'y' ) && strpos( $c1[1] ?? '', 'share' ) === false, 'share=: the canonical stays clean' );
+		$ck( $bad2 === $plain, 'a share key that isn\'t a pack card changes nothing' );
+		$_GET = array();
+	} else { echo "  (no GD or no riser: ?share= head checks skipped)\n"; }
 	echo "pack week $n: $bad problems, $warnings warnings\n"; exit( $bad || $warnings ? 1 : 0 );
 }
 if ( $view === 'admin' ) {
@@ -537,7 +577,7 @@ if ( $view === 'admin' ) {
 		'st' => array( 'Photos and logos', 'Addresses', 'Search and sharing', 'Using it in the theme', 'value="dbd"' ),
 		'dt' => array( 'Current data', 'Sync log', 'Seasons', 'Share cards', 'value="dbd_data"', 'harness-token' ),
 		'gr' => array( 'Visits by source', 'data-g="sources"', 'Google search', 'data-g="search"', 'Titles to tune', 'data-g="tune"', 'data-g="copy"', 'Top landing pages', 'data-g="landing"', 'Brevo isn’t set up', 'data-g="shares"', 'data-g="signups"', 'analytics.google.com/analytics/web/#/p123456/', 'resource_id=https%3A%2F%2Fexample.test%2F', 'page=googlesitekit-dashboard' ) );
-	$want['sp'] = array( 'The Tuesday email', 'value="dbd_pack"', 'name="dbd_pack_mail_set[to]"', 'Brevo isn’t set up', 'Share pack', 'name="week"', 'The biggest swing', 'A usage riser', 'Best and worst offense', 'A target-share mover', 'class="button sp-cp"', 'download="dbd-week-', 'card=pack-week-', 'of 280', 'Fits: r/' );  /* SCOPE §68 */
+	$want['sp'] = array( 'The Tuesday email', 'value="dbd_pack"', 'name="dbd_pack_mail_set[to]"', 'Brevo isn’t set up', 'Share pack', 'name="week"', 'The biggest swing', 'A usage riser', 'Best and worst offense', 'A target-share mover', 'class="button sp-cp"', 'download="dbd-week-', 'card=pack-week-', 'of 280', 'Fits: r/', 'value="dbd_pack_sub"', 'name="dbd_pack_sub"', 'Your subreddit', 'class="button sp-rd"', 'https://www.reddit.com/r/downbydown/submit?url=', 'share%3Dpack-week-', 'Post to r/downbydown' );  /* SCOPE §68, §71 */
 	$want['ov'][] = 'Open Growth'; $want['ov'][] = 'data-g="ov-visits"'; $want['ov'][] = 'data-g="ov-clicks"';
 	$bad = 0; $dir = getenv( 'DBD_HARNESS_HTML' ); if ( $dir && ! is_dir( $dir ) ) { mkdir( $dir, 0777, true ); }
 	foreach ( dbd_admin_tabs() as $k => $t ) {

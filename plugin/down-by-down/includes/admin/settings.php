@@ -70,6 +70,7 @@ add_action( 'admin_init', function () {
 	/* the Tuesday email (SCOPE §48): one array; a blank API key keeps the saved one */
 	register_setting( 'dbd_email', DBD_Email::OPT, array( 'type' => 'array', 'sanitize_callback' => array( 'DBD_Email', 'sanitize' ) ) );
 	register_setting( 'dbd_pack', DBD_Pack_Mail::OPT_SET, array( 'type' => 'array', 'sanitize_callback' => array( 'DBD_Pack_Mail', 'sanitize' ) ) );  /* the share pack email (SCOPE §69) */
+	register_setting( 'dbd_pack_sub', DBD_Pack::OPT_SUB, array( 'type' => 'string', 'default' => DBD_Pack::SUB_DEFAULT, 'sanitize_callback' => array( 'DBD_Pack', 'sanitize_sub' ) ) );  /* Post to r/… (SCOPE §71); its own group, so saving it leaves the email list alone */
 	/* team news (SCOPE §49): the source groups switched on; an empty save switches every source off */
 	/* team videos and highlights (SCOPE §51): on by default */
 	register_setting( 'dbd_videos', DBD_Videos::OPT_ON, array( 'type' => 'boolean', 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => true ) );
@@ -281,6 +282,8 @@ function dbd_settings_page() {
 		.dbd-admin .sp-gs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-content:start}.dbd-admin .sp-gt{grid-column:1/-1;font-size:14px}
 		.dbd-admin .sp-kh{display:flex;align-items:center;gap:6px}.dbd-admin .sp-kh span{margin-left:auto;color:#646970}
 		.dbd-admin .sp-k p{margin:6px 0 8px;line-height:1.5}
+		.dbd-admin .sp-sub{max-width:1180px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 16px}.dbd-admin .sp-sub .description{color:#646970}
+		.dbd-admin .sp-rd{border-color:#cb2026;color:#cb2026}
 		.dbd-admin .sp-kb{display:flex;flex-wrap:wrap;gap:6px}.dbd-admin .sp-kb .button{font-size:12px;min-height:26px;line-height:24px}
 		@media (max-width:1000px){.dbd-admin .sp-body,.dbd-admin .sp-g{grid-template-columns:minmax(0,1fr)}.dbd-admin .sp-gc img{max-width:360px}}
 		@media (max-width:640px){.dbd-admin .sp-gs{grid-template-columns:minmax(0,1fr)}.dbd-admin .sp-body{padding:12px}.dbd-admin .sp-keys{padding:0 12px}}
@@ -460,6 +463,23 @@ function dbd_pack_mail_box( $n ) {
 	<?php
 }
 
+/** Your subreddit (SCOPE §71). Shown before Week 1 too (Greptile, PR #130). The box takes a pasted address or r/name; sanitize_sub() keeps the name, up to 21. */
+function dbd_pack_sub_form() {
+	$sub = DBD_Pack::our_sub();
+	?>
+	<form method="post" action="options.php" class="sp-sub"><?php settings_fields( 'dbd_pack_sub' ); ?>
+		<label for="dbd-pack-sub">Your subreddit</label> r/<input id="dbd-pack-sub" name="<?php echo esc_attr( DBD_Pack::OPT_SUB ); ?>" value="<?php echo esc_attr( $sub ); ?>" maxlength="200" class="regular-text" style="width:180px">
+		<?php submit_button( 'Save', 'secondary', 'submit', false ); ?><span class="description"><?php echo esc_html( $sub !== '' ? 'Each item’s Post button opens Reddit’s new-post form for r/' . $sub . ', filled in. Clear it to hide the buttons.' : 'Set one to get a Post button on each item.' ); ?></span>
+	</form>
+	<?php
+}
+
+/** The Post to r/… button (SCOPE §71): Reddit's new-post form in a new tab, title and link filled in. Nothing when no subreddit is set. */
+function dbd_pack_reddit( $title, $link ) {
+	$u = DBD_Pack::reddit_url( $title, $link ); if ( $u === '' ) { return ''; }
+	return '<a class="button sp-rd" href="' . esc_url( $u ) . '" target="_blank" rel="noopener">' . esc_html( 'Post to r/' . DBD_Pack::our_sub() ) . '</a>';
+}
+
 /** One text with its Copy button; X and Bluesky shows its length against 280. */
 function dbd_pack_field( $lab, $text, $count = false ) {
 	$n = $count ? DBD_Pack::xlen( $text ) : 0;
@@ -469,11 +489,12 @@ function dbd_pack_field( $lab, $text, $count = false ) {
 
 function dbd_tab_share() {
 	$weeks = DBD_Pack::weeks();
-	if ( ! $weeks ) { dbd_pack_mail_box( 0 ); echo '<div class="dbd-box"><h2>Share pack</h2><p class="dbd-in" style="padding:12px 16px;margin:0">The pack starts after Week 1’s games are all in.</p></div>'; return; }  /* the email's settings show before Week 1 too (Greptile, PR #127) */
+	if ( ! $weeks ) { dbd_pack_mail_box( 0 ); dbd_pack_sub_form(); echo '<div class="dbd-box"><h2>Share pack</h2><p class="dbd-in" style="padding:12px 16px;margin:0">The pack starts after Week 1’s games are all in.</p></div>'; return; }  /* the email's settings show before Week 1 too (Greptile, PR #127) */
 	$want = (int) ( $_GET['week'] ?? 0 ); $n = in_array( $want, $weeks, true ) ? $want : $weeks[0];
 	$items = DBD_Pack::items( $n ); $keys = DBD_Pack::keys( $n );
 	$tue = DBD_Post::tuesday( $n );
 	dbd_pack_mail_box( $n );
+	dbd_pack_sub_form();
 	?>
 	<div class="sp-head">
 		<form method="get" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>"><input type="hidden" name="page" value="down-by-down-share">
@@ -486,7 +507,8 @@ function dbd_tab_share() {
 		$i = DBD_Pack::NUM[ $it['k'] ] ?? 0; $img = DBD_Card::url( $it['card'] );
 		echo '<div class="dbd-box sp-item" data-k="' . esc_attr( $it['k'] ) . '"><h2><span>' . (int) $i . '. ' . esc_html( $it['h'] ) . '</span><small>' . esc_html( $it['why'] ) . '</small></h2><div class="sp-body">'
 			. '<div class="sp-l"><div class="sp-card"><img src="' . esc_url( $img ) . '" width="1200" height="630" alt="" loading="lazy"></div>'
-			. '<div class="sp-acts"><a class="button button-primary" href="' . esc_url( $img ) . '" download="' . esc_attr( $it['file'] ) . '">Download image</a><a class="button" href="' . esc_url( $it['link'] ) . '" target="_blank" rel="noopener">Open the page</a></div>'
+			. '<div class="sp-acts"><a class="button button-primary" href="' . esc_url( $img ) . '" download="' . esc_attr( $it['file'] ) . '">Download image</a><a class="button" href="' . esc_url( $it['link'] ) . '" target="_blank" rel="noopener">Open the page</a>'
+			. dbd_pack_reddit( $it['title'], DBD_Pack::share_link( $it ) ) . '</div>'
 			. '<p class="sp-fits">Fits: ' . esc_html( implode( ' · ', $it['fits'] ) ) . '</p></div>'
 			. '<div class="sp-r">' . dbd_pack_field( 'Reddit title', $it['title'] ) . dbd_pack_field( 'Reddit comment, with the link', $it['comment'] ) . dbd_pack_field( 'X and Bluesky', $it['post'], true ) . '</div></div></div>';
 	}
@@ -502,7 +524,7 @@ function dbd_tab_share() {
 					. '<p><b>' . esc_html( rtrim( $sd['head'], '.' ) ) . '.</b> ' . esc_html( $sd['say'] ) . '</p><div class="sp-kb">'
 					. '<button type="button" class="button sp-cp" data-t="' . esc_attr( $sd['title'] ) . '">Copy title</button>'
 					. '<button type="button" class="button sp-cp" data-t="' . esc_attr( $sd['comment'] ) . '">Copy comment</button>'
-					. '<button type="button" class="button sp-cp" data-t="' . esc_attr( $sd['post'] ) . '">Copy for X and Bluesky</button></div></div>';
+					. '<button type="button" class="button sp-cp" data-t="' . esc_attr( $sd['post'] ) . '">Copy for X and Bluesky</button>' . dbd_pack_reddit( $sd['title'], $sd['link'] ) . '</div></div>';
 			}
 			echo '</div></div>';
 		}
