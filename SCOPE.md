@@ -3103,13 +3103,13 @@ Everything after the downloads is unchanged: commit only when the data changed, 
 
 **Tests:** the harness checks the five leaders against the box score for the newest week (the top passing yards, rushing yards, receiving yards, touchdowns and team defense), the card and its square draw (CI renders both, with and without logos), the texts' lengths and links, the item's place in the fixed order, and the email's count.
 
-## 76. Instagram posts itself (scoped and mocked 2026-11-18, `mockup-v50/`)
+## 76. Instagram posts itself (scoped and mocked 2026-11-18, `mockup-v50/`; decided)
 
 **Why:** Instagram is the one place a link can't fill in a post (§73), so every week Gene downloads squares and pastes captions by hand. Meta's posting API (Instagram API with Instagram Login, `instagram_business_content_publish`) lets the plugin publish for the account it's connected to; for your own account the app needs no Meta review. Gene: "How can we automate the IG stuff?"
 
 **What it does:**
 
-1. **One carousel a week.** Tuesday at 9:00 AM Eastern (two hours after the pack email, so Gene and Erik see the week first), the plugin posts one carousel to @down_by_down: the five item squares in pack order (swing, usage riser, best and worst offense, target-share mover, week leaders), with one caption. A carousel counts as one post. Keys to the game stay manual (26 a week is too many for one account's feed).
+1. **A carousel on Tuesday, and a second on Thursday (see Decisions).** Tuesday at 9:00 AM Eastern (two hours after the pack email, so Gene and Erik see the week first), the plugin posts one carousel to @down_by_down: the five item squares in pack order (swing, usage riser, best and worst offense, target-share mover, week leaders), with one caption. A carousel counts as one post. The per-side keys squares stay manual; Thursday's carousel covers the keys one game per slide.
 2. **The caption:** "Week 10 in five charts:" then one short line per slide (the item's short takeaway), a blank line, "Full charts: link in bio (downbydown.com)", a blank line, and hashtags (#NFL, #FantasyFootball, and the teams in the slides, no more than 15). Under Instagram's 2,200 characters.
 3. **JPEG copies of the squares.** The API takes JPEG only. A square asked for with `&fmt=jpg` is served as a JPEG (quality 90), cached beside the PNG and pruned with it. Instagram fetches each image from its public address.
 4. **Publishing, the way Meta asks:** a container per square (`is_carousel_item=true`), a carousel container (`media_type=CAROUSEL`, `children`), then `media_publish`; when publish doesn't return an id, check the container's `status_code` once a minute for up to five minutes. Retries like the Tuesday email (every 10 minutes, 7 tries); after the last, an email note to the test address and **Try again** on the tab. A week more than two days past its Tuesday is skipped, as with the email. A week is posted once (`dbd_ig_post` keeps season-week → state and the media id).
@@ -3121,8 +3121,11 @@ Everything after the downloads is unchanged: commit only when the data changed, 
 2. At developers.facebook.com, create an app, add the **Instagram** product, and choose **API setup with Instagram login**.
 3. Under **Generate access tokens**, add @down_by_down, accept the tester invite in Instagram (Settings → Website permissions → Apps and websites), then **Generate token** and paste it into the plugin.
 
-**Decisions:**
-1. **One carousel a week** (recommend: the account is new and Instagram flagged it once), or one item a day, Tuesday to Saturday?
-2. **Tuesday 9:00 AM Eastern**, or another time?
+**Decisions (Gene, 2026-11-18): weekly carousels, and "both … do all of them":**
+1. **Carousels, not daily posts.**
+2. **Two a week:**
+   - **Tuesday 9:00 AM Eastern: the week in review**, the five item squares as above.
+   - **Thursday 9:00 AM Eastern: keys to the coming week, every game.** One slide per game (13 in Week 11; Instagram allows 20), in kickoff order. Each slide is a new square, `ig-week-N-game-{game id}`: the headline "Week 11 keys: Colts at Texans", the line "Thursday 8:15 PM ET", and the game's card (which already shows both offenses' edges). Caption: "Week 11 keys to the game, every matchup:" then one line per game with both edges in a few words ("Colts at Texans: Colts red zone TDs; Texans wideouts"), the bio line, and #NFL plus #NFLWeek11. If a week has more than 20 games (never in the regular season), the first 20 by kickoff.
+   - Both carousels run on the same booking, retries, late-skip, Try again and Post now as above, each with its own state (`dbd_ig_post` keys `season-wN-review` and `season-wN-keys`), and both show on the status line.
 
-**Tests:** the harness builds the carousel's caption and order for the newest week (five slides, the bio line, at most 15 hashtags, under 2,200), checks the JPEG square is 1080×1080 JPEG, runs the publish flow against a fake API (containers, carousel, publish; a missing id answered by status polling; an error retried; a late week skipped; a week posted once), the token refresh (a good refresh saves the new expiry; a failed one raises the warning), and the tab's new strings.
+**Tests:** the harness builds both carousels' captions and orders for the newest week (Thursday: one slide per game in kickoff order, at most 20), (five slides, the bio line, at most 15 hashtags, under 2,200), checks the JPEG square is 1080×1080 JPEG, runs the publish flow against a fake API (containers, carousel, publish; a missing id answered by status polling; an error retried; a late week skipped; a week posted once), the token refresh (a good refresh saves the new expiry; a failed one raises the warning), and the tab's new strings.
