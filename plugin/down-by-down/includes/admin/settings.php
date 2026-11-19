@@ -91,10 +91,7 @@ function dbd_pack_settings_save( $p ) {
 		update_option( $o, call_user_func( array( 'DBD_Pack', $fn ), is_scalar( $p[ $o ] ?? '' ) ? (string) ( $p[ $o ] ?? '' ) : '' ) );
 	}
 	/* Instagram posting (SCOPE §76): the switch, a new token checked against the API, or disconnecting */
-	update_option( DBD_Instagram::OPT_SET, DBD_Instagram::sanitize( is_array( $p[ DBD_Instagram::OPT_SET ] ?? null ) ? $p[ DBD_Instagram::OPT_SET ] : array() ) );
-	$ierr = '';
-	if ( ! empty( $p['dbd_ig_disconnect'] ) ) { DBD_Instagram::disconnect(); }
-	elseif ( is_scalar( $p['dbd_ig_token_new'] ?? null ) && trim( (string) $p['dbd_ig_token_new'] ) !== '' ) { $ierr = DBD_Instagram::connect( (string) $p['dbd_ig_token_new'] ); }
+	$ierr = DBD_Instagram::save( $p );
 	$w = (int) ( $p['week'] ?? 0 );
 	return add_query_arg( array_filter( array( 'page' => 'down-by-down-share', 'week' => $w ?: null, 'pack' => $ierr === '' ? 'saved' : 'saveerr', 'pack_err' => $ierr === '' ? null : rawurlencode( 'Settings saved, but ' . lcfirst( $ierr ) ) ) ), admin_url( 'admin.php' ) ) . '#dbd-pack-settings';
 }
@@ -510,14 +507,20 @@ function dbd_pack_settings_box( $n ) {
 			<span></span><p class="description" style="margin:0">Clear an account to hide its button.</p>
 			<div class="sp-sh">Instagram posting</div>
 			<span>Post it</span><div><label><input type="checkbox" name="<?php echo esc_attr( DBD_Instagram::OPT_SET ); ?>[on]" value="1"<?php echo DBD_Instagram::settings()['on'] ? ' checked' : ''; ?>> Post the carousel on Tuesday, then one item a day Wednesday to Sunday, 9:00 AM Eastern</label></div>
+			<label for="dbd-ig-acc">Instagram account ID</label><div><input type="text" id="dbd-ig-acc" name="<?php echo esc_attr( DBD_Instagram::OPT_SET ); ?>[account]" value="<?php echo esc_attr( DBD_Instagram::settings()['account'] ); ?>" inputmode="numeric" autocomplete="off" style="width:220px;max-width:100%"><p class="description" style="margin:4px 0 0">The number under the account in your Meta app. Needed for a token that starts EAA.</p></div>
 			<label for="dbd-ig-token">Access token</label><div><input type="password" id="dbd-ig-token" name="dbd_ig_token_new" value="" autocomplete="off" placeholder="<?php echo esc_attr( DBD_Instagram::token() ? 'Paste a new token to replace it' : 'Paste the token from your Meta app' ); ?>" style="width:420px;max-width:100%">
 				<?php $it = DBD_Instagram::token();
 				if ( $it ) {
-					echo '<p class="description">' . ( DBD_Instagram::connected() ? '<span class="dbd-dot ok"></span>Connected as @' . esc_html( $it['username'] !== '' ? $it['username'] : $it['user_id'] ) . '. Good until ' . esc_html( wp_date( 'M j, Y', (int) $it['expires'] ) ) . '; renewed every week.' : '<span class="dbd-dot bad"></span>The token ran out on ' . esc_html( wp_date( 'M j', (int) $it['expires'] ) ) . '. Paste a new one.' )
+					$who = '@' . esc_html( $it['username'] !== '' ? $it['username'] : $it['user_id'] );
+					if ( DBD_Instagram::lasting( $it ) ) {  /* a Unified-login token never runs out; it's checked every week (2.34.1) */
+						echo '<p class="description">' . ( empty( $it['err'] ) ? '<span class="dbd-dot ok"></span>Connected as ' . $who . '. This token doesn’t run out; it’s checked every week.' : '<span class="dbd-dot bad"></span>Connected as ' . $who . ', but Instagram stopped taking the token: ' . esc_html( $it['err'] ) . ' Paste a new one.' ) . '</p>';
+					} else {
+					echo '<p class="description">' . ( DBD_Instagram::connected() ? '<span class="dbd-dot ok"></span>Connected as ' . $who . '. Good until ' . esc_html( wp_date( 'M j, Y', (int) $it['expires'] ) ) . '; renewed every week.' : '<span class="dbd-dot bad"></span>The token ran out on ' . esc_html( wp_date( 'M j', (int) $it['expires'] ) ) . '. Paste a new one.' )
 						. ( ! empty( $it['err'] ) ? ' <br><span class="dbd-dot warn"></span>The last renewal failed: ' . esc_html( $it['err'] ) : '' ) . '</p>';
+					}
 					echo '<label class="description" style="display:block;margin-top:4px"><input type="checkbox" name="dbd_ig_disconnect" value="1"> Disconnect (forget the token)</label>';
 				} else {
-					echo '<p class="description">In your Meta app (Instagram, API setup with Instagram login), add @' . esc_html( DBD_Pack::our_ig() !== '' ? DBD_Pack::our_ig() : 'your account' ) . ' as a tester, then Generate token and paste it here. It’s checked when you save, and never shown again.</p>';
+					echo '<p class="description">In your Meta app (Instagram, API setup with Unified login), make a configuration with @' . esc_html( DBD_Pack::our_ig() !== '' ? DBD_Pack::our_ig() : 'your account' ) . ', then Generate token and paste it here. It’s checked when you save, and never shown again.</p>';
 				} ?></div>
 		</div>
 		<div class="dbd-foot"><button class="button button-primary">Save settings</button></div>
