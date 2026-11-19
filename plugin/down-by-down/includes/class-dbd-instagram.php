@@ -10,6 +10,9 @@
  *   - A failed post retries every 10 minutes, 7 tries; then a note to the test address and Try again on the Share pack tab.
  *   - The token (pasted once on the Share pack tab) lasts 60 days; it's renewed every week, and a failed renewal shows on the tab
  *     and the Overview.
+ *   - 2.34.1 (SCOPE §77): new Meta apps only get "API setup with Unified login", whose system-user token starts EAA, goes to
+ *     graph.facebook.com, posts as an Instagram account ID set beside it, and never runs out. That kind is checked every week
+ *     instead of renewed, and warned about only when Instagram stops taking it. An IG… token still works as before.
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
@@ -21,6 +24,7 @@ class DBD_Instagram {
 	const HOOK      = 'dbd_ig_send';
 	const HOOK_REFRESH = 'dbd_ig_refresh';
 	const API       = 'https://graph.instagram.com/';
+	const API_FB    = 'https://graph.facebook.com/';  /* Unified login's EAA… tokens (2.34.1) */
 	const VER       = 'v24.0';
 	const LATE      = 86400;          /* more than a day past its slot, a post is skipped */
 	const TRIES     = 7;
@@ -51,17 +55,23 @@ class DBD_Instagram {
 
 	/* ------------------------------------------------------------------ settings and the connection */
 
-	public static function settings() { $o = get_option( self::OPT_SET, null ); return array( 'on' => is_array( $o ) ? ! empty( $o['on'] ) : true ); }
-	public static function sanitize( $v ) { return array( 'on' => is_array( $v ) && ! empty( $v['on'] ) ); }
+	public static function settings() { $o = get_option( self::OPT_SET, null ); return array( 'on' => is_array( $o ) ? ! empty( $o['on'] ) : true, 'account' => is_array( $o ) ? self::clean_account( $o['account'] ?? '' ) : '' ); }
+	public static function sanitize( $v ) { return array( 'on' => is_array( $v ) && ! empty( $v['on'] ), 'account' => self::clean_account( is_array( $v ) ? ( $v['account'] ?? '' ) : '' ) ); }
+	/** The Instagram account ID a Unified-login token posts as: digits only. */
+	public static function clean_account( $v ) { return is_scalar( $v ) ? (string) preg_replace( '/\D/', '', (string) $v ) : ''; }
+	/** Which kind a token is: 'fb' for Unified login's EAA… (graph.facebook.com, never runs out), 'ig' for Instagram login's. */
+	public static function kind( $token ) { return strpos( (string) $token, 'EAA' ) === 0 ? 'fb' : 'ig'; }
 	/** The kept connection, or null: array( token, user_id, username, expires, checked, err ). */
 	public static function token() { $t = get_option( self::OPT_TOKEN, null ); return is_array( $t ) && ! empty( $t['token'] ) ? $t : null; }
-	public static function connected() { $t = self::token(); return $t && ! empty( $t['user_id'] ) && (int) ( $t['expires'] ?? 0 ) > time(); }
+	/** Never runs out: a Unified-login token, kept with expires 0. */
+	public static function lasting( $t = null ) { $t = $t ?? self::token(); return $t && (int) ( $t['expires'] ?? 0 ) === 0; }
+	public static function connected() { $t = self::token(); return $t && ! empty( $t['user_id'] ) && ( self::lasting( $t ) || (int) ( $t['expires'] ?? 0 ) > time() ); }
 	public static function on() { return self::settings()['on'] && self::connected() && DBD_Card::jpg_ok(); }
 
 	/** One call to the API: array( HTTP code, JSON, error text ('' when fine) ). GETs carry their fields in the address, POSTs in the body. */
 	public static function api( $method, $path, $args = array(), $token = null, $versioned = true ) {
 		$args['access_token'] = (string) ( $token ?? ( self::token()['token'] ?? '' ) );
-		$url = self::API . ( $versioned ? self::VER . '/' : '' ) . ltrim( $path, '/' );
+		$url = ( self::kind( $args['access_token'] ) === 'fb' ? self::API_FB : self::API ) . ( $versioned ? self::VER . '/' : '' ) . ltrim( $path, '/' );
 		$req = array( 'method' => $method, 'timeout' => 30 );
 		if ( $method === 'GET' ) { $url = add_query_arg( array_map( 'rawurlencode', $args ), $url ); } else { $req['body'] = $args; }
 		$r = wp_remote_request( $url, $req );
@@ -71,9 +81,22 @@ class DBD_Instagram {
 		return array( $code, $j, $err );
 	}
 
-	/** A pasted token: checked against the API (who it is), then kept. Returns '' or what went wrong. */
-	public static function connect( $token ) {
+	/**
+	 * A pasted token: checked against the API (who it is), then kept. Returns '' or what went wrong. A Unified-login (EAA…) token is checked
+	 * with the Instagram account ID from the settings (or $account) and kept as never running out.
+	 */
+	public static function connect( $token, $account = null ) {
 		$token = trim( (string) $token ); if ( $token === '' ) { return ''; }
+		if ( self::kind( $token ) === 'fb' ) {
+			$acc = self::clean_account( $account ?? self::settings()['account'] );
+			if ( $acc === '' ) { return 'That token needs the Instagram account ID beside it (the number under the account in your Meta app).'; }
+			list( , $j, $err ) = self::api( 'GET', $acc, array( 'fields' => 'id,username' ), $token );
+			if ( $err !== '' ) { return 'That token didn’t work with account ' . $acc . '. ' . $err; }
+			if ( (string) ( $j['id'] ?? '' ) === '' ) { return 'Instagram didn’t recognize account ' . $acc . '.'; }
+			update_option( self::OPT_TOKEN, array( 'token' => $token, 'user_id' => $acc, 'username' => (string) ( $j['username'] ?? '' ), 'expires' => 0, 'checked' => time(), 'err' => '' ), false );
+			self::keep_refreshing();
+			return '';
+		}
 		list( , $j, $err ) = self::api( 'GET', 'me', array( 'fields' => 'user_id,username' ), $token );
 		if ( $err !== '' ) { return 'That token didn’t work. ' . $err; }
 		$uid = (string) ( $j['user_id'] ?? $j['id'] ?? '' ); if ( $uid === '' ) { return 'Instagram didn’t say which account that token is for.'; }
@@ -83,9 +106,18 @@ class DBD_Instagram {
 	}
 	public static function disconnect() { delete_option( self::OPT_TOKEN ); wp_clear_scheduled_hook( self::HOOK_REFRESH ); }
 
-	/** The weekly renewal: a fresh 60 days. A failure is kept on the connection, and the tab and the Overview say so. */
+	/**
+	 * The weekly renewal: a fresh 60 days. A failure is kept on the connection, and the tab and the Overview say so.
+	 * A token that never runs out is checked instead (does Instagram still take it?), the answer kept the same way.
+	 */
 	public static function refresh() {
 		$t = self::token(); if ( ! $t ) { return false; }
+		if ( self::lasting( $t ) ) {
+			list( , $j, $err ) = self::api( 'GET', (string) $t['user_id'], array( 'fields' => 'id,username' ), $t['token'] );
+			$t['err'] = $err === '' && ! empty( $j['id'] ) ? '' : ( $err !== '' ? $err : 'Instagram didn’t answer for the account.' ); $t['checked'] = time();
+			if ( $t['err'] === '' && ! empty( $j['username'] ) ) { $t['username'] = (string) $j['username']; }
+			update_option( self::OPT_TOKEN, $t, false ); return $t['err'] === '';
+		}
 		list( , $j, $err ) = self::api( 'GET', 'refresh_access_token', array( 'grant_type' => 'ig_refresh_token' ), $t['token'], false );
 		if ( $err === '' && ! empty( $j['access_token'] ) ) {
 			$t = array_merge( $t, array( 'token' => (string) $j['access_token'], 'expires' => time() + (int) ( $j['expires_in'] ?? self::LIFE ), 'checked' => time(), 'err' => '' ) );
@@ -98,6 +130,7 @@ class DBD_Instagram {
 	public static function warning() {
 		$t = self::token(); if ( ! $t ) { return ''; }
 		if ( ! DBD_Card::jpg_ok() ) { return 'This server’s PHP can’t make JPEG images, which Instagram needs, so nothing posts. Ask the host to turn on JPEG in GD.'; }  /* Greptile, PR #144 */
+		if ( self::lasting( $t ) ) { return ! empty( $t['err'] ) ? 'Instagram stopped taking the token (' . $t['err'] . '). Paste a new one on the Share pack tab.' : ''; }
 		$left = (int) ( $t['expires'] ?? 0 ) - time();
 		if ( $left <= 0 ) { return 'The Instagram token ran out. Paste a new one on the Share pack tab.'; }
 		if ( ! empty( $t['err'] ) ) { return 'The Instagram token didn’t renew (' . $t['err'] . '). It runs out ' . wp_date( 'M j', (int) $t['expires'] ) . '.'; }

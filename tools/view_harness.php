@@ -377,7 +377,7 @@ if ( $view === 'igpost' ) {
 	$now0 = time();
 	$GLOBALS['dbd_opt'] = array( 'dbd_email' => array( 'on' => true, 'key' => 'k', 'list' => 3, 'tpl' => 5, 'test' => 'gene@example.test' ),
 		'dbd_ig_token' => array( 'token' => 'tok', 'user_id' => '178', 'username' => 'down_by_down', 'expires' => $now0 + 50 * 86400, 'checked' => $now0, 'err' => '' ) );
-	$GLOBALS['hcalls'] = array(); $GLOBALS['hmail'] = array(); $GLOBALS['ig'] = array( 'status' => array(), 'failpub' => false, 'n' => 0, 'refresh' => 'ok' );
+	$GLOBALS['hcalls'] = array(); $GLOBALS['hmail'] = array(); $GLOBALS['ig'] = array( 'status' => array(), 'failpub' => false, 'n' => 0, 'refresh' => 'ok', 'fbcheck' => 'ok' );
 	foreach ( array(
 		'is_email' => function ( $e ) { return (bool) filter_var( $e, FILTER_VALIDATE_EMAIL ); },
 		'admin_url' => function ( $p = '' ) { return 'https://example.test/wp-admin/' . $p; },
@@ -387,10 +387,11 @@ if ( $view === 'igpost' ) {
 		'wp_clear_scheduled_hook' => function () { return 0; },
 		'wp_remote_request' => function ( $url, $a ) {
 			$u = parse_url( $url ); parse_str( (string) ( $u['query'] ?? '' ), $q ); $b = (array) ( $a['body'] ?? array() ); $path = preg_replace( '#^/(v\d+\.\d+/)?#', '', $u['path'] );
-			$GLOBALS['hcalls'][] = array( $a['method'], $path, $a['method'] === 'GET' ? $q : $b );
+			$GLOBALS['hcalls'][] = array( $a['method'], $path, $a['method'] === 'GET' ? $q : $b, (string) ( $u['host'] ?? '' ) );
 			$ok = function ( $j ) { return array( 'response' => array( 'code' => 200 ), 'body' => json_encode( $j ) ); };
 			$no = function ( $m ) { return array( 'response' => array( 'code' => 400 ), 'body' => json_encode( array( 'error' => array( 'message' => $m ) ) ) ); };
 			$tok = $a['method'] === 'GET' ? ( $q['access_token'] ?? '' ) : ( $b['access_token'] ?? '' );
+			if ( ( $q['fields'] ?? '' ) === 'id,username' ) { return ( $tok === 'EAAbad' || $GLOBALS['ig']['fbcheck'] === 'no' ) ? $no( 'Error validating access token: the session has been invalidated' ) : ( $path === '404' ? $no( 'Unsupported get request' ) : $ok( array( 'id' => $path, 'username' => 'down_by_down' ) ) ); }  /* Unified login's account check (2.34.1) */
 			if ( $path === 'me' ) { return $tok === 'bad' ? $no( 'Invalid OAuth access token' ) : $ok( array( 'user_id' => '178', 'username' => 'down_by_down', 'id' => '99' ) ); }
 			if ( $path === 'refresh_access_token' ) { return $GLOBALS['ig']['refresh'] === 'ok' ? $ok( array( 'access_token' => 'tok2', 'token_type' => 'bearer', 'expires_in' => 5184000 ) ) : $no( 'Session has expired' ); }
 			if ( $path === '178/media' ) { $GLOBALS['ig']['n']++; return $ok( array( 'id' => ( ( $b['media_type'] ?? '' ) === 'CAROUSEL' ? 'car' : 'c' ) . $GLOBALS['ig']['n'] ) ); }
@@ -474,6 +475,23 @@ if ( $view === 'igpost' ) {
 		$GLOBALS['ig']['refresh'] = 'no'; $ck( 'a failed renewal is kept and warned about', ! DBD_Instagram::refresh() && DBD_Instagram::token()['err'] !== '' && strpos( DBD_Instagram::warning(), 'The Instagram token didn’t renew' ) === 0, DBD_Instagram::warning() );
 		$GLOBALS['dbd_opt']['dbd_ig_token']['expires'] = time() - 10; $ck( 'a token that ran out: not connected, nothing posts', ! DBD_Instagram::connected() && ! DBD_Instagram::on() && strpos( DBD_Instagram::warning(), 'ran out' ) !== false );
 		DBD_Instagram::disconnect(); $ck( 'disconnect forgets it', DBD_Instagram::token() === null && DBD_Instagram::warning() === '' );
+		/* Unified login (2.34.1, SCOPE §77): an EAA… token goes to graph.facebook.com with the account ID, never runs out, and is checked weekly */
+		$ck( 'the token kinds', DBD_Instagram::kind( 'EAAxyz' ) === 'fb' && DBD_Instagram::kind( 'IGAAxyz' ) === 'ig' && DBD_Instagram::kind( 'tok' ) === 'ig' );
+		$ck( 'the account ID keeps digits only', DBD_Instagram::sanitize( array( 'on' => '1', 'account' => ' 1784-1433 054101334 ' ) ) === array( 'on' => true, 'account' => '17841433054101334' ) );
+		$ck( 'an EAA token without an account ID isn’t kept', strpos( DBD_Instagram::connect( 'EAAgood' ), 'That token needs the Instagram account ID' ) === 0 && DBD_Instagram::token() === null );
+		$GLOBALS['hcalls'] = array(); $GLOBALS['dbd_opt']['dbd_ig_set'] = array( 'on' => true, 'account' => '178' );
+		$ck( 'an EAA token that Instagram turns down isn’t kept', strpos( DBD_Instagram::connect( 'EAAbad' ), 'That token didn’t work with account 178. Instagram answered 400' ) === 0 && DBD_Instagram::token() === null );
+		$ck( 'an unknown account isn’t kept', strpos( DBD_Instagram::connect( 'EAAgood', '404' ), 'That token didn’t work with account 404.' ) === 0 && DBD_Instagram::token() === null );
+		$GLOBALS['hcalls'] = array(); $c = DBD_Instagram::connect( ' EAAgood ' ); $tk = DBD_Instagram::token();
+		$ck( 'an EAA token is kept with its account, never running out', $c === '' && $tk['token'] === 'EAAgood' && $tk['user_id'] === '178' && $tk['username'] === 'down_by_down' && $tk['expires'] === 0 && DBD_Instagram::lasting() && DBD_Instagram::connected() && DBD_Instagram::warning() === '', $c . json_encode( $tk ) );
+		$ck( 'it was checked on graph.facebook.com', ( $GLOBALS['hcalls'][0][3] ?? '' ) === 'graph.facebook.com' && $GLOBALS['hcalls'][0][1] === '178', json_encode( $GLOBALS['hcalls'] ) );
+		$GLOBALS['hcalls'] = array(); DBD_Instagram::api( 'POST', '178/media', array( 'image_url' => 'x' ) );
+		$ck( 'its posts go to graph.facebook.com', ( $GLOBALS['hcalls'][0][3] ?? '' ) === 'graph.facebook.com' && $GLOBALS['hcalls'][0][1] === '178/media' );
+		$GLOBALS['hcalls'] = array(); $ck( 'the weekly check isn’t a renewal', DBD_Instagram::refresh() && ! $calls( 'GET', 'refresh_access_token' ) && DBD_Instagram::token()['token'] === 'EAAgood' && DBD_Instagram::token()['expires'] === 0 );
+		$GLOBALS['ig']['fbcheck'] = 'no'; $ck( 'a failed check is warned about, and it still counts as connected', ! DBD_Instagram::refresh() && strpos( DBD_Instagram::warning(), 'Instagram stopped taking the token' ) === 0 && DBD_Instagram::connected(), DBD_Instagram::warning() );
+		$GLOBALS['ig']['fbcheck'] = 'ok'; $ck( 'a passing check clears the warning', DBD_Instagram::refresh() && DBD_Instagram::warning() === '' );
+		$GLOBALS['hcalls'] = array(); DBD_Instagram::api( 'GET', 'me', array(), 'IGAAx' ); $ck( 'an IG token still goes to graph.instagram.com', ( $GLOBALS['hcalls'][0][3] ?? '' ) === 'graph.instagram.com' );
+		DBD_Instagram::disconnect(); $GLOBALS['dbd_opt']['dbd_ig_set'] = array( 'on' => true );
 		/* the JPEG square */
 		$ck( 'a square asks for JPEG with &fmt=jpg', strpos( DBD_Card::jpg_url( 'ig-week-' . $n . '-swing' ), 'card=ig-week-' . $n . '-swing' ) !== false && substr( DBD_Card::jpg_url( 'ig-week-' . $n . '-swing' ), -8 ) === '&fmt=jpg' );
 		$_GET = array( 'fmt' => 'jpg' ); $ck( 'only the squares come as JPEG', DBD_Card::wants_jpg( 'ig-week-' . $n . '-swing' ) && ! DBD_Card::wants_jpg( 'pack-week-' . $n . '-snaps' ) ); $_GET = array();
@@ -769,7 +787,7 @@ if ( $view === 'admin' ) {
 		'class="button sp-x" aria-label="Post on X"', 'https://x.com/intent/post?text=', 'class="button sp-bs" aria-label="Post on Bluesky"', 'https://bsky.app/intent/compose?text=',
 		'class="button sp-fb"', 'sharer.php?u=', '>Facebook</a>', 'class="button sp-cp sp-ig"', '>Instagram</button>', 'aria-label="Download square for Instagram">Square</a>',
 		'<details class="dbd-box sp-set" id="dbd-pack-settings"', 'Settings: the Tuesday email, your accounts and Instagram posting', 'value="dbd_pack_settings"', 'name="dbd_pack_mail_set[on]"', 'name="dbd_pack_mail_set[to]"', 'Brevo isn’t set up',
-		'name="dbd_pack_sub"', 'name="dbd_pack_x"', 'name="dbd_pack_bsky"', 'name="dbd_pack_fb"', 'name="dbd_pack_ig"', 'Open the group', 'Save settings', 'id="dbd-pack-settings"><summary>', 'Instagram posting', 'name="dbd_ig_set[on]"', 'name="dbd_ig_token_new"', 'Paste the token from your Meta app', 'Instagram isn’t connected yet.' );  /* SCOPE §68, §71–74; the settings box starts closed */
+		'name="dbd_pack_sub"', 'name="dbd_pack_x"', 'name="dbd_pack_bsky"', 'name="dbd_pack_fb"', 'name="dbd_pack_ig"', 'Open the group', 'Save settings', 'id="dbd-pack-settings"><summary>', 'Instagram posting', 'name="dbd_ig_set[on]"', 'name="dbd_ig_set[account]"', 'name="dbd_ig_token_new"', 'Paste the token from your Meta app', 'Instagram isn’t connected yet.' );  /* SCOPE §68, §71–74; the settings box starts closed */
 	$want['ov'][] = 'Open Growth'; $want['ov'][] = 'data-g="ov-visits"'; $want['ov'][] = 'data-g="ov-clicks"';
 	$bad = 0; $dir = getenv( 'DBD_HARNESS_HTML' ); if ( $dir && ! is_dir( $dir ) ) { mkdir( $dir, 0777, true ); }
 	foreach ( dbd_admin_tabs() as $k => $t ) {

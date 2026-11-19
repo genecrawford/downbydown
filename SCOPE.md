@@ -3128,3 +3128,15 @@ Everything after the downloads is unchanged: commit only when the data changed, 
 4. All six posts run on the same booking, retries, late-skip (a post more than a day past its slot is skipped, not sent late), Try again and Post now, each with its own state (`dbd_ig_post` keys `season-wN-carousel`, `season-wN-swing`, …), and the status line shows the last post and the next one booked.
 
 **Tests:** the harness builds the carousel and the five daily posts for the newest week (their days, order and captions), (five slides, the bio line, at most 15 hashtags, under 2,200), checks the JPEG square is 1080×1080 JPEG, runs the publish flow against a fake API (containers, carousel, publish; a missing id answered by status polling; an error retried; a late week skipped; a week posted once), the token refresh (a good refresh saves the new expiry; a failed one raises the warning), and the tab's new strings.
+
+
+## 77. Instagram posting with a Unified-login token (2026-11-18; built as 2.34.1)
+
+Connecting 2.34.0 showed that Meta no longer offers "API setup with Instagram login" to new apps: "API setup with Instagram login is not available for newer apps. Your app uses API setup with Unified login instead." Unified login gives a system-user access token (Facebook Login for Business, `instagram_basic` + `instagram_content_publish`) that starts `EAA`, works on `graph.facebook.com`, and never expires.
+
+1. A token starting `EAA` is the Unified-login kind; anything else is the Instagram-login kind and works as in §76.
+2. The Unified kind needs the Instagram account ID (the number under the account in the Meta app; ours is 17841433054101334). It's a new field in the Share pack settings, kept in `dbd_ig_set['account']` (digits only). On save the pair is checked with `GET /{id}?fields=id,username` on graph.facebook.com; a failure keeps nothing. Changing the ID with a kept token checks the pair again.
+3. The posting steps are the same (containers, carousel children, `media_publish`, `status_code`, `permalink`), sent to graph.facebook.com/v24.0/{id}/….
+4. The token is kept with `expires` 0, never running out: no renewal and no "runs out" warning. The weekly event checks it instead; when Instagram stops taking it, the tab and the Overview say "Instagram stopped taking the token (…). Paste a new one." It still counts as connected, so a post that fails goes through the usual retries and note.
+
+**Tests:** the harness's fake API answers on both hosts and records which one each call went to: the token kinds, the ID cleaned to digits, a missing ID or a bad token or an unknown account keeps nothing, a good pair is kept never running out and checked on graph.facebook.com, posts go there, the weekly check isn't a renewal and its failure warns while a pass clears it, and an IG token still goes to graph.instagram.com. The admin harness looks for the new field.
