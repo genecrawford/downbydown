@@ -90,7 +90,10 @@ jobs:
           assert json.load(open(f'/tmp/frz/fan/w{N}.json'))['risers'] == mark['risers'], 'the file changed after the first kickoff'
           build_fan.build('/tmp/frz', now=k - datetime.timedelta(hours=1))
           assert json.load(open(f'/tmp/frz/fan/w{N}.json'))['risers'] == d['risers'], 'the file was not rewritten before kickoff'
-          print('frozen after', k.isoformat(), 'and rewritten before it')
+          # a week with no file yet gets none after its kickoff: fantasy.json may already count those games (Greptile, PR #146)
+          os.remove(f'/tmp/frz/fan/w{N}.json')
+          assert build_fan.build('/tmp/frz', now=k + datetime.timedelta(minutes=1)) is None and not os.path.exists(f'/tmp/frz/fan/w{N}.json'), 'a first file was made after kickoff'
+          print('frozen after', k.isoformat(), 'and rewritten before it; no first file after it')
           PY
       - name: Check the EPA split (SCOPE §29)
         run: |

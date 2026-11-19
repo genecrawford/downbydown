@@ -14,7 +14,8 @@ already played doesn't leak into the week's own page.
   bye               the teams off and each one's top three scorers (half PPR, three games or more).
 
 The file is rewritten by every build until week N's first kickoff, then left as it was, so a past week's page stays as it read
-before its games. Run on its own: python3 tools/build_fan.py <data dir>
+before its games. A week whose first file would come after its kickoff gets none: fantasy.json would already count those games.
+Run on its own: python3 tools/build_fan.py <data dir> [--force]
 """
 import datetime, glob, json, os, re, sys
 from collections import defaultdict
@@ -55,8 +56,10 @@ def build(out, now=None, force=False):
     games = [g for g in S.get('weeks', {}).get(str(N), []) if g.get('game_type', 'REG') == 'REG']
     if not N or not games: print('fantasy page: no regular-season week ahead'); return None
     path = f'{out}/fan/w{N}.json'
-    if os.path.exists(path) and started(games, now) and not force:
-        print(f'fantasy page: week {N} has kicked off; w{N}.json kept as it was'); return path
+    if started(games, now) and not force:
+        # kept as it was; and a week with no file yet gets none, since fantasy.json may already count the games played (Greptile, PR #146)
+        print(f'fantasy page: week {N} has kicked off; ' + (f'w{N}.json kept as it was' if os.path.exists(path) else f'no w{N}.json made after kickoff'))
+        return path if os.path.exists(path) else None
     if not os.path.exists(f'{out}/fantasy.json'): print('fantasy page: no fantasy.json yet'); return None
     F = json.load(open(f'{out}/fantasy.json'))
     nxt = {}
@@ -83,7 +86,9 @@ def build(out, now=None, force=False):
             if pt == 'pass' and k in ('comp', 'inc', 'int'): kind = 't'; tot[t][wk] += 1; tgt[t][wk] += 1
             elif pt == 'run' and k == 'run': kind = 'c'; tot[t][wk] += 1
             else: continue
-            rows.append((wk, kind, r[K['pid']], r[K['yl']], bool(r[K['td']])))
+            # a touchdown he scored: a completion or a run that scored with no fumble on it, never an interception or fumble returned (Greptile, PR #146)
+            mine = bool(r[K['td']]) and k in ('comp', 'run') and 'FUMBLE' not in str(r[K['desc']] or '').upper()
+            rows.append((wk, kind, r[K['pid']], r[K['yl']], mine))
         plays[t] = rows
     team_weeks = lambda t: sorted(w for w, v in tot[t].items() if v > 0)
 
@@ -122,18 +127,21 @@ def build(out, now=None, force=False):
     fallers = {pos: sorted([r for r in rows[pos] if r['bef'] >= FALL_FLOOR and r['d'] < 0], key=lambda r: (r['d'], r['n']))[:FALLERS] for pos in POS}
 
     # red zone: each team's last three games, inside the 20
-    rz = defaultdict(lambda: dict(c=0, tg=0, in5=0, td=0, tm=None)); rzteam = defaultdict(int)
+    # a traded player counts only his current team's plays, so his touches and the team total share one window (Greptile, PR #146)
+    rz = defaultdict(lambda: dict(c=0, tg=0, in5=0, td=0)); rzteam = defaultdict(int)
     for t, rs in plays.items():
         last = set(team_weeks(t)[-3:])
         for wk, kind, pid, yl, td in rs:
             if wk not in last or yl is None or yl > 20: continue
-            x = rz[pid]; x['c' if kind == 'c' else 'tg'] += 1; x['in5'] += 1 if yl <= 5 else 0; x['td'] += 1 if td else 0; x['tm'] = t; rzteam[t] += 1
+            rzteam[t] += 1
+            if (P.get(pid) or {}).get('t') != t: continue
+            x = rz[pid]; x['c' if kind == 'c' else 'tg'] += 1; x['in5'] += 1 if yl <= 5 else 0; x['td'] += 1 if td else 0
     rzl = []
     for pid, x in rz.items():
         p = P.get(pid)
         if not p or p['pos'] not in POS or p['t'] not in nxt: continue
         o = x['c'] + x['tg']
-        rzl.append(dict(id=pid, n=p['n'], t=p['t'], pos=p['pos'], c=x['c'], tg=x['tg'], in5=x['in5'], td=x['td'], sh=round(100 * o / rzteam[x['tm']]) if rzteam[x['tm']] else 0, m=rk(p['t'], p['pos'])))
+        rzl.append(dict(id=pid, n=p['n'], t=p['t'], pos=p['pos'], c=x['c'], tg=x['tg'], in5=x['in5'], td=x['td'], sh=round(100 * o / rzteam[p['t']]) if rzteam[p['t']] else 0, m=rk(p['t'], p['pos'])))
     key = lambda r: (-(r['c'] + r['tg']), -r['in5'], -r['td'], r['n'])
     rz_out = dict(rb=sorted([r for r in rzl if r['pos'] == 'RB'], key=key)[:RZ_N], rec=sorted([r for r in rzl if r['pos'] in ('WR', 'TE')], key=key)[:RZ_N])
 
@@ -149,9 +157,13 @@ def build(out, now=None, force=False):
     byes = [t for t in teams if t not in nxt]
     bye = []
     for t in byes:
-        pl = [p for p in P.values() if p['t'] == t and p['pos'] in ('QB', 'RB', 'WR', 'TE') and ((p.get('fan') or {}).get('s', {}).get('half') or {}).get('g', 0) >= 3]
-        pl = sorted(pl, key=lambda p: (-p['fan']['s']['half']['ppg'], p['n']))[:3]
-        bye.append(dict(t=t, top=[dict(id=p['id'], n=p['n'], pos=p['pos'], ppg=[round(float(p['fan']['s'][f]['ppg']), 1) for f in FMT]) for p in pl]))
+        # the top three in each format, so the switch can change who's listed (Greptile, PR #146)
+        top = {}
+        for f in FMT:
+            pl = [p for p in P.values() if p['t'] == t and p['pos'] in ('QB', 'RB', 'WR', 'TE') and ((p.get('fan') or {}).get('s', {}).get(f) or {}).get('g', 0) >= 3]
+            pl = sorted(pl, key=lambda p: (-p['fan']['s'][f]['ppg'], p['n']))[:3]
+            top[f] = [dict(id=p['id'], n=p['n'], pos=p['pos'], ppg=round(float(p['fan']['s'][f]['ppg']), 1)) for p in pl]
+        bye.append(dict(t=t, top=top))
 
     gl = [dict(id=g['id'], away=g['away'], home=g['home'], day=g.get('day'), date=g.get('date'), time=g.get('time')) for g in games]
     rec = dict(season=S.get('season'), week=N, thru=N - 1, built=now.strftime('%Y-%m-%dT%H:%M:%SZ'), games=gl, byes=byes,
@@ -182,7 +194,7 @@ def check(rec):
         for r in rec['rz'][side]: assert r['t'] not in off, f"{r['n']} ({r['t']}) is on bye but on the red zone list"
     for pos, rs in rec['mu'].items():
         for r in rs: assert r['t'] not in off and len(r['rk']) == 3, f'{pos} matchup row for {r["t"]} is wrong'
-    for b in rec['bye']: assert b['t'] in off
+    for b in rec['bye']: assert b['t'] in off and set(b['top']) == set(FMT), f"bye row for {b['t']} is wrong"
 
 
 if __name__ == '__main__':

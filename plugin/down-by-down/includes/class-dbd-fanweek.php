@@ -142,8 +142,12 @@ class DBD_FanWeek {
 	private static function byes( $F ) {
 		$li = '';
 		foreach ( (array) ( $F['bye'] ?? array() ) as $b ) {
-			$ps = array(); foreach ( (array) $b['top'] as $p ) { $ps[] = '<a href="' . esc_url( self::pl( $p['id'] ) ) . '">' . esc_html( $p['n'] ) . '</a> <small>' . esc_html( $p['pos'] ) . ' · ' . self::fx( $p['ppg'], array( 'DBD_Fantasy', 'num' ) ) . '</small>'; }
-			$li .= '<li><b>' . esc_html( self::nick( $b['t'] ) ) . '</b>' . ( $ps ? implode( ', ', $ps ) : '<small>no regular scorers yet</small>' ) . '</li>';
+			$cells = '';  /* the top three in each format: the switch changes who's listed, not just the points (Greptile, PR #146) */
+			foreach ( DBD_Fantasy::FMT as $fm ) {
+				$ps = array(); foreach ( (array) ( $b['top'][ $fm ] ?? array() ) as $p ) { $ps[] = '<a href="' . esc_url( self::pl( $p['id'] ) ) . '">' . esc_html( $p['n'] ) . '</a> <small>' . esc_html( $p['pos'] . ' · ' . DBD_Fantasy::num( $p['ppg'] ) ) . '</small>'; }
+				$cells .= '<span data-fx="' . $fm . '">' . ( $ps ? implode( ', ', $ps ) : '<small>no regular scorers yet</small>' ) . '</span>';
+			}
+			$li .= '<li><b>' . esc_html( self::nick( $b['t'] ) ) . '</b>' . $cells . '</li>';
 		}
 		return $li === '' ? '' : '<section class="dbd-band" id="fz-bye"><h2 class="dbd-bandh">On bye<span>who you\'re replacing this week</span></h2><section class="dbd-panel"><ul class="fz-bye">' . $li . '</ul><p class="dbd-note">Each team\'s top three scorers by points a game, in the format you pick, among players with three games or more.</p></section></section>';
 	}
