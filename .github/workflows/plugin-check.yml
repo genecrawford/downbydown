@@ -74,7 +74,10 @@ jobs:
           set -e
           export DBD_HARNESS_HTML=pages
           php tools/view_harness.php data leaders def > /dev/null
-          f=$(ls -t pages/leaders-def*.html | head -1)
+          if grep -q 'id="ld-rush"' pages/leaders-def.html; then echo "pass rushers belong on their own tab, not Defenses (SCOPE §80)"; exit 1; fi
+          php tools/view_harness.php data leaders rush > /dev/null
+          f=pages/leaders-rush.html
+          python3 -c "import re,sys; h=open('$f').read(); t=re.findall(r'aria-label=\"Leaders\".*?</nav>', h, re.S)[0]; n=re.findall(r'>([^<]+)</a>', t); sys.exit(0 if n.index('Pass rushers') + 1 == n.index('Defenses') and 'aria-current' in t.split('Pass rushers')[0].rsplit('<a', 1)[1] else 'the tab bar: ' + str(n))"
           # the rules worked out here on their own, then the band checked against them
           python3 - "$f" <<'PY'
           import glob, json, re, sys
@@ -87,7 +90,7 @@ jobs:
                   if p.get('grp') in ('DL', 'LB') and g and g * 2 >= tg and snap >= 40 and (p.get('prs') or 0) >= g and p.get('id'): R.append(p)
           N = len(R)
           if N < 3: print('fewer than three rushers: no band expected'); sys.exit(0 if 'id="ld-rush"' not in h else 'a band with too few rushers')
-          need = ['id="ld-rush"', 'id="pr-team"', f'{N} rushers, a game each', 'PRESSURES A GAME', 'SACKS A GAME', 'class="pr-svg wide"', 'class="pr-svg narrow"']
+          need = ['id="ld-rush"', 'class="pr-team"', f'{N} rushers, a game each', 'PRESSURES A GAME', 'SACKS A GAME', 'class="pr-svg wide"', 'class="pr-svg narrow"']
           if N > 10: need.append(f'Show all {N}</button>')
           miss = [m for m in need if m not in h]
           if miss: sys.exit(f'the band is missing {miss}')
@@ -98,12 +101,15 @@ jobs:
           x = lambda p: p['prs'] / p['g']; y = lambda p: (p.get('sk') or 0) / p['g']
           top = {p['name'] for p in sorted(R, key=lambda p: (-x(p), -y(p), p['name']))[:8]} | {p['name'] for p in sorted(R, key=lambda p: (-y(p), -x(p), p['name']))[:8]}
           named = set(re.findall(r'<text class="pr-l" [^>]*>([^<]+)</text>', wide))
-          if {n.replace("'", '&#039;') for n in top} != named: sys.exit(f'named on the chart {sorted(named)}, want {sorted(top)}')
+          want = {n.replace("'", '&#039;') for n in top}
+          if not named <= want or len(named) < len(want) - 4: sys.exit(f'named on the chart {sorted(named)}, want most of {sorted(want)}')  # a name with no clear spot is left off (SCOPE §80)
           lp = max(R, key=lambda p: (p['prs'], x(p)))['name']; ls = max(R, key=lambda p: (p.get('sk') or 0, y(p)))['name']
           say = re.search(r'<p class="dbd-mv-say">(.*?)</p>', band).group(1)
           if lp.replace("'", '&#039;') not in say or ls.replace("'", '&#039;') not in say: sys.exit('the read does not name the leaders: ' + say)
           if '/player/' in band or 'player=' in band: sys.exit('a rusher links to a player page; defenders have none')
-          if band.count('class="pr-h"') != 2 * N: sys.exit('every rusher needs a highlight label on both charts')
+          hc = band.count('class="pr-h"')
+          if not N <= hc <= 2 * N: sys.exit(f'{hc} highlight labels for {N} rushers on two charts')  # a team name with no clear spot is left off (Greptile, PR #148)
+          if 'class="pr-team"' not in band: sys.exit('the shared Highlight menu is missing')
           print(f'pass rushers: {N} rushers, {len(top)} named, leaders {lp} and {ls}')
           PY
           # the card and the square, for the week the defense files run through; never an older week's
@@ -111,6 +117,36 @@ jobs:
           php tools/view_harness.php data card "pack-week-$W-rush" card-pass-rushers.png
           php tools/view_harness.php data card "ig-week-$W-rush" card-square-rush.png
           for k in "pack-week-$((W-1))-rush" pack-week-99-rush; do if php tools/view_harness.php data card "$k" /tmp/x.png 2>/dev/null; then echo "card $k should not render"; exit 1; fi; done
+      - name: A chart on every position tab (SCOPE §80)
+        run: |
+          set -e
+          export DBD_HARNESS_HTML=pages
+          for g in wr te rb qb; do php tools/view_harness.php data leaders $g > /dev/null; done
+          # each chart against its board's pool, worked out here from the boards' own file
+          python3 - <<'PY'
+          import json, re, sys
+          L = json.load(open('data/players/leaders.json')); P = L['players']
+          AX = {'wr': ('tshare', 'epat'), 'te': ('tshare', 'epat'), 'rb': ('tpg', 'ypt'), 'qb': ('epadb', 'cpoe')}
+          for g, (xk, yk) in AX.items():
+              h = open(f'pages/leaders-{g}.html').read(); mn = L['min'][g]; G = L['groups'][g]['g']
+              ys = {r[0]: r[1] for r in G[yk] if r[2] >= mn and r[0] in P}
+              rows = [dict(id=r[0], n=P[r[0]][0], x=r[1], y=ys[r[0]]) for r in G[xk] if r[2] >= mn and r[0] in P and P[r[0]][1] and r[0] in ys and r[1] is not None]
+              N = len(rows)
+              if N < 3: print(g, 'too few for a chart'); continue
+              if 'id="ld-chart"' not in h or h.index('id="ld-chart"') > h.index('class="ld-grid"'): sys.exit(f'{g}: the chart is missing or below the boards')
+              band = h[h.index('id="ld-chart"'):h.index('</section></section>', h.index('id="ld-chart"'))]
+              wide = band[band.index('class="pr-svg wide"'):band.index('</svg>', band.index('class="pr-svg wide"'))]
+              dots = len(re.findall(r'<g class="pr-d', wide))
+              if dots != N: sys.exit(f'{g}: {dots} dots, the board pool has {N}')
+              hc = band.count('class="pr-h"')
+              if not N <= hc <= 2 * N: sys.exit(f'{g}: {hc} highlight labels for {N} players on two charts')
+              top = {r['n'] for r in sorted(rows, key=lambda r: (-r['x'], -r['y'], r['n']))[:6]} | {r['n'] for r in sorted(rows, key=lambda r: (-r['y'], -r['x'], r['n']))[:6]}
+              want = {n.replace("'", '&#039;') for n in top}; named = set(re.findall(r'<text class="pr-l" [^>]*>([^<]+)</text>', wide))
+              if not named <= want or len(named) < len(want) - 4: sys.exit(f'{g}: named {sorted(named)}, want most of {sorted(want)}')
+              r = sorted(map(float, re.findall(r'<circle [^>]*r="([0-9.]+)"', wide)))
+              if r[0] >= r[-1]: sys.exit(f'{g}: the dots should be sized by volume')
+              print(f'{g}: {N} players, {len(named)} named, dots {r[0]}..{r[-1]}')
+          PY
       - name: The season draft and combine boards (SCOPE §63)
         run: |
           set -e

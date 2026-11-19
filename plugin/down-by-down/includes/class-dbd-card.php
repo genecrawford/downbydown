@@ -707,9 +707,9 @@ class DBD_Card {
 			$sy = imagecreatetruecolor( 120 * $S, 16 * $S ); imagefilledrectangle( $sy, 0, 0, 120 * $S, 16 * $S, imagecolorallocate( $sy, 44, 74, 53 ) ); list( $tr, $tg, $tb ) = ( $K['rgb'] )( '#ffffff' );
 			imagettftext( $sy, 11 * $S * 0.75, 0, 0, 12 * $S, imagecolorallocate( $sy, (int) round( 44 + ( $tr - 44 ) * 0.55 ), (int) round( 74 + ( $tg - 74 ) * 0.55 ), (int) round( 53 + ( $tb - 53 ) * 0.55 ) ), $F['disp'], 'SACKS A GAME' );
 			$ro = imagerotate( $sy, 90, imagecolorallocate( $sy, 44, 74, 53 ) ); imagedestroy( $sy ); if ( $ro ) { imagecopy( $im, $ro, (int) round( ( $fx + 6 ) * $S ), (int) round( ( ( $yt + $yb ) / 2 - 50 ) * $S ), 0, 0, imagesx( $ro ), imagesy( $ro ) ); imagedestroy( $ro ); }
-			$pts = array(); $rows = array(); foreach ( $sc['pts'] as $p ) { $pts[ $p[0] ] = array( $X( $p[1] ), $Y( $p[2] ) ); $rows[] = array( 'id' => $p[0], 'n' => $p[3] ); }
+			$pts = array(); $rows = array(); foreach ( $sc['pts'] as $p ) { $pts[ (string) $p[0] ] = array( $X( $p[1] ), $Y( $p[2] ), 5 ); $rows[] = array( 'id' => $p[0], 'n' => $p[3] ); }
 			foreach ( $pts as $p ) { imagefilledellipse( $im, (int) round( $p[0] * $S ), (int) round( $p[1] * $S ), 12 * $S, 12 * $S, $ink ); imagefilledellipse( $im, (int) round( $p[0] * $S ), (int) round( $p[1] * $S ), 9 * $S, 9 * $S, $cream ); }
-			$at = DBD_Rush::place( $rows, $sc['named'], $pts, function ( $t ) use ( $K, $F ) { return ( $K['tw'] )( $F['mono2'], 12, $t ); }, 12, array( $xl, $yt, $xr, $yb ), 5 );
+			$at = DBD_Scatter::place( $rows, $sc['named'], $pts, function ( $t ) use ( $K, $F ) { return ( $K['tw'] )( $F['mono2'], 12, $t ); }, 12, array( $xl, $yt, $xr, $yb ) );  /* the shared placement (SCOPE §80) */
 			foreach ( $rows as $r ) { if ( isset( $at[ $r['id'] ] ) ) { list( $lx, $ly, $la ) = $at[ $r['id'] ]; ( $K['txt'] )( $F['mono2'], 12, $lx, $ly, $cream, $r['n'], $la === 'end' ? 'right' : 'left' ); } }
 		} elseif ( $s['dots'] ) {
 			$cols = array( 'left' => array( 0, 1 / 3 ), 'middle' => array( 1 / 3, 2 / 3 ), 'right' => array( 2 / 3, 1 ) ); $pal = array( ( $K['mix'] )( '#ffffff', 0.35, '#2c4a35' ), ( $K['col'] )( '#5b9cf6' ), ( $K['col'] )( '#4fd18b' ) );

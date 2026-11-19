@@ -2,7 +2,7 @@
 /**
  * Pass rushers (SCOPE §79): every rusher with a regular role on one chart, pressures a game against sacks a game.
  * Read from defense/{TEAM}.json at render time (no build change): pressures are PFR's charting, sacks, QB hits and tackles for loss
- * nflverse's play-by-play. Drawn as a band at the top of Leaders → Defenses, as the pack card pack-week-N-rush (DBD_Card::draw_page's
+ * nflverse's play-by-play. Drawn on their own Leaders tab, /leaders/rush/ (SCOPE §80; it opened 2.36.0 atop Defenses), as the pack card pack-week-N-rush (DBD_Card::draw_page's
  * scatter) with its square, and as share pack item 6 for the week the defense files run through.
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
@@ -69,64 +69,21 @@ class DBD_Rush {
 		return array( (int) ceil( $xm + 0.4 ), ceil( $ym * 4 + 1 ) / 4 );
 	}
 
-	/**
-	 * Where each named rusher's label goes: right of the dot, else left, else above it ending at the dot, else below, the first spot that stays
-	 * inside the box and covers no other label and no dot. $pts: id => [x, y] in drawing units; $w: a function giving a name's width.
-	 * Returns id => [x, y baseline, 'start'|'end'].
-	 */
-	public static function place( $rows, $named, $pts, $w, $px, $box, $r ) {
-		$taken = array(); $out = array();
-		$hit = function ( $a ) use ( &$taken, $pts, $r ) {
-			foreach ( $taken as $b ) { if ( $a[0] < $b[2] && $b[0] < $a[2] && $a[1] < $b[3] && $b[1] < $a[3] ) { return true; } }
-			foreach ( $pts as $id => $p ) { if ( $id === $a[4] ) { continue; } if ( $p[0] + $r > $a[0] && $p[0] - $r < $a[2] && $p[1] + $r > $a[1] && $p[1] - $r < $a[3] ) { return true; } }
-			return false;
-		};
-		$order = array_values( array_filter( $rows, function ( $x ) use ( $named ) { return in_array( $x['id'], $named, true ); } ) );
-		foreach ( $order as $row ) {
-			$id = $row['id']; list( $cx, $cy ) = $pts[ $id ]; $tw = $w( $row['n'] ); $g = $r + 4; $h = $px;
-			$cands = array( array( $cx + $g, $cy + $px * 0.35, 'start' ), array( $cx - $g, $cy + $px * 0.35, 'end' ), array( $cx + $r, $cy - $r - 4, 'end' ), array( $cx + $r, $cy + $r + $px, 'end' ), array( $cx - $r, $cy - $r - 4, 'start' ) );
-			$pick = null;
-			foreach ( $cands as $c ) {
-				$x0 = $c[2] === 'start' ? $c[0] : $c[0] - $tw; $a = array( $x0, $c[1] - $h * 0.8, $x0 + $tw, $c[1] + $h * 0.2, $id );
-				if ( $a[0] < $box[0] || $a[2] > $box[2] || $a[1] < $box[1] || $a[3] > $box[3] ) { continue; }
-				if ( ! $hit( $a ) ) { $pick = array( $c, $a ); break; }
-			}
-			if ( ! $pick ) { $c = $cands[0]; $x0 = $c[0]; if ( $x0 + $tw > $box[2] ) { $c = $cands[1]; $x0 = $c[0] - $tw; } $pick = array( $c, array( $x0, $c[1] - $h * 0.8, $x0 + $tw, $c[1] + $h * 0.2, $id ) ); }  /* nowhere clear: right, or left at the edge */
-			$taken[] = $pick[1]; $out[ $id ] = $pick[0];
-		}
-		return $out;
-	}
-
 	private static function nick( $t ) { return DBD_Data::team( $t )['nick'] ?? $t; }
 	private static function color( $t ) { $c = (string) ( DBD_Data::team( $t )['c1'] ?? '' ); return preg_match( '/^#[0-9a-fA-F]{6}$/', $c ) ? $c : '#6b6f78'; }
 	private static function n1( $v ) { return number_format( (float) $v, 1 ); }
 	private static function n2( $v ) { return number_format( (float) $v, 2 ); }
 	private static function sk( $v ) { return rtrim( rtrim( number_format( (float) $v, 1 ), '0' ), '.' ); }
 
-	/** The page chart: $W × $H, margins [left, right, top, bottom], named rushers labelled; every rusher carries a hidden name the team highlight shows. */
+	/** The page chart through the shared one (SCOPE §80): one dot size, whole pressures across, quarter sacks up. */
 	public static function svg( $rows, $W, $H, $m, $named, $px, $r, $cls ) {
-		list( $xl, $xr, $yt, $yb ) = $m; list( $xmax, $ymax ) = self::scale( $rows ); list( $mx, $my ) = self::medians( $rows );
-		$X = function ( $v ) use ( $xl, $xr, $W, $xmax ) { return $xl + ( $W - $xl - $xr ) * $v / $xmax; }; $Y = function ( $v ) use ( $yt, $yb, $H, $ymax ) { return $H - $yb - ( $H - $yt - $yb ) * $v / $ymax; };
-		$f = 'font-family="IBM Plex Mono,monospace" font-size="' . $px . '"';
-		$o = '<svg class="pr-svg ' . $cls . '" viewBox="0 0 ' . $W . ' ' . $H . '" role="img" aria-label="' . esc_attr( 'Pressures a game against sacks a game, ' . count( $rows ) . ' pass rushers' ) . '">';
-		for ( $v = 0; $v <= $xmax; $v++ ) { $x = round( $X( $v ), 1 ); $o .= '<line x1="' . $x . '" x2="' . $x . '" y1="' . $yt . '" y2="' . ( $H - $yb ) . '" class="pr-g"/><text x="' . $x . '" y="' . ( $H - $yb + $px + 6 ) . '" text-anchor="middle" ' . $f . ' class="pr-tk">' . $v . '</text>'; }
-		for ( $v = 0; $v <= $ymax + 1e-9; $v += 0.25 ) { $y = round( $Y( $v ), 1 ); $o .= '<line x1="' . $xl . '" x2="' . ( $W - $xr ) . '" y1="' . $y . '" y2="' . $y . '" class="pr-g"/><text x="' . ( $xl - 8 ) . '" y="' . round( $y + $px * 0.35, 1 ) . '" text-anchor="end" ' . $f . ' class="pr-tk">' . self::n2( $v ) . '</text>'; }
-		$o .= '<line x1="' . round( $X( $mx ), 1 ) . '" x2="' . round( $X( $mx ), 1 ) . '" y1="' . $yt . '" y2="' . ( $H - $yb ) . '" class="pr-md"/><line x1="' . $xl . '" x2="' . ( $W - $xr ) . '" y1="' . round( $Y( $my ), 1 ) . '" y2="' . round( $Y( $my ), 1 ) . '" class="pr-md"/>';
-		$o .= '<text x="' . round( ( $xl + $W - $xr ) / 2 ) . '" y="' . ( $H - 6 ) . '" text-anchor="middle" ' . $f . ' class="pr-ax">PRESSURES A GAME</text><text transform="translate(' . ( $px + 2 ) . ' ' . round( ( $yt + $H - $yb ) / 2 ) . ') rotate(-90)" text-anchor="middle" ' . $f . ' class="pr-ax">SACKS A GAME</text>';
-		$pts = array(); foreach ( $rows as $x ) { $pts[ $x['id'] ] = array( $X( $x['x'] ), $Y( $x['y'] ) ); }
-		$wf = function ( $s ) use ( $px ) { return mb_strlen( $s ) * $px * 0.6; };
-		$box = array( $xl, $yt, $W - $xr, $H - $yb ); $at = self::place( $rows, $named, $pts, $wf, $px, $box, $r );
-		$team = array(); foreach ( array_unique( array_column( $rows, 't' ) ) as $t ) { $ids = array(); foreach ( $rows as $x ) { if ( $x['t'] === $t ) { $ids[] = $x['id']; } } $team += self::place( $rows, $ids, $pts, $wf, $px, $box, $r ); }  /* the highlight shows a team's names laid out together (Greptile, PR #147) */
-		$dots = $rows; usort( $dots, function ( $a, $b ) use ( $named ) { return in_array( $a['id'], $named, true ) <=> in_array( $b['id'], $named, true ); } );  /* named ones on top */
-		foreach ( $dots as $x ) {
-			list( $cx, $cy ) = $pts[ $x['id'] ];
-			$lab = function ( $p, $cls ) use ( $x, $f ) { return '<text class="' . $cls . '" x="' . round( $p[0], 1 ) . '" y="' . round( $p[1], 1 ) . '" text-anchor="' . $p[2] . '" ' . $f . '>' . esc_html( $x['n'] ) . '</text>'; };
-			$texts = ( isset( $at[ $x['id'] ] ) ? $lab( $at[ $x['id'] ], 'pr-l' ) : '' ) . $lab( $team[ $x['id'] ], 'pr-h' );  /* pr-l: named on the chart; pr-h: shown only when his team is highlighted */
+		list( $xmax, $ymax ) = self::scale( $rows ); $pts = array();
+		foreach ( $rows as $x ) {
 			$tip = '<b>' . esc_html( $x['n'] ) . '</b> · ' . esc_html( self::nick( $x['t'] ) . ' ' . $x['pos'] ) . '<br>' . (int) $x['prs'] . ' pressures, ' . self::sk( $x['sk'] ) . ' sacks, ' . (int) $x['qbh'] . ' QB hits in ' . (int) $x['g'] . ' games · ' . (int) $x['snap'] . '% of snaps';
-			$o .= '<g class="pr-d' . ( isset( $at[ $x['id'] ] ) ? ' lab' : '' ) . '" data-t="' . esc_attr( $x['t'] ) . '" data-tip="' . esc_attr( $tip ) . '" tabindex="0"><circle cx="' . round( $cx, 1 ) . '" cy="' . round( $cy, 1 ) . '" r="' . $r . '" fill="' . esc_attr( self::color( $x['t'] ) ) . '"><title>' . esc_html( $x['n'] . ', ' . $x['t'] . ': ' . self::n1( $x['x'] ) . ' pressures and ' . self::n2( $x['y'] ) . ' sacks a game' ) . '</title></circle>'
-				. $texts . '</g>';
+			$pts[] = array( 'id' => $x['id'], 'n' => $x['n'], 't' => $x['t'], 'pos' => $x['pos'], 'x' => $x['x'], 'y' => $x['y'], 'u' => 1, 'tip' => $tip );
 		}
-		return $o . '</svg>';
+		return DBD_Scatter::svg( $pts, array( 'W' => $W, 'H' => $H, 'm' => $m, 'px' => $px, 'rmin' => $r, 'rmax' => $r, 'named' => $named, 'cls' => $cls, 'xk' => 'n', 'yk' => 'q',
+			'xl' => 'Pressures a game', 'yl' => 'Sacks a game', 'label' => 'Pressures a game against sacks a game, ' . count( $rows ) . ' pass rushers', 'xr' => array( 0, $xmax, 1 ), 'yr' => array( 0, $ymax, 0.25 ), 'mid' => self::medians( $rows ) ) );
 	}
 
 	/** The band at the top of Leaders → Defenses; '' with no rushers yet. */
@@ -137,8 +94,6 @@ class DBD_Rush {
 			? '<b>' . esc_html( $rp['n'] ) . '</b> (' . esc_html( self::nick( $rp['t'] ) ) . ') leads both ways: ' . (int) $rp['prs'] . ' pressures, ' . self::n1( $rp['x'] ) . ' a game, and ' . self::sk( $rs['sk'] ) . ' sacks.'
 			: '<b>' . esc_html( $rp['n'] ) . '</b> (' . esc_html( self::nick( $rp['t'] ) ) . ') gets there most: ' . self::n1( $rp['x'] ) . ' pressures a game, ' . (int) $rp['prs'] . ' in all. <b>' . esc_html( $rs['n'] ) . '</b> (' . esc_html( self::nick( $rs['t'] ) ) . ') finishes most: ' . self::sk( $rs['sk'] ) . ' sacks, ' . self::n2( $rs['y'] ) . ' a game.';
 		$say .= ' Up and to the right of the dashed lines is both.';
-		$teams = array_values( array_unique( array_column( $rows, 't' ) ) ); usort( $teams, function ( $a, $b ) { return strcmp( self::nick( $a ), self::nick( $b ) ); } );
-		$opts = '<option value="">All teams</option>'; foreach ( $teams as $t ) { $opts .= '<option value="' . esc_attr( $t ) . '">' . esc_html( self::nick( $t ) ) . '</option>'; }
 		$tb = '';
 		foreach ( $rows as $i => $x ) {
 			$tb .= '<tr' . ( $i >= self::TOP ? ' class="pr-x"' : '' ) . ' data-t="' . esc_attr( $x['t'] ) . '"><td class="rk">' . ( $i + 1 ) . '</td><td><a href="' . esc_url( DBD_Router::url( array( 'team' => $x['t'], 'side' => 'def' ) ) ) . '">' . esc_html( $x['n'] ) . '</a><small>' . esc_html( $x['t'] . ' · ' . $x['pos'] . ' · ' . $x['g'] . ' games' ) . '</small></td>'
@@ -146,12 +101,12 @@ class DBD_Rush {
 		}
 		$small = self::named( $rows, 3 );
 		return '<section class="dbd-band" id="ld-rush"><h2 class="dbd-bandh">Pass rushers<span>pressures against sacks, every rusher with a regular role</span></h2>'
-			. '<section class="dbd-panel pr-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Through Week ' . (int) $wk . '</b> · ' . $N . ' rushers, a game each</span><label class="pr-hl">Highlight <select id="pr-team">' . $opts . '</select></label></div>'
+			. '<section class="dbd-panel pr-panel" data-chart="rush"><div class="dbd-ph"><span class="dbd-lab"><b>Through Week ' . (int) $wk . '</b> · ' . $N . ' rushers, a game each</span>' . DBD_Scatter::menu( $rows ) . '</div>'
 			. '<p class="dbd-mv-say">' . $say . '</p>'
 			. '<div class="pr-chart" id="pr-chart">' . self::svg( $rows, 960, 540, array( 64, 24, 16, 48 ), self::named( $rows, self::NAMED ), 12, 6, 'wide' ) . self::svg( $rows, 380, 420, array( 46, 10, 10, 38 ), $small, 11, 4, 'narrow' ) . '</div>'
 			. '<div class="dbd-tw"><table class="pr-t"><thead><tr><th></th><th>Rusher</th><th>A game</th><th class="c-p">Pressures</th><th>Sacks</th><th class="c-h">QB hits</th><th class="c-h">TFL</th><th class="c-s">Snaps</th></tr></thead><tbody>' . $tb . '</tbody></table></div>'
 			. ( $N > self::TOP ? '<button class="dbd-cbtn pr-more" type="button" id="pr-more">Show all ' . $N . '</button>' : '' )
-			. '<p class="dbd-note">Pressures are Pro Football Reference\'s charting: the hurries, hits and sacks it saw. Sacks, QB hits and tackles for loss come from nflverse\'s play-by-play, so the two don\'t always add up the same way. Rushers are linemen and linebackers who played at least half their team\'s games, on ' . self::SNAP . '% or more of the snaps, with at least one pressure a game. The dashed lines are the middle of the pack. The team you highlight is remembered on this device.</p></section></section>';
+			. '<p class="dbd-note">Pressures are Pro Football Reference\'s charting: the hurries, hits and sacks it saw. Sacks, QB hits and tackles for loss come from nflverse\'s play-by-play, so the two don\'t always add up the same way. Rushers are linemen and linebackers who played at least half their team\'s games, on ' . self::SNAP . '% or more of the snaps, with at least one pressure a game. The dashed lines are the middle of the pack. The team you highlight is remembered on this device and carries to every chart.</p></section></section>';
 	}
 
 	/* ------------------------------------------------------------ the card and the share pack item */
@@ -175,7 +130,7 @@ class DBD_Rush {
 		$short = $rp['id'] === $rs['id']
 			? 'Pass rushers through ' . $lab . ': ' . $rp['n'] . ' leads both ways (' . self::n1( $rp['x'] ) . ' pressures a game, ' . self::sk( $rs['sk'] ) . ' sacks). All ' . $N . ' on one chart.'
 			: 'Pass rushers through ' . $lab . ': ' . $rp['n'] . ' gets there most (' . self::n1( $rp['x'] ) . ' pressures a game) and ' . $rs['n'] . ' finishes most (' . self::sk( $rs['sk'] ) . ' sacks). All ' . $N . ' on one chart.';
-		$link = DBD_Router::url( array( 'view' => 'leaders', 'g' => 'def' ) );
+		$link = DBD_Router::url( array( 'view' => 'leaders', 'g' => 'rush' ) );  /* their own tab (SCOPE §80) */
 		return array( 'k' => 'rush', 'h' => 'Pass rushers', 'why' => 'Every pass rusher with a regular role on one chart: pressures a game against sacks a game.',
 			'card' => 'pack-week-' . (int) $n . '-rush', 'file' => 'dbd-week-' . (int) $n . '-pass-rushers.png', 'fits' => array_values( array_unique( array_filter( array( 'r/nfl', DBD_Pack::sub( $rp['t'] ), DBD_Pack::sub( $rs['t'] ) ) ) ) ),
 			'title' => $title, 'comment' => 'Every rusher, with a team highlight and the full list: ' . $link, 'post' => DBD_Pack::post( $short, $short, $link ), 'tl' => $short, 'ts' => $short, 'link' => $link,

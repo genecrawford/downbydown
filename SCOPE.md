@@ -3247,3 +3247,58 @@ The Instagram square puts the short version above it, as the other squares do.
 - the table's top ten and Show all
 - the card (1200×630) and the square (1080×1080)
 - the share pack item's text
+
+## 80. A chart on every position tab of Leaders (scoped and mocked 2026-11-19, `mockup-v53/`; all decided; built as 2.37.0)
+
+Gene, on 2.36.0's pass rushers band: "I like it, just put it in a place that makes sense and not just at the top of the page like that ... unless we scatter plot the other positions using the same type of graph." Then: "Every position."
+
+**What changes:** every player tab on Leaders opens with one chart in the pass rushers' style, then its boards. The chart becomes part of every tab instead of something dropped onto one. Pass rushers move to a tab of their own, and Defenses goes back to the 32 team units.
+
+**The tabs, in order:** Fantasy · Wide receivers · Tight ends · Backs · Quarterbacks · Kickers · **Pass rushers** (new, `/leaders/rush/`) · Defenses.
+
+**The charts:** each uses the tab's own Scorecard metrics and its own pool, so the dots match the boards below. Each tab gets a chart:
+
+| Tab | Across | Up | Pool (through Week 10) |
+|---|---|---|---|
+| Wide receivers | Target share | EPA per target | 15+ targets, 115 |
+| Tight ends | Target share | EPA per target | 15+ targets, 48 |
+| Backs | Touches per game | Yards per touch | 30+ touches, 75 |
+| Quarterbacks | EPA per dropback | CPOE | 50+ attempts, 42 |
+| Pass rushers | Pressures a game | Sacks a game | as §79, 112 |
+
+Fantasy, Kickers and Defenses get no chart in this release.
+
+**Each chart:**
+- A heading in the tab's band style, for example "Targets and what they're worth".
+- The read: who leads each axis, with the volume behind the efficiency leader. For example, Tyquan Thornton gets the most from each target, +1.10 EPA, on 15 targets.
+- Team-colored dots, sized by volume (targets, touches or attempts), so a 15-target sample can't pass for a star.
+- Dashed lines at the middle of the pool, and a darker zero line where an axis crosses zero.
+- The top six on each axis named, and tips on every dot.
+- The same Highlight menu. The team you pick is remembered on the device and carries to every tab: pick the Vikings once, and every chart shows them.
+- A phone chart with larger type that names the top three on each axis.
+- A short note on what counts.
+- The boards follow, unchanged.
+
+**Pass rushers' tab:** the 2.36.0 band (chart, read and table with Show all) moves there as it is, because no board lists rushers. The share pack item stays item 6, and its link becomes `/leaders/rush/`.
+
+**Labels:** a name sits right, left, above or below its dot, wherever it covers no other name and no dot. If no spot is clear of dots, it may sit over a dot. If no spot is clear of other names, the name is left off and the dot keeps its tip. The box allows for the type's full height. This also fixes two overlaps on the live pass rushers chart: Hutchinson and Robinson on desktop, Rousseau and Turner on the phone.
+
+**Code:** the chart in `DBD_Rush` becomes a general one, `DBD_Scatter`, used by all five tabs. The rushers keep their own rows. The position tabs read `players/leaders.json` (the boards' file), so there's no build change. `rush.js` becomes `scatter.js`, handling every chart on the page and the shared highlight.
+
+**Not in this release:** share pack items for the new charts, and charts on Fantasy, Kickers and Defenses.
+
+**Decisions (all made):**
+1. **Quarterbacks:** DECIDED 2026-11-19: EPA per dropback against CPOE (Gene: "EPA vs CPOE").
+2. **Dot size:** DECIDED 2026-11-19: sized by volume (targets, touches, attempts) on the four position charts; pass rushers stay one size (Gene: "Size by volume").
+3. **Tab order:** DECIDED 2026-11-19: Pass rushers just before Defenses (Gene: "Before Defenses").
+
+**Effort:** a mid-size plugin release with no build change.
+
+**Measure:** visits to each Leaders tab, and the Highlight menu's events by tab.
+
+**Tests:** the harness renders each tab and checks:
+- the chart's dot count against its board's pool
+- the named players, and no two labels overlapping (box check)
+- the shared highlight key
+- the Pass rushers tab at `/leaders/rush/`, and its absence from Defenses
+- the share pack item's new link
