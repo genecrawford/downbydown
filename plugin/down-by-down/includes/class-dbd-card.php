@@ -142,7 +142,7 @@ class DBD_Card {
 
 	/** Card keys: a player id, team-MIN, game-2026_08_MIN_DET, page-hub / page-week-8 / page-leaders … */
 	public static function valid( $key ) {
-		return (bool) preg_match( '/^(\d{2}-\d{7}|team-[A-Z]{2,3}|game-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}|page-(hub|season|matchups|teams|players|leaders|myteam|week-\d{1,2}|fantasy-\d{1,2}|draft-\d{4}|combine-\d{4})|pack-week-\d{1,2}-(snaps|targets|offense|leaders)|ig-week-\d{1,2}-(swing|snaps|offense|targets|leaders|keys-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}-[A-Z]{2,3}))$/', (string) $key );
+		return (bool) preg_match( '/^(\d{2}-\d{7}|team-[A-Z]{2,3}|game-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}|page-(hub|season|matchups|teams|players|leaders|myteam|week-\d{1,2}|fantasy-\d{1,2}|draft-\d{4}|combine-\d{4})|pack-week-\d{1,2}-(snaps|targets|offense|leaders|rush)|ig-week-\d{1,2}-(swing|snaps|offense|targets|leaders|rush|keys-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}-[A-Z]{2,3}))$/', (string) $key );
 	}
 
 	/** The card a route shares: the player's, the team's, the game's, the first compared player's, or the page card. */
@@ -219,6 +219,7 @@ class DBD_Card {
 		if ( strpos( $key, 'team-' ) === 0 ) { $s = self::spec_team( substr( $key, 5 ) ); if ( ! $s ) { return null; } foreach ( $s['logos'] as $t ) { $assets['logos'][ $t ] = $logo( $t ); } return self::draw_team( $s, $assets ); }
 		if ( strpos( $key, 'pack-' ) === 0 && preg_match( '/^pack-week-(\d+)-(\w+)$/', $key, $pm ) ) {  /* the share pack's cards (SCOPE §68) */
 			if ( $pm[2] === 'offense' ) { $s = DBD_Pack::spec_offense( (int) $pm[1] ); if ( ! $s ) { return null; } foreach ( $s['logos'] as $t ) { $assets['logos'][ $t ] = $logo( $t ); } return self::draw_offense( $s, $assets ); }
+			if ( $pm[2] === 'rush' ) { $s = DBD_Rush::card_spec( (int) $pm[1] ); return $s ? self::draw_page( $s, $assets ) : null; }  /* pass rushers (SCOPE §79) */
 			if ( $pm[2] === 'leaders' ) { $s = DBD_Pack::spec_leaders( (int) $pm[1] ); if ( ! $s ) { return null; } foreach ( $s['logos'] as $t ) { $assets['logos'][ $t ] = $logo( $t ); } return self::draw_leaders( $s, $assets ); }  /* SCOPE §75 */
 			$s = DBD_Pack::spec_riser( (int) $pm[1], $pm[2] ); if ( ! $s ) { return null; } $assets['logos'][ $s['team'] ] = $logo( $s['team'] ); return self::draw_riser( $s, $assets );
 		}
@@ -694,6 +695,22 @@ class DBD_Card {
 				$rw = ( $K['tw'] )( $F['mono2'], 16, $r[3] ); $px = ( $K['fit'] )( $F['body'], 19, $r[2], $fx + $fw - 22 - $rw - 14 - $nx );
 				( $K['txt'] )( $F['body'], $px, $nx, $y, $w, $r[2] );
 				( $K['txt'] )( $F['mono2'], 16, $fx + $fw - 22, $y, $dim2, $r[3], 'right' ); }
+		} elseif ( ! empty( $s['scatter'] ) ) {  /* pass rushers (SCOPE §79): pressures a game across, sacks a game up, the middle of the pack dashed in gold, the top three on each axis named */
+			$sc = $s['scatter']; $S = $K['S']; $im = $K['im']; $xl = $fx + 54; $xr = $fx + $fw - 14; $yt = $fy + 14; $yb = $fy + $fh - 38; $xmax = max( 1, (float) $sc['xmax'] ); $ymax = max( 0.25, (float) $sc['ymax'] );
+			$X = function ( $v ) use ( $xl, $xr, $xmax ) { return $xl + ( $xr - $xl ) * $v / $xmax; }; $Y = function ( $v ) use ( $yt, $yb, $ymax ) { return $yb - ( $yb - $yt ) * $v / $ymax; };
+			$grid = ( $K['mix'] )( '#ffffff', 0.10, '#2c4a35' ); $tick = ( $K['mix'] )( '#ffffff', 0.55, '#2c4a35' ); $gold = ( $K['col'] )( '#e7c66b' ); $cream = ( $K['col'] )( self::BG ); $ink = ( $K['col'] )( '#2c4a35' );
+			for ( $v = 0; $v <= $xmax; $v++ ) { ( $K['rect'] )( $X( $v ), $yt, 1, $yb - $yt, $grid ); ( $K['txt'] )( $F['mono'], 11, $X( $v ), $yb + 16, $tick, (string) $v, 'center' ); }
+			for ( $v = 0; $v <= $ymax + 1e-9; $v += 0.25 ) { ( $K['rect'] )( $xl, $Y( $v ), $xr - $xl, 1, $grid ); ( $K['txt'] )( $F['mono'], 11, $xl - 6, $Y( $v ) + 4, $tick, number_format( $v, 2 ), 'right' ); }
+			for ( $d = $yt; $d < $yb; $d += 9 ) { ( $K['rect'] )( $X( $sc['mx'] ), $d, 1.5, 5, $gold ); }
+			for ( $d = $xl; $d < $xr; $d += 9 ) { ( $K['rect'] )( $d, $Y( $sc['my'] ), 5, 1.5, $gold ); }
+			( $K['spaced'] )( $F['disp'], 11, ( $xl + $xr ) / 2 - 52, $fy + $fh - 8, $tick, 'PRESSURES A GAME', 0.16 );
+			$sy = imagecreatetruecolor( 120 * $S, 16 * $S ); imagefilledrectangle( $sy, 0, 0, 120 * $S, 16 * $S, imagecolorallocate( $sy, 44, 74, 53 ) ); list( $tr, $tg, $tb ) = ( $K['rgb'] )( '#ffffff' );
+			imagettftext( $sy, 11 * $S * 0.75, 0, 0, 12 * $S, imagecolorallocate( $sy, (int) round( 44 + ( $tr - 44 ) * 0.55 ), (int) round( 74 + ( $tg - 74 ) * 0.55 ), (int) round( 53 + ( $tb - 53 ) * 0.55 ) ), $F['disp'], 'SACKS A GAME' );
+			$ro = imagerotate( $sy, 90, imagecolorallocate( $sy, 44, 74, 53 ) ); imagedestroy( $sy ); if ( $ro ) { imagecopy( $im, $ro, (int) round( ( $fx + 6 ) * $S ), (int) round( ( ( $yt + $yb ) / 2 - 50 ) * $S ), 0, 0, imagesx( $ro ), imagesy( $ro ) ); imagedestroy( $ro ); }
+			$pts = array(); $rows = array(); foreach ( $sc['pts'] as $p ) { $pts[ $p[0] ] = array( $X( $p[1] ), $Y( $p[2] ) ); $rows[] = array( 'id' => $p[0], 'n' => $p[3] ); }
+			foreach ( $pts as $p ) { imagefilledellipse( $im, (int) round( $p[0] * $S ), (int) round( $p[1] * $S ), 12 * $S, 12 * $S, $ink ); imagefilledellipse( $im, (int) round( $p[0] * $S ), (int) round( $p[1] * $S ), 9 * $S, 9 * $S, $cream ); }
+			$at = DBD_Rush::place( $rows, $sc['named'], $pts, function ( $t ) use ( $K, $F ) { return ( $K['tw'] )( $F['mono2'], 12, $t ); }, 12, array( $xl, $yt, $xr, $yb ), 5 );
+			foreach ( $rows as $r ) { if ( isset( $at[ $r['id'] ] ) ) { list( $lx, $ly, $la ) = $at[ $r['id'] ]; ( $K['txt'] )( $F['mono2'], 12, $lx, $ly, $cream, $r['n'], $la === 'end' ? 'right' : 'left' ); } }
 		} elseif ( $s['dots'] ) {
 			$cols = array( 'left' => array( 0, 1 / 3 ), 'middle' => array( 1 / 3, 2 / 3 ), 'right' => array( 2 / 3, 1 ) ); $pal = array( ( $K['mix'] )( '#ffffff', 0.35, '#2c4a35' ), ( $K['col'] )( '#5b9cf6' ), ( $K['col'] )( '#4fd18b' ) );
 			$x0 = $fx + 14; $w0 = $fw - 28; $y0 = $fy + 14; $h0 = $fh - 54; $S = $K['S']; $im = $K['im'];
@@ -703,7 +720,7 @@ class DBD_Card {
 				imagefilledellipse( $im, (int) round( $x * $S ), (int) round( $y * $S ), 7 * $S, 7 * $S, $pal[ $d[2] ] ); }
 			( $K['txt'] )( $F['mono'], 13, $fx + 16, $fy + $fh - 14, ( $K['mix'] )( '#ffffff', 0.7, '#2c4a35' ), $s['dots_cap'] );
 		}
-		( $K['foot'] )( 'Data: nflverse' );
+		( $K['foot'] )( $s['foot'] ?? 'Data: nflverse' );
 		return ( $K['finish'] )();
 	}
 

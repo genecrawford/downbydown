@@ -485,6 +485,7 @@ class DBD_Router {
 			wp_localize_script( 'dbd-compare', 'DBD_CMP', array( 'base' => self::url(), 'group' => $r['cgroup'], 'players' => $pl, 'files' => $files, 'teams' => DBD_Data::teams(), 'heads' => DBD_Data::headshots(), 'series' => $series, 'labels' => $labels, 'yds' => array( 'rec' => 'Receiving yards', 'rb' => 'Scrimmage yards', 'qb' => 'Passing yards' )[ DBD_Grades::kind( $r['cgroup'] ) ] ?? 'Yards' ) );
 		}
 		if ( $r['view'] === 'leaders' ) { wp_enqueue_script( 'dbd-leaders', DBD_URL . 'assets/leaders.js', array(), DBD_VERSION, true ); }
+		if ( $r['view'] === 'leaders' && ( $r['lgroup'] ?? '' ) === 'def' && ( $r['lboard'] ?? '' ) === '' ) { wp_enqueue_script( 'dbd-rush', DBD_URL . 'assets/rush.js', array(), DBD_VERSION, true ); }  /* the pass rushers' highlight and Show all (SCOPE §79) */
 		if ( $r['view'] === 'draft' || $r['view'] === 'combine' ) { wp_enqueue_script( 'dbd-boards', DBD_URL . 'assets/boards.js', array(), DBD_VERSION, true ); }
 		if ( $r['view'] === 'week' ) { wp_enqueue_script( 'dbd-week', DBD_URL . 'assets/week.js', array(), DBD_VERSION, true ); }
 		if ( $r['view'] === 'hub' ) {  /* SCOPE §41: the My team card. Always loaded: right after an update the player list may not have synced yet, and a cached page without the script would keep the card empty; hub.js does nothing if the list is missing */

@@ -76,7 +76,7 @@ function wp_schedule_single_event() {} function wp_next_scheduled() { return fal
 
 /* ---- the plugin, minus the bootstrap and admin. The SEO class extends a WordPress sitemap base class; an empty stand-in lets it load. */
 if ( ! class_exists( 'WP_Sitemaps_Provider' ) ) { class WP_Sitemaps_Provider { public $name = ''; public $object_type = ''; } }
-foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-kicker', 'class-dbd-defense', 'class-dbd-week', 'class-dbd-fanweek', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-boards', 'class-dbd-sync', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo', 'class-dbd-blocks', 'class-dbd-post', 'class-dbd-news', 'class-dbd-email', 'class-dbd-videos', 'class-dbd-growth', 'class-dbd-signup', 'class-dbd-pack', 'class-dbd-pack-mail', 'class-dbd-instagram', 'class-dbd-board-mail' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
+foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-kicker', 'class-dbd-defense', 'class-dbd-rush', 'class-dbd-week', 'class-dbd-fanweek', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-boards', 'class-dbd-sync', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo', 'class-dbd-blocks', 'class-dbd-post', 'class-dbd-news', 'class-dbd-email', 'class-dbd-videos', 'class-dbd-growth', 'class-dbd-signup', 'class-dbd-pack', 'class-dbd-pack-mail', 'class-dbd-instagram', 'class-dbd-board-mail' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
 
 if ( getenv( 'DBD_HARNESS_SIGN' ) ) { $GLOBALS['dbd_opt'] = array( 'dbd_email' => array( 'on' => true, 'key' => 'harness', 'list' => 4, 'tpl' => 5 ) ); }  /* the email set up, so pages draw the signup strip (SCOPE §66) */
 if ( getenv( 'DBD_HARNESS_NOW' ) && class_exists( 'DBD_News' ) ) { DBD_News::$now = (int) getenv( 'DBD_HARNESS_NOW' ); }
@@ -411,7 +411,7 @@ if ( $view === 'igpost' ) {
 		$day = function ( $sl ) use ( $n, $ny ) { $d = new DateTime( '@' . DBD_Instagram::slot_time( $n, $sl ) ); $d->setTimezone( $ny ); return $d->format( 'D H:i' ); };
 		$ck( 'the slots fall Tuesday to Sunday at 9:00 AM Eastern', $day( 'carousel' ) === 'Tue 09:00' && $day( 'swing' ) === 'Wed 09:00' && $day( 'snaps' ) === 'Thu 09:00' && $day( 'offense' ) === 'Fri 09:00' && $day( 'targets' ) === 'Sat 09:00' && $day( 'leaders' ) === 'Sun 09:00', $day( 'carousel' ) . ' / ' . $day( 'leaders' ) );
 		$plan = DBD_Instagram::plan( $n ); $items = array_values( array_filter( DBD_Pack::items( $n ), function ( $i ) { return ! empty( $i['sq'] ); } ) );
-		$ck( 'the plan: the carousel with every item, then each item on its own', isset( $plan['carousel'] ) && count( $plan['carousel'] ) === count( $items ) && count( $plan ) === count( $items ) + 1, implode( ',', array_keys( $plan ) ) );
+		$ck( 'the plan: the carousel with every item, then each item on its own', isset( $plan['carousel'] ) && count( $plan['carousel'] ) === count( $items ) && count( $plan ) === 1 + count( array_filter( $items, function ( $i ) { return isset( DBD_Instagram::SLOTS[ $i['k'] ] ); } ) ), implode( ',', array_keys( $plan ) ) );  /* pass rushers ride the carousel only (SCOPE §79) */
 		$cap = DBD_Instagram::carousel_caption( $n, $plan['carousel'] ); preg_match_all( '/#\w+/', $cap, $tg );
 		$ck( 'the carousel caption', strpos( $cap, 'Week ' . $n . ' in ' ) === 0 && strpos( $cap, "\n1. " ) !== false && strpos( $cap, 'Full charts: link in bio (' ) !== false && mb_strlen( $cap ) <= 2200 && count( $tg[0] ) <= 15 && in_array( '#NFL', $tg[0], true ), str_replace( "\n", ' / ', $cap ) );
 		$c1 = DBD_Instagram::caption( $n, 'swing', $plan['swing'] ); $ck( 'a daily caption is the item’s Instagram caption', strpos( $c1, 'Full chart: link in bio' ) !== false && strpos( $c1, '#NFL' ) !== false, $c1 );
@@ -437,6 +437,7 @@ if ( $view === 'igpost' ) {
 		$GLOBALS['hcalls'] = array(); DBD_Instagram::send( $kc, true ); $ck( 'a posted carousel never posts again', ! $GLOBALS['hcalls'] );
 		/* a daily post: one image; a lost publish reply is not posted twice */
 		$ks = DBD_Instagram::key( $season, $n, 'swing' ); $GLOBALS['ig']['failpub'] = true; $GLOBALS['hcalls'] = array();
+		$GLOBALS['dbd_opt'][ 'dbd_ig_job_' . $ks ]['at'] = $GLOBALS['dbd_opt'][ 'dbd_ig_job_' . $ks ]['slot_at'] = time();  /* due now, whatever day CI runs on: a slot more than a day old is rightly skipped (2.36.0) */
 		DBD_Instagram::send( $ks ); $j = DBD_Instagram::job( $ks );
 		$ck( 'a failed publish retries and keeps its container', strpos( (string) $j['state'], 'retrying: Instagram answered 400: Fatal' ) === 0 && ! empty( $j['container'] ) && count( $calls( 'POST', '178/media' ) ) === 1 && strpos( $calls( 'POST', '178/media' )[0][2]['image_url'], 'card=ig-week-' . $n . '-swing' ) !== false, json_encode( $j ) );
 		$GLOBALS['ig']['failpub'] = false; $GLOBALS['ig']['status'][ $j['container'] ] = 'PUBLISHED'; $GLOBALS['hcalls'] = array();
@@ -549,7 +550,9 @@ if ( $view === 'packmail' ) {
 		/* the email */
 		$doc = DBD_Pack_Mail::build( $n ); $h = $doc['html'] ?? '';
 		$ck( 'the subject leads with the swing and the riser', (bool) preg_match( '/^Week ' . $n . ' share pack: .+-point swing, .+’s \d+%$/u', $doc['subject'] ?? '' ), $doc['subject'] ?? '' );
-		foreach ( array( '1 · The biggest swing', '3 · Best and worst offense', '5 · Week leaders', '6 · Keys to the game, Week ' . ( $n + 1 ), 'Reddit title', 'Reddit comment, with the link', 'X and Bluesky', ' of 280', 'Open the Share pack', 'page=down-by-down-share&#038;week=' . $n ) as $w ) {
+		$hasr = in_array( 'rush', array_column( DBD_Pack::items( $n ), 'k' ), true );  /* pass rushers only when the defense files are at week $n (Greptile, PR #147) */
+		$ck( 'the count of things to post', strpos( $h, ucfirst( array( 5 => 'five', 6 => 'six', 7 => 'seven' )[ count( DBD_Pack::items( $n ) ) + ( DBD_Pack::keys( $n ) ? 1 : 0 ) ] ?? '?' ) . ' things to post this week.' ) !== false );
+		foreach ( array_merge( $hasr ? array( '6 · Pass rushers' ) : array(), array( '1 · The biggest swing', '3 · Best and worst offense', '5 · Week leaders', '7 · Keys to the game, Week ' . ( $n + 1 ), 'Reddit title', 'Reddit comment, with the link', 'X and Bluesky', ' of 280', 'Open the Share pack', 'page=down-by-down-share&#038;week=' . $n ) ) as $w ) {
 			$ck( 'the email has ' . $w, strpos( $h, $w ) !== false || strpos( $h, str_replace( '&#038;', '&', $w ) ) !== false ); }
 		preg_match_all( '#(?:href|src)="([^"]*)"#', $h, $m ); $rel = array_filter( $m[1], function ( $u ) { return ! preg_match( '#^https?://#', $u ); } );
 		$ck( 'every link and image is absolute', ! $rel, implode( ' ', $rel ) );
@@ -614,9 +617,10 @@ if ( $view === 'pack' ) {
 	$n = DBD_Pack::newest(); $ck( $n > 0, 'a finished week with movers' );
 	$items = DBD_Pack::items( $n ); $ks = array_map( function ( $x ) { return $x['k']; }, $items );
 	/* a week may lack a mover (items() leaves it out), so the items must be the fixed order minus any missing mover, never the swing or offense (Greptile, PR #125) */
-	$ck( $ks === array_values( array_intersect( array( 'swing', 'snaps', 'offense', 'targets', 'leaders' ), $ks ) ) && in_array( 'swing', $ks, true ) && in_array( 'offense', $ks, true ) && in_array( 'leaders', $ks, true ), 'the items in their fixed order, got ' . implode( ',', $ks ) );
+	$ck( $ks === array_values( array_intersect( array( 'swing', 'snaps', 'offense', 'targets', 'leaders', 'rush' ), $ks ) ) && in_array( 'swing', $ks, true ) && in_array( 'offense', $ks, true ) && in_array( 'leaders', $ks, true ), 'the items in their fixed order, got ' . implode( ',', $ks ) );
+	$ck( in_array( 'rush', $ks, true ) === ( $n === DBD_Rush::through() ), 'pass rushers only for the week the defense files run through (SCOPE §79)' );
 	foreach ( $items as $it ) { $ck( isset( DBD_Pack::NUM[ $it['k'] ] ), $it['k'] . ': a fixed number' ); }
-	$ck( DBD_Pack::NUM === array( 'swing' => 1, 'snaps' => 2, 'offense' => 3, 'targets' => 4, 'leaders' => 5, 'keys' => 6 ), 'the fixed numbers' );
+	$ck( DBD_Pack::NUM === array( 'swing' => 1, 'snaps' => 2, 'offense' => 3, 'targets' => 4, 'leaders' => 5, 'rush' => 6, 'keys' => 7 ), 'the fixed numbers' );
 	/* Week leaders (2.33.0, SCOPE §75): each panel's leader is the box score's top, worked out here on its own */
 	$bx = DBD_Data::get( 'box/w' . $n . '.json' ); $br = array();
 	foreach ( (array) ( $bx['games'] ?? array() ) as $g ) { foreach ( array( 'away', 'home' ) as $sd ) { foreach ( (array) ( $g[ $sd ]['off'] ?? array() ) as $r ) { $x = array_combine( $bx['keys'], $r ); $x['td'] = $x['rushing_tds'] + $x['receiving_tds']; $x['t'] = $g[ $sd ]['team']; $br[] = $x; } } }
@@ -799,6 +803,7 @@ if ( $view === 'admin' ) {
 		'class="button sp-fb"', 'sharer.php?u=', '>Facebook</a>', 'class="button sp-cp sp-ig"', '>Instagram</button>', 'aria-label="Download square for Instagram">Square</a>',
 		'<details class="dbd-box sp-set" id="dbd-pack-settings"', 'Settings: the Tuesday email, your accounts and Instagram posting', 'value="dbd_pack_settings"', 'name="dbd_pack_mail_set[on]"', 'name="dbd_pack_mail_set[to]"', 'Brevo isn’t set up',
 		'name="dbd_pack_sub"', 'name="dbd_pack_x"', 'name="dbd_pack_bsky"', 'name="dbd_pack_fb"', 'name="dbd_pack_ig"', 'Open the group', 'Save settings', 'id="dbd-pack-settings"><summary>', 'Instagram posting', 'name="dbd_ig_set[on]"', 'name="dbd_ig_set[account]"', 'name="dbd_ig_token_new"', 'Paste the token from your Meta app', 'Instagram isn’t connected yet.' );  /* SCOPE §68, §71–74; the settings box starts closed */
+	if ( in_array( 'rush', array_column( DBD_Pack::items( DBD_Pack::newest() ), 'k' ), true ) ) { array_push( $want['sp'], 'Pass rushers', '-pass-rushers.png"' ); }  /* SCOPE §79, only for the week the defense files run through */
 	$want['ov'][] = 'Open Growth'; $want['ov'][] = 'data-g="ov-visits"'; $want['ov'][] = 'data-g="ov-clicks"';
 	$bad = 0; $dir = getenv( 'DBD_HARNESS_HTML' ); if ( $dir && ! is_dir( $dir ) ) { mkdir( $dir, 0777, true ); }
 	foreach ( dbd_admin_tabs() as $k => $t ) {

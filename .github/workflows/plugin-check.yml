@@ -69,6 +69,48 @@ jobs:
           if grep -qF 'Fantasy leaders' "$f"; then grep -qF ">Week $N fantasy: risers, red zone and matchups →</a>" "$f" || { echo "the hub does not link the fantasy page"; exit 1; }; fi
           php tools/view_harness.php data myteam 00-0036322,00-0039075 > /dev/null
           grep -qF ">Week $N fantasy: risers, red zone, matchups</a>" pages/myteam-00-0036322,00-0039075.html || { echo "My team does not link the fantasy page"; exit 1; }
+      - name: Pass rushers (SCOPE §79)
+        run: |
+          set -e
+          export DBD_HARNESS_HTML=pages
+          php tools/view_harness.php data leaders def > /dev/null
+          f=$(ls -t pages/leaders-def*.html | head -1)
+          # the rules worked out here on their own, then the band checked against them
+          python3 - "$f" <<'PY'
+          import glob, json, re, sys
+          h = open(sys.argv[1]).read(); R = []
+          for fn in glob.glob('data/defense/[A-Z]*.json'):
+              d = json.load(open(fn)); tg = d.get('g') or 0
+              for p in d.get('defenders') or d.get('players') or []:
+                  g = p.get('g') or 0
+                  snap = round((p.get('snap') or 0) * max(tg, g) / g) if g else 0  # the build divides by the team's games: his share in the games he played
+                  if p.get('grp') in ('DL', 'LB') and g and g * 2 >= tg and snap >= 40 and (p.get('prs') or 0) >= g and p.get('id'): R.append(p)
+          N = len(R)
+          if N < 3: print('fewer than three rushers: no band expected'); sys.exit(0 if 'id="ld-rush"' not in h else 'a band with too few rushers')
+          need = ['id="ld-rush"', 'id="pr-team"', f'{N} rushers, a game each', 'PRESSURES A GAME', 'SACKS A GAME', 'class="pr-svg wide"', 'class="pr-svg narrow"']
+          if N > 10: need.append(f'Show all {N}</button>')
+          miss = [m for m in need if m not in h]
+          if miss: sys.exit(f'the band is missing {miss}')
+          band = h[h.index('id="ld-rush"'):h.index('</section></section>', h.index('id="ld-rush"'))]
+          wide = band[band.index('class="pr-svg wide"'):band.index('</svg>', band.index('class="pr-svg wide"'))]
+          dots = len(re.findall(r'<g class="pr-d', wide)); rows = len(re.findall(r'<tr[ >]', band.split('<tbody>')[1])); hid = band.count('class="pr-x"')
+          if dots != N or rows != N or hid != max(0, N - 10): sys.exit(f'want {N} dots and rows, {max(0, N - 10)} hidden; got {dots} dots, {rows} rows, {hid} hidden')
+          x = lambda p: p['prs'] / p['g']; y = lambda p: (p.get('sk') or 0) / p['g']
+          top = {p['name'] for p in sorted(R, key=lambda p: (-x(p), -y(p), p['name']))[:8]} | {p['name'] for p in sorted(R, key=lambda p: (-y(p), -x(p), p['name']))[:8]}
+          named = set(re.findall(r'<text class="pr-l" [^>]*>([^<]+)</text>', wide))
+          if {n.replace("'", '&#039;') for n in top} != named: sys.exit(f'named on the chart {sorted(named)}, want {sorted(top)}')
+          lp = max(R, key=lambda p: (p['prs'], x(p)))['name']; ls = max(R, key=lambda p: (p.get('sk') or 0, y(p)))['name']
+          say = re.search(r'<p class="dbd-mv-say">(.*?)</p>', band).group(1)
+          if lp.replace("'", '&#039;') not in say or ls.replace("'", '&#039;') not in say: sys.exit('the read does not name the leaders: ' + say)
+          if '/player/' in band or 'player=' in band: sys.exit('a rusher links to a player page; defenders have none')
+          if band.count('class="pr-h"') != 2 * N: sys.exit('every rusher needs a highlight label on both charts')
+          print(f'pass rushers: {N} rushers, {len(top)} named, leaders {lp} and {ls}')
+          PY
+          # the card and the square, for the week the defense files run through; never an older week's
+          W=$(python3 -c "import json; print(json.load(open('data/defense/MIN.json'))['through'])")
+          php tools/view_harness.php data card "pack-week-$W-rush" card-pass-rushers.png
+          php tools/view_harness.php data card "ig-week-$W-rush" card-square-rush.png
+          for k in "pack-week-$((W-1))-rush" pack-week-99-rush; do if php tools/view_harness.php data card "$k" /tmp/x.png 2>/dev/null; then echo "card $k should not render"; exit 1; fi; done
       - name: The season draft and combine boards (SCOPE §63)
         run: |
           set -e

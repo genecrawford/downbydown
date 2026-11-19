@@ -116,7 +116,7 @@ class DBD_Pack {
 
 	/** What a square draws: the headline and the card under it, from its key (ig-week-N-swing, … or ig-week-N-keys-{game}-{team}), or null. */
 	public static function spec_square( $key ) {
-		if ( ! preg_match( '/^ig-week-(\d{1,2})-(swing|snaps|offense|targets|leaders|keys-(\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3})-([A-Z]{2,3}))$/', (string) $key, $m ) ) { return null; }
+		if ( ! preg_match( '/^ig-week-(\d{1,2})-(swing|snaps|offense|targets|leaders|rush|keys-(\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3})-([A-Z]{2,3}))$/', (string) $key, $m ) ) { return null; }
 		$n = (int) $m[1];
 		if ( empty( $m[3] ) ) { foreach ( self::items( $n ) as $it ) { if ( $it['k'] === $m[2] ) { return array( 'head' => (string) $it['ts'], 'card' => $it['card'] ); } } return null; }
 		foreach ( self::keys( $n ) as $kg ) { if ( $kg['g']['id'] !== $m[3] ) { continue; } foreach ( $kg['sides'] as $sd ) { if ( $sd['t'] === $m[4] ) { return array( 'head' => (string) $sd['ts'], 'card' => $kg['card'] ); } } }
@@ -129,7 +129,7 @@ class DBD_Pack {
 	/** A share key a page may take for its preview: one of the pack's own cards. */
 	public static function share_key( $v ) {
 		$v = (string) $v;
-		return preg_match( '/^pack-week-\d{1,2}-(snaps|targets|offense|leaders)$/', $v ) && DBD_Card::valid( $v ) ? $v : '';
+		return preg_match( '/^pack-week-\d{1,2}-(snaps|targets|offense|leaders|rush)$/', $v ) && DBD_Card::valid( $v ) ? $v : '';
 	}
 
 	/** The finished weeks that have their movers, newest first. */
@@ -175,7 +175,7 @@ class DBD_Pack {
 	}
 
 	/** Each item's fixed number on the tab, so a week missing one doesn't renumber the rest (Greptile, PR #125). */
-	const NUM = array( 'swing' => 1, 'snaps' => 2, 'offense' => 3, 'targets' => 4, 'leaders' => 5, 'keys' => 6 );  /* Week leaders went in as 5 (SCOPE §75) */
+	const NUM = array( 'swing' => 1, 'snaps' => 2, 'offense' => 3, 'targets' => 4, 'leaders' => 5, 'rush' => 6, 'keys' => 7 );  /* Week leaders went in as 5 (SCOPE §75), pass rushers as 6 (SCOPE §79) */
 
 	/** The cards week $n's pack draws (for the harness): the item keys that have a pack card. */
 	public static function cards( $n ) { $o = array(); foreach ( self::items( $n ) as $it ) { if ( strpos( $it['card'], 'pack-' ) === 0 ) { $o[] = $it['card']; } } return $o; }
@@ -226,6 +226,9 @@ class DBD_Pack {
 
 		/* 5. the week's leaders (SCOPE §75) */
 		$ld = self::leaders_item( $n ); if ( $ld ) { $out[] = $ld; }
+
+		/* 6. pass rushers (SCOPE §79): only for the week the defense files run through */
+		$ru = DBD_Rush::item( $n ); if ( $ru ) { $out[] = $ru; }
 		return $out;
 	}
 

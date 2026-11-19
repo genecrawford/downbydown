@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.35.0
+Stable tag: 2.36.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,11 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.36.0 =
+* Pass rushers (SCOPE §79): a band at the top of Leaders → Defenses with every rusher who has a regular role on one chart, pressures a game against sacks a game. Linemen and linebackers count once they've played half their team's games, on 40% or more of the snaps, with a pressure a game.
+* A Highlight menu dims every team but one and names its rushers, and the choice is remembered on the device. The top ten are in a table with Show all, and phones get their own smaller chart.
+* The share pack gains item 6, Pass rushers: a card and an Instagram square for the week the defense data runs through, plus the post texts. It rides the Tuesday carousel, and Keys to the game is now item 7.
 
 = 2.35.0 =
 * The weekly fantasy page (SCOPE §78) at /fantasy/week/{N}/, with /fantasy/ showing the newest week. It has usage risers and fallers (each team's last three games against its earlier ones), red-zone work over the last three games, matchups at a glance, each game's biggest edge from Keys to the game, and the teams on bye with their top scorers. Every row shows the player's next opponent and that defense's rank against his position, in the format you pick.
