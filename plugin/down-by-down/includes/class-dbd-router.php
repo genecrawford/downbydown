@@ -114,6 +114,7 @@ class DBD_Router {
 			case 'compare': foreach ( $r['compare'] as $p ) { if ( ! DBD_Data::player( $p['id'] ) ) { $args = array( 'view' => 'players' ); break; } } break;
 			case 'game': $args = array( 'view' => 'matchups', 'week' => (int) $r['game']['week'] ); break;
 			case 'week': case 'matchups': if ( ! empty( $args['week'] ) && ! in_array( (int) $args['week'], $r['view'] === 'week' ? DBD_Week::weeks() : DBD_Data::weeks(), true ) ) { unset( $args['week'] ); } break;
+			case 'fantasy': if ( ! empty( $args['week'] ) && ! in_array( (int) $args['week'], DBD_FanWeek::weeks(), true ) ) { unset( $args['week'] ); } break;
 			case 'myteam': case 'notfound': case 'nodata': $args = array(); break;
 		}
 		$u = self::url( $args );
@@ -203,6 +204,9 @@ class DBD_Router {
 			$r['view'] = 'week'; $ok = DBD_Week::weeks();
 			$r['week'] = ( $week && in_array( $week, $ok, true ) ) ? $week : DBD_Week::default_week();
 			if ( ! $r['week'] ) { $r['week'] = DBD_Data::current_week(); }
+		} elseif ( $view === 'fantasy' ) {  /* the weekly fantasy page (SCOPE §78): a week with a file, the newest by default; a week without one is not found */
+			$r['view'] = 'fantasy'; $ok = DBD_FanWeek::weeks();
+			if ( $week ) { $r['week'] = $week; if ( ! in_array( $week, $ok, true ) ) { $r['view'] = 'notfound'; } } else { $r['week'] = DBD_FanWeek::default_week(); }
 		} elseif ( self::q( 'myteam' ) !== '' || $view === 'myteam' ) {  /* My team (SCOPE §36): the team is the address; an empty one restores from the device in myteam.js */
 			$r['view'] = 'myteam'; $r['myteam'] = DBD_MyTeam::parse( self::q( 'myteam' ) );
 		} elseif ( $view === 'players' ) {
@@ -283,6 +287,7 @@ class DBD_Router {
 		if ( $r['view'] === 'teams' ) { $args = array( 'view' => 'teams' ); }
 		if ( $r['view'] === 'myteam' ) { $args = ( $full && self::q( 'myteam' ) !== '' ) ? array( 'myteam' => self::q( 'myteam' ) ) : array( 'view' => 'myteam' ); }
 		if ( $r['view'] === 'week' ) { $args = array( 'view' => 'week', 'week' => $r['week'] ); }
+		if ( $r['view'] === 'fantasy' ) { $args = array( 'view' => 'fantasy' ); if ( $r['week'] ) { $args['week'] = $r['week']; } }
 		if ( $r['view'] === 'draft' || $r['view'] === 'combine' ) { $args = array( 'view' => $r['view'], 'y' => $r['y'] ); }
 		if ( $r['view'] === 'leaders' ) { $args = array( 'view' => 'leaders' ); if ( $r['lboard'] !== '' ) { $args['b'] = $r['lboard']; } elseif ( $r['lgroup'] !== 'fan' ) { $args['g'] = $r['lgroup']; } }
 		if ( $r['view'] === 'player' ) { $args = array( 'player' => $r['player']['id'] ); }
@@ -351,6 +356,9 @@ class DBD_Router {
 			case 'week':
 				$wl = DBD_Router::week_label( $r['week'] );
 				return array( "NFL $wl $season recap: biggest plays and swings", "What happened in $wl of the $season NFL season: every game's win-probability swings, the biggest plays by WPA and EPA, the best offenses, defenses and players, fantasy leaders and the week's movers." );
+			case 'fantasy':
+				if ( ! $r['week'] ) { return array( "NFL fantasy football $season: usage risers, red zone and matchups", 'Each week\'s usage risers and fallers, red-zone work and every matchup, with each player\'s next opponent.' ); }
+				return DBD_FanWeek::seo( $r['week'] );
 			case 'myteam':
 				return array( 'My team', 'Your fantasy lineup on one page: this week\'s matchup, injury status, snap trend and points a game for every player you follow.' );
 			case 'notfound':

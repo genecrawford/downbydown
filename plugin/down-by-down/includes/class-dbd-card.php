@@ -142,7 +142,7 @@ class DBD_Card {
 
 	/** Card keys: a player id, team-MIN, game-2026_08_MIN_DET, page-hub / page-week-8 / page-leaders … */
 	public static function valid( $key ) {
-		return (bool) preg_match( '/^(\d{2}-\d{7}|team-[A-Z]{2,3}|game-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}|page-(hub|season|matchups|teams|players|leaders|myteam|week-\d{1,2}|draft-\d{4}|combine-\d{4})|pack-week-\d{1,2}-(snaps|targets|offense|leaders)|ig-week-\d{1,2}-(swing|snaps|offense|targets|leaders|keys-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}-[A-Z]{2,3}))$/', (string) $key );
+		return (bool) preg_match( '/^(\d{2}-\d{7}|team-[A-Z]{2,3}|game-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}|page-(hub|season|matchups|teams|players|leaders|myteam|week-\d{1,2}|fantasy-\d{1,2}|draft-\d{4}|combine-\d{4})|pack-week-\d{1,2}-(snaps|targets|offense|leaders)|ig-week-\d{1,2}-(swing|snaps|offense|targets|leaders|keys-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}-[A-Z]{2,3}))$/', (string) $key );
 	}
 
 	/** The card a route shares: the player's, the team's, the game's, the first compared player's, or the page card. */
@@ -154,6 +154,7 @@ class DBD_Card {
 			case 'teamplayers': return 'team-' . $r['pteam'];
 			case 'game': return 'game-' . $r['game']['id'];
 			case 'week': return 'page-week-' . (int) $r['week'];
+			case 'fantasy': return $r['week'] ? 'page-fantasy-' . (int) $r['week'] : null;  /* SCOPE §78 */
 			case 'draft': case 'combine': return 'page-' . $r['view'] . '-' . (int) $r['y'];  /* the season boards (SCOPE §64) */
 			case 'hub': case 'season': case 'matchups': case 'teams': case 'players': case 'leaders': case 'myteam': return 'page-' . $r['view'];
 		}
@@ -392,6 +393,17 @@ class DBD_Card {
 				$board[] = array( $g['away'], (int) $g['a'], $g['home'], (int) $g['h'], ! empty( $g['ot'] ) ? 'OT' : 'Final', $g['win'] ?? '' );
 			}
 			$s['board'] = $board; $s['big'] = (string) $wk;
+			return $s;
+		}
+		if ( preg_match( '/^fantasy-(\d{1,2})$/', $k, $mm ) ) {  /* the weekly fantasy page (SCOPE §78): the top riser at each position in the tiles, the week's games on the board */
+			$wk = (int) $mm[1]; $F = DBD_FanWeek::file( $wk ); if ( ! $F ) { return null; }
+			$s['kicker'] = $season . ' season · week ' . $wk . ' · fantasy'; $s['title'] = array( 'Week ' . $wk, '!fantasy' ); $s['big'] = (string) $wk;
+			$s['say'] = 'Usage risers, red zone and every matchup, with each player\'s Week ' . $wk . ' opponent.';
+			$s['tiles'] = array();
+			foreach ( DBD_FanWeek::tops( $F ) as $pos => $r ) { $s['tiles'][] = array( $pos . ' riser', (int) round( (float) $r['now'] ) . '%', $r['n'] . ', up from ' . (int) round( (float) $r['bef'] ) . '%' ); }
+			$board = array(); $gl = (array) $F['games']; usort( $gl, function ( $a, $b ) { return array( $a['date'] ?? '', $a['time'] ?? '' ) <=> array( $b['date'] ?? '', $b['time'] ?? '' ); } );
+			foreach ( $gl as $g ) { $k2 = DBD_Data::kickoff( $g ); $board[] = array( $g['away'], null, $g['home'], null, substr( (string) ( $g['day'] ?? '' ), 0, 3 ) . ' ' . str_replace( ' ET', '', $k2['et'] ), '' ); }
+			$s['board'] = $board;
 			return $s;
 		}
 		if ( $k === 'season' ) {  /* the season page (SCOPE §44): the champion and the best units in the tiles, the playoffs on the field */

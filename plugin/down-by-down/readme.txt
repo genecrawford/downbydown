@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.34.1
+Stable tag: 2.35.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,11 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.35.0 =
+* The weekly fantasy page (SCOPE §78) at /fantasy/week/{N}/, with /fantasy/ showing the newest week. It has usage risers and fallers (each team's last three games against its earlier ones), red-zone work over the last three games, matchups at a glance, each game's biggest edge from Keys to the game, and the teams on bye with their top scorers. Every row shows the player's next opponent and that defense's rank against his position, in the format you pick.
+* The data build writes fan/w{N}.json for the coming week every hour until the week's first kickoff, then leaves it alone, so each week's page stays as it read before its games. The plugin syncs the new folder.
+* The page has its own title, description and share card, and is listed in the sitemap. The Week in review, the Matchups fantasy chart, the hub and My team link to it.
 
 = 2.34.1 =
 * Instagram posting takes the token new Meta apps give out (API setup with Unified login, starting EAA): it posts through graph.facebook.com as the Instagram account ID set beside it on the Share pack tab.

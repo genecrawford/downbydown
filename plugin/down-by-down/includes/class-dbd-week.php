@@ -75,7 +75,7 @@ class DBD_Week {
 		$k = $season . ' season' . ( $dates ? ' · ' . $fd( reset( $dates ) ) . ' to ' . $fd( end( $dates ) ) : '' ) . ' · ' . $all . ' games' . ( ! empty( $W['byes'] ) ? ' · byes: ' . implode( ', ', $W['byes'] ) : '' );
 		$sub = 'What happened this week: every game\'s swings in one strip, the plays that decided them, the offenses and defenses that had their day, the players who carried them' . ( $W && ! empty( $W['complete'] ) ? ', and whose role moved' : '' ) . '.';
 		return '<div class="dbd-ttitle"><div class="t-stagger"><p class="dbd-kicker t-stagger-line t-stagger-line--1">' . esc_html( $k ) . '</p><h1 class="t-stagger-line t-stagger-line--2"><span>' . esc_html( DBD_Router::week_label( $n ) ) . '</span> in review</h1>'
-			. '<p class="dbd-sub t-stagger-line t-stagger-line--3">' . esc_html( $sub ) . ( ( $wu = self::writeup( $n ) ) !== '' ? ' <a class="dbd-writeup" href="' . esc_url( $wu ) . '">Read the ' . esc_html( DBD_Router::week_label( $n ) ) . ' write-up</a>' : '' ) . '</p></div><div class="dbd-badge">' . (int) $fin . ' of ' . (int) $all . ' final</div></div>';
+			. '<p class="dbd-sub t-stagger-line t-stagger-line--3">' . esc_html( $sub ) . ( ( $wu = self::writeup( $n ) ) !== '' ? ' <a class="dbd-writeup" href="' . esc_url( $wu ) . '">Read the ' . esc_html( DBD_Router::week_label( $n ) ) . ' write-up</a>' : '' ) . ( ( $fz = DBD_FanWeek::link( (int) $n + 1, 'Fantasy for Week ' . ( (int) $n + 1 ), 'dbd-writeup' ) ) !== '' ? ' ' . $fz : '' ) . '</p></div><div class="dbd-badge">' . (int) $fin . ' of ' . (int) $all . ' final</div></div>';
 	}
 
 	private static function picker( $n, $weeks ) {

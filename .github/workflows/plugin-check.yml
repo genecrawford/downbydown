@@ -18,6 +18,57 @@ jobs:
         run: |
           set -e
           find plugin tools -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: The weekly fantasy page (SCOPE §78)
+        run: |
+          set -e
+          export DBD_HARNESS_HTML=pages
+          # the coming week's file, as the hourly build writes it (here only; the build commits the real one), so this and every later step has it
+          python3 tools/build_fan.py data --force
+          N=$(python3 -c "import json; print(json.load(open('data/schedule.json'))['current_week'])")
+          if [ ! -f "data/fan/w$N.json" ]; then echo "no regular-season week ahead: no fantasy page to check"; exit 0; fi
+          php tools/view_harness.php data fantasy | grep -q 'route fantasy' || { echo "/fantasy/ should open the newest week"; exit 1; }
+          php tools/view_harness.php data fantasy "$N"
+          # what the page must hold follows the week's own file: byes only in a week with byes, rows only once there are trends (Greptile, PR #146)
+          python3 - "pages/fantasy-$N.html" "$N" <<'PY'
+          import json, re, sys
+          h = open(sys.argv[1]).read(); N = sys.argv[2]; F = json.load(open(f'data/fan/w{N}.json')); off = set(F['byes'])
+          need = ['id="fz-up"', 'id="fz-down"', 'id="fz-rz"', 'data-fxset="std"', 'data-fxset="ppr"', f'<title>Week {N} fantasy football: usage risers, red zone and matchups | Down by Down</title>', f'card=page-fantasy-{N}']
+          if any(F['mu'].values()): need += ['id="fz-mu"', 'class="dbd-mvg up">Softest']
+          if F['byes']: need += ['id="fz-bye"']
+          if F['rz']['rb'] or F['rz']['rec']: need += ['class="fz-rz"']
+          miss = [m for m in need if m not in h]
+          if miss: sys.exit(f'the fantasy page is missing {miss}')
+          up = h[h.index('id="fz-up"'):h.index('id="fz-rz"')]; teams = re.findall(r'class="dbd-mvr fz-r (?:up|dn)"[^>]*data-team="([A-Z]+)"', up)
+          want = sum(len(F[g][p]) for g in ('risers', 'fallers') for p in ('RB', 'WR', 'TE'))
+          if len(teams) != want: sys.exit(f'the page draws {len(teams)} riser and faller rows, the file has {want}')
+          if off & set(teams): sys.exit(f'a team on bye is on the risers or fallers: {off & set(teams)}')
+          for b in F['bye']:
+              for f in ('std', 'half', 'ppr'):
+                  for p in b['top'][f]:
+                      if p['n'].replace("'", '&#039;') not in h: sys.exit(f"{p['n']} ({b['t']}, {f}) is missing from On bye")
+          d = re.search(r'<meta name="description" content="([^"]+)"', h).group(1)
+          if F['risers']['RB'] and F['risers']['RB'][0]['n'].replace("'", '&#039;') not in d: sys.exit('the description does not name the top riser: ' + d)
+          print('fantasy page: %d rows, byes %s; %s' % (len(teams), sorted(off), d))
+          PY
+          php tools/view_harness.php data fantasy 99 | grep -q 'route notfound' || { echo "a week with no fantasy file should be not found"; exit 1; }
+          DBD_HARNESS_PRETTY=1 php tools/view_harness.php data path "fantasy/week/$N/" | grep -q 'route fantasy' || { echo "/fantasy/week/$N/ should route"; exit 1; }
+          grep -qF "<link rel=\"canonical\" href=\"https://example.test/fantasy/week/$N/\">" "pages/fantasy-fantasy_week_$N.html" || { echo "the fantasy page's canonical is not its week path"; exit 1; }
+          DBD_HARNESS_PRETTY=1 php tools/view_harness.php data path "fantasy/x/" | grep -q 'route notfound' || { echo "/fantasy/x/ should be not found"; exit 1; }
+          php tools/view_harness.php data card "page-fantasy-$N" card-page-fantasy.png
+          if php tools/view_harness.php data card page-fantasy-99 /tmp/x.png 2>/dev/null; then echo "page-fantasy-99 should not render"; exit 1; fi
+          php tools/view_harness.php data sitemap | grep -q "fantasy" || { echo "the sitemap does not list the fantasy page"; exit 1; }
+          # links in: the week in review before it (when there is one), the Matchups chart, the hub and My team
+          if [ -f "data/week/w$((N-1)).json" ]; then
+            php tools/view_harness.php data week "$((N-1))" > /dev/null
+            grep -qF ">Fantasy for Week $N</a>" "pages/week-$((N-1)).html" || { echo "the Week $((N-1)) review does not link the Week $N fantasy page"; exit 1; }
+          fi
+          php tools/view_harness.php data matchups "$N" > /dev/null
+          grep -qF 'class="dbd-fxlink"' "pages/matchups-$N.html" || { echo "the Matchups fantasy chart does not link the fantasy page"; exit 1; }
+          php tools/view_harness.php data hub > /dev/null
+          f=$(ls -t pages/hub*.html | head -1)  # the harness names it after its default argument
+          if grep -qF 'Fantasy leaders' "$f"; then grep -qF ">Week $N fantasy: risers, red zone and matchups →</a>" "$f" || { echo "the hub does not link the fantasy page"; exit 1; }; fi
+          php tools/view_harness.php data myteam 00-0036322,00-0039075 > /dev/null
+          grep -qF ">Week $N fantasy: risers, red zone, matchups</a>" pages/myteam-00-0036322,00-0039075.html || { echo "My team does not link the fantasy page"; exit 1; }
       - name: The season draft and combine boards (SCOPE §63)
         run: |
           set -e

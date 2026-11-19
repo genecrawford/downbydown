@@ -3140,3 +3140,51 @@ Connecting 2.34.0 showed that Meta no longer offers "API setup with Instagram lo
 4. The token is kept with `expires` 0, never running out: no renewal and no "runs out" warning. The weekly event checks it instead; when Instagram stops taking it, the tab and the Overview say "Instagram stopped taking the token (…). Paste a new one." It still counts as connected, so a post that fails goes through the usual retries and note.
 
 **Tests:** the harness's fake API answers on both hosts and records which one each call went to: the token kinds, the ID cleaned to digits, a missing ID or a bad token or an unknown account keeps nothing, a good pair is kept never running out and checked on graph.facebook.com, posts go there, the weekly check isn't a renewal and its failure warns while a pass clears it, and an IG token still goes to graph.instagram.com. The admin harness looks for the new field.
+
+## 78. The weekly fantasy page (scoped and mocked 2026-11-18, `mockup-v51/`; decided; built as 2.35.0)
+
+§64 Plan 5a. Gene: "Scope the fantasy page." Mid-season, the one traffic plan that pays every week now.
+
+**What the site already has (checked 2026-11-18), so the page doesn't repeat it:**
+- The Week in review page's Movers band: one game's jump in snap or target share against the season (`movers.json`).
+- The Matchups page's full chart: every defense's rank in points allowed by position, in all three formats (`fantasy.json`).
+- Keys to the game: each side's biggest edge for next week (`DBD_Pack::keys`).
+- My team, fantasy points on every player page, the leaders boards.
+
+**What the page adds:** one stop for the coming week, built for the start/sit and waiver question. It looks forward (next week's opponent on every row), uses a three-game trend instead of one game, and adds red-zone usage, which nothing on the site shows yet.
+
+**Address and title:**
+- `/fantasy/week/{n}/` for the coming week (Week 11 now, data through Week 10). `/fantasy/` shows the current one.
+- Title: "Week 11 fantasy football: usage risers, red zone and matchups". Description names the top riser at each position.
+- Canonical, the sitemap (lastmod = the build), and a share card.
+
+**The page, top to bottom** (the site's own panels, rows and format switch, same as the Week in review page):
+1. **Header:** "Week 11 fantasy", a line of data through Week 10, games and byes, and the Standard / Half PPR / PPR switch (remembered on the device, as now). Jump links.
+2. **Usage risers:** three panels, RB, WR and TE, five each.
+   - Share over his last three games against his earlier games. Backs: share of the team's carries plus targets. Receivers and tight ends: share of the team's targets.
+   - Each row: face, name, team, a sparkline of the share game by game, "+15 pts, 26% → 41%", points a game over the three (in the chosen format), and next week's opponent with the defense's rank against his position, marked soft (1st–8th most allowed) or tough (25th–32nd).
+   - Out: players on bye, and anyone with fewer than two games on each side of the split.
+3. **Fallers:** one panel, three per position, the biggest drops among players who had at least 15% before.
+4. **Red zone:** two panels, the last three games inside the 20. Backs: carries plus targets, how many inside the 5, touchdowns, share of the team's red-zone plays. Receivers and tight ends: targets, the same columns. Six each.
+5. **Matchups at a glance:** four small panels (QB, RB, WR, TE): the four softest matchups this week and the two toughest, in the chosen format, each "offense vs defense, 6th most allowed, 26.7 a game". A link to the full chart on the Matchups page.
+6. **Edges from Keys to the game:** every game in one list, each side's biggest edge in a line, linking to the game page.
+7. **On bye:** the teams off and each one's top three scorers, so readers know who to replace.
+
+**Data:**
+- The build (tools/build_data.py) writes `data/fan/w{n}.json` for the coming week: the risers, fallers, red zone, matchups and byes, worked out from the plays files (team totals counted from every target and designed run, so a player missing from a roster can't inflate a share).
+- It is rewritten every hourly build until the week's first kickoff, then left alone, so each week's page stays as it was before the games. Past weeks stay up at their addresses.
+- The keys edges come from the plugin at render time, as now.
+
+**Links in:** the Week in review page's subtitle ("Fantasy for Week 11"), the Matchups page's fantasy chart heading, My team, and the hub. Gene adds "Fantasy" to the Divi menu.
+
+**Not in this release:** 5b (share my team's week) and a fantasy item in the share pack.
+
+**Decisions (all made):**
+1. **Trend window:** DECIDED 2026-11-19: last three games against the earlier ones (Gene: "Last three").
+2. **Share pack item:** DECIDED 2026-11-19: later, after the page has run a week or two; not in this release (Gene: "Later").
+
+**Effort:** one build change and a mid-size plugin release.
+
+**Measure:** visits to `/fantasy/`, returning visitors on Wednesday to Sunday in Analytics, and Reddit referrals once it's in the share pack.
+
+**Tests:** the build checks the file's shape and that no team on bye appears in the lists; the harness renders the page for the newest week, checks every section, the format switch, the share card (1200×630), the title, and that an unknown week is a 404.
