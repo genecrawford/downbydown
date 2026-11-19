@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.36.0
+Stable tag: 2.37.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,11 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.37.0 =
+* A chart on every position tab of Leaders (SCOPE §80): wide receivers and tight ends (target share against EPA a target), backs (touches a game against yards a touch) and quarterbacks (EPA a dropback against CPOE). Each comes from the tab's own boards, with dots sized by volume and the top six on each axis named.
+* Pass rushers move to a tab of their own, /leaders/rush/, just before Defenses, and Defenses goes back to the team boards. The share pack item now links there.
+* The Highlight menu is shared: the team you pick is remembered on the device and shows on every chart. Names never cover each other; a name with no clear spot is left off, and its dot keeps its tip.
 
 = 2.36.0 =
 * Pass rushers (SCOPE §79): a band at the top of Leaders → Defenses with every rusher who has a regular role on one chart, pressures a game against sacks a game. Linemen and linebackers count once they've played half their team's games, on 40% or more of the snaps, with a pressure a game.

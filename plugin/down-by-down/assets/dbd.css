@@ -2178,6 +2178,7 @@ html:not([data-fx]) .dbd [data-fx="half"],html[data-fx="std"] .dbd [data-fx="std
 .dbd .pr-svg{display:block;width:100%;height:auto}
 .dbd .pr-svg.narrow{display:none}
 .dbd .pr-svg .pr-g{stroke:rgba(22,30,54,.10);stroke-width:1}
+.dbd .pr-svg .pr-g.z{stroke:rgba(22,30,54,.32)}
 .dbd .pr-svg .pr-md{stroke:var(--dbd-muted);stroke-width:1.5;stroke-dasharray:5 4}
 .dbd .pr-svg .pr-tk{fill:var(--dbd-muted)}
 .dbd .pr-svg .pr-ax{fill:var(--dbd-ink);font-weight:600;letter-spacing:.06em}
