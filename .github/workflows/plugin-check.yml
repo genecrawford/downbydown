@@ -54,7 +54,8 @@ jobs:
           php tools/view_harness.php data matchups "$N" > /dev/null
           grep -qF 'class="dbd-fxlink"' "pages/matchups-$N.html" || { echo "the Matchups fantasy chart does not link the fantasy page"; exit 1; }
           php tools/view_harness.php data hub > /dev/null
-          grep -qF ">Week $N fantasy: risers, red zone and matchups →</a>" pages/hub.html || { echo "the hub does not link the fantasy page"; exit 1; }
+          f=$(ls -t pages/hub*.html | head -1)  # the harness names it after its default argument
+          grep -qF ">Week $N fantasy: risers, red zone and matchups →</a>" "$f" || { echo "the hub does not link the fantasy page"; exit 1; }
           php tools/view_harness.php data myteam 00-0036322,00-0039075 > /dev/null
           grep -qF ">Week $N fantasy: risers, red zone, matchups</a>" pages/myteam-00-0036322,00-0039075.html || { echo "My team does not link the fantasy page"; exit 1; }
       - name: The season draft and combine boards (SCOPE §63)
