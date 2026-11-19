@@ -549,7 +549,9 @@ if ( $view === 'packmail' ) {
 		/* the email */
 		$doc = DBD_Pack_Mail::build( $n ); $h = $doc['html'] ?? '';
 		$ck( 'the subject leads with the swing and the riser', (bool) preg_match( '/^Week ' . $n . ' share pack: .+-point swing, .+’s \d+%$/u', $doc['subject'] ?? '' ), $doc['subject'] ?? '' );
-		foreach ( array( '1 · The biggest swing', '3 · Best and worst offense', '5 · Week leaders', '6 · Pass rushers', '7 · Keys to the game, Week ' . ( $n + 1 ), 'Reddit title', 'Reddit comment, with the link', 'X and Bluesky', ' of 280', 'Open the Share pack', 'page=down-by-down-share&#038;week=' . $n ) as $w ) {
+		$hasr = in_array( 'rush', array_column( DBD_Pack::items( $n ), 'k' ), true );  /* pass rushers only when the defense files are at week $n (Greptile, PR #147) */
+		$ck( 'the count of things to post', strpos( $h, ucfirst( array( 5 => 'five', 6 => 'six', 7 => 'seven' )[ count( DBD_Pack::items( $n ) ) + ( DBD_Pack::keys( $n ) ? 1 : 0 ) ] ?? '?' ) . ' things to post this week.' ) !== false );
+		foreach ( array_merge( $hasr ? array( '6 · Pass rushers' ) : array(), array( '1 · The biggest swing', '3 · Best and worst offense', '5 · Week leaders', '7 · Keys to the game, Week ' . ( $n + 1 ), 'Reddit title', 'Reddit comment, with the link', 'X and Bluesky', ' of 280', 'Open the Share pack', 'page=down-by-down-share&#038;week=' . $n ) ) as $w ) {
 			$ck( 'the email has ' . $w, strpos( $h, $w ) !== false || strpos( $h, str_replace( '&#038;', '&', $w ) ) !== false ); }
 		preg_match_all( '#(?:href|src)="([^"]*)"#', $h, $m ); $rel = array_filter( $m[1], function ( $u ) { return ! preg_match( '#^https?://#', $u ); } );
 		$ck( 'every link and image is absolute', ! $rel, implode( ' ', $rel ) );
@@ -792,7 +794,7 @@ if ( $view === 'admin' ) {
 		'dt' => array( 'Current data', 'Sync log', 'Seasons', 'Share cards', 'value="dbd_data"', 'harness-token' ),
 		'gr' => array( 'Visits by source', 'data-g="sources"', 'Google search', 'data-g="search"', 'Titles to tune', 'data-g="tune"', 'data-g="copy"', 'Top landing pages', 'data-g="landing"', 'Brevo isn’t set up', 'data-g="shares"', 'data-g="signups"', 'analytics.google.com/analytics/web/#/p123456/', 'resource_id=https%3A%2F%2Fexample.test%2F', 'page=googlesitekit-dashboard' ) );
 	$want['sp'] = array( 'Week ', ' pack</h2>', 'name="week"', 'Click where you want to post.', 'Change the list', 'class="sp-open"',
-		'The biggest swing', 'A usage riser', 'Best and worst offense', 'A target-share mover', 'Week leaders', '-leaders.png"', 'Pass rushers', '-pass-rushers.png"', 'Keys to the game, Week ', 'Post it', 'Also fits r/',
+		'The biggest swing', 'A usage riser', 'Best and worst offense', 'A target-share mover', 'Week leaders', '-leaders.png"', 'Keys to the game, Week ', 'Post it', 'Also fits r/',
 		'<details class="sp-tx"><summary>Texts to copy</summary>', 'Reddit title', 'Reddit first comment, with the link', 'X and Bluesky', ' of 280', 'Instagram caption', 'class="button button-small sp-cp"',
 		'download="dbd-week-', 'card=pack-week-', 'Download square for Instagram', 'card=ig-week-', 'Download the game card',
 		'class="button sp-rd" aria-label="Post to r/downbydown"', 'https://www.reddit.com/r/downbydown/submit?url=', 'share%3Dpack-week-', '>r/downbydown</a>',
@@ -800,6 +802,7 @@ if ( $view === 'admin' ) {
 		'class="button sp-fb"', 'sharer.php?u=', '>Facebook</a>', 'class="button sp-cp sp-ig"', '>Instagram</button>', 'aria-label="Download square for Instagram">Square</a>',
 		'<details class="dbd-box sp-set" id="dbd-pack-settings"', 'Settings: the Tuesday email, your accounts and Instagram posting', 'value="dbd_pack_settings"', 'name="dbd_pack_mail_set[on]"', 'name="dbd_pack_mail_set[to]"', 'Brevo isn’t set up',
 		'name="dbd_pack_sub"', 'name="dbd_pack_x"', 'name="dbd_pack_bsky"', 'name="dbd_pack_fb"', 'name="dbd_pack_ig"', 'Open the group', 'Save settings', 'id="dbd-pack-settings"><summary>', 'Instagram posting', 'name="dbd_ig_set[on]"', 'name="dbd_ig_set[account]"', 'name="dbd_ig_token_new"', 'Paste the token from your Meta app', 'Instagram isn’t connected yet.' );  /* SCOPE §68, §71–74; the settings box starts closed */
+	if ( in_array( 'rush', array_column( DBD_Pack::items( DBD_Pack::newest() ), 'k' ), true ) ) { array_push( $want['sp'], 'Pass rushers', '-pass-rushers.png"' ); }  /* SCOPE §79, only for the week the defense files run through */
 	$want['ov'][] = 'Open Growth'; $want['ov'][] = 'data-g="ov-visits"'; $want['ov'][] = 'data-g="ov-clicks"';
 	$bad = 0; $dir = getenv( 'DBD_HARNESS_HTML' ); if ( $dir && ! is_dir( $dir ) ) { mkdir( $dir, 0777, true ); }
 	foreach ( dbd_admin_tabs() as $k => $t ) {

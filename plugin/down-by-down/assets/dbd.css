@@ -2185,11 +2185,11 @@ html:not([data-fx]) .dbd [data-fx="half"],html[data-fx="std"] .dbd [data-fx="std
 .dbd .pr-d{outline:none}
 .dbd .pr-d circle{stroke:#fff;stroke-width:1.5}
 .dbd .pr-d:hover circle,.dbd .pr-d:focus circle{stroke:var(--dbd-ink);stroke-width:2}
-.dbd .pr-d .pr-h{display:none}
+.dbd .pr-svg .pr-h{display:none;fill:var(--dbd-ink);font-weight:600}
 .dbd .pr-chart.hl .pr-d{opacity:.14}
 .dbd .pr-chart.hl .pr-d .pr-l{display:none}
 .dbd .pr-chart.hl .pr-d.on{opacity:1}
-.dbd .pr-chart.hl .pr-d.on .pr-l{display:inline;font-weight:600}
+.dbd .pr-chart.hl .pr-d.on .pr-h{display:inline}
 .dbd .pr-t{width:100%;border-collapse:collapse;font:500 12px var(--dbd-mono)}
 .dbd .pr-t th{font:600 10px var(--dbd-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--dbd-muted);text-align:right;padding:6px 10px;border-bottom:1px solid var(--dbd-line)}
 .dbd .pr-t td{text-align:right;padding:6px 10px;border-top:1px solid var(--dbd-line);white-space:nowrap}

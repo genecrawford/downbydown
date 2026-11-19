@@ -3209,7 +3209,7 @@ Gene shared a fan account's pass-rusher chart (1,800 likes in seven hours) and a
 4. **The table:** the top ten by pressures a game, with pressures, sacks, QB hits, tackles for loss and snap share, and Show all 101. The highlighted team's rows are shaded. On a phone it keeps the rank, the player, pressures a game and sacks.
 5. **The note:** what counts and where the numbers come from.
 
-**Who counts:** defensive linemen and linebackers who played at least half their team's games, on 40% or more of the snaps in the games they played, with at least one pressure a game. That's 101 through Week 10.
+**Who counts:** defensive linemen and linebackers who played at least half their team's games, on 40% or more of the snaps in the games they played, with at least one pressure a game. That's 111 through Week 10. The mock showed 101: it read the build's snap share, which divides by the team's games, so players who missed games fell short (Ed Oliver: 35% of the team's snaps is 52% of his own; Greptile, PR #147). Rusher names link to their team's defense page, since defenders have no player pages.
 
 **Sources, said plainly on the page:** pressures are Pro Football Reference's charting; sacks, QB hits and tackles for loss are nflverse's play-by-play. The two don't always add up the same way (Will Anderson Jr. has more sacks plus hits than charted pressures), so the chart keeps one source on each axis.
 

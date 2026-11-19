@@ -8,7 +8,7 @@
     document.querySelectorAll('.pr-t tbody tr').forEach(function (r) { r.classList.toggle('on', !!t && r.getAttribute('data-t') === t); });
     try { if (t) { localStorage.setItem(K, t); } else { localStorage.removeItem(K); } } catch (e) {}
   }
-  s.addEventListener('change', function () { hl(s.value); });
+  s.addEventListener('change', function () { hl(s.value); if (window.dbdTrack) window.dbdTrack('select_content', { content_type: 'pass_rushers_team', item_id: s.value || 'all' }); });  /* a reader's choice, not a restored one (SCOPE §79) */
   try { var v = localStorage.getItem(K); if (v && s.querySelector('option[value="' + v.replace(/[^A-Z]/g, '') + '"]')) { s.value = v; hl(v); } } catch (e) {}
   if (m) m.addEventListener('click', function () { document.querySelectorAll('.pr-t tbody tr.pr-x').forEach(function (r) { r.classList.remove('pr-x'); }); m.remove(); });
 })();

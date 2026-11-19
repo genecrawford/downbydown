@@ -83,7 +83,8 @@ jobs:
               d = json.load(open(fn)); tg = d.get('g') or 0
               for p in d.get('defenders') or d.get('players') or []:
                   g = p.get('g') or 0
-                  if p.get('grp') in ('DL', 'LB') and g and g * 2 >= tg and (p.get('snap') or 0) >= 40 and (p.get('prs') or 0) >= g and p.get('id'): R.append(p)
+                  snap = round((p.get('snap') or 0) * max(tg, g) / g) if g else 0  # the build divides by the team's games: his share in the games he played
+                  if p.get('grp') in ('DL', 'LB') and g and g * 2 >= tg and snap >= 40 and (p.get('prs') or 0) >= g and p.get('id'): R.append(p)
           N = len(R)
           if N < 3: print('fewer than three rushers: no band expected'); sys.exit(0 if 'id="ld-rush"' not in h else 'a band with too few rushers')
           need = ['id="ld-rush"', 'id="pr-team"', f'{N} rushers, a game each', 'PRESSURES A GAME', 'SACKS A GAME', 'class="pr-svg wide"', 'class="pr-svg narrow"']
@@ -101,6 +102,8 @@ jobs:
           lp = max(R, key=lambda p: (p['prs'], x(p)))['name']; ls = max(R, key=lambda p: (p.get('sk') or 0, y(p)))['name']
           say = re.search(r'<p class="dbd-mv-say">(.*?)</p>', band).group(1)
           if lp.replace("'", '&#039;') not in say or ls.replace("'", '&#039;') not in say: sys.exit('the read does not name the leaders: ' + say)
+          if '/player/' in band or 'player=' in band: sys.exit('a rusher links to a player page; defenders have none')
+          if band.count('class="pr-h"') != 2 * N: sys.exit('every rusher needs a highlight label on both charts')
           print(f'pass rushers: {N} rushers, {len(top)} named, leaders {lp} and {ls}')
           PY
           # the card and the square, for the week the defense files run through; never an older week's
