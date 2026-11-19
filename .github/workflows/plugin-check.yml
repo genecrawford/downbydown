@@ -90,7 +90,7 @@ jobs:
                   if p.get('grp') in ('DL', 'LB') and g and g * 2 >= tg and snap >= 40 and (p.get('prs') or 0) >= g and p.get('id'): R.append(p)
           N = len(R)
           if N < 3: print('fewer than three rushers: no band expected'); sys.exit(0 if 'id="ld-rush"' not in h else 'a band with too few rushers')
-          need = ['id="ld-rush"', 'id="pr-team"', f'{N} rushers, a game each', 'PRESSURES A GAME', 'SACKS A GAME', 'class="pr-svg wide"', 'class="pr-svg narrow"']
+          need = ['id="ld-rush"', 'class="pr-team"', f'{N} rushers, a game each', 'PRESSURES A GAME', 'SACKS A GAME', 'class="pr-svg wide"', 'class="pr-svg narrow"']
           if N > 10: need.append(f'Show all {N}</button>')
           miss = [m for m in need if m not in h]
           if miss: sys.exit(f'the band is missing {miss}')
@@ -107,7 +107,8 @@ jobs:
           say = re.search(r'<p class="dbd-mv-say">(.*?)</p>', band).group(1)
           if lp.replace("'", '&#039;') not in say or ls.replace("'", '&#039;') not in say: sys.exit('the read does not name the leaders: ' + say)
           if '/player/' in band or 'player=' in band: sys.exit('a rusher links to a player page; defenders have none')
-          if band.count('class="pr-h"') != 2 * N: sys.exit('every rusher needs a highlight label on both charts')
+          hc = band.count('class="pr-h"')
+          if not N <= hc <= 2 * N: sys.exit(f'{hc} highlight labels for {N} rushers on two charts')  # a team name with no clear spot is left off (Greptile, PR #148)
           if 'class="pr-team"' not in band: sys.exit('the shared Highlight menu is missing')
           print(f'pass rushers: {N} rushers, {len(top)} named, leaders {lp} and {ls}')
           PY
@@ -137,7 +138,8 @@ jobs:
               wide = band[band.index('class="pr-svg wide"'):band.index('</svg>', band.index('class="pr-svg wide"'))]
               dots = len(re.findall(r'<g class="pr-d', wide))
               if dots != N: sys.exit(f'{g}: {dots} dots, the board pool has {N}')
-              if band.count('class="pr-h"') != 2 * N: sys.exit(f'{g}: every player needs a highlight label on both charts')
+              hc = band.count('class="pr-h"')
+              if not N <= hc <= 2 * N: sys.exit(f'{g}: {hc} highlight labels for {N} players on two charts')
               top = {r['n'] for r in sorted(rows, key=lambda r: (-r['x'], -r['y'], r['n']))[:6]} | {r['n'] for r in sorted(rows, key=lambda r: (-r['y'], -r['x'], r['n']))[:6]}
               want = {n.replace("'", '&#039;') for n in top}; named = set(re.findall(r'<text class="pr-l" [^>]*>([^<]+)</text>', wide))
               if not named <= want or len(named) < len(want) - 4: sys.exit(f'{g}: named {sorted(named)}, want most of {sorted(want)}')

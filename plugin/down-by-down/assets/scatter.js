@@ -5,8 +5,9 @@
   if (!menus.length) return;
   function hl(t) {
     document.querySelectorAll('.pr-chart').forEach(function (c) {
-      c.classList.toggle('hl', !!t);
-      c.querySelectorAll('.pr-d').forEach(function (g) { g.classList.toggle('on', g.getAttribute('data-t') === t); });
+      var has = !!t && !!c.querySelector('.pr-d[data-t="' + t + '"]');  /* a team with nobody on this chart leaves it as it is; the choice stays for the others (Greptile, PR #148) */
+      c.classList.toggle('hl', has);
+      c.querySelectorAll('.pr-d').forEach(function (g) { g.classList.toggle('on', has && g.getAttribute('data-t') === t); });
     });
     document.querySelectorAll('.pr-t tbody tr').forEach(function (r) { r.classList.toggle('on', !!t && r.getAttribute('data-t') === t); });
     menus.forEach(function (s) { s.value = s.querySelector('option[value="' + t + '"]') ? t : ''; });

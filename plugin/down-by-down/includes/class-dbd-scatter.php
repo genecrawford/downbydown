@@ -123,9 +123,8 @@ class DBD_Scatter {
 		foreach ( $dots as $x ) {
 			$id = (string) $x['id']; list( $cx, $cy, $r ) = $pts[ $id ];
 			$lab = function ( $p, $cls ) use ( $x, $f ) { return '<text class="' . $cls . '" x="' . round( $p[0], 1 ) . '" y="' . round( $p[1], 1 ) . '" text-anchor="' . $p[2] . '" ' . $f . '>' . esc_html( $x['n'] ) . '</text>'; };
-			$hp = $team[ $id ] ?? array( $cx + $r + 4, $cy + $px * 0.35, 'start' );
 			$s .= '<g class="pr-d' . ( isset( $at[ $id ] ) ? ' lab' : '' ) . '" data-t="' . esc_attr( $x['t'] ) . '" data-tip="' . esc_attr( $x['tip'] ) . '" tabindex="0"><circle cx="' . round( $cx, 1 ) . '" cy="' . round( $cy, 1 ) . '" r="' . round( $r, 1 ) . '" fill="' . esc_attr( self::color( $x['t'] ) ) . '"><title>' . esc_html( $x['n'] . ', ' . $x['t'] ) . '</title></circle>'
-				. ( isset( $at[ $id ] ) ? $lab( $at[ $id ], 'pr-l' ) : '' ) . $lab( $hp, 'pr-h' ) . '</g>';
+				. ( isset( $at[ $id ] ) ? $lab( $at[ $id ], 'pr-l' ) : '' ) . ( isset( $team[ $id ] ) ? $lab( $team[ $id ], 'pr-h' ) : '' ) . '</g>';  /* a highlight name with no clear spot is left off too (Greptile, PR #148) */
 		}
 		return $s . '</svg>';
 	}
