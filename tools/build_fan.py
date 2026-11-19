@@ -45,6 +45,15 @@ def started(games, now):
     return False
 
 
+def scored(desc):
+    """True when the ball carrier himself scored the play's touchdown (Greptile, PR #146): read only what stood after a replay
+    reversal, and a fumble counts against him unless he recovered it himself. An interception never reaches here."""
+    t = str(desc or '').upper()
+    if 'REVERSED' in t: t = t.rsplit('REVERSED', 1)[1]
+    if 'FUMBLE' not in t: return True
+    return 'AND RECOVERS' in t and 'RECOVERED BY' not in t
+
+
 def _wk(gid):
     try: return int(str(gid).split('_')[1])
     except (IndexError, ValueError): return 0
@@ -86,8 +95,7 @@ def build(out, now=None, force=False):
             if pt == 'pass' and k in ('comp', 'inc', 'int'): kind = 't'; tot[t][wk] += 1; tgt[t][wk] += 1
             elif pt == 'run' and k == 'run': kind = 'c'; tot[t][wk] += 1
             else: continue
-            # a touchdown he scored: a completion or a run that scored with no fumble on it, never an interception or fumble returned (Greptile, PR #146)
-            mine = bool(r[K['td']]) and k in ('comp', 'run') and 'FUMBLE' not in str(r[K['desc']] or '').upper()
+            mine = bool(r[K['td']]) and k in ('comp', 'run') and scored(r[K['desc']])
             rows.append((wk, kind, r[K['pid']], r[K['yl']], mine))
         plays[t] = rows
     team_weeks = lambda t: sorted(w for w, v in tot[t].items() if v > 0)
