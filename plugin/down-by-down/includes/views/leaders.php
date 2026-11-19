@@ -22,6 +22,7 @@ echo '<nav class="dbd-wkbar ld-tabs" aria-label="Leaders"><div class="dbd-wktabs
 foreach ( DBD_Leaders::GROUPS as $k => $lab ) { echo '<a href="' . esc_url( $lurl( array( 'g' => $k ) ) ) . '"' . ( $k === $g ? ' aria-current="page"' : '' ) . '>' . esc_html( $lab ) . '</a>'; }
 echo '</div></nav>';
 if ( $g === 'def' ) {
+	echo DBD_Rush::band();  /* pass rushers, pressures against sacks (SCOPE §79) */
 	echo DBD_Leaders::defenses();  /* SCOPE §39 */
 } elseif ( $g === 'k' ) {
 	echo DBD_Kicker::leaders_tab();  /* SCOPE §47 */

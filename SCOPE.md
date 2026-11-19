@@ -3188,3 +3188,62 @@ Connecting 2.34.0 showed that Meta no longer offers "API setup with Instagram lo
 **Measure:** visits to `/fantasy/`, returning visitors on Wednesday to Sunday in Analytics, and Reddit referrals once it's in the share pack.
 
 **Tests:** the build checks the file's shape and that no team on bye appears in the lists; the harness renders the page for the newest week, checks every section, the format switch, the share card (1200×630), the title, and that an unknown week is a 404.
+
+## 79. Pass rushers: pressures against sacks (scoped and mocked 2026-11-19, `mockup-v52/`; all decided; built as 2.36.0)
+
+Gene shared a fan account's pass-rusher chart (1,800 likes in seven hours) and asked what I made of it, then: "Scope it." The site's defense files already back up its Dallas Turner numbers (8 sacks, 30 pressures, 22 QB hits). Individual pass rushers aren't ranked anywhere on the site today: the Leaders page's Defenses tab ranks the 32 units, and defenders appear only on their own team's defense page.
+
+**What it adds:** one chart of every pass rusher with a regular role. Pressures a game run across, sacks a game run up, so a reader sees at a glance who gets there and who finishes. It's our own chart from our own numbers, not a copy of the post's.
+
+**Where:** a Pass rushers band at the top of Leaders → Defenses (`/leaders/def/#ld-rush`), above the team boards.
+
+**The band, top to bottom:**
+1. **Heading:** "Through Week 10 · 101 rushers, a game each", with a Highlight menu (All teams, then the 32 teams by nickname).
+2. **The read:** who gets there most (Greg Rousseau, 4.1 pressures a game, 37 in all) and who finishes most (Will Anderson Jr., 10.5 sacks, 1.17 a game).
+3. **The chart:**
+   - every rusher as a dot in his team's color, with dashed lines at the middle of the pack on each axis
+   - the top eight on each axis named
+   - a tip on each dot: pressures, sacks, QB hits, games and snap share
+   - highlighting a team dims everyone else and names that team's rushers (the Vikings: Turner, Van Ginkel, Cashman, Wilson, Rodriguez, Ingram-Dawkins); the choice is remembered on the device
+   - on a phone, a smaller chart with larger type that names the top three on each axis
+4. **The table:** the top ten by pressures a game, with pressures, sacks, QB hits, tackles for loss and snap share, and Show all 101. The highlighted team's rows are shaded. On a phone it keeps the rank, the player, pressures a game and sacks.
+5. **The note:** what counts and where the numbers come from.
+
+**Who counts:** defensive linemen and linebackers who played at least half their team's games, on 40% or more of the snaps in the games they played, with at least one pressure a game. That's 101 through Week 10.
+
+**Sources, said plainly on the page:** pressures are Pro Football Reference's charting; sacks, QB hits and tackles for loss are nflverse's play-by-play. The two don't always add up the same way (Will Anderson Jr. has more sacks plus hits than charted pressures), so the chart keeps one source on each axis.
+
+**Share card and square:** `pack-week-N-rush` (1200×630) and `ig-week-N-rush`, drawn only for the week the defense files run through, in the site's card style:
+- the title "Pass rushers"
+- three tiles: most pressures, most sacks, and the number of rushers
+- the chart on the green panel, naming the top three on each axis
+
+The Instagram square puts the short version above it, as the other squares do.
+
+**Share pack item** (decided: weekly; item 6, Keys to the game moves to 7; it rides the Tuesday Instagram carousel, with no day of its own):
+- **Title:** "Every NFL pass rusher through Week 10, pressures a game against sacks a game (101 rushers with a regular role)".
+- **Short version:** "Pass rushers through Week 10: Greg Rousseau gets there most (4.1 pressures a game) and Will Anderson Jr. finishes most (10.5 sacks). All 101 on one chart."
+- **Fits:** r/nfl.
+- **Link:** the band.
+
+**Data:** no build change. The plugin reads `defense/{TEAM}.json` (`defenders`: g, snap, prs, sk, qbh, tfl) at render time, cached with the data version.
+
+**Labels:** a label never sits on another label or on a dot. Near the right edge it moves above its dot.
+
+**Not in this release:** each team's defense page with its own rushers highlighted on the same chart, and a week-by-week view.
+
+**Decisions (all made):**
+1. **Axes:** DECIDED 2026-11-19: pressures a game against sacks a game (Gene: "Pressures vs sacks").
+2. **Share pack:** DECIDED 2026-11-19: a weekly item, the card plus the square, every Tuesday with the pack (Gene: "Weekly item").
+3. **Who counts:** DECIDED 2026-11-19: half the games, 40% of the snaps and a pressure a game, 101 rushers through Week 10 (Gene: "40% of snaps").
+
+**Effort:** a small-to-mid plugin release (a band, a new card drawing, a share pack item) and no build change.
+
+**Measure:** visits to `/leaders/def/`, the Highlight menu's use (Analytics event), and referrals from the posts.
+
+**Tests:** the harness renders `/leaders/def/` and checks:
+- the band, the dot count and the named rushers
+- that no qualifier misses the rules
+- the table's top ten and Show all
+- the card (1200×630) and the square (1080×1080)
+- the share pack item's text
