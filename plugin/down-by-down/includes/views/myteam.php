@@ -17,7 +17,8 @@ if ( ! $rows ) {
 	echo '<section class="dbd-panel mt-board"><div class="dbd-ph"><span class="dbd-lab"><b>Lineup</b> · QB, 2 RB, 2 WR, TE, FLEX, then the bench</span></div>' . DBD_MyTeam::board( array(), 1 ) . '</section>';  /* the empty lineup: every slot has its own + */
 } else {
 	echo '<section class="dbd-panel mt-add"><div class="mt-addrow">' . $search . '<div class="dbd-fg"><span>Fantasy scoring</span>' . DBD_Fantasy::seg() . '</div><div class="mt-acts"><button class="dbd-cbtn" type="button" id="mt-copy">Copy link</button><button class="dbd-cbtn" type="button" id="mt-clear">Clear</button></div></div></section>';
-	echo '<section class="dbd-panel mt-sum"><div class="dbd-ph"><span class="dbd-lab"><b>This week</b> · Week ' . $cw . ', your starters</span><span class="dbd-badge">best lineup by points a game</span></div>';
+	$fz = DBD_FanWeek::link( $cw, 'Week ' . $cw . ' fantasy: risers, red zone, matchups', 'dbd-badge' );  /* SCOPE §78 */
+	echo '<section class="dbd-panel mt-sum"><div class="dbd-ph"><span class="dbd-lab"><b>This week</b> · Week ' . $cw . ', your starters</span>' . ( $fz !== '' ? $fz : '<span class="dbd-badge">best lineup by points a game</span>' ) . '</div>';
 	foreach ( DBD_Fantasy::FMT as $i => $fm ) { echo '<div data-fx="' . $fm . '">' . DBD_MyTeam::summary( $rows, $i ) . '</div>'; }
 	echo '</section>';
 	echo '<section class="dbd-panel mt-board"><div class="dbd-ph"><span class="dbd-lab"><b>Lineup</b> · QB, 2 RB, 2 WR, TE, FLEX, then the bench</span><span class="mt-cmp">' . DBD_MyTeam::compare_links( $rows ) . '</span></div>';

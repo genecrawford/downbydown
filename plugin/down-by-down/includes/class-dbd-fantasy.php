@@ -177,7 +177,8 @@ class DBD_Fantasy {
 			}
 		}
 		if ( $rows === '' ) { return ''; }
-		return '<section class="dbd-panel dbd-fxm" id="dbd-fxm"><div class="dbd-ph"><span class="dbd-lab"><b>Fantasy matchups</b> · ' . esc_html( $label ) . ': where each defense ranks in points allowed, by position</span>' . self::seg() . '</div>'
+		$wk = (int) ( $games[0]['week'] ?? 0 ); $fz = class_exists( 'DBD_FanWeek' ) ? DBD_FanWeek::link( $wk, 'Week ' . $wk . ' fantasy: risers, red zone, byes', 'dbd-fxlink' ) : '';  /* SCOPE §78 */
+		return '<section class="dbd-panel dbd-fxm" id="dbd-fxm"><div class="dbd-ph"><span class="dbd-lab"><b>Fantasy matchups</b> · ' . esc_html( $label ) . ': where each defense ranks in points allowed, by position' . ( $fz !== '' ? ' · ' . $fz : '' ) . '</span>' . self::seg() . '</div>'
 			. '<div class="dbd-tw"><table class="dbd-stat dbd-fxmt"><thead><tr><th>Offense</th><th>QB</th><th>RB</th><th>WR</th><th>TE</th><th>K</th></tr></thead><tbody>' . $rows . '</tbody></table></div>'
 			. '<div class="dbd-legend"><span><i class="sq soft"></i>1st to ' . self::ord( self::SOFT ) . ', a soft matchup</span><span><i class="sq tough"></i>' . self::ord( self::TOUGH ) . ' to ' . self::ord( count( $f['allow'] ) ) . ', a tough one</span><span>1st allows the most</span></div>'
 			. '<p class="dbd-note">Points allowed are every player at the position the defense has faced this season, per game. The format you pick is remembered on this device.</p></section>';

@@ -39,6 +39,7 @@ Writes:
   series.json     every scheduled pair's series since 1999 and every team's record broken down (SCOPE §33)
   players/leaders.json  every Scorecard metric and Playstyle trait by group above a usage floor, and the fantasy boards (SCOPE §37)
   defense/{TEAM}.json, defense/league.json, plays/def/{TEAM}.json  the defensive half (SCOPE §39)
+  fan/w{N}.json   the weekly fantasy page for the coming week (SCOPE §78): usage risers and fallers, red zone, matchups, byes; frozen at the week's first kickoff (tools/build_fan.py)
   fantasy.json    points allowed by each defense to QB/RB/WR/TE in standard, half and PPR, with ranks, the starter line and boom/bust lines (SCOPE §34);
                   player files gain fan (per-format totals, range, booms, busts, ranks), index rows fp/fr/fpos
   manifest.json   {season, week, through_week, built_at, files: {path: sha1}}
@@ -1666,6 +1667,10 @@ for wk_s, gl_ in sorted(weeks.items(), key=lambda x: int(x[0])):
                players=pl_top, fx=fx_, pbp=sorted(pbp_g), movers=movers_for(N) if complete else None)
     json.dump(clean(rec), open(f'{out}/week/w{N}.json', 'w'), separators=(',', ':')); _wk_done.append(N)
 print('week in review:', len(_wk_done), 'weeks', _wk_done[-3:])
+
+# ---------------------------------------------------------------- the weekly fantasy page (SCOPE §78): fan/w{N}.json for the coming week, frozen at its first kickoff
+import build_fan
+build_fan.build(out)
 
 # ---------------------------------------------------------------- manifest
 files = {}

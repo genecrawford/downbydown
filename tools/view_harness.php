@@ -3,7 +3,7 @@
  * Render one plugin view outside WordPress, from the repo's data files, with a thin shim for the handful of
  * WordPress functions the plugin calls. Catches the fatal that a live page would hide behind "critical error".
  *   php tools/view_harness.php <data dir> <view> [arg]
- *   views: player <gsis id> | players | team <ABBR> | hub | game <game id> | teamplayers <ABBR> | matchups [N] | teams | compare <id,id> | myteam [id,id,…] | leaders [g or board key] | defense <ABBR> | week [N]
+ *   views: player <gsis id> | players | team <ABBR> | hub | game <game id> | teamplayers <ABBR> | matchups [N] | teams | compare <id,id> | myteam [id,id,…] | leaders [g or board key] | defense <ABBR> | week [N] | fantasy [N]
  *   DBD_HARNESS_ROOT=1: the app page is /hub/, not the front page, with paths at the root
  *   live blocks (class-dbd-blocks.php): block <type> ['k=v&k=v' attributes] | page <html file> (a theme page with its [dbd_block] shortcodes drawn)
  *   the weekly post (class-dbd-post.php, SCOPE §46): post <N> (DBD_HARNESS_AHEAD=0 leaves out next week, as a backfilled post does) | sitemap (every app URL)
@@ -76,7 +76,7 @@ function wp_schedule_single_event() {} function wp_next_scheduled() { return fal
 
 /* ---- the plugin, minus the bootstrap and admin. The SEO class extends a WordPress sitemap base class; an empty stand-in lets it load. */
 if ( ! class_exists( 'WP_Sitemaps_Provider' ) ) { class WP_Sitemaps_Provider { public $name = ''; public $object_type = ''; } }
-foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-kicker', 'class-dbd-defense', 'class-dbd-week', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-boards', 'class-dbd-sync', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo', 'class-dbd-blocks', 'class-dbd-post', 'class-dbd-news', 'class-dbd-email', 'class-dbd-videos', 'class-dbd-growth', 'class-dbd-signup', 'class-dbd-pack', 'class-dbd-pack-mail', 'class-dbd-instagram', 'class-dbd-board-mail' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
+foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-kicker', 'class-dbd-defense', 'class-dbd-week', 'class-dbd-fanweek', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-boards', 'class-dbd-sync', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo', 'class-dbd-blocks', 'class-dbd-post', 'class-dbd-news', 'class-dbd-email', 'class-dbd-videos', 'class-dbd-growth', 'class-dbd-signup', 'class-dbd-pack', 'class-dbd-pack-mail', 'class-dbd-instagram', 'class-dbd-board-mail' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
 
 if ( getenv( 'DBD_HARNESS_SIGN' ) ) { $GLOBALS['dbd_opt'] = array( 'dbd_email' => array( 'on' => true, 'key' => 'harness', 'list' => 4, 'tpl' => 5 ) ); }  /* the email set up, so pages draw the signup strip (SCOPE §66) */
 if ( getenv( 'DBD_HARNESS_NOW' ) && class_exists( 'DBD_News' ) ) { DBD_News::$now = (int) getenv( 'DBD_HARNESS_NOW' ); }
@@ -128,6 +128,7 @@ if ( $view === 'urls' ) {
 	foreach ( array_keys( DBD_Leaders::GROUPS ) as $g ) { $cases[] = array( 'view' => 'leaders', 'g' => $g ); }
 	foreach ( DBD_Data::weeks() as $w ) { $cases[] = array( 'view' => 'matchups', 'week' => $w ); }
 	foreach ( DBD_Week::weeks() as $w ) { $cases[] = array( 'view' => 'week', 'week' => $w ); }
+	if ( DBD_FanWeek::weeks() ) { $cases[] = array( 'view' => 'fantasy' ); } foreach ( DBD_FanWeek::weeks() as $w ) { $cases[] = array( 'view' => 'fantasy', 'week' => $w ); }  /* SCOPE §78 */
 	foreach ( array_keys( DBD_Data::teams() ) as $t ) { $cases[] = array( 'team' => $t ); $cases[] = array( 'team' => $t, 'side' => 'def' ); $cases[] = array( 'view' => 'players', 'team' => $t ); }
 	foreach ( ( DBD_Data::schedule()['weeks'] ?? array() ) as $gl ) { foreach ( $gl as $g ) { $cases[] = array( 'game' => $g['id'] ); $cases[] = array( 'game' => $g['id'], 'side' => 'home' ); } }
 	foreach ( DBD_Data::player_index() as $p ) { $cases[] = array( 'player' => $p['id'] ); }
@@ -165,7 +166,7 @@ if ( $view === 'urls' ) {
 		echo "  " . DBD_Data::current_season() . " Vikings page to $as: " . DBD_Router::season_url( $as ) . "\n";
 	}
 	DBD_Data::use_season( null );
-	foreach ( array( 'team/zzz/', 'game/1999-week-1-a-at-b/', 'player/nobody-at-all/', 'week/x/', 'teams/extra/', '1999/team/min/' ) as $odd ) { $_GET = array(); $r = DBD_Router::route_path( $odd ); echo "  $odd -> " . $r['view'] . ( $r['view'] === 'players' ? ' (search "' . $r['q'] . '")' : '' ) . "\n"; }
+	foreach ( array( 'team/zzz/', 'game/1999-week-1-a-at-b/', 'player/nobody-at-all/', 'week/x/', 'teams/extra/', '1999/team/min/', 'fantasy/week/99/', 'fantasy/x/' ) as $odd ) { $_GET = array(); $r = DBD_Router::route_path( $odd ); echo "  $odd -> " . $r['view'] . ( $r['view'] === 'players' ? ' (search "' . $r['q'] . '")' : '' ) . "\n"; }
 	echo "urls" . ( getenv( 'DBD_HARNESS_ROOT' ) ? ' (app on /hub/, paths at the root)' : '' ) . ": " . count( $cases ) . " links, $paths paths, $bad problems, $warnings warnings\n";
 	foreach ( array( array( 'player' => '00-0036322' ), array( 'game' => '2026_08_MIN_DET', 'side' => 'home' ), array( 'team' => 'MIN', 'side' => 'def' ), array( 'view' => 'players', 'team' => 'MIN' ), array( 'view' => 'leaders', 'g' => 'rb' ), array( 'compare' => '00-0036322,00-0036900' ), array( 'view' => 'players', 'pt' => 'MIN', 'q' => 'jeff' ) ) as $ex ) { echo '  ' . json_encode( $ex ) . ' -> ' . DBD_Router::url( $ex ) . "\n"; }
 	exit( $bad || $warnings ? 1 : 0 );
@@ -886,7 +887,7 @@ if ( $view === 'path' ) {  /* a readable path, routed the way a request for it w
 	$rp = new ReflectionProperty( 'DBD_Router', 'page_url' ); $rp->setAccessible( true ); $rp->setValue( null, 'https://example.test/' );
 	DBD_Router::$route = DBD_Router::route_path( $arg ); $routed = true;
 }
-if ( $view === 'player' ) { $_GET['player'] = $arg; } elseif ( $view === 'players' ) { $_GET['view'] = 'players'; } elseif ( $view === 'team' ) { $_GET['team'] = $arg; } elseif ( $view === 'game' ) { $_GET['game'] = $arg; } elseif ( $view === 'teamplayers' ) { $_GET['view'] = 'players'; $_GET['team'] = $arg; } elseif ( $view === 'matchups' ) { $_GET['view'] = 'matchups'; if ( $arg ) { $_GET['week'] = $arg; } } elseif ( $view === 'teams' ) { $_GET['view'] = 'teams'; } elseif ( $view === 'compare' ) { $_GET['compare'] = $arg; } elseif ( $view === 'defense' ) { $_GET['team'] = $arg; $_GET['side'] = 'def'; } elseif ( $view === 'leaders' ) { $_GET['view'] = 'leaders'; if ( $arg && strpos( $arg, '.' ) !== false ) { $_GET['b'] = $arg; } elseif ( $arg ) { $_GET['g'] = $arg; } } elseif ( $view === 'myteam' ) { if ( $arg ) { $_GET['myteam'] = $arg; } else { $_GET['view'] = 'myteam'; } } elseif ( $view === 'week' ) { $_GET['view'] = 'week'; if ( $arg ) { $_GET['week'] = $arg; } } elseif ( $view === 'draft' || $view === 'combine' ) { $_GET['view'] = $view; if ( $arg ) { $_GET['y'] = $arg; } }  /* the season boards (SCOPE §63) */
+if ( $view === 'player' ) { $_GET['player'] = $arg; } elseif ( $view === 'players' ) { $_GET['view'] = 'players'; } elseif ( $view === 'team' ) { $_GET['team'] = $arg; } elseif ( $view === 'game' ) { $_GET['game'] = $arg; } elseif ( $view === 'teamplayers' ) { $_GET['view'] = 'players'; $_GET['team'] = $arg; } elseif ( $view === 'matchups' ) { $_GET['view'] = 'matchups'; if ( $arg ) { $_GET['week'] = $arg; } } elseif ( $view === 'teams' ) { $_GET['view'] = 'teams'; } elseif ( $view === 'compare' ) { $_GET['compare'] = $arg; } elseif ( $view === 'defense' ) { $_GET['team'] = $arg; $_GET['side'] = 'def'; } elseif ( $view === 'leaders' ) { $_GET['view'] = 'leaders'; if ( $arg && strpos( $arg, '.' ) !== false ) { $_GET['b'] = $arg; } elseif ( $arg ) { $_GET['g'] = $arg; } } elseif ( $view === 'myteam' ) { if ( $arg ) { $_GET['myteam'] = $arg; } else { $_GET['view'] = 'myteam'; } } elseif ( $view === 'week' ) { $_GET['view'] = 'week'; if ( $arg ) { $_GET['week'] = $arg; } } elseif ( $view === 'fantasy' ) { $_GET['view'] = 'fantasy'; if ( $arg ) { $_GET['week'] = $arg; } }  /* SCOPE §78 */ elseif ( $view === 'draft' || $view === 'combine' ) { $_GET['view'] = $view; if ( $arg ) { $_GET['y'] = $arg; } }  /* the season boards (SCOPE §63) */
 if ( empty( $routed ) ) {
 $rp = new ReflectionProperty( 'DBD_Router', 'page_url' ); $rp->setAccessible( true ); $rp->setValue( null, 'https://example.test/app/' );
 DBD_Router::$route = DBD_Router::route();

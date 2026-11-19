@@ -117,7 +117,7 @@ class DBD_Hub {
 				}
 				$fx .= '<div data-fx="' . esc_attr( $fm ) . '"><ol class="ld-list hb-fxl">' . ( $li ?: '<li class="none">No leaders yet.</li>' ) . '</ol></div>';
 			}
-			$cards .= '<section class="dbd-panel ld-card"><div class="ld-h wk-fxh"><span><b>Fantasy leaders</b><small>points a game, the top two at each position</small></span>' . DBD_Fantasy::seg() . '</div>' . $fx . '<a class="hb-more" href="' . esc_url( DBD_Router::url( array( 'view' => 'leaders' ) ) ) . '">All the boards →</a></section>';
+			$cards .= '<section class="dbd-panel ld-card"><div class="ld-h wk-fxh"><span><b>Fantasy leaders</b><small>points a game, the top two at each position</small></span>' . DBD_Fantasy::seg() . '</div>' . $fx . '<a class="hb-more" href="' . esc_url( DBD_Router::url( array( 'view' => 'leaders' ) ) ) . '">All the boards →</a>' . DBD_FanWeek::link( DBD_FanWeek::default_week(), 'Week ' . DBD_FanWeek::default_week() . ' fantasy: risers, red zone and matchups →', 'hb-more' ) . '</section>';
 		}
 		/* My team: the empty card; hub.js swaps in the saved lineup from this device */
 		$cards .= '<section class="dbd-panel ld-card hb-mt" id="hb-mt"><div class="ld-h"><b>My team</b><small class="hb-mts">your lineup, kept on this device</small></div>'

@@ -90,6 +90,9 @@ class DBD_Seo {
 		$wks = class_exists( 'DBD_Week' ) ? DBD_Week::weeks() : array();
 		if ( $wks ) { $list[] = array( 'loc' => $u( array( 'view' => 'week' ) ), 'changefreq' => 'daily', 'priority' => 0.8 ); }
 		foreach ( $wks as $w ) { $list[] = array( 'loc' => $u( array( 'view' => 'week', 'week' => $w ) ), 'changefreq' => 'weekly', 'priority' => 0.7 ); }
+		/* the weekly fantasy page (SCOPE §78): each week's page, last changed when its file was built (a past week is frozen at its kickoff) */
+		if ( class_exists( 'DBD_FanWeek' ) ) { foreach ( DBD_FanWeek::weeks() as $w ) { $fw = DBD_FanWeek::file( $w ); $b = $fw && ! empty( $fw['built'] ) ? strtotime( $fw['built'] ) : 0;
+			$list[] = array( 'loc' => $u( array( 'view' => 'fantasy', 'week' => $w ) ), 'changefreq' => 'daily', 'priority' => 0.8 ) + ( $b ? array( 'lastmod' => gmdate( 'c', $b ) ) : array() ); } }
 		if ( DBD_Data::has_players() ) {
 			$list[] = array( 'loc' => $u( array( 'view' => 'leaders' ) ), 'changefreq' => 'daily', 'priority' => 0.8 );
 			foreach ( array_keys( DBD_Leaders::GROUPS ) as $g ) { if ( $g !== 'fan' ) { $list[] = array( 'loc' => $u( array( 'view' => 'leaders', 'g' => $g ) ), 'changefreq' => 'daily', 'priority' => 0.7 ); } }
