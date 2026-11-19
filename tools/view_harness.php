@@ -437,6 +437,7 @@ if ( $view === 'igpost' ) {
 		$GLOBALS['hcalls'] = array(); DBD_Instagram::send( $kc, true ); $ck( 'a posted carousel never posts again', ! $GLOBALS['hcalls'] );
 		/* a daily post: one image; a lost publish reply is not posted twice */
 		$ks = DBD_Instagram::key( $season, $n, 'swing' ); $GLOBALS['ig']['failpub'] = true; $GLOBALS['hcalls'] = array();
+		$GLOBALS['dbd_opt'][ 'dbd_ig_job_' . $ks ]['at'] = $GLOBALS['dbd_opt'][ 'dbd_ig_job_' . $ks ]['slot_at'] = time();  /* due now, whatever day CI runs on: a slot more than a day old is rightly skipped (2.36.0) */
 		DBD_Instagram::send( $ks ); $j = DBD_Instagram::job( $ks );
 		$ck( 'a failed publish retries and keeps its container', strpos( (string) $j['state'], 'retrying: Instagram answered 400: Fatal' ) === 0 && ! empty( $j['container'] ) && count( $calls( 'POST', '178/media' ) ) === 1 && strpos( $calls( 'POST', '178/media' )[0][2]['image_url'], 'card=ig-week-' . $n . '-swing' ) !== false, json_encode( $j ) );
 		$GLOBALS['ig']['failpub'] = false; $GLOBALS['ig']['status'][ $j['container'] ] = 'PUBLISHED'; $GLOBALS['hcalls'] = array();
