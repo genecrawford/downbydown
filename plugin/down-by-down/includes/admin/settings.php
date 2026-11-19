@@ -91,13 +91,7 @@ function dbd_pack_settings_save( $p ) {
 		update_option( $o, call_user_func( array( 'DBD_Pack', $fn ), is_scalar( $p[ $o ] ?? '' ) ? (string) ( $p[ $o ] ?? '' ) : '' ) );
 	}
 	/* Instagram posting (SCOPE §76): the switch, a new token checked against the API, or disconnecting */
-	$acc0 = DBD_Instagram::settings()['account'];
-	update_option( DBD_Instagram::OPT_SET, DBD_Instagram::sanitize( is_array( $p[ DBD_Instagram::OPT_SET ] ?? null ) ? $p[ DBD_Instagram::OPT_SET ] : array() ) );
-	$ierr = ''; $it0 = DBD_Instagram::token();
-	if ( ! empty( $p['dbd_ig_disconnect'] ) ) { DBD_Instagram::disconnect(); }
-	elseif ( is_scalar( $p['dbd_ig_token_new'] ?? null ) && trim( (string) $p['dbd_ig_token_new'] ) !== '' ) { $ierr = DBD_Instagram::connect( (string) $p['dbd_ig_token_new'] ); }
-	/* a new account ID with a kept Unified-login token: checked with that token again (2.34.1, SCOPE §77) */
-	elseif ( $it0 && DBD_Instagram::kind( $it0['token'] ) === 'fb' && DBD_Instagram::settings()['account'] !== $acc0 ) { $ierr = DBD_Instagram::connect( $it0['token'] ); }
+	$ierr = DBD_Instagram::save( $p );
 	$w = (int) ( $p['week'] ?? 0 );
 	return add_query_arg( array_filter( array( 'page' => 'down-by-down-share', 'week' => $w ?: null, 'pack' => $ierr === '' ? 'saved' : 'saveerr', 'pack_err' => $ierr === '' ? null : rawurlencode( 'Settings saved, but ' . lcfirst( $ierr ) ) ) ), admin_url( 'admin.php' ) ) . '#dbd-pack-settings';
 }

@@ -491,6 +491,16 @@ if ( $view === 'igpost' ) {
 		$GLOBALS['ig']['fbcheck'] = 'no'; $ck( 'a failed check is warned about, and it still counts as connected', ! DBD_Instagram::refresh() && strpos( DBD_Instagram::warning(), 'Instagram stopped taking the token' ) === 0 && DBD_Instagram::connected(), DBD_Instagram::warning() );
 		$GLOBALS['ig']['fbcheck'] = 'ok'; $ck( 'a passing check clears the warning', DBD_Instagram::refresh() && DBD_Instagram::warning() === '' );
 		$GLOBALS['hcalls'] = array(); DBD_Instagram::api( 'GET', 'me', array(), 'IGAAx' ); $ck( 'an IG token still goes to graph.instagram.com', ( $GLOBALS['hcalls'][0][3] ?? '' ) === 'graph.instagram.com' );
+		/* the settings box's save (Greptile, PR #145): a new account ID that fails its check goes back, and the connection keeps posting where it did */
+		$GLOBALS['dbd_opt']['dbd_ig_set'] = array( 'on' => true, 'account' => '178' ); DBD_Instagram::connect( 'EAAgood' ); $GLOBALS['ig']['fbcheck'] = 'no';
+		$e1 = DBD_Instagram::save( array( 'dbd_ig_set' => array( 'on' => '1', 'account' => '555' ) ) );
+		$ck( 'a new account ID that fails its check is put back', strpos( $e1, 'That token didn’t work with account 555.' ) === 0 && strpos( $e1, 'put back to 178' ) !== false && DBD_Instagram::settings()['account'] === '178' && DBD_Instagram::token()['user_id'] === '178', $e1 . json_encode( DBD_Instagram::settings() ) );
+		$e2 = DBD_Instagram::save( array( 'dbd_ig_set' => array( 'on' => '1', 'account' => '555' ), 'dbd_ig_token_new' => 'EAAbad' ) );
+		$ck( 'a new token and ID that fail together put the ID back too', $e2 !== '' && DBD_Instagram::settings()['account'] === '178' && DBD_Instagram::token()['token'] === 'EAAgood', $e2 );
+		$GLOBALS['ig']['fbcheck'] = 'ok'; $e3 = DBD_Instagram::save( array( 'dbd_ig_set' => array( 'on' => '1', 'account' => '555' ) ) );
+		$ck( 'a new account ID that passes moves the connection', $e3 === '' && DBD_Instagram::settings()['account'] === '555' && DBD_Instagram::token()['user_id'] === '555', $e3 );
+		$ck( 'saving with nothing new checks nothing', ( function () { $GLOBALS['hcalls'] = array(); return DBD_Instagram::save( array( 'dbd_ig_set' => array( 'on' => '1', 'account' => '555' ) ) ) === '' && ! $GLOBALS['hcalls']; } )() );
+		DBD_Instagram::save( array( 'dbd_ig_set' => array( 'on' => '1', 'account' => '555' ), 'dbd_ig_disconnect' => '1' ) ); $ck( 'Disconnect in the box forgets the token', DBD_Instagram::token() === null );
 		DBD_Instagram::disconnect(); $GLOBALS['dbd_opt']['dbd_ig_set'] = array( 'on' => true );
 		/* the JPEG square */
 		$ck( 'a square asks for JPEG with &fmt=jpg', strpos( DBD_Card::jpg_url( 'ig-week-' . $n . '-swing' ), 'card=ig-week-' . $n . '-swing' ) !== false && substr( DBD_Card::jpg_url( 'ig-week-' . $n . '-swing' ), -8 ) === '&fmt=jpg' );

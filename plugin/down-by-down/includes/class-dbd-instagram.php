@@ -104,6 +104,21 @@ class DBD_Instagram {
 		self::keep_refreshing();
 		return '';
 	}
+	/**
+	 * The settings box's Instagram part: the switch and the account ID, then a new token checked, or disconnecting. A new account ID
+	 * with a kept Unified-login token is checked with that token again. When a check fails, the account ID goes back to what it was,
+	 * so the setting never names an account the kept connection doesn't post to (Greptile, PR #145). Returns '' or what went wrong.
+	 */
+	public static function save( $p ) {
+		$acc0 = self::settings()['account']; $it0 = self::token();
+		$new = self::sanitize( is_array( $p[ self::OPT_SET ] ?? null ) ? $p[ self::OPT_SET ] : array() ); update_option( self::OPT_SET, $new );
+		$ierr = '';
+		if ( ! empty( $p['dbd_ig_disconnect'] ) ) { self::disconnect(); return ''; }
+		if ( is_scalar( $p['dbd_ig_token_new'] ?? null ) && trim( (string) $p['dbd_ig_token_new'] ) !== '' ) { $ierr = self::connect( (string) $p['dbd_ig_token_new'] ); }
+		elseif ( $it0 && self::kind( $it0['token'] ) === 'fb' && $new['account'] !== $acc0 ) { $ierr = self::connect( $it0['token'] ); }
+		if ( $ierr !== '' && $new['account'] !== $acc0 ) { update_option( self::OPT_SET, array_merge( $new, array( 'account' => $acc0 ) ) ); $ierr .= ' The account ID was put back to ' . ( $acc0 !== '' ? $acc0 : 'blank' ) . '.'; }
+		return $ierr;
+	}
 	public static function disconnect() { delete_option( self::OPT_TOKEN ); wp_clear_scheduled_hook( self::HOOK_REFRESH ); }
 
 	/**
