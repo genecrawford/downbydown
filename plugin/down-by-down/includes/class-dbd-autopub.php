@@ -4,6 +4,7 @@
  * and is ticked in the settings: Instagram (DBD_Instagram::auto(), in the background) and Bluesky (DBD_Bluesky::post(), during the press).
  * A network that already has the item is left out, so nothing posts twice; an Instagram day still to come is taken over and dropped.
  * Reddit, X and Facebook can't post on their own, so their buttons stay as they are.
+ * 2.39.0 (SCOPE §82): a Bluesky day still to come is taken over the same way (the day's run finds the record sent).
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
@@ -55,7 +56,11 @@ class DBD_AutoPub {
 		$bj = DBD_Bluesky::job( $key ); $bs = (string) ( $bj['state'] ?? '' );
 		if ( in_array( 'bs', $nets, true ) || $bs === 'sent' ) {
 			if ( $bs === 'sent' ) { $out['bs'] = array( 'done', 'Bluesky: posted ' . $when( $bj['sent_at'] ) . '.', (string) ( $bj['link'] ?? '' ), 'ok' ); }
-			elseif ( $bs === 'failed' ) { $out['bs'] = array( 'ready', 'Bluesky didn’t post: ' . (string) ( $bj['err'] ?? '' ), '', 'bad' ); }
+			elseif ( strpos( $bs, 'failed' ) === 0 ) { $out['bs'] = array( 'ready', 'Bluesky didn’t post: ' . DBD_Bluesky::why( $bj ), '', 'bad' ); }
+			/* its day on the weekly schedule (SCOPE §82): the button posts it now, and the day finds it sent */
+			elseif ( $bs === 'booked' ) { $out['bs'] = array( 'ready', 'Bluesky: booked for ' . $when( $bj['slot_at'] ?? $bj['at'] ) . '. Auto publish posts it now instead.', '', '' ); }
+			elseif ( strpos( $bs, 'retrying' ) === 0 ) { $out['bs'] = array( 'ready', 'Bluesky: retrying, ' . substr( $bs, 10 ) . '. Auto publish tries it now.', '', 'warn' ); }
+			elseif ( strpos( $bs, 'not posted' ) === 0 || strpos( $bs, 'skipped' ) === 0 ) { $out['bs'] = array( 'ready', 'Bluesky: ' . $bs . '.', '', '' ); }
 			else { $out['bs'] = array( 'ready', '', '', '' ); }
 		}
 		return $out;

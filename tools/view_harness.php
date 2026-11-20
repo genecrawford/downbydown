@@ -520,12 +520,13 @@ if ( $view === 'autopub' ) {
 	$GLOBALS['dbd_opt'] = array( 'dbd_email' => array( 'on' => true, 'key' => 'k', 'list' => 3, 'tpl' => 5, 'test' => 'gene@example.test' ),
 		'dbd_ig_token' => array( 'token' => 'tok', 'user_id' => '178', 'username' => 'down_by_down', 'expires' => time() + 50 * 86400, 'checked' => time(), 'err' => '' ) );
 	$GLOBALS['hcalls'] = array(); $GLOBALS['hmail'] = array(); $GLOBALS['htr'] = array();
-	$GLOBALS['bs'] = array( 'n' => 0, 'records' => array(), 'lose' => false, 'expire' => 0, 'sessions' => 0 ); $GLOBALS['ig'] = array( 'n' => 0 );
+	$GLOBALS['bs'] = array( 'n' => 0, 'records' => array(), 'lose' => false, 'expire' => 0, 'sessions' => 0, 'failn' => 0 ); $GLOBALS['ig'] = array( 'n' => 0 );
 	foreach ( array(
 		'is_email' => function ( $e ) { return (bool) filter_var( $e, FILTER_VALIDATE_EMAIL ); },
 		'admin_url' => function ( $p = '' ) { return 'https://example.test/wp-admin/' . $p; },
 		'add_option' => function ( $k, $v = '' ) { if ( isset( $GLOBALS['dbd_opt'][ $k ] ) ) { return false; } $GLOBALS['dbd_opt'][ $k ] = $v; return true; },
 		'delete_option' => function ( $k ) { unset( $GLOBALS['dbd_opt'][ $k ] ); return true; },
+		'wp_nonce_url' => function ( $u, $a = '' ) { return $u . ( strpos( $u, '?' ) === false ? '?' : '&' ) . '_wpnonce=n'; },
 		'delete_transient' => function ( $k ) { unset( $GLOBALS['htr'][ $k ] ); return true; },
 		'wp_mail' => function ( $to, $sub ) { $GLOBALS['hmail'][] = $sub; return true; },
 		'wp_clear_scheduled_hook' => function () { return 0; },
@@ -538,14 +539,16 @@ if ( $view === 'autopub' ) {
 				$GLOBALS['hcalls'][] = array( 'bs', $a['method'], $nsid, $a['method'] === 'GET' ? $q : ( is_array( $b ) ? $b : strlen( $raw ) ), $a['headers'] ?? array() );
 				$auth = (string) ( $a['headers']['Authorization'] ?? '' );
 				if ( $nsid === 'com.atproto.server.createSession' ) { if ( ( $b['password'] ?? '' ) !== 'good-pass' ) { return $no( 401, 'AuthenticationRequired', 'Invalid identifier or password' ); } $GLOBALS['bs']['sessions']++; return $ok( array( 'did' => 'did:plc:dbd', 'handle' => 'downbydown.bsky.social', 'accessJwt' => 'jwt' . $GLOBALS['bs']['sessions'] ) ); }
-				if ( $nsid === 'com.atproto.repo.getRecord' ) { $r = $GLOBALS['bs']['records'][ $q['rkey'] ?? '' ] ?? null; return $r ? $ok( array( 'uri' => 'at://did:plc:dbd/app.bsky.feed.post/' . $q['rkey'], 'value' => $r ) ) : $no( 400, 'RecordNotFound', 'Could not locate record' ); }
+				if ( $nsid === 'com.atproto.repo.getRecord' ) { $r = $GLOBALS['bs']['records'][ $q['rkey'] ?? '' ] ?? null; return $r ? $ok( array( 'uri' => 'at://did:plc:dbd/app.bsky.feed.post/' . $q['rkey'], 'cid' => 'bafyrei' . $q['rkey'], 'value' => $r ) ) : $no( 400, 'RecordNotFound', 'Could not locate record' ); }
 				if ( $GLOBALS['bs']['expire'] > 0 && $auth === 'Bearer jwt1' ) { $GLOBALS['bs']['expire']--; return $no( 400, 'ExpiredToken', 'Token has expired' ); }
 				if ( strpos( $auth, 'Bearer jwt' ) !== 0 ) { return $no( 401, 'AuthMissing', 'Authentication Required' ); }
 				if ( $nsid === 'com.atproto.repo.uploadBlob' ) { return ( $a['headers']['Content-Type'] ?? '' ) === 'image/png' && substr( $raw, 1, 3 ) === 'PNG' ? $ok( array( 'blob' => array( '$type' => 'blob', 'ref' => array( '$link' => 'bafy' ), 'mimeType' => 'image/png', 'size' => strlen( $raw ) ) ) ) : $no( 400, 'InvalidRequest', 'not a png' ); }
 				if ( $nsid === 'com.atproto.repo.createRecord' ) {
+					if ( ! empty( $GLOBALS['bs']['failn'] ) && --$GLOBALS['bs']['failn'] === 0 ) { return $no( 500, 'InternalServerError', 'Internal Server Error' ); }  /* refused: nothing kept */
+					if ( isset( $GLOBALS['bs']['records'][ $b['rkey'] ] ) ) { return $no( 400, 'InvalidRequest', 'Record already exists' ); }
 					$GLOBALS['bs']['records'][ $b['rkey'] ] = $b['record'];
 					if ( $GLOBALS['bs']['lose'] ) { $GLOBALS['bs']['lose'] = false; return $no( 502, 'UpstreamFailure', 'Bad gateway' ); }  /* it went out, but the reply was lost */
-					return $ok( array( 'uri' => 'at://did:plc:dbd/app.bsky.feed.post/' . $b['rkey'], 'cid' => 'bafyrei' ) );
+					return $ok( array( 'uri' => 'at://did:plc:dbd/app.bsky.feed.post/' . $b['rkey'], 'cid' => 'bafyrei' . $b['rkey'] ) );
 				}
 				return $no( 400, 'MethodNotImplemented', $nsid );
 			}
@@ -633,7 +636,7 @@ if ( $view === 'autopub' ) {
 		if ( count( $other ) >= 1 ) {
 			$kl = DBD_AutoPub::key( $n, $other[0]['k'] ); $GLOBALS['bs']['lose'] = true; $GLOBALS['hcalls'] = array();
 			$e = DBD_Bluesky::post( $kl, $other[0] ); $jl = DBD_Bluesky::job( $kl );
-			$ck( 'a lost reply: kept as failed, with the record key it used', strpos( $e, 'Bluesky answered 502' ) === 0 && $jl['state'] === 'failed' && strlen( $jl['rkey'] ) === 13 && DBD_AutoPub::states( $n, $other[0]['k'] )['bs'][0] === 'ready' && strpos( DBD_AutoPub::states( $n, $other[0]['k'] )['bs'][1], 'Bluesky didn’t post: Bluesky answered 502' ) === 0, json_encode( array( $e, $jl ) ) );
+			$ck( 'a lost reply: kept as failed, with the record key it used', strpos( $e, 'Bluesky answered 502' ) === 0 && strpos( $jl['state'], 'failed: Bluesky answered 502' ) === 0 && strlen( $jl['rkey'] ) === 13 && DBD_AutoPub::states( $n, $other[0]['k'] )['bs'][0] === 'ready' && strpos( DBD_AutoPub::states( $n, $other[0]['k'] )['bs'][1], 'Bluesky didn’t post: Bluesky answered 502' ) === 0, json_encode( array( $e, $jl ) ) );
 			$GLOBALS['hcalls'] = array(); $e = DBD_Bluesky::post( $kl, $other[0] );
 			$ck( 'pressed again: it finds the post that went out, and posts nothing new', $e === '' && DBD_Bluesky::job( $kl )['state'] === 'sent' && count( $bcalls( 'com.atproto.repo.getRecord' ) ) === 1 && ! $bcalls( 'com.atproto.repo.createRecord' ) && strpos( DBD_Bluesky::job( $kl )['link'], '/post/' . $jl['rkey'] ) !== false, json_encode( $GLOBALS['hcalls'] ) );
 		}
@@ -649,6 +652,73 @@ if ( $view === 'autopub' ) {
 		$GLOBALS['dbd_opt']['dbd_pack_bsky'] = 'downbydown.bsky.social'; DBD_Bluesky::save( array( 'dbd_bsky_pass_new' => 'good-pass' ) ); $ck( 'pasting one connects it again', DBD_Bluesky::connected() );
 		DBD_Bluesky::save( array( 'dbd_bsky_disconnect' => '1' ) ); $ck( 'disconnect forgets it', ! DBD_Bluesky::conn() );
 		$ck( 'the networks setting: unticked means off, missing means on', DBD_AutoPub::sanitize( array( 'ig' => '1' ) ) === array( 'ig' => true, 'bs' => false ) && DBD_AutoPub::sanitize( 'x' ) === array( 'ig' => false, 'bs' => false ) );
+
+		/* ---- Bluesky on Instagram's days (2.39.0, SCOPE §82): booking, the Tuesday thread, a daily post, the button's records, retries */
+		echo "  -- Bluesky's days\n";
+		foreach ( array_keys( $GLOBALS['dbd_opt'] ) as $o ) { if ( strpos( $o, 'dbd_bsky_job_' ) === 0 && $o !== 'dbd_bsky_job_' . $key ) { unset( $GLOBALS['dbd_opt'][ $o ] ); } }  /* only the swing stays, sent with Auto publish */
+		unset( $GLOBALS['dbd_opt']['dbd_bsky_set'] ); $ck( 'the weekly switch is on unless unticked', DBD_Bluesky::settings()['on'] && ! DBD_Bluesky::on() && DBD_Bluesky::sanitize( array() ) === array( 'on' => false ) && DBD_Bluesky::note() === array() );
+		DBD_Bluesky::save( array( 'dbd_bsky_pass_new' => 'good-pass', 'dbd_bsky_set' => array( 'on' => '1' ) ) ); $ck( 'saved ticked and connected: on', DBD_Bluesky::on() );
+		$plan = DBD_Instagram::plan( $n ); $slots = array_keys( $plan ); $daily = array_values( array_diff( $slots, array( 'carousel', $ks ) ) ); $t0 = DBD_Instagram::slot_time( $n, 'carousel' ); $bkey = function ( $sl ) use ( $season, $n ) { return DBD_Instagram::key( $season, $n, $sl ); };
+		$bk = DBD_Bluesky::note( null, $t0 - 600 ); $want = array(); foreach ( $slots as $sl ) { if ( $sl !== $ks ) { $want[ $bkey( $sl ) ] = DBD_Instagram::slot_time( $n, $sl ); } }
+		$ck( 'a sync books the week on Instagram’s days and times, each in its own record, and not the item already sent with Auto publish', $bk === $want && in_array( 'carousel', $slots, true ) && DBD_Bluesky::job( $bkey( 'carousel' ) )['state'] === 'booked' && DBD_Bluesky::job( $key )['state'] === 'sent', json_encode( array( $bk, $want ) ) );
+		$snap = array_filter( $GLOBALS['dbd_opt'], function ( $k ) { return strpos( $k, 'dbd_bsky_job_' ) === 0; }, ARRAY_FILTER_USE_KEY ); DBD_Bluesky::note( null, $t0 - 300 );
+		$ck( 'a second sync books nothing new', $snap === array_filter( $GLOBALS['dbd_opt'], function ( $k ) { return strpos( $k, 'dbd_bsky_job_' ) === 0; }, ARRAY_FILTER_USE_KEY ) );
+		$rows = DBD_Bluesky::week_rows( $n ); $ck( 'This week: the thread booked, the swing sent with Auto publish', strpos( $rows['carousel'][1], 'The thread: booked for ' ) === 0 && strpos( $rows[ $ks ][1] ?? 'sent with Auto publish', 'sent with Auto publish' ) !== false, json_encode( $rows ) );
+		$GLOBALS['hcalls'] = array(); DBD_Bluesky::send( $key ); $ck( 'the item sent with Auto publish posts nothing on its day', ! $GLOBALS['hcalls'] );
+		if ( $daily ) {
+			$last = end( $daily ); unset( $GLOBALS['dbd_opt'][ 'dbd_bsky_job_' . $bkey( $last ) ] ); DBD_Bluesky::note( null, DBD_Instagram::slot_time( $n, $last ) + DBD_Instagram::LATE + 60 );
+			$ck( 'a day more than a day past is skipped, not posted late', strpos( DBD_Bluesky::job( $bkey( $last ) )['state'], 'skipped' ) === 0, json_encode( DBD_Bluesky::job( $bkey( $last ) ) ) );
+		}
+		$now_job = function ( $sl, $extra = array() ) use ( $bkey ) { $GLOBALS['dbd_opt'][ 'dbd_bsky_job_' . $bkey( $sl ) ] = $extra + array( 'state' => 'booked', 'at' => time(), 'slot_at' => time(), 'tries' => 0 ); };
+		/* the thread: the first post, then each item a reply in pack order */
+		$its = $plan['carousel']; $ck_ = $bkey( 'carousel' ); $now_job( 'carousel' ); $GLOBALS['hcalls'] = array(); $GLOBALS['bs']['records'] = array();
+		DBD_Bluesky::send( $ck_ ); $cr = $bcalls( 'com.atproto.repo.createRecord' ); $tj = DBD_Bluesky::job( $ck_ ); $wk = DBD_Router::url( array( 'view' => 'week', 'week' => $n ) );
+		$first = $cr[0][3]['record'] ?? array(); $fi = $first['facets'][0]['index'] ?? array();
+		$ck( 'the thread’s first post names the week, the week page’s link short and clickable', count( $cr ) === count( $its ) + 1 && strpos( $first['text'] ?? '', 'Week ' . $n . ' in ' ) === 0 && strpos( $first['text'], ' charts, one in each reply below. Every chart and the numbers behind it: ' . DBD_Bluesky::short_link( $wk ) ) !== false
+			&& ( $first['facets'][0]['features'][0]['uri'] ?? '' ) === $wk && substr( $first['text'], $fi['byteStart'] ?? 0, ( $fi['byteEnd'] ?? 0 ) - ( $fi['byteStart'] ?? 0 ) ) === DBD_Bluesky::short_link( $wk ) && ! isset( $first['reply'] ) && ! isset( $first['embed'] ), json_encode( $first ) );
+		$chain = true; $why = '';
+		for ( $i = 1; $i < count( $cr ); $i++ ) {
+			$r = $cr[ $i ][3]['record']; $prev = 'at://did:plc:dbd/app.bsky.feed.post/' . $cr[ $i - 1 ][3]['rkey']; $root = 'at://did:plc:dbd/app.bsky.feed.post/' . $cr[0][3]['rkey'];
+			if ( ( $r['reply']['root']['uri'] ?? '' ) !== $root || ( $r['reply']['parent']['uri'] ?? '' ) !== $prev || ( $r['reply']['parent']['cid'] ?? '' ) !== 'bafyrei' . $cr[ $i - 1 ][3]['rkey'] || ( $r['embed']['external']['uri'] ?? '' ) !== DBD_Pack::share_link( $its[ $i - 1 ] ) || $r['text'] !== DBD_Bluesky::text( $its[ $i - 1 ] )[0] ) { $chain = false; $why = json_encode( $r ); break; }
+		}
+		$ck( 'each item replies in pack order, its parent the post before it, its root the first, with its own text and card', $chain && count( $bcalls( 'com.atproto.repo.uploadBlob' ) ) === count( $its ), $why );
+		$ck( 'the thread is kept as posted, its View link the first post', $tj['state'] === 'sent' && $tj['link'] === 'https://bsky.app/profile/downbydown.bsky.social/post/' . $cr[0][3]['rkey'] && count( $tj['parts'] ) === count( $its ) + 1 && ! DBD_Bluesky::by_button( $tj ), json_encode( $tj ) );
+		$ck( 'the thread keeps the items it chose on its first try', ( $tj['items'] ?? null ) === array_map( function ( $it ) { return (string) $it['k']; }, $its ), json_encode( $tj['items'] ?? null ) );
+		$GLOBALS['hcalls'] = array(); DBD_Bluesky::send( $ck_, true ); $ck( 'sent again: nothing posts twice', ! $bcalls( 'com.atproto.repo.createRecord' ) );
+		$ck( 'the thread’s replies don’t count as the items’ own posts', ! $daily || ( DBD_Bluesky::job( $bkey( $daily[0] ) )['state'] ?? '' ) === 'booked' );
+		/* a thread that fails partway carries on from the last part that went out; a lost reply is found, not posted again */
+		$now_job( 'carousel' ); $GLOBALS['bs']['records'] = array(); $GLOBALS['bs']['failn'] = 3; $GLOBALS['hcalls'] = array();
+		DBD_Bluesky::send( $ck_ ); $tj = DBD_Bluesky::job( $ck_ );
+		$ck( 'the third post refused: retrying, the first two kept, the third’s key kept', strpos( $tj['state'], 'retrying: Bluesky answered 500' ) === 0 && (int) $tj['tries'] === 1 && ! empty( $tj['parts'][1]['uri'] ) && empty( $tj['parts'][2]['uri'] ) && strlen( $tj['parts'][2]['rkey'] ?? '' ) === 13 && count( $GLOBALS['bs']['records'] ) === 2, json_encode( $tj ) );
+		$GLOBALS['bs']['lose'] = true; DBD_Bluesky::send( $ck_ ); $tj = DBD_Bluesky::job( $ck_ );
+		$ck( 'the retry carries on at the third (which goes out, its reply lost): retrying again', strpos( $tj['state'], 'retrying' ) === 0 && count( $GLOBALS['bs']['records'] ) === 3, json_encode( $tj ) );
+		DBD_Bluesky::send( $ck_ ); $tj = DBD_Bluesky::job( $ck_ ); $recs = $GLOBALS['bs']['records']; $rk = array_keys( $recs );
+		$ok = $tj['state'] === 'sent' && count( $recs ) === count( $its ) + 1 && strpos( $recs[ $rk[0] ]['text'], 'Week ' ) === 0 && count( array_filter( $bcalls( 'com.atproto.repo.createRecord' ), function ( $c ) use ( $rk ) { return $c[3]['rkey'] === $rk[0]; } ) ) === 1;
+		for ( $i = 1; $ok && $i < count( $rk ); $i++ ) { $ok = ( $recs[ $rk[ $i ] ]['reply']['parent']['uri'] ?? '' ) === 'at://did:plc:dbd/app.bsky.feed.post/' . $rk[ $i - 1 ] && ( $recs[ $rk[ $i ] ]['reply']['root']['uri'] ?? '' ) === 'at://did:plc:dbd/app.bsky.feed.post/' . $rk[0]; }
+		$ck( 'then finishes: one first post, every item once, each chained to the one before', $ok, json_encode( array( $tj, $recs ) ) );
+		$now_job( 'carousel', array( 'items' => array( (string) $its[0]['k'], 'gone' ) ) ); $GLOBALS['hcalls'] = array(); DBD_Bluesky::send( $ck_ ); $tj = DBD_Bluesky::job( $ck_ );
+		$ck( 'a retry whose item has left the pack fails rather than posting a short thread', strpos( $tj['state'], 'retrying: gone isn’t in the Week ' . $n . ' pack any more' ) === 0 && ! $bcalls( 'com.atproto.repo.createRecord' ), json_encode( $tj ) );
+		/* a daily post: the item's Bluesky text and card, on the same record as Auto publish */
+		if ( count( $daily ) >= 3 ) {
+			$d1 = $daily[0]; $it1 = DBD_Pack::find( $n, $d1 ); $now_job( $d1 ); $GLOBALS['hcalls'] = array();
+			DBD_Bluesky::send( $bkey( $d1 ) ); $cr = $bcalls( 'com.atproto.repo.createRecord' ); $dj = DBD_Bluesky::job( $bkey( $d1 ) );
+			$ck( 'a day posts its item as Auto publish would, and the button then reads posted', $dj['state'] === 'sent' && count( $cr ) === 1 && $cr[0][3]['record']['text'] === DBD_Bluesky::text( $it1 )[0] && ! isset( $cr[0][3]['record']['reply'] ) && DBD_AutoPub::states( $n, $d1 )['bs'][0] === 'done' && ! DBD_Bluesky::by_button( $dj ), json_encode( $dj ) );
+			$d2 = $daily[1]; $s2 = DBD_AutoPub::states( $n, $d2 )['bs'];
+			$ck( 'a booked day: the button’s line says it posts now instead', $s2[0] === 'ready' && strpos( $s2[1], 'Bluesky: booked for ' ) === 0 && strpos( $s2[1], 'Auto publish posts it now instead.' ) !== false, json_encode( $s2 ) );
+			DBD_AutoPub::publish( $n, $d2 ); $GLOBALS['hcalls'] = array(); DBD_Bluesky::send( $bkey( $d2 ) );
+			$ck( 'pressed: posted now, sent with Auto publish, and its day posts nothing', DBD_Bluesky::job( $bkey( $d2 ) )['state'] === 'sent' && DBD_Bluesky::by_button( DBD_Bluesky::job( $bkey( $d2 ) ) ) && ! $GLOBALS['hcalls'] && strpos( DBD_Bluesky::week_rows( $n )[ $d2 ][1], 'sent with Auto publish' ) !== false );
+			$d3 = $daily[2]; $now_job( $d3, array( 'tries' => 6 ) ); $GLOBALS['bs']['failn'] = 1; $GLOBALS['hmail'] = array(); DBD_Bluesky::send( $bkey( $d3 ) ); $fj = DBD_Bluesky::job( $bkey( $d3 ) ); $ln = DBD_Bluesky::line( $n ); $wr = DBD_Bluesky::week_rows( $n )[ $d3 ];
+			$ck( 'the seventh failure: failed, a note to the test address, Try again on the line and the list', strpos( $fj['state'], 'failed: Bluesky answered 500' ) === 0 && count( $GLOBALS['hmail'] ) === 1 && strpos( $GLOBALS['hmail'][0], 'Bluesky didn’t take ' . DBD_Instagram::label( $d3 ) . ' for Week ' . $n ) !== false
+				&& $ln[0] === 'bad' && $ln[3] === $bkey( $d3 ) && $wr[0] === 'bad' && $wr[3] === $bkey( $d3 ) && strpos( DBD_Bluesky::again_url( $bkey( $d3 ) ), 'action=dbd_bsky_again' ) !== false, json_encode( array( $fj, $ln, $wr, $GLOBALS['hmail'] ) ) );
+			$GLOBALS['dbd_opt'][ 'dbd_bsky_job_' . $bkey( $d3 ) ] = array_merge( $fj, array( 'state' => 'retrying: again', 'tries' => 0, 'force' => true, 'slot_at' => time() - 3 * 86400 ) ); DBD_Bluesky::send( $bkey( $d3 ) );
+			$ln = DBD_Bluesky::line( $n );
+			$ck( 'Try again posts it, even past its cutoff; the line says what posted last', DBD_Bluesky::job( $bkey( $d3 ) )['state'] === 'sent' && $ln[0] === 'ok' && strpos( $ln[1], 'Bluesky: posted ' . DBD_Instagram::label( $d3 ) . ' ' ) === 0 && $ln[2] !== '', json_encode( $ln ) );
+		} else { echo "  (fewer than three daily items this week; skipped the daily checks)\n"; }
+		/* switched off: nothing books or posts on a day; the button still posts */
+		$GLOBALS['dbd_opt']['dbd_bsky_set'] = array( 'on' => false ); $ox = $bkey( 'carousel' ); $now_job( 'carousel' ); $GLOBALS['hcalls'] = array(); DBD_Bluesky::send( $ox );
+		unset( $GLOBALS['dbd_opt'][ 'dbd_bsky_job_' . $ox ] );
+		$ck( 'switched off: a booked day posts nothing, a sync books nothing, there’s no line, and the button still posts to Bluesky', ! $GLOBALS['hcalls'] && DBD_Bluesky::note( null, $t0 - 600 ) === array() && ! DBD_Bluesky::job( $ox ) && DBD_Bluesky::line( $n ) === null && in_array( 'bs', DBD_AutoPub::nets(), true ) );
+		unset( $GLOBALS['dbd_opt']['dbd_bsky_set'] );
 	} catch ( Throwable $e ) { fwrite( STDERR, 'FATAL in autopub: ' . $e->getMessage() . ' at ' . basename( $e->getFile() ) . ':' . $e->getLine() . "\n" ); exit( 1 ); }
 	echo "autopub week $n: $bad problems, $warnings warnings\n"; exit( $bad || $warnings ? 1 : 0 );
 }
@@ -947,6 +1017,7 @@ if ( $view === 'admin' ) {
 		'name="dbd_pack_sub"', 'name="dbd_pack_x"', 'name="dbd_pack_bsky"', 'name="dbd_pack_fb"', 'name="dbd_pack_ig"', 'Open the group', 'Save settings', 'id="dbd-pack-settings"><summary>', 'Instagram posting', 'name="dbd_ig_set[on]"', 'name="dbd_ig_set[account]"', 'name="dbd_ig_token_new"', 'Paste the token from your Meta app', 'Instagram isn’t connected yet.' );  /* SCOPE §68, §71–74; the settings box starts closed */
 	array_push( $want['sp'], 'class="sp-ap"', 'class="sp-apd"', '<summary class="button button-primary">Auto publish</summary>', 'value="dbd_auto_publish"', 'name="slot" value="swing"', 'to Bluesky now?</b>', 'Posts it to Bluesky now.', 'class="button button-primary sp-apgo"', 'class="button sp-apx"', 'id="sp-swing"', 'id="sp-keys-', 'name="slot" value="keys-',
 		'Bluesky posting', 'name="dbd_bsky_pass_new"', 'Connected as @downbydown.bsky.social', 'name="dbd_bsky_disconnect"', 'name="dbd_ap_set[ig]"', 'name="dbd_ap_set[bs]"', 'Reddit, X and Facebook can’t post on their own.' );  /* Auto publish (SCOPE §81) */
+	array_push( $want['sp'], 'name="dbd_bsky_set[on]" value="1" checked', 'Post on Tuesday, then one item a day Wednesday to Sunday, 9:00 AM Eastern', 'Bluesky this week', 'The thread: ', 'Bluesky: nothing posted for Week ' );  /* Bluesky's days (SCOPE §82) */
 	if ( in_array( 'rush', array_column( DBD_Pack::items( DBD_Pack::newest() ), 'k' ), true ) ) { array_push( $want['sp'], 'Pass rushers', '-pass-rushers.png"' ); }  /* SCOPE §79, only for the week the defense files run through */
 	$want['ov'][] = 'Open Growth'; $want['ov'][] = 'data-g="ov-visits"'; $want['ov'][] = 'data-g="ov-clicks"';
 	$bad = 0; $dir = getenv( 'DBD_HARNESS_HTML' ); if ( $dir && ! is_dir( $dir ) ) { mkdir( $dir, 0777, true ); }

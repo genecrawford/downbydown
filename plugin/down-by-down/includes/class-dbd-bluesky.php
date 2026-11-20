@@ -6,6 +6,10 @@
  *   - Each item posts once: a record per item ('dbd_bsky_job_2026-w10-rush'). The post's record key is chosen before it's sent and kept, so
  *     when a reply is lost, the next press finds the post that went out instead of posting it again.
  *   - The session (createSession) is kept for an hour; a refused one is made again once.
+ *   - 2.39.0 (SCOPE §82): Bluesky on Instagram's days, 9:00 AM Eastern. Tuesday is a thread (a first post naming the week, then each item with a
+ *     square replying in pack order), Wednesday to Sunday one item a day. Booking, cutoffs, retries and the note copy Instagram's (§76), and
+ *     a day uses the item's same record as Auto publish, so an item already sent with the button is skipped on its day. The thread keeps
+ *     each part's record key and address as it goes, so a retry carries on from the last part that went out.
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
@@ -16,11 +20,26 @@ class DBD_Bluesky {
 	const SESSION  = 'dbd_bsky_session'; /* the session, an hour */
 	const API      = 'https://bsky.social/xrpc/';
 	const ALPHA    = '234567abcdefghijklmnopqrstuvwxyz';  /* a record key's letters (TID) */
+	const OPT_SET  = 'dbd_bsky_set';     /* the weekly switch: array( 'on' => bool ), on unless unticked (SCOPE §82) */
+	const HOOK     = 'dbd_bsky_send';
+	const COL      = 'app.bsky.feed.post';
 
 	/** The largest card Bluesky takes as a thumb; the harness lowers it. */
 	public static $max_blob = 1000000;
 
+	public static function init() {
+		add_action( 'dbd_synced', array( __CLASS__, 'note' ) );
+		add_action( self::HOOK, array( __CLASS__, 'send' ) );
+		add_action( 'admin_post_dbd_bsky_again', array( __CLASS__, 'again_action' ) );
+	}
+	public static function unschedule() { wp_clear_scheduled_hook( self::HOOK ); }
+
 	/* ------------------------------------------------------------------ the connection */
+
+	public static function settings() { $o = get_option( self::OPT_SET, null ); return array( 'on' => is_array( $o ) ? ! empty( $o['on'] ) : true ); }
+	public static function sanitize( $v ) { return array( 'on' => is_array( $v ) && ! empty( $v['on'] ) ); }
+	/** Posting on the weekly days: switched on and connected. */
+	public static function on() { return self::settings()['on'] && self::connected(); }
 
 	public static function conn() { $c = get_option( self::OPT_CONN, null ); return is_array( $c ) && ! empty( $c['pass'] ) ? $c : null; }
 	public static function connected() { $c = self::conn(); return $c && ! empty( $c['did'] ); }
@@ -76,6 +95,7 @@ class DBD_Bluesky {
 	 * under Your accounts is forgotten, so the button never posts to an account the settings don't name. Returns '' or what went wrong.
 	 */
 	public static function save( $p ) {
+		update_option( self::OPT_SET, self::sanitize( is_array( $p[ self::OPT_SET ] ?? null ) ? $p[ self::OPT_SET ] : array() ) );
 		if ( ! empty( $p['dbd_bsky_disconnect'] ) ) { self::disconnect(); return ''; }
 		$new = is_scalar( $p['dbd_bsky_pass_new'] ?? null ) ? trim( (string) $p['dbd_bsky_pass_new'] ) : '';
 		if ( $new !== '' ) { $c0 = self::conn(); $err = self::connect( $new ); if ( $err !== '' && $c0 && strtolower( (string) $c0['handle'] ) !== strtolower( DBD_Pack::our_bsky() ) ) { self::disconnect(); } return $err; }
@@ -135,36 +155,209 @@ class DBD_Bluesky {
 	}
 	private static function job_set( $key, $fields ) { update_option( self::OPT_JOB . $key, array_merge( self::job( $key ) ?: array(), $fields ), false ); }
 
-	/** Post an item now: '' when it's out (or was already), or what went wrong (kept on its record for the item's line). */
-	public static function post( $key, $it ) {
+	/** Post an item now: '' when it's out (or was already), or what went wrong (kept on its record for the item's line). $auto: the button's press. */
+	public static function post( $key, $it, $auto = true, $held = false ) {
 		$j = self::job( $key ); if ( ( $j['state'] ?? '' ) === 'sent' ) { return ''; }
 		$c = self::conn(); if ( ! self::connected() ) { return 'Bluesky isn’t connected.'; }
-		$lock = 'dbd_bsky_lock_' . $key;
-		if ( ! add_option( $lock, time(), '', false ) ) { if ( time() - (int) get_option( $lock, 0 ) < 300 ) { return 'it’s already posting'; } update_option( $lock, time(), false ); }
+		if ( ! $held && ! self::lock( $key ) ) { return 'it’s already posting'; }  /* $held: send() holds it already */
 		try {
 			/* read the record again now the lock is ours, from the database itself: a press that finished meanwhile has posted it, and this
 			   request's option cache (which remembers a missing option too) wouldn't show that (Greptile, PR #149) */
 			$j = self::fresh_job( $key ); if ( ( $j['state'] ?? '' ) === 'sent' ) { return ''; }
-			$did = (string) $c['did']; $col = 'app.bsky.feed.post'; $rkey = (string) ( $j['rkey'] ?? '' );
-			if ( $rkey !== '' ) {  /* an earlier try: did it go out? (a lost reply is never posted twice) */
-				list( $gc, $gj ) = self::call( 'com.atproto.repo.getRecord', array( 'repo' => $did, 'collection' => $col, 'rkey' => $rkey ), '', '', 'GET' );
-				if ( $gc === 200 && ! empty( $gj['uri'] ) ) { return self::sent( $key, (string) $gj['uri'], (string) $c['handle'] ); }
-				if ( $gc !== 400 && $gc !== 404 ) { return self::fail( $key, 'Bluesky didn’t say whether the last try went out; try again in a minute' ); }
-			} else { $rkey = self::tid(); self::job_set( $key, array( 'rkey' => $rkey ) ); }
-			$thumb = null; $card = (string) ( $it['card'] ?? '' );
-			if ( $card !== '' ) {
-				list( $f ) = DBD_Card::ensure( $card );
-				if ( $f !== '' && filesize( $f ) <= self::$max_blob ) {
-					list( , $bj, $err ) = self::authed( 'com.atproto.repo.uploadBlob', (string) file_get_contents( $f ), 'image/png' );
-					if ( $err !== '' ) { return self::fail( $key, $err ); }
-					$thumb = $bj['blob'] ?? null;
-				}
-			}
-			list( , $rj, $err ) = self::authed( 'com.atproto.repo.createRecord', array( 'repo' => $did, 'collection' => $col, 'rkey' => $rkey, 'record' => self::record( $it, $thumb ) ) );
-			if ( $err !== '' || empty( $rj['uri'] ) ) { return self::fail( $key, $err !== '' ? $err : 'Bluesky made no post' ); }
-			return self::sent( $key, (string) $rj['uri'], (string) $c['handle'] );
-		} finally { delete_option( $lock ); }
+			list( $p, $err ) = self::part( $key, (array) ( $j ?? array() ), function ( $thumb ) use ( $it ) { return self::record( $it, $thumb ); }, $it, 'rkey' );
+			if ( $err !== '' ) { return self::fail( $key, $err ); }
+			return self::sent( $key, $p['uri'], (string) $c['handle'], $auto );
+		} finally { if ( ! $held ) { self::unlock( $key ); } }
 	}
-	private static function sent( $key, $uri, $handle ) { self::job_set( $key, array( 'state' => 'sent', 'uri' => $uri, 'link' => self::web( $uri, $handle ), 'sent_at' => time(), 'err' => '' ) ); return ''; }
-	private static function fail( $key, $err ) { self::job_set( $key, array( 'state' => 'failed', 'err' => $err, 'at' => time() ) ); return $err; }
+
+	/** The lock on a record while it posts: false when another request holds it (one older than 5 minutes is taken over). */
+	private static function lock( $key ) {
+		$lock = 'dbd_bsky_lock_' . $key;
+		if ( ! add_option( $lock, time(), '', false ) ) { if ( time() - (int) get_option( $lock, 0 ) < 300 ) { return false; } update_option( $lock, time(), false ); }
+		return true;
+	}
+	private static function unlock( $key ) { delete_option( 'dbd_bsky_lock_' . $key ); }
+
+	/**
+	 * One post that may have gone out before: array( array( uri, cid, rkey ), error ). Its record key sits in $j[$rk] (a thread part's, or the
+	 * item's): when there is one, Bluesky is asked whether it went out (a lost reply is never posted twice); otherwise a new key is chosen and kept
+	 * on the record first. $make( $thumb ) builds the record; $it's card, when it has one, is uploaded as the thumb.
+	 */
+	private static function part( $key, $j, $make, $it, $rk, $save = null ) {
+		$c = self::conn(); $did = (string) $c['did']; $rkey = (string) ( $j[ $rk ] ?? '' );
+		$save = $save ?? function ( $rkey ) use ( $key, $rk ) { self::job_set( $key, array( $rk => $rkey ) ); };
+		if ( $rkey !== '' ) {
+			list( $gc, $gj ) = self::call( 'com.atproto.repo.getRecord', array( 'repo' => $did, 'collection' => self::COL, 'rkey' => $rkey ), '', '', 'GET' );
+			if ( $gc === 200 && ! empty( $gj['uri'] ) ) { return array( array( 'uri' => (string) $gj['uri'], 'cid' => (string) ( $gj['cid'] ?? '' ), 'rkey' => $rkey ), '' ); }
+			if ( $gc !== 400 && $gc !== 404 ) { return array( null, 'Bluesky didn’t say whether the last try went out; try again in a minute' ); }
+		} else { $rkey = self::tid(); $save( $rkey ); }
+		$thumb = null; $card = (string) ( $it['card'] ?? '' );
+		if ( $card !== '' ) {
+			list( $f ) = DBD_Card::ensure( $card );
+			if ( $f !== '' && filesize( $f ) <= self::$max_blob ) {
+				list( , $bj, $err ) = self::authed( 'com.atproto.repo.uploadBlob', (string) file_get_contents( $f ), 'image/png' );
+				if ( $err !== '' ) { return array( null, $err ); }
+				$thumb = $bj['blob'] ?? null;
+			}
+		}
+		list( , $rj, $err ) = self::authed( 'com.atproto.repo.createRecord', array( 'repo' => $did, 'collection' => self::COL, 'rkey' => $rkey, 'record' => $make( $thumb ) ) );
+		if ( $err !== '' || empty( $rj['uri'] ) ) { return array( null, $err !== '' ? $err : 'Bluesky made no post' ); }
+		return array( array( 'uri' => (string) $rj['uri'], 'cid' => (string) ( $rj['cid'] ?? '' ), 'rkey' => $rkey ), '' );
+	}
+
+	private static function sent( $key, $uri, $handle, $auto = false ) {
+		$f = array( 'state' => 'sent', 'uri' => $uri, 'link' => self::web( $uri, $handle ), 'sent_at' => time(), 'err' => '', 'force' => false ); if ( $auto ) { $f['auto'] = true; }
+		self::job_set( $key, $f ); return '';
+	}
+	private static function fail( $key, $err ) { self::job_set( $key, array( 'state' => 'failed: ' . $err, 'err' => $err ) ); return $err; }
+
+	/* ------------------------------------------------------------------ the week's posts (SCOPE §82) */
+
+	/** A slot's name in a sentence: Tuesday's is the thread; the rest as Instagram names them. */
+	public static function label( $slot ) { return $slot === 'carousel' ? 'the thread' : DBD_Instagram::label( $slot ); }
+	/** Sent with the button rather than on its day (a record from before 2.39.0 has no day either). */
+	public static function by_button( $j ) { return ! empty( $j['auto'] ) || ! isset( $j['slot_at'] ); }
+	public static function state_for( $season, $n, $slots ) { $s = array( 'jobs' => array() ); foreach ( $slots as $sl ) { $k = DBD_Instagram::key( $season, $n, $sl ); if ( ( $j = self::job( $k ) ) ) { $s['jobs'][ $k ] = $j; } } return $s; }
+
+	/** After each sync: book the newest week's posts on Instagram's days and times, and book again any whose event went missing. */
+	public static function note( $unused = null, $now = null ) {
+		if ( ! self::on() || DBD_Data::archived() ) { return array(); }
+		$n = DBD_Pack::newest(); if ( ! $n ) { return array(); }
+		$now = $now ?? time(); $season = (int) DBD_Data::season(); $slots = array_keys( DBD_Instagram::plan( $n ) ); $times = array();
+		foreach ( $slots as $sl ) { $times[ $sl ] = DBD_Instagram::slot_time( $n, $sl ); }
+		$s0 = self::state_for( $season, $n, $slots ); list( $s, $book ) = DBD_Instagram::decide( $s0, $season, $n, $slots, $times, $now );
+		/* each new record is added once (add_option fails when another request got there first), and only then booked; an item already sent
+		   with Auto publish has its record, so its day is never booked */
+		foreach ( $s['jobs'] as $key => $j ) { if ( ! isset( $s0['jobs'][ $key ] ) && ! add_option( self::OPT_JOB . $key, $j, '', false ) ) { unset( $book[ $key ] ); } }
+		foreach ( $book as $key => $at ) { wp_schedule_single_event( $at, self::HOOK, array( $key ) ); }
+		foreach ( $slots as $sl ) {
+			$key = DBD_Instagram::key( $season, $n, $sl ); $j = $s['jobs'][ $key ] ?? array(); $st = (string) ( $j['state'] ?? '' );
+			$late = empty( $j['force'] ) && $now > (int) ( $j['slot_at'] ?? $j['at'] ?? 0 ) + DBD_Instagram::LATE;
+			if ( ! isset( $book[ $key ] ) && ! $late && ( $st === 'booked' || strpos( $st, 'retrying' ) === 0 ) && ! wp_next_scheduled( self::HOOK, array( $key ) ) ) {
+				$at = max( (int) $now + 60, (int) ( $j['at'] ?? 0 ) ); wp_schedule_single_event( $at, self::HOOK, array( $key ) ); $book[ $key ] = $at;
+			}
+		}
+		return $book;
+	}
+
+	/**
+	 * The booked post: sent once, retried on failure. $force posts now whatever the time (Try again). The record is read and written under the
+	 * item's lock throughout, retry included, so a press of Auto publish that posts it meanwhile is never overwritten (Greptile, PR #150).
+	 */
+	public static function send( $key, $force = false ) {
+		$kp = DBD_Instagram::parse( $key ); if ( ! $kp || ! self::job( $key ) ) { return; }
+		if ( ! self::lock( $key ) ) { return; }  /* another request has it */
+		try {
+			$job = self::fresh_job( $key ) ?: array(); $st = (string) ( $job['state'] ?? '' ); if ( $st === 'sent' ) { return; }
+			if ( ! $force && $st !== 'booked' && strpos( $st, 'retrying' ) !== 0 ) { return; }  /* a press that failed took the day over */
+			$force = $force || ! empty( $job['force'] );
+			if ( ! self::on() ) { self::job_set( $key, array( 'state' => 'not posted: Bluesky posting is off or not connected' ) ); return; }
+			list( $season, $n, $slot ) = $kp;
+			if ( (int) DBD_Data::season() !== $season ) { self::job_set( $key, array( 'state' => 'not posted: a new season started' ) ); return; }
+			if ( ! $force && time() > (int) ( $job['slot_at'] ?? $job['at'] ?? 0 ) + DBD_Instagram::LATE ) { self::job_set( $key, array( 'state' => 'not posted: more than a day late' ) ); return; }
+			if ( $slot === 'carousel' ) { $err = self::thread( $key, $n, true ); }
+			else { $it = DBD_Pack::find( $n, $slot ); $err = $it ? self::post( $key, $it, false, true ) : 'there’s no ' . self::label( $slot ) . ' for Week ' . $n; }
+			if ( $err !== '' ) { self::retry( $key, $err ); }
+		} finally { self::unlock( $key ); }
+	}
+	private static function retry( $key, $err ) {
+		$job = self::job( $key ) ?: array(); $t = (int) ( $job['tries'] ?? 0 ) + 1;
+		if ( $t < DBD_Instagram::TRIES ) { self::job_set( $key, array( 'tries' => $t, 'state' => 'retrying: ' . $err, 'err' => $err ) ); wp_schedule_single_event( time() + DBD_Instagram::RETRY, self::HOOK, array( $key ) ); return; }
+		self::job_set( $key, array( 'tries' => $t, 'state' => 'failed: ' . $err, 'err' => $err ) );
+		$kp = DBD_Instagram::parse( $key );
+		wp_mail( DBD_Email::test_to(), 'Down by Down: Bluesky didn’t take ' . self::label( $kp[2] ?? 'carousel' ) . ' for Week ' . (int) ( $kp[1] ?? 0 ),
+			'It failed ' . DBD_Instagram::TRIES . " times over an hour.\n\nThe last error: $err\n\nTry again on the Share pack tab: " . admin_url( 'admin.php?page=down-by-down-share' ) . "\n" );
+	}
+
+	/** The thread's first post: "Week 10 in five charts, one in each reply below. …" and the week page's link, short and clickable. */
+	public static function intro( $n, $count, $now = null ) {
+		$words = array( 2 => 'two', 3 => 'three', 4 => 'four', 5 => 'five', 6 => 'six', 7 => 'seven' ); $link = DBD_Router::url( array( 'view' => 'week', 'week' => (int) $n ) );
+		$t = 'Week ' . (int) $n . ' in ' . ( $words[ $count ] ?? (string) $count ) . ' charts, one in each reply below. Every chart and the numbers behind it: '; $p = strlen( $t ); $show = self::short_link( $link );
+		return array( '$type' => self::COL, 'text' => $t . $show, 'createdAt' => gmdate( 'Y-m-d\TH:i:s.000\Z', (int) ( $now ?? time() ) ), 'langs' => array( 'en' ),
+			'facets' => array( array( 'index' => array( 'byteStart' => $p, 'byteEnd' => $p + strlen( $show ) ), 'features' => array( array( '$type' => 'app.bsky.richtext.facet#link', 'uri' => $link ) ) ) ) );
+	}
+
+	/**
+	 * Tuesday's thread: the first post, then each item with a square replying in pack order (each reply's parent the post before it, its root
+	 * the first). Each part's record key, address and cid are kept on the record as it goes, so a retry carries on where the last one stopped.
+	 */
+	public static function thread( $key, $n, $held = false ) {
+		$c = self::conn(); if ( ! self::connected() ) { return 'Bluesky isn’t connected.'; }
+		if ( ! $held && ! self::lock( $key ) ) { return 'it’s already posting'; }
+		try {
+			$j = self::fresh_job( $key ) ?: array(); if ( ( $j['state'] ?? '' ) === 'sent' ) { return ''; }
+			/* the items are chosen once, on the first try, and kept: a retry posts the replies the first post promised, even when the pack
+			   has changed since (pass rushers leave an older week's pack as the defense data moves on; Greptile, PR #150) */
+			if ( isset( $j['items'] ) && is_array( $j['items'] ) ) {
+				$items = array(); foreach ( $j['items'] as $k ) { $it = DBD_Pack::find( $n, (string) $k ); if ( ! $it ) { return self::fail( $key, self::label( (string) $k ) . ' isn’t in the Week ' . (int) $n . ' pack any more' ); } $items[] = $it; }
+			} else {
+				$items = DBD_Instagram::plan( $n )['carousel'] ?? array();
+				if ( count( $items ) >= 2 ) { self::job_set( $key, array( 'items' => array_map( function ( $it ) { return (string) $it['k']; }, $items ) ) ); }
+			}
+			if ( count( $items ) < 2 ) { return self::fail( $key, 'there’s no thread for Week ' . (int) $n ); }
+			$parts = array_values( (array) ( $j['parts'] ?? array() ) ); $root = null; $parent = null;
+			for ( $i = 0; $i <= count( $items ); $i++ ) {
+				$p = (array) ( $parts[ $i ] ?? array() );
+				if ( empty( $p['uri'] ) || empty( $p['cid'] ) ) {
+					$it = $i ? $items[ $i - 1 ] : array(); $r0 = $root; $pa = $parent;
+					$make = function ( $thumb ) use ( $i, $n, $items, $it, $r0, $pa ) {
+						if ( ! $i ) { return self::intro( $n, count( $items ) ); }
+						return self::record( $it, $thumb ) + array( 'reply' => array( 'root' => $r0, 'parent' => $pa ) );
+					};
+					$save = function ( $rkey ) use ( $key, &$parts, $i ) { $parts[ $i ] = array( 'rkey' => $rkey ); self::job_set( $key, array( 'parts' => $parts ) ); };
+					list( $got, $err ) = self::part( $key, $p, $make, $it, 'rkey', $save );
+					if ( $err !== '' ) { return self::fail( $key, $err ); }
+					if ( $got['cid'] === '' ) { return self::fail( $key, 'Bluesky didn’t give the post’s cid' ); }
+					$parts[ $i ] = $p = $got; self::job_set( $key, array( 'parts' => $parts ) );
+				}
+				$ref = array( 'uri' => (string) $p['uri'], 'cid' => (string) $p['cid'] );
+				if ( ! $i ) { $root = $ref; } $parent = $ref;
+			}
+			return self::sent( $key, (string) $parts[0]['uri'], (string) $c['handle'] );
+		} finally { if ( ! $held ) { self::unlock( $key ); } }
+	}
+
+	/* ------------------------------------------------------------------ the tab */
+
+	/** Week $n's posts for the settings box: slot => array( dot, text, link, try-again key ). */
+	public static function week_rows( $n ) {
+		$season = (int) DBD_Data::season(); $out = array(); $when = function ( $ts ) { return wp_date( 'l, M j, g:i A', (int) $ts ); };
+		foreach ( array_keys( DBD_Instagram::plan( $n ) ) as $sl ) {
+			$key = DBD_Instagram::key( $season, $n, $sl ); $j = self::job( $key ); $lab = ucfirst( self::label( $sl ) ); $st = (string) ( $j['state'] ?? '' );
+			if ( ! $j ) { $out[ $sl ] = array( '', $lab . ': ' . $when( DBD_Instagram::slot_time( $n, $sl ) ) . ', not booked yet', '', '' ); }
+			elseif ( $st === 'sent' ) { $out[ $sl ] = array( 'ok', $lab . ': ' . ( self::by_button( $j ) ? 'sent with Auto publish ' : 'posted ' ) . $when( $j['sent_at'] ?? 0 ), (string) ( $j['link'] ?? '' ), '' ); }
+			elseif ( $st === 'booked' ) { $out[ $sl ] = array( 'ok', $lab . ': booked for ' . $when( $j['at'] ), '', '' ); }
+			elseif ( strpos( $st, 'retrying' ) === 0 ) { $out[ $sl ] = array( 'warn', $lab . ': retrying, ' . substr( $st, 10 ), '', '' ); }
+			elseif ( strpos( $st, 'failed' ) === 0 ) { $out[ $sl ] = array( 'bad', $lab . ': didn’t post, ' . self::why( $j ), '', $key ); }
+			else { $out[ $sl ] = array( '', $lab . ': ' . ( $st !== '' ? $st : 'posting…' ), '', '' ); }
+		}
+		return $out;
+	}
+	/** What went wrong with a failed record: its err, or the state's words. */
+	public static function why( $j ) { $st = (string) ( $j['state'] ?? '' ); return (string) ( ( $j['err'] ?? '' ) !== '' ? $j['err'] : ( strpos( $st, 'failed: ' ) === 0 ? substr( $st, 8 ) : $st ) ); }
+
+	/** The status line at the top of the tab: array( dot, text, link, try-again key ), or null when the weekly posts are off or Bluesky isn't connected. */
+	public static function line( $n ) {
+		if ( ! self::on() ) { return null; }
+		$season = (int) DBD_Data::season(); $when = function ( $ts ) { return wp_date( 'l, M j, g:i A', (int) $ts ); }; $last = null; $next = null;
+		foreach ( array_keys( DBD_Instagram::plan( $n ) ) as $sl ) {
+			$key = DBD_Instagram::key( $season, $n, $sl ); $j = self::job( $key ); $st = (string) ( $j['state'] ?? '' );
+			if ( strpos( $st, 'failed' ) === 0 && ! self::by_button( $j ) ) { return array( 'bad', 'Bluesky didn’t take ' . self::label( $sl ) . ': ' . self::why( $j ), '', $key ); }
+			if ( $st === 'sent' && ( ! $last || (int) ( $j['sent_at'] ?? 0 ) >= (int) ( $last[1]['sent_at'] ?? 0 ) ) ) { $last = array( $sl, $j ); }
+			if ( ! $next && ( $st === 'booked' || strpos( $st, 'retrying' ) === 0 ) ) { $next = array( $sl, $j ); }
+		}
+		$txt = 'Bluesky: ' . ( $last ? 'posted ' . self::label( $last[0] ) . ' ' . $when( $last[1]['sent_at'] ?? 0 ) . '.' : 'nothing posted for Week ' . (int) $n . ' yet.' )
+			. ( $next ? ' Next: ' . self::label( $next[0] ) . ', ' . $when( $next[1]['at'] ) . '.' : '' );
+		return array( 'ok', $txt, (string) ( $last[1]['link'] ?? '' ), '' );
+	}
+
+	public static function again_url( $key ) { return wp_nonce_url( admin_url( 'admin-post.php?action=dbd_bsky_again&key=' . rawurlencode( $key ) ), 'dbd_bsky_again_' . $key ); }
+	public static function again_action() {
+		$key = sanitize_text_field( wp_unslash( (string) ( $_GET['key'] ?? '' ) ) ); check_admin_referer( 'dbd_bsky_again_' . $key ); if ( ! current_user_can( 'manage_options' ) ) { wp_die( 'No.' ); }
+		$back = function ( $args ) { wp_safe_redirect( add_query_arg( array_merge( array( 'page' => 'down-by-down-share' ), $args ), admin_url( 'admin.php' ) ) . '#dbd-pack-settings' ); exit; };
+		if ( ! DBD_Instagram::parse( $key ) || ! self::job( $key ) ) { $back( array( 'pack' => 'igerror', 'pack_err' => rawurlencode( 'That post isn’t there.' ) ) ); }
+		self::job_set( $key, array( 'state' => 'retrying: again', 'tries' => 0, 'force' => true ) );
+		wp_clear_scheduled_hook( self::HOOK, array( $key ) ); wp_schedule_single_event( time(), self::HOOK, array( $key ) );
+		$back( array( 'pack' => 'bsagain' ) );
+	}
 }
