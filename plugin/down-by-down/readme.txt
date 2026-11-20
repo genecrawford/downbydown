@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.40.0
+Stable tag: 2.41.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,11 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.41.0 =
+* Threads posting (SCOPE §84), treated just like the other networks: each finished week, Threads posts on the same days at 9:00 AM Eastern, Tuesday a thread (the first post naming the week, each item a numbered reply), then one item a day. Each post is the item's long takeaway with the page as its preview card.
+* Threads joins Auto publish. Posting is Instagram's two steps, the container kept on the item's record so a retry finds a post that went out instead of posting again. Booking, the cutoff, retries, the email note and Try again work as the others'.
+* Your accounts gains Threads (down_by_down by default). The Threads posting settings take a token from Meta's Graph API Explorer and the app's Threads App secret; the plugin makes it last 60 days and renews it every week, and a failed renewal shows on the tab and the Overview.
 
 = 2.40.0 =
 * X posting (SCOPE §83): each finished week, X posts on Instagram's and Bluesky's days at 9:00 AM Eastern, through X's pay-per-use API with four keys pasted once in the new X posting settings. Each post is the item's X text and link, X showing the card as the preview. Tuesday is a thread: a first post naming the week, then each item as a numbered reply.

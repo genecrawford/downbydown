@@ -3348,7 +3348,7 @@ Gene, after testing §81's Auto publish on Bluesky: "will bluesky get the same a
 
 **Tests:** the harness books a week's Bluesky posts once at the right days, skips one past its cutoff, skips an item already sent with Auto publish, posts a daily item through the fake Bluesky (the same record as Auto publish), retries and fails with the note, Try again, the status line, the switch off (nothing books, the button still posts), and the Tuesday post as decided.
 
-## 83. X on the same schedule (scoped and mocked 2026-11-20, `mockup-v56/`; all decided)
+## 83. X on the same schedule (scoped and mocked 2026-11-20, `mockup-v56/`; all decided; built as 2.40.0, PR #151, live and connected 2026-11-20)
 
 Gene, after 2.39.0 went live: "is there no way to make twitter/x work the same way?" Then: "Scope it."
 
@@ -3372,4 +3372,35 @@ Gene, after 2.39.0 went live: "is there no way to make twitter/x work the same w
 2. **"A thread."** Tuesday on X is a thread like Bluesky's (§82): a first post naming the week ("Week 10 in five charts, one in each reply below. Every chart and the numbers behind it:" and the week page's link), then each item with a square as a reply under it in pack order (`reply.in_reply_to_tweet_id` = the post before), each its X text and link. One record (`dbd_x_job_{season}-w{N}-carousel`) keeps the items chosen on the first try and each part's post ID as it goes, so a retry carries on from the last part that went out. The View link is the first post. The replies don't count as the items' own posts. About 6 posts, $1.20 a week. *Built note:* each reply starts with its number ("1/5 …", fitted to 280 the pack's way), because X refuses a post whose text repeats a recent one, and Wednesday's daily post of the same item would otherwise read as a repeat of Tuesday's reply.
 
 **Tests:** the harness, with a fake X: the OAuth 1.0a signature against X's published example, booking once on the right days, skipping one past its cutoff and one already sent with Auto publish, a daily post and Tuesday as decided, a lost reply found among the last posts and not posted again, X's duplicate refusal, retries to the note and Try again, the switch off, the month's count, and the Auto publish button posting to all three.
+
+## 84. Threads on the same schedule (scoped and mocked 2026-11-20, `mockup-v57/`; all decided)
+
+Gene, after X went live: "great, how about threads?" Then: "Scope it."
+
+**What Meta's docs say** (read 2026-11-20, developers.facebook.com/documentation/threads):
+- **Cost:** none is listed.
+- **Posting, two steps like Instagram's:** `POST /{user-id}/threads` (`media_type=TEXT`, `text`, `link_attachment`), then `POST /{user-id}/threads_publish` with the container. Text runs to 500 characters, with 5 links at most.
+- **Replies:** `reply_to_id` (needs `threads_manage_replies`). Replying to a reply is implied but not spelled out.
+- **Limits:** 250 posts and 1,000 replies a day.
+- **Tokens:** they last 60 days and renew (`refresh_access_token`, once a token is a day old).
+- **Without app review:** an app can post only for its **Threads testers**. The account accepts the invite under Threads → Settings → Account → Website permissions.
+- **No "Generate token" button:** unlike Instagram's, the first token comes from Threads' own sign-in screen (`threads.com/oauth/authorize`).
+
+**What it does:**
+
+1. **Threads joins the others' days:** Tuesday (see Decision 2), then one item a day, Wednesday to Sunday, 9:00 AM Eastern. Pass rushers and keys stay on the button only. **Threads joins Auto publish** too ("Instagram, Bluesky, X and Threads").
+2. **The post:** the item's long takeaway (the Reddit title, no cutting needed at 500 characters), with the item's link as the preview card (`link_attachment`, the `?share=` card) rather than a link in the text. A tap on the card opens the page.
+3. **Each item posts once:** a record per item (`dbd_th_job_{season}-w{N}-{item}`), shared by its day and the button. The container is kept on the record, as Instagram's is. A retry first asks whether that container was already published; if so, it finds the post among the account's latest posts or replies (by its text) instead of posting again.
+4. **Booking, the cutoff, retries, the note and Try again** work as the other networks', locked from the record's first read to its last write; `dbd_th_send` events.
+5. **The token is renewed every week,** like Instagram's. A failed renewal shows on the tab and the Overview, a week before it runs out.
+6. **Your accounts** gains **Threads** (default `down_by_down`, the Instagram name, since a Threads profile comes from the Instagram account). The connection checks that the token is for that account.
+7. **On the Share pack tab:** a Threads status line, a **Threads posting** section with the switch (on by default once connected) and the connection, and a **Threads this week** list.
+
+**Setup Gene does once:** the Threads profile for @down_by_down if it isn't made yet. In the Meta app, the "Access the Threads API" use case with `threads_basic`, `threads_content_publish` and `threads_manage_replies`, and @down_by_down added as a Threads Tester, its invite accepted in Threads. Then the connection, per Decision 1.
+
+**Decisions (Gene, 2026-11-20):** "This and any social media we add, if possible, gets treated just like all the others, it's safe for you to assume that." So:
+1. **Connecting: a pasted token,** the way every other network connects (Instagram's token, Bluesky's app password, X's keys). Gene makes a Threads token in Meta's Graph API Explorer (the app, threads.net, `threads_basic`, `threads_content_publish`, `threads_manage_replies`, Generate as @down_by_down) and pastes it with the app's Threads App secret. The plugin checks it (`/me?fields=id,username` against Your accounts), turns an hour-long token into a 60-day one (`access_token`, `grant_type=th_exchange_token`), and renews it every week (`refresh_access_token`, `th_refresh_token`).
+2. **Tuesday: a thread,** like Bluesky's and X's. The first post names the week with the week page as its card, then each item with a square replies in pack order, each reply to the one before (`reply_to_id`). If Threads refuses a reply to a reply, the replies go under the first post instead. One record keeps the items chosen on the first try and each part's container and post ID, so a retry carries on from the last part that went out. The View link is the first post; the replies don't count as the items' own posts.
+
+**Tests:** the harness, with a fake Threads: connecting as decided (the wrong account refused), booking once on the right days, skipping one past its cutoff and one already sent with Auto publish, a daily post (the long takeaway, the card as `link_attachment`, no link in the text), Tuesday as decided, a published container whose reply was lost found and not posted again, retries to the note and Try again, the weekly renewal and its warning, the switch off, and Auto publish posting to all four.
 

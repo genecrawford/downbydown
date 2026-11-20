@@ -83,6 +83,7 @@ class DBD_Pack {
 
 	const OPT_FB = 'dbd_pack_fb'; const FB_DEFAULT = 'https://www.facebook.com/groups/988685080499981';
 	const OPT_IG = 'dbd_pack_ig'; const IG_DEFAULT = 'down_by_down';
+	const OPT_TH = 'dbd_pack_th'; const TH_DEFAULT = 'down_by_down';  /* Threads (2.41.0, SCOPE §84): a Threads profile comes from the Instagram account */
 
 	/** The Facebook group's address: only a facebook.com address, kept as https://www.facebook.com/…; anything else gives ''. */
 	public static function sanitize_fb( $v ) {
@@ -98,6 +99,9 @@ class DBD_Pack {
 	}
 	public static function our_fb() { return self::sanitize_fb( get_option( self::OPT_FB, self::FB_DEFAULT ) ); }
 	public static function our_ig() { return self::sanitize_ig( get_option( self::OPT_IG, self::IG_DEFAULT ) ); }
+	/** A Threads handle: a pasted @name or threads.com/@name (or threads.net) address gives the name; the Instagram rules. */
+	public static function sanitize_th( $v ) { return self::sanitize_ig( (string) preg_replace( '#^(https?://)?(www\.)?threads\.(com|net)/@?#i', '', trim( (string) $v ) ) ); }
+	public static function our_th() { return self::sanitize_th( get_option( self::OPT_TH, self::TH_DEFAULT ) ); }
 
 	/** Facebook's share box for an item or keys side (its share link, so the pack card is the preview), or '' when no group is set. */
 	public static function fb_url( $it ) { return self::our_fb() === '' ? '' : 'https://www.facebook.com/sharer/sharer.php?u=' . rawurlencode( self::share_link( $it ) ); }
