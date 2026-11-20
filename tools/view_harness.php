@@ -927,6 +927,7 @@ if ( $view === 'admin' ) {
 		'is_email' => function ( $e ) { return (bool) filter_var( $e, FILTER_VALIDATE_EMAIL ); },
 		'sanitize_email' => function ( $e ) { return preg_replace( '/[^a-z0-9@._+\-]/i', '', (string) $e ); },  /* the Share pack's one Save (SCOPE §74) */
 		'add_menu_page' => function () {}, 'add_submenu_page' => function () {}, 'register_setting' => function () {},
+		'delete_option' => function ( $k ) { unset( $GLOBALS['dbd_opt'][ $k ] ); return true; }, 'delete_transient' => function () { return true; },  /* Bluesky's settings (SCOPE §81) */
 	) as $fn => $body ) { if ( ! function_exists( $fn ) ) { $GLOBALS['hfn'][ $fn ] = $body; eval( 'function ' . $fn . '( ...$a ) { return $GLOBALS["hfn"]["' . $fn . '"]( ...$a ); }' ); } }
 	require DBD_PATH . 'includes/admin/settings.php';
 	$want = array( 'ov' => array( 'Needs a look', 'The last data sync failed', 'needs a Brevo API key', 'The last signup didn’t reach Brevo', 'Its send log row has Try again', 'Open Week in review', 'Sync now', 'Fetch news and videos now', 'news feed' ),

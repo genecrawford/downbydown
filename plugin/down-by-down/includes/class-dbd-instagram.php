@@ -368,7 +368,12 @@ class DBD_Instagram {
 		$j = self::job( $key ); if ( ( $j['state'] ?? '' ) === 'sent' ) { return ''; }
 		$f = array( 'state' => 'booked', 'at' => time(), 'tries' => 0, 'force' => true, 'auto' => true );
 		if ( ! $j ) { add_option( self::OPT_JOB . $key, $f + array( 'slot_at' => time() ), '', false ); } else { self::job_set( $key, $f ); }
-		wp_schedule_single_event( time(), self::HOOK, array( $key ) ); if ( function_exists( 'spawn_cron' ) ) { spawn_cron(); }
+		/* any booking for this post (its day, or a retry due soon) goes, or WordPress would refuse the new one as a duplicate and the post would
+		   wait for it; a booking that still fails posts during the press instead (Greptile, PR #149) */
+		wp_clear_scheduled_hook( self::HOOK, array( $key ) );
+		$ok = wp_schedule_single_event( time(), self::HOOK, array( $key ) );
+		if ( $ok === false ) { self::send( $key, true ); return ''; }
+		if ( function_exists( 'spawn_cron' ) ) { spawn_cron(); }
 		return '';
 	}
 

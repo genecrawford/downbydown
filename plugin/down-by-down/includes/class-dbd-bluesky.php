@@ -135,6 +135,9 @@ class DBD_Bluesky {
 		$lock = 'dbd_bsky_lock_' . $key;
 		if ( ! add_option( $lock, time(), '', false ) ) { if ( time() - (int) get_option( $lock, 0 ) < 120 ) { return 'it’s already posting'; } update_option( $lock, time(), false ); }
 		try {
+			/* read the record again now the lock is ours: a press that finished meanwhile has posted it (Greptile, PR #149) */
+			if ( function_exists( 'wp_cache_delete' ) ) { wp_cache_delete( self::OPT_JOB . $key, 'options' ); }
+			$j = self::job( $key ); if ( ( $j['state'] ?? '' ) === 'sent' ) { return ''; }
 			$did = (string) $c['did']; $col = 'app.bsky.feed.post'; $rkey = (string) ( $j['rkey'] ?? '' );
 			if ( $rkey !== '' ) {  /* an earlier try: did it go out? (a lost reply is never posted twice) */
 				list( $gc, $gj ) = self::call( 'com.atproto.repo.getRecord', array( 'repo' => $did, 'collection' => $col, 'rkey' => $rkey ), '', '', 'GET' );
