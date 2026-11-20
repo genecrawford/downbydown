@@ -115,7 +115,13 @@ jobs:
           # the card and the square, for the week the defense files run through; never an older week's
           W=$(python3 -c "import json; print(json.load(open('data/defense/MIN.json'))['through'])")
           php tools/view_harness.php data card "pack-week-$W-rush" card-pass-rushers.png
-          php tools/view_harness.php data card "ig-week-$W-rush" card-square-rush.png
+          # the square comes from the week's pack, which waits for the week's last game: midweek (defense through a week still being played) there's none
+          if python3 -c "import json,sys; sys.exit(0 if json.load(open('data/week/w$W.json')).get('complete') else 1)" 2>/dev/null; then
+            php tools/view_harness.php data card "ig-week-$W-rush" card-square-rush.png
+          else
+            echo "Week $W isn't finished, so no pass rushers square yet"
+            if php tools/view_harness.php data card "ig-week-$W-rush" /tmp/x.png 2>/dev/null; then echo "ig-week-$W-rush should not render before Week $W is finished"; exit 1; fi
+          fi
           for k in "pack-week-$((W-1))-rush" pack-week-99-rush; do if php tools/view_harness.php data card "$k" /tmp/x.png 2>/dev/null; then echo "card $k should not render"; exit 1; fi; done
       - name: A chart on every position tab (SCOPE §80)
         run: |
