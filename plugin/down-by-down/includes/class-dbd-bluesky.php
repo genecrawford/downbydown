@@ -126,6 +126,13 @@ class DBD_Bluesky {
 	}
 
 	public static function job( $key ) { $j = get_option( self::OPT_JOB . $key, null ); return is_array( $j ) ? $j : null; }
+	/** The record as the database has it now, past this request's option cache; the plain read where there's no database (the harness). */
+	private static function fresh_job( $key ) {
+		global $wpdb;
+		if ( ! isset( $wpdb ) || ! is_object( $wpdb ) || ! method_exists( $wpdb, 'get_var' ) ) { return self::job( $key ); }
+		$v = $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s LIMIT 1", self::OPT_JOB . $key ) );
+		$j = $v === null ? null : maybe_unserialize( $v ); return is_array( $j ) ? $j : null;
+	}
 	private static function job_set( $key, $fields ) { update_option( self::OPT_JOB . $key, array_merge( self::job( $key ) ?: array(), $fields ), false ); }
 
 	/** Post an item now: '' when it's out (or was already), or what went wrong (kept on its record for the item's line). */
@@ -133,11 +140,11 @@ class DBD_Bluesky {
 		$j = self::job( $key ); if ( ( $j['state'] ?? '' ) === 'sent' ) { return ''; }
 		$c = self::conn(); if ( ! self::connected() ) { return 'Bluesky isn’t connected.'; }
 		$lock = 'dbd_bsky_lock_' . $key;
-		if ( ! add_option( $lock, time(), '', false ) ) { if ( time() - (int) get_option( $lock, 0 ) < 120 ) { return 'it’s already posting'; } update_option( $lock, time(), false ); }
+		if ( ! add_option( $lock, time(), '', false ) ) { if ( time() - (int) get_option( $lock, 0 ) < 300 ) { return 'it’s already posting'; } update_option( $lock, time(), false ); }
 		try {
-			/* read the record again now the lock is ours: a press that finished meanwhile has posted it (Greptile, PR #149) */
-			if ( function_exists( 'wp_cache_delete' ) ) { wp_cache_delete( self::OPT_JOB . $key, 'options' ); }
-			$j = self::job( $key ); if ( ( $j['state'] ?? '' ) === 'sent' ) { return ''; }
+			/* read the record again now the lock is ours, from the database itself: a press that finished meanwhile has posted it, and this
+			   request's option cache (which remembers a missing option too) wouldn't show that (Greptile, PR #149) */
+			$j = self::fresh_job( $key ); if ( ( $j['state'] ?? '' ) === 'sent' ) { return ''; }
 			$did = (string) $c['did']; $col = 'app.bsky.feed.post'; $rkey = (string) ( $j['rkey'] ?? '' );
 			if ( $rkey !== '' ) {  /* an earlier try: did it go out? (a lost reply is never posted twice) */
 				list( $gc, $gj ) = self::call( 'com.atproto.repo.getRecord', array( 'repo' => $did, 'collection' => $col, 'rkey' => $rkey ), '', '', 'GET' );
