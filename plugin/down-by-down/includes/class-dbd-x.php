@@ -17,7 +17,7 @@ class DBD_X {
 	const OPT_CONN  = 'dbd_x_conn';   /* the connection: ck, cs, at, as (the four keys), id, username, checked (not autoloaded) */
 	const OPT_SET   = 'dbd_x_set';    /* the weekly switch: array( 'on' => bool ), on unless unticked */
 	const OPT_JOB   = 'dbd_x_job_';   /* one record per item */
-	const OPT_COUNT = 'dbd_x_count';  /* this month's posts: array( 'm' => 'Y-m', 'n' => count ) */
+	const OPT_COUNT = 'dbd_x_count_'; /* a month's posts, 'dbd_x_count_2026-11' => count */
 	const HOOK      = 'dbd_x_send';
 	const API       = 'https://api.x.com/2/';
 	const PRICE     = 0.20;           /* about what X charges for a post with a link (third-party guides, 2026) */
@@ -89,25 +89,30 @@ class DBD_X {
 	public static function save( $p ) {
 		update_option( self::OPT_SET, self::sanitize( is_array( $p[ self::OPT_SET ] ?? null ) ? $p[ self::OPT_SET ] : array() ) );
 		if ( ! empty( $p['dbd_x_disconnect'] ) ) { self::disconnect(); return ''; }
+		/* keys kept for an account that's no longer the one under Your accounts are forgotten first, whatever else was pasted (Greptile, PR #151) */
+		$c = self::conn(); $gone = '';
+		if ( $c && strtolower( (string) $c['username'] ) !== strtolower( DBD_Pack::our_x() ) ) {
+			self::disconnect(); $gone = DBD_Pack::our_x() !== '' ? 'The X account changed, so its keys were forgotten. Paste keys for @' . DBD_Pack::our_x() . '.' : '';
+		}
 		$k = array(); foreach ( array_keys( self::KEYS ) as $f ) { $k[ $f ] = is_scalar( $p[ 'dbd_x_' . $f . '_new' ] ?? null ) ? trim( (string) $p[ 'dbd_x_' . $f . '_new' ] ) : ''; }
 		if ( array_filter( $k ) ) {
 			if ( count( array_filter( $k ) ) < 4 ) { return 'Paste all four X keys together: the API key and its secret, the access token and its secret.'; }
-			$c0 = self::conn(); $err = self::connect( $k );
-			if ( $err !== '' && $c0 && strtolower( (string) $c0['username'] ) !== strtolower( DBD_Pack::our_x() ) ) { self::disconnect(); }
-			return $err;
+			return self::connect( $k );
 		}
-		$c = self::conn();
-		if ( $c && strtolower( (string) $c['username'] ) !== strtolower( DBD_Pack::our_x() ) ) {
-			self::disconnect(); return DBD_Pack::our_x() !== '' ? 'The X account changed, so its keys were forgotten. Paste keys for @' . DBD_Pack::our_x() . '.' : '';
-		}
-		return '';
+		return $gone;
 	}
 
 	/* ------------------------------------------------------------------ the posts */
 
 	/** This month's posts, for the settings box. */
-	public static function month() { $c = get_option( self::OPT_COUNT, null ); return is_array( $c ) && ( $c['m'] ?? '' ) === wp_date( 'Y-m' ) ? (int) ( $c['n'] ?? 0 ) : 0; }
-	private static function count_one() { $m = wp_date( 'Y-m' ); $c = get_option( self::OPT_COUNT, null ); if ( ! is_array( $c ) || ( $c['m'] ?? '' ) !== $m ) { $c = array( 'm' => $m, 'n' => 0 ); } $c['n'] = (int) $c['n'] + 1; update_option( self::OPT_COUNT, $c, false ); }
+	public static function month() { return (int) get_option( self::OPT_COUNT . wp_date( 'Y-m' ), 0 ); }
+	/** One more post this month, added in the database itself, so two posts at once both count (Greptile, PR #151). */
+	private static function count_one() {
+		$o = self::OPT_COUNT . wp_date( 'Y-m' ); if ( add_option( $o, 1, '', false ) ) { return; }
+		global $wpdb;
+		if ( isset( $wpdb ) && is_object( $wpdb ) && method_exists( $wpdb, 'query' ) ) { $wpdb->query( $wpdb->prepare( "UPDATE {$wpdb->options} SET option_value = option_value + 1 WHERE option_name = %s", $o ) ); wp_cache_delete( $o, 'options' ); return; }
+		update_option( $o, (int) get_option( $o, 0 ) + 1, false );
+	}
 
 	/** A post's text as X shows it back, for finding it again: no links (X turns them into t.co ones), entities decoded, spaces as one. */
 	public static function norm( $t ) { return trim( (string) preg_replace( '/\s+/u', ' ', (string) preg_replace( '#https?://\S+#', '', html_entity_decode( (string) $t, ENT_QUOTES, 'UTF-8' ) ) ) ); }
@@ -127,12 +132,13 @@ class DBD_X {
 	 * posts first; a new try is marked ($mark) before it's sent. A refusal as a repeat is looked for again, so it's taken as the post it repeats.
 	 */
 	private static function part( $p, $text, $reply, $mark ) {
+		$text = (string) ( $p['text'] ?? $text );  /* a retry sends and looks for the text tried first, even when a sync has changed the item since (Greptile, PR #151) */
 		if ( ! empty( $p['tried'] ) ) {
 			list( $id, $err ) = self::find( $text );
 			if ( $err !== '' ) { return array( '', 'X didn’t say whether the last try went out (' . $err . ')' ); }
 			if ( $id !== '' ) { self::count_one(); return array( $id, '' ); }  /* it went out on that try, uncounted (its reply was lost), and X charged it */
 		}
-		$mark();
+		$mark( $text );
 		$body = array( 'text' => (string) $text ); if ( $reply !== '' ) { $body['reply'] = array( 'in_reply_to_tweet_id' => (string) $reply ); }
 		list( $code, $j, $err ) = self::call( 'POST', 'tweets', $body );
 		if ( $err === '' && ! empty( $j['data']['id'] ) ) { self::count_one(); return array( (string) $j['data']['id'], '' ); }
@@ -163,7 +169,7 @@ class DBD_X {
 		if ( ! $held && ! self::lock( $key ) ) { return 'it’s already posting'; }
 		try {
 			$j = self::fresh_job( $key ) ?: array(); if ( ( $j['state'] ?? '' ) === 'sent' ) { return ''; }
-			list( $id, $err ) = self::part( $j, (string) DBD_Pack::social( $it )['x'], '', function () use ( $key ) { self::job_set( $key, array( 'tried' => time() ) ); } );
+			list( $id, $err ) = self::part( $j, (string) DBD_Pack::social( $it )['x'], '', function ( $text ) use ( $key ) { self::job_set( $key, array( 'tried' => time(), 'text' => $text ) ); } );
 			if ( $err !== '' ) { return self::fail( $key, $err ); }
 			return self::sent( $key, $id, $auto );
 		} finally { if ( ! $held ) { self::unlock( $key ); } }
@@ -261,7 +267,7 @@ class DBD_X {
 				$p = (array) ( $parts[ $i ] ?? array() );
 				if ( empty( $p['id'] ) ) {
 					$text = $i ? self::reply_text( $items[ $i - 1 ], $i, $count ) : self::intro( $n, $count );
-					$mark = function () use ( $key, &$parts, $i ) { $parts[ $i ] = array( 'tried' => time() ); self::job_set( $key, array( 'parts' => $parts ) ); };
+					$mark = function ( $text ) use ( $key, &$parts, $i ) { $parts[ $i ] = array( 'tried' => time(), 'text' => $text ); self::job_set( $key, array( 'parts' => $parts ) ); };
 					list( $id, $err ) = self::part( $p, $text, $prev, $mark );
 					if ( $err !== '' ) { return self::fail( $key, $err ); }
 					$parts[ $i ] = array( 'id' => $id ); self::job_set( $key, array( 'parts' => $parts ) );

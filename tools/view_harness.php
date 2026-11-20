@@ -741,9 +741,9 @@ if ( $view === 'autopub' ) {
 
 		/* ---- X (2.40.0, SCOPE §83): the signature, connecting, Auto publish, its days, the thread, a lost reply, a repeat, retries */
 		echo "  -- X\n";
-		$xs = DBD_X::sign( 'POST', 'https://api.twitter.com/1.1/statuses/update.json', array( 'include_entities' => 'true', 'status' => 'Hello Ladies + Gentlemen, a signed OAuth request!' ), 'xvz1evFS4wEEPTGEFPHBog', 'kAcSOqF21Fu85e7zjz7ZN2U4ZRhfV3WpwPAoE3Z7kBw',
+		$xsig = DBD_X::sign( 'POST', 'https://api.twitter.com/1.1/statuses/update.json', array( 'include_entities' => 'true', 'status' => 'Hello Ladies + Gentlemen, a signed OAuth request!' ), 'xvz1evFS4wEEPTGEFPHBog', 'kAcSOqF21Fu85e7zjz7ZN2U4ZRhfV3WpwPAoE3Z7kBw',
 			'370773112-GmHxMAgYyLbNEtIKZeRNFsMKPR9EyMZeS9weJAEb', 'LswwdoUaIvS8ltyTt5jkRh4J50vUPVVHtR2YPi5kE', 'kYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg', 1318622958 );
-		$ck( 'the OAuth 1.0a signature matches X’s published example', strpos( $xs, 'oauth_signature="hCtSmYh%2BiHYCEqBWrE7C7hYmtUk%3D"' ) !== false && strpos( $xs, 'OAuth oauth_consumer_key="xvz1evFS4wEEPTGEFPHBog", oauth_nonce=' ) === 0, $xs );
+		$ck( 'the OAuth 1.0a signature matches X’s published example', strpos( $xsig, 'oauth_signature="hCtSmYh%2BiHYCEqBWrE7C7hYmtUk%3D"' ) !== false && strpos( $xsig, 'OAuth oauth_consumer_key="xvz1evFS4wEEPTGEFPHBog", oauth_nonce=' ) === 0, $xsig );
 		$ck( 'not connected: X isn’t on the button', ! DBD_X::connected() && ! in_array( 'x', DBD_AutoPub::nets(), true ) );
 		$xk = function ( $at ) { return array( 'dbd_x_set' => array( 'on' => '1' ), 'dbd_x_ck_new' => 'ck1', 'dbd_x_cs_new' => 'cs1', 'dbd_x_at_new' => $at, 'dbd_x_as_new' => 'as1' ); };
 		$e = DBD_X::save( array( 'dbd_x_ck_new' => 'ck1', 'dbd_x_at_new' => 'at1' ) ); $ck( 'two keys of four: asked for all four, nothing kept', strpos( $e, 'Paste all four X keys together' ) === 0 && ! DBD_X::conn(), $e );
@@ -791,6 +791,15 @@ if ( $view === 'autopub' ) {
 		$GLOBALS['dbd_opt']['dbd_x_set'] = array( 'on' => false ); $xnow( 'carousel' ); $GLOBALS['hcalls'] = array(); DBD_X::send( $xkey( 'carousel' ) ); unset( $GLOBALS['dbd_opt'][ 'dbd_x_job_' . $xkey( 'carousel' ) ] );
 		$ck( 'switched off: a booked day posts nothing, a sync books nothing, no line; the button still posts to X', ! $xcalls() && DBD_X::note( null, $t0 - 600 ) === array() && DBD_X::line( $n ) === null && in_array( 'x', DBD_AutoPub::nets(), true ) );
 		unset( $GLOBALS['dbd_opt']['dbd_x_set'] );
+		if ( count( $daily ) >= 4 ) {  /* a retry keeps the text it tried, though a sync changed the item since: the lost post is found, not posted again in new words */
+			$d4 = $daily[3]; $it4 = DBD_Pack::find( $n, $d4 ); $old = DBD_Pack::social( $it4 )['x'];
+			$xnow( $d4, array( 'tried' => time() - 600, 'text' => $old ) ); $GLOBALS['xs']['posts'][] = array( 'id' => '777', 'text' => $old, 'reply' => '' );
+			$GLOBALS['hcalls'] = array(); DBD_X::send( $xkey( $d4 ) ); $j4 = DBD_X::job( $xkey( $d4 ) );
+			$ck( 'a retry looks for the text it tried and finds the lost post', $j4['state'] === 'sent' && $j4['id'] === '777' && ! $xcalls(), json_encode( $j4 ) );
+		}
+		$GLOBALS['dbd_opt']['dbd_pack_x'] = 'someone_else'; $e = DBD_X::save( array( 'dbd_x_set' => array( 'on' => '1' ), 'dbd_x_ck_new' => 'ck1' ) );
+		$ck( 'the account changed and only some keys pasted: the old keys are forgotten anyway', ! DBD_X::conn() && strpos( $e, 'Paste all four X keys together' ) === 0, $e );
+		unset( $GLOBALS['dbd_opt']['dbd_pack_x'] ); DBD_X::save( $xk( 'at1' ) );
 		$GLOBALS['dbd_opt']['dbd_pack_x'] = 'someone_else'; $e = DBD_X::save( array( 'dbd_x_set' => array( 'on' => '1' ) ) );
 		$ck( 'a changed X account forgets the keys', ! DBD_X::conn() && strpos( $e, 'The X account changed' ) === 0, $e ); unset( $GLOBALS['dbd_opt']['dbd_pack_x'] );
 	} catch ( Throwable $e ) { fwrite( STDERR, 'FATAL in autopub: ' . $e->getMessage() . ' at ' . basename( $e->getFile() ) . ':' . $e->getLine() . "\n" ); exit( 1 ); }
