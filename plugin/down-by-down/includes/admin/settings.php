@@ -531,6 +531,7 @@ function dbd_pack_settings_box( $n ) {
 					echo '<p class="description">In your Meta app (Instagram, API setup with Unified login), make a configuration with @' . esc_html( DBD_Pack::our_ig() !== '' ? DBD_Pack::our_ig() : 'your account' ) . ', then Generate token and paste it here. It’s checked when you save, and never shown again.</p>';
 				} ?></div>
 			<div class="sp-sh">Bluesky posting</div>
+			<span>Post it</span><div><label><input type="checkbox" name="<?php echo esc_attr( DBD_Bluesky::OPT_SET ); ?>[on]" value="1"<?php echo DBD_Bluesky::settings()['on'] ? ' checked' : ''; ?>> Post on Tuesday, then one item a day Wednesday to Sunday, 9:00 AM Eastern</label><p class="description" style="margin:4px 0 0">Tuesday is a thread: a first post naming the week, each item replying under it. Untick it and Bluesky posts only when you press Auto publish.</p></div>
 			<span>Account</span><div style="padding-top:5px"><?php echo DBD_Pack::our_bsky() !== '' ? '@' . esc_html( DBD_Pack::our_bsky() ) . ' <span class="description">(from Your accounts above)</span>' : '<span class="description">Add the Bluesky account above first.</span>'; ?></div>
 			<label for="dbd-bsky-pass">App password</label><div><input type="password" id="dbd-bsky-pass" name="dbd_bsky_pass_new" value="" autocomplete="off" placeholder="<?php echo esc_attr( DBD_Bluesky::conn() ? 'Paste a new app password to replace it' : 'Paste an app password from Bluesky' ); ?>" style="width:420px;max-width:100%">
 				<?php $bc = DBD_Bluesky::conn();
@@ -564,6 +565,11 @@ function dbd_pack_settings_box( $n ) {
 				<button class="button">Post the next one now</button> <span class="description">Posts the first one not out yet, right away.</span></form>
 			<?php } ?></div></div>
 		<?php endif; ?>
+		<?php if ( $n && DBD_Bluesky::connected() ) : ?>
+		<div class="sp-sg sp-last"><div class="sp-sh">Bluesky this week</div><span></span><div><?php  /* SCOPE §82 */
+			foreach ( DBD_Bluesky::week_rows( $n ) as $r ) { echo '<span class="dbd-dot ' . esc_attr( $r[0] ) . '"></span>' . esc_html( $r[1] ) . ( $r[2] !== '' ? ' <a href="' . esc_url( $r[2] ) . '" target="_blank" rel="noopener">View</a>' : '' ) . ( $r[3] !== '' ? ' <a class="button button-small" href="' . esc_url( DBD_Bluesky::again_url( $r[3] ) ) . '">Try again</a>' : '' ) . '<br>'; }
+			if ( ! DBD_Bluesky::on() ) { echo '<span class="description">Weekly posting is off; Auto publish still posts.</span>'; } ?></div></div>
+		<?php endif; ?>
 	</details>
 	<?php
 }
@@ -572,7 +578,7 @@ function dbd_pack_settings_box( $n ) {
 function dbd_pack_notices() {
 	if ( ! isset( $_GET['pack'] ) ) { return; }
 	$pk = (string) $_GET['pack']; $pn = (int) ( $_GET['pack_n'] ?? 0 );
-	if ( $pk === 'igposted' ) { $x = array( 'success', 'Posted to Instagram.' ); } elseif ( $pk === 'igagain' ) { $x = array( 'success', 'Instagram is trying that post again.' ); }
+	if ( $pk === 'igposted' ) { $x = array( 'success', 'Posted to Instagram.' ); } elseif ( $pk === 'igagain' ) { $x = array( 'success', 'Instagram is trying that post again.' ); } elseif ( $pk === 'bsagain' ) { $x = array( 'success', 'Bluesky is trying that post again.' ); }
 	elseif ( $pk === 'igerror' || $pk === 'saveerr' ) { $x = array( 'error', sanitize_text_field( wp_unslash( rawurldecode( (string) ( $_GET['pack_err'] ?? '' ) ) ) ) ); }  /* not the email's wording (Greptile, PR #144) */
 	else {
 	$x = $pk === 'saved' ? array( 'success', 'Settings saved.' ) : ( $pk === 'sent' ? array( 'success', 'The pack went to ' . $pn . ( $pn === 1 ? ' person.' : ' people.' ) ) : ( $pk === 'again' ? array( 'success', 'The pack email is going again.' ) : array( 'error', 'The pack email didn’t send: ' . sanitize_text_field( wp_unslash( rawurldecode( (string) ( $_GET['pack_err'] ?? '' ) ) ) ) ) ) );
@@ -653,7 +659,8 @@ function dbd_tab_share() {
 	</div>
 	<p class="sp-how">Click where you want to post. Reddit, X and Bluesky open with the post filled in. Facebook copies the text and opens its share box: choose Share to a group, then paste. Instagram copies the caption: post it with the square.</p>
 	<p class="sp-mail"><span class="dbd-dot <?php echo esc_attr( $ml[0] ); ?>"></span><?php echo esc_html( $ml[1] ); ?><?php if ( $ml[2] !== '' ) { echo ' <a class="button button-small" href="' . esc_url( DBD_Pack_Mail::again_url( $ml[2] ) ) . '">Try again</a>'; } ?> <a href="#dbd-pack-settings" class="sp-open">Change the list</a>
-		<?php $il = DBD_Instagram::line( $n ); if ( $il ) { echo '<br><span class="dbd-dot ' . esc_attr( $il[0] ) . '"></span>' . esc_html( $il[1] ) . ( $il[2] !== '' ? ' <a href="' . esc_url( $il[2] ) . '" target="_blank" rel="noopener">View on Instagram</a>' : '' ) . ( $il[3] !== '' ? ' <a class="button button-small" href="' . esc_url( DBD_Instagram::again_url( $il[3] ) ) . '">Try again</a>' : '' ) . ( ! DBD_Instagram::connected() ? ' <a href="#dbd-pack-settings" class="sp-open">Connect it</a>' : '' ); } ?></p>
+		<?php $il = DBD_Instagram::line( $n ); if ( $il ) { echo '<br><span class="dbd-dot ' . esc_attr( $il[0] ) . '"></span>' . esc_html( $il[1] ) . ( $il[2] !== '' ? ' <a href="' . esc_url( $il[2] ) . '" target="_blank" rel="noopener">View on Instagram</a>' : '' ) . ( $il[3] !== '' ? ' <a class="button button-small" href="' . esc_url( DBD_Instagram::again_url( $il[3] ) ) . '">Try again</a>' : '' ) . ( ! DBD_Instagram::connected() ? ' <a href="#dbd-pack-settings" class="sp-open">Connect it</a>' : '' ); }
+		$bl = DBD_Bluesky::line( $n ); if ( $bl ) { echo '<br><span class="dbd-dot ' . esc_attr( $bl[0] ) . '"></span>' . esc_html( $bl[1] ) . ( $bl[2] !== '' ? ' <a href="' . esc_url( $bl[2] ) . '" target="_blank" rel="noopener">View on Bluesky</a>' : '' ) . ( $bl[3] !== '' ? ' <a class="button button-small" href="' . esc_url( DBD_Bluesky::again_url( $bl[3] ) ) . '">Try again</a>' : '' ); } ?></p>
 	<?php
 	foreach ( $items as $it ) {
 		$i = DBD_Pack::NUM[ $it['k'] ] ?? 0; $img = DBD_Card::url( $it['card'] );
