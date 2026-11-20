@@ -62,7 +62,8 @@ class DBD_Threads {
 
 	/**
 	 * A pasted token and the app's Threads App secret: checked for the account under Your accounts, made into a 60-day token, then kept.
-	 * Returns '' or what went wrong.
+	 * A token from the app's User Token Generator is a 60-day one already and can't be made into one (Threads answers 400): it works (checked
+	 * just above), so it's kept as it is, good for 60 days and renewed every week like any other (2.41.1). Returns '' or what went wrong.
 	 */
 	public static function connect( $token, $secret ) {
 		$token = trim( (string) $token ); $secret = trim( (string) $secret );
@@ -72,9 +73,9 @@ class DBD_Threads {
 		$u = (string) ( $j['username'] ?? '' );
 		if ( strtolower( $u ) !== strtolower( $h ) ) { return 'That Threads token is for @' . $u . ', not @' . $h . '. Generate it as @' . $h . '.'; }
 		list( , $x, $err ) = self::call( 'GET', 'access_token', array( 'grant_type' => 'th_exchange_token', 'client_secret' => $secret ), $token, false );
-		if ( $err !== '' || empty( $x['access_token'] ) ) { return 'Threads didn’t make that token into a 60-day one (' . ( $err !== '' ? $err : 'no token came back' ) . '). Check the App secret, and paste a freshly generated token: one older than an hour can’t be.'; }
-		update_option( self::OPT_CONN, array( 'token' => (string) $x['access_token'], 'secret' => $secret, 'id' => (string) $j['id'], 'username' => $u,
-			'expires' => time() + (int) ( $x['expires_in'] ?? 60 * DAY_IN_SECONDS ), 'checked' => time(), 'err' => '' ), false );
+		$long = $err === '' && ! empty( $x['access_token'] );
+		update_option( self::OPT_CONN, array( 'token' => $long ? (string) $x['access_token'] : $token, 'secret' => $secret, 'id' => (string) $j['id'], 'username' => $u,
+			'expires' => time() + ( $long ? (int) ( $x['expires_in'] ?? 60 * DAY_IN_SECONDS ) : 60 * DAY_IN_SECONDS ), 'checked' => time(), 'err' => '' ), false );
 		self::keep_refreshing();
 		return '';
 	}
