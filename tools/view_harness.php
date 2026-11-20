@@ -526,6 +526,7 @@ if ( $view === 'autopub' ) {
 		'admin_url' => function ( $p = '' ) { return 'https://example.test/wp-admin/' . $p; },
 		'add_option' => function ( $k, $v = '' ) { if ( isset( $GLOBALS['dbd_opt'][ $k ] ) ) { return false; } $GLOBALS['dbd_opt'][ $k ] = $v; return true; },
 		'delete_option' => function ( $k ) { unset( $GLOBALS['dbd_opt'][ $k ] ); return true; },
+		'wp_nonce_url' => function ( $u, $a = '' ) { return $u . ( strpos( $u, '?' ) === false ? '?' : '&' ) . '_wpnonce=n'; },
 		'delete_transient' => function ( $k ) { unset( $GLOBALS['htr'][ $k ] ); return true; },
 		'wp_mail' => function ( $to, $sub ) { $GLOBALS['hmail'][] = $sub; return true; },
 		'wp_clear_scheduled_hook' => function () { return 0; },
