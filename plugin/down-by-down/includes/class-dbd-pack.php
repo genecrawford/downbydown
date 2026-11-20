@@ -332,6 +332,14 @@ class DBD_Pack {
 		return $out;
 	}
 
+	/** Week $n's item for a slot ('swing' … 'rush'), or a keys side for 'keys-{game}-{team}' carrying its game's card; null when there's none (SCOPE §81). */
+	public static function find( $n, $slot ) {
+		$slot = (string) $slot;
+		if ( strpos( $slot, 'keys-' ) !== 0 ) { foreach ( self::items( $n ) as $it ) { if ( ( $it['k'] ?? '' ) === $slot ) { return $it; } } return null; }
+		foreach ( self::keys( $n ) as $kg ) { foreach ( $kg['sides'] as $sd ) { if ( $sd['sq'] === 'ig-week-' . (int) $n . '-' . $slot ) { $sd['card'] = $kg['card']; return $sd; } } }
+		return null;
+	}
+
 	/* ---- the two new cards' specs (DBD_Card draws them) */
 
 	/** A riser card: pack-week-9-snaps or pack-week-9-targets. */
