@@ -3329,7 +3329,7 @@ Gene, looking at Share pack item 6: "can you set a button "auto publish" and any
 **Tests:** the harness fakes the Bluesky API (session, blob, record): the text and its link facet's byte offsets (with the curly quotes and the minus sign the texts use), the external embed, the View link from the `at://` uri, a bad app password keeps nothing, an oversized card posts without the image, a second press doesn't post again. On the Instagram side: a new item key (`rush`) parses, the single post goes through the fake API, and an item already posted is left out. The admin harness looks for the button, the ask, the per-network lines, the Published state and the new settings fields, and a keys side's button, its key parsing and its single post.
 
 
-## 82. Bluesky on Instagram's schedule (scoped and mocked 2026-11-20, `mockup-v55/`; all decided)
+## 82. Bluesky on Instagram's schedule (scoped and mocked 2026-11-20, `mockup-v55/`; all decided; built as 2.39.0, PR #150, live 2026-11-20)
 
 Gene, after testing §81's Auto publish on Bluesky: "will bluesky get the same auto-schedule that instagram gets now?" It didn't: in 2.38.0 Bluesky posts only on a press. Then: "Scope it."
 
@@ -3347,3 +3347,29 @@ Gene, after testing §81's Auto publish on Bluesky: "will bluesky get the same a
 2. **"9:00 AM, same."** Bluesky posts at 9:00 AM Eastern alongside Instagram, on the same days, so both status lines and This week lists name the same times. No separate time setting.
 
 **Tests:** the harness books a week's Bluesky posts once at the right days, skips one past its cutoff, skips an item already sent with Auto publish, posts a daily item through the fake Bluesky (the same record as Auto publish), retries and fails with the note, Try again, the status line, the switch off (nothing books, the button still posts), and the Tuesday post as decided.
+
+## 83. X on the same schedule (scoped and mocked 2026-11-20, `mockup-v56/`; all decided)
+
+Gene, after 2.39.0 went live: "is there no way to make twitter/x work the same way?" Then: "Scope it."
+
+**Why it's possible now:** since February 2026 X's API is pay-per-use, with no monthly fee and no free tier for new developers. You buy credits in X's Developer Console and each post takes a little from them. Third-party guides put a post at about $0.015, or about $0.20 when it carries a link. X's own price page should be checked at setup. The credits are prepaid, so the balance is the spending cap: when it runs out, posts fail with X's error and Try again, and nothing is charged beyond it.
+
+**What it does:**
+
+1. **X joins Instagram's and Bluesky's days:** Tuesday (see Decision 2), then one item a day, Wednesday to Sunday, 9:00 AM Eastern, in pack order. Pass rushers and keys stay on the button only.
+2. **X joins Auto publish** (§81): the button posts to X too when it's connected and ticked under Posts to. The ask names the three as "Instagram, Bluesky and X" (with three, the list gets a comma instead of two "and"s).
+3. **The post** is the item's X text from the pack (the same one the Post on X button fills in, 280 at most with the link counted as 23), per Decision 1.
+4. **Each item posts once:** a record per item (`dbd_x_job_{season}-w{N}-{item}`), shared by the day and the button, as for Bluesky. X picks a post's ID itself, so a lost reply can't be looked up by a key chosen beforehand. Instead, a retry first reads the account's last few posts (a few reads, a fraction of a cent) and, if one has the same text, takes it as sent. X also refuses an exact repeat of a recent post, a second guard.
+5. **Booking, the one-day cutoff, retries (every 10 minutes, 7 tries), the email note and Try again** work as Instagram's and Bluesky's (§76, §82); `dbd_x_send` events.
+6. **The connection:** X's user-context keys for @dxd_NFLfootball (OAuth 1.0a): API key and secret, access token and secret, made once in the Developer Console with Read and Write permission and pasted into a new **X posting** section of the Share pack settings. They're checked when saved (who am I?) and never shown again. They don't expire; Gene can revoke them in the console. Gene pastes them himself.
+7. **On the Share pack tab:** an X status line under Bluesky's, the X posting section's switch ("Post on Tuesday, then one item a day Wednesday to Sunday, 9:00 AM Eastern"; on by default once connected), an **X this week** list, and a count of this month's posts with what they cost at X's price ("This month: 14 posts, about $2.80"), so the credit balance in X's console holds no surprises.
+
+**About the cost:** with links, a week is about 11 posts (Tuesday's 6, then 5 days), about $2.20, and Week 11 to Week 18 about $18. Each keys side pressed with Auto publish adds a post.
+
+**Decisions (Gene, 2026-11-20):**
+1. **"Text and link."** Each post is the item's X text with its link; X builds the card preview from the page's own tags (`twitter:card` summary_large_image, the `?share=` card), as when the link is pasted by hand. No image upload. About $0.20 a post.
+
+2. **"A thread."** Tuesday on X is a thread like Bluesky's (§82): a first post naming the week ("Week 10 in five charts, one in each reply below. Every chart and the numbers behind it:" and the week page's link), then each item with a square as a reply under it in pack order (`reply.in_reply_to_tweet_id` = the post before), each its X text and link. One record (`dbd_x_job_{season}-w{N}-carousel`) keeps the items chosen on the first try and each part's post ID as it goes, so a retry carries on from the last part that went out. The View link is the first post. The replies don't count as the items' own posts. About 6 posts, $1.20 a week. *Built note:* each reply starts with its number ("1/5 …", fitted to 280 the pack's way), because X refuses a post whose text repeats a recent one, and Wednesday's daily post of the same item would otherwise read as a repeat of Tuesday's reply.
+
+**Tests:** the harness, with a fake X: the OAuth 1.0a signature against X's published example, booking once on the right days, skipping one past its cutoff and one already sent with Auto publish, a daily post and Tuesday as decided, a lost reply found among the last posts and not posted again, X's duplicate refusal, retries to the note and Try again, the switch off, the month's count, and the Auto publish button posting to all three.
+

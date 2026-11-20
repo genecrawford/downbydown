@@ -5,24 +5,29 @@
  * A network that already has the item is left out, so nothing posts twice; an Instagram day still to come is taken over and dropped.
  * Reddit, X and Facebook can't post on their own, so their buttons stay as they are.
  * 2.39.0 (SCOPE §82): a Bluesky day still to come is taken over the same way (the day's run finds the record sent).
+ * 2.40.0 (SCOPE §83): X joins (DBD_X::post(), during the press), its days taken over the same way.
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 class DBD_AutoPub {
 
-	const OPT  = 'dbd_ap_set';   /* which networks the button posts to: array( 'ig' => bool, 'bs' => bool ) */
-	const NETS = array( 'ig' => 'Instagram', 'bs' => 'Bluesky' );
+	const OPT  = 'dbd_ap_set';   /* which networks the button posts to: array( 'ig' => bool, 'bs' => bool, 'x' => bool ) */
+	const NETS = array( 'ig' => 'Instagram', 'bs' => 'Bluesky', 'x' => 'X' );
 
 	public static function init() { add_action( 'admin_post_dbd_auto_publish', array( __CLASS__, 'action' ) ); }
 
-	public static function settings() { $o = get_option( self::OPT, null ); return array( 'ig' => is_array( $o ) ? ! empty( $o['ig'] ) : true, 'bs' => is_array( $o ) ? ! empty( $o['bs'] ) : true ); }
-	public static function sanitize( $v ) { return array( 'ig' => is_array( $v ) && ! empty( $v['ig'] ), 'bs' => is_array( $v ) && ! empty( $v['bs'] ) ); }
+	/** Ticked or not; a network missing from the saved setting (X, added in 2.40.0, on a site saved before) counts as ticked. */
+	public static function settings() { $o = get_option( self::OPT, null ); $s = array(); foreach ( array_keys( self::NETS ) as $k ) { $s[ $k ] = is_array( $o ) && array_key_exists( $k, $o ) ? ! empty( $o[ $k ] ) : true; } return $s; }
+	public static function sanitize( $v ) { $s = array(); foreach ( array_keys( self::NETS ) as $k ) { $s[ $k ] = is_array( $v ) && ! empty( $v[ $k ] ); } return $s; }
+	/** The networks in a sentence: "Instagram", "Instagram and Bluesky", "Instagram, Bluesky and X". */
+	public static function names( $nets ) { $n = array_map( function ( $x ) { return self::NETS[ $x ]; }, array_values( $nets ) ); $last = array_pop( $n ); return $n ? implode( ', ', $n ) . ' and ' . $last : (string) $last; }
 
 	/** The networks the button posts to: ticked and connected. */
 	public static function nets() {
 		$s = self::settings(); $o = array();
 		if ( $s['ig'] && DBD_Instagram::can_post() ) { $o[] = 'ig'; }
 		if ( $s['bs'] && DBD_Bluesky::connected() ) { $o[] = 'bs'; }
+		if ( $s['x'] && DBD_X::connected() ) { $o[] = 'x'; }
 		return $o;
 	}
 
@@ -63,6 +68,15 @@ class DBD_AutoPub {
 			elseif ( strpos( $bs, 'not posted' ) === 0 || strpos( $bs, 'skipped' ) === 0 ) { $out['bs'] = array( 'ready', 'Bluesky: ' . $bs . '.', '', '' ); }
 			else { $out['bs'] = array( 'ready', '', '', '' ); }
 		}
+		$xj = DBD_X::job( $key ); $xs = (string) ( $xj['state'] ?? '' );
+		if ( in_array( 'x', $nets, true ) || $xs === 'sent' ) {
+			if ( $xs === 'sent' ) { $out['x'] = array( 'done', 'X: posted ' . $when( $xj['sent_at'] ) . '.', (string) ( $xj['link'] ?? '' ), 'ok' ); }
+			elseif ( strpos( $xs, 'failed' ) === 0 ) { $out['x'] = array( 'ready', 'X didn’t post: ' . DBD_X::why( $xj ), '', 'bad' ); }
+			elseif ( $xs === 'booked' ) { $out['x'] = array( 'ready', 'X: booked for ' . $when( $xj['slot_at'] ?? $xj['at'] ) . '. Auto publish posts it now instead.', '', '' ); }
+			elseif ( strpos( $xs, 'retrying' ) === 0 ) { $out['x'] = array( 'ready', 'X: retrying, ' . substr( $xs, 10 ) . '. Auto publish tries it now.', '', 'warn' ); }
+			elseif ( strpos( $xs, 'not posted' ) === 0 || strpos( $xs, 'skipped' ) === 0 ) { $out['x'] = array( 'ready', 'X: ' . $xs . '.', '', '' ); }
+			else { $out['x'] = array( 'ready', '', '', '' ); }
+		}
 		return $out;
 	}
 
@@ -77,7 +91,7 @@ class DBD_AutoPub {
 		$it = DBD_Pack::find( $n, $slot ); if ( ! $it ) { return array( 'item' => 'That item isn’t in the Week ' . (int) $n . ' pack.' ); }
 		$key = self::key( $n, $slot ); $errs = array();
 		foreach ( self::ready( $n, $slot, $it ) as $net ) {
-			$e = $net === 'bs' ? DBD_Bluesky::post( $key, $it ) : DBD_Instagram::auto( $key );
+			$e = $net === 'bs' ? DBD_Bluesky::post( $key, $it ) : ( $net === 'x' ? DBD_X::post( $key, $it ) : DBD_Instagram::auto( $key ) );
 			if ( $e !== '' ) { $errs[ $net ] = $e; }
 		}
 		return $errs;

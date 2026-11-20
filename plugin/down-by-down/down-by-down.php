@@ -3,7 +3,7 @@
  * Plugin Name: Down by Down
  * Plugin URI:  https://downbydown.com
  * Description: How every NFL offense actually plays, drawn on the field from public play-by-play. Put [down_by_down] on a page and that page becomes the app.
- * Version:     2.39.0
+ * Version:     2.40.0
  * Author:      Period Three
  * Author URI:  https://period-three.com
  * License:     GPL-2.0-or-later
@@ -14,7 +14,7 @@
 
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-define( 'DBD_VERSION', '2.39.0' );
+define( 'DBD_VERSION', '2.40.0' );
 define( 'DBD_FILE', __FILE__ );
 define( 'DBD_PATH', plugin_dir_path( __FILE__ ) );
 define( 'DBD_URL', plugin_dir_url( __FILE__ ) );
@@ -54,6 +54,7 @@ require_once DBD_PATH . 'includes/class-dbd-pack.php';
 require_once DBD_PATH . 'includes/class-dbd-pack-mail.php';
 require_once DBD_PATH . 'includes/class-dbd-instagram.php';  /* Instagram posts itself (SCOPE §76) */
 require_once DBD_PATH . 'includes/class-dbd-bluesky.php';    /* Bluesky posting for Auto publish (SCOPE §81) */
+require_once DBD_PATH . 'includes/class-dbd-x.php';          /* X posting (SCOPE §83) */
 require_once DBD_PATH . 'includes/class-dbd-autopub.php';    /* Auto publish (SCOPE §81) */
 require_once DBD_PATH . 'includes/class-dbd-board-mail.php';
 require_once DBD_PATH . 'includes/class-dbd-growth.php';
@@ -76,6 +77,7 @@ register_deactivation_hook( __FILE__, function () {
 	DBD_Pack_Mail::unschedule();
 	DBD_Instagram::unschedule();
 	DBD_Bluesky::unschedule();
+	DBD_X::unschedule();
 } );
 
 add_action( 'plugins_loaded', function () {
@@ -92,5 +94,6 @@ add_action( 'plugins_loaded', function () {
 	DBD_Pack_Mail::init();
 	DBD_Instagram::init();
 	DBD_Bluesky::init();
+	DBD_X::init();
 	DBD_AutoPub::init();
 } );
