@@ -76,7 +76,7 @@ function wp_schedule_single_event() {} function wp_next_scheduled() { return fal
 
 /* ---- the plugin, minus the bootstrap and admin. The SEO class extends a WordPress sitemap base class; an empty stand-in lets it load. */
 if ( ! class_exists( 'WP_Sitemaps_Provider' ) ) { class WP_Sitemaps_Provider { public $name = ''; public $object_type = ''; } }
-foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-kicker', 'class-dbd-defense', 'class-dbd-scatter', 'class-dbd-rush', 'class-dbd-week', 'class-dbd-fanweek', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-boards', 'class-dbd-sync', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo', 'class-dbd-blocks', 'class-dbd-post', 'class-dbd-news', 'class-dbd-email', 'class-dbd-videos', 'class-dbd-growth', 'class-dbd-signup', 'class-dbd-pack', 'class-dbd-pack-mail', 'class-dbd-instagram', 'class-dbd-bluesky', 'class-dbd-x', 'class-dbd-autopub', 'class-dbd-board-mail' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
+foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-kicker', 'class-dbd-defense', 'class-dbd-scatter', 'class-dbd-rush', 'class-dbd-week', 'class-dbd-fanweek', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-boards', 'class-dbd-sync', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo', 'class-dbd-blocks', 'class-dbd-post', 'class-dbd-news', 'class-dbd-email', 'class-dbd-videos', 'class-dbd-growth', 'class-dbd-signup', 'class-dbd-pack', 'class-dbd-pack-mail', 'class-dbd-instagram', 'class-dbd-bluesky', 'class-dbd-x', 'class-dbd-threads', 'class-dbd-autopub', 'class-dbd-board-mail' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
 
 if ( getenv( 'DBD_HARNESS_SIGN' ) ) { $GLOBALS['dbd_opt'] = array( 'dbd_email' => array( 'on' => true, 'key' => 'harness', 'list' => 4, 'tpl' => 5 ) ); }  /* the email set up, so pages draw the signup strip (SCOPE §66) */
 if ( getenv( 'DBD_HARNESS_NOW' ) && class_exists( 'DBD_News' ) ) { DBD_News::$now = (int) getenv( 'DBD_HARNESS_NOW' ); }
@@ -520,7 +520,7 @@ if ( $view === 'autopub' ) {
 	$GLOBALS['dbd_opt'] = array( 'dbd_email' => array( 'on' => true, 'key' => 'k', 'list' => 3, 'tpl' => 5, 'test' => 'gene@example.test' ),
 		'dbd_ig_token' => array( 'token' => 'tok', 'user_id' => '178', 'username' => 'down_by_down', 'expires' => time() + 50 * 86400, 'checked' => time(), 'err' => '' ) );
 	$GLOBALS['hcalls'] = array(); $GLOBALS['hmail'] = array(); $GLOBALS['htr'] = array();
-	$GLOBALS['bs'] = array( 'n' => 0, 'records' => array(), 'lose' => false, 'expire' => 0, 'sessions' => 0, 'failn' => 0 ); $GLOBALS['xs'] = array( 'posts' => array(), 'failn' => 0, 'lose' => false ); $GLOBALS['ig'] = array( 'n' => 0 );
+	$GLOBALS['bs'] = array( 'n' => 0, 'records' => array(), 'lose' => false, 'expire' => 0, 'sessions' => 0, 'failn' => 0 ); $GLOBALS['xs'] = array( 'posts' => array(), 'failn' => 0, 'lose' => false ); $GLOBALS['thf'] = array( 'c' => array(), 'posts' => array(), 'failn' => 0, 'lose' => false, 'norr' => false, 'refail' => false ); $GLOBALS['ig'] = array( 'n' => 0 );
 	foreach ( array(
 		'is_email' => function ( $e ) { return (bool) filter_var( $e, FILTER_VALIDATE_EMAIL ); },
 		'admin_url' => function ( $p = '' ) { return 'https://example.test/wp-admin/' . $p; },
@@ -551,6 +551,34 @@ if ( $view === 'autopub' ) {
 					return $ok( array( 'uri' => 'at://did:plc:dbd/app.bsky.feed.post/' . $b['rkey'], 'cid' => 'bafyrei' . $b['rkey'] ) );
 				}
 				return $no( 400, 'MethodNotImplemented', $nsid );
+			}
+			if ( $host === 'graph.threads.net' ) {  /* Threads (SCOPE §84): token short1 for @down_by_down (id th99), other for someone else; App secret sec1 */
+				$path = preg_replace( '#^/(v1\.0/)?#', '', $u['path'] ); $b = (array) ( $a['body'] ?? array() ); $tok = (string) ( $a['method'] === 'GET' ? ( $q['access_token'] ?? '' ) : ( $b['access_token'] ?? '' ) ); $F =& $GLOBALS['thf'];
+				$GLOBALS['hcalls'][] = array( 'th', $a['method'], $path, $a['method'] === 'GET' ? $q : $b );
+				$tno = function ( $c, $m ) { return array( 'response' => array( 'code' => $c ), 'body' => json_encode( array( 'error' => array( 'message' => $m, 'code' => 100 ) ) ) ); };
+				if ( $path === 'me' ) { return $tok === 'short1' ? $ok( array( 'id' => 'th99', 'username' => 'down_by_down' ) ) : ( $tok === 'other' ? $ok( array( 'id' => 'th77', 'username' => 'someone_else' ) ) : $tno( 400, 'Invalid OAuth access token' ) ); }
+				if ( $path === 'access_token' ) { return $tok === 'short1' && ( $q['client_secret'] ?? '' ) === 'sec1' && ( $q['grant_type'] ?? '' ) === 'th_exchange_token' ? $ok( array( 'access_token' => 'long1', 'token_type' => 'bearer', 'expires_in' => 5184000 ) ) : $tno( 400, 'Error validating client secret' ); }
+				if ( $path === 'refresh_access_token' ) { return ! $F['refail'] && strpos( $tok, 'long' ) === 0 && ( $q['grant_type'] ?? '' ) === 'th_refresh_token' ? $ok( array( 'access_token' => 'long2', 'token_type' => 'bearer', 'expires_in' => 5184000 ) ) : $tno( 400, 'Session has expired' ); }
+				if ( strpos( $tok, 'long' ) !== 0 ) { return $tno( 400, 'Invalid OAuth access token' ); }
+				if ( $path === 'th99/threads' && $a['method'] === 'POST' ) {
+					if ( ! empty( $F['failn'] ) && --$F['failn'] === 0 ) { return $tno( 500, 'An unknown error occurred' ); }
+					$to = (string) ( $b['reply_to_id'] ?? '' ); if ( $F['norr'] && $to !== '' && ! empty( $F['posts'][ $to ]['reply'] ) ) { return $tno( 400, 'Cannot reply to a reply' ); }
+					$cid = 'c' . ( count( $F['c'] ) + 1 ); $F['c'][ $cid ] = array( 'p' => $b, 'status' => 'FINISHED', 'post' => '' ); return $ok( array( 'id' => $cid ) );
+				}
+				if ( $path === 'th99/threads_publish' ) {
+					$cid = (string) ( $b['creation_id'] ?? '' ); if ( ! isset( $F['c'][ $cid ] ) || $F['c'][ $cid ]['status'] !== 'FINISHED' ) { return $tno( 400, 'Media not found' ); }
+					$pid = 'p' . ( count( $F['posts'] ) + 1 ); $F['posts'][ $pid ] = array( 'text' => $F['c'][ $cid ]['p']['text'], 'reply' => (string) ( $F['c'][ $cid ]['p']['reply_to_id'] ?? '' ), 'link' => (string) ( $F['c'][ $cid ]['p']['link_attachment'] ?? '' ) );
+					$F['c'][ $cid ]['status'] = 'PUBLISHED'; $F['c'][ $cid ]['post'] = $pid;
+					if ( $F['lose'] ) { $F['lose'] = false; return $tno( 502, 'Bad gateway' ); }  /* it went out, but the reply was lost */
+					return $ok( array( 'id' => $pid ) );
+				}
+				if ( $path === 'th99/threads' || $path === 'th99/replies' ) {
+					$o = array(); foreach ( array_reverse( $F['posts'], true ) as $pid => $p0 ) { if ( ( $p0['reply'] !== '' ) === ( $path === 'th99/replies' ) ) { $o[] = array( 'id' => $pid, 'text' => $p0['text'] ); } }
+					return $ok( array( 'data' => array_slice( $o, 0, (int) ( $q['limit'] ?? 25 ) ) ) );
+				}
+				if ( isset( $F['c'][ $path ] ) ) { return $ok( array( 'id' => $path, 'status' => $F['c'][ $path ]['status'] ) ); }
+				if ( isset( $F['posts'][ $path ] ) ) { return $ok( array( 'id' => $path, 'permalink' => 'https://www.threads.com/@down_by_down/post/' . $path ) ); }
+				return $tno( 404, $path );
 			}
 			if ( $host === 'api.x.com' ) {  /* X (SCOPE §83): keys ck1/at1 for @dxd_NFLfootball (id 99), at-other for someone else */
 				$path = substr( $u['path'], 3 ); $b = json_decode( (string) ( $a['body'] ?? '' ), true ); $auth = (string) ( $a['headers']['Authorization'] ?? '' );
@@ -670,7 +698,7 @@ if ( $view === 'autopub' ) {
 		$ck( 'a changed Bluesky account forgets the app password', ! DBD_Bluesky::conn() && strpos( $e, 'The Bluesky account changed' ) === 0 && DBD_AutoPub::nets() === array( 'ig' ), $e );
 		$GLOBALS['dbd_opt']['dbd_pack_bsky'] = 'downbydown.bsky.social'; DBD_Bluesky::save( array( 'dbd_bsky_pass_new' => 'good-pass' ) ); $ck( 'pasting one connects it again', DBD_Bluesky::connected() );
 		DBD_Bluesky::save( array( 'dbd_bsky_disconnect' => '1' ) ); $ck( 'disconnect forgets it', ! DBD_Bluesky::conn() );
-		$ck( 'the networks setting: unticked means off, missing means on', DBD_AutoPub::sanitize( array( 'ig' => '1' ) ) === array( 'ig' => true, 'bs' => false, 'x' => false ) && DBD_AutoPub::sanitize( 'x' ) === array( 'ig' => false, 'bs' => false, 'x' => false ) );
+		$ck( 'the networks setting: unticked means off, missing means on', DBD_AutoPub::sanitize( array( 'ig' => '1' ) ) === array( 'ig' => true, 'bs' => false, 'x' => false, 'th' => false ) && DBD_AutoPub::sanitize( 'x' ) === array( 'ig' => false, 'bs' => false, 'x' => false, 'th' => false ) );
 
 		/* ---- Bluesky on Instagram's days (2.39.0, SCOPE §82): booking, the Tuesday thread, a daily post, the button's records, retries */
 		echo "  -- Bluesky's days\n";
@@ -802,6 +830,67 @@ if ( $view === 'autopub' ) {
 		unset( $GLOBALS['dbd_opt']['dbd_pack_x'] ); DBD_X::save( $xk( 'at1' ) );
 		$GLOBALS['dbd_opt']['dbd_pack_x'] = 'someone_else'; $e = DBD_X::save( array( 'dbd_x_set' => array( 'on' => '1' ) ) );
 		$ck( 'a changed X account forgets the keys', ! DBD_X::conn() && strpos( $e, 'The X account changed' ) === 0, $e ); unset( $GLOBALS['dbd_opt']['dbd_pack_x'] );
+
+		/* ---- Threads (2.41.0, SCOPE §84): connecting, renewing, Auto publish, its days, the thread, a lost reply, retries */
+		echo "  -- Threads\n"; DBD_Threads::$wait = function () {}; $F =& $GLOBALS['thf'];
+		$tcalls = function ( $p ) { return array_values( array_filter( $GLOBALS['hcalls'], function ( $c ) use ( $p ) { return $c[0] === 'th' && $c[2] === $p && $c[1] === 'POST'; } ) ); };
+		$tkey = function ( $sl ) use ( $season, $n ) { return DBD_Instagram::key( $season, $n, $sl ); };
+		$tnow = function ( $sl, $extra = array() ) use ( $tkey ) { $GLOBALS['dbd_opt'][ 'dbd_th_job_' . $tkey( $sl ) ] = $extra + array( 'state' => 'booked', 'at' => time(), 'slot_at' => time(), 'tries' => 0 ); };
+		$ck( 'Your accounts: Threads is the Instagram name by default; a pasted address gives the name', DBD_Pack::our_th() === 'down_by_down' && DBD_Pack::sanitize_th( 'https://www.threads.com/@down_by_down' ) === 'down_by_down' && DBD_Pack::sanitize_th( '@Some.One' ) === 'Some.One' );
+		$ck( 'not connected: Threads isn’t on the button', ! DBD_Threads::connected() && ! in_array( 'th', DBD_AutoPub::nets(), true ) );
+		$tk = function ( $tok, $sec = 'sec1' ) { return array( 'dbd_th_set' => array( 'on' => '1' ), 'dbd_th_token_new' => $tok, 'dbd_th_secret_new' => $sec ); };
+		$e = DBD_Threads::save( $tk( 'short1', '' ) ); $ck( 'a token without the App secret: asked for it', strpos( $e, 'Paste the app’s Threads App secret' ) === 0 && ! DBD_Threads::conn(), $e );
+		$e = DBD_Threads::save( $tk( 'other' ) ); $ck( 'a token for another account: refused', strpos( $e, 'That Threads token is for @someone_else, not @down_by_down.' ) === 0 && ! DBD_Threads::conn(), $e );
+		$e = DBD_Threads::save( $tk( 'short1', 'wrong' ) ); $ck( 'a wrong App secret: refused, nothing kept', strpos( $e, 'Threads didn’t make that token into a 60-day one' ) === 0 && ! DBD_Threads::conn(), $e );
+		$e = DBD_Threads::save( $tk( 'short1' ) ); $tc = DBD_Threads::conn();
+		$ck( 'the right token and secret: made a 60-day token, kept; the button posts to Threads (X was disconnected above)', $e === '' && $tc['token'] === 'long1' && $tc['id'] === 'th99' && abs( (int) $tc['expires'] - time() - 5184000 ) < 5 && DBD_AutoPub::nets() === array( 'ig', 'bs', 'th' ) && DBD_AutoPub::names( array( 'ig', 'bs', 'x', 'th' ) ) === 'Instagram, Bluesky, X and Threads', json_encode( array( $e, $tc, DBD_AutoPub::nets() ) ) );
+		$ck( 'the weekly renewal: a new token, 60 more days', DBD_Threads::refresh() && DBD_Threads::conn()['token'] === 'long2' && DBD_Threads::warning() === '' );
+		$F['refail'] = true; $ck( 'a failed renewal is kept and warned about', ! DBD_Threads::refresh() && strpos( DBD_Threads::warning(), 'The Threads token didn’t renew (Threads answered 400: Session has expired)' ) === 0 && DBD_Threads::conn()['token'] === 'long2', DBD_Threads::warning() ); $F['refail'] = false; DBD_Threads::refresh();
+		/* Auto publish to Threads: the long takeaway, the page as the card, no link in the text */
+		$GLOBALS['hcalls'] = array(); DBD_AutoPub::publish( $n, $ks ); $cr = $tcalls( 'th99/threads' ); $tj = DBD_Threads::job( $key );
+		$ck( 'Auto publish posts the long takeaway with the page as its card, sent with the button', count( $cr ) === 1 && $cr[0][3]['media_type'] === 'TEXT' && $cr[0][3]['text'] === (string) ( $sw['tl'] ?? $sw['title'] ) && $cr[0][3]['link_attachment'] === DBD_Pack::share_link( $sw ) && strpos( $cr[0][3]['text'], 'http' ) === false && count( $tcalls( 'th99/threads_publish' ) ) === 1
+			&& ( $tj['state'] ?? '' ) === 'sent' && DBD_Threads::by_button( $tj ) && $tj['link'] === 'https://www.threads.com/@down_by_down/post/' . $tj['id'], json_encode( array( $cr, $tj ) ) );
+		$GLOBALS['hcalls'] = array(); DBD_AutoPub::publish( $n, $ks ); $ck( 'pressed again: nothing posts twice', ! $tcalls( 'th99/threads' ) && DBD_AutoPub::states( $n, $ks )['th'][0] === 'done' );
+		$bk = DBD_Threads::note( null, $t0 - 600 ); $want = array(); foreach ( $slots as $sl ) { if ( $sl !== $ks ) { $want[ $tkey( $sl ) ] = DBD_Instagram::slot_time( $n, $sl ); } }
+		$ck( 'a sync books Threads on the same days and times, not the item already sent with the button', $bk === $want, json_encode( array( $bk, $want ) ) );
+		/* the thread */
+		$F['posts'] = array(); $F['c'] = array(); $tnow( 'carousel' ); $GLOBALS['hcalls'] = array(); DBD_Threads::send( $tkey( 'carousel' ) ); $cr = $tcalls( 'th99/threads' ); $tj = DBD_Threads::job( $tkey( 'carousel' ) ); $P = array_keys( $F['posts'] ); $c = count( $its );
+		$ok = count( $cr ) === $c + 1 && $cr[0][3]['text'] === DBD_Threads::intro( $n, $c ) && $cr[0][3]['link_attachment'] === $wk && ! isset( $cr[0][3]['reply_to_id'] ); $why = json_encode( $cr[0][3] ?? null );
+		for ( $i = 1; $ok && $i <= $c; $i++ ) { $t = $cr[ $i ][3]; $ok = strpos( $t['text'], $i . '/' . $c . ' ' ) === 0 && mb_strlen( $t['text'] ) <= 500 && $t['link_attachment'] === DBD_Pack::share_link( $its[ $i - 1 ] ) && $t['reply_to_id'] === $P[ $i - 1 ]; if ( ! $ok ) { $why = json_encode( $t ); } }
+		$ck( 'the thread: the week’s first post with the week page as its card, then each item numbered, replying to the one before', $ok, $why );
+		$ck( 'kept as posted, its View link the first post, its items kept', $tj['state'] === 'sent' && $tj['link'] === 'https://www.threads.com/@down_by_down/post/' . $P[0] && count( $tj['parts'] ) === $c + 1 && ( $tj['items'] ?? null ) === array_map( function ( $it ) { return (string) $it['k']; }, $its ), json_encode( $tj ) );
+		/* no reply to a reply: the replies go under the first post */
+		$F['posts'] = array(); $F['c'] = array(); $F['norr'] = true; $tnow( 'carousel' ); DBD_Threads::send( $tkey( 'carousel' ) ); $P = $F['posts']; $k0 = array_keys( $P )[0];
+		$ck( 'when Threads won’t take a reply to a reply, each goes under the first post', DBD_Threads::job( $tkey( 'carousel' ) )['state'] === 'sent' && count( $P ) === $c + 1 && count( array_filter( $P, function ( $p0 ) use ( $k0 ) { return $p0['reply'] === $k0; } ) ) === $c, json_encode( $P ) ); $F['norr'] = false;
+		/* a refused third part, then a lost reply: carries on, finds the published one, posts nothing twice */
+		$F['posts'] = array(); $F['c'] = array(); $tnow( 'carousel' ); $F['failn'] = 3; DBD_Threads::send( $tkey( 'carousel' ) ); $tj = DBD_Threads::job( $tkey( 'carousel' ) );
+		$ck( 'the third refused: retrying, two kept', strpos( $tj['state'], 'retrying: Threads answered 500' ) === 0 && count( $F['posts'] ) === 2 && empty( $tj['parts'][2]['id'] ), json_encode( $tj ) );
+		$F['lose'] = true; $GLOBALS['hcalls'] = array(); DBD_Threads::send( $tkey( 'carousel' ) ); $tj = DBD_Threads::job( $tkey( 'carousel' ) ); $P = $F['posts']; $pk = array_keys( $P );
+		$ok = $tj['state'] === 'sent' && count( $P ) === $c + 1 && count( array_unique( array_column( $P, 'text' ) ) ) === $c + 1 && $tj['parts'][2]['id'] === $pk[2];
+		for ( $i = 1; $ok && $i <= $c; $i++ ) { $ok = $P[ $pk[ $i ] ]['reply'] === $pk[ $i - 1 ]; }
+		$ck( 'the retry carries on at the third, whose publish reply is lost: Threads says published, it’s found among the replies, and the thread finishes with every post once', $ok && count( $tcalls( 'th99/threads' ) ) === $c - 1 && count( $tcalls( 'th99/threads_publish' ) ) === $c - 1, json_encode( array( $tj, $P ) ) );
+		if ( count( $daily ) >= 3 ) {
+			list( $d1, $d2, $d3 ) = $daily; $it1 = DBD_Pack::find( $n, $d1 );
+			$tnow( $d1 ); $GLOBALS['hcalls'] = array(); DBD_Threads::send( $tkey( $d1 ) ); $cr = $tcalls( 'th99/threads' ); $dj = DBD_Threads::job( $tkey( $d1 ) );
+			$ck( 'a day posts its item’s long takeaway, not the thread’s numbered reply', $dj['state'] === 'sent' && count( $cr ) === 1 && $cr[0][3]['text'] === (string) ( $it1['tl'] ?? $it1['title'] ) && ! isset( $cr[0][3]['reply_to_id'] ) && ! DBD_Threads::by_button( $dj ) && DBD_AutoPub::states( $n, $d1 )['th'][0] === 'done', json_encode( array( $dj, $cr ) ) );
+			$before = count( $F['posts'] ); $tnow( $d2 ); $F['lose'] = true; DBD_Threads::send( $tkey( $d2 ) ); $j2 = DBD_Threads::job( $tkey( $d2 ) );
+			$ck( 'a daily post whose publish reply was lost is found among the latest posts: sent, once', $j2['state'] === 'sent' && count( $F['posts'] ) === $before + 1 && isset( $F['posts'][ $j2['id'] ] ) && $F['posts'][ $j2['id'] ]['reply'] === '', json_encode( $j2 ) );
+			if ( count( $daily ) >= 4 ) {  /* a container Threads already published on a try whose answer never came: the next try asks about it first and finds the post */
+				$d4 = $daily[3]; $it4 = DBD_Pack::find( $n, $d4 ); $t4 = DBD_Threads::text( $it4 );
+				$F['c']['cZ'] = array( 'p' => array( 'text' => $t4 ), 'status' => 'PUBLISHED', 'post' => 'pZ' ); $F['posts']['pZ'] = array( 'text' => $t4, 'reply' => '', 'link' => '' );
+				$tnow( $d4, array( 'container' => 'cZ', 'params' => array( 'media_type' => 'TEXT', 'text' => $t4, 'link_attachment' => DBD_Pack::share_link( $it4 ) ), 'tries' => 1 ) ); $GLOBALS['hcalls'] = array(); DBD_Threads::send( $tkey( $d4 ) ); $j4 = DBD_Threads::job( $tkey( $d4 ) );
+				$ck( 'a try already published: asked about first, found, nothing posted again', $j4['state'] === 'sent' && $j4['id'] === 'pZ' && ! $tcalls( 'th99/threads' ) && ! $tcalls( 'th99/threads_publish' ), json_encode( $j4 ) );
+			}
+			$tnow( $d3, array( 'tries' => 6 ) ); $F['failn'] = 1; $GLOBALS['hmail'] = array(); DBD_Threads::send( $tkey( $d3 ) ); $fj = DBD_Threads::job( $tkey( $d3 ) ); $ln = DBD_Threads::line( $n ); $wr = DBD_Threads::week_rows( $n )[ $d3 ];
+			$ck( 'the seventh failure: failed, the note, Try again on the line and the list', strpos( $fj['state'], 'failed: Threads answered 500' ) === 0 && strpos( $GLOBALS['hmail'][0] ?? '', 'Threads didn’t take ' . DBD_Instagram::label( $d3 ) ) !== false && $ln[3] === $tkey( $d3 ) && $wr[3] === $tkey( $d3 ) && strpos( DBD_Threads::again_url( $tkey( $d3 ) ), 'action=dbd_th_again' ) !== false, json_encode( array( $fj, $ln, $wr ) ) );
+			$GLOBALS['dbd_opt'][ 'dbd_th_job_' . $tkey( $d3 ) ] = array_merge( $fj, array( 'state' => 'retrying: again', 'tries' => 0, 'force' => true ) ); DBD_Threads::send( $tkey( $d3 ) ); $ln = DBD_Threads::line( $n );
+			$ck( 'Try again posts it; the line says what posted last', DBD_Threads::job( $tkey( $d3 ) )['state'] === 'sent' && $ln[0] === 'ok' && strpos( $ln[1], 'Threads: posted ' ) === 0 && $ln[2] !== '', json_encode( $ln ) );  /* several post in the same second here, so any of them may be "last" */
+		} else { echo "  (fewer than three daily items this week; skipped the Threads daily checks)\n"; }
+		$GLOBALS['dbd_opt']['dbd_th_set'] = array( 'on' => false ); $tnow( 'carousel' ); $GLOBALS['hcalls'] = array(); DBD_Threads::send( $tkey( 'carousel' ) ); unset( $GLOBALS['dbd_opt'][ 'dbd_th_job_' . $tkey( 'carousel' ) ] );
+		$ck( 'switched off: a booked day posts nothing, a sync books nothing, no line; the button still posts to Threads', ! $tcalls( 'th99/threads' ) && DBD_Threads::note( null, $t0 - 600 ) === array() && DBD_Threads::line( $n ) === null && in_array( 'th', DBD_AutoPub::nets(), true ) );
+		unset( $GLOBALS['dbd_opt']['dbd_th_set'] );
+		$GLOBALS['dbd_opt']['dbd_pack_th'] = 'someone_else'; $e = DBD_Threads::save( array( 'dbd_th_set' => array( 'on' => '1' ), 'dbd_th_token_new' => 'short1' ) );
+		$ck( 'a changed Threads account forgets the token first, whatever else was pasted', ! DBD_Threads::conn() && strpos( $e, 'Paste the app’s Threads App secret' ) === 0, $e ); unset( $GLOBALS['dbd_opt']['dbd_pack_th'] );
 	} catch ( Throwable $e ) { fwrite( STDERR, 'FATAL in autopub: ' . $e->getMessage() . ' at ' . basename( $e->getFile() ) . ':' . $e->getLine() . "\n" ); exit( 1 ); }
 	echo "autopub week $n: $bad problems, $warnings warnings\n"; exit( $bad || $warnings ? 1 : 0 );
 }
@@ -1096,11 +1185,12 @@ if ( $view === 'admin' ) {
 		'class="button sp-rd" aria-label="Post to r/downbydown"', 'https://www.reddit.com/r/downbydown/submit?url=', 'share%3Dpack-week-', '>r/downbydown</a>',
 		'class="button sp-x" aria-label="Post on X"', 'https://x.com/intent/post?text=', 'class="button sp-bs" aria-label="Post on Bluesky"', 'https://bsky.app/intent/compose?text=',
 		'class="button sp-fb"', 'sharer.php?u=', '>Facebook</a>', 'class="button sp-cp sp-ig"', '>Instagram</button>', 'aria-label="Download square for Instagram">Square</a>',
-		'<details class="dbd-box sp-set" id="dbd-pack-settings"', 'Settings: the Tuesday email, your accounts, Instagram, Bluesky and X posting', 'value="dbd_pack_settings"', 'name="dbd_pack_mail_set[on]"', 'name="dbd_pack_mail_set[to]"', 'Brevo isn’t set up',
+		'<details class="dbd-box sp-set" id="dbd-pack-settings"', 'Settings: the Tuesday email, your accounts, Instagram, Bluesky, X and Threads posting', 'value="dbd_pack_settings"', 'name="dbd_pack_mail_set[on]"', 'name="dbd_pack_mail_set[to]"', 'Brevo isn’t set up',
 		'name="dbd_pack_sub"', 'name="dbd_pack_x"', 'name="dbd_pack_bsky"', 'name="dbd_pack_fb"', 'name="dbd_pack_ig"', 'Open the group', 'Save settings', 'id="dbd-pack-settings"><summary>', 'Instagram posting', 'name="dbd_ig_set[on]"', 'name="dbd_ig_set[account]"', 'name="dbd_ig_token_new"', 'Paste the token from your Meta app', 'Instagram isn’t connected yet.' );  /* SCOPE §68, §71–74; the settings box starts closed */
 	array_push( $want['sp'], 'class="sp-ap"', 'class="sp-apd"', '<summary class="button button-primary">Auto publish</summary>', 'value="dbd_auto_publish"', 'name="slot" value="swing"', 'to Bluesky now?</b>', 'Posts it to Bluesky now.', 'class="button button-primary sp-apgo"', 'class="button sp-apx"', 'id="sp-swing"', 'id="sp-keys-', 'name="slot" value="keys-',
 		'Bluesky posting', 'name="dbd_bsky_pass_new"', 'Connected as @downbydown.bsky.social', 'name="dbd_bsky_disconnect"', 'name="dbd_ap_set[ig]"', 'name="dbd_ap_set[bs]"', 'Reddit and Facebook can’t post on their own.' );  /* Auto publish (SCOPE §81) */
 	array_push( $want['sp'], 'X posting', 'name="dbd_x_set[on]" value="1" checked', 'name="dbd_x_ck_new"', 'name="dbd_x_cs_new"', 'name="dbd_x_at_new"', 'name="dbd_x_as_new"', 'Paste all four together.', 'name="dbd_ap_set[x]" value="1" checked' );  /* X posting (SCOPE §83): not connected in this harness */
+	array_push( $want['sp'], 'Threads posting', 'name="dbd_pack_th"', 'value="down_by_down"', 'name="dbd_th_set[on]" value="1" checked', 'name="dbd_th_secret_new"', 'name="dbd_th_token_new"', 'threads_manage_replies', 'name="dbd_ap_set[th]" value="1" checked' );  /* Threads posting (SCOPE §84) */
 	array_push( $want['sp'], 'name="dbd_bsky_set[on]" value="1" checked', 'Post on Tuesday, then one item a day Wednesday to Sunday, 9:00 AM Eastern', 'Bluesky this week', 'The thread: ', 'Bluesky: nothing posted for Week ' );  /* Bluesky's days (SCOPE §82) */
 	if ( in_array( 'rush', array_column( DBD_Pack::items( DBD_Pack::newest() ), 'k' ), true ) ) { array_push( $want['sp'], 'Pass rushers', '-pass-rushers.png"' ); }  /* SCOPE §79, only for the week the defense files run through */
 	$want['ov'][] = 'Open Growth'; $want['ov'][] = 'data-g="ov-visits"'; $want['ov'][] = 'data-g="ov-clicks"';

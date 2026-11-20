@@ -87,7 +87,7 @@ add_action( 'admin_init', function () {
 function dbd_pack_settings_save( $p ) {
 	$m = is_array( $p[ DBD_Pack_Mail::OPT_SET ] ?? null ) ? $p[ DBD_Pack_Mail::OPT_SET ] : array();
 	update_option( DBD_Pack_Mail::OPT_SET, DBD_Pack_Mail::sanitize( array( 'on' => ! empty( $m['on'] ), 'to' => (string) ( $m['to'] ?? '' ) ) ) );
-	foreach ( array( DBD_Pack::OPT_SUB => 'sanitize_sub', DBD_Pack::OPT_X => 'sanitize_x', DBD_Pack::OPT_BSKY => 'sanitize_bsky', DBD_Pack::OPT_FB => 'sanitize_fb', DBD_Pack::OPT_IG => 'sanitize_ig' ) as $o => $fn ) {
+	foreach ( array( DBD_Pack::OPT_SUB => 'sanitize_sub', DBD_Pack::OPT_X => 'sanitize_x', DBD_Pack::OPT_BSKY => 'sanitize_bsky', DBD_Pack::OPT_FB => 'sanitize_fb', DBD_Pack::OPT_IG => 'sanitize_ig', DBD_Pack::OPT_TH => 'sanitize_th' ) as $o => $fn ) {
 		update_option( $o, call_user_func( array( 'DBD_Pack', $fn ), is_scalar( $p[ $o ] ?? '' ) ? (string) ( $p[ $o ] ?? '' ) : '' ) );
 	}
 	/* Instagram posting (SCOPE §76): the switch, a new token checked against the API, or disconnecting */
@@ -96,6 +96,7 @@ function dbd_pack_settings_save( $p ) {
 	update_option( DBD_AutoPub::OPT, DBD_AutoPub::sanitize( is_array( $p[ DBD_AutoPub::OPT ] ?? null ) ? $p[ DBD_AutoPub::OPT ] : array() ) );
 	$berr = DBD_Bluesky::save( $p ); if ( $berr !== '' ) { $ierr = $ierr === '' ? $berr : rtrim( $ierr, '.' ) . '. ' . $berr; }
 	$xerr = DBD_X::save( $p ); if ( $xerr !== '' ) { $ierr = $ierr === '' ? $xerr : rtrim( $ierr, '.' ) . '. ' . $xerr; }  /* X posting (SCOPE §83) */
+	$terr = DBD_Threads::save( $p ); if ( $terr !== '' ) { $ierr = $ierr === '' ? $terr : rtrim( $ierr, '.' ) . '. ' . $terr; }  /* Threads posting (SCOPE §84) */
 	$w = (int) ( $p['week'] ?? 0 );
 	return add_query_arg( array_filter( array( 'page' => 'down-by-down-share', 'week' => $w ?: null, 'pack' => $ierr === '' ? 'saved' : 'saveerr', 'pack_err' => $ierr === '' ? null : rawurlencode( 'Settings saved, but ' . lcfirst( $ierr ) ) ) ), admin_url( 'admin.php' ) ) . '#dbd-pack-settings';
 }
@@ -200,6 +201,7 @@ function dbd_admin_attention() {
 	if ( $miss && DBD_Post::on() ) { $a[] = array( 'warn', $miss . ' finished week' . ( $miss === 1 ? ' has' : 's have' ) . ' no post.', 'wk' ); }
 	if ( $s['nprob'] ) { $n = count( $s['nprob'] ); $a[] = array( 'warn', $n . ' news feed' . ( $n === 1 ? '' : 's' ) . ' didn’t answer properly on the last fetch.', 'nw' ); }
 	if ( class_exists( 'DBD_Instagram' ) && ( $iw = DBD_Instagram::warning() ) !== '' ) { $a[] = array( 'warn', $iw, 'sp' ); }  /* SCOPE §76 */
+	if ( class_exists( 'DBD_Threads' ) && ( $tw = DBD_Threads::warning() ) !== '' ) { $a[] = array( 'warn', $tw, 'sp' ); }  /* SCOPE §84 */
 	if ( DBD_Videos::on() ) {
 		$vs = get_option( DBD_Videos::OPT_STATUS ); $vp = is_array( $vs ) ? array_filter( (array) $vs['feeds'], function ( $x ) { return empty( $x['ok'] ) || ! empty( $x['err'] ); } ) : array();
 		if ( $vp ) { $n = count( $vp ); $a[] = array( 'warn', $n . ' YouTube channel' . ( $n === 1 ? '' : 's' ) . ' to check after the last fetch.', 'nw' ); }
@@ -498,7 +500,7 @@ function dbd_pack_settings_box( $n ) {
 			. ( $note !== '' ? '<p class="description">' . $note . '</p>' : '' ) . '</div>';
 	};
 	?>
-	<details class="dbd-box sp-set" id="dbd-pack-settings"<?php echo $open ? ' open' : ''; ?>><summary>Settings: the Tuesday email, your accounts, Instagram, Bluesky and X posting</summary>
+	<details class="dbd-box sp-set" id="dbd-pack-settings"<?php echo $open ? ' open' : ''; ?>><summary>Settings: the Tuesday email, your accounts, Instagram, Bluesky, X and Threads posting</summary>
 		<?php dbd_pack_notices(); ?>
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="dbd_pack_settings"><input type="hidden" name="week" value="<?php echo (int) $n; ?>"><?php wp_nonce_field( 'dbd_pack_settings' ); ?>
 		<div class="sp-sg">
@@ -513,6 +515,7 @@ function dbd_pack_settings_box( $n ) {
 			<label for="dbd-pack-bsky">Bluesky</label><?php echo $fld( 'dbd-pack-bsky', DBD_Pack::OPT_BSKY, DBD_Pack::our_bsky(), '', 260 ); ?>
 			<label for="dbd-pack-fb">Facebook group</label><?php echo $fld( 'dbd-pack-fb', DBD_Pack::OPT_FB, DBD_Pack::our_fb(), '', 420, DBD_Pack::our_fb() !== '' ? '<a href="' . esc_url( DBD_Pack::our_fb() ) . '" target="_blank" rel="noopener">Open the group</a>' : '' ); ?>
 			<label for="dbd-pack-ig">Instagram</label><?php echo $fld( 'dbd-pack-ig', DBD_Pack::OPT_IG, DBD_Pack::our_ig(), '@' ); ?>
+			<label for="dbd-pack-th">Threads</label><?php echo $fld( 'dbd-pack-th', DBD_Pack::OPT_TH, DBD_Pack::our_th(), '@', 240, 'The Threads profile’s name; the Instagram account’s by default.' ); ?>
 			<span></span><p class="description" style="margin:0">Clear an account to hide its button.</p>
 			<div class="sp-sh">Instagram posting</div>
 			<span>Post it</span><div><label><input type="checkbox" name="<?php echo esc_attr( DBD_Instagram::OPT_SET ); ?>[on]" value="1"<?php echo DBD_Instagram::settings()['on'] ? ' checked' : ''; ?>> Post the carousel on Tuesday, then one item a day Wednesday to Sunday, 9:00 AM Eastern</label></div>
@@ -559,10 +562,23 @@ function dbd_pack_settings_box( $n ) {
 			<?php if ( $xc ) : $xm = DBD_X::month(); ?>
 			<span>This month</span><div style="padding-top:5px"><?php echo esc_html( $xm . ( $xm === 1 ? ' post' : ' posts' ) . ', about $' . number_format( $xm * DBD_X::PRICE, 2 ) . ' at X’s price.' ); ?> <span class="description">Your credit balance is in the X Developer Console.</span></div>
 			<?php endif; ?>
+			<div class="sp-sh">Threads posting</div>
+			<span>Post it</span><div><label><input type="checkbox" name="<?php echo esc_attr( DBD_Threads::OPT_SET ); ?>[on]" value="1"<?php echo DBD_Threads::settings()['on'] ? ' checked' : ''; ?>> Post on Tuesday, then one item a day Wednesday to Sunday, 9:00 AM Eastern</label><p class="description" style="margin:4px 0 0">Tuesday is a thread: a first post naming the week, each item replying under it. Untick it and Threads posts only when you press Auto publish.</p></div>
+			<span>Account</span><div style="padding-top:5px"><?php echo DBD_Pack::our_th() !== '' ? '@' . esc_html( DBD_Pack::our_th() ) . ' <span class="description">(from Your accounts above)</span>' : '<span class="description">Add the Threads account above first.</span>'; ?></div>
+			<?php $tc = DBD_Threads::conn(); ?>
+			<label for="dbd-th-secret">Threads App secret</label><div><input type="password" id="dbd-th-secret" name="dbd_th_secret_new" value="" autocomplete="off" placeholder="<?php echo esc_attr( $tc ? 'Kept; paste a new one to replace it' : 'From the Meta app’s Threads settings' ); ?>" style="width:420px;max-width:100%"></div>
+			<label for="dbd-th-token">Access token</label><div><input type="password" id="dbd-th-token" name="dbd_th_token_new" value="" autocomplete="off" placeholder="<?php echo esc_attr( $tc ? 'Paste a new token to replace it' : 'From Meta’s Graph API Explorer (Threads)' ); ?>" style="width:420px;max-width:100%">
+				<?php if ( $tc ) {
+					echo '<p class="description">' . ( DBD_Threads::connected() ? '<span class="dbd-dot ' . ( empty( $tc['err'] ) ? 'ok' : 'warn' ) . '"></span>Connected as @' . esc_html( $tc['username'] ) . '. Good until ' . esc_html( wp_date( 'M j, Y', (int) $tc['expires'] ) ) . '; renewed every week.' . ( ! empty( $tc['err'] ) ? ' The last renewal failed: ' . esc_html( $tc['err'] ) : '' ) : '<span class="dbd-dot bad"></span>The token ran out on ' . esc_html( wp_date( 'M j', (int) $tc['expires'] ) ) . '. Paste a new one.' ) . '</p>'
+						. '<label class="description" style="display:block;margin-top:4px"><input type="checkbox" name="dbd_th_disconnect" value="1"> Disconnect (forget the token)</label>';
+				} else {
+					echo '<p class="description">In Meta’s Graph API Explorer, choose your app and threads.net, tick threads_basic, threads_content_publish and threads_manage_replies, Generate the token as @' . esc_html( DBD_Pack::our_th() !== '' ? DBD_Pack::our_th() : 'your account' ) . ', and paste it here within the hour with the App secret. The plugin makes it last 60 days and renews it every week. Never shown again.</p>';
+				} ?></div>
 			<div class="sp-sh">Auto publish</div>
 			<span>Posts to</span><div><?php $aps = DBD_AutoPub::settings(); ?><label><input type="checkbox" name="<?php echo esc_attr( DBD_AutoPub::OPT ); ?>[ig]" value="1"<?php echo $aps['ig'] ? ' checked' : ''; ?>> Instagram</label><br>
 				<label><input type="checkbox" name="<?php echo esc_attr( DBD_AutoPub::OPT ); ?>[bs]" value="1"<?php echo $aps['bs'] ? ' checked' : ''; ?>> Bluesky</label><br>
-				<label><input type="checkbox" name="<?php echo esc_attr( DBD_AutoPub::OPT ); ?>[x]" value="1"<?php echo $aps['x'] ? ' checked' : ''; ?>> X</label>
+				<label><input type="checkbox" name="<?php echo esc_attr( DBD_AutoPub::OPT ); ?>[x]" value="1"<?php echo $aps['x'] ? ' checked' : ''; ?>> X</label><br>
+				<label><input type="checkbox" name="<?php echo esc_attr( DBD_AutoPub::OPT ); ?>[th]" value="1"<?php echo $aps['th'] ? ' checked' : ''; ?>> Threads</label>
 				<p class="description">The Auto publish button on each item posts it to these, right away. Untick one to leave it out; one that isn’t connected is left out by itself. Reddit and Facebook can’t post on their own.</p></div>
 		</div>
 		<div class="dbd-foot"><button class="button button-primary">Save settings</button></div>
@@ -594,6 +610,11 @@ function dbd_pack_settings_box( $n ) {
 			foreach ( DBD_X::week_rows( $n ) as $r ) { echo '<span class="dbd-dot ' . esc_attr( $r[0] ) . '"></span>' . esc_html( $r[1] ) . ( $r[2] !== '' ? ' <a href="' . esc_url( $r[2] ) . '" target="_blank" rel="noopener">View</a>' : '' ) . ( $r[3] !== '' ? ' <a class="button button-small" href="' . esc_url( DBD_X::again_url( $r[3] ) ) . '">Try again</a>' : '' ) . '<br>'; }
 			if ( ! DBD_X::on() ) { echo '<span class="description">Weekly posting is off; Auto publish still posts.</span>'; } ?></div></div>
 		<?php endif; ?>
+		<?php if ( $n && DBD_Threads::connected() ) : ?>
+		<div class="sp-sg sp-last"><div class="sp-sh">Threads this week</div><span></span><div><?php  /* SCOPE §84 */
+			foreach ( DBD_Threads::week_rows( $n ) as $r ) { echo '<span class="dbd-dot ' . esc_attr( $r[0] ) . '"></span>' . esc_html( $r[1] ) . ( $r[2] !== '' ? ' <a href="' . esc_url( $r[2] ) . '" target="_blank" rel="noopener">View</a>' : '' ) . ( $r[3] !== '' ? ' <a class="button button-small" href="' . esc_url( DBD_Threads::again_url( $r[3] ) ) . '">Try again</a>' : '' ) . '<br>'; }
+			if ( ! DBD_Threads::on() ) { echo '<span class="description">Weekly posting is off; Auto publish still posts.</span>'; } ?></div></div>
+		<?php endif; ?>
 	</details>
 	<?php
 }
@@ -602,7 +623,7 @@ function dbd_pack_settings_box( $n ) {
 function dbd_pack_notices() {
 	if ( ! isset( $_GET['pack'] ) ) { return; }
 	$pk = (string) $_GET['pack']; $pn = (int) ( $_GET['pack_n'] ?? 0 );
-	if ( $pk === 'igposted' ) { $x = array( 'success', 'Posted to Instagram.' ); } elseif ( $pk === 'igagain' ) { $x = array( 'success', 'Instagram is trying that post again.' ); } elseif ( $pk === 'bsagain' ) { $x = array( 'success', 'Bluesky is trying that post again.' ); } elseif ( $pk === 'xagain' ) { $x = array( 'success', 'X is trying that post again.' ); }
+	if ( $pk === 'igposted' ) { $x = array( 'success', 'Posted to Instagram.' ); } elseif ( $pk === 'igagain' ) { $x = array( 'success', 'Instagram is trying that post again.' ); } elseif ( $pk === 'bsagain' ) { $x = array( 'success', 'Bluesky is trying that post again.' ); } elseif ( $pk === 'xagain' ) { $x = array( 'success', 'X is trying that post again.' ); } elseif ( $pk === 'thagain' ) { $x = array( 'success', 'Threads is trying that post again.' ); }
 	elseif ( $pk === 'igerror' || $pk === 'saveerr' ) { $x = array( 'error', sanitize_text_field( wp_unslash( rawurldecode( (string) ( $_GET['pack_err'] ?? '' ) ) ) ) ); }  /* not the email's wording (Greptile, PR #144) */
 	else {
 	$x = $pk === 'saved' ? array( 'success', 'Settings saved.' ) : ( $pk === 'sent' ? array( 'success', 'The pack went to ' . $pn . ( $pn === 1 ? ' person.' : ' people.' ) ) : ( $pk === 'again' ? array( 'success', 'The pack email is going again.' ) : array( 'error', 'The pack email didn’t send: ' . sanitize_text_field( wp_unslash( rawurldecode( (string) ( $_GET['pack_err'] ?? '' ) ) ) ) ) ) );
@@ -685,7 +706,8 @@ function dbd_tab_share() {
 	<p class="sp-mail"><span class="dbd-dot <?php echo esc_attr( $ml[0] ); ?>"></span><?php echo esc_html( $ml[1] ); ?><?php if ( $ml[2] !== '' ) { echo ' <a class="button button-small" href="' . esc_url( DBD_Pack_Mail::again_url( $ml[2] ) ) . '">Try again</a>'; } ?> <a href="#dbd-pack-settings" class="sp-open">Change the list</a>
 		<?php $il = DBD_Instagram::line( $n ); if ( $il ) { echo '<br><span class="dbd-dot ' . esc_attr( $il[0] ) . '"></span>' . esc_html( $il[1] ) . ( $il[2] !== '' ? ' <a href="' . esc_url( $il[2] ) . '" target="_blank" rel="noopener">View on Instagram</a>' : '' ) . ( $il[3] !== '' ? ' <a class="button button-small" href="' . esc_url( DBD_Instagram::again_url( $il[3] ) ) . '">Try again</a>' : '' ) . ( ! DBD_Instagram::connected() ? ' <a href="#dbd-pack-settings" class="sp-open">Connect it</a>' : '' ); }
 		$bl = DBD_Bluesky::line( $n ); if ( $bl ) { echo '<br><span class="dbd-dot ' . esc_attr( $bl[0] ) . '"></span>' . esc_html( $bl[1] ) . ( $bl[2] !== '' ? ' <a href="' . esc_url( $bl[2] ) . '" target="_blank" rel="noopener">View on Bluesky</a>' : '' ) . ( $bl[3] !== '' ? ' <a class="button button-small" href="' . esc_url( DBD_Bluesky::again_url( $bl[3] ) ) . '">Try again</a>' : '' ); }
-		$xl = DBD_X::line( $n ); if ( $xl ) { echo '<br><span class="dbd-dot ' . esc_attr( $xl[0] ) . '"></span>' . esc_html( $xl[1] ) . ( $xl[2] !== '' ? ' <a href="' . esc_url( $xl[2] ) . '" target="_blank" rel="noopener">View on X</a>' : '' ) . ( $xl[3] !== '' ? ' <a class="button button-small" href="' . esc_url( DBD_X::again_url( $xl[3] ) ) . '">Try again</a>' : '' ); } ?></p>
+		$xl = DBD_X::line( $n ); if ( $xl ) { echo '<br><span class="dbd-dot ' . esc_attr( $xl[0] ) . '"></span>' . esc_html( $xl[1] ) . ( $xl[2] !== '' ? ' <a href="' . esc_url( $xl[2] ) . '" target="_blank" rel="noopener">View on X</a>' : '' ) . ( $xl[3] !== '' ? ' <a class="button button-small" href="' . esc_url( DBD_X::again_url( $xl[3] ) ) . '">Try again</a>' : '' ); }
+		$tl = DBD_Threads::line( $n ); if ( $tl ) { echo '<br><span class="dbd-dot ' . esc_attr( $tl[0] ) . '"></span>' . esc_html( $tl[1] ) . ( $tl[2] !== '' ? ' <a href="' . esc_url( $tl[2] ) . '" target="_blank" rel="noopener">View on Threads</a>' : '' ) . ( $tl[3] !== '' ? ' <a class="button button-small" href="' . esc_url( DBD_Threads::again_url( $tl[3] ) ) . '">Try again</a>' : '' ); } ?></p>
 	<?php
 	foreach ( $items as $it ) {
 		$i = DBD_Pack::NUM[ $it['k'] ] ?? 0; $img = DBD_Card::url( $it['card'] );

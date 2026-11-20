@@ -6,13 +6,14 @@
  * Reddit, X and Facebook can't post on their own, so their buttons stay as they are.
  * 2.39.0 (SCOPE §82): a Bluesky day still to come is taken over the same way (the day's run finds the record sent).
  * 2.40.0 (SCOPE §83): X joins (DBD_X::post(), during the press), its days taken over the same way.
+ * 2.41.0 (SCOPE §84): Threads joins (DBD_Threads::post(), during the press), the same way.
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 class DBD_AutoPub {
 
 	const OPT  = 'dbd_ap_set';   /* which networks the button posts to: array( 'ig' => bool, 'bs' => bool, 'x' => bool ) */
-	const NETS = array( 'ig' => 'Instagram', 'bs' => 'Bluesky', 'x' => 'X' );
+	const NETS = array( 'ig' => 'Instagram', 'bs' => 'Bluesky', 'x' => 'X', 'th' => 'Threads' );
 
 	public static function init() { add_action( 'admin_post_dbd_auto_publish', array( __CLASS__, 'action' ) ); }
 
@@ -28,6 +29,7 @@ class DBD_AutoPub {
 		if ( $s['ig'] && DBD_Instagram::can_post() ) { $o[] = 'ig'; }
 		if ( $s['bs'] && DBD_Bluesky::connected() ) { $o[] = 'bs'; }
 		if ( $s['x'] && DBD_X::connected() ) { $o[] = 'x'; }
+		if ( $s['th'] && DBD_Threads::connected() ) { $o[] = 'th'; }
 		return $o;
 	}
 
@@ -77,6 +79,15 @@ class DBD_AutoPub {
 			elseif ( strpos( $xs, 'not posted' ) === 0 || strpos( $xs, 'skipped' ) === 0 ) { $out['x'] = array( 'ready', 'X: ' . $xs . '.', '', '' ); }
 			else { $out['x'] = array( 'ready', '', '', '' ); }
 		}
+		$tj = DBD_Threads::job( $key ); $ts = (string) ( $tj['state'] ?? '' );
+		if ( in_array( 'th', $nets, true ) || $ts === 'sent' ) {
+			if ( $ts === 'sent' ) { $out['th'] = array( 'done', 'Threads: posted ' . $when( $tj['sent_at'] ) . '.', (string) ( $tj['link'] ?? '' ), 'ok' ); }
+			elseif ( strpos( $ts, 'failed' ) === 0 ) { $out['th'] = array( 'ready', 'Threads didn’t post: ' . DBD_Threads::why( $tj ), '', 'bad' ); }
+			elseif ( $ts === 'booked' ) { $out['th'] = array( 'ready', 'Threads: booked for ' . $when( $tj['slot_at'] ?? $tj['at'] ) . '. Auto publish posts it now instead.', '', '' ); }
+			elseif ( strpos( $ts, 'retrying' ) === 0 ) { $out['th'] = array( 'ready', 'Threads: retrying, ' . substr( $ts, 10 ) . '. Auto publish tries it now.', '', 'warn' ); }
+			elseif ( strpos( $ts, 'not posted' ) === 0 || strpos( $ts, 'skipped' ) === 0 ) { $out['th'] = array( 'ready', 'Threads: ' . $ts . '.', '', '' ); }
+			else { $out['th'] = array( 'ready', '', '', '' ); }
+		}
 		return $out;
 	}
 
@@ -91,7 +102,7 @@ class DBD_AutoPub {
 		$it = DBD_Pack::find( $n, $slot ); if ( ! $it ) { return array( 'item' => 'That item isn’t in the Week ' . (int) $n . ' pack.' ); }
 		$key = self::key( $n, $slot ); $errs = array();
 		foreach ( self::ready( $n, $slot, $it ) as $net ) {
-			$e = $net === 'bs' ? DBD_Bluesky::post( $key, $it ) : ( $net === 'x' ? DBD_X::post( $key, $it ) : DBD_Instagram::auto( $key ) );
+			$e = $net === 'bs' ? DBD_Bluesky::post( $key, $it ) : ( $net === 'x' ? DBD_X::post( $key, $it ) : ( $net === 'th' ? DBD_Threads::post( $key, $it ) : DBD_Instagram::auto( $key ) ) );
 			if ( $e !== '' ) { $errs[ $net ] = $e; }
 		}
 		return $errs;
