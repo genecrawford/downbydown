@@ -102,6 +102,8 @@ class DBD_Pack {
 	/** A Threads handle: a pasted @name or threads.com/@name (or threads.net) address gives the name; the Instagram rules. */
 	public static function sanitize_th( $v ) { return self::sanitize_ig( (string) preg_replace( '#^(https?://)?(www\.)?threads\.(com|net)/@?#i', '', trim( (string) $v ) ) ); }
 	public static function our_th() { return self::sanitize_th( get_option( self::OPT_TH, self::TH_DEFAULT ) ); }
+	/** Post on Threads (2.42.0): Threads' compose page with the item's post filled in (its long takeaway, as Auto publish sends it) and the page as the card; '' when there's no Threads account. */
+	public static function th_url( $it ) { return self::our_th() === '' ? '' : 'https://www.threads.com/intent/post?text=' . rawurlencode( DBD_Threads::text( $it ) ) . '&url=' . rawurlencode( self::share_link( $it ) ); }
 
 	/** Facebook's share box for an item or keys side (its share link, so the pack card is the preview), or '' when no group is set. */
 	public static function fb_url( $it ) { return self::our_fb() === '' ? '' : 'https://www.facebook.com/sharer/sharer.php?u=' . rawurlencode( self::share_link( $it ) ); }

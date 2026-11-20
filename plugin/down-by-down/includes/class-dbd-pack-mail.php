@@ -124,6 +124,7 @@ class DBD_Pack_Mail {
 			if ( ( $u = DBD_Pack::bsky_url( $t['bsky'] ) ) !== '' ) { $o .= ' · <a href="' . esc_url( $u ) . '" style="color:' . $RED . ';font-weight:600">Post on Bluesky</a>'; }
 			if ( ( $u = DBD_Pack::fb_url( $it ) ) !== '' ) { $o .= ' · <a href="' . esc_url( $u ) . '" style="color:' . $RED . ';font-weight:600">Share on Facebook</a>'; }  /* SCOPE §73: opens the share box; paste the Reddit title there */
 			if ( DBD_Pack::our_ig() !== '' && ! empty( $it['sq'] ) ) { $o .= ' · <a href="' . esc_url( DBD_Card::url( $it['sq'] ) ) . '" style="color:' . $RED . ';font-weight:600">Square for Instagram</a>'; }
+			if ( ( $u = DBD_Pack::th_url( $it ) ) !== '' ) { $o .= ' · <a href="' . esc_url( $u ) . '" style="color:' . $RED . ';font-weight:600">Post on Threads</a>'; }  /* 2.42.0 */
 			return $o; };
 		$rows = '';
 		foreach ( $items as $it ) {

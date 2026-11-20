@@ -306,7 +306,7 @@ function dbd_settings_page() {
 		.dbd-admin .sp-tk{font-size:15px;line-height:1.5;margin:0 0 14px}
 		.dbd-admin .sp-pl{margin:0 0 6px;font-weight:600}
 		.dbd-admin .sp-row{display:flex;flex-wrap:wrap;gap:6px}
-		.dbd-admin .sp-rd{border-color:#cb2026;color:#cb2026}.dbd-admin .sp-x{border-color:#0f1419;color:#0f1419}.dbd-admin .sp-bs{border-color:#1185fe;color:#1185fe}.dbd-admin .sp-fb{border-color:#0866ff;color:#0866ff}.dbd-admin .sp-ig{border-color:#c13584;color:#c13584}
+		.dbd-admin .sp-rd{border-color:#cb2026;color:#cb2026}.dbd-admin .sp-x{border-color:#0f1419;color:#0f1419}.dbd-admin .sp-bs{border-color:#1185fe;color:#1185fe}.dbd-admin .sp-fb{border-color:#0866ff;color:#0866ff}.dbd-admin .sp-ig{border-color:#c13584;color:#c13584}.dbd-admin .sp-th{border-color:#000;color:#000}
 		.dbd-admin .sp-row .button.ok{border-color:#00a32a;color:#007017}
 		.dbd-admin .sp-ap{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:12px 0 0;padding-top:12px;border-top:1px solid #f0f0f1}.dbd-admin .sp-ap .description{color:#50575e}
 		.dbd-admin .sp-apd>summary{list-style:none;display:inline-block}.dbd-admin .sp-apd>summary::-webkit-details-marker{display:none}.dbd-admin .sp-apd[open]{flex-basis:100%}.dbd-admin .sp-apd[open]+.description{display:none}
@@ -662,7 +662,7 @@ function dbd_pack_btn( $cls, $label, $aria, $href = '', $data = '' ) {
 	return $href !== '' ? '<a' . $a . ' href="' . esc_url( $href ) . '" target="_blank" rel="noopener">' . esc_html( $label ) . '</a>' : '<button type="button"' . $a . '>' . esc_html( $label ) . '</button>';
 }
 
-/** The row of places to post, always in this order: r/ours, r/the team's (keys), X, Bluesky, Facebook, Instagram, then Square (keys). */
+/** The row of places to post, always in this order: r/ours, r/the team's (keys), X, Bluesky, Facebook, Instagram, Square (keys), then Threads (2.42.0). */
 function dbd_pack_row( $it, $link, $team_sub = '', $square = false ) {
 	$o = ''; $sub = DBD_Pack::our_sub(); $t = DBD_Pack::social( $it );
 	if ( $sub !== '' ) { $o .= dbd_pack_btn( 'sp-rd', 'r/' . $sub, 'Post to r/' . $sub, DBD_Pack::reddit_url( $it['title'], $link ) ); }
@@ -672,6 +672,7 @@ function dbd_pack_row( $it, $link, $team_sub = '', $square = false ) {
 	if ( ( $fu = DBD_Pack::fb_url( $it ) ) !== '' ) { $o .= dbd_pack_btn( 'sp-fb', 'Facebook', 'Share on Facebook: copies the text, then opens the share box', $fu, DBD_Pack::fb_text( $it ) ); }  /* pack.js copies data-t */
 	if ( ( $cap = DBD_Pack::ig_caption( $it ) ) !== '' ) { $o .= dbd_pack_btn( 'sp-cp sp-ig', 'Instagram', 'Copy for Instagram: the caption', '', $cap );
 		if ( $square && ! empty( $it['sq'] ) ) { $o .= '<a class="button sp-ig" href="' . esc_url( DBD_Card::url( $it['sq'] ) ) . '" download="' . esc_attr( $it['sqfile'] ?? 'dbd-square.png' ) . '" aria-label="Download square for Instagram">Square</a>'; } }
+	$o .= dbd_pack_btn( 'sp-th', 'Threads', 'Post on Threads', DBD_Pack::th_url( $it ) );
 	return '<div class="sp-row">' . $o . '</div>';
 }
 
