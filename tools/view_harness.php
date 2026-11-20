@@ -682,6 +682,7 @@ if ( $view === 'autopub' ) {
 		}
 		$ck( 'each item replies in pack order, its parent the post before it, its root the first, with its own text and card', $chain && count( $bcalls( 'com.atproto.repo.uploadBlob' ) ) === count( $its ), $why );
 		$ck( 'the thread is kept as posted, its View link the first post', $tj['state'] === 'sent' && $tj['link'] === 'https://bsky.app/profile/downbydown.bsky.social/post/' . $cr[0][3]['rkey'] && count( $tj['parts'] ) === count( $its ) + 1 && ! DBD_Bluesky::by_button( $tj ), json_encode( $tj ) );
+		$ck( 'the thread keeps the items it chose on its first try', ( $tj['items'] ?? null ) === array_map( function ( $it ) { return (string) $it['k']; }, $its ), json_encode( $tj['items'] ?? null ) );
 		$GLOBALS['hcalls'] = array(); DBD_Bluesky::send( $ck_, true ); $ck( 'sent again: nothing posts twice', ! $bcalls( 'com.atproto.repo.createRecord' ) );
 		$ck( 'the thread’s replies don’t count as the items’ own posts', ! $daily || ( DBD_Bluesky::job( $bkey( $daily[0] ) )['state'] ?? '' ) === 'booked' );
 		/* a thread that fails partway carries on from the last part that went out; a lost reply is found, not posted again */
@@ -694,6 +695,8 @@ if ( $view === 'autopub' ) {
 		$ok = $tj['state'] === 'sent' && count( $recs ) === count( $its ) + 1 && strpos( $recs[ $rk[0] ]['text'], 'Week ' ) === 0 && count( array_filter( $bcalls( 'com.atproto.repo.createRecord' ), function ( $c ) use ( $rk ) { return $c[3]['rkey'] === $rk[0]; } ) ) === 1;
 		for ( $i = 1; $ok && $i < count( $rk ); $i++ ) { $ok = ( $recs[ $rk[ $i ] ]['reply']['parent']['uri'] ?? '' ) === 'at://did:plc:dbd/app.bsky.feed.post/' . $rk[ $i - 1 ] && ( $recs[ $rk[ $i ] ]['reply']['root']['uri'] ?? '' ) === 'at://did:plc:dbd/app.bsky.feed.post/' . $rk[0]; }
 		$ck( 'then finishes: one first post, every item once, each chained to the one before', $ok, json_encode( array( $tj, $recs ) ) );
+		$now_job( 'carousel', array( 'items' => array( (string) $its[0]['k'], 'gone' ) ) ); $GLOBALS['hcalls'] = array(); DBD_Bluesky::send( $ck_ ); $tj = DBD_Bluesky::job( $ck_ );
+		$ck( 'a retry whose item has left the pack fails rather than posting a short thread', strpos( $tj['state'], 'retrying: gone isn’t in the Week ' . $n . ' pack any more' ) === 0 && ! $bcalls( 'com.atproto.repo.createRecord' ), json_encode( $tj ) );
 		/* a daily post: the item's Bluesky text and card, on the same record as Auto publish */
 		if ( count( $daily ) >= 3 ) {
 			$d1 = $daily[0]; $it1 = DBD_Pack::find( $n, $d1 ); $now_job( $d1 ); $GLOBALS['hcalls'] = array();

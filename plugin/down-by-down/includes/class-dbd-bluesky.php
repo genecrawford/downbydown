@@ -156,10 +156,10 @@ class DBD_Bluesky {
 	private static function job_set( $key, $fields ) { update_option( self::OPT_JOB . $key, array_merge( self::job( $key ) ?: array(), $fields ), false ); }
 
 	/** Post an item now: '' when it's out (or was already), or what went wrong (kept on its record for the item's line). $auto: the button's press. */
-	public static function post( $key, $it, $auto = true ) {
+	public static function post( $key, $it, $auto = true, $held = false ) {
 		$j = self::job( $key ); if ( ( $j['state'] ?? '' ) === 'sent' ) { return ''; }
 		$c = self::conn(); if ( ! self::connected() ) { return 'Bluesky isn’t connected.'; }
-		if ( ! self::lock( $key ) ) { return 'it’s already posting'; }
+		if ( ! $held && ! self::lock( $key ) ) { return 'it’s already posting'; }  /* $held: send() holds it already */
 		try {
 			/* read the record again now the lock is ours, from the database itself: a press that finished meanwhile has posted it, and this
 			   request's option cache (which remembers a missing option too) wouldn't show that (Greptile, PR #149) */
@@ -167,7 +167,7 @@ class DBD_Bluesky {
 			list( $p, $err ) = self::part( $key, (array) ( $j ?? array() ), function ( $thumb ) use ( $it ) { return self::record( $it, $thumb ); }, $it, 'rkey' );
 			if ( $err !== '' ) { return self::fail( $key, $err ); }
 			return self::sent( $key, $p['uri'], (string) $c['handle'], $auto );
-		} finally { self::unlock( $key ); }
+		} finally { if ( ! $held ) { self::unlock( $key ); } }
 	}
 
 	/** The lock on a record while it posts: false when another request holds it (one older than 5 minutes is taken over). */
@@ -240,20 +240,25 @@ class DBD_Bluesky {
 		return $book;
 	}
 
-	/** The booked post: sent once, retried on failure. $force posts now whatever the time (Try again). */
+	/**
+	 * The booked post: sent once, retried on failure. $force posts now whatever the time (Try again). The record is read and written under the
+	 * item's lock throughout, retry included, so a press of Auto publish that posts it meanwhile is never overwritten (Greptile, PR #150).
+	 */
 	public static function send( $key, $force = false ) {
-		$kp = DBD_Instagram::parse( $key ); $job = self::job( $key ); if ( ! $kp || ! $job ) { return; }
-		$st = (string) ( $job['state'] ?? '' ); if ( $st === 'sent' ) { return; }
-		if ( ! $force && $st !== 'booked' && strpos( $st, 'retrying' ) !== 0 ) { return; }  /* a press that failed took the day over */
-		$force = $force || ! empty( $job['force'] );
-		if ( ! self::on() ) { self::job_set( $key, array( 'state' => 'not posted: Bluesky posting is off or not connected' ) ); return; }
-		list( $season, $n, $slot ) = $kp;
-		if ( (int) DBD_Data::season() !== $season ) { self::job_set( $key, array( 'state' => 'not posted: a new season started' ) ); return; }
-		if ( ! $force && time() > (int) ( $job['slot_at'] ?? $job['at'] ?? 0 ) + DBD_Instagram::LATE ) { self::job_set( $key, array( 'state' => 'not posted: more than a day late' ) ); return; }
-		if ( $slot === 'carousel' ) { $err = self::thread( $key, $n ); }
-		else { $it = DBD_Pack::find( $n, $slot ); $err = $it ? self::post( $key, $it, false ) : 'there’s no ' . self::label( $slot ) . ' for Week ' . $n; }
-		if ( $err === '' || $err === 'it’s already posting' ) { return; }  /* another request has it */
-		self::retry( $key, $err );
+		$kp = DBD_Instagram::parse( $key ); if ( ! $kp || ! self::job( $key ) ) { return; }
+		if ( ! self::lock( $key ) ) { return; }  /* another request has it */
+		try {
+			$job = self::fresh_job( $key ) ?: array(); $st = (string) ( $job['state'] ?? '' ); if ( $st === 'sent' ) { return; }
+			if ( ! $force && $st !== 'booked' && strpos( $st, 'retrying' ) !== 0 ) { return; }  /* a press that failed took the day over */
+			$force = $force || ! empty( $job['force'] );
+			if ( ! self::on() ) { self::job_set( $key, array( 'state' => 'not posted: Bluesky posting is off or not connected' ) ); return; }
+			list( $season, $n, $slot ) = $kp;
+			if ( (int) DBD_Data::season() !== $season ) { self::job_set( $key, array( 'state' => 'not posted: a new season started' ) ); return; }
+			if ( ! $force && time() > (int) ( $job['slot_at'] ?? $job['at'] ?? 0 ) + DBD_Instagram::LATE ) { self::job_set( $key, array( 'state' => 'not posted: more than a day late' ) ); return; }
+			if ( $slot === 'carousel' ) { $err = self::thread( $key, $n, true ); }
+			else { $it = DBD_Pack::find( $n, $slot ); $err = $it ? self::post( $key, $it, false, true ) : 'there’s no ' . self::label( $slot ) . ' for Week ' . $n; }
+			if ( $err !== '' ) { self::retry( $key, $err ); }
+		} finally { self::unlock( $key ); }
 	}
 	private static function retry( $key, $err ) {
 		$job = self::job( $key ) ?: array(); $t = (int) ( $job['tries'] ?? 0 ) + 1;
@@ -276,12 +281,20 @@ class DBD_Bluesky {
 	 * Tuesday's thread: the first post, then each item with a square replying in pack order (each reply's parent the post before it, its root
 	 * the first). Each part's record key, address and cid are kept on the record as it goes, so a retry carries on where the last one stopped.
 	 */
-	public static function thread( $key, $n ) {
-		$items = DBD_Instagram::plan( $n )['carousel'] ?? array(); if ( count( $items ) < 2 ) { return 'there’s no thread for Week ' . (int) $n; }
+	public static function thread( $key, $n, $held = false ) {
 		$c = self::conn(); if ( ! self::connected() ) { return 'Bluesky isn’t connected.'; }
-		if ( ! self::lock( $key ) ) { return 'it’s already posting'; }
+		if ( ! $held && ! self::lock( $key ) ) { return 'it’s already posting'; }
 		try {
 			$j = self::fresh_job( $key ) ?: array(); if ( ( $j['state'] ?? '' ) === 'sent' ) { return ''; }
+			/* the items are chosen once, on the first try, and kept: a retry posts the replies the first post promised, even when the pack
+			   has changed since (pass rushers leave an older week's pack as the defense data moves on; Greptile, PR #150) */
+			if ( isset( $j['items'] ) && is_array( $j['items'] ) ) {
+				$items = array(); foreach ( $j['items'] as $k ) { $it = DBD_Pack::find( $n, (string) $k ); if ( ! $it ) { return self::fail( $key, self::label( (string) $k ) . ' isn’t in the Week ' . (int) $n . ' pack any more' ); } $items[] = $it; }
+			} else {
+				$items = DBD_Instagram::plan( $n )['carousel'] ?? array();
+				if ( count( $items ) >= 2 ) { self::job_set( $key, array( 'items' => array_map( function ( $it ) { return (string) $it['k']; }, $items ) ) ); }
+			}
+			if ( count( $items ) < 2 ) { return self::fail( $key, 'there’s no thread for Week ' . (int) $n ); }
 			$parts = array_values( (array) ( $j['parts'] ?? array() ) ); $root = null; $parent = null;
 			for ( $i = 0; $i <= count( $items ); $i++ ) {
 				$p = (array) ( $parts[ $i ] ?? array() );
@@ -301,7 +314,7 @@ class DBD_Bluesky {
 				if ( ! $i ) { $root = $ref; } $parent = $ref;
 			}
 			return self::sent( $key, (string) $parts[0]['uri'], (string) $c['handle'] );
-		} finally { self::unlock( $key ); }
+		} finally { if ( ! $held ) { self::unlock( $key ); } }
 	}
 
 	/* ------------------------------------------------------------------ the tab */
