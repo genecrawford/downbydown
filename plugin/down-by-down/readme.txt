@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.39.0
+Stable tag: 2.40.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,11 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.40.0 =
+* X posting (SCOPE §83): each finished week, X posts on Instagram's and Bluesky's days at 9:00 AM Eastern, through X's pay-per-use API with four keys pasted once in the new X posting settings. Each post is the item's X text and link, X showing the card as the preview. Tuesday is a thread: a first post naming the week, then each item as a numbered reply.
+* X joins Auto publish: the button posts to Instagram, Bluesky and X. Each item posts once, its day and the button sharing one record; a try that may have gone out is looked for among the account's latest posts before posting again.
+* Booking, the cutoff, retries, the email note and Try again work as Bluesky's. The settings count this month's X posts and what they cost at X's price.
 
 = 2.39.0 =
 * Bluesky on Instagram's schedule (SCOPE §82): each finished week, Bluesky posts on Instagram's days at 9:00 AM Eastern. Tuesday is a thread: a first post naming the week with the week page's link, then each item with a square as a reply under it, in pack order. Wednesday to Sunday, one item a day, exactly as Auto publish sends it.

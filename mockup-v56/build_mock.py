@@ -1,0 +1,118 @@
+"""Mock v56 (SCOPE §83): X on the same schedule as Instagram and Bluesky. The Week 10 pack's live X texts (_pack.json, as in v55).
+Shows the two post forms (decision 1), the three Tuesday choices (decision 2), the five daily posts, the status line, the settings
+and the Auto publish ask. Writes index.html."""
+import html, json, os, re
+here = os.path.dirname(os.path.abspath(__file__))
+e = lambda s: html.escape(str(s), quote=True)
+D = json.load(open(os.path.join(here, '_pack.json')))
+I = {it['k']: it for it in D['items']}
+CARD = 'https://downbydown.com/?card='
+X = D['x']
+def shown(u):  # X shows a link without https://, cut with … after 23 or so characters
+    s = re.sub(r'^https?://(www\.)?', '', u)
+    return s[:24] + '…' if len(s) > 25 else s
+def text(it, link=True):
+    t, u = it['post'].rsplit(' https://', 1)
+    return e(t) + (f' <a>{e(shown("https://" + u))}</a>' if link else '')
+def head(when):
+    return f'<div class="xh"><span class="av">DxD</span><div><b>Down x Down</b> <span class="mu">@{e(X)} · {e(when)}</span></div></div>'
+def card(it):
+    return f'<div class="lk"><img src="{CARD}{e(it["card"])}" alt=""><span class="dom">downbydown.com</span></div>'
+def post(it, when):
+    return f'<div class="xp">{head(when)}<p class="xt">{text(it)}</p>{card(it)}</div>'
+def post_img(it, when):
+    return f'<div class="xp">{head(when)}<p class="xt">{text(it, False)}</p><img class="sq" src="{CARD}{e(it["sq"])}" alt=""></div>'
+FIVE = ['swing', 'snaps', 'offense', 'targets', 'leaders']
+DAILY = [('Wednesday', 'swing'), ('Thursday', 'snaps'), ('Friday', 'offense'), ('Saturday', 'targets'), ('Sunday', 'leaders')]
+sw = I['swing']
+
+form_a = post(sw, 'Wed 9:00 AM')
+form_b = post_img(sw, 'Wed 9:00 AM')
+
+intro = f'<div class="xp">{head("Tue 9:00 AM")}<p class="xt">Week 10 in five charts, one in each reply below. Every chart and the numbers behind it: <a>downbydown.com/week/10</a></p></div>'
+thread = intro + ''.join(f'<div class="rep"><div class="rl"></div>{post(I[k], "reply " + str(i + 2) + "/6")}</div>' for i, k in enumerate(FIVE[:2])) + \
+    '<p class="more">…three more replies: best and worst offense, the target-share mover, week leaders.</p>'
+one = intro.replace('one in each reply below. Every chart and the numbers behind it:', 'the biggest swing, a usage riser, best and worst offense, a target-share mover and week leaders. Every chart and the numbers behind it:')
+one = one.replace('</div>', '', 0) + ''
+one = f'<div class="xp">{head("Tue 9:00 AM")}<p class="xt">Week 10 in five charts: the biggest swing, a usage riser, best and worst offense, a target-share mover and week leaders. Every chart and the numbers behind it: <a>downbydown.com/week/10</a></p><div class="lk"><img src="{CARD}page-week-10" alt=""><span class="dom">downbydown.com</span></div></div>'
+skip = '<div class="xp none"><p class="xt mu">Nothing on Tuesday. X starts Wednesday with the biggest swing.</p></div>'
+
+days = ''.join(f'<div class="day"><p class="dh">{d} 9:00 AM</p>{post(I[k], d[:3] + " 9:00 AM")}</div>' for d, k in DAILY)
+
+css = '''
+body{margin:0;background:#f0f0f1;color:#1d2327;font:13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+main{max-width:1180px;margin:0 auto;padding:20px 16px 60px}
+.note{padding:10px 14px;border:1px dashed #c9a400;background:#fffbe6;margin:0 0 20px;line-height:1.55;font-size:14px}
+h2.s{font-size:15px;margin:30px 0 4px}p.sd{margin:0 0 12px;color:#50575e;max-width:860px}
+a{color:#1d9bf0;cursor:pointer}
+.opts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start}.opts.two{grid-template-columns:repeat(2,minmax(0,1fr));max-width:820px}
+.opt>h3{font-size:14px;margin:0 0 2px}.opt>p{margin:0 0 8px;color:#50575e}
+.xp{background:#fff;border:1px solid #cfd9de;padding:12px}.xp.none{min-height:60px}
+.xh{display:flex;gap:8px;align-items:center}.av{flex:0 0 32px;width:32px;height:32px;border-radius:16px;background:#121417;color:#fff;font:600 10px/32px sans-serif;text-align:center}.mu{color:#536471}.sm{font-size:12px;margin:6px 0 0}
+.xt{margin:6px 0 8px;font-size:14px;line-height:1.45;color:#0f1419}
+.lk{position:relative;border:1px solid #cfd9de;border-radius:14px;overflow:hidden}.lk img{display:block;width:100%;aspect-ratio:1200/630}
+.dom{position:absolute;left:10px;bottom:8px;background:rgba(0,0,0,.6);color:#fff;font-size:12px;padding:0 6px;border-radius:4px;line-height:20px}
+.sq{display:block;width:100%;aspect-ratio:1;border-radius:14px;border:1px solid #cfd9de}
+.cost{margin:6px 0 0;color:#50575e}
+.rep{display:grid;grid-template-columns:18px minmax(0,1fr);margin-top:-1px}.rl{border-left:2px solid #cfd9de;margin-left:15px}
+.more{margin:8px 0 0 18px;color:#50575e}
+.days{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}.dh{font-weight:600;margin:0 0 6px}
+.days .xt{font-size:12.5px}
+.box{background:#fff;border:1px solid #c3c4c7}.top{padding:12px 16px}.top p{margin:0;color:#50575e;line-height:1.9}
+.dot{display:inline-block;width:8px;height:8px;border-radius:4px;background:#00a32a;margin-right:6px}.dot.off{background:#c3c4c7}
+.set>.sm2{padding:12px 16px;font-size:14px;font-weight:600;border-bottom:1px solid #c3c4c7}
+.sg{display:grid;grid-template-columns:200px minmax(0,1fr);gap:12px 16px;padding:16px;align-items:start}.sg>label,.sg>span{color:#50575e;padding-top:3px}
+.sh{grid-column:1/-1;font-weight:600;font-size:14px;padding-top:12px;border-top:1px solid #f0f0f1}.faded{opacity:.4}
+.dd{color:#646970;margin:4px 0 0;font-size:12px}.ok{color:#007017;font-weight:600}.new{background:#fffbe6;margin:-4px -6px;padding:4px 6px}
+input[type=password]{width:340px;max-width:100%;padding:3px 8px;border:1px solid #8c8f94;border-radius:4px;font:inherit}
+.b{display:inline-block;padding:0 12px;line-height:28px;border:1px solid #2271b1;border-radius:3px;background:#2271b1;color:#fff}.b2{display:inline-block;padding:0 12px;line-height:28px;border:1px solid #2271b1;border-radius:3px;color:#2271b1;background:#f6f7f7}
+.foot{padding:12px 16px;border-top:1px solid #c3c4c7;background:#f6f7f7}
+.ask{max-width:520px;padding:12px 16px}.ask p{margin:0 0 10px}
+@media (max-width:1000px){.opts,.opts.two{grid-template-columns:minmax(0,1fr)}.days{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:640px){.days{grid-template-columns:minmax(0,1fr)}.sg{grid-template-columns:minmax(0,1fr)}}
+'''
+page = f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>X schedule mock</title><style>{css}</style></head><body><main>
+<div class="note"><b>Mock: X on the same schedule (SCOPE §83).</b> X gets the days Instagram and Bluesky have: something on <b>Tuesday</b>, then <b>one item a day, Wednesday to Sunday</b>, 9:00 AM Eastern, and the Auto publish button posts to X too. Each post is the item’s X text from the pack (what the Post on X button fills in today). X charges per post from credits you buy ahead, about <b>$0.20 a post with a link</b>, so roughly $2.20 a week. Week 10’s live texts below; the cards are the real ones.</div>
+
+<h2 class="s">The post: two ways (decision 1)</h2>
+<p class="sd">The same item, the biggest swing, both ways.</p>
+<div class="opts two">
+<div class="opt"><h3>A. Text and link, the card as the preview</h3><p>X builds the preview from the page’s own tags, as it does when the link is pasted by hand. A tap opens the page.</p>{form_a}<p class="cost">About $0.20 a post. A week: about $2.20.</p></div>
+<div class="opt"><h3>B. Text and the square, no link</h3><p>The square goes up as an image. Nothing to click through to the site.</p>{form_b}<p class="cost">About $0.015 a post, plus the image upload.</p></div>
+</div>
+
+<h2 class="s">Tuesday: three ways (decision 2)</h2>
+<p class="sd">X has no carousel. Shown with form A.</p>
+<div class="opts">
+<div class="opt"><h3>A. A thread, like Bluesky’s</h3><p>One post names the week; each of the five items replies under it with its own text and card. Six posts, about $1.20.</p>{thread}</div>
+<div class="opt"><h3>B. One post naming the week</h3><p>The five items in a line, the week page’s link and card. One post, about $0.20.</p>{one}</div>
+<div class="opt"><h3>C. Nothing on Tuesday</h3><p>X starts Wednesday. No repeat of the week’s items.</p>{skip}</div>
+</div>
+
+<h2 class="s">Then one item a day, Wednesday to Sunday</h2>
+<p class="sd">Same order as Instagram and Bluesky, each exactly what Auto publish sends. An item already sent with the button is skipped on its day.</p>
+<div class="days">{days}</div>
+
+<h2 class="s">At the top of the Share pack tab</h2>
+<div class="box top"><p><span class="dot"></span>Week 10 pack emailed Tuesday, Nov 17, 7:00 AM to 2 people. <a>Change the list</a><br><span class="dot"></span>Instagram: posted best and worst offense Friday, Nov 20, 9:00 AM. Next: the target-share mover, Saturday, Nov 21, 9:00 AM.<br><span class="dot"></span>Bluesky: posted best and worst offense Friday, Nov 20, 12:22 PM. Next: the target-share mover, Saturday, Nov 21, 9:00 AM.<br><span class="new"><span class="dot"></span>X: posted best and worst offense Friday, Nov 20, 9:00 AM. Next: the target-share mover, Saturday, Nov 21, 9:00 AM. <a>View on X</a></span></p></div>
+
+<h2 class="s">In the settings box</h2>
+<div class="box set"><div class="sm2">▾ Settings: the Tuesday email, your accounts, Instagram, Bluesky and X posting</div>
+<div class="sg"><div class="sh faded" style="border-top:0;padding-top:0">The Tuesday email · Your accounts · Instagram posting · Bluesky posting</div><span class="faded">unchanged</span><div class="faded">as now</div>
+<div class="sh">X posting <span class="mu" style="font-weight:400">(new)</span></div>
+<span>Post it</span><div><label><input type="checkbox" checked> Post on Tuesday, then one item a day Wednesday to Sunday, 9:00 AM Eastern</label><p class="dd">Untick it and X posts only when you press Auto publish.</p></div>
+<span>Account</span><div>@{e(X)} <span class="mu">(from Your accounts above)</span></div>
+<label>API key</label><div><input type="password" placeholder="Paste from the X Developer Console"></div>
+<label>API key secret</label><div><input type="password" placeholder="Paste from the X Developer Console"></div>
+<label>Access token</label><div><input type="password" placeholder="Paste from the X Developer Console"></div>
+<label>Access token secret</label><div><input type="password" placeholder="Paste from the X Developer Console"><p class="dd">In the X Developer Console: your app → User authentication settings → Read and write, then Keys and tokens → Generate the access token and secret for @{e(X)}. They’re checked when you save, and never shown again.</p><p class="dd"><span class="ok">● Connected as @{e(X)}.</span> (once saved) Revoke the keys in the console to cut the plugin off.</p></div>
+<span>This month</span><div>14 posts, about $2.80 at X’s price. <span class="mu">Your credit balance is in the X Developer Console.</span></div>
+<div class="sh faded">Auto publish</div><span class="faded">Posts to</span><div><label><input type="checkbox" checked disabled> Instagram</label><br><label><input type="checkbox" checked disabled> Bluesky</label><br><span class="new"><label><input type="checkbox" checked> X</label></span></div>
+</div><div class="foot"><span class="b">Save settings</span></div>
+<div class="sg" style="border-top:1px solid #c3c4c7"><div class="sh" style="border-top:0;padding-top:0">X this week <span class="mu" style="font-weight:400">(new, under Bluesky this week)</span></div><span></span><div><span class="dot"></span>The thread: posted Tuesday, Nov 17, 9:00 AM <a>View</a><br><span class="dot"></span>The biggest swing: posted Wednesday, Nov 18, 9:00 AM <a>View</a><br><span class="dot"></span>The usage riser: posted Thursday, Nov 19, 9:00 AM <a>View</a><br><span class="dot"></span>Best and worst offense: posted Friday, Nov 20, 9:00 AM <a>View</a><br><span class="dot"></span>The target-share mover: booked for Saturday, Nov 21, 9:00 AM<br><span class="dot"></span>Week leaders: sent with Auto publish Friday, Nov 20, 10:06 AM <a>View</a></div></div></div>
+
+<h2 class="s">The Auto publish ask, on each item</h2>
+<div class="box ask"><p><b>Post “The biggest swing” to Instagram, Bluesky and X now?</b> It goes out right away.</p><span class="b">Post it now</span> <span class="b2">Cancel</span><p class="mu" style="margin:10px 0 0">Under the button: Posts it to Instagram, Bluesky and X now.</p></div>
+</main></body></html>'''
+open(os.path.join(here, 'index.html'), 'w').write(page)
+print('ok')
