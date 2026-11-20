@@ -92,6 +92,9 @@ function dbd_pack_settings_save( $p ) {
 	}
 	/* Instagram posting (SCOPE §76): the switch, a new token checked against the API, or disconnecting */
 	$ierr = DBD_Instagram::save( $p );
+	/* Auto publish (SCOPE §81): the networks it posts to, and Bluesky's app password */
+	update_option( DBD_AutoPub::OPT, DBD_AutoPub::sanitize( is_array( $p[ DBD_AutoPub::OPT ] ?? null ) ? $p[ DBD_AutoPub::OPT ] : array() ) );
+	$berr = DBD_Bluesky::save( $p ); if ( $berr !== '' ) { $ierr = $ierr === '' ? $berr : rtrim( $ierr, '.' ) . '. ' . $berr; }
 	$w = (int) ( $p['week'] ?? 0 );
 	return add_query_arg( array_filter( array( 'page' => 'down-by-down-share', 'week' => $w ?: null, 'pack' => $ierr === '' ? 'saved' : 'saveerr', 'pack_err' => $ierr === '' ? null : rawurlencode( 'Settings saved, but ' . lcfirst( $ierr ) ) ) ), admin_url( 'admin.php' ) ) . '#dbd-pack-settings';
 }
@@ -302,6 +305,11 @@ function dbd_settings_page() {
 		.dbd-admin .sp-row{display:flex;flex-wrap:wrap;gap:6px}
 		.dbd-admin .sp-rd{border-color:#cb2026;color:#cb2026}.dbd-admin .sp-x{border-color:#0f1419;color:#0f1419}.dbd-admin .sp-bs{border-color:#1185fe;color:#1185fe}.dbd-admin .sp-fb{border-color:#0866ff;color:#0866ff}.dbd-admin .sp-ig{border-color:#c13584;color:#c13584}
 		.dbd-admin .sp-row .button.ok{border-color:#00a32a;color:#007017}
+		.dbd-admin .sp-ap{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:12px 0 0;padding-top:12px;border-top:1px solid #f0f0f1}.dbd-admin .sp-ap .description{color:#50575e}
+		.dbd-admin .sp-apd>summary{list-style:none;display:inline-block}.dbd-admin .sp-apd>summary::-webkit-details-marker{display:none}.dbd-admin .sp-apd[open]{flex-basis:100%}.dbd-admin .sp-apd[open]+.description{display:none}
+		.dbd-admin .sp-ask{margin-top:8px;padding:10px 12px;background:#f6f7f7;border:1px solid #dcdcde}.dbd-admin .sp-ask p{margin:0 0 8px}.dbd-admin .sp-ask form{margin:0}
+		.dbd-admin .sp-aps{flex-basis:100%;margin:0;line-height:1.9;color:#3c434a}
+		.dbd-admin .sp-ks .sp-ap{grid-column:2;margin-top:6px;padding-top:0;border-top:0}.dbd-admin .sp-ks .sp-ap .button{min-height:26px;line-height:24px;padding:0 9px;font-size:12px}
 		.dbd-admin .sp-fits{margin:10px 0 0;color:#646970}
 		.dbd-admin .sp-tx{margin-top:12px;border-top:1px solid #f0f0f1;padding-top:10px}.dbd-admin .sp-tx summary{cursor:pointer;color:#2271b1;font-weight:600}
 		.dbd-admin .sp-f{margin:10px 0 0}
@@ -489,7 +497,7 @@ function dbd_pack_settings_box( $n ) {
 			. ( $note !== '' ? '<p class="description">' . $note . '</p>' : '' ) . '</div>';
 	};
 	?>
-	<details class="dbd-box sp-set" id="dbd-pack-settings"<?php echo $open ? ' open' : ''; ?>><summary>Settings: the Tuesday email, your accounts and Instagram posting</summary>
+	<details class="dbd-box sp-set" id="dbd-pack-settings"<?php echo $open ? ' open' : ''; ?>><summary>Settings: the Tuesday email, your accounts, Instagram and Bluesky posting</summary>
 		<?php dbd_pack_notices(); ?>
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="dbd_pack_settings"><input type="hidden" name="week" value="<?php echo (int) $n; ?>"><?php wp_nonce_field( 'dbd_pack_settings' ); ?>
 		<div class="sp-sg">
@@ -522,6 +530,20 @@ function dbd_pack_settings_box( $n ) {
 				} else {
 					echo '<p class="description">In your Meta app (Instagram, API setup with Unified login), make a configuration with @' . esc_html( DBD_Pack::our_ig() !== '' ? DBD_Pack::our_ig() : 'your account' ) . ', then Generate token and paste it here. It’s checked when you save, and never shown again.</p>';
 				} ?></div>
+			<div class="sp-sh">Bluesky posting</div>
+			<span>Account</span><div style="padding-top:5px"><?php echo DBD_Pack::our_bsky() !== '' ? '@' . esc_html( DBD_Pack::our_bsky() ) . ' <span class="description">(from Your accounts above)</span>' : '<span class="description">Add the Bluesky account above first.</span>'; ?></div>
+			<label for="dbd-bsky-pass">App password</label><div><input type="password" id="dbd-bsky-pass" name="dbd_bsky_pass_new" value="" autocomplete="off" placeholder="<?php echo esc_attr( DBD_Bluesky::conn() ? 'Paste a new app password to replace it' : 'Paste an app password from Bluesky' ); ?>" style="width:420px;max-width:100%">
+				<?php $bc = DBD_Bluesky::conn();
+				if ( $bc ) {
+					echo '<p class="description"><span class="dbd-dot ok"></span>Connected as @' . esc_html( $bc['handle'] ) . '. Delete the app password in Bluesky to cut the plugin off.</p>'
+						. '<label class="description" style="display:block;margin-top:4px"><input type="checkbox" name="dbd_bsky_disconnect" value="1"> Disconnect (forget the app password)</label>';
+				} else {
+					echo '<p class="description">Make one in Bluesky: Settings → Privacy and security → App passwords → Add. It’s checked when you save, and never shown again.</p>';
+				} ?></div>
+			<div class="sp-sh">Auto publish</div>
+			<span>Posts to</span><div><?php $aps = DBD_AutoPub::settings(); ?><label><input type="checkbox" name="<?php echo esc_attr( DBD_AutoPub::OPT ); ?>[ig]" value="1"<?php echo $aps['ig'] ? ' checked' : ''; ?>> Instagram</label><br>
+				<label><input type="checkbox" name="<?php echo esc_attr( DBD_AutoPub::OPT ); ?>[bs]" value="1"<?php echo $aps['bs'] ? ' checked' : ''; ?>> Bluesky</label>
+				<p class="description">The Auto publish button on each item posts it to these, right away. Untick one to leave it out; one that isn’t connected is left out by itself. Reddit, X and Facebook can’t post on their own.</p></div>
 		</div>
 		<div class="dbd-foot"><button class="button button-primary">Save settings</button></div>
 		</form>
@@ -556,6 +578,30 @@ function dbd_pack_notices() {
 	$x = $pk === 'saved' ? array( 'success', 'Settings saved.' ) : ( $pk === 'sent' ? array( 'success', 'The pack went to ' . $pn . ( $pn === 1 ? ' person.' : ' people.' ) ) : ( $pk === 'again' ? array( 'success', 'The pack email is going again.' ) : array( 'error', 'The pack email didn’t send: ' . sanitize_text_field( wp_unslash( rawurldecode( (string) ( $_GET['pack_err'] ?? '' ) ) ) ) ) ) );
 	}
 	echo '<div class="notice notice-' . esc_attr( $x[0] ) . ' inline sp-note"><p>' . esc_html( $x[1] ) . '</p></div>';
+}
+
+/**
+ * Auto publish (SCOPE §81): the button, its ask (a details box, so it asks without JavaScript too), and a line per network. The button lists the
+ * networks it would post to now; with every network done it reads Published; with none connected the row isn't there.
+ */
+function dbd_pack_auto( $n, $it ) {
+	$slot = DBD_AutoPub::slot( $n, $it ); if ( $slot === '' ) { return ''; }
+	$st = DBD_AutoPub::states( $n, $slot, $it ); if ( ! $st ) { return ''; }
+	$ready = DBD_AutoPub::ready( $n, $slot, $it ); $nets = DBD_AutoPub::nets();
+	$names = implode( ' and ', array_map( function ( $x ) { return DBD_AutoPub::NETS[ $x ]; }, $ready ) );
+	$o = '';
+	if ( $ready ) {
+		$o .= '<details class="sp-apd"><summary class="button button-primary">Auto publish</summary><div class="sp-ask"><form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">'
+			. '<input type="hidden" name="action" value="dbd_auto_publish"><input type="hidden" name="week" value="' . (int) $n . '"><input type="hidden" name="slot" value="' . esc_attr( $slot ) . '">' . wp_nonce_field( 'dbd_ap_' . (int) $n . '_' . $slot, '_wpnonce', true, false )
+			. '<p><b>' . esc_html( 'Post “' . DBD_AutoPub::name( $it ) . '” to ' . $names . ' now?' ) . '</b> It goes out right away.</p><button class="button button-primary sp-apgo">Post it now</button> <button type="button" class="button sp-apx">Cancel</button></form></div></details>'
+			. '<span class="description">' . esc_html( 'Posts it to ' . $names . ' now.' ) . '</span>';
+	} elseif ( $nets && ! array_filter( $nets, function ( $x ) use ( $st ) { return ( $st[ $x ][0] ?? '' ) !== 'done'; } ) ) {
+		$o .= '<button type="button" class="button" disabled>Published</button>';
+	}
+	$lines = '';
+	foreach ( $st as $s ) { if ( $s[1] !== '' ) { $lines .= ( $lines !== '' ? '<br>' : '' ) . '<span class="dbd-dot ' . esc_attr( $s[3] ) . '"></span>' . esc_html( $s[1] ) . ( $s[2] !== '' ? ' <a href="' . esc_url( $s[2] ) . '" target="_blank" rel="noopener">View</a>' : '' ); } }
+	if ( $o === '' && $lines === '' ) { return ''; }
+	return '<div class="sp-ap">' . $o . ( $lines !== '' ? '<p class="sp-aps">' . $lines . '</p>' : '' ) . '</div>';
 }
 
 /** One place to post (SCOPE §74): the site's name as the label, its own color, and the full phrase for screen readers. */
@@ -612,11 +658,11 @@ function dbd_tab_share() {
 	foreach ( $items as $it ) {
 		$i = DBD_Pack::NUM[ $it['k'] ] ?? 0; $img = DBD_Card::url( $it['card'] );
 		$also = array_values( array_filter( (array) $it['fits'] ) );
-		echo '<section class="dbd-box sp-item" data-k="' . esc_attr( $it['k'] ) . '"><div class="sp-ih"><span class="sp-no">' . (int) $i . '</span><h2>' . esc_html( $it['h'] ) . '</h2></div><div class="sp-body">'
+		echo '<section class="dbd-box sp-item" id="' . esc_attr( 'sp-' . $it['k'] ) . '" data-k="' . esc_attr( $it['k'] ) . '"><div class="sp-ih"><span class="sp-no">' . (int) $i . '</span><h2>' . esc_html( $it['h'] ) . '</h2></div><div class="sp-body">'
 			. '<div class="sp-l"><a class="sp-card" href="' . esc_url( $it['link'] ) . '" target="_blank" rel="noopener" aria-label="Open the page"><img src="' . esc_url( $img ) . '" width="1200" height="630" alt="" loading="lazy"></a>'
 			. '<p class="sp-dl"><a href="' . esc_url( $img ) . '" download="' . esc_attr( $it['file'] ) . '">Download image</a>'
 			. ( DBD_Pack::our_ig() !== '' && ! empty( $it['sq'] ) ? '<a href="' . esc_url( DBD_Card::url( $it['sq'] ) ) . '" download="' . esc_attr( $it['sqfile'] ) . '">Download square for Instagram</a>' : '' ) . '</p></div>'
-			. '<div class="sp-r"><p class="sp-tk">' . esc_html( $it['title'] ) . '</p><p class="sp-pl">Post it</p>' . dbd_pack_row( $it, DBD_Pack::share_link( $it ) )
+			. '<div class="sp-r"><p class="sp-tk">' . esc_html( $it['title'] ) . '</p><p class="sp-pl">Post it</p>' . dbd_pack_row( $it, DBD_Pack::share_link( $it ) ) . dbd_pack_auto( $n, $it )
 			. ( $also ? '<p class="sp-fits">Also fits ' . esc_html( implode( ', ', $also ) ) . ': post there by hand with the texts below.</p>' : '' )
 			. '<details class="sp-tx"><summary>Texts to copy</summary>' . dbd_pack_texts( $it ) . '</details></div></div></section>';
 	}
@@ -628,8 +674,8 @@ function dbd_tab_share() {
 			$g = $kg['g']; $img = DBD_Card::url( $kg['card'] ); $tx = '';
 			echo '<div class="sp-kg"><div class="sp-kgh"><b><a href="' . esc_url( $kg['link'] ) . '" target="_blank" rel="noopener">' . esc_html( $nk( $g['away'] ) . ' at ' . $nk( $g['home'] ) ) . '</a></b><a href="' . esc_url( $img ) . '" download="' . esc_attr( $kg['file'] ) . '">Download the game card</a></div>';
 			foreach ( $kg['sides'] as $sd ) {
-				echo '<div class="sp-ks">' . DBD_Marks::tile_svg( $sd['t'], 24 ) . '<div class="sp-kt"><b>' . esc_html( $nk( $sd['t'] ) . ' offense.' ) . '</b> ' . esc_html( rtrim( $sd['head'], '.' ) ) . '. <span>' . esc_html( $sd['say'] ) . '</span></div>'
-					. dbd_pack_row( $sd, $sd['link'], $sd['fits'], true ) . '</div>';  /* ours, then the team's own subreddit (2.29.1) */
+				echo '<div class="sp-ks" id="' . esc_attr( 'sp-' . DBD_AutoPub::slot( $n, $sd ) ) . '">' . DBD_Marks::tile_svg( $sd['t'], 24 ) . '<div class="sp-kt"><b>' . esc_html( $nk( $sd['t'] ) . ' offense.' ) . '</b> ' . esc_html( rtrim( $sd['head'], '.' ) ) . '. <span>' . esc_html( $sd['say'] ) . '</span></div>'
+					. dbd_pack_row( $sd, $sd['link'], $sd['fits'], true ) . dbd_pack_auto( $n, $sd + array( 'card' => $kg['card'] ) ) . '</div>';  /* ours, then the team's own subreddit (2.29.1) */
 				$tx .= dbd_pack_texts( $sd, $nk( $sd['t'] ) . ': ' );
 			}
 			echo '<details class="sp-tx"><summary>Texts to copy</summary>' . $tx . '</details></div>';

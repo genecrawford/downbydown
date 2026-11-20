@@ -51,8 +51,8 @@ function get_query_var( $k ) { return ''; }
 function add_rewrite_rule() {} function flush_rewrite_rules() {}
 if ( ! defined( 'DAY_IN_SECONDS' ) ) { define( 'DAY_IN_SECONDS', 86400 ); define( 'HOUR_IN_SECONDS', 3600 ); }
 function update_option( $k, $v, $al = null ) { if ( isset( $GLOBALS['dbd_opt'] ) ) { $GLOBALS['dbd_opt'][ $k ] = $v; } return true; }  /* stored only in the admin and send modes, which read it back */
-function get_transient( $k ) { return false; }
-function set_transient( $k, $v, $e = 0 ) { return true; }
+function get_transient( $k ) { return $GLOBALS['htr'][ $k ] ?? false; }  /* kept only where a mode sets $GLOBALS['htr'] (autopub) */
+function set_transient( $k, $v, $e = 0 ) { if ( isset( $GLOBALS['htr'] ) ) { $GLOBALS['htr'][ $k ] = $v; } return true; }
 function home_url( $p = '' ) { return 'https://example.test' . $p; }
 function get_permalink( $p = null ) { return getenv( 'DBD_HARNESS_ROOT' ) ? 'https://example.test/hub/' : 'https://example.test/app/'; }
 function is_front_page() { return false; } function add_shortcode() {}
@@ -76,7 +76,7 @@ function wp_schedule_single_event() {} function wp_next_scheduled() { return fal
 
 /* ---- the plugin, minus the bootstrap and admin. The SEO class extends a WordPress sitemap base class; an empty stand-in lets it load. */
 if ( ! class_exists( 'WP_Sitemaps_Provider' ) ) { class WP_Sitemaps_Provider { public $name = ''; public $object_type = ''; } }
-foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-kicker', 'class-dbd-defense', 'class-dbd-scatter', 'class-dbd-rush', 'class-dbd-week', 'class-dbd-fanweek', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-boards', 'class-dbd-sync', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo', 'class-dbd-blocks', 'class-dbd-post', 'class-dbd-news', 'class-dbd-email', 'class-dbd-videos', 'class-dbd-growth', 'class-dbd-signup', 'class-dbd-pack', 'class-dbd-pack-mail', 'class-dbd-instagram', 'class-dbd-board-mail' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
+foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-kicker', 'class-dbd-defense', 'class-dbd-scatter', 'class-dbd-rush', 'class-dbd-week', 'class-dbd-fanweek', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-boards', 'class-dbd-sync', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo', 'class-dbd-blocks', 'class-dbd-post', 'class-dbd-news', 'class-dbd-email', 'class-dbd-videos', 'class-dbd-growth', 'class-dbd-signup', 'class-dbd-pack', 'class-dbd-pack-mail', 'class-dbd-instagram', 'class-dbd-bluesky', 'class-dbd-autopub', 'class-dbd-board-mail' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
 
 if ( getenv( 'DBD_HARNESS_SIGN' ) ) { $GLOBALS['dbd_opt'] = array( 'dbd_email' => array( 'on' => true, 'key' => 'harness', 'list' => 4, 'tpl' => 5 ) ); }  /* the email set up, so pages draw the signup strip (SCOPE §66) */
 if ( getenv( 'DBD_HARNESS_NOW' ) && class_exists( 'DBD_News' ) ) { DBD_News::$now = (int) getenv( 'DBD_HARNESS_NOW' ); }
@@ -513,6 +513,145 @@ if ( $view === 'igpost' ) {
 	echo "igpost week $n: $bad problems, $warnings warnings\n"; exit( $bad || $warnings ? 1 : 0 );
 }
 /* ---- the share pack email (2.28.0, SCOPE §69): booking, the email, one copy per person, a retry for only the one Brevo refused */
+/* ---- Auto publish (2.38.0, SCOPE §81): the Bluesky text, its link facet's byte offsets and the preview; connecting; posting through a fake
+   Bluesky (session, card upload, record), once only, a lost reply found instead of posted again, an expired session made again, a card too big
+   for a thumb; then the button's networks and states, an Instagram day taken over and dropped, pass rushers and a keys side on Instagram */
+if ( $view === 'autopub' ) {
+	$GLOBALS['dbd_opt'] = array( 'dbd_email' => array( 'on' => true, 'key' => 'k', 'list' => 3, 'tpl' => 5, 'test' => 'gene@example.test' ),
+		'dbd_ig_token' => array( 'token' => 'tok', 'user_id' => '178', 'username' => 'down_by_down', 'expires' => time() + 50 * 86400, 'checked' => time(), 'err' => '' ) );
+	$GLOBALS['hcalls'] = array(); $GLOBALS['hmail'] = array(); $GLOBALS['htr'] = array();
+	$GLOBALS['bs'] = array( 'n' => 0, 'records' => array(), 'lose' => false, 'expire' => 0, 'sessions' => 0 ); $GLOBALS['ig'] = array( 'n' => 0 );
+	foreach ( array(
+		'is_email' => function ( $e ) { return (bool) filter_var( $e, FILTER_VALIDATE_EMAIL ); },
+		'admin_url' => function ( $p = '' ) { return 'https://example.test/wp-admin/' . $p; },
+		'add_option' => function ( $k, $v = '' ) { if ( isset( $GLOBALS['dbd_opt'][ $k ] ) ) { return false; } $GLOBALS['dbd_opt'][ $k ] = $v; return true; },
+		'delete_option' => function ( $k ) { unset( $GLOBALS['dbd_opt'][ $k ] ); return true; },
+		'delete_transient' => function ( $k ) { unset( $GLOBALS['htr'][ $k ] ); return true; },
+		'wp_mail' => function ( $to, $sub ) { $GLOBALS['hmail'][] = $sub; return true; },
+		'wp_clear_scheduled_hook' => function () { return 0; },
+		'wp_remote_request' => function ( $url, $a ) {
+			$u = parse_url( $url ); parse_str( (string) ( $u['query'] ?? '' ), $q ); $host = (string) ( $u['host'] ?? '' );
+			$ok = function ( $j ) { return array( 'response' => array( 'code' => 200 ), 'body' => json_encode( $j ) ); };
+			$no = function ( $c, $e, $m = '' ) { return array( 'response' => array( 'code' => $c ), 'body' => json_encode( array( 'error' => $e, 'message' => $m ) ) ); };
+			if ( $host === 'bsky.social' ) {
+				$nsid = substr( $u['path'], 6 ); $raw = (string) ( $a['body'] ?? '' ); $b = json_decode( $raw, true );
+				$GLOBALS['hcalls'][] = array( 'bs', $a['method'], $nsid, $a['method'] === 'GET' ? $q : ( is_array( $b ) ? $b : strlen( $raw ) ), $a['headers'] ?? array() );
+				$auth = (string) ( $a['headers']['Authorization'] ?? '' );
+				if ( $nsid === 'com.atproto.server.createSession' ) { if ( ( $b['password'] ?? '' ) !== 'good-pass' ) { return $no( 401, 'AuthenticationRequired', 'Invalid identifier or password' ); } $GLOBALS['bs']['sessions']++; return $ok( array( 'did' => 'did:plc:dbd', 'handle' => 'downbydown.bsky.social', 'accessJwt' => 'jwt' . $GLOBALS['bs']['sessions'] ) ); }
+				if ( $nsid === 'com.atproto.repo.getRecord' ) { $r = $GLOBALS['bs']['records'][ $q['rkey'] ?? '' ] ?? null; return $r ? $ok( array( 'uri' => 'at://did:plc:dbd/app.bsky.feed.post/' . $q['rkey'], 'value' => $r ) ) : $no( 400, 'RecordNotFound', 'Could not locate record' ); }
+				if ( $GLOBALS['bs']['expire'] > 0 && $auth === 'Bearer jwt1' ) { $GLOBALS['bs']['expire']--; return $no( 400, 'ExpiredToken', 'Token has expired' ); }
+				if ( strpos( $auth, 'Bearer jwt' ) !== 0 ) { return $no( 401, 'AuthMissing', 'Authentication Required' ); }
+				if ( $nsid === 'com.atproto.repo.uploadBlob' ) { return ( $a['headers']['Content-Type'] ?? '' ) === 'image/png' && substr( $raw, 1, 3 ) === 'PNG' ? $ok( array( 'blob' => array( '$type' => 'blob', 'ref' => array( '$link' => 'bafy' ), 'mimeType' => 'image/png', 'size' => strlen( $raw ) ) ) ) : $no( 400, 'InvalidRequest', 'not a png' ); }
+				if ( $nsid === 'com.atproto.repo.createRecord' ) {
+					$GLOBALS['bs']['records'][ $b['rkey'] ] = $b['record'];
+					if ( $GLOBALS['bs']['lose'] ) { $GLOBALS['bs']['lose'] = false; return $no( 502, 'UpstreamFailure', 'Bad gateway' ); }  /* it went out, but the reply was lost */
+					return $ok( array( 'uri' => 'at://did:plc:dbd/app.bsky.feed.post/' . $b['rkey'], 'cid' => 'bafyrei' ) );
+				}
+				return $no( 400, 'MethodNotImplemented', $nsid );
+			}
+			$b = (array) ( $a['body'] ?? array() ); $path = preg_replace( '#^/(v\d+\.\d+/)?#', '', $u['path'] );
+			$GLOBALS['hcalls'][] = array( 'ig', $a['method'], $path, $a['method'] === 'GET' ? $q : $b );
+			if ( $path === '178/media' ) { $GLOBALS['ig']['n']++; return $ok( array( 'id' => 'c' . $GLOBALS['ig']['n'] ) ); }
+			if ( $path === '178/media_publish' ) { return $ok( array( 'id' => 'm' . $b['creation_id'] ) ); }
+			if ( ( $q['fields'] ?? '' ) === 'status_code' ) { return $ok( array( 'status_code' => 'FINISHED' ) ); }
+			if ( ( $q['fields'] ?? '' ) === 'permalink' ) { return $ok( array( 'permalink' => 'https://www.instagram.com/p/' . $path . '/' ) ); }
+			return $no( 400, 'unknown', $path );
+		},
+	) as $fn => $body ) { if ( ! function_exists( $fn ) ) { $GLOBALS['hfn'][ $fn ] = $body; eval( 'function ' . $fn . '( ...$a ) { return $GLOBALS["hfn"]["' . $fn . '"]( ...$a ); }' ); } }
+	DBD_Instagram::$wait = function () {};
+	$bad = 0; $ck = function ( $what, $ok, $got = '' ) use ( &$bad ) { echo '  ' . ( $ok ? 'ok' : 'WRONG' ) . ": $what" . ( $ok ? '' : " (got: $got)" ) . "\n"; $bad += ! $ok; };
+	$bcalls = function ( $nsid ) { return array_values( array_filter( $GLOBALS['hcalls'], function ( $c ) use ( $nsid ) { return $c[0] === 'bs' && $c[2] === $nsid; } ) ); };
+	$igcalls = function ( $p ) { return array_values( array_filter( $GLOBALS['hcalls'], function ( $c ) use ( $p ) { return $c[0] === 'ig' && $c[2] === $p; } ) ); };
+	try {
+		$n = DBD_Pack::newest(); $season = (int) DBD_Data::season(); $items = DBD_Pack::items( $n ); $sw = DBD_Pack::find( $n, 'swing' ) ?: $items[0]; $ks = (string) $sw['k'];
+		$ck( 'find: an item by its key, nothing for a key that isn’t there', ( $sw['k'] ?? '' ) === $ks && DBD_Pack::find( $n, 'nope' ) === null && DBD_Pack::find( $n, 'keys-2026_99_AAA_BBB-AAA' ) === null );
+		/* the text: shortened link, the facet's byte offsets over the shortened link, the full link in the facet */
+		$all = array_merge( $items, array_merge( ...array_map( function ( $kg ) { return $kg['sides']; }, DBD_Pack::keys( $n ) ?: array( array( 'sides' => array() ) ) ) ) );
+		$tx_ok = true; $tx_bad = '';
+		foreach ( $all as $it ) {
+			list( $t, $f ) = DBD_Bluesky::text( $it ); $link = DBD_Pack::share_link( $it ); $show = DBD_Bluesky::short_link( $link );
+			$ix = $f[0]['index'] ?? array(); $span = substr( $t, (int) ( $ix['byteStart'] ?? 0 ), (int) ( $ix['byteEnd'] ?? 0 ) - (int) ( $ix['byteStart'] ?? 0 ) );
+			if ( count( $f ) !== 1 || $span !== $show || ( $f[0]['features'][0]['uri'] ?? '' ) !== $link || strpos( $t, $link ) !== false || mb_strlen( $t ) > 300 || mb_strlen( $show ) > 30 || ! mb_check_encoding( $t, 'UTF-8' ) ) { $tx_ok = false; $tx_bad = $t . ' | ' . json_encode( $f ) . ' | ' . $span; break; }
+		}
+		$ck( 'every item’s Bluesky text: the link shown short, its facet’s bytes over exactly that, the full link in the facet, 300 at most (' . count( $all ) . ' texts)', $tx_ok, $tx_bad );
+		list( $tw ) = DBD_Bluesky::text( array( 'title' => 'Week 10’s swing: the Commanders’ win, −0.52 a play', 'link' => 'https://downbydown.com/game/2026-week-10-commanders-at-giants/' ) );
+		list( , $fw ) = DBD_Bluesky::text( array( 'title' => 'Week 10’s swing: the Commanders’ win, −0.52 a play', 'link' => 'https://downbydown.com/game/2026-week-10-commanders-at-giants/' ) ); $at = (int) ( $fw[0]['index']['byteStart'] ?? -1 );
+		$ck( 'curly quotes and a minus sign count in bytes, not letters', strpos( $tw, ' downbydown.com/game/2026-week…' ) !== false && $at === strpos( $tw, 'downbydown.com/game/' ) && $at > mb_strlen( substr( $tw, 0, $at ) ) && substr( $tw, $at, $fw[0]['index']['byteEnd'] - $at ) === 'downbydown.com/game/2026-week…', $tw . ' ' . json_encode( $fw ) );
+		$ck( 'a short link drops the address’s query and slash', DBD_Bluesky::short_link( 'https://downbydown.com/week/10/?share=pack-week-10-offense' ) === 'downbydown.com/week/10' && DBD_Bluesky::short_link( 'https://www.downbydown.com/leaders/rush/' ) === 'downbydown.com/leaders/rush', DBD_Bluesky::short_link( 'https://downbydown.com/week/10/?share=pack-week-10-offense' ) );
+		$rec = DBD_Bluesky::record( $sw, array( '$type' => 'blob' ), 1800000000 );
+		$ck( 'the record: a post in English with the link preview (the item’s title and card)', $rec['$type'] === 'app.bsky.feed.post' && $rec['langs'] === array( 'en' ) && $rec['createdAt'] === '2027-01-15T08:00:00.000Z' && $rec['embed']['$type'] === 'app.bsky.embed.external'
+			&& $rec['embed']['external']['uri'] === DBD_Pack::share_link( $sw ) && $rec['embed']['external']['title'] === $sw['title'] && isset( $rec['embed']['external']['thumb'] ) && ! empty( $rec['facets'] ), json_encode( $rec ) );
+		$t1 = DBD_Bluesky::tid( 1800000000000000 ); $t2 = DBD_Bluesky::tid( 1800000000000001 );
+		$ck( 'a record key: 13 letters of the TID alphabet, later ones sorting after', preg_match( '/^[234567a-j][234567a-z]{12}$/', $t1 ) && strcmp( $t2, $t1 ) > 0 && strlen( DBD_Bluesky::tid() ) === 13, "$t1 $t2" );
+		$ck( 'a post’s web link from its at:// address', DBD_Bluesky::web( 'at://did:plc:dbd/app.bsky.feed.post/3kabc', 'downbydown.bsky.social' ) === 'https://bsky.app/profile/downbydown.bsky.social/post/3kabc' && DBD_Bluesky::web( 'at://x/other/1', 'h' ) === '' );
+		/* connecting */
+		$ck( 'not connected: nothing to post to', ! DBD_Bluesky::connected() && DBD_AutoPub::nets() === array( 'ig' ) );
+		$e1 = DBD_Bluesky::connect( 'bad-pass' ); $ck( 'a bad app password keeps nothing', strpos( $e1, 'That app password didn’t work for @downbydown.bsky.social. Bluesky answered 401: Invalid identifier or password' ) === 0 && ! DBD_Bluesky::conn(), $e1 );
+		$ck( 'a good one is kept with the account it’s for', DBD_Bluesky::connect( ' good-pass ' ) === '' && DBD_Bluesky::conn()['did'] === 'did:plc:dbd' && DBD_Bluesky::conn()['pass'] === 'good-pass' && $bcalls( 'com.atproto.server.createSession' )[0][3]['identifier'] === 'downbydown.bsky.social' );
+		$ck( 'both networks are on the button', DBD_AutoPub::nets() === array( 'ig', 'bs' ) );
+		$GLOBALS['dbd_opt']['dbd_ap_set'] = array( 'ig' => false, 'bs' => true ); $ck( 'untick Instagram and the button leaves it out', DBD_AutoPub::nets() === array( 'bs' ) ); unset( $GLOBALS['dbd_opt']['dbd_ap_set'] );
+		/* posting to Bluesky through Auto publish: the item's card as the thumb */
+		$key = DBD_AutoPub::key( $n, $ks ); $GLOBALS['hcalls'] = array();
+		$st0 = DBD_AutoPub::states( $n, $ks ); $ck( 'before: both ready', ( $st0['ig'][0] ?? '' ) === 'ready' && ( $st0['bs'][0] ?? '' ) === 'ready' && DBD_AutoPub::ready( $n, $ks ) === array( 'ig', 'bs' ), json_encode( $st0 ) );
+		$errs = DBD_AutoPub::publish( $n, $ks ); $bj = DBD_Bluesky::job( $key ); $cr = $bcalls( 'com.atproto.repo.createRecord' ); $up = $bcalls( 'com.atproto.repo.uploadBlob' );
+		$ck( 'Bluesky: the card uploaded as a PNG, then one post with it', ! $errs && count( $up ) === 1 && $up[0][3] > 1000 && count( $cr ) === 1 && $cr[0][3]['repo'] === 'did:plc:dbd' && $cr[0][3]['collection'] === 'app.bsky.feed.post' && ! empty( $cr[0][3]['record']['embed']['external']['thumb'] ) && $cr[0][4]['Authorization'] === 'Bearer jwt1', json_encode( array( $errs, $cr ) ) );
+		$ck( 'it’s kept as posted with its link', ( $bj['state'] ?? '' ) === 'sent' && $bj['link'] === 'https://bsky.app/profile/downbydown.bsky.social/post/' . $bj['rkey'], json_encode( $bj ) );
+		$ij = DBD_Instagram::job( $key ); $ck( 'Instagram: queued to post now, as Auto publish', ( $ij['state'] ?? '' ) === 'booked' && ! empty( $ij['auto'] ) && ! empty( $ij['force'] ) && abs( (int) $ij['at'] - time() ) < 5, json_encode( $ij ) );
+		$st1 = DBD_AutoPub::states( $n, $ks ); $ck( 'the lines: Instagram posting…, Bluesky posted; nothing left for the button', $st1['ig'][0] === 'busy' && $st1['ig'][1] === 'Instagram: posting…' && $st1['bs'][0] === 'done' && strpos( $st1['bs'][1], 'Bluesky: posted ' ) === 0 && $st1['bs'][2] === $bj['link'] && ! DBD_AutoPub::ready( $n, $ks ), json_encode( $st1 ) );
+		$GLOBALS['hcalls'] = array(); DBD_Instagram::send( $key ); $ij = DBD_Instagram::job( $key ); $med = $igcalls( '178/media' );
+		$ck( 'Instagram: one image post, the item’s square and caption', ( $ij['state'] ?? '' ) === 'sent' && count( $med ) === 1 && strpos( $med[0][3]['image_url'], 'card=' . $sw['sq'] ) !== false && strpos( $med[0][3]['image_url'], 'fmt=jpg' ) !== false && $med[0][3]['caption'] === DBD_Pack::ig_caption( $sw, true ) && count( $igcalls( '178/media_publish' ) ) === 1, json_encode( array( $ij, $med ) ) );
+		$GLOBALS['hcalls'] = array(); $errs = DBD_AutoPub::publish( $n, $ks );
+		$ck( 'pressed again: nothing posts twice', ! $errs && ! $GLOBALS['hcalls'] && DBD_AutoPub::states( $n, $ks )['ig'][0] === 'done', json_encode( $GLOBALS['hcalls'] ) );
+		DBD_Instagram::send( $key ); $ck( 'the item’s own day later finds it sent and posts nothing', ! $GLOBALS['hcalls'] );
+		/* an Instagram day still to come is taken over: booked for later, posted now, the day dropped */
+		$k2 = null; foreach ( $items as $it ) { if ( isset( DBD_Instagram::SLOTS[ $it['k'] ] ) && $it['k'] !== $ks ) { $k2 = $it['k']; break; } }
+		if ( $k2 ) {
+			$key2 = DBD_AutoPub::key( $n, $k2 ); $later = time() + 3 * 86400;
+			$GLOBALS['dbd_opt'][ 'dbd_ig_job_' . $key2 ] = array( 'state' => 'booked', 'at' => $later, 'slot_at' => $later, 'tries' => 0 );
+			$s2 = DBD_AutoPub::states( $n, $k2 ); $ck( 'a booked day: ready, and the line says Auto publish posts it now instead', $s2['ig'][0] === 'ready' && strpos( $s2['ig'][1], 'Instagram: booked for ' ) === 0 && strpos( $s2['ig'][1], 'Auto publish posts it now instead.' ) !== false, json_encode( $s2 ) );
+			DBD_AutoPub::publish( $n, $k2 ); $j2 = DBD_Instagram::job( $key2 );
+			$ck( 'pressed: the day is taken over to post now', $j2['state'] === 'booked' && ! empty( $j2['auto'] ) && abs( (int) $j2['at'] - time() ) < 5 && (int) $j2['slot_at'] === $later, json_encode( $j2 ) );
+			DBD_Instagram::send( $key2 ); $ck( 'it posts now', DBD_Instagram::job( $key2 )['state'] === 'sent' );
+			$GLOBALS['hcalls'] = array(); DBD_Instagram::send( $key2 ); $ck( 'and its day posts nothing', ! $GLOBALS['hcalls'] && DBD_Instagram::job( $key2 )['state'] === 'sent' );
+			$ck( 'a day taken by Auto publish is never booked again by a sync', ! isset( DBD_Instagram::note()[ $key2 ] ) );
+		} else { echo "  (no second daily item this week; skipped the booked-day checks)\n"; }
+		/* the weekly switch off: Auto publish still posts to Instagram */
+		$GLOBALS['dbd_opt']['dbd_ig_set'] = array( 'on' => false ); $ck( 'with weekly posting off, the button still posts to Instagram', DBD_AutoPub::nets() === array( 'ig', 'bs' ) && ! DBD_Instagram::on() );
+		/* pass rushers and a keys side: outside the weekly days, posted on Instagram by key */
+		$extra = array(); if ( DBD_Pack::find( $n, 'rush' ) ) { $extra[] = 'rush'; }
+		foreach ( DBD_Pack::keys( $n ) as $kg ) { if ( ! empty( $kg['sides'][0] ) ) { $extra[] = DBD_AutoPub::slot( $n, $kg['sides'][0] ); break; } }
+		foreach ( $extra as $sl ) {
+			$k3 = DBD_AutoPub::key( $n, $sl ); $it3 = DBD_Pack::find( $n, $sl ); $GLOBALS['hcalls'] = array();
+			$ck( "$sl: its post key parses, and it has a card", DBD_Instagram::parse( $k3 ) === array( $season, $n, $sl ) && ! empty( $it3['card'] ) && DBD_Card::valid( $it3['card'] ), $k3 );
+			DBD_AutoPub::publish( $n, $sl ); DBD_Instagram::send( $k3 ); $med = $igcalls( '178/media' ); $cr = $bcalls( 'com.atproto.repo.createRecord' );
+			$ck( "$sl: Instagram posts its square, Bluesky its text with the card", DBD_Instagram::job( $k3 )['state'] === 'sent' && strpos( $med[0][3]['image_url'] ?? '', 'card=' . $it3['sq'] ) !== false && DBD_Bluesky::job( $k3 )['state'] === 'sent' && count( $cr ) === 1 && count( $bcalls( 'com.atproto.repo.uploadBlob' ) ) === 1, json_encode( array( DBD_Instagram::job( $k3 ), DBD_Bluesky::job( $k3 ) ) ) );
+			$ck( "$sl: the label", DBD_Instagram::label( $sl ) === ( $sl === 'rush' ? 'pass rushers' : 'the ' . ( DBD_Data::team( substr( $sl, -3 ) )['nick'] ?? substr( $sl, -3 ) ) . ' keys' ) || ( strpos( $sl, 'keys-' ) === 0 && preg_match( '/^the .+ keys$/', DBD_Instagram::label( $sl ) ) ), DBD_Instagram::label( $sl ) );
+		}
+		if ( ! $extra ) { echo "  (no pass rushers or keys this week; skipped those checks)\n"; }
+		/* Bluesky, the hard parts: a lost reply, an expired session, a card too big */
+		$other = array_values( array_filter( $items, function ( $it ) use ( $ks, $k2, $extra ) { return ! in_array( $it['k'], array_merge( array( $ks, $k2 ), $extra ), true ); } ) );
+		if ( count( $other ) >= 1 ) {
+			$kl = DBD_AutoPub::key( $n, $other[0]['k'] ); $GLOBALS['bs']['lose'] = true; $GLOBALS['hcalls'] = array();
+			$e = DBD_Bluesky::post( $kl, $other[0] ); $jl = DBD_Bluesky::job( $kl );
+			$ck( 'a lost reply: kept as failed, with the record key it used', strpos( $e, 'Bluesky answered 502' ) === 0 && $jl['state'] === 'failed' && strlen( $jl['rkey'] ) === 13 && DBD_AutoPub::states( $n, $other[0]['k'] )['bs'][0] === 'ready' && strpos( DBD_AutoPub::states( $n, $other[0]['k'] )['bs'][1], 'Bluesky didn’t post: Bluesky answered 502' ) === 0, json_encode( array( $e, $jl ) ) );
+			$GLOBALS['hcalls'] = array(); $e = DBD_Bluesky::post( $kl, $other[0] );
+			$ck( 'pressed again: it finds the post that went out, and posts nothing new', $e === '' && DBD_Bluesky::job( $kl )['state'] === 'sent' && count( $bcalls( 'com.atproto.repo.getRecord' ) ) === 1 && ! $bcalls( 'com.atproto.repo.createRecord' ) && strpos( DBD_Bluesky::job( $kl )['link'], '/post/' . $jl['rkey'] ) !== false, json_encode( $GLOBALS['hcalls'] ) );
+		}
+		if ( count( $other ) >= 2 ) {
+			$ke = DBD_AutoPub::key( $n, $other[1]['k'] ); $GLOBALS['htr'] = array( 'dbd_bsky_session' => array( 'jwt' => 'jwt1', 'did' => 'did:plc:dbd' ) ); $GLOBALS['bs']['expire'] = 1; $GLOBALS['hcalls'] = array(); DBD_Bluesky::$max_blob = 10;
+			$e = DBD_Bluesky::post( $ke, $other[1] ); $cr = $bcalls( 'com.atproto.repo.createRecord' );
+			$ck( 'an expired session is made again once; a card too big posts without its image', $e === '' && DBD_Bluesky::job( $ke )['state'] === 'sent' && count( $cr ) === 2 && $cr[0][4]['Authorization'] === 'Bearer jwt1' && $cr[1][4]['Authorization'] !== 'Bearer jwt1' && ! $bcalls( 'com.atproto.repo.uploadBlob' ) && ! isset( $cr[1][3]['record']['embed']['external']['thumb'] ) && $cr[1][3]['rkey'] === $cr[0][3]['rkey'], json_encode( $GLOBALS['hcalls'] ) );
+			DBD_Bluesky::$max_blob = 1000000;
+		}
+		/* the button's last state: every network done reads Published (checked in the admin harness by its markup); settings and saving */
+		$GLOBALS['dbd_opt']['dbd_pack_bsky'] = 'someone.else.social'; $e = DBD_Bluesky::save( array() );
+		$ck( 'a changed Bluesky account forgets the app password', ! DBD_Bluesky::conn() && strpos( $e, 'The Bluesky account changed' ) === 0 && DBD_AutoPub::nets() === array( 'ig' ), $e );
+		$GLOBALS['dbd_opt']['dbd_pack_bsky'] = 'downbydown.bsky.social'; DBD_Bluesky::save( array( 'dbd_bsky_pass_new' => 'good-pass' ) ); $ck( 'pasting one connects it again', DBD_Bluesky::connected() );
+		DBD_Bluesky::save( array( 'dbd_bsky_disconnect' => '1' ) ); $ck( 'disconnect forgets it', ! DBD_Bluesky::conn() );
+		$ck( 'the networks setting: unticked means off, missing means on', DBD_AutoPub::sanitize( array( 'ig' => '1' ) ) === array( 'ig' => true, 'bs' => false ) && DBD_AutoPub::sanitize( 'x' ) === array( 'ig' => false, 'bs' => false ) );
+	} catch ( Throwable $e ) { fwrite( STDERR, 'FATAL in autopub: ' . $e->getMessage() . ' at ' . basename( $e->getFile() ) . ':' . $e->getLine() . "\n" ); exit( 1 ); }
+	echo "autopub week $n: $bad problems, $warnings warnings\n"; exit( $bad || $warnings ? 1 : 0 );
+}
 if ( $view === 'packmail' ) {
 	$GLOBALS['dbd_opt'] = array( 'dbd_email' => array( 'on' => true, 'key' => 'xkeysib-test', 'list' => 3, 'tpl' => 5, 'test' => 'gene@example.test' ) );
 	$GLOBALS['hcalls'] = array(); $GLOBALS['hmail'] = array(); $GLOBALS['refuse'] = array();
@@ -762,6 +901,7 @@ if ( $view === 'admin' ) {
 		'dbd_sync_log' => array( array( 'time' => '2026-11-11 11:04:00', 'trigger' => 'push', 'ok' => false, 'error' => 'manifest.json: HTTP 502', 'changed' => array(), 'seconds' => 2.1 ), array( 'time' => '2026-11-10 23:05:00', 'trigger' => 'push', 'ok' => true, 'error' => '', 'changed' => array( 'a', 'b' ), 'seconds' => 4.1 ) ),
 		'dbd_news_status' => array( 'at' => 1793900000, 'secs' => 7, 'feeds' => array( 'site:MIN' => array( 'ok' => true, 'n' => 5, 'err' => '' ), 'fan:WAS' => array( 'ok' => false, 'err' => 'HTTP 503', 'last' => 1793800000 ) ) ),
 		'dbd_sync_token' => 'harness-token',
+		'dbd_bsky_conn' => array( 'pass' => 'app-pass', 'handle' => 'downbydown.bsky.social', 'did' => 'did:plc:harness', 'checked' => 1793900000 ),  /* Auto publish (SCOPE §81): Bluesky connected, Instagram not */
 		'googlesitekit_analytics-4_settings' => array( 'propertyID' => '123456' ),
 		'googlesitekit_search-console_settings' => array( 'propertyID' => 'https://example.test/' ),
 	);
@@ -802,8 +942,10 @@ if ( $view === 'admin' ) {
 		'class="button sp-rd" aria-label="Post to r/downbydown"', 'https://www.reddit.com/r/downbydown/submit?url=', 'share%3Dpack-week-', '>r/downbydown</a>',
 		'class="button sp-x" aria-label="Post on X"', 'https://x.com/intent/post?text=', 'class="button sp-bs" aria-label="Post on Bluesky"', 'https://bsky.app/intent/compose?text=',
 		'class="button sp-fb"', 'sharer.php?u=', '>Facebook</a>', 'class="button sp-cp sp-ig"', '>Instagram</button>', 'aria-label="Download square for Instagram">Square</a>',
-		'<details class="dbd-box sp-set" id="dbd-pack-settings"', 'Settings: the Tuesday email, your accounts and Instagram posting', 'value="dbd_pack_settings"', 'name="dbd_pack_mail_set[on]"', 'name="dbd_pack_mail_set[to]"', 'Brevo isn’t set up',
+		'<details class="dbd-box sp-set" id="dbd-pack-settings"', 'Settings: the Tuesday email, your accounts, Instagram and Bluesky posting', 'value="dbd_pack_settings"', 'name="dbd_pack_mail_set[on]"', 'name="dbd_pack_mail_set[to]"', 'Brevo isn’t set up',
 		'name="dbd_pack_sub"', 'name="dbd_pack_x"', 'name="dbd_pack_bsky"', 'name="dbd_pack_fb"', 'name="dbd_pack_ig"', 'Open the group', 'Save settings', 'id="dbd-pack-settings"><summary>', 'Instagram posting', 'name="dbd_ig_set[on]"', 'name="dbd_ig_set[account]"', 'name="dbd_ig_token_new"', 'Paste the token from your Meta app', 'Instagram isn’t connected yet.' );  /* SCOPE §68, §71–74; the settings box starts closed */
+	array_push( $want['sp'], 'class="sp-ap"', 'class="sp-apd"', '<summary class="button button-primary">Auto publish</summary>', 'value="dbd_auto_publish"', 'name="slot" value="swing"', 'to Bluesky now?</b>', 'Posts it to Bluesky now.', 'class="button button-primary sp-apgo"', 'class="button sp-apx"', 'id="sp-swing"', 'id="sp-keys-', 'name="slot" value="keys-',
+		'Bluesky posting', 'name="dbd_bsky_pass_new"', 'Connected as @downbydown.bsky.social', 'name="dbd_bsky_disconnect"', 'name="dbd_ap_set[ig]"', 'name="dbd_ap_set[bs]"', 'Reddit, X and Facebook can’t post on their own.' );  /* Auto publish (SCOPE §81) */
 	if ( in_array( 'rush', array_column( DBD_Pack::items( DBD_Pack::newest() ), 'k' ), true ) ) { array_push( $want['sp'], 'Pass rushers', '-pass-rushers.png"' ); }  /* SCOPE §79, only for the week the defense files run through */
 	$want['ov'][] = 'Open Growth'; $want['ov'][] = 'data-g="ov-visits"'; $want['ov'][] = 'data-g="ov-clicks"';
 	$bad = 0; $dir = getenv( 'DBD_HARNESS_HTML' ); if ( $dir && ! is_dir( $dir ) ) { mkdir( $dir, 0777, true ); }

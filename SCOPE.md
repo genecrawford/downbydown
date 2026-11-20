@@ -3302,3 +3302,28 @@ Fantasy, Kickers and Defenses get no chart in this release.
 - the shared highlight key
 - the Pass rushers tab at `/leaders/rush/`, and its absence from Defenses
 - the share pack item's new link
+
+
+## 81. Auto publish (scoped and mocked 2026-11-19, `mockup-v54/`; all decided; built as 2.38.0)
+
+Gene, looking at Share pack item 6: "can you set a button "auto publish" and anything connected to auto publish does that?" Then: "Add Bluesky, Reddit." Reddit was checked and left out: its Responsible Builder Policy now needs Reddit's own approval before any API use, keeps developer access to moderation work, and Reddit is reported to be closing its public API this month. Gene: "Instagram, Bluesky."
+
+**What it does:**
+
+1. **One button on each Share pack item:** **Auto publish**, under the row of places to post, with a line saying where it will post ("Posts it to Instagram and Bluesky now."). Reddit, X and Facebook can't post by themselves, so their buttons stay as they are.
+2. **It asks first.** Pressing it opens a short ask in place ("Post “Pass rushers” to Instagram and Bluesky now?" · **Post it now** · Cancel). Nothing posts without the second press.
+3. **Bluesky** gets the pack's Bluesky text (`DBD_Pack::social()['bsky']`, already under 300) with the link made clickable, and the item's card as the link preview (title, the item's title as the description, the card image). Through the AT Protocol: `com.atproto.server.createSession` with the handle and the app password, `com.atproto.repo.uploadBlob` for the card (PNG, under Bluesky's 1 MB; over it, the preview goes without the image), then `com.atproto.repo.createRecord` (`app.bsky.feed.post`: text, a link facet with UTF-8 byte offsets, `langs` en, an `app.bsky.embed.external` embed). The reply's `at://` uri becomes the View link (`bsky.app/profile/{handle}/post/{rkey}`). Bluesky posts during the press.
+4. **Instagram** gets the item's square and its caption (`ig_caption( $it, true )`) as a single post, through §76's publish flow (container, `media_publish`, status checks, retries every 10 minutes, 7 tries). It's queued to start right away, since a post can take minutes, and the item's line says "posting…" until it's done.
+5. **Nothing posts twice.** Each network keeps a record per item (Instagram's `dbd_ig_job_{season}-w{N}-{item}`, a new `dbd_bsky_job_{season}-w{N}-{item}` for Bluesky). A network that already has the item is left out of the button, and the line says so with its View link. With both done, the button reads **Published** and can't be pressed.
+6. **The item's line shows how each went:** "Instagram: posted Thursday, Nov 19, 4:12 PM. View" / "Bluesky: posted … View", or "Instagram didn’t post: … ", and the button, still there for that network, tries it again. An Instagram day booked for later reads "booked for Wednesday, …, 9:00 AM. Auto publish posts it now instead."
+7. **Settings, a new Bluesky posting section** under Instagram posting: the account (the Bluesky handle already in Your accounts) and an **App password** field. It's checked with `createSession` when saved, kept in a non-autoloaded option, never shown again, with a Disconnect box. Then **Auto publish → Posts to: ☑ Instagram ☑ Bluesky**, to leave one out. A network that isn't connected is left out by itself, and the button hides when none are.
+8. **Who can press it:** admins (`manage_options`), with a nonce, through `admin-post.php`.
+
+**Gene, once (about 2 minutes):** in Bluesky, Settings → Privacy and security → App passwords → Add, name it "Down by Down", copy it, paste it into the plugin and save. Deleting it there cuts the plugin off.
+
+**Decisions (Gene, 2026-11-19):**
+1. **"Post now, drop the day."** An item whose Instagram day is still to come (items 1–5 post on their own Wednesday to Sunday under §76) posts to Instagram when Auto publish is pressed, and its booked day is dropped: the press writes that day's job record (`dbd_ig_job_{season}-w{N}-{item}`), so the scheduled run finds it posted and skips it. The status line's "Next" moves on to the following day's item.
+
+2. **"Yes, each row."** Keys to the game gets an Auto publish on each team's row (one per side of each game, about 30 in a full week). Bluesky gets that side's Bluesky text with its card as the preview; Instagram gets that side's square (`ig-week-N-keys-{game}-{team}`) and its caption as a single post. Their records use the side's key (`dbd_ig_job_{season}-w{N}-keys-{game}-{team}`, `dbd_bsky_job_…` the same), so §76's slot parser learns that form; keys still never post on a schedule. The row's buttons are the small keys size, and its status sits under the row.
+
+**Tests:** the harness fakes the Bluesky API (session, blob, record): the text and its link facet's byte offsets (with the curly quotes and the minus sign the texts use), the external embed, the View link from the `at://` uri, a bad app password keeps nothing, an oversized card posts without the image, a second press doesn't post again. On the Instagram side: a new item key (`rush`) parses, the single post goes through the fake API, and an item already posted is left out. The admin harness looks for the button, the ask, the per-network lines, the Published state and the new settings fields, and a keys side's button, its key parsing and its single post.

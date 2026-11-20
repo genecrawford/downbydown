@@ -179,19 +179,28 @@ class DBD_Card {
 
 	public static function dir() { $up = wp_upload_dir(); return trailingslashit( $up['basedir'] ) . 'down-by-down/cards'; }
 
+	/**
+	 * A card's cached file, drawn first when it isn't there: array( path, 0 ), or array( '', 404 ) when there's no such card, array( '', 500 ) when
+	 * it couldn't be written. The route streams it; Bluesky's Auto publish uploads it (SCOPE §81).
+	 */
+	public static function ensure( $key, $jpg = false ) {
+		if ( ! self::available() || ! self::valid( $key ) ) { return array( '', 404 ); }
+		$dir = self::dir(); wp_mkdir_p( $dir ); $file = $dir . '/' . self::file_name( $key, $jpg );
+		if ( file_exists( $file ) ) { return array( $file, 0 ); }
+		$fetch = function ( $url ) { $r = wp_remote_get( $url, array( 'timeout' => 5 ) ); return ( ! is_wp_error( $r ) && (int) wp_remote_retrieve_response_code( $r ) === 200 ) ? wp_remote_retrieve_body( $r ) : null; };
+		$im = self::render( $key, $fetch ); if ( ! $im ) { return array( '', 404 ); }
+		/* write beside the final name, then rename into place, so a request arriving mid-write never streams a half-written PNG */
+		$tmp = $dir . '/.' . wp_generate_password( 12, false ) . '.tmp'; $ok = $jpg ? imagejpeg( $im, $tmp, 90 ) : imagepng( $im, $tmp, 6 ); imagedestroy( $im );
+		if ( ! $ok || ! file_exists( $tmp ) || filesize( $tmp ) < 1000 || ! @rename( $tmp, $file ) ) { @unlink( $tmp ); return array( '', 500 ); }
+		return array( $file, 0 );
+	}
+
 	/** The route: render once per file name, cache under uploads, stream. Exits. */
 	public static function serve( $key ) {
 		$fail = function ( $code ) { status_header( $code ); nocache_headers(); exit; };
 		if ( ! self::available() || ! self::valid( $key ) ) { $fail( 404 ); }
 		$jpg = self::wants_jpg( $key ); if ( $jpg && ! self::jpg_ok() ) { $fail( 404 ); }
-		$dir = self::dir(); wp_mkdir_p( $dir ); $file = $dir . '/' . self::file_name( $key, $jpg );
-		if ( ! file_exists( $file ) ) {
-			$fetch = function ( $url ) { $r = wp_remote_get( $url, array( 'timeout' => 5 ) ); return ( ! is_wp_error( $r ) && (int) wp_remote_retrieve_response_code( $r ) === 200 ) ? wp_remote_retrieve_body( $r ) : null; };
-			$im = self::render( $key, $fetch ); if ( ! $im ) { $fail( 404 ); }
-			/* write beside the final name, then rename into place, so a request arriving mid-write never streams a half-written PNG */
-			$tmp = $dir . '/.' . wp_generate_password( 12, false ) . '.tmp'; $ok = $jpg ? imagejpeg( $im, $tmp, 90 ) : imagepng( $im, $tmp, 6 ); imagedestroy( $im );
-			if ( ! $ok || ! file_exists( $tmp ) || filesize( $tmp ) < 1000 || ! @rename( $tmp, $file ) ) { @unlink( $tmp ); $fail( 500 ); }
-		}
+		list( $file, $code ) = self::ensure( $key, $jpg ); if ( $file === '' ) { $fail( $code ); }
 		header( 'Content-Type: ' . ( $jpg ? 'image/jpeg' : 'image/png' ) ); header( 'Content-Length: ' . filesize( $file ) ); header( 'Cache-Control: public, max-age=86400' ); header( 'X-Content-Type-Options: nosniff' );
 		readfile( $file ); exit;
 	}

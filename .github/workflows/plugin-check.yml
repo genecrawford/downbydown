@@ -664,6 +664,10 @@ jobs:
           DBD_HARNESS_HTML=emails php tools/view_harness.php data packmail
           # Instagram posts itself (2.34.0, SCOPE §76): slots, captions, booking, a fake API, no double posts, retries, the token, JPEG squares
           php tools/view_harness.php data igpost
+          # Auto publish (2.38.0, SCOPE §81): the Bluesky text and link facet, connecting, a fake Bluesky (once only, a lost reply, an expired session,
+          # a card too big), the button's networks and states, an Instagram day taken over and dropped, pass rushers and a keys side on Instagram
+          php tools/view_harness.php data autopub
+          grep -q "add_action( 'admin_post_dbd_auto_publish'" plugin/down-by-down/includes/class-dbd-autopub.php
           grep -q "'down-by-down-share', 'Share pack'" plugin/down-by-down/includes/admin/settings.php
           node --check plugin/down-by-down/assets/pack.js
           # the events: share from the card button and both copy-link buttons; sign_up once per session on the confirmed landing

@@ -13,6 +13,8 @@
  *   - 2.34.1 (SCOPE §77): new Meta apps only get "API setup with Unified login", whose system-user token starts EAA, goes to
  *     graph.facebook.com, posts as an Instagram account ID set beside it, and never runs out. That kind is checked every week
  *     instead of renewed, and warned about only when Instagram stops taking it. An IG… token still works as before.
+ *   - 2.38.0 (SCOPE §81): Auto publish posts one item now (auto()): any pack item, pass rushers and each keys side too. An item whose day
+ *     is still to come posts now and its day is dropped, since the day's run finds the record already sent.
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
@@ -67,6 +69,8 @@ class DBD_Instagram {
 	public static function lasting( $t = null ) { $t = $t ?? self::token(); return $t && (int) ( $t['expires'] ?? 0 ) === 0; }
 	public static function connected() { $t = self::token(); return $t && ! empty( $t['user_id'] ) && ( self::lasting( $t ) || (int) ( $t['expires'] ?? 0 ) > time() ); }
 	public static function on() { return self::settings()['on'] && self::connected() && DBD_Card::jpg_ok(); }
+	/** Can post at all (Auto publish, SCOPE §81): connected and able to make JPEGs, whatever the weekly switch says. */
+	public static function can_post() { return self::connected() && DBD_Card::jpg_ok(); }
 
 	/** One call to the API: array( HTTP code, JSON, error text ('' when fine) ). GETs carry their fields in the address, POSTs in the body. */
 	public static function api( $method, $path, $args = array(), $token = null, $versioned = true ) {
@@ -156,7 +160,14 @@ class DBD_Instagram {
 	/* ------------------------------------------------------------------ the week's posts */
 
 	public static function key( $season, $n, $slot ) { return (int) $season . '-w' . (int) $n . '-' . $slot; }
-	public static function parse( $key ) { return preg_match( '/^(\d{4})-w(\d{1,2})-(carousel|swing|snaps|offense|targets|leaders)$/', (string) $key, $m ) ? array( (int) $m[1], (int) $m[2], $m[3] ) : null; }
+	/** A post key's season, week and slot: the weekly slots, or an item only Auto publish posts (pass rushers, a keys side; SCOPE §81). */
+	public static function parse( $key ) { return preg_match( '/^(\d{4})-w(\d{1,2})-(carousel|swing|snaps|offense|targets|leaders|rush|keys-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}-[A-Z]{2,3})$/', (string) $key, $m ) ? array( (int) $m[1], (int) $m[2], $m[3] ) : null; }
+	/** A slot's name in a sentence: 'the biggest swing', 'pass rushers', 'the Bills keys'. */
+	public static function label( $slot ) {
+		if ( isset( self::LABEL[ $slot ] ) ) { return self::LABEL[ $slot ]; }
+		if ( $slot === 'rush' ) { return 'pass rushers'; }
+		return preg_match( '/^keys-.+-([A-Z]{2,3})$/', (string) $slot, $m ) ? 'the ' . ( DBD_Data::team( $m[1] )['nick'] ?? $m[1] ) . ' keys' : (string) $slot;
+	}
 
 	/** When a slot of week $n posts: 9:00 AM Eastern, its days after the week's Tuesday (the date counted in Eastern time, so DST can't move it). */
 	public static function slot_time( $n, $slot ) {
@@ -173,6 +184,12 @@ class DBD_Instagram {
 		$out = array(); if ( count( $items ) >= 2 ) { $out['carousel'] = $items; }
 		foreach ( array_keys( self::SLOTS ) as $sl ) { if ( isset( $by[ $sl ] ) ) { $out[ $sl ] = array( $by[ $sl ] ); } }
 		return $out;
+	}
+	/** The items a slot shows: the plan's, or for an item outside it (Auto publish), the item itself when it has a square. */
+	public static function items_of( $n, $slot ) {
+		$plan = self::plan( $n ); if ( ! empty( $plan[ $slot ] ) ) { return $plan[ $slot ]; }
+		if ( $slot === 'carousel' ) { return array(); }
+		$it = DBD_Pack::find( $n, $slot ); return $it && ! empty( $it['sq'] ) ? array( $it ) : array();
 	}
 
 	/** The carousel's caption: "Week 10 in five charts:", a line a slide, the bio line, then #NFL, #FantasyFootball and the teams (15 tags at most). */
@@ -244,8 +261,8 @@ class DBD_Instagram {
 	public static function publish( $key ) {
 		$kp = self::parse( $key ); if ( ! $kp ) { return array( '', 'not a post key' ); }
 		list( , $n, $slot ) = $kp; $t = self::token(); $uid = (string) ( $t['user_id'] ?? '' );
-		$plan = self::plan( $n ); if ( empty( $plan[ $slot ] ) ) { return array( '', 'there’s no ' . self::LABEL[ $slot ] . ' for Week ' . $n ); }
-		$items = $plan[ $slot ]; $job = self::job( $key ) ?: array(); $cid = (string) ( $job['container'] ?? '' );
+		$items = self::items_of( $n, $slot ); if ( ! $items ) { return array( '', 'there’s no ' . self::label( $slot ) . ' for Week ' . $n ); }
+		$job = self::job( $key ) ?: array(); $cid = (string) ( $job['container'] ?? '' );
 		if ( $cid !== '' ) {
 			$st = self::status_of( $cid );
 			if ( $st === 'PUBLISHED' ) { return array( (string) ( $job['media'] ?? '' ), '' ); }
@@ -284,7 +301,7 @@ class DBD_Instagram {
 		$st = (string) $job['state']; if ( ! $force && $st !== 'booked' && strpos( $st, 'retrying' ) !== 0 ) { return; }
 		if ( $st === 'sent' ) { return; }
 		$force = $force || ! empty( $job['force'] );  /* Try again on the tab overrides the cutoff */
-		if ( ! self::on() ) { self::job_set( $key, array( 'state' => 'not posted: Instagram posting is off or not connected' ) ); return; }
+		if ( ! ( empty( $job['auto'] ) ? self::on() : self::can_post() ) ) { self::job_set( $key, array( 'state' => 'not posted: Instagram posting is off or not connected' ) ); return; }  /* Auto publish needs only the connection */
 		list( $season, $n, $slot ) = $kp;
 		if ( (int) DBD_Data::season() !== $season ) { self::job_set( $key, array( 'state' => 'not posted: a new season started' ) ); return; }
 		if ( ! $force && time() > (int) ( $job['slot_at'] ?? $job['at'] ?? 0 ) + self::LATE ) { self::job_set( $key, array( 'state' => 'not posted: more than a day late' ) ); return; }  /* retries too (Greptile, PR #144) */
@@ -302,7 +319,7 @@ class DBD_Instagram {
 		if ( $t < self::TRIES ) { self::job_set( $key, array( 'tries' => $t, 'state' => 'retrying: ' . $err ) ); wp_schedule_single_event( time() + self::RETRY, self::HOOK, array( $key ) ); return; }
 		self::job_set( $key, array( 'tries' => $t, 'state' => 'failed: ' . $err ) );
 		$kp = self::parse( $key );
-		wp_mail( DBD_Email::test_to(), 'Down by Down: Instagram didn’t take ' . self::LABEL[ $kp[2] ?? 'carousel' ] . ' for Week ' . (int) ( $kp[1] ?? 0 ),
+		wp_mail( DBD_Email::test_to(), 'Down by Down: Instagram didn’t take ' . self::label( $kp[2] ?? 'carousel' ) . ' for Week ' . (int) ( $kp[1] ?? 0 ),
 			'It failed ' . self::TRIES . " times over an hour.\n\nThe last error: $err\n\nTry again on the Share pack tab: " . admin_url( 'admin.php?page=down-by-down-share' ) . "\n" );
 	}
 
@@ -339,6 +356,20 @@ class DBD_Instagram {
 			. ( $next ? ' Next: ' . self::LABEL[ $next[0] ] . ', ' . $when( $next[1]['at'] ) . '.' : '' );
 		$link = (string) ( $last[1]['link'] ?? '' ); $warn = self::warning();
 		return $warn !== '' ? array( 'warn', $txt . ' ' . $warn, $link, '' ) : array( 'ok', $txt, $link, '' );
+	}
+
+	/**
+	 * Auto publish (SCOPE §81): post this item now. Its record is set to go right away (a booked day's record is taken over, so that day
+	 * finds it sent and posts nothing), then the post runs in the background, since Instagram can take minutes. Returns '' or why not.
+	 */
+	public static function auto( $key ) {
+		if ( ! self::parse( $key ) ) { return 'not a post key'; }
+		if ( ! self::can_post() ) { return 'Instagram isn’t connected.'; }
+		$j = self::job( $key ); if ( ( $j['state'] ?? '' ) === 'sent' ) { return ''; }
+		$f = array( 'state' => 'booked', 'at' => time(), 'tries' => 0, 'force' => true, 'auto' => true );
+		if ( ! $j ) { add_option( self::OPT_JOB . $key, $f + array( 'slot_at' => time() ), '', false ); } else { self::job_set( $key, $f ); }
+		wp_schedule_single_event( time(), self::HOOK, array( $key ) ); if ( function_exists( 'spawn_cron' ) ) { spawn_cron(); }
+		return '';
 	}
 
 	private static function back( $args ) { wp_safe_redirect( add_query_arg( array_merge( array( 'page' => 'down-by-down-share' ), $args ), admin_url( 'admin.php' ) ) . '#dbd-pack-settings' ); exit; }

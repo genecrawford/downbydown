@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.37.0
+Stable tag: 2.38.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,12 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.38.0 =
+* Auto publish (SCOPE §81): each Share pack item, and each team's row in Keys to the game, gets an Auto publish button. After a short confirm it posts the item to Instagram (its square and caption, as a single post) and Bluesky (its text, with the link clickable and the card as the preview).
+* Nothing posts twice: a network that already has the item is left out, and with both done the button reads Published. Each item shows a line per network with its View link, or what went wrong.
+* An item whose Instagram day is still to come posts now, and its day is dropped.
+* Bluesky connects once with an app password in the Share pack settings, which also choose the networks the button posts to. Reddit, X and Facebook keep their buttons.
 
 = 2.37.0 =
 * A chart on every position tab of Leaders (SCOPE §80): wide receivers and tight ends (target share against EPA a target), backs (touches a game against yards a touch) and quarterbacks (EPA a dropback against CPOE). Each comes from the tab's own boards, with dots sized by volume and the top six on each axis named.
