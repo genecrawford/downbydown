@@ -142,7 +142,7 @@ class DBD_Card {
 
 	/** Card keys: a player id, team-MIN, game-2026_08_MIN_DET, page-hub / page-week-8 / page-leaders … */
 	public static function valid( $key ) {
-		return (bool) preg_match( '/^(\d{2}-\d{7}|team-[A-Z]{2,3}|game-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}|page-(hub|season|matchups|teams|players|leaders|myteam|week-\d{1,2}|fantasy-\d{1,2}|draft-\d{4}|combine-\d{4})|pack-week-\d{1,2}-(snaps|targets|offense|leaders|rush)|ig-week-\d{1,2}-(swing|snaps|offense|targets|leaders|rush|keys-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}-[A-Z]{2,3}))$/', (string) $key );
+		return (bool) preg_match( '/^(\d{2}-\d{7}|team-[A-Z]{2,3}|game-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}|page-(hub|season|matchups|teams|players|leaders|myteam|week-\d{1,2}|fantasy-\d{1,2}|draft-\d{4}|combine-\d{4})|pack-week-\d{1,2}-(snaps|targets|offense|leaders|rush)|ig-week-\d{1,2}-(swing|snaps|offense|targets|leaders|rush|keys-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}-[A-Z]{2,3})|tall-week-\d{1,2}-(black|paper)-(' . DBD_Tall::SLOTS . '))$/', (string) $key );
 	}
 
 	/** The card a route shares: the player's, the team's, the game's, the first compared player's, or the page card. */
@@ -174,7 +174,7 @@ class DBD_Card {
 
 	/** A square as a JPEG (SCOPE §76): Instagram's API takes JPEG only. Only the Instagram squares come this way. */
 	public static function jpg_ok() { return function_exists( 'imagejpeg' ) && function_exists( 'imagetypes' ) && ( imagetypes() & IMG_JPG ); }  /* Greptile, PR #144 */
-	public static function wants_jpg( $key ) { return strpos( (string) $key, 'ig-' ) === 0 && isset( $_GET['fmt'] ) && $_GET['fmt'] === 'jpg'; }
+	public static function wants_jpg( $key ) { return strpos( (string) $key, 'tall-' ) === 0 || ( strpos( (string) $key, 'ig-' ) === 0 && isset( $_GET['fmt'] ) && $_GET['fmt'] === 'jpg' ); }  /* the tall graphics (SCOPE §85) are always JPEG */
 	public static function jpg_url( $key ) { return add_query_arg( array( 'fmt' => 'jpg' ), self::url( $key ) ); }
 
 	public static function dir() { $up = wp_upload_dir(); return trailingslashit( $up['basedir'] ) . 'down-by-down/cards'; }
@@ -190,7 +190,9 @@ class DBD_Card {
 		$fetch = function ( $url ) { $r = wp_remote_get( $url, array( 'timeout' => 5 ) ); return ( ! is_wp_error( $r ) && (int) wp_remote_retrieve_response_code( $r ) === 200 ) ? wp_remote_retrieve_body( $r ) : null; };
 		$im = self::render( $key, $fetch ); if ( ! $im ) { return array( '', 404 ); }
 		/* write beside the final name, then rename into place, so a request arriving mid-write never streams a half-written PNG */
-		$tmp = $dir . '/.' . wp_generate_password( 12, false ) . '.tmp'; $ok = $jpg ? imagejpeg( $im, $tmp, 90 ) : imagepng( $im, $tmp, 6 ); imagedestroy( $im );
+		$tmp = $dir . '/.' . wp_generate_password( 12, false ) . '.tmp'; $ok = $jpg ? imagejpeg( $im, $tmp, 90 ) : imagepng( $im, $tmp, 6 );
+		if ( $ok && $jpg && strpos( $key, 'tall-' ) === 0 ) { foreach ( array( 82, 72 ) as $q ) { clearstatcache( true, $tmp ); if ( filesize( $tmp ) < 950000 ) { break; } $ok = imagejpeg( $im, $tmp, $q ); } }  /* under Bluesky's 1 MB (SCOPE §85) */
+		imagedestroy( $im );
 		if ( ! $ok || ! file_exists( $tmp ) || filesize( $tmp ) < 1000 || ! @rename( $tmp, $file ) ) { @unlink( $tmp ); return array( '', 500 ); }
 		return array( $file, 0 );
 	}
@@ -232,6 +234,7 @@ class DBD_Card {
 			if ( $pm[2] === 'leaders' ) { $s = DBD_Pack::spec_leaders( (int) $pm[1] ); if ( ! $s ) { return null; } foreach ( $s['logos'] as $t ) { $assets['logos'][ $t ] = $logo( $t ); } return self::draw_leaders( $s, $assets ); }  /* SCOPE §75 */
 			$s = DBD_Pack::spec_riser( (int) $pm[1], $pm[2] ); if ( ! $s ) { return null; } $assets['logos'][ $s['team'] ] = $logo( $s['team'] ); return self::draw_riser( $s, $assets );
 		}
+		if ( strpos( $key, 'tall-' ) === 0 ) { return DBD_Tall::render( $key, $fetch ); }  /* the tall social graphics (SCOPE §85) */
 		if ( strpos( $key, 'ig-' ) === 0 ) {  /* the Instagram square (SCOPE §73): the headline over the item's own card */
 			$sq = DBD_Pack::spec_square( $key ); if ( ! $sq || ! self::valid( $sq['card'] ) ) { return null; }
 			$inner = self::render( $sq['card'], $fetch ); if ( ! $inner ) { return null; }
@@ -243,12 +246,23 @@ class DBD_Card {
 		return self::draw_page( $s, $assets );
 	}
 
-	/** A team's logo bytes when logos are on, kept under uploads for 30 days so a card render doesn't fetch the same logo twice. */
-	private static function logo_bin( $abbr, $fetch ) {
+	/** A team's logo bytes when logos are on, kept under uploads for 30 days so a card render doesn't fetch the same logo twice. $dark: the version for dark backgrounds, or the plain one if it has none (SCOPE §85). */
+	public static function logo_bin( $abbr, $fetch, $dark = false ) {
 		$url = DBD_Data::logo( $abbr ); if ( ! $url ) { return null; }
-		$dir = self::dir() . '/logos'; $f = $dir . '/' . preg_replace( '/[^A-Z]/', '', $abbr ) . '.png';
+		if ( $dark ) { $du = str_replace( '/500/', '/500-dark/', $url ); if ( $du === $url ) { $dark = false; } else { $url = $du; } }
+		$dir = self::dir() . '/logos'; $f = $dir . '/' . preg_replace( '/[^A-Z]/', '', $abbr ) . ( $dark ? '-d' : '' ) . '.png';
 		if ( is_readable( $f ) && filemtime( $f ) > time() - 30 * DAY_IN_SECONDS ) { $b = file_get_contents( $f ); return $b !== false && $b !== '' ? $b : null; }
-		$b = $fetch( $url ); if ( ! $b ) { return null; }
+		$b = $fetch( $url ); if ( ! $b ) { return $dark ? self::logo_bin( $abbr, $fetch, false ) : null; }
+		if ( wp_mkdir_p( $dir ) ) { @file_put_contents( $f, $b ); }
+		return $b;
+	}
+
+	/** A player's headshot as a transparent PNG (the NFL's image address asks for one), kept under uploads for 30 days like the logos (SCOPE §85). */
+	public static function head_bin( $id, $url, $fetch ) {
+		if ( ! $url || ! preg_match( '/^\d{2}-\d{7}$/', (string) $id ) ) { return null; }
+		$dir = self::dir() . '/heads'; $f = $dir . '/' . $id . '.png';
+		if ( is_readable( $f ) && filemtime( $f ) > time() - 30 * DAY_IN_SECONDS ) { $b = file_get_contents( $f ); return $b !== false && $b !== '' ? $b : null; }
+		$b = $fetch( str_replace( 'f_auto,q_auto', 'f_png,q_auto,w_900', (string) $url ) ); if ( ! $b ) { return null; }
 		if ( wp_mkdir_p( $dir ) ) { @file_put_contents( $f, $b ); }
 		return $b;
 	}

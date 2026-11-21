@@ -32,8 +32,9 @@ class DBD_X {
 
 	/* ------------------------------------------------------------------ the connection */
 
-	public static function settings() { $o = get_option( self::OPT_SET, null ); return array( 'on' => is_array( $o ) ? ! empty( $o['on'] ) : true ); }
-	public static function sanitize( $v ) { return array( 'on' => is_array( $v ) && ! empty( $v['on'] ) ); }
+	/** 'img': attach the tall graphic (SCOPE §85). Off until the first upload's charge is checked, since X's rate card lists no price for it. */
+	public static function settings() { $o = get_option( self::OPT_SET, null ); return array( 'on' => is_array( $o ) ? ! empty( $o['on'] ) : true, 'img' => is_array( $o ) && ! empty( $o['img'] ) ); }
+	public static function sanitize( $v ) { return array( 'on' => is_array( $v ) && ! empty( $v['on'] ), 'img' => is_array( $v ) && ! empty( $v['img'] ) ); }
 	public static function conn() { $c = get_option( self::OPT_CONN, null ); return is_array( $c ) && ! empty( $c['ck'] ) && ! empty( $c['at'] ) ? $c : null; }
 	public static function connected() { $c = self::conn(); return $c && ! empty( $c['id'] ); }
 	public static function on() { return self::settings()['on'] && self::connected(); }
@@ -127,19 +128,34 @@ class DBD_X {
 		return array( '', '' );
 	}
 
+	/** The item's tall graphic uploaded to X: array( media ID or '', error ). No graphic to send is no error: the post goes as text and link. */
+	private static function upload( $n, $it ) {
+		$f = DBD_Tall::file( $n, $it ); if ( $f === '' ) { return array( '', '' ); }
+		list( , $j, $err ) = self::call( 'POST', 'media/upload', array( 'media' => base64_encode( (string) file_get_contents( $f ) ), 'media_category' => 'tweet_image' ) );
+		if ( $err !== '' || empty( $j['data']['id'] ) ) { return array( '', $err !== '' ? $err : 'X took no image' ); }
+		return array( (string) $j['data']['id'], '' );
+	}
+
 	/**
 	 * One post that may have gone out before: array( post ID, error ). A record already tried ($p['tried']) is looked for among the latest
 	 * posts first; a new try is marked ($mark) before it's sent. A refusal as a repeat is looked for again, so it's taken as the post it repeats.
+	 * With the graphic on, $it's image goes with it; a retry within 12 hours reuses the upload rather than paying for another.
 	 */
-	private static function part( $p, $text, $reply, $mark ) {
+	private static function part( $p, $text, $reply, $mark, $n = 0, $it = null ) {
 		$text = (string) ( $p['text'] ?? $text );  /* a retry sends and looks for the text tried first, even when a sync has changed the item since (Greptile, PR #151) */
 		if ( ! empty( $p['tried'] ) ) {
 			list( $id, $err ) = self::find( $text );
 			if ( $err !== '' ) { return array( '', 'X didn’t say whether the last try went out (' . $err . ')' ); }
 			if ( $id !== '' ) { self::count_one(); return array( $id, '' ); }  /* it went out on that try, uncounted (its reply was lost), and X charged it */
 		}
-		$mark( $text );
+		$mid = ''; $mat = 0;
+		if ( $it && self::settings()['img'] ) {
+			if ( ! empty( $p['mid'] ) && (int) ( $p['mid_at'] ?? 0 ) > time() - 12 * HOUR_IN_SECONDS ) { $mid = (string) $p['mid']; $mat = (int) $p['mid_at']; }
+			else { list( $mid, $merr ) = self::upload( $n, $it ); if ( $merr !== '' ) { return array( '', $merr ); } $mat = time(); }
+		}
+		$mark( $text, $mid, $mat );
 		$body = array( 'text' => (string) $text ); if ( $reply !== '' ) { $body['reply'] = array( 'in_reply_to_tweet_id' => (string) $reply ); }
+		if ( $mid !== '' ) { $body['media'] = array( 'media_ids' => array( $mid ) ); }
 		list( $code, $j, $err ) = self::call( 'POST', 'tweets', $body );
 		if ( $err === '' && ! empty( $j['data']['id'] ) ) { self::count_one(); return array( (string) $j['data']['id'], '' ); }
 		if ( $code === 403 && stripos( $err, 'duplicate' ) !== false ) { list( $id ) = self::find( $text ); if ( $id !== '' ) { self::count_one(); return array( $id, '' ); } }  /* a repeat of a try whose reply was lost */
@@ -169,7 +185,8 @@ class DBD_X {
 		if ( ! $held && ! self::lock( $key ) ) { return 'it’s already posting'; }
 		try {
 			$j = self::fresh_job( $key ) ?: array(); if ( ( $j['state'] ?? '' ) === 'sent' ) { return ''; }
-			list( $id, $err ) = self::part( $j, (string) DBD_Pack::social( $it )['x'], '', function ( $text ) use ( $key ) { self::job_set( $key, array( 'tried' => time(), 'text' => $text ) ); } );
+			$kp = DBD_Instagram::parse( $key );
+			list( $id, $err ) = self::part( $j, (string) DBD_Pack::social( $it )['x'], '', function ( $text, $mid = '', $mat = 0 ) use ( $key ) { self::job_set( $key, array( 'tried' => time(), 'text' => $text, 'mid' => $mid, 'mid_at' => $mat ) ); }, (int) ( $kp[1] ?? 0 ), $it );
 			if ( $err !== '' ) { return self::fail( $key, $err ); }
 			return self::sent( $key, $id, $auto );
 		} finally { if ( ! $held ) { self::unlock( $key ); } }
@@ -267,8 +284,8 @@ class DBD_X {
 				$p = (array) ( $parts[ $i ] ?? array() );
 				if ( empty( $p['id'] ) ) {
 					$text = $i ? self::reply_text( $items[ $i - 1 ], $i, $count ) : self::intro( $n, $count );
-					$mark = function ( $text ) use ( $key, &$parts, $i ) { $parts[ $i ] = array( 'tried' => time(), 'text' => $text ); self::job_set( $key, array( 'parts' => $parts ) ); };
-					list( $id, $err ) = self::part( $p, $text, $prev, $mark );
+					$mark = function ( $text, $mid = '', $mat = 0 ) use ( $key, &$parts, $i ) { $parts[ $i ] = array( 'tried' => time(), 'text' => $text, 'mid' => $mid, 'mid_at' => $mat ); self::job_set( $key, array( 'parts' => $parts ) ); };
+					list( $id, $err ) = self::part( $p, $text, $prev, $mark, $n, $i ? $items[ $i - 1 ] : null );
 					if ( $err !== '' ) { return self::fail( $key, $err ); }
 					$parts[ $i ] = array( 'id' => $id ); self::job_set( $key, array( 'parts' => $parts ) );
 				}

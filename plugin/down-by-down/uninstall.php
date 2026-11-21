@@ -21,7 +21,7 @@ foreach ( array( 'dbd_pack_mail', 'dbd_pack_mail_set', 'dbd_pack_sub', 'dbd_pack
 wp_unschedule_hook( 'dbd_pack_mail_send' ); wp_unschedule_hook( 'dbd_ig_send' ); wp_unschedule_hook( 'dbd_ig_refresh' ); wp_unschedule_hook( 'dbd_bsky_send' ); wp_unschedule_hook( 'dbd_x_send' ); wp_unschedule_hook( 'dbd_th_send' ); wp_unschedule_hook( 'dbd_th_refresh' );
 global $wpdb; $wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE 'dbd\\_ig\\_job\\_%' OR option_name LIKE 'dbd\\_ig\\_lock\\_%'" );  /* Instagram's per-post records (SCOPE §76) */
 /* Auto publish (SCOPE §81): the networks, the Bluesky connection and session, its per-post records */
-foreach ( array( 'dbd_ap_set', 'dbd_bsky_conn' ) as $o ) { delete_option( $o ); } delete_transient( 'dbd_bsky_session' );
+foreach ( array( 'dbd_ap_set', 'dbd_bsky_conn', 'dbd_pack_look' ) as $o ) { delete_option( $o ); } delete_transient( 'dbd_bsky_session' );
 $wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE 'dbd\\_bsky\\_job\\_%' OR option_name LIKE 'dbd\\_bsky\\_lock\\_%' OR option_name LIKE 'dbd\\_x\\_job\\_%' OR option_name LIKE 'dbd\\_x\\_lock\\_%' OR option_name LIKE 'dbd\\_x\\_count\\_%' OR option_name LIKE 'dbd\\_th\\_job\\_%' OR option_name LIKE 'dbd\\_th\\_lock\\_%'" );
 
 $u   = wp_upload_dir();

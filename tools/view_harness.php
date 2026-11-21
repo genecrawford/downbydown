@@ -76,7 +76,7 @@ function wp_schedule_single_event() {} function wp_next_scheduled() { return fal
 
 /* ---- the plugin, minus the bootstrap and admin. The SEO class extends a WordPress sitemap base class; an empty stand-in lets it load. */
 if ( ! class_exists( 'WP_Sitemaps_Provider' ) ) { class WP_Sitemaps_Provider { public $name = ''; public $object_type = ''; } }
-foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-kicker', 'class-dbd-defense', 'class-dbd-scatter', 'class-dbd-rush', 'class-dbd-week', 'class-dbd-fanweek', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-boards', 'class-dbd-sync', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo', 'class-dbd-blocks', 'class-dbd-post', 'class-dbd-news', 'class-dbd-email', 'class-dbd-videos', 'class-dbd-growth', 'class-dbd-signup', 'class-dbd-pack', 'class-dbd-pack-mail', 'class-dbd-instagram', 'class-dbd-bluesky', 'class-dbd-x', 'class-dbd-threads', 'class-dbd-autopub', 'class-dbd-board-mail' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
+foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-kicker', 'class-dbd-defense', 'class-dbd-scatter', 'class-dbd-rush', 'class-dbd-week', 'class-dbd-fanweek', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-boards', 'class-dbd-sync', 'class-dbd-tall', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo', 'class-dbd-blocks', 'class-dbd-post', 'class-dbd-news', 'class-dbd-email', 'class-dbd-videos', 'class-dbd-growth', 'class-dbd-signup', 'class-dbd-pack', 'class-dbd-pack-mail', 'class-dbd-instagram', 'class-dbd-bluesky', 'class-dbd-x', 'class-dbd-threads', 'class-dbd-autopub', 'class-dbd-board-mail' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
 
 if ( getenv( 'DBD_HARNESS_SIGN' ) ) { $GLOBALS['dbd_opt'] = array( 'dbd_email' => array( 'on' => true, 'key' => 'harness', 'list' => 4, 'tpl' => 5 ) ); }  /* the email set up, so pages draw the signup strip (SCOPE §66) */
 if ( getenv( 'DBD_HARNESS_NOW' ) && class_exists( 'DBD_News' ) ) { DBD_News::$now = (int) getenv( 'DBD_HARNESS_NOW' ); }
@@ -176,6 +176,7 @@ if ( $view === 'urls' ) {
 if ( getenv( 'DBD_HARNESS_SEASON' ) ) { if ( ! DBD_Data::use_season( (int) getenv( 'DBD_HARNESS_SEASON' ) ) ) { fwrite( STDERR, 'no archived season ' . getenv( 'DBD_HARNESS_SEASON' ) . "\n" ); exit( 2 ); } }
 
 /* ---- a share card (SCOPE §26, §43): php tools/view_harness.php data card <key> <out.png>. Logos and photos only with DBD_HARNESS_LOGOS. */
+DBD_Tall::$off = $view !== 'tall';  /* the modes below test the text-and-card fallback; 'tall' and the end of 'autopub' test the graphics (SCOPE §85) */
 if ( $view === 'card' ) {
 	$out = $argv[4] ?? 'card.png';
 	if ( ! DBD_Card::available() ) { fwrite( STDERR, "GD with FreeType is not available\n" ); exit( 3 ); }
@@ -184,7 +185,7 @@ if ( $view === 'card' ) {
 	if ( ! $im ) { fwrite( STDERR, "render( $arg ) returned nothing\n" ); exit( 4 ); }
 	imagepng( $im, $out, 6 ); imagedestroy( $im ); $sz = getimagesize( $out );
 	echo "card $arg: {$sz[0]}x{$sz[1]}, " . round( microtime( true ) - $t0, 2 ) . "s, $warnings warnings -> $out\n";
-	$want = strpos( (string) $arg, 'ig-' ) === 0 ? array( 1080, 1080 ) : array( 1200, 630 );  /* the Instagram squares (SCOPE §73) */
+	$want = strpos( (string) $arg, 'tall-' ) === 0 ? array( 1080, 1350 ) : ( strpos( (string) $arg, 'ig-' ) === 0 ? array( 1080, 1080 ) : array( 1200, 630 ) );  /* the Instagram squares (SCOPE §73) */
 	exit( $sz[0] === $want[0] && $sz[1] === $want[1] && ! $warnings ? 0 : 5 );
 }
 
@@ -542,7 +543,7 @@ if ( $view === 'autopub' ) {
 				if ( $nsid === 'com.atproto.repo.getRecord' ) { $r = $GLOBALS['bs']['records'][ $q['rkey'] ?? '' ] ?? null; return $r ? $ok( array( 'uri' => 'at://did:plc:dbd/app.bsky.feed.post/' . $q['rkey'], 'cid' => 'bafyrei' . $q['rkey'], 'value' => $r ) ) : $no( 400, 'RecordNotFound', 'Could not locate record' ); }
 				if ( $GLOBALS['bs']['expire'] > 0 && $auth === 'Bearer jwt1' ) { $GLOBALS['bs']['expire']--; return $no( 400, 'ExpiredToken', 'Token has expired' ); }
 				if ( strpos( $auth, 'Bearer jwt' ) !== 0 ) { return $no( 401, 'AuthMissing', 'Authentication Required' ); }
-				if ( $nsid === 'com.atproto.repo.uploadBlob' ) { return ( $a['headers']['Content-Type'] ?? '' ) === 'image/png' && substr( $raw, 1, 3 ) === 'PNG' ? $ok( array( 'blob' => array( '$type' => 'blob', 'ref' => array( '$link' => 'bafy' ), 'mimeType' => 'image/png', 'size' => strlen( $raw ) ) ) ) : $no( 400, 'InvalidRequest', 'not a png' ); }
+				if ( $nsid === 'com.atproto.repo.uploadBlob' ) { $bt = (string) ( $a['headers']['Content-Type'] ?? '' ); return ( $bt === 'image/png' && substr( $raw, 1, 3 ) === 'PNG' ) || ( $bt === 'image/jpeg' && substr( $raw, 0, 2 ) === "\xFF\xD8" ) ? $ok( array( 'blob' => array( '$type' => 'blob', 'ref' => array( '$link' => 'bafy' ), 'mimeType' => $bt, 'size' => strlen( $raw ) ) ) ) : $no( 400, 'InvalidRequest', 'not a png' ); }
 				if ( $nsid === 'com.atproto.repo.createRecord' ) {
 					if ( ! empty( $GLOBALS['bs']['failn'] ) && --$GLOBALS['bs']['failn'] === 0 ) { return $no( 500, 'InternalServerError', 'Internal Server Error' ); }  /* refused: nothing kept */
 					if ( isset( $GLOBALS['bs']['records'][ $b['rkey'] ] ) ) { return $no( 400, 'InvalidRequest', 'Record already exists' ); }
@@ -586,10 +587,11 @@ if ( $view === 'autopub' ) {
 				$xno = function ( $c, $d ) { return array( 'response' => array( 'code' => $c ), 'body' => json_encode( array( 'title' => 'Error', 'detail' => $d, 'status' => $c ) ) ); };
 				if ( strpos( $auth, 'OAuth ' ) !== 0 || strpos( $auth, 'oauth_consumer_key="ck1"' ) === false || ! preg_match( '/oauth_signature="[^"]{20,}"/', $auth ) ) { return $xno( 401, 'Unauthorized' ); }
 				if ( $path === 'users/me' ) { return strpos( $auth, 'oauth_token="at-other"' ) !== false ? $ok( array( 'data' => array( 'id' => '77', 'username' => 'someone_else' ) ) ) : $ok( array( 'data' => array( 'id' => '99', 'username' => 'dxd_NFLfootball' ) ) ); }
+				if ( $path === 'media/upload' ) { $GLOBALS['xs']['up'] = (int) ( $GLOBALS['xs']['up'] ?? 0 ) + 1; return ( $b['media_category'] ?? '' ) === 'tweet_image' && substr( (string) base64_decode( (string) ( $b['media'] ?? '' ) ), 0, 2 ) === "\xFF\xD8" ? $ok( array( 'data' => array( 'id' => 'mid' . $GLOBALS['xs']['up'] ) ) ) : $xno( 400, 'bad media' ); }
 				if ( $path === 'tweets' && $a['method'] === 'POST' ) {
 					if ( ! empty( $GLOBALS['xs']['failn'] ) && --$GLOBALS['xs']['failn'] === 0 ) { return $xno( 503, 'Service Unavailable' ); }
 					foreach ( $GLOBALS['xs']['posts'] as $p0 ) { if ( $p0['text'] === $b['text'] ) { return $xno( 403, 'You are not allowed to create a Tweet with duplicate content.' ); } }
-					$id = (string) ( 1000 + count( $GLOBALS['xs']['posts'] ) ); $GLOBALS['xs']['posts'][] = array( 'id' => $id, 'text' => $b['text'], 'reply' => (string) ( $b['reply']['in_reply_to_tweet_id'] ?? '' ) );
+					$id = (string) ( 1000 + count( $GLOBALS['xs']['posts'] ) ); $GLOBALS['xs']['posts'][] = array( 'id' => $id, 'text' => $b['text'], 'reply' => (string) ( $b['reply']['in_reply_to_tweet_id'] ?? '' ), 'media' => (array) ( $b['media']['media_ids'] ?? array() ) );
 					if ( $GLOBALS['xs']['lose'] ) { $GLOBALS['xs']['lose'] = false; return $xno( 502, 'Bad Gateway' ); }  /* it went out, but the reply was lost */
 					return array( 'response' => array( 'code' => 201 ), 'body' => json_encode( array( 'data' => array( 'id' => $id, 'text' => $b['text'] ) ) ) );
 				}
@@ -893,8 +895,66 @@ if ( $view === 'autopub' ) {
 		unset( $GLOBALS['dbd_opt']['dbd_th_set'] );
 		$GLOBALS['dbd_opt']['dbd_pack_th'] = 'someone_else'; $e = DBD_Threads::save( array( 'dbd_th_set' => array( 'on' => '1' ), 'dbd_th_token_new' => 'short1' ) );
 		$ck( 'a changed Threads account forgets the token first, whatever else was pasted', ! DBD_Threads::conn() && strpos( $e, 'Paste the app’s Threads App secret' ) === 0, $e ); unset( $GLOBALS['dbd_opt']['dbd_pack_th'] );
+		/* ---- the tall graphics on every network (SCOPE §85) */
+		DBD_Bluesky::$max_blob = 1000000; DBD_Tall::$off = false; DBD_Pack::$now = 0; $GLOBALS['xs']['posts'] = array(); $GLOBALS['thf']['posts'] = array(); $GLOBALS['thf']['c'] = array(); $GLOBALS['bs']['records'] = array();
+		$GLOBALS['dbd_opt']['dbd_bsky_conn'] = array( 'pass' => 'good-pass', 'handle' => 'downbydown.bsky.social', 'did' => 'did:plc:dbd', 'checked' => time() );
+		$GLOBALS['dbd_opt']['dbd_x_conn'] = array( 'ck' => 'ck1', 'cs' => 'cs1', 'at' => 'at1', 'as' => 'as1', 'id' => '99', 'username' => 'dxd_NFLfootball', 'checked' => time() ); $GLOBALS['dbd_opt']['dbd_pack_x'] = 'dxd_NFLfootball';
+		$GLOBALS['dbd_opt']['dbd_th_conn'] = array( 'token' => 'long1', 'secret' => 'sec1', 'id' => 'th99', 'username' => 'down_by_down', 'expires' => time() + 40 * 86400, 'checked' => time(), 'err' => '' );
+		unset( $GLOBALS['dbd_opt']['dbd_ap_set'] ); $bi = DBD_Pack::find( $n, 'board' ); $bk = DBD_Instagram::key( $season, $n, 'board' );
+		$ck( 'League Leaders: on the plan for Monday 9:00 AM, not in the carousel', $bi && isset( DBD_Instagram::plan( $n )['board'] ) && ! in_array( 'board', array_column( DBD_Instagram::plan( $n )['carousel'] ?? array(), 'k' ), true ) && wp_date( 'D G:i', DBD_Instagram::slot_time( $n, 'board' ), new DateTimeZone( 'America/New_York' ) ) === 'Mon 9:00' );
+		foreach ( array( 'dbd_ig_job_', 'dbd_bsky_job_', 'dbd_x_job_', 'dbd_th_job_' ) as $o ) { unset( $GLOBALS['dbd_opt'][ $o . $bk ] ); } $GLOBALS['hcalls'] = array();
+		$errs = DBD_AutoPub::publish( $n, 'board' ); DBD_Instagram::send( $bk, true ); $im = $igcalls( '178/media' ); $rc = $bcalls( 'com.atproto.repo.createRecord' ); $em = $rc[0][3]['record']['embed'] ?? array();
+		$tc = array_values( array_filter( $GLOBALS['hcalls'], function ( $x ) { return $x[0] === 'th' && $x[1] === 'POST' && $x[2] === 'th99/threads'; } ) ); $tp = $tc[0][3] ?? array(); $tkey = 'tall-week-' . $n . '-black-board';
+		$ck( 'Auto publish reaches all four, no errors', ! $errs && DBD_Instagram::job( $bk )['state'] === 'sent' && DBD_Bluesky::job( $bk )['state'] === 'sent' && DBD_X::job( $bk )['state'] === 'sent' && DBD_Threads::job( $bk )['state'] === 'sent', json_encode( $errs ) );
+		$ck( 'Instagram gets the tall JPEG', strpos( $im[0][3]['image_url'] ?? '', 'card=' . $tkey ) !== false && strpos( $im[0][3]['image_url'], 'fmt=jpg' ) !== false, json_encode( $im[0][3] ?? null ) );
+		$ck( 'Bluesky: an image embed at 4:5 with alt text, the link still in a facet', ( $em['$type'] ?? '' ) === 'app.bsky.embed.images' && ( $em['images'][0]['aspectRatio'] ?? null ) === array( 'width' => 1080, 'height' => 1350 ) && ( $em['images'][0]['alt'] ?? '' ) === $bi['tl'] && ( $em['images'][0]['image']['mimeType'] ?? '' ) === 'image/jpeg' && ! empty( $rc[0][3]['record']['facets'] ), json_encode( $em ) );
+		$ck( 'X stays text and link until its switch is on', empty( $GLOBALS['xs']['up'] ) && $GLOBALS['xs']['posts'][0]['media'] === array(), json_encode( $GLOBALS['xs']['posts'] ) );
+		$ck( 'Threads: an IMAGE post with the link in its text, 500 at most', ( $tp['media_type'] ?? '' ) === 'IMAGE' && strpos( $tp['image_url'] ?? '', 'card=' . $tkey ) !== false && strpos( $tp['text'] ?? '', DBD_Pack::share_link( $bi ) ) !== false && mb_strlen( $tp['text'] ) <= 500 && ! isset( $tp['link_attachment'] ), json_encode( $tp ) );
+		$GLOBALS['dbd_opt']['dbd_x_set'] = array( 'on' => true, 'img' => true ); unset( $GLOBALS['dbd_opt'][ 'dbd_x_job_' . $bk ] ); $GLOBALS['xs']['posts'] = array(); $GLOBALS['xs']['failn'] = 1; $GLOBALS['hcalls'] = array();
+		$e1 = DBD_X::post( $bk, $bi ); $j1 = DBD_X::job( $bk ); $e2 = DBD_X::post( $bk, $bi ); $xup = array_filter( $GLOBALS['hcalls'], function ( $x ) { return $x[0] === 'x' && $x[2] === 'media/upload'; } );
+		$ck( 'X with the switch on: uploads once, retries with the same upload, the post carries it', $e1 !== '' && ( $j1['mid'] ?? '' ) !== '' && $e2 === '' && count( $xup ) === 1 && $GLOBALS['xs']['posts'][0]['media'] === array( $j1['mid'] ), json_encode( $GLOBALS['xs']['posts'] ) );
+		$kg0 = null; foreach ( DBD_Pack::keys( $n ) as $kg ) { if ( ! DBD_Router::is_final( $kg['g'] ) ) { $kg0 = $kg; break; } }
+		if ( $kg0 ) {
+			$sd = $kg0['sides'][0]; $sl = DBD_AutoPub::slot( $n, $sd ); $tick = strtotime( DBD_Data::kickoff( $kg0['g'] )['utc'] );
+			foreach ( array( 'dbd_ig_job_', 'dbd_bsky_job_', 'dbd_x_job_', 'dbd_th_job_' ) as $o ) { unset( $GLOBALS['dbd_opt'][ $o . DBD_AutoPub::key( $n, $sl ) ] ); }  /* a clean side, whatever the checks above posted */
+			DBD_Pack::$now = $tick - 60; $before = DBD_Pack::find( $n, $sl ) !== null && DBD_AutoPub::ready( $n, $sl, $sd ) !== array() && DBD_Card::render( DBD_Tall::key( $n, $sl ) ) !== null;
+			DBD_Pack::$now = $tick; $after = DBD_Pack::find( $n, $sl ) === null && DBD_AutoPub::ready( $n, $sl, $sd ) === array() && DBD_Card::render( DBD_Tall::key( $n, $sl ) ) === null && isset( DBD_AutoPub::publish( $n, $sl )['item'] );
+			$ck( 'a keys side: offered and drawn before kickoff; no button, no graphic, no post from kickoff on', $before && $after );
+		} else { echo "  (no game left to kick off this week; skipped the keys check)\n"; }
+		DBD_Tall::$off = true; DBD_Pack::$now = null;
 	} catch ( Throwable $e ) { fwrite( STDERR, 'FATAL in autopub: ' . $e->getMessage() . ' at ' . basename( $e->getFile() ) . ':' . $e->getLine() . "\n" ); exit( 1 ); }
 	echo "autopub week $n: $bad problems, $warnings warnings\n"; exit( $bad || $warnings ? 1 : 0 );
+}
+/* ---- the tall graphics (SCOPE §85): every post in both looks at 1080×1350 under 1 MB, long names, the fallbacks, League Leaders and the weekly look. Images land in $arg/ */
+if ( $view === 'tall' ) {
+	$GLOBALS['dbd_opt'] = array(); $dir = $arg ?: 'tall'; if ( ! is_dir( $dir ) ) { mkdir( $dir ); } $bad = 0; $ck = function ( $what, $ok, $got = '' ) use ( &$bad ) { echo '  ' . ( $ok ? 'ok' : 'WRONG' ) . ": $what" . ( $ok ? '' : " (got: $got)" ) . "\n"; $bad += ! $ok; };
+	$fetch = getenv( 'DBD_HARNESS_LOGOS' ) ? function ( $u ) { $b = @file_get_contents( $u, false, stream_context_create( array( 'http' => array( 'timeout' => 10 ) ) ) ); return $b ?: null; } : null;
+	$save = function ( $im, $name ) use ( $dir, $ck ) { if ( ! $im ) { $ck( "$name draws", false ); return; } $f = "$dir/$name.jpg"; imagejpeg( $im, $f, 90 ); $w = imagesx( $im ); $h = imagesy( $im ); imagedestroy( $im ); $sz = filesize( $f ); if ( $w !== 1080 || $h !== 1350 || $sz >= 1000000 ) { $ck( "$name: 1080×1350 under 1 MB", false, "$w x $h, $sz" ); } };
+	try {
+		$n = DBD_Pack::newest(); $W = DBD_Week::file( $n ); $rush = (int) DBD_Rush::through(); $nk = array(); foreach ( DBD_Pack::keys( $n ) as $kg ) { if ( ! DBD_Router::is_final( $kg['g'] ) ) { $nk[] = $kg; } }
+		$t0 = PHP_INT_MAX; foreach ( $nk as $kg ) { $t0 = min( $t0, (int) strtotime( DBD_Data::kickoff( $kg['g'] )['utc'] ) ); } DBD_Pack::$now = $t0 - 60;
+		$slots = array( 'board', 'swing', 'snaps', 'offense', 'targets', 'leaders' ); foreach ( $nk as $kg ) { foreach ( $kg['sides'] as $sd ) { $slots[] = DBD_AutoPub::slot( $n, $sd ); } } $c = 0; $sec = microtime( true );
+		foreach ( array( 'black', 'paper' ) as $look ) { foreach ( $slots as $i => $sl ) { $k = DBD_Tall::key( $n, $sl, $look ); $ck0 = DBD_Card::valid( $k ); if ( ! $ck0 ) { $ck( "$k is a valid key", false ); } $im = DBD_Card::render( $k, $fetch ); $c++; if ( strpos( $sl, 'keys-' ) === 0 && $i > 7 && $look === 'paper' ) { if ( $im ) { imagedestroy( $im ); } continue; } $save( $im, $look . '-' . str_replace( '_', '-', $sl ) ); } }
+		$dr = new ReflectionMethod( 'DBD_Tall', 'draw_rush' ); $dr->setAccessible( true );
+		foreach ( array( 'black', 'paper' ) as $look ) { $save( $dr->invoke( null, $rush, $look, $fetch ), $look . '-rush' ); }
+		echo "  drew $c graphics in " . round( microtime( true ) - $sec, 1 ) . "s\n";
+		$GLOBALS['dbd_opt']['dbd_headshots'] = false; $save( DBD_Card::render( DBD_Tall::key( $n, 'board', 'black' ), $fetch ), 'nophoto-board' ); $save( DBD_Card::render( DBD_Tall::key( $n, 'snaps', 'paper' ), $fetch ), 'nophoto-snaps' ); $save( DBD_Card::render( DBD_Tall::key( $n, 'leaders', 'black' ), $fetch ), 'nophoto-leaders' ); unset( $GLOBALS['dbd_opt']['dbd_headshots'] );
+		$bd = new ReflectionMethod( 'DBD_Tall', 'board' ); $bd->setAccessible( true ); $long = array(); for ( $i = 0; $i < 11; $i++ ) { $long[] = array( 'id' => '00-00000' . sprintf( '%02d', $i ), 'full' => 'Christopher Oluwaseun Amon-Ra St. Brown-Montgomery III', 't' => 'JAX', 'num' => 88, 'vs' => '12,345', 'x' => '12.5 SACKS' ); }
+		$save( $bd->invoke( null, new DBD_Tall_Canvas( 'black', null ), array( 'LEAGUE LEADERS', 'RECEIVING YARDS' ), 'THROUGH WEEK 18', $long, 'RECEIVING YARDS' ), 'long-names' );
+		foreach ( array( 'tall-week-99-black-swing', 'tall-week-99-paper-board', 'tall-week-' . $n . '-paper-keys-2026_99_AAA_BBB-AAA' ) as $k ) { $ck( "$k draws nothing", DBD_Card::render( $k ) === null ); }
+		foreach ( array( 'tall-week-1-red-swing', 'tall-week-1-black-nope', 'tall-week-123-black-swing' ) as $k ) { $ck( "$k isn't a valid key", ! DBD_Card::valid( $k ) ); }
+		/* League Leaders: the rotation, the order, the top 11 */
+		$seen = array(); for ( $w = 1; $w <= 8; $w++ ) { $seen[ DBD_Tall::stat( $w )[0] ] = 1; } $ck( 'eight weeks show all eight stats', count( $seen ) === 8 ); $ck( 'Week 10 is rushing TDs', DBD_Tall::stat( 10 )[0] === 'rushing_tds' );
+		foreach ( range( max( 1, $n - 7 ), $n ) as $w ) { $s = DBD_Tall::board_spec( $w ); if ( ! $s ) { echo "  (Week $w: no " . DBD_Tall::stat( $w )[1] . " board from this data)\n"; continue; } $R = $s['rows']; $o = count( $R ) <= 11; foreach ( $R as $i => $r ) { if ( $i && ( $R[ $i - 1 ]['v'] < $r['v'] || ( $R[ $i - 1 ]['v'] == $r['v'] && strcmp( DBD_Pack::last( $R[ $i - 1 ]['full'] ), DBD_Pack::last( $r['full'] ) ) > 0 ) ) ) { $o = false; } } $ck( 'Week ' . $w . ' ' . $s['stat'][1] . ': top 11, most first, ties by last name (' . $R[0]['full'] . ' ' . $R[0]['vs'] . ')', $o ); }
+		$it = DBD_Pack::board_item( $n ); $ck( 'its post: names the stat and the week, fits X', $it && strpos( $it['tl'], 'through Week ' . $n ) !== false && DBD_Pack::xlen( $it['post'] ) <= 280 && DBD_Card::valid( $it['sq'] ), json_encode( $it['tl'] ?? null ) ); echo '  ' . ( $it['tl'] ?? '' ) . "\n";
+		/* the weekly look */
+		$ws = DBD_Pack::weeks(); $a = $ws[0]; $b = $ws[1] ?? $ws[0];
+		$ck( 'Black the first time', DBD_Tall::look( $a ) === 'black' && DBD_Tall::key( $a, 'swing' ) === "tall-week-$a-black-swing" );
+		DBD_Tall::set_look( $a, 'paper' ); $ck( 'a pick changes only its week; the others keep what they had', DBD_Tall::look( $a ) === 'paper' && ( $a === $b || DBD_Tall::look( $b ) === 'black' ) && DBD_Tall::key( $a, 'swing' ) === "tall-week-$a-paper-swing" );
+		$ck( 'a new week starts with the last pick', DBD_Tall::look( 99 ) === 'paper' ); DBD_Tall::set_look( 99, 'black' ); $ck( 'and the week before keeps its own', DBD_Tall::look( $a ) === 'paper' && DBD_Tall::look( 98 ) === 'black' );
+		$ck( 'a look that doesn’t exist is refused', DBD_Tall::set_look( $a, 'neon' ) === false && DBD_Tall::look( $a ) === 'paper' );
+	} catch ( Throwable $e ) { fwrite( STDERR, 'FATAL in tall: ' . $e->getMessage() . ' at ' . basename( $e->getFile() ) . ':' . $e->getLine() . "\n" ); exit( 1 ); }
+	echo "tall week $n: $bad problems, $warnings warnings\n"; exit( $bad || $warnings ? 1 : 0 );
 }
 if ( $view === 'packmail' ) {
 	$GLOBALS['dbd_opt'] = array( 'dbd_email' => array( 'on' => true, 'key' => 'xkeysib-test', 'list' => 3, 'tpl' => 5, 'test' => 'gene@example.test' ) );
@@ -948,8 +1008,8 @@ if ( $view === 'packmail' ) {
 		$ck( 'a team-subreddit Post link on every keys side (2.29.1)', $nt === $nk && substr_count( $h, '>Post to r/' ) === count( DBD_Pack::items( $n ) ) + 2 * $nk, $nt . ' of ' . $nk );
 		$ck( 'the email\'s Post links carry ?share= for the pack cards', strpos( $h, 'reddit.com/r/downbydown/submit?url=' ) !== false && strpos( $h, 'share%3Dpack-week-' . $n . '-' ) !== false );
 		$ck( 'a Post on X and a Post on Bluesky link for every item and keys side (2.30.0)', substr_count( $h, '>Post on X</a>' ) === count( DBD_Pack::items( $n ) ) + $nk && substr_count( $h, '>Post on Bluesky</a>' ) === count( DBD_Pack::items( $n ) ) + $nk, substr_count( $h, '>Post on X</a>' ) . ' X, ' . substr_count( $h, '>Post on Bluesky</a>' ) . ' Bluesky' );
-		$ck( 'Share on Facebook and Square for Instagram on every item and keys side (2.31.0)', substr_count( $h, '>Share on Facebook</a>' ) === count( DBD_Pack::items( $n ) ) + $nk && substr_count( $h, '>Square for Instagram</a>' ) === count( DBD_Pack::items( $n ) ) + $nk, substr_count( $h, '>Share on Facebook</a>' ) . ' Facebook, ' . substr_count( $h, '>Square for Instagram</a>' ) . ' squares' );
-		$ck( 'an Instagram caption for every item and keys side', substr_count( $h, 'Full chart: link in bio' ) === count( DBD_Pack::items( $n ) ) + $nk && substr_count( $h, 'Instagram caption, with the square' ) === count( DBD_Pack::items( $n ) ) && strpos( $h, 'card=ig-week-' . $n . '-' ) !== false && strpos( $h, 'sharer.php?u=' ) !== false );
+		$ck( 'Share on Facebook and Graphic for Instagram on every item and keys side (2.31.0)', substr_count( $h, '>Share on Facebook</a>' ) === count( DBD_Pack::items( $n ) ) + $nk && substr_count( $h, '>Graphic for Instagram</a>' ) === count( DBD_Pack::items( $n ) ) + $nk, substr_count( $h, '>Share on Facebook</a>' ) . ' Facebook, ' . substr_count( $h, '>Graphic for Instagram</a>' ) . ' graphics' );
+		$ck( 'an Instagram caption for every item and keys side', substr_count( $h, 'Full chart: link in bio' ) === count( DBD_Pack::items( $n ) ) + $nk && substr_count( $h, 'Instagram caption, with the graphic' ) === count( DBD_Pack::items( $n ) ) && strpos( $h, 'card=tall-week-' . $n . '-' ) !== false && strpos( $h, 'sharer.php?u=' ) !== false );
 		$ck( 'the X and Bluesky links carry the share link', strpos( $h, 'https://x.com/intent/post?text=' ) !== false && strpos( $h, 'https://bsky.app/intent/compose?text=' ) !== false && strpos( $h, 'share%3Dpack-week-' . $n . '-snaps' ) !== false );
 		$ck( 'a Post on Threads link for every item and keys side, with the page as its card (2.42.0)', substr_count( $h, '>Post on Threads</a>' ) === count( DBD_Pack::items( $n ) ) + $nk && strpos( $h, 'https://www.threads.com/intent/post?text=' ) !== false && preg_match( '/intent\/post\?text=[^"]+&(amp;)?url=https%3A%2F%2F/', $h ), substr_count( $h, '>Post on Threads</a>' ) . ' Threads' );
 		$keep = $GLOBALS['dbd_opt']; $GLOBALS['dbd_opt'][ DBD_Pack::OPT_X ] = ''; $GLOBALS['dbd_opt'][ DBD_Pack::OPT_BSKY ] = ''; $GLOBALS['dbd_opt'][ DBD_Pack::OPT_TH ] = '';
@@ -1005,7 +1065,7 @@ if ( $view === 'pack' ) {
 	$ck( in_array( 'rush', $ks, true ) === ( $n === DBD_Rush::through() ), 'pass rushers only for the week the defense files run through (SCOPE §79)' );
 	foreach ( $items as $it ) { if ( $it['k'] === 'rush' ) { $ck( strpos( $it['link'], 'rush' ) !== false && strpos( $it['link'], 'def' ) === false, 'pass rushers link to their own tab (SCOPE §80), got ' . $it['link'] ); } }
 	foreach ( $items as $it ) { $ck( isset( DBD_Pack::NUM[ $it['k'] ] ), $it['k'] . ': a fixed number' ); }
-	$ck( DBD_Pack::NUM === array( 'swing' => 1, 'snaps' => 2, 'offense' => 3, 'targets' => 4, 'leaders' => 5, 'rush' => 6, 'keys' => 7 ), 'the fixed numbers' );
+	$ck( DBD_Pack::NUM === array( 'swing' => 1, 'snaps' => 2, 'offense' => 3, 'targets' => 4, 'leaders' => 5, 'rush' => 6, 'keys' => 7, 'board' => 8 ), 'the fixed numbers' );
 	/* Week leaders (2.33.0, SCOPE §75): each panel's leader is the box score's top, worked out here on its own */
 	$bx = DBD_Data::get( 'box/w' . $n . '.json' ); $br = array();
 	foreach ( (array) ( $bx['games'] ?? array() ) as $g ) { foreach ( array( 'away', 'home' ) as $sd ) { foreach ( (array) ( $g[ $sd ]['off'] ?? array() ) as $r ) { $x = array_combine( $bx['keys'], $r ); $x['td'] = $x['rushing_tds'] + $x['receiving_tds']; $x['t'] = $g[ $sd ]['team']; $br[] = $x; } } }
@@ -1185,10 +1245,10 @@ if ( $view === 'admin' ) {
 	$want['sp'] = array( 'Week ', ' pack</h2>', 'name="week"', 'Click where you want to post.', 'Change the list', 'class="sp-open"',
 		'The biggest swing', 'A usage riser', 'Best and worst offense', 'A target-share mover', 'Week leaders', '-leaders.png"', 'Keys to the game, Week ', 'Post it', 'Also fits r/',
 		'<details class="sp-tx"><summary>Texts to copy</summary>', 'Reddit title', 'Reddit first comment, with the link', 'X and Bluesky', ' of 280', 'Instagram caption', 'class="button button-small sp-cp"',
-		'download="dbd-week-', 'card=pack-week-', 'Download square for Instagram', 'card=ig-week-', 'Download the game card',
+		'download="dbd-week-', 'card=pack-week-', 'Download graphic', 'card=tall-week-', 'Download the game card',
 		'class="button sp-rd" aria-label="Post to r/downbydown"', 'https://www.reddit.com/r/downbydown/submit?url=', 'share%3Dpack-week-', '>r/downbydown</a>',
 		'class="button sp-x" aria-label="Post on X"', 'https://x.com/intent/post?text=', 'class="button sp-bs" aria-label="Post on Bluesky"', 'https://bsky.app/intent/compose?text=', 'class="button sp-th" aria-label="Post on Threads"', 'https://www.threads.com/intent/post?text=', '>Threads</a>',
-		'class="button sp-fb"', 'sharer.php?u=', '>Facebook</a>', 'class="button sp-cp sp-ig"', '>Instagram</button>', 'aria-label="Download square for Instagram">Square</a>',
+		'class="button sp-fb"', 'sharer.php?u=', '>Facebook</a>', 'class="button sp-cp sp-ig"', '>Instagram</button>', 'aria-label="Download the graphic">Graphic</a>',
 		'<details class="dbd-box sp-set" id="dbd-pack-settings"', 'Settings: the Tuesday email, your accounts, Instagram, Bluesky, X and Threads posting', 'value="dbd_pack_settings"', 'name="dbd_pack_mail_set[on]"', 'name="dbd_pack_mail_set[to]"', 'Brevo isn’t set up',
 		'name="dbd_pack_sub"', 'name="dbd_pack_x"', 'name="dbd_pack_bsky"', 'name="dbd_pack_fb"', 'name="dbd_pack_ig"', 'Open the group', 'Save settings', 'id="dbd-pack-settings"><summary>', 'Instagram posting', 'name="dbd_ig_set[on]"', 'name="dbd_ig_set[account]"', 'name="dbd_ig_token_new"', 'Paste the token from your Meta app', 'Instagram isn’t connected yet.' );  /* SCOPE §68, §71–74; the settings box starts closed */
 	array_push( $want['sp'], 'class="sp-ap"', 'class="sp-apd"', '<summary class="button button-primary">Auto publish</summary>', 'value="dbd_auto_publish"', 'name="slot" value="swing"', 'to Bluesky now?</b>', 'Posts it to Bluesky now.', 'class="button button-primary sp-apgo"', 'class="button sp-apx"', 'id="sp-swing"', 'id="sp-keys-', 'name="slot" value="keys-',

@@ -300,8 +300,8 @@ function dbd_settings_page() {
 		.dbd-admin .sp-mail{margin:0 0 18px;color:#50575e}
 		.dbd-admin .sp-item{max-width:1100px}
 		.dbd-admin .sp-ih{display:flex;align-items:baseline;gap:10px;padding:12px 16px 0}.dbd-admin .sp-ih h2{font-size:15px;margin:0;padding:0;border:0}.dbd-admin .sp-no{font-weight:600;color:#646970}
-		.dbd-admin .sp-body{display:grid;grid-template-columns:400px minmax(0,1fr);gap:20px;padding:12px 16px 16px}
-		.dbd-admin .sp-card{display:block}.dbd-admin .sp-card img{display:block;width:100%;height:auto;aspect-ratio:1200/630;border:1px solid #dcdcde;background:#f4f1ea}
+		.dbd-admin .sp-body{display:grid;grid-template-columns:320px minmax(0,1fr);gap:20px;padding:12px 16px 16px}
+		.dbd-admin .sp-card{display:block}.dbd-admin .sp-card img{display:block;width:100%;height:auto;aspect-ratio:1080/1350;border:1px solid #dcdcde;background:#f4f1ea}.dbd-admin .sp-look{display:inline-flex;align-items:center;gap:6px;margin:0}.dbd-admin .sp-look .button[aria-pressed=true]{background:#1d2327;border-color:#1d2327;color:#fff}
 		.dbd-admin .sp-dl{display:flex;flex-wrap:wrap;gap:6px 14px;margin:8px 0 0}
 		.dbd-admin .sp-tk{font-size:15px;line-height:1.5;margin:0 0 14px}
 		.dbd-admin .sp-pl{margin:0 0 6px;font-weight:600}
@@ -546,7 +546,8 @@ function dbd_pack_settings_box( $n ) {
 					echo '<p class="description">Make one in Bluesky: Settings → Privacy and security → App passwords → Add. It’s checked when you save, and never shown again.</p>';
 				} ?></div>
 			<div class="sp-sh">X posting</div>
-			<span>Post it</span><div><label><input type="checkbox" name="<?php echo esc_attr( DBD_X::OPT_SET ); ?>[on]" value="1"<?php echo DBD_X::settings()['on'] ? ' checked' : ''; ?>> Post on Tuesday, then one item a day Wednesday to Sunday, 9:00 AM Eastern</label><p class="description" style="margin:4px 0 0">Tuesday is a thread: a first post naming the week, each item replying under it. Untick it and X posts only when you press Auto publish.</p></div>
+			<span>Post it</span><div><label><input type="checkbox" name="<?php echo esc_attr( DBD_X::OPT_SET ); ?>[on]" value="1"<?php echo DBD_X::settings()['on'] ? ' checked' : ''; ?>> Post on Tuesday, then one item a day Wednesday to Sunday, 9:00 AM Eastern</label><p class="description" style="margin:4px 0 0">Tuesday is a thread: a first post naming the week, each item replying under it. Untick it and X posts only when you press Auto publish.</p>
+				<label style="display:block;margin-top:8px"><input type="checkbox" name="<?php echo esc_attr( DBD_X::OPT_SET ); ?>[img]" value="1"<?php echo DBD_X::settings()['img'] ? ' checked' : ''; ?>> Attach the graphic to each X post</label><p class="description" style="margin:4px 0 0">Off, X posts stay text and link. X’s price list doesn’t show what an image upload costs, so check the first one on the usage page in the X console.</p></div>
 			<span>Account</span><div style="padding-top:5px"><?php echo DBD_Pack::our_x() !== '' ? '@' . esc_html( DBD_Pack::our_x() ) . ' <span class="description">(from Your accounts above)</span>' : '<span class="description">Add the X account above first.</span>'; ?></div>
 			<?php $xc = DBD_X::conn(); foreach ( DBD_X::KEYS as $f => $lab ) : ?>
 			<label for="dbd-x-<?php echo esc_attr( $f ); ?>"><?php echo esc_html( $lab ); ?></label><div><input type="password" id="dbd-x-<?php echo esc_attr( $f ); ?>" name="dbd_x_<?php echo esc_attr( $f ); ?>_new" value="" autocomplete="off" placeholder="<?php echo esc_attr( $xc ? 'Paste a new one to replace it' : 'Paste from the X Developer Console' ); ?>" style="width:420px;max-width:100%">
@@ -662,8 +663,8 @@ function dbd_pack_btn( $cls, $label, $aria, $href = '', $data = '' ) {
 	return $href !== '' ? '<a' . $a . ' href="' . esc_url( $href ) . '" target="_blank" rel="noopener">' . esc_html( $label ) . '</a>' : '<button type="button"' . $a . '>' . esc_html( $label ) . '</button>';
 }
 
-/** The row of places to post, always in this order: r/ours, r/the team's (keys), X, Bluesky, Facebook, Instagram, Square (keys), then Threads (2.42.0). */
-function dbd_pack_row( $it, $link, $team_sub = '', $square = false ) {
+/** The row of places to post, always in this order: r/ours, r/the team's (keys), X, Bluesky, Facebook, Instagram, Graphic (keys, before kickoff), then Threads (2.42.0). */
+function dbd_pack_row( $it, $link, $team_sub = '', $square = false, $n = 0 ) {
 	$o = ''; $sub = DBD_Pack::our_sub(); $t = DBD_Pack::social( $it );
 	if ( $sub !== '' ) { $o .= dbd_pack_btn( 'sp-rd', 'r/' . $sub, 'Post to r/' . $sub, DBD_Pack::reddit_url( $it['title'], $link ) ); }
 	if ( $team_sub !== '' && ( $ts = DBD_Pack::sanitize_sub( $team_sub ) ) !== '' ) { $o .= dbd_pack_btn( 'sp-rd', 'r/' . $ts, 'Post to r/' . $ts, DBD_Pack::reddit_url( $it['title'], $link, $ts ) ); }
@@ -671,7 +672,7 @@ function dbd_pack_row( $it, $link, $team_sub = '', $square = false ) {
 	$o .= dbd_pack_btn( 'sp-bs', 'Bluesky', 'Post on Bluesky', DBD_Pack::bsky_url( $t['bsky'] ) );
 	if ( ( $fu = DBD_Pack::fb_url( $it ) ) !== '' ) { $o .= dbd_pack_btn( 'sp-fb', 'Facebook', 'Share on Facebook: copies the text, then opens the share box', $fu, DBD_Pack::fb_text( $it ) ); }  /* pack.js copies data-t */
 	if ( ( $cap = DBD_Pack::ig_caption( $it ) ) !== '' ) { $o .= dbd_pack_btn( 'sp-cp sp-ig', 'Instagram', 'Copy for Instagram: the caption', '', $cap );
-		if ( $square && ! empty( $it['sq'] ) ) { $o .= '<a class="button sp-ig" href="' . esc_url( DBD_Card::url( $it['sq'] ) ) . '" download="' . esc_attr( $it['sqfile'] ?? 'dbd-square.png' ) . '" aria-label="Download square for Instagram">Square</a>'; } }
+		if ( $square && $n && ! empty( $it['sq'] ) ) { $o .= '<a class="button sp-ig" href="' . esc_url( DBD_Tall::preview( $n, $it ) ) . '" download="' . esc_attr( DBD_Tall::file_name( $n, $it ) ) . '" aria-label="Download the graphic">Graphic</a>'; } }
 	$o .= dbd_pack_btn( 'sp-th', 'Threads', 'Post on Threads', DBD_Pack::th_url( $it ) );
 	return '<div class="sp-row">' . $o . '</div>';
 }
@@ -702,25 +703,28 @@ function dbd_tab_share() {
 			<select name="week" aria-label="Week" onchange="this.form.submit()"><?php foreach ( $weeks as $w ) { echo '<option value="' . (int) $w . '"' . ( $w === $n ? ' selected' : '' ) . '>Week ' . (int) $w . '</option>'; } ?></select>
 			<noscript><button class="button">Show</button></noscript></form>
 		<?php if ( $tue ) { echo '<span class="sp-when">ready ' . esc_html( wp_date( 'l, M j', $tue ) ) . '</span>'; } ?>
+		<form class="sp-look" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="dbd_pack_look"><input type="hidden" name="week" value="<?php echo (int) $n; ?>"><?php wp_nonce_field( 'dbd_pack_look_' . $n ); $lk = DBD_Tall::look( $n ); ?>
+			<span>Look this week</span><button class="button" name="look" value="black" aria-pressed="<?php echo $lk === 'black' ? 'true' : 'false'; ?>">Black</button><button class="button" name="look" value="paper" aria-pressed="<?php echo $lk === 'paper' ? 'true' : 'false'; ?>">Paper</button></form>
 	</div>
-	<p class="sp-how">Click where you want to post. Reddit, X and Bluesky open with the post filled in. Facebook copies the text and opens its share box: choose Share to a group, then paste. Instagram copies the caption: post it with the square.</p>
+	<p class="sp-how">Click where you want to post. Reddit, X and Bluesky open with the post filled in. Facebook copies the text and opens its share box: choose Share to a group, then paste. Instagram copies the caption: post it with the graphic.</p>
 	<p class="sp-mail"><span class="dbd-dot <?php echo esc_attr( $ml[0] ); ?>"></span><?php echo esc_html( $ml[1] ); ?><?php if ( $ml[2] !== '' ) { echo ' <a class="button button-small" href="' . esc_url( DBD_Pack_Mail::again_url( $ml[2] ) ) . '">Try again</a>'; } ?> <a href="#dbd-pack-settings" class="sp-open">Change the list</a>
 		<?php $il = DBD_Instagram::line( $n ); if ( $il ) { echo '<br><span class="dbd-dot ' . esc_attr( $il[0] ) . '"></span>' . esc_html( $il[1] ) . ( $il[2] !== '' ? ' <a href="' . esc_url( $il[2] ) . '" target="_blank" rel="noopener">View on Instagram</a>' : '' ) . ( $il[3] !== '' ? ' <a class="button button-small" href="' . esc_url( DBD_Instagram::again_url( $il[3] ) ) . '">Try again</a>' : '' ) . ( ! DBD_Instagram::connected() ? ' <a href="#dbd-pack-settings" class="sp-open">Connect it</a>' : '' ); }
 		$bl = DBD_Bluesky::line( $n ); if ( $bl ) { echo '<br><span class="dbd-dot ' . esc_attr( $bl[0] ) . '"></span>' . esc_html( $bl[1] ) . ( $bl[2] !== '' ? ' <a href="' . esc_url( $bl[2] ) . '" target="_blank" rel="noopener">View on Bluesky</a>' : '' ) . ( $bl[3] !== '' ? ' <a class="button button-small" href="' . esc_url( DBD_Bluesky::again_url( $bl[3] ) ) . '">Try again</a>' : '' ); }
 		$xl = DBD_X::line( $n ); if ( $xl ) { echo '<br><span class="dbd-dot ' . esc_attr( $xl[0] ) . '"></span>' . esc_html( $xl[1] ) . ( $xl[2] !== '' ? ' <a href="' . esc_url( $xl[2] ) . '" target="_blank" rel="noopener">View on X</a>' : '' ) . ( $xl[3] !== '' ? ' <a class="button button-small" href="' . esc_url( DBD_X::again_url( $xl[3] ) ) . '">Try again</a>' : '' ); }
 		$tl = DBD_Threads::line( $n ); if ( $tl ) { echo '<br><span class="dbd-dot ' . esc_attr( $tl[0] ) . '"></span>' . esc_html( $tl[1] ) . ( $tl[2] !== '' ? ' <a href="' . esc_url( $tl[2] ) . '" target="_blank" rel="noopener">View on Threads</a>' : '' ) . ( $tl[3] !== '' ? ' <a class="button button-small" href="' . esc_url( DBD_Threads::again_url( $tl[3] ) ) . '">Try again</a>' : '' ); } ?></p>
 	<?php
-	foreach ( $items as $it ) {
-		$i = DBD_Pack::NUM[ $it['k'] ] ?? 0; $img = DBD_Card::url( $it['card'] );
+	$pack_item = function ( $it ) use ( $n ) {
+		$i = DBD_Pack::NUM[ $it['k'] ] ?? 0; $img = DBD_Card::url( $it['card'] ); $tall = DBD_Tall::preview( $n, $it );  /* the week's look: the switch is the preview (SCOPE §85) */
 		$also = array_values( array_filter( (array) $it['fits'] ) );
 		echo '<section class="dbd-box sp-item" id="' . esc_attr( 'sp-' . $it['k'] ) . '" data-k="' . esc_attr( $it['k'] ) . '"><div class="sp-ih"><span class="sp-no">' . (int) $i . '</span><h2>' . esc_html( $it['h'] ) . '</h2></div><div class="sp-body">'
-			. '<div class="sp-l"><a class="sp-card" href="' . esc_url( $it['link'] ) . '" target="_blank" rel="noopener" aria-label="Open the page"><img src="' . esc_url( $img ) . '" width="1200" height="630" alt="" loading="lazy"></a>'
-			. '<p class="sp-dl"><a href="' . esc_url( $img ) . '" download="' . esc_attr( $it['file'] ) . '">Download image</a>'
-			. ( DBD_Pack::our_ig() !== '' && ! empty( $it['sq'] ) ? '<a href="' . esc_url( DBD_Card::url( $it['sq'] ) ) . '" download="' . esc_attr( $it['sqfile'] ) . '">Download square for Instagram</a>' : '' ) . '</p></div>'
+			. '<div class="sp-l"><a class="sp-card" href="' . esc_url( $it['link'] ) . '" target="_blank" rel="noopener" aria-label="Open the page"><img src="' . esc_url( $tall ) . '" width="1080" height="1350" alt="" loading="lazy"></a>'
+			. '<p class="sp-dl"><a href="' . esc_url( $tall ) . '" download="' . esc_attr( DBD_Tall::file_name( $n, $it ) ) . '">Download graphic</a>'
+			. '<a href="' . esc_url( $img ) . '" download="' . esc_attr( preg_replace( '/\.jpg$/', '.png', $it['file'] ) ) . '">Download link card</a></p></div>'
 			. '<div class="sp-r"><p class="sp-tk">' . esc_html( $it['title'] ) . '</p><p class="sp-pl">Post it</p>' . dbd_pack_row( $it, DBD_Pack::share_link( $it ) ) . dbd_pack_auto( $n, $it )
 			. ( $also ? '<p class="sp-fits">Also fits ' . esc_html( implode( ', ', $also ) ) . ': post there by hand with the texts below.</p>' : '' )
 			. '<details class="sp-tx"><summary>Texts to copy</summary>' . dbd_pack_texts( $it ) . '</details></div></div></section>';
-	}
+	};
+	foreach ( $items as $it ) { $pack_item( $it ); }
 	if ( $keys ) {
 		$nk = function ( $t ) { return DBD_Data::team( $t )['nick'] ?? $t; };
 		echo '<section class="dbd-box sp-item" data-k="keys"><div class="sp-ih"><span class="sp-no">' . (int) DBD_Pack::NUM['keys'] . '</span><h2>' . esc_html( 'Keys to the game, Week ' . ( $n + 1 ) ) . '</h2></div>'
@@ -730,13 +734,14 @@ function dbd_tab_share() {
 			echo '<div class="sp-kg"><div class="sp-kgh"><b><a href="' . esc_url( $kg['link'] ) . '" target="_blank" rel="noopener">' . esc_html( $nk( $g['away'] ) . ' at ' . $nk( $g['home'] ) ) . '</a></b><a href="' . esc_url( $img ) . '" download="' . esc_attr( $kg['file'] ) . '">Download the game card</a></div>';
 			foreach ( $kg['sides'] as $sd ) {
 				echo '<div class="sp-ks" id="' . esc_attr( 'sp-' . DBD_AutoPub::slot( $n, $sd ) ) . '">' . DBD_Marks::tile_svg( $sd['t'], 24 ) . '<div class="sp-kt"><b>' . esc_html( $nk( $sd['t'] ) . ' offense.' ) . '</b> ' . esc_html( rtrim( $sd['head'], '.' ) ) . '. <span>' . esc_html( $sd['say'] ) . '</span></div>'
-					. dbd_pack_row( $sd, $sd['link'], $sd['fits'], true ) . dbd_pack_auto( $n, $sd + array( 'card' => $kg['card'] ) ) . '</div>';  /* ours, then the team's own subreddit (2.29.1) */
+					. dbd_pack_row( $sd, $sd['link'], $sd['fits'], ! DBD_Pack::started( $g ), $n ) . dbd_pack_auto( $n, $sd + array( 'card' => $kg['card'] ) ) . '</div>';  /* ours, then the team's own subreddit (2.29.1) */
 				$tx .= dbd_pack_texts( $sd, $nk( $sd['t'] ) . ': ' );
 			}
 			echo '<details class="sp-tx"><summary>Texts to copy</summary>' . $tx . '</details></div>';
 		}
 		echo '</section>';
 	}
+	if ( ( $bi = DBD_Pack::board_item( $n ) ) ) { $pack_item( $bi ); }  /* League Leaders, Mondays (SCOPE §85) */
 	dbd_pack_settings_box( $n );
 }
 

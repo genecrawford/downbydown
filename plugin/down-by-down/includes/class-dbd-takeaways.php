@@ -104,7 +104,7 @@ class DBD_Takeaways {
 		}
 
 		$cards = array();
-		$cards[] = array( 'Biggest edge', 'edge', $heads[ $best['k'] ][0] ?? ucfirst( DBD_Metrics::label( $best['k'] ) ), self::sentence( $best['k'], $O, $D ) );
+		$cards[] = array( 'Biggest edge', 'edge', $heads[ $best['k'] ][0] ?? ucfirst( DBD_Metrics::label( $best['k'] ) ), self::sentence( $best['k'], $O, $D ), $best['k'] );  /* the metric, for the keys graphic (SCOPE §85) */
 		if ( $opp ) { $cards[] = $opp; }
 		$cards[] = array( 'Watch out', 'warn', $heads[ $worst['k'] ][1] ?? ucfirst( DBD_Metrics::label( $worst['k'] ) ), self::sentence( $worst['k'], $O, $D ) );
 		if ( $wash ) { $cards[] = array( 'Wash', 'even', DBD_Metrics::label( $wash ), 'Call this one even. ' . self::sentence( $wash, $O, $D ) ); }

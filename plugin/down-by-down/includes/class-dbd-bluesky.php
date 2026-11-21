@@ -123,13 +123,14 @@ class DBD_Bluesky {
 	}
 
 	/** The record Bluesky keeps: the text, its facet, English, and the link preview (the item's title, its why or its say, and the card when given). */
-	public static function record( $it, $thumb = null, $now = null ) {
+	public static function record( $it, $thumb = null, $now = null, $image = null ) {
 		list( $t, $f ) = self::text( $it );
 		$ext = array( 'uri' => DBD_Pack::share_link( $it ), 'title' => (string) ( $it['title'] ?? '' ), 'description' => (string) ( $it['why'] ?? $it['say'] ?? '' ) );
 		if ( $thumb ) { $ext['thumb'] = $thumb; }
 		$r = array( '$type' => 'app.bsky.feed.post', 'text' => $t, 'createdAt' => gmdate( 'Y-m-d\TH:i:s.000\Z', (int) ( $now ?? time() ) ), 'langs' => array( 'en' ) );
 		if ( $f ) { $r['facets'] = $f; }
-		$r['embed'] = array( '$type' => 'app.bsky.embed.external', 'external' => $ext );
+		$r['embed'] = $image ? array( '$type' => 'app.bsky.embed.images', 'images' => array( array( 'image' => $image, 'alt' => (string) ( $it['tl'] ?? $it['title'] ?? '' ), 'aspectRatio' => array( 'width' => DBD_Tall::W, 'height' => DBD_Tall::H ) ) ) )  /* the tall graphic (SCOPE §85); the link stays clickable through its facet */
+			: array( '$type' => 'app.bsky.embed.external', 'external' => $ext );
 		return $r;
 	}
 
@@ -164,7 +165,7 @@ class DBD_Bluesky {
 			/* read the record again now the lock is ours, from the database itself: a press that finished meanwhile has posted it, and this
 			   request's option cache (which remembers a missing option too) wouldn't show that (Greptile, PR #149) */
 			$j = self::fresh_job( $key ); if ( ( $j['state'] ?? '' ) === 'sent' ) { return ''; }
-			list( $p, $err ) = self::part( $key, (array) ( $j ?? array() ), function ( $thumb ) use ( $it ) { return self::record( $it, $thumb ); }, $it, 'rkey' );
+			list( $p, $err ) = self::part( $key, (array) ( $j ?? array() ), function ( $thumb, $image = null ) use ( $it ) { return self::record( $it, $thumb, null, $image ); }, $it, 'rkey' );
 			if ( $err !== '' ) { return self::fail( $key, $err ); }
 			return self::sent( $key, $p['uri'], (string) $c['handle'], $auto );
 		} finally { if ( ! $held ) { self::unlock( $key ); } }
@@ -191,8 +192,16 @@ class DBD_Bluesky {
 			if ( $gc === 200 && ! empty( $gj['uri'] ) ) { return array( array( 'uri' => (string) $gj['uri'], 'cid' => (string) ( $gj['cid'] ?? '' ), 'rkey' => $rkey ), '' ); }
 			if ( $gc !== 400 && $gc !== 404 ) { return array( null, 'Bluesky didn’t say whether the last try went out; try again in a minute' ); }
 		} else { $rkey = self::tid(); $save( $rkey ); }
-		$thumb = null; $card = (string) ( $it['card'] ?? '' );
-		if ( $card !== '' ) {
+		$thumb = null; $image = null; $card = (string) ( $it['card'] ?? '' ); $kp = DBD_Instagram::parse( $key );
+		if ( $it && $kp ) {  /* the tall graphic, when it's drawn and under Bluesky's limit (SCOPE §85); the link card otherwise */
+			$gf = DBD_Tall::file( (int) $kp[1], $it );
+			if ( $gf !== '' && filesize( $gf ) <= self::$max_blob ) {
+				list( , $bj, $err ) = self::authed( 'com.atproto.repo.uploadBlob', (string) file_get_contents( $gf ), 'image/jpeg' );
+				if ( $err !== '' ) { return array( null, $err ); }
+				$image = $bj['blob'] ?? null;
+			}
+		}
+		if ( ! $image && $card !== '' ) {
 			list( $f ) = DBD_Card::ensure( $card );
 			if ( $f !== '' && filesize( $f ) <= self::$max_blob ) {
 				list( , $bj, $err ) = self::authed( 'com.atproto.repo.uploadBlob', (string) file_get_contents( $f ), 'image/png' );
@@ -200,7 +209,7 @@ class DBD_Bluesky {
 				$thumb = $bj['blob'] ?? null;
 			}
 		}
-		list( , $rj, $err ) = self::authed( 'com.atproto.repo.createRecord', array( 'repo' => $did, 'collection' => self::COL, 'rkey' => $rkey, 'record' => $make( $thumb ) ) );
+		list( , $rj, $err ) = self::authed( 'com.atproto.repo.createRecord', array( 'repo' => $did, 'collection' => self::COL, 'rkey' => $rkey, 'record' => $make( $thumb, $image ) ) );
 		if ( $err !== '' || empty( $rj['uri'] ) ) { return array( null, $err !== '' ? $err : 'Bluesky made no post' ); }
 		return array( array( 'uri' => (string) $rj['uri'], 'cid' => (string) ( $rj['cid'] ?? '' ), 'rkey' => $rkey ), '' );
 	}
@@ -300,9 +309,9 @@ class DBD_Bluesky {
 				$p = (array) ( $parts[ $i ] ?? array() );
 				if ( empty( $p['uri'] ) || empty( $p['cid'] ) ) {
 					$it = $i ? $items[ $i - 1 ] : array(); $r0 = $root; $pa = $parent;
-					$make = function ( $thumb ) use ( $i, $n, $items, $it, $r0, $pa ) {
+					$make = function ( $thumb, $image = null ) use ( $i, $n, $items, $it, $r0, $pa ) {
 						if ( ! $i ) { return self::intro( $n, count( $items ) ); }
-						return self::record( $it, $thumb ) + array( 'reply' => array( 'root' => $r0, 'parent' => $pa ) );
+						return self::record( $it, $thumb, null, $image ) + array( 'reply' => array( 'root' => $r0, 'parent' => $pa ) );
 					};
 					$save = function ( $rkey ) use ( $key, &$parts, $i ) { $parts[ $i ] = array( 'rkey' => $rkey ); self::job_set( $key, array( 'parts' => $parts ) ); };
 					list( $got, $err ) = self::part( $key, $p, $make, $it, 'rkey', $save );
