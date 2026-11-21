@@ -34,8 +34,8 @@ class DBD_Instagram {
 	const LIFE      = 60 * 86400;     /* a long-lived token's life */
 	const TZ        = 'America/New_York';
 	/* each slot and its day after the week's Tuesday */
-	const SLOTS = array( 'carousel' => 0, 'swing' => 1, 'snaps' => 2, 'offense' => 3, 'targets' => 4, 'leaders' => 5 );
-	const LABEL = array( 'carousel' => 'the carousel', 'swing' => 'the biggest swing', 'snaps' => 'the usage riser', 'offense' => 'best and worst offense', 'targets' => 'the target-share mover', 'leaders' => 'week leaders' );
+	const SLOTS = array( 'carousel' => 0, 'swing' => 1, 'snaps' => 2, 'offense' => 3, 'targets' => 4, 'leaders' => 5, 'board' => 6 );  /* Monday's League Leaders (SCOPE §85) */
+	const LABEL = array( 'carousel' => 'the carousel', 'swing' => 'the biggest swing', 'snaps' => 'the usage riser', 'offense' => 'best and worst offense', 'targets' => 'the target-share mover', 'leaders' => 'week leaders', 'board' => 'League Leaders' );
 
 	/** How to wait between status checks; the harness swaps it for one that doesn't. */
 	public static $wait = 'sleep';
@@ -161,7 +161,7 @@ class DBD_Instagram {
 
 	public static function key( $season, $n, $slot ) { return (int) $season . '-w' . (int) $n . '-' . $slot; }
 	/** A post key's season, week and slot: the weekly slots, or an item only Auto publish posts (pass rushers, a keys side; SCOPE §81). */
-	public static function parse( $key ) { return preg_match( '/^(\d{4})-w(\d{1,2})-(carousel|swing|snaps|offense|targets|leaders|rush|keys-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}-[A-Z]{2,3})$/', (string) $key, $m ) ? array( (int) $m[1], (int) $m[2], $m[3] ) : null; }
+	public static function parse( $key ) { return preg_match( '/^(\d{4})-w(\d{1,2})-(carousel|swing|snaps|offense|targets|leaders|board|rush|keys-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}-[A-Z]{2,3})$/', (string) $key, $m ) ? array( (int) $m[1], (int) $m[2], $m[3] ) : null; }
 	/** A slot's name in a sentence: 'the biggest swing', 'pass rushers', 'the Bills keys'. */
 	public static function label( $slot ) {
 		if ( isset( self::LABEL[ $slot ] ) ) { return self::LABEL[ $slot ]; }
@@ -183,6 +183,7 @@ class DBD_Instagram {
 		foreach ( $items as $it ) { $by[ $it['k'] ] = $it; }
 		$out = array(); if ( count( $items ) >= 2 ) { $out['carousel'] = $items; }
 		foreach ( array_keys( self::SLOTS ) as $sl ) { if ( isset( $by[ $sl ] ) ) { $out[ $sl ] = array( $by[ $sl ] ); } }
+		if ( ( $b = DBD_Pack::board_item( $n ) ) ) { $out['board'] = array( $b ); }  /* its own day, never in the carousel */
 		return $out;
 	}
 	/** The items a slot shows: the plan's, or for an item outside it (Auto publish), the item itself when it has a square. */
@@ -254,6 +255,9 @@ class DBD_Instagram {
 		return $st;
 	}
 
+	/** The picture for an item: its tall graphic in the week's look (SCOPE §85), or its square if the graphic can't be drawn. */
+	private static function image( $n, $it ) { $u = DBD_Tall::url( $n, $it ); return $u !== '' ? $u : DBD_Card::jpg_url( $it['sq'] ); }
+
 	/**
 	 * Post one slot: array( media id or '', error '' ). Reuses the job's container when Instagram still has it: PUBLISHED means it already
 	 * went out (a lost reply), FINISHED means publish it; anything else makes new ones.
@@ -274,14 +278,14 @@ class DBD_Instagram {
 			if ( $slot === 'carousel' ) {
 				$kids = array();
 				foreach ( $items as $it ) {
-					list( , $j, $err ) = self::api( 'POST', $uid . '/media', array( 'image_url' => DBD_Card::jpg_url( $it['sq'] ), 'is_carousel_item' => 'true' ) );
+					list( , $j, $err ) = self::api( 'POST', $uid . '/media', array( 'image_url' => self::image( $n, $it ), 'is_carousel_item' => 'true' ) );
 					if ( $err !== '' || empty( $j['id'] ) ) { return array( '', $err !== '' ? $err : 'Instagram made no slide' ); }
 					$kids[] = (string) $j['id'];
 				}
 				foreach ( $kids as $k ) { $st = self::ready( $k ); if ( $st !== 'FINISHED' ) { return array( '', 'a slide isn’t ready (' . ( $st !== '' ? $st : 'no answer' ) . ')' ); } }
 				list( , $j, $err ) = self::api( 'POST', $uid . '/media', array( 'media_type' => 'CAROUSEL', 'children' => implode( ',', $kids ), 'caption' => $cap ) );
 			} else {
-				list( , $j, $err ) = self::api( 'POST', $uid . '/media', array( 'image_url' => DBD_Card::jpg_url( $items[0]['sq'] ), 'caption' => $cap ) );
+				list( , $j, $err ) = self::api( 'POST', $uid . '/media', array( 'image_url' => self::image( $n, $items[0] ), 'caption' => $cap ) );
 			}
 			if ( $err !== '' || empty( $j['id'] ) ) { return array( '', $err !== '' ? $err : 'Instagram made no post' ); }
 			$cid = (string) $j['id']; self::job_set( $key, array( 'container' => $cid ) );

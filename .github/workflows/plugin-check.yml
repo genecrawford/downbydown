@@ -453,6 +453,16 @@ jobs:
         with:
           name: share-cards
           path: card-*.png
+      - name: The tall social graphics (SCOPE §85)
+        run: |
+          set -e
+          # every post in both looks at 1080x1350 under 1 MB, long names, the fallbacks, League Leaders and the weekly look
+          DBD_HARNESS_MEDIA=1 DBD_HARNESS_LOGOS=1 php tools/view_harness.php data tall tall-graphics
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tall-graphics
+          path: tall-graphics/
       - name: Readable URLs (SCOPE §43)
         run: |
           set -e

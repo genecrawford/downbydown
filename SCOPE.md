@@ -3373,7 +3373,7 @@ Gene, after 2.39.0 went live: "is there no way to make twitter/x work the same w
 
 **Tests:** the harness, with a fake X: the OAuth 1.0a signature against X's published example, booking once on the right days, skipping one past its cutoff and one already sent with Auto publish, a daily post and Tuesday as decided, a lost reply found among the last posts and not posted again, X's duplicate refusal, retries to the note and Try again, the switch off, the month's count, and the Auto publish button posting to all three.
 
-## 84. Threads on the same schedule (scoped and mocked 2026-11-20, `mockup-v57/`; all decided)
+## 84. Threads on the same schedule (scoped and mocked 2026-11-20, `mockup-v57/`; all decided; built as 2.41.0 and 2.41.1, with the Post on Threads button in 2.42.0, live and connected 2026-11-20)
 
 Gene, after X went live: "great, how about threads?" Then: "Scope it."
 
@@ -3403,4 +3403,47 @@ Gene, after X went live: "great, how about threads?" Then: "Scope it."
 2. **Tuesday: a thread,** like Bluesky's and X's. The first post names the week with the week page as its card, then each item with a square replies in pack order, each reply to the one before (`reply_to_id`). If Threads refuses a reply to a reply, the replies go under the first post instead. One record keeps the items chosen on the first try and each part's container and post ID, so a retry carries on from the last part that went out. The View link is the first post; the replies don't count as the items' own posts.
 
 **Tests:** the harness, with a fake Threads: connecting as decided (the wrong account refused), booking once on the right days, skipping one past its cutoff and one already sent with Auto publish, a daily post (the long takeaway, the card as `link_attachment`, no link in the text), Tuesday as decided, a published container whose reply was lost found and not posted again, retries to the note and Try again, the weekly renewal and its warning, the switch off, and Auto publish posting to all four.
+
+## 85. Cleaner social graphics (built as 2.43.0, 2026-11-21; mock `mockup-v58/`)
+
+Gene, showing the NFL's "League Leaders: Rushing TDs" post: "let's spec/mock some cleaner looking social media posts like this?" The idea taken from it is the layout (one tall graphic, one idea, a ranked board, big numbers, team colors). Nothing of the NFL's own branding or photography is copied.
+
+**What's wrong today:** each square is a 1200×630 website card shrunk under a long headline, so a stat line lands around 12px on a phone and the same sentence appears in the graphic and the caption.
+
+**What it does:**
+
+1. **A new tall graphic for each post,** 1080×1350 (4:5, the tallest feed size Instagram, Threads, X and Bluesky all show whole), drawn from the same pack data by `DBD_Card` with the plugin's fonts (Barlow Condensed, IBM Plex). Key content stays inside the middle 1012px, so Instagram's 3:4 profile grid doesn't cut it.
+2. **Three layouts cover everything:**
+   - **Ranked board:** league leaders, week leaders, best and worst offense, pass rushers.
+   - **Player spotlight:** the usage riser, the target-share mover (team-color block, the big number, the game-by-game bars).
+   - **Game:** the biggest swing, a keys side (the score or matchup, the big number, the chart).
+3. **The words stay the pack's.** Headings, the "say" lines and the numbers are what the pack already has; the long sentence moves to the caption where it belongs.
+4. **The website cards don't change.** The 1200×630 cards stay as the link previews and page images.
+5. **Week 10's data was checked against the NFL's graphic:** our rushing TD board matches its 11 players and counts exactly.
+
+**Two additions the mock turned up:**
+- **Defender photos.** The player files carry photos for offense only, so pass rushers and the sacks board would have none. `tools/build_data.py` already reads the nflverse roster that has them (952 of 955 rostered defenders, all 12 of the top pass rushers), so it adds `photo` to each defender.
+- **No keys post for a game that's started.** Keys stay in the pack after kickoff: on 2026-11-21, Thursday's Colts at Texans is final and its two keys rows still offer Auto publish. A keys side whose game has kicked off loses its Auto publish button and draws no graphic.
+
+**Decisions (Gene, 2026-11-21):**
+1. **"I like both, can you make it so I can choose week to week?"** Both looks get built, Black and Paper, with a **Look this week** switch at the top of each week's Share pack:
+   - The tab's graphics and download buttons show the week's look, so the switch is also the preview.
+   - Every post for that week uses it, on the schedule and on Auto publish. Posts already out stay as they went out; the ones still to come use the new pick.
+   - A new week starts with the look you picked last (Black the first time), so you only touch it when you want a change.
+   - The pick is kept per week (`dbd_pack_look`: week => `black` or `paper`), and the look is part of each graphic's address and cache name, so a change can't serve the old image.
+
+2. **"Use headshots."** The spotlight and board posts use the player's headshot on a team-color block, fetched and cached like the logos. They follow the site's `dbd_headshots` switch: turned off, or for a player with no photo, the post falls back to the team logo and the number (the layout in the mock), so a post never goes out with a gap.
+
+3. **On all four networks,** by Gene's standing rule that every network is treated like the others (§84). The tall graphic is the post's image on Instagram, X, Bluesky and Threads, with the item's text and its link in the text. Each network's way:
+   - **Instagram:** as now (the image and caption), with the graphic in place of the square. The Tuesday carousel uses the same graphics.
+   - **Bluesky:** `app.bsky.embed.images` with `aspectRatio` 4:5 and alt text, replacing the link-card embed. The link stays clickable through its facet. JPEG, kept under 1 MB.
+   - **X:** uploaded through `/2/media/upload`, attached with `media.media_ids`, the link in the text. X's rate card (read 2026-11-21) lists Post: Create with URL at $0.20, so a post costs what it does now. **It lists no price for the upload**, so the first live post is checked against the usage page in the console before the schedule uses it.
+   - **Threads:** `media_type=IMAGE` with `image_url`, the link in the text. **Meta's docs don't say whether a link in an image post's text is clickable,** so the first live post checks it. If it isn't, the link goes in a reply under the post.
+   - The 1200×630 cards stay as each page's own preview for anyone sharing a link by hand.
+
+4. **"Add it."** **League Leaders** is a new weekly post, **Monday at 9:00 AM Eastern**, the one day the schedule leaves free. A season board through the newest finished week, rotating one stat a week: passing yards, passing TDs, rushing yards, rushing TDs, receiving yards, receiving TDs, receptions, sacks. The top 11, ties in last-name order, the leader in the headshot panel. It's a post of its own (slot `board`), not part of Tuesday's thread, follows the week's look, goes to all four networks and joins Auto publish. About $0.20 a week on X.
+
+**As built:** X's graphic sits behind an "Attach the graphic to each X post" switch, off by default, because the first upload's charge has to be read off the usage page before the schedule uses it. Until then X keeps posting text and link. Defender photos and sacks by week arrive with the next data build.
+
+**Tests:** each graphic renders at 1080×1350 in both looks for every pack item and keys side, the weekly pick carries forward and doesn't change a post already out, long names and big numbers fit, a missing photo or logo falls back, a week missing an item draws nothing, and the JPEG stays under Bluesky's 1 MB if it's used there.
 

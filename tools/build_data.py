@@ -1491,8 +1491,10 @@ if have_pbp:
         defs = {}
         for w in st_t.itertuples():
             d_ = defs.setdefault(w.player_id, dict(id=w.player_id, name=w.player_display_name, pos=w.position, grp=w.position_group, num=c(getattr(_ros.get(w.player_id), 'jersey_number', None)),
-                                                    g=0, tkl=0, tfl=0, sk=0.0, qbh=0, int=0, pd=0, ff=0))
+                                                    g=0, tkl=0, tfl=0, sk=0.0, qbh=0, int=0, pd=0, ff=0, sw={},
+                                                    photo=(lambda u_: u_ if isinstance(u_, str) and u_.startswith('https://') else None)(getattr(_ros.get(w.player_id), 'headshot_url', None))))  # his headshot and his sacks by week, for the social graphics (SCOPE §85)
             d_['g'] += 1; d_['tkl'] += DI_(w.def_tackles_solo) + DI_(w.def_tackle_assists); d_['tfl'] += DI_(w.def_tackles_for_loss); d_['sk'] += DF_(w.def_sacks) or 0.0
+            if DF_(w.def_sacks): d_['sw'][str(int(w.week))] = d_['sw'].get(str(int(w.week)), 0.0) + float(DF_(w.def_sacks))
             d_['qbh'] += DI_(w.def_qb_hits); d_['int'] += DI_(w.def_interceptions); d_['pd'] += DI_(w.def_pass_defended); d_['ff'] += DI_(w.def_fumbles_forced)
         for d_ in defs.values():
             pid_ = _pfrid.get(d_['id'])

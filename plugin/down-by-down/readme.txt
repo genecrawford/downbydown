@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.42.0
+Stable tag: 2.43.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,12 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.43.0 =
+* New social graphics (SCOPE §85): every post gets a tall 1080 × 1350 graphic in place of the shrunken square, with a ranked board, a player spotlight or a game layout. Black and Paper looks, picked week by week at the top of the Share pack.
+* League Leaders: a new Monday 9:00 AM post, the season's top 11 in one stat, a different stat each week, on all four networks.
+* The graphic goes out on Instagram, Bluesky and Threads. X keeps text and link until its image switch is turned on, since X's price list doesn't show the upload charge.
+* Defender headshots and sacks by week in the data build. A keys post can't go out once its game has kicked off.
 
 = 2.42.0 =
 * Post on Threads: each Share pack item and each keys side gets a Threads button after Instagram, and the Tuesday email a Post on Threads link. It opens Threads with the item's long takeaway filled in and the page as the card, the post Auto publish sends. Hidden when Your accounts has no Threads account.

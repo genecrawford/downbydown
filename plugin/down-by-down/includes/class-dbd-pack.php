@@ -181,7 +181,7 @@ class DBD_Pack {
 	}
 
 	/** Each item's fixed number on the tab, so a week missing one doesn't renumber the rest (Greptile, PR #125). */
-	const NUM = array( 'swing' => 1, 'snaps' => 2, 'offense' => 3, 'targets' => 4, 'leaders' => 5, 'rush' => 6, 'keys' => 7 );  /* Week leaders went in as 5 (SCOPE §75), pass rushers as 6 (SCOPE §79) */
+	const NUM = array( 'swing' => 1, 'snaps' => 2, 'offense' => 3, 'targets' => 4, 'leaders' => 5, 'rush' => 6, 'keys' => 7, 'board' => 8 );  /* Week leaders went in as 5 (SCOPE §75), pass rushers as 6 (SCOPE §79), League Leaders as 8 (SCOPE §85) */
 
 	/** The cards week $n's pack draws (for the harness): the item keys that have a pack card. */
 	public static function cards( $n ) { $o = array(); foreach ( self::items( $n ) as $it ) { if ( strpos( $it['card'], 'pack-' ) === 0 ) { $o[] = $it['card']; } } return $o; }
@@ -241,7 +241,7 @@ class DBD_Pack {
 	/* ---- Week leaders (2.33.0, SCOPE §75): passing, rushing and receiving yards, touchdowns, and the team defense that allowed the fewest EPA a play */
 
 	/** Every offensive line of week $n's box scores as named rows (team, opponent, the box columns, the player's full name), or null before the file is there. */
-	private static function box_rows( $n ) {
+	public static function box_rows( $n ) {
 		$f = DBD_Data::get( 'box/w' . (int) $n . '.json' ); if ( ! $f || empty( $f['games'] ) ) { return null; }
 		$K = (array) ( $f['keys'] ?? array() ); $rows = array();
 		foreach ( (array) $f['games'] as $g ) {
@@ -340,10 +340,39 @@ class DBD_Pack {
 
 	/** Week $n's item for a slot ('swing' … 'rush'), or a keys side for 'keys-{game}-{team}' carrying its game's card; null when there's none (SCOPE §81). */
 	public static function find( $n, $slot ) {
-		$slot = (string) $slot;
+		$slot = (string) $slot; if ( $slot === 'board' ) { return self::board_item( $n ); }
 		if ( strpos( $slot, 'keys-' ) !== 0 ) { foreach ( self::items( $n ) as $it ) { if ( ( $it['k'] ?? '' ) === $slot ) { return $it; } } return null; }
-		foreach ( self::keys( $n ) as $kg ) { foreach ( $kg['sides'] as $sd ) { if ( $sd['sq'] === 'ig-week-' . (int) $n . '-' . $slot ) { $sd['card'] = $kg['card']; return $sd; } } }
+		foreach ( self::keys( $n ) as $kg ) { if ( self::started( $kg['g'] ) ) { continue; } foreach ( $kg['sides'] as $sd ) {  /* a preview is no use once the game's on (SCOPE §85) */ if ( $sd['sq'] === 'ig-week-' . (int) $n . '-' . $slot ) { $sd['card'] = $kg['card']; return $sd; } } }
 		return null;
+	}
+
+	/** Has this game kicked off? A final has; so has one past its kickoff time. The harness sets $now. */
+	public static $now = null;
+	public static function started( $g ) {
+		if ( DBD_Tall::$off ) { return false; }
+		if ( DBD_Router::is_final( $g ) ) { return true; }
+		$u = (string) ( DBD_Data::kickoff( $g )['utc'] ?? '' ); $t = $u !== '' ? strtotime( $u ) : false;
+		return $t !== false && ( self::$now ?? time() ) >= $t;
+	}
+	/** The same, from a keys slot ('keys-{game}-{team}'). */
+	public static function slot_started( $slot ) {
+		if ( ! preg_match( '/^keys-(\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3})-/', (string) $slot, $m ) ) { return false; }
+		$g = DBD_Data::game( $m[1] ); return ! $g || self::started( $g );
+	}
+
+	/* ---- League Leaders (2.43.0, SCOPE §85): Monday's post, a season board, one stat a week; not part of Tuesday's carousel or thread */
+
+	public static function board_item( $n ) {
+		if ( DBD_Tall::$off ) { return null; }
+		$W = DBD_Week::file( $n ); if ( ! $W || empty( $W['complete'] ) ) { return null; }
+		$s = DBD_Tall::board_spec( $n ); if ( ! $s ) { return null; }
+		$R = $s['rows']; $what = $s['stat'][3]; $top = array_values( array_filter( $R, function ( $x ) use ( $R ) { return (float) $x['v'] === (float) $R[0]['v']; } ) ); $c = count( $top );
+		$who = $c === 1 ? $top[0]['full'] . ' leads' : ( $c === 2 ? $top[0]['full'] . ' and ' . $top[1]['full'] . ' lead' : $top[0]['full'] . ', ' . $top[1]['full'] . ' and ' . ( $c - 2 ) . ( $c === 3 ? ' other' : ' others' ) . ' lead' );
+		$short = 'League leaders in ' . $what . ' through Week ' . (int) $n . ': ' . $who . ' with ' . $R[0]['vs'] . '.';
+		$link = DBD_Router::url( $s['stat'][0] === 'sk' ? array( 'view' => 'leaders', 'g' => 'rush' ) : array( 'view' => 'leaders' ) ); $teams = array_values( array_unique( array_column( array_slice( $R, 0, 3 ), 't' ) ) );
+		return array( 'k' => 'board', 'h' => 'League Leaders', 'why' => 'The season’s top 11 in one stat, a different stat each week.', 'card' => 'page-leaders', 'file' => 'dbd-week-' . (int) $n . '-league-leaders.jpg', 'fits' => array( 'r/nfl' ),
+			'title' => $short, 'comment' => 'Every leaderboard, all season: ' . $link, 'post' => self::post( $short, $short, $link ), 'tl' => $short, 'ts' => $short, 'link' => $link,
+			'lead' => self::last( $R[0]['full'] ) . '’s ' . $R[0]['vs'], 'teams' => $teams, 'sq' => DBD_Tall::key( $n, 'board' ), 'sqfile' => 'dbd-week-' . (int) $n . '-league-leaders.jpg' );
 	}
 
 	/* ---- the two new cards' specs (DBD_Card draws them) */
@@ -354,7 +383,7 @@ class DBD_Pack {
 		$sn = self::mover( $W, 'snaps' ); $m = $kind === 'snaps' ? $sn : self::mover( $W, 'targets', $sn['id'] ?? '' ); if ( ! $m ) { return null; }
 		$t = (string) $m['team']; $tm = DBD_Data::team( $t ) ?: array(); $parts = explode( ' ', (string) $m['name'], 2 );
 		$lab = $kind === 'snaps' ? 'Snap share' : 'Target share'; $g = (int) ( $m['g'] ?? 0 );
-		return array( 'kind' => $kind, 'week' => (int) $n, 'season' => (int) DBD_Data::season(), 'team' => $t, 'c1' => $tm['c1'] ?? '#121417',
+		return array( 'kind' => $kind, 'id' => (string) ( $m['id'] ?? '' ), 'num' => (string) ( $m['num'] ?? '' ), 'week' => (int) $n, 'season' => (int) DBD_Data::season(), 'team' => $t, 'c1' => $tm['c1'] ?? '#121417',
 			'meta' => DBD_Data::season() . ' · week ' . (int) $n . ' · ' . strtolower( $lab ), 'kicker' => $lab . ' · ' . ( $tm['nick'] ?? $t ) . ' ' . ( $m['pos'] ?? '' ) . ( isset( $m['num'] ) ? ' #' . $m['num'] : '' ),
 			'first' => $parts[0], 'last' => $parts[1] ?? '', 'now' => (float) $m['now'], 'before' => (float) $m['before'],
 			'say' => ( $kind === 'snaps' ? 'of the ' . self::poss( $t ) . ' snaps' : 'of the ' . self::poss( $t ) . ' targets' ) . ' against the ' . self::nick( $m['opp'] ?? '' ) . ', up from ' . (int) round( (float) $m['before'] ) . '%' . ( $g ? ' in his ' . $g . ' earlier ' . ( $g === 1 ? 'game' : 'games' ) : '' ),

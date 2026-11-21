@@ -93,6 +93,7 @@ class DBD_AutoPub {
 
 	/** The networks the button would post to now. */
 	public static function ready( $n, $slot, $it = null ) {
+		if ( DBD_Pack::slot_started( $slot ) ) { return array(); }  /* a keys post is a preview: none once its game has kicked off (SCOPE §85) */
 		$st = self::states( $n, $slot, $it );
 		return array_values( array_filter( self::nets(), function ( $x ) use ( $st ) { return ( $st[ $x ][0] ?? '' ) === 'ready'; } ) );
 	}

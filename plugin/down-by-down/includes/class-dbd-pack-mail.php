@@ -123,7 +123,7 @@ class DBD_Pack_Mail {
 			if ( ( $u = DBD_Pack::x_url( $t['x'] ) ) !== '' ) { $o .= ' · <a href="' . esc_url( $u ) . '" style="color:' . $RED . ';font-weight:600">Post on X</a>'; }
 			if ( ( $u = DBD_Pack::bsky_url( $t['bsky'] ) ) !== '' ) { $o .= ' · <a href="' . esc_url( $u ) . '" style="color:' . $RED . ';font-weight:600">Post on Bluesky</a>'; }
 			if ( ( $u = DBD_Pack::fb_url( $it ) ) !== '' ) { $o .= ' · <a href="' . esc_url( $u ) . '" style="color:' . $RED . ';font-weight:600">Share on Facebook</a>'; }  /* SCOPE §73: opens the share box; paste the Reddit title there */
-			if ( DBD_Pack::our_ig() !== '' && ! empty( $it['sq'] ) ) { $o .= ' · <a href="' . esc_url( DBD_Card::url( $it['sq'] ) ) . '" style="color:' . $RED . ';font-weight:600">Square for Instagram</a>'; }
+			if ( DBD_Pack::our_ig() !== '' && ! empty( $it['sq'] ) ) { $gu = preg_match( '/^ig-week-(\d+)-/', (string) $it['sq'], $gm ) ? DBD_Tall::preview( (int) $gm[1], $it ) : DBD_Card::url( $it['sq'] ); $o .= ' · <a href="' . esc_url( $gu ) . '" style="color:' . $RED . ';font-weight:600">Graphic for Instagram</a>'; }
 			if ( ( $u = DBD_Pack::th_url( $it ) ) !== '' ) { $o .= ' · <a href="' . esc_url( $u ) . '" style="color:' . $RED . ';font-weight:600">Post on Threads</a>'; }  /* 2.42.0 */
 			return $o; };
 		$rows = '';
@@ -134,7 +134,7 @@ class DBD_Pack_Mail {
 				. '<tr><td style="padding:0 0 14px"><a href="' . $img . '"><img src="' . $img . '" width="544" alt="' . esc_attr( $it['h'] ) . '" style="display:block;width:100%;max-width:544px;height:auto;border:1px solid ' . $LINE . '"></a></td></tr>'
 				. $block( 'Reddit title', $it['title'] ) . $block( 'Reddit comment, with the link', $it['comment'] )
 				. $block( 'X and Bluesky', $it['post'], ' <span style="font-weight:400;letter-spacing:0;text-transform:none">· ' . DBD_Pack::xlen( $it['post'] ) . ' of ' . DBD_Pack::X_MAX . '</span>' )
-				. ( ( $cap = DBD_Pack::ig_caption( $it ) ) !== '' ? $block( 'Instagram caption, with the square', $cap ) : '' )
+				. ( ( $cap = DBD_Pack::ig_caption( $it ) ) !== '' ? $block( 'Instagram caption, with the graphic', $cap ) : '' )
 				. '<tr><td style="' . $font . ';font-size:14px;color:' . $MUTED . ';padding:2px 0 0">Fits: ' . self::e( implode( ' · ', $it['fits'] ) ) . ' · <a href="' . esc_url( $it['link'] ) . '" style="color:' . $RED . ';font-weight:600">Open the page</a>'
 				. $post( $it['title'], DBD_Pack::share_link( $it ) ) . $soc( $it ) . '</td></tr></table></td></tr>';
 		}

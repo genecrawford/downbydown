@@ -137,6 +137,18 @@ class DBD_Threads {
 		return 'Week ' . (int) $n . ' in ' . ( $words[ $count ] ?? (string) $count ) . ' charts, one in each reply below. Every chart and the numbers behind it:';
 	}
 
+	/**
+	 * What a post sends (SCOPE §85): the tall graphic as an image with the link in the text, or, when it can't be drawn, the text with the page
+	 * as its preview card, as before. $pre: a thread reply's "1/5 ".
+	 */
+	public static function params( $n, $it, $pre = '' ) {
+		$img = DBD_Tall::url( $n, $it ); $link = DBD_Pack::share_link( $it );
+		if ( $img === '' ) { return array( 'media_type' => 'TEXT', 'text' => self::text( $it, $pre ), 'link_attachment' => $link ); }
+		$room = self::MAX - mb_strlen( $link ) - 1; $t = $pre . (string) ( $it['tl'] ?? $it['title'] ?? '' );
+		if ( mb_strlen( $t ) > $room ) { $t = rtrim( (string) preg_replace( '/\s+\S*$/u', '', mb_substr( $t, 0, $room - 1 ) ), ' ,;:' ) . '…'; }
+		return array( 'media_type' => 'IMAGE', 'image_url' => $img, 'text' => $t . ' ' . $link );
+	}
+
 	/** A container's status (FINISHED, IN_PROGRESS, ERROR, EXPIRED, PUBLISHED), or '' when Threads didn't say. */
 	private static function status_of( $id ) { list( , $j, $err ) = self::call( 'GET', (string) $id, array( 'fields' => 'status' ) ); return $err === '' ? (string) ( $j['status'] ?? '' ) : ''; }
 	/** Wait for a container to finish: up to six checks, five seconds apart. */
@@ -150,7 +162,7 @@ class DBD_Threads {
 		$c = self::conn(); if ( ! $c ) { return array( '', 'Threads isn’t connected.' ); }
 		list( , $j, $err ) = self::call( 'GET', $c['id'] . '/' . ( $reply ? 'replies' : 'threads' ), array( 'fields' => 'id,text', 'limit' => '10' ) );
 		if ( $err !== '' ) { return array( '', $err ); }
-		foreach ( (array) ( $j['data'] ?? array() ) as $p ) { if ( trim( (string) ( $p['text'] ?? '' ) ) === trim( (string) $text ) && ! empty( $p['id'] ) ) { return array( (string) $p['id'], '' ); } }
+		foreach ( (array) ( $j['data'] ?? array() ) as $p ) { if ( DBD_X::norm( $p['text'] ?? '' ) === DBD_X::norm( $text ) && ! empty( $p['id'] ) ) { return array( (string) $p['id'], '' ); } }
 		return array( '', '' );
 	}
 
@@ -209,7 +221,7 @@ class DBD_Threads {
 		try {
 			$j = self::fresh_job( $key ) ?: array(); if ( ( $j['state'] ?? '' ) === 'sent' ) { return ''; }
 			/* the text and card a try used are kept with its container, so a retry asks about and looks for the same post */
-			$params = (array) ( $j['params'] ?? array( 'media_type' => 'TEXT', 'text' => self::text( $it ), 'link_attachment' => DBD_Pack::share_link( $it ) ) );
+			$kp = DBD_Instagram::parse( $key ); $params = (array) ( $j['params'] ?? self::params( (int) ( $kp[1] ?? 0 ), $it ) );
 			list( $id, $err ) = self::part( $j, $params, function ( $cid ) use ( $key, $params ) { self::job_set( $key, array( 'container' => $cid, 'params' => $params ) ); } );
 			if ( $err !== '' ) { return self::fail( $key, $err ); }
 			return self::sent( $key, $id, $auto );
@@ -296,7 +308,7 @@ class DBD_Threads {
 				$p = (array) ( $parts[ $i ] ?? array() );
 				if ( empty( $p['id'] ) ) {
 					$params = (array) ( $p['params'] ?? ( $i
-						? array( 'media_type' => 'TEXT', 'text' => self::text( $items[ $i - 1 ], $i . '/' . $count . ' ' ), 'link_attachment' => DBD_Pack::share_link( $items[ $i - 1 ] ), 'reply_to_id' => $prev )
+						? self::params( $n, $items[ $i - 1 ], $i . '/' . $count . ' ' ) + array( 'reply_to_id' => $prev )
 						: array( 'media_type' => 'TEXT', 'text' => self::intro( $n, $count ), 'link_attachment' => DBD_Router::url( array( 'view' => 'week', 'week' => (int) $n ) ) ) ) );
 					$keep = function ( $cid ) use ( $key, &$parts, $i, &$params ) { $parts[ $i ] = array( 'container' => $cid, 'params' => $params ); self::job_set( $key, array( 'parts' => $parts ) ); };
 					list( $id, $err ) = self::part( $p, $params, $keep );
