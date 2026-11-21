@@ -45,3 +45,6 @@
   .dbd-post .pl td.ln span{display:inline;margin-left:8px}
   .dbd-post.dbd-post .pl{border-bottom:1px solid var(--line)}
 }
+/* the standout chart (SCOPE §66): the swing game's card under "The swing and the play" */
+.dbd-post.dbd-post p.swing{margin:4px 0 20px}
+.dbd-post .swing img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:4px}

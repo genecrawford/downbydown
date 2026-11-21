@@ -1,11 +1,13 @@
 <?php
 /**
- * Down by Down in the admin (2.11.0, SCOPE §50): five tabs, each its own page in the sidebar under Down by Down.
+ * Down by Down in the admin (2.11.0, SCOPE §50): six tabs, each its own page in the sidebar under Down by Down.
  *   Overview        what needs a look, then a summary of each area with its main button
  *   Week in review  the weekly post, its weeks, the Tuesday email and its send log
  *   Team news       the fetch status and the sources
  *   Site            photos and logos, addresses, the home description, notes for the theme
  *   Data            the current data and Sync now, the sync log, seasons, share cards, the data source and GitHub push
+ *   Growth          visits by source, Google search, titles to tune, landing pages, email (2.25.0, SCOPE §65; assets/growth.js)
+ *   Share pack      six things to post each week, with their cards and texts (2.27.0, SCOPE §68; assets/pack.js)
  * Each box that saves is its own form (its own settings group), so saving one tab never touches another's settings.
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
@@ -18,6 +20,8 @@ function dbd_admin_tabs() {
 		'nw' => array( 'down-by-down-news', 'News and videos' ),
 		'st' => array( 'down-by-down-site', 'Site' ),
 		'dt' => array( 'down-by-down-data', 'Data' ),
+		'gr' => array( 'down-by-down-growth', 'Growth' ),
+		'sp' => array( 'down-by-down-share', 'Share pack' ),
 	);
 }
 function dbd_admin_url( $tab = 'ov', $args = array(), $hash = '' ) {
@@ -38,6 +42,19 @@ add_action( 'admin_menu', function () {
 	foreach ( dbd_admin_tabs() as $t ) { add_submenu_page( 'down-by-down', 'Down by Down: ' . $t[1], $t[1], 'manage_options', $t[0], 'dbd_settings_page' ); }
 } );
 
+/* the Growth numbers (SCOPE §65): growth.js on the Overview and the Growth tab, with Site Kit's REST root and a nonce */
+add_action( 'admin_enqueue_scripts', function () {
+	$page = sanitize_key( (string) ( $_GET['page'] ?? '' ) );
+	if ( $page !== 'down-by-down' && $page !== 'down-by-down-growth' ) { return; }
+	wp_enqueue_script( 'dbd-growth', DBD_URL . 'assets/growth.js', array(), DBD_VERSION, true );
+	wp_add_inline_script( 'dbd-growth', 'window.DBD_GROWTH=' . wp_json_encode( DBD_Growth::js_config() ) . ';', 'before' );
+} );
+/* the Share pack's copy buttons (SCOPE §68) */
+add_action( 'admin_enqueue_scripts', function () {
+	if ( sanitize_key( (string) ( $_GET['page'] ?? '' ) ) !== 'down-by-down-share' ) { return; }
+	wp_enqueue_script( 'dbd-pack', DBD_URL . 'assets/pack.js', array(), DBD_VERSION, true );
+} );
+
 add_action( 'admin_init', function () {
 	/* Site */
 	register_setting( 'dbd', 'dbd_headshots', array( 'type' => 'boolean', 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => false ) );
@@ -52,6 +69,12 @@ add_action( 'admin_init', function () {
 	register_setting( 'dbd_posts', DBD_Post::OPT_FORM, array( 'type' => 'string', 'sanitize_callback' => 'sanitize_text_field', 'default' => DBD_Post::FORM ) );
 	/* the Tuesday email (SCOPE §48): one array; a blank API key keeps the saved one */
 	register_setting( 'dbd_email', DBD_Email::OPT, array( 'type' => 'array', 'sanitize_callback' => array( 'DBD_Email', 'sanitize' ) ) );
+	register_setting( 'dbd_pack', DBD_Pack_Mail::OPT_SET, array( 'type' => 'array', 'sanitize_callback' => array( 'DBD_Pack_Mail', 'sanitize' ) ) );  /* the share pack email (SCOPE §69) */
+	register_setting( 'dbd_pack_sub', DBD_Pack::OPT_SUB, array( 'type' => 'string', 'default' => DBD_Pack::SUB_DEFAULT, 'sanitize_callback' => array( 'DBD_Pack', 'sanitize_sub' ) ) );  /* Post to r/… (SCOPE §71); its own group, so saving it leaves the email list alone */
+	register_setting( 'dbd_pack_sub', DBD_Pack::OPT_X, array( 'type' => 'string', 'default' => DBD_Pack::X_DEFAULT, 'sanitize_callback' => array( 'DBD_Pack', 'sanitize_x' ) ) );  /* Post on X (SCOPE §72), saved with the subreddit */
+	register_setting( 'dbd_pack_sub', DBD_Pack::OPT_BSKY, array( 'type' => 'string', 'default' => DBD_Pack::BSKY_DEFAULT, 'sanitize_callback' => array( 'DBD_Pack', 'sanitize_bsky' ) ) );  /* Post on Bluesky (SCOPE §72) */
+	register_setting( 'dbd_pack_sub', DBD_Pack::OPT_FB, array( 'type' => 'string', 'default' => DBD_Pack::FB_DEFAULT, 'sanitize_callback' => array( 'DBD_Pack', 'sanitize_fb' ) ) );  /* Share on Facebook (SCOPE §73) */
+	register_setting( 'dbd_pack_sub', DBD_Pack::OPT_IG, array( 'type' => 'string', 'default' => DBD_Pack::IG_DEFAULT, 'sanitize_callback' => array( 'DBD_Pack', 'sanitize_ig' ) ) );  /* the Instagram caption (SCOPE §73) */
 	/* team news (SCOPE §49): the source groups switched on; an empty save switches every source off */
 	/* team videos and highlights (SCOPE §51): on by default */
 	register_setting( 'dbd_videos', DBD_Videos::OPT_ON, array( 'type' => 'boolean', 'sanitize_callback' => 'rest_sanitize_boolean', 'default' => true ) );
@@ -59,6 +82,28 @@ add_action( 'admin_init', function () {
 } );
 
 /* ------------------------------------------------------------------ the buttons that do something */
+
+/* The Share pack's settings, all in one form (SCOPE §74): the Tuesday email's list (dbd_pack) and the five accounts (dbd_pack_sub), each with its own sanitizer. */
+function dbd_pack_settings_save( $p ) {
+	$m = is_array( $p[ DBD_Pack_Mail::OPT_SET ] ?? null ) ? $p[ DBD_Pack_Mail::OPT_SET ] : array();
+	update_option( DBD_Pack_Mail::OPT_SET, DBD_Pack_Mail::sanitize( array( 'on' => ! empty( $m['on'] ), 'to' => (string) ( $m['to'] ?? '' ) ) ) );
+	foreach ( array( DBD_Pack::OPT_SUB => 'sanitize_sub', DBD_Pack::OPT_X => 'sanitize_x', DBD_Pack::OPT_BSKY => 'sanitize_bsky', DBD_Pack::OPT_FB => 'sanitize_fb', DBD_Pack::OPT_IG => 'sanitize_ig', DBD_Pack::OPT_TH => 'sanitize_th' ) as $o => $fn ) {
+		update_option( $o, call_user_func( array( 'DBD_Pack', $fn ), is_scalar( $p[ $o ] ?? '' ) ? (string) ( $p[ $o ] ?? '' ) : '' ) );
+	}
+	/* Instagram posting (SCOPE §76): the switch, a new token checked against the API, or disconnecting */
+	$ierr = DBD_Instagram::save( $p );
+	/* Auto publish (SCOPE §81): the networks it posts to, and Bluesky's app password */
+	update_option( DBD_AutoPub::OPT, DBD_AutoPub::sanitize( is_array( $p[ DBD_AutoPub::OPT ] ?? null ) ? $p[ DBD_AutoPub::OPT ] : array() ) );
+	$berr = DBD_Bluesky::save( $p ); if ( $berr !== '' ) { $ierr = $ierr === '' ? $berr : rtrim( $ierr, '.' ) . '. ' . $berr; }
+	$xerr = DBD_X::save( $p ); if ( $xerr !== '' ) { $ierr = $ierr === '' ? $xerr : rtrim( $ierr, '.' ) . '. ' . $xerr; }  /* X posting (SCOPE §83) */
+	$terr = DBD_Threads::save( $p ); if ( $terr !== '' ) { $ierr = $ierr === '' ? $terr : rtrim( $ierr, '.' ) . '. ' . $terr; }  /* Threads posting (SCOPE §84) */
+	$w = (int) ( $p['week'] ?? 0 );
+	return add_query_arg( array_filter( array( 'page' => 'down-by-down-share', 'week' => $w ?: null, 'pack' => $ierr === '' ? 'saved' : 'saveerr', 'pack_err' => $ierr === '' ? null : rawurlencode( 'Settings saved, but ' . lcfirst( $ierr ) ) ) ), admin_url( 'admin.php' ) ) . '#dbd-pack-settings';
+}
+add_action( 'admin_post_dbd_pack_settings', function () {
+	check_admin_referer( 'dbd_pack_settings' ); if ( ! current_user_can( 'manage_options' ) ) { wp_die( 'No.' ); }
+	wp_safe_redirect( dbd_pack_settings_save( wp_unslash( $_POST ) ) ); exit;
+} );
 
 add_action( 'admin_post_dbd_news_now', function () {
 	check_admin_referer( 'dbd_news_now' );
@@ -155,6 +200,8 @@ function dbd_admin_attention() {
 	$miss = count( array_filter( $s['weeks'], function ( $w ) use ( $s ) { return ! isset( $s['pmap'][ $w ] ); } ) );
 	if ( $miss && DBD_Post::on() ) { $a[] = array( 'warn', $miss . ' finished week' . ( $miss === 1 ? ' has' : 's have' ) . ' no post.', 'wk' ); }
 	if ( $s['nprob'] ) { $n = count( $s['nprob'] ); $a[] = array( 'warn', $n . ' news feed' . ( $n === 1 ? '' : 's' ) . ' didn’t answer properly on the last fetch.', 'nw' ); }
+	if ( class_exists( 'DBD_Instagram' ) && ( $iw = DBD_Instagram::warning() ) !== '' ) { $a[] = array( 'warn', $iw, 'sp' ); }  /* SCOPE §76 */
+	if ( class_exists( 'DBD_Threads' ) && ( $tw = DBD_Threads::warning() ) !== '' ) { $a[] = array( 'warn', $tw, 'sp' ); }  /* SCOPE §84 */
 	if ( DBD_Videos::on() ) {
 		$vs = get_option( DBD_Videos::OPT_STATUS ); $vp = is_array( $vs ) ? array_filter( (array) $vs['feeds'], function ( $x ) { return empty( $x['ok'] ) || ! empty( $x['err'] ); } ) : array();
 		if ( $vp ) { $n = count( $vp ); $a[] = array( 'warn', $n . ' YouTube channel' . ( $n === 1 ? '' : 's' ) . ' to check after the last fetch.', 'nw' ); }
@@ -233,7 +280,57 @@ function dbd_settings_page() {
 		.dbd-admin details.dbd-box[open]>summary{border-bottom:1px solid #c3c4c7}
 		.dbd-admin .dbd-help details{margin:0 0 10px}.dbd-admin .dbd-help details>summary{font-weight:600}
 		.dbd-admin .dbd-help ul{list-style:disc;padding-left:20px}
-		@media (max-width:782px){.dbd-admin .dbd-grid{grid-template-columns:minmax(0,1fr)}.dbd-admin .dbd-rows td:first-child{width:110px}}
+		.dbd-admin .up{color:#007017}.dbd-admin .down{color:#b32d2e}.dbd-admin .flat{color:#646970}
+		.dbd-admin .g-t{width:100%;border-collapse:collapse}
+		.dbd-admin .g-t th{padding:8px 16px;text-align:left;font-weight:400;color:#50575e;border-bottom:1px solid #f0f0f1;white-space:nowrap}
+		.dbd-admin .g-t td{padding:8px 16px;border-top:1px solid #f0f0f1;vertical-align:middle}
+		.dbd-admin .g-t tbody tr:first-child td{border-top:0}
+		.dbd-admin .g-t .n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+		.dbd-admin .g-t .w{width:100%}
+		.dbd-admin .bar-c{display:block;height:8px;background:#f0f0f1;min-width:80px}.dbd-admin .bar-c i{display:block;height:8px;background:#2271b1}
+		.dbd-admin .g-t td.pg{max-width:0;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+		.dbd-admin .g-t td.pg a{text-decoration:none}
+		.dbd-admin .g-t td.pg small{display:block;color:#646970;font-size:12px;overflow:hidden;text-overflow:ellipsis}
+		.dbd-admin .g-wait{color:#646970}
+		@media (max-width:782px){.dbd-admin .dbd-grid{grid-template-columns:minmax(0,1fr)}.dbd-admin .dbd-rows td:first-child{width:110px}.dbd-admin .g-t th,.dbd-admin .g-t td{padding-left:10px;padding-right:10px}.dbd-admin .hide-sm{display:none}}
+		/* the Share pack (SCOPE §68) */
+		/* the Share pack (SCOPE §68–74): one row of places to post per item, texts folded, settings at the bottom */
+		.dbd-admin .sp-top{max-width:1100px;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:0 0 6px}.dbd-admin .sp-top h2{font-size:18px;margin:0}.dbd-admin .sp-top form{margin:0}.dbd-admin .sp-when{color:#50575e}
+		.dbd-admin .sp-how{max-width:820px;margin:0 0 6px;color:#3c434a;line-height:1.55}
+		.dbd-admin .sp-mail{margin:0 0 18px;color:#50575e}
+		.dbd-admin .sp-item{max-width:1100px}
+		.dbd-admin .sp-ih{display:flex;align-items:baseline;gap:10px;padding:12px 16px 0}.dbd-admin .sp-ih h2{font-size:15px;margin:0;padding:0;border:0}.dbd-admin .sp-no{font-weight:600;color:#646970}
+		.dbd-admin .sp-body{display:grid;grid-template-columns:400px minmax(0,1fr);gap:20px;padding:12px 16px 16px}
+		.dbd-admin .sp-card{display:block}.dbd-admin .sp-card img{display:block;width:100%;height:auto;aspect-ratio:1200/630;border:1px solid #dcdcde;background:#f4f1ea}
+		.dbd-admin .sp-dl{display:flex;flex-wrap:wrap;gap:6px 14px;margin:8px 0 0}
+		.dbd-admin .sp-tk{font-size:15px;line-height:1.5;margin:0 0 14px}
+		.dbd-admin .sp-pl{margin:0 0 6px;font-weight:600}
+		.dbd-admin .sp-row{display:flex;flex-wrap:wrap;gap:6px}
+		.dbd-admin .sp-rd{border-color:#cb2026;color:#cb2026}.dbd-admin .sp-x{border-color:#0f1419;color:#0f1419}.dbd-admin .sp-bs{border-color:#1185fe;color:#1185fe}.dbd-admin .sp-fb{border-color:#0866ff;color:#0866ff}.dbd-admin .sp-ig{border-color:#c13584;color:#c13584}.dbd-admin .sp-th{border-color:#000;color:#000}
+		.dbd-admin .sp-row .button.ok{border-color:#00a32a;color:#007017}
+		.dbd-admin .sp-ap{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:12px 0 0;padding-top:12px;border-top:1px solid #f0f0f1}.dbd-admin .sp-ap .description{color:#50575e}
+		.dbd-admin .sp-apd>summary{list-style:none;display:inline-block}.dbd-admin .sp-apd>summary::-webkit-details-marker{display:none}.dbd-admin .sp-apd[open]{flex-basis:100%}.dbd-admin .sp-apd[open]+.description{display:none}
+		.dbd-admin .sp-ask{margin-top:8px;padding:10px 12px;background:#f6f7f7;border:1px solid #dcdcde}.dbd-admin .sp-ask p{margin:0 0 8px}.dbd-admin .sp-ask form{margin:0}
+		.dbd-admin .sp-aps{flex-basis:100%;margin:0;line-height:1.9;color:#3c434a}
+		.dbd-admin .sp-ks .sp-ap{grid-column:2;margin-top:6px;padding-top:0;border-top:0}.dbd-admin .sp-ks .sp-ap .button{min-height:26px;line-height:24px;padding:0 9px;font-size:12px}
+		.dbd-admin .sp-fits{margin:10px 0 0;color:#646970}
+		.dbd-admin .sp-tx{margin-top:12px;border-top:1px solid #f0f0f1;padding-top:10px}.dbd-admin .sp-tx summary{cursor:pointer;color:#2271b1;font-weight:600}
+		.dbd-admin .sp-f{margin:10px 0 0}
+		.dbd-admin .sp-fh{display:flex;align-items:center;gap:10px;margin-bottom:4px}.dbd-admin .sp-fh b{flex:1}.dbd-admin .sp-fh .cnt{color:#646970;font-size:12px}.dbd-admin .sp-fh .cnt.over{color:#b32d2e;font-weight:600}
+		.dbd-admin .sp-f textarea{width:100%;box-sizing:border-box;padding:6px 8px;font-size:13px;line-height:1.5;resize:vertical;field-sizing:content;min-height:3.2em}
+		.dbd-admin .sp-cp.ok{border-color:#00a32a;color:#007017}
+		.dbd-admin .sp-kl{margin:6px 16px 4px;color:#50575e}
+		.dbd-admin .sp-kg{margin:0 16px;padding:12px 0;border-top:1px solid #f0f0f1}.dbd-admin .sp-kl+.sp-kg{border-top:0}.dbd-admin .sp-kg:last-child{padding-bottom:16px}
+		.dbd-admin .sp-kgh{display:flex;gap:14px;align-items:baseline;flex-wrap:wrap;margin-bottom:4px}.dbd-admin .sp-kgh b{font-size:14px}
+		.dbd-admin .sp-ks{display:grid;grid-template-columns:24px minmax(0,1fr);gap:4px 10px;padding:6px 0}.dbd-admin .sp-ks svg{width:24px;height:24px}.dbd-admin .sp-kt{line-height:1.5}.dbd-admin .sp-kt span{color:#50575e}.dbd-admin .sp-ks .sp-row{grid-column:2}
+		.dbd-admin .sp-ks .sp-row .button{min-height:26px;line-height:24px;padding:0 9px;font-size:12px}
+		.dbd-admin .sp-set{max-width:1100px;margin-top:24px}.dbd-admin .sp-set>summary{padding:12px 16px;font-size:14px;font-weight:600;cursor:pointer}.dbd-admin .sp-set[open]>summary{border-bottom:1px solid #c3c4c7}
+		.dbd-admin .sp-note{margin:12px 16px 0}
+		.dbd-admin .sp-sg{display:grid;grid-template-columns:200px minmax(0,1fr);gap:12px 16px;padding:16px;align-items:start}.dbd-admin .sp-sg>label,.dbd-admin .sp-sg>span{color:#50575e;padding-top:5px}.dbd-admin .sp-sg .description{margin:4px 0 0}
+		.dbd-admin .sp-sh{grid-column:1/-1;font-weight:600;font-size:14px;margin-top:6px;padding-top:12px;border-top:1px solid #f0f0f1}.dbd-admin .sp-sg>.sp-sh:first-child{margin-top:0;padding-top:0;border-top:0}
+		.dbd-admin .sp-last{border-top:1px solid #c3c4c7}
+		@media (max-width:1000px){.dbd-admin .sp-body{grid-template-columns:minmax(0,1fr)}.dbd-admin .sp-l{max-width:420px}}
+		@media (max-width:782px){.dbd-admin .sp-sg{grid-template-columns:minmax(0,1fr)}.dbd-admin .sp-sg>span:empty{display:none}}
 		</style>
 		<h1>Down by Down</h1>
 		<p class="dbd-lede"><?php echo esc_html( 'Season ' . ( $m['season'] ?? '–' ) . ( isset( $m['week'] ) ? ' · Week ' . $m['week'] : '' ) . ( DBD_Data::updated_text() ? ' · data ' . lcfirst( DBD_Data::updated_text() ) : '' ) . ' · version ' . DBD_VERSION ); ?></p>
@@ -249,6 +346,8 @@ function dbd_settings_page() {
 			case 'nw': dbd_tab_news(); break;
 			case 'st': dbd_tab_site(); break;
 			case 'dt': dbd_tab_data(); break;
+			case 'gr': dbd_tab_growth(); break;
+			case 'sp': dbd_tab_share(); break;
 			default:   dbd_tab_overview();
 		}
 		?>
@@ -263,6 +362,8 @@ function dbd_admin_notices() {
 	if ( isset( $_GET['cleared'] ) ) { $n[] = array( 'success', (int) $_GET['cleared'] . ' cached cards cleared. They are drawn again the next time a page is shared.' ); }
 	if ( isset( $_GET['written'] ) ) { $wn = (int) $_GET['written']; $n[] = array( 'success', $wn ? $wn . ' weekly post' . ( $wn === 1 ? '' : 's' ) . ' written.' : 'No new posts: every finished week already has one, or was deleted.' ); }
 	if ( isset( $_GET['news'] ) ) { $ns = get_option( DBD_News::OPT_STATUS ); $n[] = array( 'success', is_array( $ns ) ? 'News fetched in ' . $ns['secs'] . ' seconds.' : 'News fetched.' ); }
+	if ( isset( $_GET['board'] ) ) { $bw = (string) $_GET['board']; $n[] = $bw === 'tested' ? array( 'success', 'Board email test sent to ' . DBD_Email::test_to() . '.' ) : ( $bw === 'again' ? array( 'success', 'The board email is going again.' ) : array( 'error', 'The board email test didn’t send: ' . sanitize_text_field( rawurldecode( (string) ( $_GET['board_err'] ?? '' ) ) ) ) ); }
+	/* the Share pack's own notices show inside its settings box (SCOPE §74): dbd_pack_notices() */
 	if ( isset( $_GET['token'] ) ) { $n[] = array( 'warning', 'New token made. Update the DBD_SYNC_TOKEN secret in the GitHub repo or the nightly push will stop working.' ); }
 	foreach ( $n as $x ) { echo '<div class="notice notice-' . esc_attr( $x[0] ) . ' is-dismissible"><p>' . esc_html( $x[1] ) . '</p></div>'; }
 }
@@ -313,8 +414,330 @@ function dbd_tab_overview() {
 			<tr><td>Addresses</td><td><?php echo DBD_Urls::on() ? 'Readable: <code>/team/min/</code>' : 'Query strings: <code>?team=MIN</code>'; ?></td></tr>
 		</tbody></table>
 		<div class="dbd-foot"><a class="button" href="<?php echo esc_url( dbd_admin_url( 'st' ) ); ?>">Open Site</a></div></div>
+
+		<div class="dbd-box"><h2>Growth <small>last 28 days</small></h2><table class="dbd-rows"><tbody>
+			<tr><td>Visits</td><td data-g="ov-visits"><span class="g-wait">Asking Site Kit…</span></td></tr>
+			<tr><td>Search clicks</td><td data-g="ov-clicks"><span class="g-wait">Asking Site Kit…</span></td></tr>
+			<tr><td>Subscribers</td><td><?php echo dbd_growth_subscribers(); ?></td></tr>
+		</tbody></table>
+		<div class="dbd-foot"><a class="button" href="<?php echo esc_url( dbd_admin_url( 'gr' ) ); ?>">Open Growth</a></div></div>
 	</div>
 	<?php
+}
+
+/* ------------------------------------------------------------------ Growth (2.25.0, SCOPE §65) */
+
+/** "142 +37 in 28 days" from Brevo, or why not. */
+function dbd_growth_subscribers() {
+	list( $n, $err ) = DBD_Growth::list_size();
+	if ( $n === null ) { return '<span class="g-wait">' . esc_html( $err ) . '.</span>' . ( DBD_Growth::email_on() ? '' : ' <a href="' . esc_url( dbd_admin_url( 'wk' ) ) . '">Set it up on Week in review</a>' ); }
+	$c = DBD_Growth::size_change( $n );
+	if ( ! $c ) { return esc_html( number_format( $n ) ) . ' <span class="flat">(the change shows from tomorrow)</span>'; }
+	$cls = $c[0] > 0 ? 'up' : ( $c[0] < 0 ? 'down' : 'flat' );
+	$since = $c[1] <= gmdate( 'Y-m-d', strtotime( wp_date( 'Y-m-d' ) . ' -' . DBD_Growth::DAYS . ' days' ) ) ? 'in 28 days' : 'since ' . wp_date( 'M j', strtotime( $c[1] . ' 12:00' ) );
+	return esc_html( number_format( $n ) ) . ' <span class="' . $cls . '">' . ( $c[0] > 0 ? '+' : ( $c[0] < 0 ? '−' : '±' ) ) . abs( (int) $c[0] ) . ' ' . esc_html( $since ) . '</span>';
+}
+
+function dbd_tab_growth() {
+	$L = DBD_Growth::links();
+	$a = function ( $k, $t ) use ( $L ) { return '<a class="button" href="' . esc_url( $L[ $k ] ) . '"' . ( $k === 'sitekit' ? '' : ' target="_blank" rel="noopener"' ) . '>' . esc_html( $t ) . '</a>'; };
+	$wait = '<span class="g-wait">Asking Site Kit…</span>';
+	$le = DBD_Growth::last_email();
+	?>
+	<p class="dbd-lede" style="max-width:980px">The last 28 days against the 28 before. Analytics and Search Console numbers come from Site Kit, read in your browser as you; email numbers come from Brevo. Shares and signups are counted from version 2.25.0.</p>
+	<div class="dbd-box"><h2>Visits by source <small data-g="range"></small></h2>
+		<div data-g="sources"><p class="dbd-in"><?php echo $wait; ?></p></div>
+		<div class="dbd-foot"><?php echo $a( 'analytics', 'Open in Analytics' ) . $a( 'sitekit', 'Open Site Kit' ); ?></div></div>
+
+	<div class="dbd-grid">
+		<div class="dbd-box"><h2>Google search</h2><table class="dbd-rows"><tbody data-g="search">
+			<tr><td>Clicks</td><td><?php echo $wait; ?></td></tr>
+		</tbody></table>
+		<div class="dbd-foot"><?php echo $a( 'search', 'Open in Search Console' ); ?></div></div>
+
+		<div class="dbd-box"><h2>Email</h2><table class="dbd-rows"><tbody>
+			<tr><td>Subscribers</td><td><?php echo dbd_growth_subscribers(); ?></td></tr>
+			<tr><td>Signups</td><td data-g="signups"><?php echo $wait; ?></td></tr>
+			<tr><td>Last email</td><td><?php echo $le ? esc_html( DBD_Growth::email_line( $le[0], $le[1] ) ) . ( $le[2] !== '' ? ' <span class="dbd-red">(' . esc_html( $le[2] ) . ')</span>' : '' ) : 'None sent yet.'; ?></td></tr>
+			<tr><td>Shares</td><td data-g="shares"><?php echo $wait; ?></td></tr>
+		</tbody></table>
+		<div class="dbd-foot"><?php echo $a( 'brevo', 'Open in Brevo' ); ?></div></div>
+	</div>
+
+	<div class="dbd-box"><h2>Titles to tune <small>seen often in Google, rarely clicked</small></h2>
+		<table class="g-t"><thead><tr><th>Page and its title</th><th class="n">Seen</th><th class="n">Clicks</th><th class="n">Rate</th></tr></thead><tbody data-g="tune">
+			<tr><td colspan="4"><?php echo $wait; ?></td></tr>
+		</tbody></table>
+		<div class="dbd-foot"><button type="button" class="button" data-g="copy" disabled>Copy the list for Claude</button><span class="description">Pages Google showed at least 100 times, with a click rate under the site's.</span></div></div>
+
+	<div class="dbd-box"><h2>Top landing pages <small>where visits start</small></h2>
+		<table class="g-t"><thead><tr><th>Page</th><th class="n">Visits</th><th class="n">Change</th></tr></thead><tbody data-g="landing">
+			<tr><td colspan="3"><?php echo $wait; ?></td></tr>
+		</tbody></table>
+		<div class="dbd-foot"><?php echo $a( 'analytics', 'Open in Analytics' ) . $a( 'sitekit', 'Open Site Kit' ); ?></div></div>
+	<?php
+}
+
+/* ------------------------------------------------------------------ Share pack (2.27.0, SCOPE §68; laid out simply in 2.32.0, SCOPE §74) */
+
+/** The email's state in one line for the top of the tab (SCOPE §74): [ dot class, text, Try-again job key or '' ]. */
+function dbd_pack_mail_line() {
+	if ( (string) DBD_Email::get( 'key' ) === '' ) { return array( 'bad', 'The Tuesday email isn’t set up: Brevo needs its API key on Week in review.', '' ); }
+	$ps = DBD_Pack_Mail::settings();
+	if ( ! $ps['on'] ) { return array( 'bad', 'The Tuesday email is switched off.', '' ); }
+	if ( ! $ps['to'] ) { return array( 'bad', 'The Tuesday email has no one to send to.', '' ); }
+	$st = DBD_Pack_Mail::status(); $l = $st ? $st[ count( $st ) - 1 ] : null;
+	if ( ! $l ) { return array( 'ok', 'Each new pack is emailed on its Tuesday at 7:00 AM to ' . count( $ps['to'] ) . ( count( $ps['to'] ) === 1 ? ' person.' : ' people.' ), '' ); }
+	return array( $l[0], $l[1], $l[2] );
+}
+
+/** Every setting on the tab in one box at the bottom, one Save (SCOPE §74): the Tuesday email (SCOPE §69) and the five accounts (§71–73). */
+function dbd_pack_settings_box( $n ) {
+	$ps = DBD_Pack_Mail::settings(); $key = (string) DBD_Email::get( 'key' ) !== '';
+	$open = isset( $_GET['pack'] ) || isset( $_GET['settings-updated'] ) || ! $n;
+	$fld = function ( $id, $name, $value, $pre = '', $w = 240, $note = '' ) {
+		return '<div>' . ( $pre !== '' ? esc_html( $pre ) . ' ' : '' ) . '<input type="text" id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" value="' . esc_attr( $value ) . '" maxlength="300" style="width:' . (int) $w . 'px;max-width:100%">'
+			. ( $note !== '' ? '<p class="description">' . $note . '</p>' : '' ) . '</div>';
+	};
+	?>
+	<details class="dbd-box sp-set" id="dbd-pack-settings"<?php echo $open ? ' open' : ''; ?>><summary>Settings: the Tuesday email, your accounts, Instagram, Bluesky, X and Threads posting</summary>
+		<?php dbd_pack_notices(); ?>
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"><input type="hidden" name="action" value="dbd_pack_settings"><input type="hidden" name="week" value="<?php echo (int) $n; ?>"><?php wp_nonce_field( 'dbd_pack_settings' ); ?>
+		<div class="sp-sg">
+			<div class="sp-sh">The Tuesday email</div>
+			<span>Send it</span><div><label><input type="checkbox" name="<?php echo esc_attr( DBD_Pack_Mail::OPT_SET ); ?>[on]" value="1"<?php echo $ps['on'] ? ' checked' : ''; ?>> Email each week’s pack, Tuesday 7:00 AM Eastern</label>
+				<?php if ( ! $key ) { echo '<p class="description"><span class="dbd-dot bad"></span>Brevo isn’t set up. <a href="' . esc_url( dbd_admin_url( 'wk' ) ) . '">Add the API key on Week in review</a>.</p>'; } ?></div>
+			<label for="dbd-pack-to">Send to</label><div><textarea id="dbd-pack-to" name="<?php echo esc_attr( DBD_Pack_Mail::OPT_SET ); ?>[to]" rows="3" style="width:420px;max-width:100%"><?php echo esc_textarea( implode( "\n", $ps['to'] ) ); ?></textarea>
+				<p class="description">One address per line, up to <?php echo (int) DBD_Pack_Mail::MAX_TO; ?>. Each person gets their own copy.</p></div>
+			<div class="sp-sh">Your accounts</div>
+			<label for="dbd-pack-sub">Reddit</label><?php echo $fld( 'dbd-pack-sub', DBD_Pack::OPT_SUB, DBD_Pack::our_sub(), 'r/' ); ?>
+			<label for="dbd-pack-x">X</label><?php echo $fld( 'dbd-pack-x', DBD_Pack::OPT_X, DBD_Pack::our_x(), '@', 240, 'Also named in every page’s share tags.' ); ?>
+			<label for="dbd-pack-bsky">Bluesky</label><?php echo $fld( 'dbd-pack-bsky', DBD_Pack::OPT_BSKY, DBD_Pack::our_bsky(), '', 260 ); ?>
+			<label for="dbd-pack-fb">Facebook group</label><?php echo $fld( 'dbd-pack-fb', DBD_Pack::OPT_FB, DBD_Pack::our_fb(), '', 420, DBD_Pack::our_fb() !== '' ? '<a href="' . esc_url( DBD_Pack::our_fb() ) . '" target="_blank" rel="noopener">Open the group</a>' : '' ); ?>
+			<label for="dbd-pack-ig">Instagram</label><?php echo $fld( 'dbd-pack-ig', DBD_Pack::OPT_IG, DBD_Pack::our_ig(), '@' ); ?>
+			<label for="dbd-pack-th">Threads</label><?php echo $fld( 'dbd-pack-th', DBD_Pack::OPT_TH, DBD_Pack::our_th(), '@', 240, 'The Threads profile’s name; the Instagram account’s by default.' ); ?>
+			<span></span><p class="description" style="margin:0">Clear an account to hide its button.</p>
+			<div class="sp-sh">Instagram posting</div>
+			<span>Post it</span><div><label><input type="checkbox" name="<?php echo esc_attr( DBD_Instagram::OPT_SET ); ?>[on]" value="1"<?php echo DBD_Instagram::settings()['on'] ? ' checked' : ''; ?>> Post the carousel on Tuesday, then one item a day Wednesday to Sunday, 9:00 AM Eastern</label></div>
+			<label for="dbd-ig-acc">Instagram account ID</label><div><input type="text" id="dbd-ig-acc" name="<?php echo esc_attr( DBD_Instagram::OPT_SET ); ?>[account]" value="<?php echo esc_attr( DBD_Instagram::settings()['account'] ); ?>" inputmode="numeric" autocomplete="off" style="width:220px;max-width:100%"><p class="description" style="margin:4px 0 0">The number under the account in your Meta app. Needed for a token that starts EAA.</p></div>
+			<label for="dbd-ig-token">Access token</label><div><input type="password" id="dbd-ig-token" name="dbd_ig_token_new" value="" autocomplete="off" placeholder="<?php echo esc_attr( DBD_Instagram::token() ? 'Paste a new token to replace it' : 'Paste the token from your Meta app' ); ?>" style="width:420px;max-width:100%">
+				<?php $it = DBD_Instagram::token();
+				if ( $it ) {
+					$who = '@' . esc_html( $it['username'] !== '' ? $it['username'] : $it['user_id'] );
+					if ( DBD_Instagram::lasting( $it ) ) {  /* a Unified-login token never runs out; it's checked every week (2.34.1) */
+						echo '<p class="description">' . ( empty( $it['err'] ) ? '<span class="dbd-dot ok"></span>Connected as ' . $who . '. This token doesn’t run out; it’s checked every week.' : '<span class="dbd-dot bad"></span>Connected as ' . $who . ', but Instagram stopped taking the token: ' . esc_html( $it['err'] ) . ' Paste a new one.' ) . '</p>';
+					} else {
+					echo '<p class="description">' . ( DBD_Instagram::connected() ? '<span class="dbd-dot ok"></span>Connected as ' . $who . '. Good until ' . esc_html( wp_date( 'M j, Y', (int) $it['expires'] ) ) . '; renewed every week.' : '<span class="dbd-dot bad"></span>The token ran out on ' . esc_html( wp_date( 'M j', (int) $it['expires'] ) ) . '. Paste a new one.' )
+						. ( ! empty( $it['err'] ) ? ' <br><span class="dbd-dot warn"></span>The last renewal failed: ' . esc_html( $it['err'] ) : '' ) . '</p>';
+					}
+					echo '<label class="description" style="display:block;margin-top:4px"><input type="checkbox" name="dbd_ig_disconnect" value="1"> Disconnect (forget the token)</label>';
+				} else {
+					echo '<p class="description">In your Meta app (Instagram, API setup with Unified login), make a configuration with @' . esc_html( DBD_Pack::our_ig() !== '' ? DBD_Pack::our_ig() : 'your account' ) . ', then Generate token and paste it here. It’s checked when you save, and never shown again.</p>';
+				} ?></div>
+			<div class="sp-sh">Bluesky posting</div>
+			<span>Post it</span><div><label><input type="checkbox" name="<?php echo esc_attr( DBD_Bluesky::OPT_SET ); ?>[on]" value="1"<?php echo DBD_Bluesky::settings()['on'] ? ' checked' : ''; ?>> Post on Tuesday, then one item a day Wednesday to Sunday, 9:00 AM Eastern</label><p class="description" style="margin:4px 0 0">Tuesday is a thread: a first post naming the week, each item replying under it. Untick it and Bluesky posts only when you press Auto publish.</p></div>
+			<span>Account</span><div style="padding-top:5px"><?php echo DBD_Pack::our_bsky() !== '' ? '@' . esc_html( DBD_Pack::our_bsky() ) . ' <span class="description">(from Your accounts above)</span>' : '<span class="description">Add the Bluesky account above first.</span>'; ?></div>
+			<label for="dbd-bsky-pass">App password</label><div><input type="password" id="dbd-bsky-pass" name="dbd_bsky_pass_new" value="" autocomplete="off" placeholder="<?php echo esc_attr( DBD_Bluesky::conn() ? 'Paste a new app password to replace it' : 'Paste an app password from Bluesky' ); ?>" style="width:420px;max-width:100%">
+				<?php $bc = DBD_Bluesky::conn();
+				if ( $bc ) {
+					echo '<p class="description"><span class="dbd-dot ok"></span>Connected as @' . esc_html( $bc['handle'] ) . '. Delete the app password in Bluesky to cut the plugin off.</p>'
+						. '<label class="description" style="display:block;margin-top:4px"><input type="checkbox" name="dbd_bsky_disconnect" value="1"> Disconnect (forget the app password)</label>';
+				} else {
+					echo '<p class="description">Make one in Bluesky: Settings → Privacy and security → App passwords → Add. It’s checked when you save, and never shown again.</p>';
+				} ?></div>
+			<div class="sp-sh">X posting</div>
+			<span>Post it</span><div><label><input type="checkbox" name="<?php echo esc_attr( DBD_X::OPT_SET ); ?>[on]" value="1"<?php echo DBD_X::settings()['on'] ? ' checked' : ''; ?>> Post on Tuesday, then one item a day Wednesday to Sunday, 9:00 AM Eastern</label><p class="description" style="margin:4px 0 0">Tuesday is a thread: a first post naming the week, each item replying under it. Untick it and X posts only when you press Auto publish.</p></div>
+			<span>Account</span><div style="padding-top:5px"><?php echo DBD_Pack::our_x() !== '' ? '@' . esc_html( DBD_Pack::our_x() ) . ' <span class="description">(from Your accounts above)</span>' : '<span class="description">Add the X account above first.</span>'; ?></div>
+			<?php $xc = DBD_X::conn(); foreach ( DBD_X::KEYS as $f => $lab ) : ?>
+			<label for="dbd-x-<?php echo esc_attr( $f ); ?>"><?php echo esc_html( $lab ); ?></label><div><input type="password" id="dbd-x-<?php echo esc_attr( $f ); ?>" name="dbd_x_<?php echo esc_attr( $f ); ?>_new" value="" autocomplete="off" placeholder="<?php echo esc_attr( $xc ? 'Paste a new one to replace it' : 'Paste from the X Developer Console' ); ?>" style="width:420px;max-width:100%">
+			<?php if ( $f === 'as' ) {
+				if ( $xc ) {
+					echo '<p class="description"><span class="dbd-dot ok"></span>Connected as @' . esc_html( $xc['username'] ) . '. Revoke the keys in the X Developer Console to cut the plugin off.</p>'
+						. '<label class="description" style="display:block;margin-top:4px"><input type="checkbox" name="dbd_x_disconnect" value="1"> Disconnect (forget the keys)</label>';
+				} else {
+					echo '<p class="description">In the X Developer Console: your app, then User authentication settings, Read and write; then Keys and tokens, and generate the access token and secret while signed in as @' . esc_html( DBD_Pack::our_x() !== '' ? DBD_Pack::our_x() : 'your account' ) . '. Paste all four together. They’re checked when you save, and never shown again.</p>';
+				}
+			} ?></div>
+			<?php endforeach; ?>
+			<?php if ( $xc ) : $xm = DBD_X::month(); ?>
+			<span>This month</span><div style="padding-top:5px"><?php echo esc_html( $xm . ( $xm === 1 ? ' post' : ' posts' ) . ', about $' . number_format( $xm * DBD_X::PRICE, 2 ) . ' at X’s price.' ); ?> <span class="description">Your credit balance is in the X Developer Console.</span></div>
+			<?php endif; ?>
+			<div class="sp-sh">Threads posting</div>
+			<span>Post it</span><div><label><input type="checkbox" name="<?php echo esc_attr( DBD_Threads::OPT_SET ); ?>[on]" value="1"<?php echo DBD_Threads::settings()['on'] ? ' checked' : ''; ?>> Post on Tuesday, then one item a day Wednesday to Sunday, 9:00 AM Eastern</label><p class="description" style="margin:4px 0 0">Tuesday is a thread: a first post naming the week, each item replying under it. Untick it and Threads posts only when you press Auto publish.</p></div>
+			<span>Account</span><div style="padding-top:5px"><?php echo DBD_Pack::our_th() !== '' ? '@' . esc_html( DBD_Pack::our_th() ) . ' <span class="description">(from Your accounts above)</span>' : '<span class="description">Add the Threads account above first.</span>'; ?></div>
+			<?php $tc = DBD_Threads::conn(); ?>
+			<label for="dbd-th-secret">Threads App secret</label><div><input type="password" id="dbd-th-secret" name="dbd_th_secret_new" value="" autocomplete="off" placeholder="<?php echo esc_attr( $tc ? 'Kept; paste a new one to replace it' : 'From the Meta app’s Threads settings' ); ?>" style="width:420px;max-width:100%"></div>
+			<label for="dbd-th-token">Access token</label><div><input type="password" id="dbd-th-token" name="dbd_th_token_new" value="" autocomplete="off" placeholder="<?php echo esc_attr( $tc ? 'Paste a new token to replace it' : 'From the Meta app’s User Token Generator' ); ?>" style="width:420px;max-width:100%">
+				<?php if ( $tc ) {
+					echo '<p class="description">' . ( DBD_Threads::connected() ? '<span class="dbd-dot ' . ( empty( $tc['err'] ) ? 'ok' : 'warn' ) . '"></span>Connected as @' . esc_html( $tc['username'] ) . '. Good until ' . esc_html( wp_date( 'M j, Y', (int) $tc['expires'] ) ) . '; renewed every week.' . ( ! empty( $tc['err'] ) ? ' The last renewal failed: ' . esc_html( $tc['err'] ) : '' ) : '<span class="dbd-dot bad"></span>The token ran out on ' . esc_html( wp_date( 'M j', (int) $tc['expires'] ) ) . '. Paste a new one.' ) . '</p>'
+						. '<label class="description" style="display:block;margin-top:4px"><input type="checkbox" name="dbd_th_disconnect" value="1"> Disconnect (forget the token)</label>';
+				} else {
+					echo '<p class="description">In the Meta app, Use cases, then Access the Threads API, Customize, Settings: copy the Threads app secret, and under User Token Generator, Generate an access token for @' . esc_html( DBD_Pack::our_th() !== '' ? DBD_Pack::our_th() : 'your account' ) . ' (a Threads Tester with threads_basic, threads_content_publish and threads_manage_replies). Paste both here. The token lasts 60 days and is renewed every week. Never shown again.</p>';
+				} ?></div>
+			<div class="sp-sh">Auto publish</div>
+			<span>Posts to</span><div><?php $aps = DBD_AutoPub::settings(); ?><label><input type="checkbox" name="<?php echo esc_attr( DBD_AutoPub::OPT ); ?>[ig]" value="1"<?php echo $aps['ig'] ? ' checked' : ''; ?>> Instagram</label><br>
+				<label><input type="checkbox" name="<?php echo esc_attr( DBD_AutoPub::OPT ); ?>[bs]" value="1"<?php echo $aps['bs'] ? ' checked' : ''; ?>> Bluesky</label><br>
+				<label><input type="checkbox" name="<?php echo esc_attr( DBD_AutoPub::OPT ); ?>[x]" value="1"<?php echo $aps['x'] ? ' checked' : ''; ?>> X</label><br>
+				<label><input type="checkbox" name="<?php echo esc_attr( DBD_AutoPub::OPT ); ?>[th]" value="1"<?php echo $aps['th'] ? ' checked' : ''; ?>> Threads</label>
+				<p class="description">The Auto publish button on each item posts it to these, right away. Untick one to leave it out; one that isn’t connected is left out by itself. Reddit and Facebook can’t post on their own.</p></div>
+		</div>
+		<div class="dbd-foot"><button class="button button-primary">Save settings</button></div>
+		</form>
+		<?php if ( $key ) : $st = DBD_Pack_Mail::status(); ?>
+		<div class="sp-sg sp-last"><div class="sp-sh">Last sends</div><span></span><div><?php
+			if ( ! $st ) { echo 'None yet.'; }
+			foreach ( $st as $i => $l ) { echo ( $i ? '<br>' : '' ) . '<span class="dbd-dot ' . esc_attr( $l[0] ) . '"></span>' . esc_html( $l[1] ) . ( $l[2] !== '' ? ' <a class="button button-small" href="' . esc_url( DBD_Pack_Mail::again_url( $l[2] ) ) . '">Try again</a>' : '' ); }
+			if ( $ps['to'] && $n ) { ?>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top:10px"><input type="hidden" name="action" value="dbd_pack_now"><input type="hidden" name="week" value="<?php echo (int) $n; ?>"><?php wp_nonce_field( 'dbd_pack_now' ); ?>
+				<button class="button"><?php echo esc_html( 'Send the Week ' . $n . ' pack now' ); ?></button> <span class="description"><?php echo esc_html( 'To ' . count( $ps['to'] ) . ( count( $ps['to'] ) === 1 ? ' person' : ' people' ) . ', right away. Save any change to the list first.' ); ?></span></form>
+			<?php } ?></div></div>
+		<?php endif; ?>
+		<?php if ( $n && DBD_Instagram::connected() ) : ?>
+		<div class="sp-sg sp-last"><div class="sp-sh">Instagram this week</div><span></span><div><?php
+			foreach ( DBD_Instagram::week_rows( $n ) as $r ) { echo '<span class="dbd-dot ' . esc_attr( $r[0] ) . '"></span>' . esc_html( $r[1] ) . ( $r[2] !== '' ? ' <a href="' . esc_url( $r[2] ) . '" target="_blank" rel="noopener">View</a>' : '' ) . ( $r[3] !== '' ? ' <a class="button button-small" href="' . esc_url( DBD_Instagram::again_url( $r[3] ) ) . '">Try again</a>' : '' ) . '<br>'; }
+			if ( DBD_Instagram::on() && DBD_Instagram::next_key() !== '' ) { ?>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top:10px"><input type="hidden" name="action" value="dbd_ig_now"><?php wp_nonce_field( 'dbd_ig_now' ); ?>
+				<button class="button">Post the next one now</button> <span class="description">Posts the first one not out yet, right away.</span></form>
+			<?php } ?></div></div>
+		<?php endif; ?>
+		<?php if ( $n && DBD_Bluesky::connected() ) : ?>
+		<div class="sp-sg sp-last"><div class="sp-sh">Bluesky this week</div><span></span><div><?php  /* SCOPE §82 */
+			foreach ( DBD_Bluesky::week_rows( $n ) as $r ) { echo '<span class="dbd-dot ' . esc_attr( $r[0] ) . '"></span>' . esc_html( $r[1] ) . ( $r[2] !== '' ? ' <a href="' . esc_url( $r[2] ) . '" target="_blank" rel="noopener">View</a>' : '' ) . ( $r[3] !== '' ? ' <a class="button button-small" href="' . esc_url( DBD_Bluesky::again_url( $r[3] ) ) . '">Try again</a>' : '' ) . '<br>'; }
+			if ( ! DBD_Bluesky::on() ) { echo '<span class="description">Weekly posting is off; Auto publish still posts.</span>'; } ?></div></div>
+		<?php endif; ?>
+		<?php if ( $n && DBD_X::connected() ) : ?>
+		<div class="sp-sg sp-last"><div class="sp-sh">X this week</div><span></span><div><?php  /* SCOPE §83 */
+			foreach ( DBD_X::week_rows( $n ) as $r ) { echo '<span class="dbd-dot ' . esc_attr( $r[0] ) . '"></span>' . esc_html( $r[1] ) . ( $r[2] !== '' ? ' <a href="' . esc_url( $r[2] ) . '" target="_blank" rel="noopener">View</a>' : '' ) . ( $r[3] !== '' ? ' <a class="button button-small" href="' . esc_url( DBD_X::again_url( $r[3] ) ) . '">Try again</a>' : '' ) . '<br>'; }
+			if ( ! DBD_X::on() ) { echo '<span class="description">Weekly posting is off; Auto publish still posts.</span>'; } ?></div></div>
+		<?php endif; ?>
+		<?php if ( $n && DBD_Threads::connected() ) : ?>
+		<div class="sp-sg sp-last"><div class="sp-sh">Threads this week</div><span></span><div><?php  /* SCOPE §84 */
+			foreach ( DBD_Threads::week_rows( $n ) as $r ) { echo '<span class="dbd-dot ' . esc_attr( $r[0] ) . '"></span>' . esc_html( $r[1] ) . ( $r[2] !== '' ? ' <a href="' . esc_url( $r[2] ) . '" target="_blank" rel="noopener">View</a>' : '' ) . ( $r[3] !== '' ? ' <a class="button button-small" href="' . esc_url( DBD_Threads::again_url( $r[3] ) ) . '">Try again</a>' : '' ) . '<br>'; }
+			if ( ! DBD_Threads::on() ) { echo '<span class="description">Weekly posting is off; Auto publish still posts.</span>'; } ?></div></div>
+		<?php endif; ?>
+	</details>
+	<?php
+}
+
+/** The tab's own notices, inside the settings box (SCOPE §74): saved, sent, going again, or what went wrong. */
+function dbd_pack_notices() {
+	if ( ! isset( $_GET['pack'] ) ) { return; }
+	$pk = (string) $_GET['pack']; $pn = (int) ( $_GET['pack_n'] ?? 0 );
+	if ( $pk === 'igposted' ) { $x = array( 'success', 'Posted to Instagram.' ); } elseif ( $pk === 'igagain' ) { $x = array( 'success', 'Instagram is trying that post again.' ); } elseif ( $pk === 'bsagain' ) { $x = array( 'success', 'Bluesky is trying that post again.' ); } elseif ( $pk === 'xagain' ) { $x = array( 'success', 'X is trying that post again.' ); } elseif ( $pk === 'thagain' ) { $x = array( 'success', 'Threads is trying that post again.' ); }
+	elseif ( $pk === 'igerror' || $pk === 'saveerr' ) { $x = array( 'error', sanitize_text_field( wp_unslash( rawurldecode( (string) ( $_GET['pack_err'] ?? '' ) ) ) ) ); }  /* not the email's wording (Greptile, PR #144) */
+	else {
+	$x = $pk === 'saved' ? array( 'success', 'Settings saved.' ) : ( $pk === 'sent' ? array( 'success', 'The pack went to ' . $pn . ( $pn === 1 ? ' person.' : ' people.' ) ) : ( $pk === 'again' ? array( 'success', 'The pack email is going again.' ) : array( 'error', 'The pack email didn’t send: ' . sanitize_text_field( wp_unslash( rawurldecode( (string) ( $_GET['pack_err'] ?? '' ) ) ) ) ) ) );
+	}
+	echo '<div class="notice notice-' . esc_attr( $x[0] ) . ' inline sp-note"><p>' . esc_html( $x[1] ) . '</p></div>';
+}
+
+/**
+ * Auto publish (SCOPE §81): the button, its ask (a details box, so it asks without JavaScript too), and a line per network. The button lists the
+ * networks it would post to now; with every network done it reads Published; with none connected the row isn't there.
+ */
+function dbd_pack_auto( $n, $it ) {
+	$slot = DBD_AutoPub::slot( $n, $it ); if ( $slot === '' ) { return ''; }
+	$st = DBD_AutoPub::states( $n, $slot, $it ); if ( ! $st ) { return ''; }
+	$ready = DBD_AutoPub::ready( $n, $slot, $it ); $nets = DBD_AutoPub::nets();
+	$names = DBD_AutoPub::names( $ready );
+	$o = '';
+	if ( $ready ) {
+		$o .= '<details class="sp-apd"><summary class="button button-primary">Auto publish</summary><div class="sp-ask"><form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">'
+			. '<input type="hidden" name="action" value="dbd_auto_publish"><input type="hidden" name="week" value="' . (int) $n . '"><input type="hidden" name="slot" value="' . esc_attr( $slot ) . '">' . wp_nonce_field( 'dbd_ap_' . (int) $n . '_' . $slot, '_wpnonce', true, false )
+			. '<p><b>' . esc_html( 'Post “' . DBD_AutoPub::name( $it ) . '” to ' . $names . ' now?' ) . '</b> It goes out right away.</p><button class="button button-primary sp-apgo">Post it now</button> <button type="button" class="button sp-apx">Cancel</button></form></div></details>'
+			. '<span class="description">' . esc_html( 'Posts it to ' . $names . ' now.' ) . '</span>';
+	} elseif ( $nets && ! array_filter( $nets, function ( $x ) use ( $st ) { return ( $st[ $x ][0] ?? '' ) !== 'done'; } ) ) {
+		$o .= '<button type="button" class="button" disabled>Published</button>';
+	}
+	$lines = '';
+	foreach ( $st as $s ) { if ( $s[1] !== '' ) { $lines .= ( $lines !== '' ? '<br>' : '' ) . '<span class="dbd-dot ' . esc_attr( $s[3] ) . '"></span>' . esc_html( $s[1] ) . ( $s[2] !== '' ? ' <a href="' . esc_url( $s[2] ) . '" target="_blank" rel="noopener">View</a>' : '' ); } }
+	if ( $o === '' && $lines === '' ) { return ''; }
+	return '<div class="sp-ap">' . $o . ( $lines !== '' ? '<p class="sp-aps">' . $lines . '</p>' : '' ) . '</div>';
+}
+
+/** One place to post (SCOPE §74): the site's name as the label, its own color, and the full phrase for screen readers. */
+function dbd_pack_btn( $cls, $label, $aria, $href = '', $data = '' ) {
+	if ( $href === '' && $data === '' ) { return ''; }
+	$a = ' class="button ' . esc_attr( $cls ) . '" aria-label="' . esc_attr( $aria ) . '"' . ( $data !== '' ? ' data-t="' . esc_attr( $data ) . '"' : '' );
+	return $href !== '' ? '<a' . $a . ' href="' . esc_url( $href ) . '" target="_blank" rel="noopener">' . esc_html( $label ) . '</a>' : '<button type="button"' . $a . '>' . esc_html( $label ) . '</button>';
+}
+
+/** The row of places to post, always in this order: r/ours, r/the team's (keys), X, Bluesky, Facebook, Instagram, Square (keys), then Threads (2.42.0). */
+function dbd_pack_row( $it, $link, $team_sub = '', $square = false ) {
+	$o = ''; $sub = DBD_Pack::our_sub(); $t = DBD_Pack::social( $it );
+	if ( $sub !== '' ) { $o .= dbd_pack_btn( 'sp-rd', 'r/' . $sub, 'Post to r/' . $sub, DBD_Pack::reddit_url( $it['title'], $link ) ); }
+	if ( $team_sub !== '' && ( $ts = DBD_Pack::sanitize_sub( $team_sub ) ) !== '' ) { $o .= dbd_pack_btn( 'sp-rd', 'r/' . $ts, 'Post to r/' . $ts, DBD_Pack::reddit_url( $it['title'], $link, $ts ) ); }
+	$o .= dbd_pack_btn( 'sp-x', 'X', 'Post on X', DBD_Pack::x_url( $t['x'] ) );
+	$o .= dbd_pack_btn( 'sp-bs', 'Bluesky', 'Post on Bluesky', DBD_Pack::bsky_url( $t['bsky'] ) );
+	if ( ( $fu = DBD_Pack::fb_url( $it ) ) !== '' ) { $o .= dbd_pack_btn( 'sp-fb', 'Facebook', 'Share on Facebook: copies the text, then opens the share box', $fu, DBD_Pack::fb_text( $it ) ); }  /* pack.js copies data-t */
+	if ( ( $cap = DBD_Pack::ig_caption( $it ) ) !== '' ) { $o .= dbd_pack_btn( 'sp-cp sp-ig', 'Instagram', 'Copy for Instagram: the caption', '', $cap );
+		if ( $square && ! empty( $it['sq'] ) ) { $o .= '<a class="button sp-ig" href="' . esc_url( DBD_Card::url( $it['sq'] ) ) . '" download="' . esc_attr( $it['sqfile'] ?? 'dbd-square.png' ) . '" aria-label="Download square for Instagram">Square</a>'; } }
+	$o .= dbd_pack_btn( 'sp-th', 'Threads', 'Post on Threads', DBD_Pack::th_url( $it ) );
+	return '<div class="sp-row">' . $o . '</div>';
+}
+
+/** One text with its Copy button; X and Bluesky shows its length against 280. */
+function dbd_pack_field( $lab, $text, $count = false, $rows = 2 ) {
+	$n = $count ? DBD_Pack::xlen( $text ) : 0;
+	return '<div class="sp-f"><div class="sp-fh"><b>' . esc_html( $lab ) . '</b>' . ( $count ? '<span class="cnt' . ( $n > DBD_Pack::X_MAX ? ' over' : '' ) . '">' . (int) $n . ' of ' . DBD_Pack::X_MAX . '</span>' : '' )
+		. '<button type="button" class="button button-small sp-cp">Copy</button></div><textarea readonly rows="' . (int) $rows . '" class="large-text">' . esc_textarea( $text ) . '</textarea></div>';
+}
+
+/** The four texts for an item or a keys side, folded away (SCOPE §74). $pre names the side on a keys game. */
+function dbd_pack_texts( $it, $pre = '' ) {
+	$o = dbd_pack_field( $pre . 'Reddit title', $it['title'] ) . dbd_pack_field( $pre . 'Reddit first comment, with the link', $it['comment'] ) . dbd_pack_field( $pre . 'X and Bluesky', $it['post'], true );
+	if ( ( $cap = DBD_Pack::ig_caption( $it ) ) !== '' ) { $o .= dbd_pack_field( $pre . 'Instagram caption', $cap, false, 5 ); }
+	return $o;
+}
+
+function dbd_tab_share() {
+	$weeks = DBD_Pack::weeks();
+	if ( ! $weeks ) { echo '<div class="dbd-box"><h2>Share pack</h2><p class="dbd-in" style="margin:0">The pack starts after Week 1’s games are all in.</p></div>'; dbd_pack_settings_box( 0 ); return; }  /* the settings show before Week 1 too (Greptile, PR #127, #130) */
+	$want = (int) ( $_GET['week'] ?? 0 ); $n = in_array( $want, $weeks, true ) ? $want : $weeks[0];
+	$items = DBD_Pack::items( $n ); $keys = DBD_Pack::keys( $n ); $tue = DBD_Post::tuesday( $n ); $ml = dbd_pack_mail_line();
+	?>
+	<div class="sp-top">
+		<h2><?php echo esc_html( 'Week ' . $n . ' pack' ); ?></h2>
+		<form method="get" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>"><input type="hidden" name="page" value="down-by-down-share">
+			<select name="week" aria-label="Week" onchange="this.form.submit()"><?php foreach ( $weeks as $w ) { echo '<option value="' . (int) $w . '"' . ( $w === $n ? ' selected' : '' ) . '>Week ' . (int) $w . '</option>'; } ?></select>
+			<noscript><button class="button">Show</button></noscript></form>
+		<?php if ( $tue ) { echo '<span class="sp-when">ready ' . esc_html( wp_date( 'l, M j', $tue ) ) . '</span>'; } ?>
+	</div>
+	<p class="sp-how">Click where you want to post. Reddit, X and Bluesky open with the post filled in. Facebook copies the text and opens its share box: choose Share to a group, then paste. Instagram copies the caption: post it with the square.</p>
+	<p class="sp-mail"><span class="dbd-dot <?php echo esc_attr( $ml[0] ); ?>"></span><?php echo esc_html( $ml[1] ); ?><?php if ( $ml[2] !== '' ) { echo ' <a class="button button-small" href="' . esc_url( DBD_Pack_Mail::again_url( $ml[2] ) ) . '">Try again</a>'; } ?> <a href="#dbd-pack-settings" class="sp-open">Change the list</a>
+		<?php $il = DBD_Instagram::line( $n ); if ( $il ) { echo '<br><span class="dbd-dot ' . esc_attr( $il[0] ) . '"></span>' . esc_html( $il[1] ) . ( $il[2] !== '' ? ' <a href="' . esc_url( $il[2] ) . '" target="_blank" rel="noopener">View on Instagram</a>' : '' ) . ( $il[3] !== '' ? ' <a class="button button-small" href="' . esc_url( DBD_Instagram::again_url( $il[3] ) ) . '">Try again</a>' : '' ) . ( ! DBD_Instagram::connected() ? ' <a href="#dbd-pack-settings" class="sp-open">Connect it</a>' : '' ); }
+		$bl = DBD_Bluesky::line( $n ); if ( $bl ) { echo '<br><span class="dbd-dot ' . esc_attr( $bl[0] ) . '"></span>' . esc_html( $bl[1] ) . ( $bl[2] !== '' ? ' <a href="' . esc_url( $bl[2] ) . '" target="_blank" rel="noopener">View on Bluesky</a>' : '' ) . ( $bl[3] !== '' ? ' <a class="button button-small" href="' . esc_url( DBD_Bluesky::again_url( $bl[3] ) ) . '">Try again</a>' : '' ); }
+		$xl = DBD_X::line( $n ); if ( $xl ) { echo '<br><span class="dbd-dot ' . esc_attr( $xl[0] ) . '"></span>' . esc_html( $xl[1] ) . ( $xl[2] !== '' ? ' <a href="' . esc_url( $xl[2] ) . '" target="_blank" rel="noopener">View on X</a>' : '' ) . ( $xl[3] !== '' ? ' <a class="button button-small" href="' . esc_url( DBD_X::again_url( $xl[3] ) ) . '">Try again</a>' : '' ); }
+		$tl = DBD_Threads::line( $n ); if ( $tl ) { echo '<br><span class="dbd-dot ' . esc_attr( $tl[0] ) . '"></span>' . esc_html( $tl[1] ) . ( $tl[2] !== '' ? ' <a href="' . esc_url( $tl[2] ) . '" target="_blank" rel="noopener">View on Threads</a>' : '' ) . ( $tl[3] !== '' ? ' <a class="button button-small" href="' . esc_url( DBD_Threads::again_url( $tl[3] ) ) . '">Try again</a>' : '' ); } ?></p>
+	<?php
+	foreach ( $items as $it ) {
+		$i = DBD_Pack::NUM[ $it['k'] ] ?? 0; $img = DBD_Card::url( $it['card'] );
+		$also = array_values( array_filter( (array) $it['fits'] ) );
+		echo '<section class="dbd-box sp-item" id="' . esc_attr( 'sp-' . $it['k'] ) . '" data-k="' . esc_attr( $it['k'] ) . '"><div class="sp-ih"><span class="sp-no">' . (int) $i . '</span><h2>' . esc_html( $it['h'] ) . '</h2></div><div class="sp-body">'
+			. '<div class="sp-l"><a class="sp-card" href="' . esc_url( $it['link'] ) . '" target="_blank" rel="noopener" aria-label="Open the page"><img src="' . esc_url( $img ) . '" width="1200" height="630" alt="" loading="lazy"></a>'
+			. '<p class="sp-dl"><a href="' . esc_url( $img ) . '" download="' . esc_attr( $it['file'] ) . '">Download image</a>'
+			. ( DBD_Pack::our_ig() !== '' && ! empty( $it['sq'] ) ? '<a href="' . esc_url( DBD_Card::url( $it['sq'] ) ) . '" download="' . esc_attr( $it['sqfile'] ) . '">Download square for Instagram</a>' : '' ) . '</p></div>'
+			. '<div class="sp-r"><p class="sp-tk">' . esc_html( $it['title'] ) . '</p><p class="sp-pl">Post it</p>' . dbd_pack_row( $it, DBD_Pack::share_link( $it ) ) . dbd_pack_auto( $n, $it )
+			. ( $also ? '<p class="sp-fits">Also fits ' . esc_html( implode( ', ', $also ) ) . ': post there by hand with the texts below.</p>' : '' )
+			. '<details class="sp-tx"><summary>Texts to copy</summary>' . dbd_pack_texts( $it ) . '</details></div></div></section>';
+	}
+	if ( $keys ) {
+		$nk = function ( $t ) { return DBD_Data::team( $t )['nick'] ?? $t; };
+		echo '<section class="dbd-box sp-item" data-k="keys"><div class="sp-ih"><span class="sp-no">' . (int) DBD_Pack::NUM['keys'] . '</span><h2>' . esc_html( 'Keys to the game, Week ' . ( $n + 1 ) ) . '</h2></div>'
+			. '<p class="sp-kl">' . esc_html( 'Each team’s biggest edge in its next game, for its own fans. ' . count( $keys ) . ( count( $keys ) === 1 ? ' game' : ' games' ) . ' this week.' ) . '</p>';
+		foreach ( $keys as $kg ) {
+			$g = $kg['g']; $img = DBD_Card::url( $kg['card'] ); $tx = '';
+			echo '<div class="sp-kg"><div class="sp-kgh"><b><a href="' . esc_url( $kg['link'] ) . '" target="_blank" rel="noopener">' . esc_html( $nk( $g['away'] ) . ' at ' . $nk( $g['home'] ) ) . '</a></b><a href="' . esc_url( $img ) . '" download="' . esc_attr( $kg['file'] ) . '">Download the game card</a></div>';
+			foreach ( $kg['sides'] as $sd ) {
+				echo '<div class="sp-ks" id="' . esc_attr( 'sp-' . DBD_AutoPub::slot( $n, $sd ) ) . '">' . DBD_Marks::tile_svg( $sd['t'], 24 ) . '<div class="sp-kt"><b>' . esc_html( $nk( $sd['t'] ) . ' offense.' ) . '</b> ' . esc_html( rtrim( $sd['head'], '.' ) ) . '. <span>' . esc_html( $sd['say'] ) . '</span></div>'
+					. dbd_pack_row( $sd, $sd['link'], $sd['fits'], true ) . dbd_pack_auto( $n, $sd + array( 'card' => $kg['card'] ) ) . '</div>';  /* ours, then the team's own subreddit (2.29.1) */
+				$tx .= dbd_pack_texts( $sd, $nk( $sd['t'] ) . ': ' );
+			}
+			echo '<details class="sp-tx"><summary>Texts to copy</summary>' . $tx . '</details></div>';
+		}
+		echo '</section>';
+	}
+	dbd_pack_settings_box( $n );
 }
 
 /* ------------------------------------------------------------------ Week in review */
@@ -408,6 +831,9 @@ function dbd_tab_week() {
 				<td><input name="<?php echo esc_attr( $opt ); ?>[address]" id="dbd_e_ad" type="text" class="large-text" value="<?php echo esc_attr( $eo['address'] ); ?>"><p class="description">In every email's footer, as US law requires.</p></td></tr>
 			<tr><th scope="row"><label for="dbd_e_fm">Signup form</label></th>
 				<td><input name="<?php echo esc_attr( $opt ); ?>[form]" id="dbd_e_fm" type="number" min="1" class="small-text" value="<?php echo (int) $eo['form']; ?>"> <span class="description">The WPForms form's ID.</span></td></tr>
+			<tr><th scope="row">Board emails</th>
+				<td><label><input type="checkbox" name="<?php echo esc_attr( $opt ); ?>[boards]" value="1" <?php checked( $eo['boards'] !== false ); ?>> Email the list when a new combine's results or draft board lands</label>
+				<p class="description">The Tuesday after its data stops changing for two days, at 8:00 AM Eastern. Twice a year; the boards already on the site are never emailed.</p></td></tr>
 			<tr><th scope="row"><label for="dbd_e_te">Tests go to</label></th>
 				<td><input name="<?php echo esc_attr( $opt ); ?>[test]" id="dbd_e_te" type="email" class="regular-text" value="<?php echo esc_attr( $eo['test'] ); ?>" placeholder="<?php echo esc_attr( DBD_Email::test_to() ); ?>"> <span class="description">Empty uses the reply-to.</span></td></tr>
 		</table>
@@ -415,13 +841,30 @@ function dbd_tab_week() {
 			<?php if ( $lp && $eo['key'] !== '' ) : ?><a class="button" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=dbd_email_test' ), 'dbd_email_test' ) ); ?>">Send a test of <?php echo esc_html( DBD_Router::week_label( (int) get_post_meta( $lp->ID, DBD_Post::M_WEEK, true ) ) ); ?> to <?php echo esc_html( DBD_Email::test_to() ); ?></a><?php endif; ?></div>
 	</form>
 
+	<?php $bm = DBD_Board_Mail::state(); ?>
+	<div class="dbd-box" id="dbd-boards"><h2>Board emails <small>the combine and the draft, twice a year (SCOPE §66)</small></h2>
+		<table class="dbd-rows"><tbody>
+		<?php foreach ( DBD_Board_Mail::KINDS as $bk ) :
+			$bys = DBD_Boards::years( $bk ); $bnew = $bys[0] ?? 0; $bsent = (int) ( $bm['sent'][ $bk ] ?? 0 ); $bseen = $bm['seen'][ $bk ] ?? null; $bjob = $bnew ? ( $bm['jobs'][ $bk . '-' . $bnew ] ?? null ) : null;
+			if ( ! $bnew ) { $btxt = 'No board yet.'; }
+			elseif ( $bjob ) { $btxt = 'The ' . $bnew . ' email: ' . $bjob['state'] . '.'; }
+			elseif ( $bnew > $bsent && $bseen && (int) $bseen[0] === $bnew ) { $btxt = 'The ' . $bnew . ' ' . $bk . ' is in, unchanged since ' . dbd_admin_when( $bseen[2] ) . '. It goes the first Tuesday after two days unchanged.'; }
+			elseif ( $bsent ) { $btxt = 'Up to date through ' . $bsent . '. The next one goes the Tuesday after the ' . ( $bsent + 1 ) . ' ' . ( $bk === 'draft' ? 'draft' : 'combine results' ) . ' land.'; }
+			else { $btxt = 'Waiting for the first sync to note the boards on the site.'; }
+		?>
+			<tr><td><?php echo esc_html( ucfirst( $bk ) ); ?></td><td><?php echo esc_html( $btxt ); ?></td></tr>
+		<?php endforeach; ?>
+		</tbody></table>
+		<div class="dbd-foot"><?php if ( $eo['key'] !== '' ) : foreach ( DBD_Board_Mail::KINDS as $bk ) : $bys = DBD_Boards::years( $bk ); if ( ! $bys ) { continue; } ?><a class="button" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=dbd_board_test&kind=' . $bk ), 'dbd_board_test' ) ); ?>">Send a test of the <?php echo (int) $bys[0] . ' ' . esc_html( $bk ); ?> email</a><?php endforeach; ?><span class="description">Tests go to <?php echo esc_html( DBD_Email::test_to() ); ?>.</span><?php else : ?><span class="description">Add the Brevo API key above to send a test.</span><?php endif; ?></div></div>
+
 	<?php $again = array(); ?>
 	<div class="dbd-box"><h2>Send log</h2>
 		<table class="widefat striped"><thead><tr><th>When</th><th>Post</th><th>Result</th><th>To</th></tr></thead><tbody>
 			<?php foreach ( $el as $r ) : ?>
 			<tr><td><?php echo esc_html( dbd_admin_when( $r['at'] ) ); ?></td>
-				<td><a href="<?php echo esc_url( (string) get_edit_post_link( (int) $r['post'] ) ); ?>"><?php echo esc_html( $r['title'] ); ?></a></td>
-				<td><?php echo esc_html( $r['result'] . ( $r['camp'] ? ' (Brevo campaign ' . $r['camp'] . ')' : '' ) ); ?><?php if ( strpos( (string) $r['result'], 'failed' ) === 0 && DBD_Email::failed( $r['post'] ) && ! isset( $again[ $r['post'] ] ) ) : $again[ $r['post'] ] = 1; ?> <a class="button button-small" href="<?php echo esc_url( DBD_Email::again_url( $r['post'] ) ); ?>">Try again</a><?php endif; ?></td><td><?php echo $r['n'] ? (int) $r['n'] : '–'; ?></td></tr>
+				<?php $rb = (string) ( $r['board'] ?? '' ); $rbk = $rb !== '' ? explode( '-', $rb ) : null; ?>
+				<td><a href="<?php echo esc_url( $rbk ? DBD_Router::url( array( 'view' => $rbk[0], 'y' => (int) $rbk[1] ) ) : (string) get_edit_post_link( (int) $r['post'] ) ); ?>"><?php echo esc_html( $r['title'] ); ?></a></td>
+				<td><?php echo esc_html( $r['result'] . ( $r['camp'] ? ' (Brevo campaign ' . $r['camp'] . ')' : '' ) ); ?><?php if ( strpos( (string) $r['result'], 'failed' ) === 0 ) : $ak = $rb !== '' ? $rb : 'p' . (int) $r['post']; if ( ! isset( $again[ $ak ] ) && ( $rb !== '' ? DBD_Board_Mail::failed( $rb ) : DBD_Email::failed( $r['post'] ) ) ) : $again[ $ak ] = 1; ?> <a class="button button-small" href="<?php echo esc_url( $rb !== '' ? DBD_Board_Mail::again_url( $rb ) : DBD_Email::again_url( $r['post'] ) ); ?>">Try again</a><?php endif; endif; ?></td><td><?php echo $r['n'] ? (int) $r['n'] : '–'; ?></td></tr>
 			<?php endforeach; ?>
 			<?php if ( ! $el ) : ?><tr><td colspan="4">Nothing sent yet.</td></tr><?php endif; ?>
 		</tbody></table></div>

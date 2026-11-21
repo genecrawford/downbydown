@@ -1,0 +1,97 @@
+{
+    "n": 10,
+    "items": [
+        {
+            "k": "swing",
+            "h": "The biggest swing",
+            "card": "game-2026_10_WAS_NYG",
+            "file": "dbd-week-10-swing-was-nyg.png",
+            "title": "Week 10’s biggest swing: one play with 1:05 left in the fourth quarter moved the Commanders’ chance of beating the Giants by 39 points. They won 24-21.",
+            "post": "Week 10’s biggest swing: one play with 1:05 left in the fourth quarter moved the Commanders’ chance of beating the Giants by 39 points. They won 24-21. https://downbydown.com/game/2026-week-10-commanders-at-giants/",
+            "link": "https://downbydown.com/game/2026-week-10-commanders-at-giants/",
+            "share": "https://downbydown.com/game/2026-week-10-commanders-at-giants/"
+        },
+        {
+            "k": "snaps",
+            "h": "A usage riser",
+            "card": "pack-week-10-snaps",
+            "file": "dbd-week-10-snaps-chimere-dike.png",
+            "title": "Chimere Dike played 95% of the Titans’ snaps against the Jaguars in Week 10, up from 21% in his 8 earlier games.",
+            "post": "Chimere Dike played 95% of the Titans’ snaps against the Jaguars in Week 10, up from 21% in his 8 earlier games. https://downbydown.com/player/chimere-dike/",
+            "link": "https://downbydown.com/player/chimere-dike/",
+            "share": "https://downbydown.com/player/chimere-dike/?share=pack-week-10-snaps"
+        },
+        {
+            "k": "offense",
+            "h": "Best and worst offense",
+            "card": "pack-week-10-offense",
+            "file": "dbd-week-10-offense.png",
+            "title": "Week 10 offenses by EPA a play: the 49ers were best (+0.45 in a 46-40 win over the Cowboys), the Cardinals worst (−0.52 in a 34-6 loss to the Rams).",
+            "post": "Week 10 offenses by EPA a play: the 49ers were best (+0.45 in a 46-40 win over the Cowboys), the Cardinals worst (−0.52 in a 34-6 loss to the Rams). https://downbydown.com/week/10/",
+            "link": "https://downbydown.com/week/10/",
+            "share": "https://downbydown.com/week/10/?share=pack-week-10-offense"
+        },
+        {
+            "k": "targets",
+            "h": "A target-share mover",
+            "card": "pack-week-10-targets",
+            "file": "dbd-week-10-targets-nico-collins.png",
+            "title": "Nico Collins drew 44% of the Texans’ targets against the Browns in Week 10, up from 21% in his 6 earlier games.",
+            "post": "Nico Collins drew 44% of the Texans’ targets against the Browns in Week 10, up from 21% in his 6 earlier games. https://downbydown.com/player/nico-collins/",
+            "link": "https://downbydown.com/player/nico-collins/",
+            "share": "https://downbydown.com/player/nico-collins/?share=pack-week-10-targets"
+        }
+    ],
+    "keys": [
+        {
+            "card": "game-2026_11_IND_HOU",
+            "away": "IND",
+            "home": "HOU",
+            "sides": [
+                {
+                    "t": "IND",
+                    "fits": "r/Colts",
+                    "head": "Red zone touchdowns",
+                    "say": "Colts score a touchdown on 65% of red zone trips (10th). Texans allow 68% (23rd).",
+                    "title": "Colts at Texans: where the matchup tilts for the Colts offense",
+                    "post": "Colts at Texans: Colts score a touchdown on 65% of red zone trips (10th). Texans allow 68% (23rd). https://downbydown.com/game/2026-week-11-colts-at-texans/",
+                    "link": "https://downbydown.com/game/2026-week-11-colts-at-texans/"
+                },
+                {
+                    "t": "HOU",
+                    "fits": "r/Texans",
+                    "head": "Wideouts feast",
+                    "say": "Colts give up 149 yards a game to wide receivers (16th), against a league average of 148. Texans' wide receivers produce 196 (4th).",
+                    "title": "Colts at Texans: where the matchup tilts for the Texans offense",
+                    "post": "Colts at Texans: Colts give up 149 yards a game to wide receivers (16th), against a league average of 148. Texans' wide receivers produce 196 (4th). https://downbydown.com/game/2026-week-11-colts-at-texans/texans/",
+                    "link": "https://downbydown.com/game/2026-week-11-colts-at-texans/texans/"
+                }
+            ]
+        },
+        {
+            "card": "game-2026_11_MIA_BUF",
+            "away": "MIA",
+            "home": "BUF",
+            "sides": [
+                {
+                    "t": "MIA",
+                    "fits": "r/miamidolphins",
+                    "head": "Backs catch passes",
+                    "say": "Bills give up 44 yards a game to running backs (30th), against a league average of 33. Dolphins' running backs produce 23 (27th).",
+                    "title": "Dolphins at Bills: where the matchup tilts for the Dolphins offense",
+                    "post": "Dolphins at Bills: Bills give up 44 yards a game to running backs (30th), against a league average of 33. Dolphins' running backs produce 23 (27th). https://downbydown.com/game/2026-week-11-dolphins-at-bills/",
+                    "link": "https://downbydown.com/game/2026-week-11-dolphins-at-bills/"
+                },
+                {
+                    "t": "BUF",
+                    "fits": "r/buffalobills",
+                    "head": "Throw it",
+                    "say": "Bills gain +0.16 EPA per dropback (5th). Dolphins allow +0.16 (28th).",
+                    "title": "Dolphins at Bills: where the matchup tilts for the Bills offense",
+                    "post": "Dolphins at Bills: Bills gain +0.16 EPA per dropback (5th). Dolphins allow +0.16 (28th). https://downbydown.com/game/2026-week-11-dolphins-at-bills/bills/",
+                    "link": "https://downbydown.com/game/2026-week-11-dolphins-at-bills/bills/"
+                }
+            ]
+        }
+    ]
+}

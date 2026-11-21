@@ -2709,3 +2709,728 @@ Gene: "explore what a season draft board/page and a season combine board/page co
 **Open questions:**
 1. The draft page's "so far" stats come from nflverse's draft file, updated weekly. Should they also link each rookie to his player page where one exists? (Default: yes.)
 2. Should the combine page also show the undrafted players' current teams, where a roster has them? (Default: no; only drafted or "Undrafted".)
+
+## 64. Growing traffic without ads: scope and plans (2026-11-15)
+
+Gene asked for ways to grow visitors without paying for ads, then for a scope and plan for each. Six plans follow. Each says where the site stands today (checked live on 2026-11-15), what to build in the plugin (each goes through the usual scope, mock and build), what is Gene's to do by hand, the effort, and how to tell if it's working.
+
+**Where the site stands:**
+- Every page type has a title, a description and a canonical URL.
+- Player and game pages carry share cards (og:image) and structured data (Person, SportsEvent).
+- The app's pages are in the WordPress sitemap, which robots.txt lists.
+- Google Analytics runs through Site Kit (tag GT-PB68KPF5).
+- The email signup (WPForms 63, Brevo) shows only under the weekly posts.
+
+**Gaps:**
+- The draft and combine boards have no share card or structured data.
+- Whether Search Console is connected isn't visible from outside.
+- Nothing yet helps posting to Reddit or X, and there are no embeds.
+
+**Suggested order** (by payoff for effort):
+1. Plan 6, measurement. It comes first so everything after it can be judged.
+2. Plan 1, search fixes.
+3. Plan 3, email signups.
+4. Plan 2, the share pack.
+5. Plan 5, fantasy.
+6. Plan 4, embeds and data stories.
+
+### Plan 1. Search: get the pages that already exist found
+
+**Goal:** more visits from Google for long-tail searches the big sites don't answer directly ("Justin Jefferson target share", "Vikings vs Packers matchup", "2026 combine 40 times").
+
+**Build (plugin):**
+- **1a. Search Console report (manual first):** pull the pages with many impressions but few clicks, and rewrite those titles and descriptions in `DBD_Router::seo_base()`. Titles lead with what people search ("Justin Jefferson stats 2026: targets, routes, EPA"), not the site's voice.
+- **1b. Structured data where it's missing:**
+  - The draft and combine boards get an `ItemList` (each pick or player as a `ListItem`) and a share card (the "page" card type with the year's headline).
+  - Player pages add `sameAs` to the Wikipedia article §62 already stores, which helps Google tie the page to the right person.
+- **1c. Internal links:** a "related" line at the end of each player page (his next game, his team's offense page, his draft class), and draft board names already link to player pages. The hub links to the newest draft and combine boards in the offseason (February to April).
+- **1d. Fresher pages in the sitemap:** the app sitemap entries get `lastmod` from the data build's `built_at`, so Google recrawls pages that changed overnight.
+- **1e. Seasonal prominence:** from mid-February to the draft, the home page's hero points at the combine, then the draft board. Gene's Divi home has a section for it, so this is a content change.
+
+**Gene's part:**
+- Confirm Search Console is connected in Site Kit, and submit `wp-sitemap.xml` there.
+- Once a month, look at the "pages with impressions, few clicks" list (or hand it to Claude).
+
+**Effort:** 1b plus 1d is one plugin release; 1c is a small one; 1a is ongoing, 30 minutes a month.
+
+**Measure:**
+- In Search Console: clicks and impressions for /player/, /game/, /draft/ and /combine/ pages, month over month.
+- The click-through rate on the pages whose titles were rewritten.
+
+### Plan 2. Communities: a weekly share pack for Reddit and X
+
+**Goal:** a steady stream of visitors from the places fans already talk (team subreddits, r/fantasyfootball, r/nfl, NFL analytics X and Bluesky), earned by posting one useful chart and takeaway, not a bare link.
+
+**Build (plugin): a "Share pack" tab in the Down by Down admin, refreshed each Tuesday from the week's data.**
+- Five ready-to-post items, each a share-card image (the card renderer already exists), a one-line takeaway, and the page link:
+  - the week's biggest win-probability swing;
+  - a usage riser;
+  - each team's "Keys to the game" read for its next opponent (one per team, for team subreddits);
+  - the week's best and worst offense by EPA;
+  - a fantasy target-share mover.
+- **Copy buttons** for the text and download buttons for the images.
+- **Nothing posts on its own.** Reddit and X rules and the community norms both call for a person posting.
+
+**Gene's part:**
+- Post two or three items a week by hand, image first with the link in a comment where a subreddit allows it.
+- Follow each subreddit's self-promotion rule; the common guide is to contribute far more than you link.
+- Use the same images on X and Bluesky, tagging the beat writers or analysts the chart is about.
+
+**Effort:** one plugin release for the tab; about 30 minutes a week of posting.
+
+**Measure:**
+- Referral visits from reddit.com, x.com and bsky.app in Analytics.
+- Which items get shared, so the weekly pack leans toward those.
+
+### Plan 3. The Tuesday email: turn visitors into regulars
+
+**Goal:** more signups from the people already visiting, and more forwards of each email.
+
+**Build (plugin):**
+- **3a. Signup in more places:** a quiet signup strip (the same WPForms form) at the end of game pages, player pages and the draft and combine boards, after the stats like the news blocks. Not a popup.
+- **3b. The draft and combine angle:** in the offseason the form's line changes to "Get the combine and draft boards the week they land".
+- **3c. A forward line in each email** ("Know someone who'd like this? Forward it; they can sign up at …"), plus one standout chart per email as the reason to forward.
+
+**Gene's part:** check the Brevo free plan limit (300 emails a day) as the list grows. The list can be split across days, or the plan raised when it's worth it.
+
+**Effort:** one small plugin release.
+
+**Measure:** weekly new subscribers (Brevo), the signup rate per page type (a GA4 event on form submit), and email open and click rates.
+
+### Plan 4. Things other sites link to: embeds and data stories
+
+**Goal:** backlinks, which lift every page's search ranking, plus referral visits from fan blogs and team sites.
+
+**Build (plugin):**
+- **4a. Embeddable widgets:**
+  - `/embed/player/{slug}/`, `/embed/team/{abbr}/` and `/embed/draft/{year}/{team}/` serve stripped-down versions (no site header) of a player's season card, a team's EPA card and a team's draft class.
+  - Each carries a small "Down by Down" credit link and an "Embed" button on the full page that copies the iframe code.
+  - Embeds load from the synced data like the pages do, cached the same way.
+- **4b. Data stories, posted as WordPress posts with charts.** Two or three a year, timed to search interest:
+  - "Which draft slots produce Pro Bowlers since 1980" (from the draft boards), in March and April.
+  - "Do combine numbers predict careers? Every 40-yard dash since 2000 against career AV", in February.
+  - "Every team's best and worst draft class since 2000", in the offseason.
+
+**Gene's part:**
+- Email a handful of fan blogs and podcasts in the fantasy and analytics space with a link to the embed or story most relevant to them. These are personal notes, not mass mail.
+- Post the stories to the communities in Plan 2.
+
+**Effort:** 4a is one plugin release; each story takes an afternoon with Claude doing the data and charts.
+
+**Measure:** referring domains in Search Console, embed views (a GA4 event from the embed page), and referral visits.
+
+### Plan 5. Fantasy: the biggest audience, every week
+
+**Goal:** fantasy players come back several times a week in season; give them a reason to make Down by Down one of their stops.
+
+**Build (plugin):**
+- **5a. A weekly fantasy page,** `/fantasy/week/{n}/`, built from data the site already has:
+  - target and carry share risers and fallers (the movers);
+  - red-zone usage leaders;
+  - matchup edges from "Keys to the game" (defenses that leak to tight ends, to the deep middle);
+  - each player linking to his page.
+- **5b. My team sharing:** a "Share my team's week" card that turns a saved lineup into a share image.
+- **5c. Fantasy titles:** search-friendly titles on that page ("Week 11 fantasy usage risers and matchups").
+
+**Gene's part:** the fantasy page is one of the share pack's weekly items (Plan 2); r/fantasyfootball's weekly threads are where it fits.
+
+**Effort:** 5a is a mid-size plugin release (the data exists, the page is new); 5b is a small one.
+
+**Measure:** visits to the fantasy page, returning visitors in season (Analytics), and My team shares.
+
+### Plan 6. Measurement: know what's working
+
+**Goal:** one monthly look that says which of these plans moves traffic, so time goes to what works.
+
+**Build (plugin):**
+- **GA4 events:**
+  - email signup submitted;
+  - share card downloaded or shared (the share buttons);
+  - embed code copied, and embed viewed;
+  - outbound clicks to YouTube and news (already links).
+- **A "Growth" box on the admin Overview tab:** this week's new email subscribers (from Brevo, which the plugin already talks to), the share pack items used, and links to Search Console and Analytics.
+
+**Gene's part:** confirm Search Console in Site Kit (also part of Plan 1), and keep a monthly half hour to look at the numbers, or hand them to Claude.
+
+**Effort:** one small plugin release.
+
+**Measure:** this plan is the measure. The monthly check covers:
+- visits by source (search, social, email, referral);
+- the top landing pages;
+- new subscribers;
+- referring domains.
+
+## 65. Measurement: one monthly look at what's working (scoped and mocked 2026-11-15, `mockup-v40/`)
+
+SCOPE §64 Plan 6, in detail. The goal is one page in the admin that answers "is it growing, and from where?" once a month, without opening four other tools.
+
+**What's there today (checked live 2026-11-15):**
+- Google Analytics loads on every app page through Site Kit.
+- Search Console is connected in Site Kit. Its numbers can't be read from a server command (§64, 2.24.0), but Site Kit's own dashboard reads them in the browser as the signed-in user, and the new tab can do the same.
+- The plugin already talks to Brevo and logs each Tuesday email's campaign.
+- Nothing on the site sends its own Analytics events yet: share-card taps, copied links and signups aren't counted.
+
+**65a. Events sent to Analytics** (in `dbd-site.js`, `compare.js` and `myteam.js`; each only when Analytics is on the page):
+
+| Event | When | Details sent |
+|---|---|---|
+| `share` | the share-card button: the phone's share sheet, or the image opening | method (share sheet, image), type (player, team, game, page), id |
+| `share` | Copy link on Compare and My team | method (copy link), type (compare, my team) |
+| `sign_up` | a new subscriber lands on the post after confirming their email (`?dbd_joined=1`), once per browser session | method (email) |
+
+Outbound clicks to YouTube and news sites need nothing from the plugin: Analytics counts them itself when its "Enhanced measurement" is on. Embeds (Plan 4) and the share pack (Plan 2) bring their own events when they're built.
+
+**65b. A Growth tab in the plugin's admin,** the sixth tab, plus a small Growth box on the Overview linking to it. Everything compares the last 28 days with the 28 before:
+- **Visits by source:** search, direct, social, email, referral, with the change for each. From Analytics.
+- **Google search:** clicks, impressions and click rate.
+- **Titles to tune:** the five pages with the most impressions and the lowest click rate. This is §64's monthly Plan 1a job, ready to hand to Claude.
+- **Top landing pages:** the ten pages people arrive on.
+- **Email:** subscribers now, the change in 28 days, and the last Tuesday email's opens and clicks. From Brevo; the plugin saves the list size once a day so it can show the change.
+- **Shares and signups:** counts of the two new events.
+- **Links:** Site Kit, Analytics, Search Console and Brevo, each opening the full report.
+
+**How the numbers are read:**
+- Analytics and Search Console: the tab asks Site Kit from the browser, the way Site Kit's own dashboard does, so it works for anyone who can see the Site Kit dashboard. If Site Kit doesn't answer (signed out of Google, or a Site Kit update changes its routes), those rows say so and keep their link.
+- Brevo: from the server with the key the plugin already has, cached for an hour.
+- Nothing is stored except the daily list size (90 days kept).
+
+**Gene's part (about ten minutes, once):**
+- In Analytics, Admin → Data streams → the site → Enhanced measurement: check "Outbound clicks" is on.
+- After the release, in Analytics, Admin → Events: mark `sign_up` as a key event.
+- Once a month: open the Growth tab, or hand Claude the "Titles to tune" list.
+
+**Effort:** one small release, 2.25.0. It touches PHP (the tab, the Brevo reads), so Greptile reviews it.
+
+**Undo:** the tab only reads; the events only add to Analytics. Turning the release back removes both, and the stored list sizes go with the plugin's other settings.
+
+## 66. More signups for the Tuesday email (scoped and mocked 2026-11-15, `mockup-v41/`)
+
+SCOPE §64 Plan 3, in detail. Today the signup form (WPForms #63, `[wpforms id="63" title="false"]`) shows only on the home page and under each weekly post.
+
+**66a. A signup strip at the end of four page types:** game pages, player pages (kickers too), and the draft and combine boards.
+- It sits after everything else on the page, below the news and videos, as one plain panel: a line, a sentence and the same form. Not a popup, nothing that moves.
+- It uses the shortcode from the Week in review tab's "Signup under each post" setting, so changing the form there changes it everywhere.
+- It only shows while the email is on and Brevo is set up, so it's never a dead form.
+- Someone who has confirmed on this device (the "You're in" landing) sees "You're on the list" instead of the form.
+- It has an id (`#dbd-sign`), so the email's forward line and any post can link straight to it.
+- A new Analytics event, `generate_lead`, fires when the form is sent, with the page type. The Growth tab's Signups row becomes "41 confirmed, from 55 forms sent".
+
+**66b. The line changes with the calendar:**
+
+| Dates | Line | Sentence |
+|---|---|---|
+| September 1 to February 14 | The week in review, every Tuesday | The scores, the biggest swings and the players who rose, one email after every week. Free. |
+| February 15 to April 30 | The combine and draft boards, the week they land | Every drill and every pick, the week the results are in. Then the week in review again from September. Free. |
+| May 1 to August 31 | The week in review, every Tuesday from September | The scores, the biggest swings and the players who rose, one email after every week. Free. |
+
+**Board emails, so the February line is true:** today the plugin only emails weekly posts, so nothing would arrive in March or April. The release adds two emails a year:
+- The Tuesday 8 AM after a new year's combine results land and stop changing for two days: the combine card, the fastest 40, top vertical and most bench reps, the top ten, and a button to the board.
+- The same after the draft: the draft card, the first pick, the team with the most picks, the first ten picks, and a button to the board.
+- They use the Tuesday email's template, show in its send log, can be sent as a test first, and have the same Try again. The board page is their "View in browser".
+- On the Week in review tab: a switch for board emails (on by default) and which one is next.
+
+**66c. Two things in every Tuesday email:**
+- **The standout chart:** "The swing and the play" gets the swing game's card, its win-probability line with the biggest swing marked, linking to the game. It goes into the weekly post itself, so the site and the email match. It's saved to the media library when the post is written, like the week card, so email apps load it from the site. Posts already published don't change.
+- **A forward line** under the main button: "Know someone who'd like this? Forward it. They can sign up at downbydown.com." The link opens the post's signup form (`#dbd-sign`). Board emails get the same line, linking to the board's strip.
+
+**Gene's part:** nothing to set up. As the list grows, keep an eye on Brevo's free-plan limit (300 emails a day).
+
+**Effort:** one release, 2.26.0. The board emails are most of it. It touches PHP, so Greptile reviews it.
+
+**Undo:** the strip only shows while the email is on; board emails have their own switch; the chart and forward line only affect posts written after the update.
+
+## 67. One dark signup box across the site (scoped and mocked 2026-11-15, `mockup-v42/`)
+
+Gene, on the live combine board: put the next-board block and the signup side by side, both dark like the combine block, then make the newsletter signup look the same across the site.
+
+- **The plugin's signup (2.26.1):** the strip becomes a dark box built like the next-board block: a small red line ("The email: every Tuesday", or "the week they land" from February 15 to April 30), the big headline, the sentence, then the field and button on one line. The form's label is hidden from sight but kept for screen readers, and the field says "Your email". The red bar runs along the bottom.
+- **On the draft and combine boards:** the next-board block and the signup sit side by side, the same height, and stack below 860px. Alone everywhere else (game, player and kicker pages).
+- **Gene's Divi newsletter section** (the home page and under each weekly post, `divi/home-newsletter.html`): the same dark look, the field and button on one line, the email preview on the right unchanged. Claude sends the full updated code for its Code module; Gene pastes it.
+
+## 68. The share pack: five things to post each week (scoped and mocked 2026-11-16, `mockup-v43/`)
+
+Plan 2 of §64. Gene asked to scope it after 2.26.1. The goal is visits from the places fans already talk (team subreddits, r/nfl, r/fantasyfootball, X, Bluesky), earned by posting one useful chart and a plain takeaway, not a bare link. Gene posts by hand; nothing posts by itself.
+
+**Where it lives:** a new Share pack tab in the Down by Down admin (the seventh, after Growth), its own submenu page like the others. Plugin 2.27.0.
+
+**When it fills:** from the newest finished week (the week file with `complete` and its movers), the moment the sync brings in the last game, so it's ready Tuesday morning. A week picker shows earlier weeks of the season. Before Week 1 the tab says the pack starts after Week 1's games. Nothing is stored: the tab reads the week file each time it opens.
+
+**The five items**, each with an image, three texts and buttons:
+1. **The biggest swing.** The week's largest one-play change in win probability (`swings[0]`, the same one the weekly post uses). Image: the game's card, which already draws the win-probability line with the swing marked.
+2. **A usage riser.** The biggest jump in snap share against his own earlier games (`movers.snaps.up`), quarterbacks left out (a new starter is the debut list's story). Image: a new card (below).
+3. **Best and worst offense.** Every offense that played, by EPA a play for the week (`teams`). Image: a new card (below).
+4. **A target-share mover.** The biggest jump in share of the team's targets (`movers.targets.up`), skipping the usage riser if he's the same player. Image: the riser card in its target-share version.
+5. **Keys to the game, next week.** For every team playing next week, its offense's Biggest edge read against that opponent (`DBD_Takeaways::cards()`, the first card), for its own subreddit. Image: the game's preview card, which already shows both sides. Teams on a bye are left out; in the playoffs it follows the next round once it's scheduled.
+
+An item whose data is missing (no swing, no mover) is left out, and the rest keep their numbers.
+
+**The texts for each item:**
+- **Reddit title:** the takeaway as one plain sentence, no link.
+- **Reddit comment, with the link:** one line of context (the play, or what the page shows) and the page link, for subreddits that want the link in a comment.
+- **X and Bluesky:** the takeaway and the link, with a count against 280 (a link counts as 23 on X). If it runs over, the result clause is dropped.
+- **Copy** buttons on each; **Download image** (the card, saved with a file name like `dbd-week-9-swing-den-car.png`); **Open the page**.
+- **Fits:** a hint of where it suits (r/nfl, r/fantasyfootball, the teams' subreddits), from a stored map of the 32 team subreddits.
+- The writing follows the weekly post's rules: plain sentences, numbers from the data, no hype, hashtags or emoji. A play description loses its bracketed notes and any sentence nflverse cut off with an ellipsis.
+- Links stay clean, with no tracking tags. Reddit readers distrust them, and the Growth tab already shows visits from reddit.com, x.com and bsky.app and the pages they landed on.
+
+**Two new cards** (`DBD_Card`, drawn with the same kit and fonts as the others, 1200 × 630, served through `?card=` and cached and pruned the same way):
+- **The riser card** (`pack-{season}-{week}-snaps` or `-targets`): the player's name, the share this week in his team's color, the sentence ("of the Giants' snaps against the Eagles, up from 33% in his 4 earlier games"), and a bar chart of that share game by game, this week's bar in team color, a dash where he didn't play, a dashed line at his earlier average.
+- **The offense card** (`pack-{season}-{week}-offense`): "Who moved the ball", the best and worst offenses as two tiles (team, EPA a play, the score), and every offense that played as a bar from zero, best and worst in their team colors, the rest in quiet green and red.
+
+**Not in this release:** posting for Gene, a log of what was posted, and tracking tags on the links.
+
+**Tests:** a harness mode `pack` renders the tab in CI from a fixture week (all five items, the X count under 280, a missing mover leaves its item out), and the card harness draws both new cards.
+
+**Gene's part:** post two or three items a week by hand, image first. Follow each subreddit's self-promotion rule (contribute far more than you link). Use the same images on X and Bluesky, tagging the beat writers or analysts the chart is about.
+
+**Measure:** visits from reddit.com, x.com and bsky.app on the Growth tab, and which landing pages they reached, so the pack can lean toward what gets shared.
+
+## 69. The share pack by email, Tuesday morning (scoped and mocked 2026-11-16, `mockup-v44/`)
+
+Gene, after 2.27.0: "Build the email." This is the first step toward automating the share pack. Bluesky, a Facebook Page and X come later, once Gene has the accounts. Reddit stays by hand.
+
+**Who gets it (Gene, building it):** several people, since Erik is helping post. The "Send to" box takes up to ten addresses, one per line. Each person gets their own copy, so nobody sees the others' addresses, and a retry goes only to whoever Brevo refused.
+
+**What:** one email to each of them every Tuesday at 7:00 AM Eastern, an hour before the weekly post and the Tuesday email go out. It holds the newest share pack, so he can post from his phone.
+
+**How it sends:** through Brevo's transactional email, with the API key the Tuesday email already uses (the same way the board-email tests send). It goes to each address on the list and is not a campaign, so it never touches the subscriber list. It counts toward Brevo's 300-a-day free limit as one email.
+
+**When:**
+- When a sync brings in a finished week that hasn't had its pack emailed, the plugin books one send for that week's Tuesday at 7:00 AM Eastern, or a minute later if that time has passed.
+- Each pack week goes out once.
+- A failed send tries again on the Tuesday email's schedule (`DBD_Email::TRIES` and `RETRY`). After the last try, the Share pack tab shows the error and offers Try again.
+- Before Week 1, or with the email turned off, nothing is booked. A week more than two days past its Tuesday (the plugin installed late, or the data came in late) is marked and never sent.
+
+**What's in it** (light, plain, built from the same `DBD_Pack` items as the tab):
+- **Subject:** "Week 9 share pack: Broncos’ 43-point swing, Singletary’s 93%". The two lead items, each kept short.
+- **Opening line:** "Five things to post this week. Long-press any text to copy it; tap an image to open it full size and save it."
+- **Items 1 to 4,** each with:
+  - its number and name;
+  - the card image, linked to the full-size card;
+  - the Reddit title, the Reddit comment and the X and Bluesky post as three labeled blocks, with the post's length against 280;
+  - "Fits:" and an "Open the page" link.
+- **Item 5,** keys to the game: each game's matchup, then a line for each offense (its subreddit, its read and its link), so a team's text can be copied straight into its subreddit. The game cards aren't in the email, to keep it short; the tab has them.
+- **Footer:** an "Open the Share pack" button (the admin tab) and "Turn this email off on the Share pack tab."
+
+**On the Share pack tab,** a new box at the top, "The Tuesday email to you":
+- An on/off switch, on by default.
+- Who it goes to: one address per line, up to ten, defaulting to the test address on Week in review.
+- A "Send the Week 9 pack now" button, which sends the week shown to everyone on the list right away without changing the Tuesday booking.
+- A status line: "Week 9 pack sent Tuesday, Nov 10, 7:00 AM", "Week 10 pack booked for Tuesday, Nov 17, 7:00 AM", or the last error with Try again.
+- If Brevo isn't set up, the box says so and links to Week in review.
+
+**Tests:** the harness builds the email from the newest pack (subject, the four items, the keys, no unescaped text, every link absolute). It checks the booking rule (a new week books once; a sent week doesn't book again; the time is Tuesday 7:00 AM Eastern, or a minute after now when that's passed) and that the admin box renders.
+
+## 70. The data build checks every hour (built 2026-11-17)
+
+**Why:** GitHub starts scheduled runs late and sometimes drops them. Over Nov 16–17 only 4 of 11 scheduled builds ran, and both Tuesday-morning builds after Monday night never started, so the Chargers–Ravens game wasn't on the site at 6 AM even though nflverse had posted it at 12:30 and 5:00 AM ET. nflverse itself avoids this by starting its builds from outside GitHub.
+
+**What changed** (`.github/workflows/build-data.yml`, no plugin change):
+
+1. **Hourly at :37** from September to February, in place of the three daily runs and the game-night extras. A dropped run now costs an hour.
+2. **A cheap first check.** A `check` job reads the upload time and size of every nflverse file the build uses, the last commit of nfldata's `games.csv`, today's date, and our own `tools/` and workflow file, and hashes them. If a finished build already saw that hash (kept in the Actions cache), the run stops in seconds: nothing downloaded, committed or synced. A new day always builds once, since player ages and the Wikipedia cache depend on the date. A manual run always builds unless "force" is unticked.
+3. **Outages stop quietly.** If a download fails (no answer, or a server error after curl's retries), or play-by-play or weekly stats are missing in a season that already has games in `/data` (nflverse can drop a file for a moment while re-uploading it, and building without it would empty the site), the run leaves `/data` alone with a warning and the next hour tries again. It fails (and GitHub emails) only when `/data`'s `built_at` is more than two days old, or our own build breaks.
+
+Everything after the downloads is unchanged: commit only when the data changed, then ping the site.
+
+## 71. Post to r/downbydown from the Share pack tab (scoped and mocked 2026-11-18, `mockup-v45/`; ALL DECIDED)
+
+**Why:** Gene set up r/downbydown. Reddit closed open API sign-ups in November 2025 (new apps need approval under its Responsible Builder Policy), so posting for him isn't dependable. What does work without any API: Reddit's new-post form takes the title and link in the address, the way X's share link does. One click opens the form filled in; Gene or Erik clicks Post.
+
+**What it does:**
+
+1. **A "Post to r/downbydown" button on every pack item** (swing, snaps, offense, targets) and on **every keys side** (13 games × 2 this week; post the few you like). Opens `https://www.reddit.com/r/{sub}/submit?url={link}&title={title}` in a new tab. Title = the item's Reddit title (already under Reddit's 300-character limit); link = the item's page.
+2. **It's a link post, so the card is the preview.** Reddit can't take an image file through the address, but a link post shows the page's `og:image`. The swing and keys already point at game pages whose share image is the game card. For the three pack-only cards (snaps, targets, offense) the link adds `?share={card key}`; a page asked for with a valid `pack-week-N-…` key prints that card as its `og:image` / `twitter:image` and puts the same address in `og:url`. `rel=canonical` stays the clean address, so search engines see one page. Any other `share` value is ignored. Each week's key differs, so Reddit never shows last week's preview.
+3. **One setting on the tab: "Your subreddit"** (default `downbydown`). Empty hides the buttons. Stored as `dbd_pack_sub`, letters, digits and underscores only.
+4. **Nothing else on the tab changes:** the Copy buttons, the X and Bluesky text, and the "Fits" line for team subreddits stay. Team subreddits stay manual (automated self-links there read as spam).
+
+**Prefill test PASSED (Gene, 2026-11-18):** the test link opened r/downbydown's new-post form as a link post with the title word for word and the link filled in, and Reddit pulled the page's share card as the preview. Reddit's form also has an optional body box; it stays empty (the first-comment text stays a Copy button).
+
+**Decisions (all decided 2026-11-18):**
+1. Keys: a button on **every side** (26 this week); Gene and Erik pick which to post.
+2. The Tuesday pack email gets the same **"Post to r/downbydown" links** on every item and every keys side, so Erik can post from his inbox. Hidden when the subreddit setting is empty.
+
+**Tests:** the harness checks each button's address (right subreddit, encoded title and link, `?share=` only on pack-only cards), that a page with a valid `share` key prints that card in `og:image` and `og:url` but keeps the clean canonical, and that an invalid key changes nothing.
+
+**2.29.1 (Gene, 2026-11-18):** each keys side also gets **Post to r/{team subreddit}** next to Post to r/downbydown, using the team's subreddit from `DBD_Pack::SUBS` (the same one the "Fits" hint shows), on the tab and in the Tuesday email. `reddit_url()` takes an optional subreddit. The team buttons don't depend on the "Your subreddit" setting. The four main items keep only the r/downbydown button.
+
+## 72. Post on X and Post on Bluesky buttons (scoped and mocked 2026-11-18, `mockup-v46/`)
+
+**Why:** Gene set up X (@dxd_NFLfootball) and Bluesky (downbydown.bsky.social). Same idea as §71: one click opens the site's compose box with the post written, link included; Gene or Erik clicks Post. Bluesky auto-posting is a later scope; X stays on buttons (its posting API now costs money).
+
+**What it does:**
+
+1. **Post on X** and **Post on Bluesky** buttons next to the "X and Bluesky" text on each of the four main items, and on every keys side (next to its Reddit buttons). Each opens the site's official compose link in a new tab:
+   - X: `https://x.com/intent/post?text={text}`
+   - Bluesky: `https://bsky.app/intent/compose?text={text}`
+2. **The text is the pack's existing "X and Bluesky" post,** with the item's link swapped for its `share_link()` (§71), so the snaps, targets and offense posts preview their own pack card. X shows the card from the page's `twitter:image` (already `summary_large_image`); Bluesky's composer turns the link into a link card from `og:image`.
+3. **Bluesky's 300-character count includes the link** (X counts any link as 23). Where the text plus the full link runs over 300, the Bluesky button uses the same fallback the X text already has: the short takeaway, then a cut at a word.
+4. **The Tuesday pack email** gets the same "Post on X · Post on Bluesky" links on every item and keys side.
+5. **Your accounts:** next to "Your subreddit", an **X account** field (default `dxd_NFLfootball`) and a **Bluesky** field (default `downbydown.bsky.social`). The X handle goes in every page's `twitter:site` tag, so links shared on X credit the account. Either field empty hides that site's buttons.
+
+**Before building, two tests (Gene, signed in, from his own browser):** the mock's test links open X's and Bluesky's compose boxes with this week's snaps post. Don't post; confirm the text and link are filled in, and whether a preview card appears. (Today the preview is Chimere Dike's snaps card, since `?share=` is live.)
+
+**Tests:** the harness checks both addresses decode back to the post text with the share link, the Bluesky text stays within 300 with the full link, empty handles hide the buttons, the email carries one X and one Bluesky link per item and keys side, and `twitter:site` is on every app page.
+
+## 73. Share on Facebook, a caption and a square for Instagram (scoped and mocked 2026-11-18, `mockup-v47/`)
+
+**Why:** Gene set up Instagram (@down_by_down) and a Facebook group (facebook.com/groups/988685080499981). Neither takes a fully prefilled post: Facebook's share link fills in only the link (it dropped prefilled text years ago, and has allowed no posting to groups through its API since 2024), and Instagram has no compose link at all (and caption links aren't clickable). So: get as close to one click as each allows.
+
+**What it does:**
+
+1. **Share on Facebook**, on each of the four main items and every keys side, after the X and Bluesky buttons. One click does two things: it copies the post text, and it opens `https://www.facebook.com/sharer/sharer.php?u={share link}` in a new tab. Facebook's share box shows the link with its card (the pack card for snaps, targets and offense, via `?share=`). Gene picks **Share to a group**, chooses Down by Down, and pastes. The button's label changes to "Copied, now paste" for a moment so it's clear the text is on the clipboard. The text is the takeaway without the link (the card carries it).
+2. **Copy for Instagram**: a caption field on each main item and keys side, with its own Copy button. The caption is the takeaway, a blank line, "Full chart: link in bio (downbydown.com)", a blank line, then hashtags: `#NFL`, the teams' nicknames (`#Commanders #Giants`), plus `#FantasyFootball` on the snaps and targets items. Post it with the item's Download image. The 1200×630 card is within Instagram's widest feed shape (1.91:1); tall 1080×1350 cards are a separate step later, if Instagram earns it.
+3. **Settings,** with the other accounts: **Facebook group** (default the group's address; empty hides the Facebook buttons, and when set the tab shows an "Open the group" link) and **Instagram** (default `down_by_down`; empty hides the captions).
+4. **The Tuesday pack email** gets "Share on Facebook" links (the email can't copy to the clipboard, so its link only opens the share box, and the Facebook text sits in the email to copy by hand) and the Instagram caption under each item and keys side.
+5. **Gene, once:** put downbydown.com in the Instagram bio, so "link in bio" leads somewhere.
+6. **Instagram squares (added by Gene, 2026-11-18; `mockup-v47/squares.html`):** a 1080×1080 graphic for each of the four main items and every keys side, with a **Download square** button next to Download image (and in the email, a "Square for Instagram" link next to each image). Each square is drawn by `DBD_Card` on the cards' cream: the takeaway set large in Barlow Condensed (the item's short takeaway; a keys side's headline and line), the item's own 1200×630 card scaled to 960 wide under it, and a red rule with "downbydown.com" and "Link in bio" at the foot. No second logo: the card inside carries it. Card keys `ig-week-{N}-{swing|snaps|offense|targets}` and `ig-week-{N}-keys-{game id}-{team}`, cached and pruned like the other cards; the headline shrinks to fit four lines.
+
+**Facebook test PASSED (Gene, 2026-11-18):** the share link opened Facebook's share box with the link card, and Share to a group let him pick Down by Down.
+
+**Decisions (decided 2026-11-18):**
+1. Keys sides get Share on Facebook, the Instagram caption and a square too, like the main items: **yes**.
+
+**Tests:** the harness checks every square key is valid and draws at 1080×1080 (CI renders them, with and without logos, and a bad key fails), the share address decodes to the share link, the Facebook text has no link, every caption has the takeaway, the bio line and its hashtags (#FantasyFootball only on snaps and targets), cleared settings hide each, the email counts, and pack.js copies the text from the Facebook button.
+
+## 74. The Share pack tab, simplified (scoped and mocked 2026-11-18, `mockup-v48/`; built as 2.32.0)
+
+**Why:** after §68–73 the tab does a lot, and it reads like it. Before the first item, Gene meets the email box, a row of five account fields that wraps, a week picker and a paragraph of instructions. Each item then shows four text boxes and seven buttons in two places, and each keys side has nine buttons. Gene: "make it much simpler to understand." Same features, less to read.
+
+**What changes (no new features, nothing removed):**
+
+1. **The top is three lines:** "Week 10 pack" with the week picker and when it was ready; one sentence on how the buttons work; and the email's status in one line ("Emailed to 2 people Tuesday, Nov 17 at 7:00 AM", or what's wrong) with a "Change the list" link to the settings.
+2. **Each item:** its number and name; the card with **Download image** and **Download square for Instagram** under it; the takeaway as plain text; then **Post it** with one button per place, in one row and always in this order: **r/downbydown, X, Bluesky, Facebook, Instagram**. The Instagram button copies the caption (the square is under the card). A line under the row names the other subreddits it fits, to post by hand.
+3. **The four texts** (Reddit title, Reddit first comment, X and Bluesky, Instagram caption) fold away under **Texts to copy**, closed by default, each still with its Copy button. The X count stays on the X and Bluesky box.
+4. **Keys to the game:** each game is a heading with "Download the game card"; each side is one line (team mark, its edge in bold, the numbers) with one row of small buttons in the same order, plus the team's own subreddit after r/downbydown and **Square** at the end. Each game's texts fold under its own "Texts to copy".
+5. **Settings go to the bottom,** in one box that opens on click: "Settings: the Tuesday email and your accounts", with the email (on/off, the list, the last sends, Send now) and the five accounts in labelled rows, and one **Save settings** button for all of it. It opens on its own after a save, an error, or a send, so the notice is next to what changed.
+6. **Buttons all look the same** apart from each site's color: one size per row, the labels are just the site's name.
+
+**Under the hood:** the email list and the accounts save in one form. They're two settings groups today (the list is in `dbd_pack`, the accounts in `dbd_pack_sub`, kept apart because options.php resets a group's unposted options); one form posting both groups' options to one handler (admin-post `dbd_pack_settings`, with a nonce) that sanitizes each with its existing callback. The Send-now and Try-again forms stay as they are, inside the box. The page's notices move into the box.
+
+**Built as mocked (Gene: "Build it", 2026-11-18).** Small additions: the card links to its page (the old "Open the page" button), and a Try again button sits on the status line at the top when a send failed.
+
+**Tests:** the admin harness checks the new order of the post row, the folds closed by default, the settings box with every field name, one Save, and that the settings box is open when `?pack=` or `settings-updated` is in the address; the admin-post handler saves both groups' fields with their sanitizers and refuses a bad nonce.
+
+## 75. Week leaders in the Share pack (scoped and mocked 2026-11-18, `mockup-v49/leaders.html`; built as 2.33.0)
+
+**Why:** Gene: "how about some weekly stat leaders? Like leading QB's, TD, Rushing, Receiving and defense?" The pack has the week's biggest swing and its risers, but not the simple leaderboard fans share most.
+
+**What it does:**
+
+1. **A new pack item, "Week leaders"**, with the same parts as the others: a 1200×630 card, its Instagram square (`ig-week-N-leaders`), the Post it row (r/downbydown, X, Bluesky, Facebook, Instagram), and the four texts folded under Texts to copy. "Fits" r/nfl and r/fantasyfootball. Also in the Tuesday pack email.
+2. **The card (`pack-week-N-leaders`):** "WEEK N LEADERS", then five panels side by side, each with the leader big (team mark, name, the number) and a line of detail, and the next two under a rule:
+   - **Passing:** passing yards (completions of attempts, TD, INT).
+   - **Rushing:** rushing yards (carries, TD).
+   - **Receiving:** receiving yards (catches, TD).
+   - **Touchdowns:** rushing plus receiving touchdowns (how many of each); ties broken by yards from scrimmage.
+   - **Defense:** the team that allowed the fewest EPA a play, with the points it allowed and to whom.
+3. **Where the numbers come from:** the week's box scores (`data/box/wN.json`, every offensive player's line, already built nightly) and the week file's team defense (`depa`). No new data. Full names from the players index, falling back to the box score's short name. A week only gets the item once all its games are final, like the rest of the pack.
+4. **The texts:** Reddit title "Week 10 leaders: Joe Burrow threw for 409 yards and 4 TDs, James Cook ran for 157, Ja'Marr Chase caught 11 for 231, Christian McCaffrey and George Pickens scored 3 each, and the Rams held the Cardinals to 6." (under 300); the X and Bluesky text and the square's headline use the short version (passing, rushing, receiving, defense); the first comment links the week page.
+
+**Decisions (decided 2026-11-18, built as 2.33.0):**
+1. Defense: the **team** that allowed the fewest EPA a play (one week of individual sacks and interceptions is mostly ties).
+2. Where it sits: **item 5, before Keys to the game**, which becomes 6.
+
+**Tests:** the harness checks the five leaders against the box score for the newest week (the top passing yards, rushing yards, receiving yards, touchdowns and team defense), the card and its square draw (CI renders both, with and without logos), the texts' lengths and links, the item's place in the fixed order, and the email's count.
+
+## 76. Instagram posts itself (scoped and mocked 2026-11-18, `mockup-v50/`; decided; built as 2.34.0)
+
+**Why:** Instagram is the one place a link can't fill in a post (§73), so every week Gene downloads squares and pastes captions by hand. Meta's posting API (Instagram API with Instagram Login, `instagram_business_content_publish`) lets the plugin publish for the account it's connected to; for your own account the app needs no Meta review. Gene: "How can we automate the IG stuff?"
+
+**What it does:**
+
+1. **A carousel on Tuesday, then one post a day (see Decisions).** Tuesday at 9:00 AM Eastern (two hours after the pack email, so Gene and Erik see the week first), the plugin posts one carousel to @down_by_down: the five item squares in pack order (swing, usage riser, best and worst offense, target-share mover, week leaders), with one caption. Then each item gets its own post, one a day. Keys to the game stay manual.
+2. **The caption:** "Week 10 in five charts:" then one short line per slide (the item's short takeaway), a blank line, "Full charts: link in bio (downbydown.com)", a blank line, and hashtags (#NFL, #FantasyFootball, and the teams in the slides, no more than 15). Under Instagram's 2,200 characters.
+3. **JPEG copies of the squares.** The API takes JPEG only. A square asked for with `&fmt=jpg` is served as a JPEG (quality 90), cached beside the PNG and pruned with it. Instagram fetches each image from its public address.
+4. **Publishing, the way Meta asks:** for the carousel, a container per square (`is_carousel_item=true`), a carousel container (`media_type=CAROUSEL`, `children`), then `media_publish`; for a daily post, one image container, then `media_publish`; when publish doesn't return an id, check the container's `status_code` once a minute for up to five minutes. Retries like the Tuesday email (every 10 minutes, 7 tries); after the last, an email note to the test address and **Try again** on the tab. A week more than two days past its Tuesday is skipped, as with the email. A week is posted once (`dbd_ig_post` keeps season-week → state and the media id).
+5. **On the Share pack tab:** the status line at the top gains Instagram ("Week 10 carousel posted Tuesday, Nov 17, 9:00 AM · View on Instagram"), and the settings box gets an **Instagram posting** section: on/off, the access token (pasted once, shown as "connected as @down_by_down" after a check against the API, never printed back), and **Post the Week 10 carousel now**. The token is kept in a non-autoloaded option.
+6. **The token stays alive.** Instagram's long-lived token lasts 60 days. Every week the plugin refreshes it (`refresh_access_token`); if a refresh fails, the tab and the Overview's "Needs a look" say so, with a week of the old token's time left to paste a new one.
+
+**Gene, once (about 15 minutes):**
+1. In Instagram, switch @down_by_down to a professional account (Creator or Business).
+2. At developers.facebook.com, create an app, add the **Instagram** product, and choose **API setup with Instagram login**.
+3. Under **Generate access tokens**, add @down_by_down, accept the tester invite in Instagram (Settings → Website permissions → Apps and websites), then **Generate token** and paste it into the plugin.
+
+**Decisions (Gene, 2026-11-18): "one carousel, then a post every day", at 9:00 AM:**
+1. **Tuesday 9:00 AM Eastern: the carousel**, the five item squares as above (the week at a glance).
+2. **Then one post a day, Wednesday to Sunday at 9:00 AM Eastern, one item each, in pack order:** Wednesday the biggest swing, Thursday the usage riser, Friday the best and worst offense, Saturday the target-share mover, Sunday the week leaders. Each is a single image post: the item's square and its Instagram caption (§73: the takeaway, the bio line, its hashtags). A week missing an item (no riser that week) skips that day.
+3. The Thursday keys carousel (proposed earlier the same day) is dropped; keys stay manual.
+4. All six posts run on the same booking, retries, late-skip (a post more than a day past its slot is skipped, not sent late), Try again and Post now, each with its own state (`dbd_ig_post` keys `season-wN-carousel`, `season-wN-swing`, …), and the status line shows the last post and the next one booked.
+
+**Tests:** the harness builds the carousel and the five daily posts for the newest week (their days, order and captions), (five slides, the bio line, at most 15 hashtags, under 2,200), checks the JPEG square is 1080×1080 JPEG, runs the publish flow against a fake API (containers, carousel, publish; a missing id answered by status polling; an error retried; a late week skipped; a week posted once), the token refresh (a good refresh saves the new expiry; a failed one raises the warning), and the tab's new strings.
+
+
+## 77. Instagram posting with a Unified-login token (2026-11-18; built as 2.34.1)
+
+Connecting 2.34.0 showed that Meta no longer offers "API setup with Instagram login" to new apps: "API setup with Instagram login is not available for newer apps. Your app uses API setup with Unified login instead." Unified login gives a system-user access token (Facebook Login for Business, `instagram_basic` + `instagram_content_publish`) that starts `EAA`, works on `graph.facebook.com`, and never expires.
+
+1. A token starting `EAA` is the Unified-login kind; anything else is the Instagram-login kind and works as in §76.
+2. The Unified kind needs the Instagram account ID (the number under the account in the Meta app; ours is 17841433054101334). It's a new field in the Share pack settings, kept in `dbd_ig_set['account']` (digits only). On save the pair is checked with `GET /{id}?fields=id,username` on graph.facebook.com; a failure keeps nothing. Changing the ID with a kept token checks the pair again; when a check fails, the ID goes back to what it was, so it never names an account the kept connection doesn't post to (Greptile, PR #145).
+3. The posting steps are the same (containers, carousel children, `media_publish`, `status_code`, `permalink`), sent to graph.facebook.com/v24.0/{id}/….
+4. The token is kept with `expires` 0, never running out: no renewal and no "runs out" warning. The weekly event checks it instead; when Instagram stops taking it, the tab and the Overview say "Instagram stopped taking the token (…). Paste a new one." It still counts as connected, so a post that fails goes through the usual retries and note.
+
+**Tests:** the harness's fake API answers on both hosts and records which one each call went to: the token kinds, the ID cleaned to digits, a missing ID or a bad token or an unknown account keeps nothing, a good pair is kept never running out and checked on graph.facebook.com, posts go there, the weekly check isn't a renewal and its failure warns while a pass clears it, and an IG token still goes to graph.instagram.com. The admin harness looks for the new field.
+
+## 78. The weekly fantasy page (scoped and mocked 2026-11-18, `mockup-v51/`; decided; built as 2.35.0)
+
+§64 Plan 5a. Gene: "Scope the fantasy page." Mid-season, the one traffic plan that pays every week now.
+
+**What the site already has (checked 2026-11-18), so the page doesn't repeat it:**
+- The Week in review page's Movers band: one game's jump in snap or target share against the season (`movers.json`).
+- The Matchups page's full chart: every defense's rank in points allowed by position, in all three formats (`fantasy.json`).
+- Keys to the game: each side's biggest edge for next week (`DBD_Pack::keys`).
+- My team, fantasy points on every player page, the leaders boards.
+
+**What the page adds:** one stop for the coming week, built for the start/sit and waiver question. It looks forward (next week's opponent on every row), uses a three-game trend instead of one game, and adds red-zone usage, which nothing on the site shows yet.
+
+**Address and title:**
+- `/fantasy/week/{n}/` for the coming week (Week 11 now, data through Week 10). `/fantasy/` shows the current one.
+- Title: "Week 11 fantasy football: usage risers, red zone and matchups". Description names the top riser at each position.
+- Canonical, the sitemap (lastmod = the build), and a share card.
+
+**The page, top to bottom** (the site's own panels, rows and format switch, same as the Week in review page):
+1. **Header:** "Week 11 fantasy", a line of data through Week 10, games and byes, and the Standard / Half PPR / PPR switch (remembered on the device, as now). Jump links.
+2. **Usage risers:** three panels, RB, WR and TE, five each.
+   - Share over his last three games against his earlier games. Backs: share of the team's carries plus targets. Receivers and tight ends: share of the team's targets.
+   - Each row: face, name, team, a sparkline of the share game by game, "+15 pts, 26% → 41%", points a game over the three (in the chosen format), and next week's opponent with the defense's rank against his position, marked soft (1st–8th most allowed) or tough (25th–32nd).
+   - Out: players on bye, and anyone with fewer than two games on each side of the split.
+3. **Fallers:** one panel, three per position, the biggest drops among players who had at least 15% before.
+4. **Red zone:** two panels, the last three games inside the 20. Backs: carries plus targets, how many inside the 5, touchdowns, share of the team's red-zone plays. Receivers and tight ends: targets, the same columns. Six each.
+5. **Matchups at a glance:** four small panels (QB, RB, WR, TE): the four softest matchups this week and the two toughest, in the chosen format, each "offense vs defense, 6th most allowed, 26.7 a game". A link to the full chart on the Matchups page.
+6. **Edges from Keys to the game:** every game in one list, each side's biggest edge in a line, linking to the game page.
+7. **On bye:** the teams off and each one's top three scorers, so readers know who to replace.
+
+**Data:**
+- The build (tools/build_data.py) writes `data/fan/w{n}.json` for the coming week: the risers, fallers, red zone, matchups and byes, worked out from the plays files (team totals counted from every target and designed run, so a player missing from a roster can't inflate a share).
+- It is rewritten every hourly build until the week's first kickoff, then left alone, so each week's page stays as it was before the games. Past weeks stay up at their addresses.
+- The keys edges come from the plugin at render time, as now.
+
+**Links in:** the Week in review page's subtitle ("Fantasy for Week 11"), the Matchups page's fantasy chart heading, My team, and the hub. Gene adds "Fantasy" to the Divi menu.
+
+**Not in this release:** 5b (share my team's week) and a fantasy item in the share pack.
+
+**Decisions (all made):**
+1. **Trend window:** DECIDED 2026-11-19: last three games against the earlier ones (Gene: "Last three").
+2. **Share pack item:** DECIDED 2026-11-19: later, after the page has run a week or two; not in this release (Gene: "Later").
+
+**Effort:** one build change and a mid-size plugin release.
+
+**Measure:** visits to `/fantasy/`, returning visitors on Wednesday to Sunday in Analytics, and Reddit referrals once it's in the share pack.
+
+**Tests:** the build checks the file's shape and that no team on bye appears in the lists; the harness renders the page for the newest week, checks every section, the format switch, the share card (1200×630), the title, and that an unknown week is a 404.
+
+## 79. Pass rushers: pressures against sacks (scoped and mocked 2026-11-19, `mockup-v52/`; all decided; built as 2.36.0)
+
+Gene shared a fan account's pass-rusher chart (1,800 likes in seven hours) and asked what I made of it, then: "Scope it." The site's defense files already back up its Dallas Turner numbers (8 sacks, 30 pressures, 22 QB hits). Individual pass rushers aren't ranked anywhere on the site today: the Leaders page's Defenses tab ranks the 32 units, and defenders appear only on their own team's defense page.
+
+**What it adds:** one chart of every pass rusher with a regular role. Pressures a game run across, sacks a game run up, so a reader sees at a glance who gets there and who finishes. It's our own chart from our own numbers, not a copy of the post's.
+
+**Where:** a Pass rushers band at the top of Leaders → Defenses (`/leaders/def/#ld-rush`), above the team boards.
+
+**The band, top to bottom:**
+1. **Heading:** "Through Week 10 · 101 rushers, a game each", with a Highlight menu (All teams, then the 32 teams by nickname).
+2. **The read:** who gets there most (Greg Rousseau, 4.1 pressures a game, 37 in all) and who finishes most (Will Anderson Jr., 10.5 sacks, 1.17 a game).
+3. **The chart:**
+   - every rusher as a dot in his team's color, with dashed lines at the middle of the pack on each axis
+   - the top eight on each axis named
+   - a tip on each dot: pressures, sacks, QB hits, games and snap share
+   - highlighting a team dims everyone else and names that team's rushers (the Vikings: Turner, Van Ginkel, Cashman, Wilson, Rodriguez, Ingram-Dawkins); the choice is remembered on the device
+   - on a phone, a smaller chart with larger type that names the top three on each axis
+4. **The table:** the top ten by pressures a game, with pressures, sacks, QB hits, tackles for loss and snap share, and Show all 101. The highlighted team's rows are shaded. On a phone it keeps the rank, the player, pressures a game and sacks.
+5. **The note:** what counts and where the numbers come from.
+
+**Who counts:** defensive linemen and linebackers who played at least half their team's games, on 40% or more of the snaps in the games they played, with at least one pressure a game. That's 111 through Week 10. The mock showed 101: it read the build's snap share, which divides by the team's games, so players who missed games fell short (Ed Oliver: 35% of the team's snaps is 52% of his own; Greptile, PR #147). Rusher names link to their team's defense page, since defenders have no player pages.
+
+**Sources, said plainly on the page:** pressures are Pro Football Reference's charting; sacks, QB hits and tackles for loss are nflverse's play-by-play. The two don't always add up the same way (Will Anderson Jr. has more sacks plus hits than charted pressures), so the chart keeps one source on each axis.
+
+**Share card and square:** `pack-week-N-rush` (1200×630) and `ig-week-N-rush`, drawn only for the week the defense files run through, in the site's card style:
+- the title "Pass rushers"
+- three tiles: most pressures, most sacks, and the number of rushers
+- the chart on the green panel, naming the top three on each axis
+
+The Instagram square puts the short version above it, as the other squares do.
+
+**Share pack item** (decided: weekly; item 6, Keys to the game moves to 7; it rides the Tuesday Instagram carousel, with no day of its own):
+- **Title:** "Every NFL pass rusher through Week 10, pressures a game against sacks a game (101 rushers with a regular role)".
+- **Short version:** "Pass rushers through Week 10: Greg Rousseau gets there most (4.1 pressures a game) and Will Anderson Jr. finishes most (10.5 sacks). All 101 on one chart."
+- **Fits:** r/nfl.
+- **Link:** the band.
+
+**Data:** no build change. The plugin reads `defense/{TEAM}.json` (`defenders`: g, snap, prs, sk, qbh, tfl) at render time, cached with the data version.
+
+**Labels:** a label never sits on another label or on a dot. Near the right edge it moves above its dot.
+
+**Not in this release:** each team's defense page with its own rushers highlighted on the same chart, and a week-by-week view.
+
+**Decisions (all made):**
+1. **Axes:** DECIDED 2026-11-19: pressures a game against sacks a game (Gene: "Pressures vs sacks").
+2. **Share pack:** DECIDED 2026-11-19: a weekly item, the card plus the square, every Tuesday with the pack (Gene: "Weekly item").
+3. **Who counts:** DECIDED 2026-11-19: half the games, 40% of the snaps and a pressure a game, 101 rushers through Week 10 (Gene: "40% of snaps").
+
+**Effort:** a small-to-mid plugin release (a band, a new card drawing, a share pack item) and no build change.
+
+**Measure:** visits to `/leaders/def/`, the Highlight menu's use (Analytics event), and referrals from the posts.
+
+**Tests:** the harness renders `/leaders/def/` and checks:
+- the band, the dot count and the named rushers
+- that no qualifier misses the rules
+- the table's top ten and Show all
+- the card (1200×630) and the square (1080×1080)
+- the share pack item's text
+
+## 80. A chart on every position tab of Leaders (scoped and mocked 2026-11-19, `mockup-v53/`; all decided; built as 2.37.0)
+
+Gene, on 2.36.0's pass rushers band: "I like it, just put it in a place that makes sense and not just at the top of the page like that ... unless we scatter plot the other positions using the same type of graph." Then: "Every position."
+
+**What changes:** every player tab on Leaders opens with one chart in the pass rushers' style, then its boards. The chart becomes part of every tab instead of something dropped onto one. Pass rushers move to a tab of their own, and Defenses goes back to the 32 team units.
+
+**The tabs, in order:** Fantasy · Wide receivers · Tight ends · Backs · Quarterbacks · Kickers · **Pass rushers** (new, `/leaders/rush/`) · Defenses.
+
+**The charts:** each uses the tab's own Scorecard metrics and its own pool, so the dots match the boards below. Each tab gets a chart:
+
+| Tab | Across | Up | Pool (through Week 10) |
+|---|---|---|---|
+| Wide receivers | Target share | EPA per target | 15+ targets, 115 |
+| Tight ends | Target share | EPA per target | 15+ targets, 48 |
+| Backs | Touches per game | Yards per touch | 30+ touches, 75 |
+| Quarterbacks | EPA per dropback | CPOE | 50+ attempts, 42 |
+| Pass rushers | Pressures a game | Sacks a game | as §79, 112 |
+
+Fantasy, Kickers and Defenses get no chart in this release.
+
+**Each chart:**
+- A heading in the tab's band style, for example "Targets and what they're worth".
+- The read: who leads each axis, with the volume behind the efficiency leader. For example, Tyquan Thornton gets the most from each target, +1.10 EPA, on 15 targets.
+- Team-colored dots, sized by volume (targets, touches or attempts), so a 15-target sample can't pass for a star.
+- Dashed lines at the middle of the pool, and a darker zero line where an axis crosses zero.
+- The top six on each axis named, and tips on every dot.
+- The same Highlight menu. The team you pick is remembered on the device and carries to every tab: pick the Vikings once, and every chart shows them.
+- A phone chart with larger type that names the top three on each axis.
+- A short note on what counts.
+- The boards follow, unchanged.
+
+**Pass rushers' tab:** the 2.36.0 band (chart, read and table with Show all) moves there as it is, because no board lists rushers. The share pack item stays item 6, and its link becomes `/leaders/rush/`.
+
+**Labels:** a name sits right, left, above or below its dot, wherever it covers no other name and no dot. If no spot is clear of dots, it may sit over a dot. If no spot is clear of other names, the name is left off and the dot keeps its tip. The box allows for the type's full height. This also fixes two overlaps on the live pass rushers chart: Hutchinson and Robinson on desktop, Rousseau and Turner on the phone.
+
+**Code:** the chart in `DBD_Rush` becomes a general one, `DBD_Scatter`, used by all five tabs. The rushers keep their own rows. The position tabs read `players/leaders.json` (the boards' file), so there's no build change. `rush.js` becomes `scatter.js`, handling every chart on the page and the shared highlight.
+
+**Not in this release:** share pack items for the new charts, and charts on Fantasy, Kickers and Defenses.
+
+**Decisions (all made):**
+1. **Quarterbacks:** DECIDED 2026-11-19: EPA per dropback against CPOE (Gene: "EPA vs CPOE").
+2. **Dot size:** DECIDED 2026-11-19: sized by volume (targets, touches, attempts) on the four position charts; pass rushers stay one size (Gene: "Size by volume").
+3. **Tab order:** DECIDED 2026-11-19: Pass rushers just before Defenses (Gene: "Before Defenses").
+
+**Effort:** a mid-size plugin release with no build change.
+
+**Measure:** visits to each Leaders tab, and the Highlight menu's events by tab.
+
+**Tests:** the harness renders each tab and checks:
+- the chart's dot count against its board's pool
+- the named players, and no two labels overlapping (box check)
+- the shared highlight key
+- the Pass rushers tab at `/leaders/rush/`, and its absence from Defenses
+- the share pack item's new link
+
+
+## 81. Auto publish (scoped and mocked 2026-11-19, `mockup-v54/`; all decided; built as 2.38.0)
+
+Gene, looking at Share pack item 6: "can you set a button "auto publish" and anything connected to auto publish does that?" Then: "Add Bluesky, Reddit." Reddit was checked and left out: its Responsible Builder Policy now needs Reddit's own approval before any API use, keeps developer access to moderation work, and Reddit is reported to be closing its public API this month. Gene: "Instagram, Bluesky."
+
+**What it does:**
+
+1. **One button on each Share pack item:** **Auto publish**, under the row of places to post, with a line saying where it will post ("Posts it to Instagram and Bluesky now."). Reddit, X and Facebook can't post by themselves, so their buttons stay as they are.
+2. **It asks first.** Pressing it opens a short ask in place ("Post “Pass rushers” to Instagram and Bluesky now?" · **Post it now** · Cancel). Nothing posts without the second press.
+3. **Bluesky** gets the pack's Bluesky text (`DBD_Pack::social()['bsky']`, already under 300) with the link made clickable, and the item's card as the link preview (title, the item's title as the description, the card image). Through the AT Protocol: `com.atproto.server.createSession` with the handle and the app password, `com.atproto.repo.uploadBlob` for the card (PNG, under Bluesky's 1 MB; over it, the preview goes without the image), then `com.atproto.repo.createRecord` (`app.bsky.feed.post`: text, a link facet with UTF-8 byte offsets, `langs` en, an `app.bsky.embed.external` embed). The reply's `at://` uri becomes the View link (`bsky.app/profile/{handle}/post/{rkey}`). Bluesky posts during the press.
+4. **Instagram** gets the item's square and its caption (`ig_caption( $it, true )`) as a single post, through §76's publish flow (container, `media_publish`, status checks, retries every 10 minutes, 7 tries). It's queued to start right away, since a post can take minutes, and the item's line says "posting…" until it's done.
+5. **Nothing posts twice.** Each network keeps a record per item (Instagram's `dbd_ig_job_{season}-w{N}-{item}`, a new `dbd_bsky_job_{season}-w{N}-{item}` for Bluesky). A network that already has the item is left out of the button, and the line says so with its View link. With both done, the button reads **Published** and can't be pressed.
+6. **The item's line shows how each went:** "Instagram: posted Thursday, Nov 19, 4:12 PM. View" / "Bluesky: posted … View", or "Instagram didn’t post: … ", and the button, still there for that network, tries it again. An Instagram day booked for later reads "booked for Wednesday, …, 9:00 AM. Auto publish posts it now instead."
+7. **Settings, a new Bluesky posting section** under Instagram posting: the account (the Bluesky handle already in Your accounts) and an **App password** field. It's checked with `createSession` when saved, kept in a non-autoloaded option, never shown again, with a Disconnect box. Then **Auto publish → Posts to: ☑ Instagram ☑ Bluesky**, to leave one out. A network that isn't connected is left out by itself, and the button hides when none are.
+8. **Who can press it:** admins (`manage_options`), with a nonce, through `admin-post.php`.
+
+**Gene, once (about 2 minutes):** in Bluesky, Settings → Privacy and security → App passwords → Add, name it "Down by Down", copy it, paste it into the plugin and save. Deleting it there cuts the plugin off.
+
+**Decisions (Gene, 2026-11-19):**
+1. **"Post now, drop the day."** An item whose Instagram day is still to come (items 1–5 post on their own Wednesday to Sunday under §76) posts to Instagram when Auto publish is pressed, and its booked day is dropped: the press writes that day's job record (`dbd_ig_job_{season}-w{N}-{item}`), so the scheduled run finds it posted and skips it. The status line's "Next" moves on to the following day's item.
+
+2. **"Yes, each row."** Keys to the game gets an Auto publish on each team's row (one per side of each game, about 30 in a full week). Bluesky gets that side's Bluesky text with its card as the preview; Instagram gets that side's square (`ig-week-N-keys-{game}-{team}`) and its caption as a single post. Their records use the side's key (`dbd_ig_job_{season}-w{N}-keys-{game}-{team}`, `dbd_bsky_job_…` the same), so §76's slot parser learns that form; keys still never post on a schedule. The row's buttons are the small keys size, and its status sits under the row.
+
+**Tests:** the harness fakes the Bluesky API (session, blob, record): the text and its link facet's byte offsets (with the curly quotes and the minus sign the texts use), the external embed, the View link from the `at://` uri, a bad app password keeps nothing, an oversized card posts without the image, a second press doesn't post again. On the Instagram side: a new item key (`rush`) parses, the single post goes through the fake API, and an item already posted is left out. The admin harness looks for the button, the ask, the per-network lines, the Published state and the new settings fields, and a keys side's button, its key parsing and its single post.
+
+
+## 82. Bluesky on Instagram's schedule (scoped and mocked 2026-11-20, `mockup-v55/`; all decided; built as 2.39.0, PR #150, live 2026-11-20)
+
+Gene, after testing §81's Auto publish on Bluesky: "will bluesky get the same auto-schedule that instagram gets now?" It didn't: in 2.38.0 Bluesky posts only on a press. Then: "Scope it."
+
+**What it does:**
+
+1. **Each finished week, Bluesky gets Instagram's days:** Tuesday (see Decision 1), then one item a day, Wednesday to Sunday, in pack order: the biggest swing, the usage riser, best and worst offense, the target-share mover, week leaders. A week missing an item skips that day. Pass rushers and keys stay on the button only, as on Instagram.
+2. **A daily post is exactly what Auto publish sends** (§81): the item's Bluesky text, the link shown short and clickable, the card as the link preview. Same record per item (`dbd_bsky_job_{season}-w{N}-{item}`), so **nothing posts twice either way**: an item already sent with Auto publish is skipped on its day ("already sent with Auto publish"), and once its day has posted, its button reads Published for Bluesky.
+3. **Booking, retries and cutoffs copy Instagram's (§76):** a sync that brings in a finished week books Bluesky's posts once (`dbd_bsky_send` events, `add_option` so two syncs can't both book). A post more than a day past its slot is skipped, not sent late. A failure retries every 10 minutes, 7 tries; after the last, an email note to the test address and **Try again** on the tab. A post Bluesky took but didn't confirm is found by its record key, never posted again (§81's TID rule).
+4. **On the Share pack tab:** the status line at the top gains Bluesky ("Bluesky: posted the usage riser Thursday, Nov 19, 9:00 AM. Next: best and worst offense, Friday, …"), and the settings box's Bluesky posting section gets an on/off ("Post on Tuesday, then one item a day Wednesday to Sunday, 9:00 AM Eastern"; on by default once connected) and a **This week** list like Instagram's. Unticked, Bluesky posts only when Auto publish is pressed.
+5. **The weekly switch doesn't touch Auto publish:** the button keeps posting to Bluesky whenever it's connected and ticked under Auto publish → Posts to.
+
+**Decisions (Gene, 2026-11-20):**
+1. **"A thread."** Tuesday's post is a thread: a first post naming the week ("Week 10 in five charts, one in each reply below. Every chart and the numbers behind it:" and the week page's link, short and clickable), then each of the week's items with a square as a reply under it, in pack order, with its own Bluesky text and its card as the link preview. Each reply sets `reply.root` and `reply.parent` (the first post, then the reply before it, so they read in order). The thread is one record (`dbd_bsky_job_{season}-w{N}-carousel`) that keeps each part's record key and address as it goes, so a retry carries on from the last part that went out instead of starting over or posting a part twice. The thread's View link is the first post. The thread's replies don't count as an item's own post, so each item still gets its day.
+
+2. **"9:00 AM, same."** Bluesky posts at 9:00 AM Eastern alongside Instagram, on the same days, so both status lines and This week lists name the same times. No separate time setting.
+
+**Tests:** the harness books a week's Bluesky posts once at the right days, skips one past its cutoff, skips an item already sent with Auto publish, posts a daily item through the fake Bluesky (the same record as Auto publish), retries and fails with the note, Try again, the status line, the switch off (nothing books, the button still posts), and the Tuesday post as decided.
+
+## 83. X on the same schedule (scoped and mocked 2026-11-20, `mockup-v56/`; all decided; built as 2.40.0, PR #151, live and connected 2026-11-20)
+
+Gene, after 2.39.0 went live: "is there no way to make twitter/x work the same way?" Then: "Scope it."
+
+**Why it's possible now:** since February 2026 X's API is pay-per-use, with no monthly fee and no free tier for new developers. You buy credits in X's Developer Console and each post takes a little from them. Third-party guides put a post at about $0.015, or about $0.20 when it carries a link. X's own price page should be checked at setup. The credits are prepaid, so the balance is the spending cap: when it runs out, posts fail with X's error and Try again, and nothing is charged beyond it.
+
+**What it does:**
+
+1. **X joins Instagram's and Bluesky's days:** Tuesday (see Decision 2), then one item a day, Wednesday to Sunday, 9:00 AM Eastern, in pack order. Pass rushers and keys stay on the button only.
+2. **X joins Auto publish** (§81): the button posts to X too when it's connected and ticked under Posts to. The ask names the three as "Instagram, Bluesky and X" (with three, the list gets a comma instead of two "and"s).
+3. **The post** is the item's X text from the pack (the same one the Post on X button fills in, 280 at most with the link counted as 23), per Decision 1.
+4. **Each item posts once:** a record per item (`dbd_x_job_{season}-w{N}-{item}`), shared by the day and the button, as for Bluesky. X picks a post's ID itself, so a lost reply can't be looked up by a key chosen beforehand. Instead, a retry first reads the account's last few posts (a few reads, a fraction of a cent) and, if one has the same text, takes it as sent. X also refuses an exact repeat of a recent post, a second guard.
+5. **Booking, the one-day cutoff, retries (every 10 minutes, 7 tries), the email note and Try again** work as Instagram's and Bluesky's (§76, §82); `dbd_x_send` events.
+6. **The connection:** X's user-context keys for @dxd_NFLfootball (OAuth 1.0a): API key and secret, access token and secret, made once in the Developer Console with Read and Write permission and pasted into a new **X posting** section of the Share pack settings. They're checked when saved (who am I?) and never shown again. They don't expire; Gene can revoke them in the console. Gene pastes them himself.
+7. **On the Share pack tab:** an X status line under Bluesky's, the X posting section's switch ("Post on Tuesday, then one item a day Wednesday to Sunday, 9:00 AM Eastern"; on by default once connected), an **X this week** list, and a count of this month's posts with what they cost at X's price ("This month: 14 posts, about $2.80"), so the credit balance in X's console holds no surprises.
+
+**About the cost:** with links, a week is about 11 posts (Tuesday's 6, then 5 days), about $2.20, and Week 11 to Week 18 about $18. Each keys side pressed with Auto publish adds a post.
+
+**Decisions (Gene, 2026-11-20):**
+1. **"Text and link."** Each post is the item's X text with its link; X builds the card preview from the page's own tags (`twitter:card` summary_large_image, the `?share=` card), as when the link is pasted by hand. No image upload. About $0.20 a post.
+
+2. **"A thread."** Tuesday on X is a thread like Bluesky's (§82): a first post naming the week ("Week 10 in five charts, one in each reply below. Every chart and the numbers behind it:" and the week page's link), then each item with a square as a reply under it in pack order (`reply.in_reply_to_tweet_id` = the post before), each its X text and link. One record (`dbd_x_job_{season}-w{N}-carousel`) keeps the items chosen on the first try and each part's post ID as it goes, so a retry carries on from the last part that went out. The View link is the first post. The replies don't count as the items' own posts. About 6 posts, $1.20 a week. *Built note:* each reply starts with its number ("1/5 …", fitted to 280 the pack's way), because X refuses a post whose text repeats a recent one, and Wednesday's daily post of the same item would otherwise read as a repeat of Tuesday's reply.
+
+**Tests:** the harness, with a fake X: the OAuth 1.0a signature against X's published example, booking once on the right days, skipping one past its cutoff and one already sent with Auto publish, a daily post and Tuesday as decided, a lost reply found among the last posts and not posted again, X's duplicate refusal, retries to the note and Try again, the switch off, the month's count, and the Auto publish button posting to all three.
+
+## 84. Threads on the same schedule (scoped and mocked 2026-11-20, `mockup-v57/`; all decided)
+
+Gene, after X went live: "great, how about threads?" Then: "Scope it."
+
+**What Meta's docs say** (read 2026-11-20, developers.facebook.com/documentation/threads):
+- **Cost:** none is listed.
+- **Posting, two steps like Instagram's:** `POST /{user-id}/threads` (`media_type=TEXT`, `text`, `link_attachment`), then `POST /{user-id}/threads_publish` with the container. Text runs to 500 characters, with 5 links at most.
+- **Replies:** `reply_to_id` (needs `threads_manage_replies`). Replying to a reply is implied but not spelled out.
+- **Limits:** 250 posts and 1,000 replies a day.
+- **Tokens:** they last 60 days and renew (`refresh_access_token`, once a token is a day old).
+- **Without app review:** an app can post only for its **Threads testers**. The account accepts the invite under Threads → Settings → Account → Website permissions.
+- **No "Generate token" button:** unlike Instagram's, the first token comes from Threads' own sign-in screen (`threads.com/oauth/authorize`).
+
+**What it does:**
+
+1. **Threads joins the others' days:** Tuesday (see Decision 2), then one item a day, Wednesday to Sunday, 9:00 AM Eastern. Pass rushers and keys stay on the button only. **Threads joins Auto publish** too ("Instagram, Bluesky, X and Threads").
+2. **The post:** the item's long takeaway (the Reddit title, no cutting needed at 500 characters), with the item's link as the preview card (`link_attachment`, the `?share=` card) rather than a link in the text. A tap on the card opens the page.
+3. **Each item posts once:** a record per item (`dbd_th_job_{season}-w{N}-{item}`), shared by its day and the button. The container is kept on the record, as Instagram's is. A retry first asks whether that container was already published; if so, it finds the post among the account's latest posts or replies (by its text) instead of posting again.
+4. **Booking, the cutoff, retries, the note and Try again** work as the other networks', locked from the record's first read to its last write; `dbd_th_send` events.
+5. **The token is renewed every week,** like Instagram's. A failed renewal shows on the tab and the Overview, a week before it runs out.
+6. **Your accounts** gains **Threads** (default `down_by_down`, the Instagram name, since a Threads profile comes from the Instagram account). The connection checks that the token is for that account.
+7. **On the Share pack tab:** a Threads status line, a **Threads posting** section with the switch (on by default once connected) and the connection, and a **Threads this week** list.
+
+**Setup Gene does once:** the Threads profile for @down_by_down if it isn't made yet. In the Meta app, the "Access the Threads API" use case with `threads_basic`, `threads_content_publish` and `threads_manage_replies`, and @down_by_down added as a Threads Tester, its invite accepted in Threads. Then the connection, per Decision 1.
+
+**Decisions (Gene, 2026-11-20):** "This and any social media we add, if possible, gets treated just like all the others, it's safe for you to assume that." So:
+1. **Connecting: a pasted token,** the way every other network connects (Instagram's token, Bluesky's app password, X's keys). Gene makes a Threads token in Meta's Graph API Explorer (the app, threads.net, `threads_basic`, `threads_content_publish`, `threads_manage_replies`, Generate as @down_by_down) and pastes it with the app's Threads App secret. The plugin checks it (`/me?fields=id,username` against Your accounts), turns an hour-long token into a 60-day one (`access_token`, `grant_type=th_exchange_token`), and renews it every week (`refresh_access_token`, `th_refresh_token`).
+2. **Tuesday: a thread,** like Bluesky's and X's. The first post names the week with the week page as its card, then each item with a square replies in pack order, each reply to the one before (`reply_to_id`). If Threads refuses a reply to a reply, the replies go under the first post instead. One record keeps the items chosen on the first try and each part's container and post ID, so a retry carries on from the last part that went out. The View link is the first post; the replies don't count as the items' own posts.
+
+**Tests:** the harness, with a fake Threads: connecting as decided (the wrong account refused), booking once on the right days, skipping one past its cutoff and one already sent with Auto publish, a daily post (the long takeaway, the card as `link_attachment`, no link in the text), Tuesday as decided, a published container whose reply was lost found and not posted again, retries to the note and Try again, the weekly renewal and its warning, the switch off, and Auto publish posting to all four.
+

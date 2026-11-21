@@ -1,29 +1,34 @@
 name: Build data
 
-# Three times a day during the season (06:15, 10:15 and 14:15 UTC), plus extra runs around the games, plus a manual
-# trigger. GitHub often starts scheduled runs hours late and sometimes drops them (on Nov 3 2026 the overnight run never
-# came, so Monday night's game sat unfinished until a manual run), and nflverse posts weekly player stats a few hours
-# after the play-by-play. The extra runs are backstops: Sunday after the early and late games (21:37 and 01:37 UTC
-# Monday), after Sunday night (05:37 UTC Monday), and after Monday night (05:37 and 08:37 UTC Tuesday). Off the top of
-# the hour, when GitHub is busiest. A run with nothing new commits nothing (not even a new built_at) and doesn't ping the
-# site; overlapping runs queue (concurrency below).
-# Each run downloads the nflverse files, rebuilds /data, commits it if anything changed, then tells the WordPress site to sync. The site also pulls daily on its own as a fallback.
+# SCOPE §70. Every hour during the season (at :37, off the top of the hour, when GitHub is busiest), plus a manual trigger.
+# GitHub starts scheduled runs late and sometimes drops them outright (Nov 16-17 2026: 4 of 11 runs came, and both
+# Tuesday-morning runs after Monday night never started), so an hourly check means a skipped run only costs an hour.
+#
+# The `check` job asks GitHub for the nflverse files' upload times, plus the date and our own build code, and hashes that.
+# If a finished build already saw the same hash (kept in the Actions cache), the run stops there in a few seconds:
+# nothing downloaded, nothing committed, no site ping. A new day always builds once (player ages and the Wikipedia
+# cache depend on the date). A manual run always builds unless "force" is unticked.
+#
+# The `build` job downloads the nflverse files, rebuilds /data, commits it if anything changed, then tells the WordPress
+# site to sync. A run with nothing new commits nothing (not even a new built_at). If nflverse is down, or a file that
+# should be there isn't (it can vanish for a moment while nflverse re-uploads it), the run stops quietly with a warning
+# and the next hour tries again; it only fails (and emails) when /data is more than two days old, or our own build
+# breaks. Overlapping runs queue (concurrency below). The site also pulls daily on its own as a fallback.
 on:
   schedule:
-    - cron: "15 6,10,14 * 9-12 *"
-    - cron: "15 6,10,14 * 1-2 *"
-    - cron: "37 21 * 9-12 0"         # Sunday 21:37 UTC: the early games
-    - cron: "37 21 * 1-2 0"
-    - cron: "37 1,5 * 9-12 1"        # Monday 01:37 and 05:37 UTC: Sunday's late games, then Sunday night
-    - cron: "37 1,5 * 1-2 1"
-    - cron: "37 5,8 * 9-12 2"        # Tuesday 05:37 and 08:37 UTC: Monday night
-    - cron: "37 5,8 * 1-2 2"
+    - cron: "37 * * 9-12 *"
+    - cron: "37 * * 1-2 *"
   workflow_dispatch:
     inputs:
       week:
         description: "Force a week number (leave blank to derive from the schedule)"
         required: false
         default: ""
+      force:
+        description: "Build even if nflverse has nothing new"
+        type: boolean
+        required: false
+        default: true
 
 permissions:
   contents: write
@@ -33,7 +38,79 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.decide.outputs.run }}
+      key: ${{ steps.fp.outputs.key }}
+      season: ${{ steps.fp.outputs.season }}
+    steps:
+      - name: Fingerprint the inputs
+        id: fp
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WEEK: ${{ github.event.inputs.week }}
+        run: |
+          # The NFL season is named for the year it starts; before March we are still in last year's season.
+          S=$(date -u +%Y); M=$(date -u +%-m)
+          if [ "$M" -lt 3 ]; then S=$((S-1)); fi
+          echo "season=$S" >> "$GITHUB_OUTPUT"
+          mkdir -p in; fp=in/inputs.txt
+          echo "day $(date -u +%F)" > "$fp"
+          # a manual run that forces a week gets its own key, so the hourly runs (which derive the week) don't skip after it
+          echo "week ${WEEK:-auto}" >> "$fp"
+          # and the week /data was last built for: after a forced-week run publishes another week, the next hourly run
+          # no longer matches its old key, so it builds and puts the schedule's week back
+          built=$(gh api "repos/$GITHUB_REPOSITORY/contents/data/manifest.json?ref=$GITHUB_SHA" -H "Accept: application/vnd.github.raw" | python3 -c "import json,sys; print(json.load(sys.stdin).get('week'))") || ok=0
+          echo "built for week $built" >> "$fp"
+          ok=1
+          # our own build code and this workflow: a change to either builds once
+          code=$(gh api "repos/$GITHUB_REPOSITORY/contents/?ref=$GITHUB_SHA" --jq '.[] | select(.name=="tools") | .sha') || ok=0
+          flow=$(gh api "repos/$GITHUB_REPOSITORY/contents/.github/workflows/build-data.yml?ref=$GITHUB_SHA" --jq .sha) || ok=0
+          echo "code $code $flow" >> "$fp"
+          # the release files the build downloads, by name, upload time and size
+          want="^(roster_${S}\.csv|teams_colors_logos\.csv|play_by_play_${S}\.csv\.gz|stats_player_week_${S}\.csv|snap_counts_${S}\.csv|advstats_week_(rec|def)_${S}\.csv|injuries_${S}\.csv|depth_charts_${S}\.csv|ftn_charting_${S}\.csv|draft_picks\.csv|combine\.csv) "
+          for tag in rosters teams pbp stats_player snap_counts pfr_advstats injuries depth_charts ftn_charting draft_picks combine; do
+            if gh api "repos/nflverse/nflverse-data/releases/tags/$tag" --jq '.assets[] | "\(.name) \(.updated_at) \(.size)"' > in/rel.txt; then
+              grep -E "$want" in/rel.txt | sort | sed "s|^|$tag/|" >> "$fp" || true
+            else ok=0; fi
+          done
+          # the schedule comes from a plain file in nfldata; its last commit stands in for an upload time
+          games=$(gh api "repos/nflverse/nfldata/commits?path=data/games.csv&per_page=1" --jq '.[0].sha') || ok=0
+          echo "games $games" >> "$fp"
+          cat "$fp"
+          if [ "$ok" = 1 ]; then
+            echo "key=nflverse-$(sha256sum "$fp" | cut -c1-20)" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::Couldn't read every nflverse upload time; building anyway (the build stops quietly if nflverse is down)."
+          fi
+
+      - name: Has a build already seen these inputs?
+        id: seen
+        if: steps.fp.outputs.key != ''
+        uses: actions/cache/restore@v4
+        with:
+          path: in/inputs.txt
+          key: ${{ steps.fp.outputs.key }}
+          lookup-only: true
+
+      - name: Decide
+        id: decide
+        env:
+          EVENT: ${{ github.event_name }}
+          FORCE: ${{ github.event.inputs.force }}
+          KEY: ${{ steps.fp.outputs.key }}
+          HIT: ${{ steps.seen.outputs.cache-hit }}
+        run: |
+          if [ "$EVENT" = workflow_dispatch ] && [ "$FORCE" != false ]; then echo "Manual run: building."; run=true
+          elif [ -z "$KEY" ]; then run=true
+          elif [ "$HIT" = true ]; then echo "::notice::Nothing new from nflverse since the last build; stopping here."; run=false
+          else echo "New nflverse files (or a new day, or new build code): building."; run=true; fi
+          echo "run=$run" >> "$GITHUB_OUTPUT"
+
   build:
+    needs: check
+    if: needs.check.outputs.run == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -45,31 +122,44 @@ jobs:
       - name: Install pandas
         run: pip install --quiet pandas pillow
 
-      - name: Work out the season
-        id: season
-        run: |
-          # The NFL season is named for the year it starts; before March we are still in last year's season.
-          Y=$(date -u +%Y); M=$(date -u +%-m)
-          if [ "$M" -lt 3 ]; then Y=$((Y-1)); fi
-          echo "season=$Y" >> "$GITHUB_OUTPUT"
-
       - name: Download nflverse files
+        id: dl
         env:
-          S: ${{ steps.season.outputs.season }}
+          S: ${{ needs.check.outputs.season }}
         run: |
           mkdir -p in
-          curl -sSL -o in/roster.csv "https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_${S}.csv"
-          curl -sSL -o in/teams.csv  "https://github.com/nflverse/nflverse-data/releases/download/teams/teams_colors_logos.csv"
-          curl -sSL -o in/games.csv  "https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv"
+          # Stop quietly: leave /data as it is and let the next hourly run try again. Only once /data is more than two
+          # days old does a failed download fail the run (and email), since by then something is really wrong.
+          stop() {
+            echo "::warning::$1 Nothing was changed; the next hourly run will try again."
+            # built_at only moves when /data really changes (a run with nothing new keeps the old one)
+            built=$(python3 -c "import json; print(json.load(open('data/manifest.json')).get('built_at',''))" 2>/dev/null || true)
+            age=$(( $(date +%s) - $(date -u -d "${built:-1970-01-01T00:00:00Z}" +%s) ))
+            if [ "$age" -gt 172800 ]; then echo "::error::The site's data is more than two days old and nflverse downloads keep failing."; exit 1; fi
+            echo "ok=false" >> "$GITHUB_OUTPUT"; exit 0
+          }
+          # get URL FILE: prints the final HTTP status (000 = no answer). curl retries timeouts and 5xx on its own.
+          # A transfer cut off after a 200 (curl exits non-zero) reports "partial", so a truncated file never reaches the build.
+          get() { local c rc=0; c=$(curl -sSL -f --retry 3 --retry-delay 15 -o "$2" -w '%{http_code}' "$1" 2>/dev/null) || rc=$?; [ -n "$c" ] || c=000; if [ "$rc" != 0 ] && [ "$c" = 200 ]; then c=partial; fi; [ "$c" = 200 ] || rm -f "$2"; echo "$c"; }
+          # In a season that already has games in /data, play-by-play and weekly stats must be there; missing means
+          # nflverse is mid-upload, and building without them would empty the site.
+          live=$(python3 -c "import json,sys; m=json.load(open('data/manifest.json')); print(1 if m.get('season')==int(sys.argv[1]) and (m.get('through_week') or 0)>=1 else 0)" "$S" 2>/dev/null || echo 0)
+          R=https://github.com/nflverse/nflverse-data/releases/download
+          c=$(get "$R/rosters/roster_${S}.csv" in/roster.csv);           [ "$c" = 200 ] || stop "Rosters didn't download (HTTP $c)."
+          c=$(get "$R/teams/teams_colors_logos.csv" in/teams.csv);       [ "$c" = 200 ] || stop "Teams didn't download (HTTP $c)."
+          c=$(get "https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv" in/games.csv); [ "$c" = 200 ] || stop "The schedule didn't download (HTTP $c)."
           # Play-by-play does not exist until the season starts; a 404 here is normal in August.
-          if curl -sSL -f -o in/pbp.csv.gz "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_${S}.csv.gz"; then
-            echo "pbp=in/pbp.csv.gz" >> "$GITHUB_ENV"
-          else
-            echo "No play-by-play for ${S} yet; building schedule-only data."
-            echo "pbp=-" >> "$GITHUB_ENV"
-          fi
+          c=$(get "$R/pbp/play_by_play_${S}.csv.gz" in/pbp.csv.gz)
+          if [ "$c" = 200 ]; then echo "pbp=in/pbp.csv.gz" >> "$GITHUB_ENV"
+          elif [ "$c" = 404 ] && [ "$live" = 0 ]; then echo "No play-by-play for ${S} yet; building schedule-only data."; echo "pbp=-" >> "$GITHUB_ENV"
+          else stop "Play-by-play didn't download (HTTP $c)."; fi
           # Player layer inputs. Each is optional: a 404 just leaves that part of the player pages empty.
-          dl() { if curl -sSL -f -o "in/$2" "https://github.com/nflverse/nflverse-data/releases/download/$1"; then echo "$3=in/$2" >> "$GITHUB_ENV"; else echo "No $2 for ${S}; skipping."; fi; }
+          dl() {
+            local c; c=$(get "$R/$1" "in/$2")
+            if [ "$c" = 200 ]; then echo "$3=in/$2" >> "$GITHUB_ENV"
+            elif [ "$c" = 404 ] && { [ "$live" = 0 ] || [ "$2" != stats.csv ]; }; then echo "No $2 for ${S}; skipping."
+            else stop "$2 didn't download (HTTP $c)."; fi
+          }
           dl "stats_player/stats_player_week_${S}.csv"  stats.csv   DBD_STATS
           dl "snap_counts/snap_counts_${S}.csv"         snaps.csv   DBD_SNAPS
           dl "pfr_advstats/advstats_week_rec_${S}.csv"  pfr.csv     DBD_PFR
@@ -80,15 +170,24 @@ jobs:
           dl "draft_picks/draft_picks.csv"              draft.csv   DBD_DRAFT    # SCOPE §62: every draft since 1980
           dl "combine/combine.csv"                      combine.csv DBD_COMBINE  # SCOPE §62: every combine since 2000
           ls -la in
+          echo "ok=true" >> "$GITHUB_OUTPUT"
 
       - name: Set last season aside (SCOPE §44)
+        if: steps.dl.outputs.ok == 'true'
         env:
-          S: ${{ steps.season.outputs.season }}
+          S: ${{ needs.check.outputs.season }}
         run: |
           # the first build of a new season moves the finished one, playoffs and all, to data/archive/{season}/
           python3 tools/archive.py freeze data "$S"
 
+      - name: Build the draft and combine boards (SCOPE §63)
+        if: steps.dl.outputs.ok == 'true'
+        run: |
+          # before the main build, so its manifest lists these files; links to player pages use the last build's index
+          if [ -f in/draft.csv ] && [ -f in/combine.csv ]; then python3 tools/build_boards.py in/draft.csv in/combine.csv data; else echo "No draft or combine file; boards unchanged."; fi
+
       - name: Build data
+        if: steps.dl.outputs.ok == 'true'
         env:
           DBD_WIKI: '1'  # SCOPE §62: refresh the Wikipedia cache in tools/cache/wiki.json
         run: |
@@ -96,13 +195,13 @@ jobs:
           python3 tools/build_data.py "$pbp" in/roster.csv in/games.csv in/teams.csv data ${{ github.event.inputs.week }}
 
       - name: Show one player's new fields (a run on any other branch is a dry run)
-        if: github.ref != 'refs/heads/main'
+        if: steps.dl.outputs.ok == 'true' && github.ref != 'refs/heads/main'
         run: |
           python3 -c "import json; d=json.load(open('data/players/MIN.json')); p=[x for x in d['players'] if x.get('bf')]; print(len(p), 'MIN players with bf,', sum(1 for x in d['players'] if x.get('wk')), 'with wk'); print(json.dumps([x for x in d['players'] if x['id']=='00-0036322'][0].get('bf')), [x for x in d['players'] if x['id']=='00-0036322'][0].get('wk'), [x for x in d['players'] if x['id']=='00-0036322'][0].get('draft'))"
 
       - name: Commit data if it changed
         id: commit
-        if: github.ref == 'refs/heads/main'  # only main's data reaches the site; a branch run builds and stops
+        if: steps.dl.outputs.ok == 'true' && github.ref == 'refs/heads/main'  # only main's data reaches the site; a branch run builds and stops
         run: |
           git config user.name "downbydown-bot"
           git config user.email "actions@users.noreply.github.com"
@@ -131,3 +230,15 @@ jobs:
           # ?rest_route= works whether or not the site uses pretty permalinks. Print only the JSON line and the status.
           curl -sS -X POST "${SITE%/}/?rest_route=/dbd/v1/sync" -H "X-DBD-Token: ${TOKEN}" -H "Accept: application/json" -o /tmp/sync.json -w "HTTP %{http_code}\n" || echo "Sync call failed; the site will pull on its own schedule."
           head -c 600 /tmp/sync.json; echo
+
+      - name: Remember these inputs
+        # only after a finished build (committed, or nothing to commit), so a failed or stopped run tries again next hour
+        if: steps.dl.outputs.ok == 'true' && needs.check.outputs.key != ''
+        run: echo "${{ needs.check.outputs.key }}" > in/inputs.txt
+
+      - name: Save the fingerprint
+        if: steps.dl.outputs.ok == 'true' && needs.check.outputs.key != ''
+        uses: actions/cache/save@v4
+        with:
+          path: in/inputs.txt
+          key: ${{ needs.check.outputs.key }}

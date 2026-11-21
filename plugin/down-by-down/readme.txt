@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.22.0
+Stable tag: 2.42.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,116 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.42.0 =
+* Post on Threads: each Share pack item and each keys side gets a Threads button after Instagram, and the Tuesday email a Post on Threads link. It opens Threads with the item's long takeaway filled in and the page as the card, the post Auto publish sends. Hidden when Your accounts has no Threads account.
+
+= 2.41.1 =
+* Threads: a token from the Meta app's User Token Generator (already good for 60 days, which Threads won't exchange) is kept as it is once it's checked for the account, instead of refused. The settings now point to the User Token Generator.
+
+= 2.41.0 =
+* Threads posting (SCOPE §84), treated just like the other networks: each finished week, Threads posts on the same days at 9:00 AM Eastern, Tuesday a thread (the first post naming the week, each item a numbered reply), then one item a day. Each post is the item's long takeaway with the page as its preview card.
+* Threads joins Auto publish. Posting is Instagram's two steps, the container kept on the item's record so a retry finds a post that went out instead of posting again. Booking, the cutoff, retries, the email note and Try again work as the others'.
+* Your accounts gains Threads (down_by_down by default). The Threads posting settings take a token from Meta's Graph API Explorer and the app's Threads App secret; the plugin makes it last 60 days and renews it every week, and a failed renewal shows on the tab and the Overview.
+
+= 2.40.0 =
+* X posting (SCOPE §83): each finished week, X posts on Instagram's and Bluesky's days at 9:00 AM Eastern, through X's pay-per-use API with four keys pasted once in the new X posting settings. Each post is the item's X text and link, X showing the card as the preview. Tuesday is a thread: a first post naming the week, then each item as a numbered reply.
+* X joins Auto publish: the button posts to Instagram, Bluesky and X. Each item posts once, its day and the button sharing one record; a try that may have gone out is looked for among the account's latest posts before posting again.
+* Booking, the cutoff, retries, the email note and Try again work as Bluesky's. The settings count this month's X posts and what they cost at X's price.
+
+= 2.39.0 =
+* Bluesky on Instagram's schedule (SCOPE §82): each finished week, Bluesky posts on Instagram's days at 9:00 AM Eastern. Tuesday is a thread: a first post naming the week with the week page's link, then each item with a square as a reply under it, in pack order. Wednesday to Sunday, one item a day, exactly as Auto publish sends it.
+* Nothing posts twice: a day uses the item's same record as Auto publish, so an item already sent with the button is skipped on its day, and pressing the button on a booked item posts it now and drops its day. A thread that fails partway carries on from the last post that went out.
+* Booking, the one-day cutoff, retries every 10 minutes (7 tries), the email note and Try again work as Instagram's. The Share pack tab gets a Bluesky status line, and the settings a switch (on by default) and a Bluesky this week list.
+
+= 2.38.0 =
+* Auto publish (SCOPE §81): each Share pack item, and each team's row in Keys to the game, gets an Auto publish button. After a short confirm it posts the item to Instagram (its square and caption, as a single post) and Bluesky (its text, with the link clickable and the card as the preview).
+* Nothing posts twice: a network that already has the item is left out, and with both done the button reads Published. Each item shows a line per network with its View link, or what went wrong.
+* An item whose Instagram day is still to come posts now, and its day is dropped.
+* Bluesky connects once with an app password in the Share pack settings, which also choose the networks the button posts to. Reddit, X and Facebook keep their buttons.
+
+= 2.37.0 =
+* A chart on every position tab of Leaders (SCOPE §80): wide receivers and tight ends (target share against EPA a target), backs (touches a game against yards a touch) and quarterbacks (EPA a dropback against CPOE). Each comes from the tab's own boards, with dots sized by volume and the top six on each axis named.
+* Pass rushers move to a tab of their own, /leaders/rush/, just before Defenses, and Defenses goes back to the team boards. The share pack item now links there.
+* The Highlight menu is shared: the team you pick is remembered on the device and shows on every chart. Names never cover each other; a name with no clear spot is left off, and its dot keeps its tip.
+
+= 2.36.0 =
+* Pass rushers (SCOPE §79): a band at the top of Leaders → Defenses with every rusher who has a regular role on one chart, pressures a game against sacks a game. Linemen and linebackers count once they've played half their team's games, on 40% or more of the snaps, with a pressure a game.
+* A Highlight menu dims every team but one and names its rushers, and the choice is remembered on the device. The top ten are in a table with Show all, and phones get their own smaller chart.
+* The share pack gains item 6, Pass rushers: a card and an Instagram square for the week the defense data runs through, plus the post texts. It rides the Tuesday carousel, and Keys to the game is now item 7.
+
+= 2.35.0 =
+* The weekly fantasy page (SCOPE §78) at /fantasy/week/{N}/, with /fantasy/ showing the newest week. It has usage risers and fallers (each team's last three games against its earlier ones), red-zone work over the last three games, matchups at a glance, each game's biggest edge from Keys to the game, and the teams on bye with their top scorers. Every row shows the player's next opponent and that defense's rank against his position, in the format you pick.
+* The data build writes fan/w{N}.json for the coming week every hour until the week's first kickoff, then leaves it alone, so each week's page stays as it read before its games. The plugin syncs the new folder.
+* The page has its own title, description and share card, and is listed in the sitemap. The Week in review, the Matchups fantasy chart, the hub and My team link to it.
+
+= 2.34.1 =
+* Instagram posting takes the token new Meta apps give out (API setup with Unified login, starting EAA): it posts through graph.facebook.com as the Instagram account ID set beside it on the Share pack tab.
+* That token never runs out, so it isn't renewed; it's checked every week, and the tab and the Overview warn only if Instagram stops taking it. Instagram-login tokens work as before.
+
+= 2.34.0 =
+* Instagram posts itself (SCOPE §76), through the Instagram API with Instagram Login: Tuesday 9:00 AM Eastern a carousel of the week's squares with one caption, then one item a day Wednesday to Sunday at 9:00 AM, each its square and caption. Squares go as JPEG (&fmt=jpg). Booked after each sync; a post more than a day late is skipped; retries every 10 minutes, then a note and Try again; a container that already went out is never posted twice.
+* Share pack settings: Instagram posting on/off and the access token (checked when saved, never shown again, renewed weekly); the week's posts with Post the next one now; a status line at the top; the Overview warns when the token didn't renew or is about to run out.
+
+= 2.33.0 =
+* Week leaders (SCOPE §75): a new Share pack item, number 5 (keys to the game is now 6). A card with five panels: passing, rushing and receiving yards, touchdowns, and the team defense that allowed the fewest EPA a play, each leader big with the next two under; its Instagram square; the Post it row and texts; and in the Tuesday pack email. From the weekly box scores.
+
+= 2.32.0 =
+* The Share pack tab, simplified (SCOPE §74): the top is the week, one line on how the buttons work, and the email's status; each item is its card, its takeaway and one row of places to post (r/downbydown, X, Bluesky, Facebook, Instagram), with the four texts folded under Texts to copy; keys to the game are compact rows; the Tuesday email and the five accounts are one settings box at the bottom with one Save.
+
+= 2.31.0 =
+* Share on Facebook (SCOPE §73): on every Share pack item and keys side, copies the post text and opens Facebook's share box with the link and its card; choose Share to a group and paste.
+* Instagram: a caption for every item and keys side (the takeaway, "Full chart: link in bio", #NFL, the teams' hashtags, #FantasyFootball on the usage items), and a 1080×1080 square for each, drawn like the other cards (the takeaway over the item's own card), with Download square buttons.
+* The Tuesday pack email carries Share on Facebook links, the captions and a link to each square.
+* New Share pack settings: Facebook group (with an Open the group link) and Instagram; clearing one hides its buttons.
+
+= 2.30.0 =
+* Post on X and Post on Bluesky (SCOPE §72): each Share pack item and every keys side gets buttons that open X's and Bluesky's compose box with the post written, using the share link so the pack cards are the preview. The Bluesky text keeps within 300 counting the whole link. The Tuesday pack email carries the same links.
+* New Share pack settings: X account (default dxd_NFLfootball) and Bluesky (default downbydown.bsky.social); clearing one hides its buttons. The X account goes in every page's twitter:site tag.
+
+= 2.29.1 =
+* Each keys side gets a second Post button for its team's own subreddit (Post to r/raiders and so on), next to Post to r/downbydown, on the Share pack tab and in the Tuesday pack email.
+
+= 2.29.0 =
+* Post to r/downbydown (SCOPE §71): each Share pack item and every keys side gets a button that opens Reddit's new-post form for your subreddit with the title and link filled in. The Tuesday pack email carries the same links.
+* A link post shows the page's share card; for the snaps, targets and offense cards the link adds ?share=, which makes that page's preview the pack card (canonical unchanged).
+* New setting on the Share pack tab: Your subreddit (default downbydown; empty hides the buttons).
+
+= 2.28.0 =
+* The share pack by email (SCOPE §69): each new pack goes to the people who post it, Tuesday at 7:00 AM Eastern, through Brevo with one copy per person (never the subscriber list). The Share pack tab has a new box: on or off, who gets it (one address per line, up to ten), "Send the pack now", and the last sends with Try again. A failed send retries for an hour, only for the people it didn't reach.
+
+= 2.27.0 =
+* The share pack (SCOPE §68): a Share pack tab in the admin with five things to post each week, from the newest finished week: the biggest swing, a usage riser, the best and worst offense, a target-share mover, and each team's Biggest edge for next week. Each has its card to download, a Reddit title, a Reddit comment with the link and a post for X and Bluesky (counted against 280), with Copy buttons. Nothing posts by itself.
+* Two new share cards: the riser card (a player's snap or target share game by game) and the offense card (every offense that played, by EPA a play).
+
+= 2.26.1 =
+* One dark signup box (SCOPE §67): the signup is a dark box built like the next-board block, with the field and button on one line and "Your email" in the field. On the draft and combine boards it sits beside the next-board block, the same height.
+
+= 2.26.0 =
+* More signups (SCOPE §66): the Tuesday email's signup strip at the end of game, player and kicker pages and the draft and combine boards, with a line that follows the calendar (the combine and draft boards from February 15 to April 30). Someone who confirmed on the device sees "You're on the list". Sending a signup form tells Analytics (generate_lead), and the Growth tab counts the forms sent.
+* Board emails: the Tuesday after a new combine's results or draft board settles, the list gets a short email with the board's card, its headline numbers, the top ten and a button to the board. On by default, with a switch, tests and Try again on the Week in review tab. The boards already on the site are never emailed.
+* Every Tuesday email: the swing game's win-probability card under "The swing and the play" (in the weekly post too, for posts written from now on), and a forward line with a link to the signup form.
+
+= 2.25.0 =
+* Measurement (SCOPE §65): a Growth tab in the admin (visits by source, Google search, titles to tune, top landing pages, email) and a Growth box on the Overview. Analytics and Search Console numbers are read in the browser through Site Kit; email numbers come from Brevo, with the list's size saved once a day.
+* Analytics events: share (the share-card button, and Copy link on Compare and My team) and sign_up (a confirmed subscriber landing on the post), sent only when Site Kit's Analytics tag is on the page.
+
+= 2.24.0 =
+* Search (SCOPE §64, plan 1): page titles lead with what people search ("Justin Jefferson stats 2026: targets, snaps, EPA", "Vikings vs Packers, Week 11: Vikings offense matchup", "2026 NFL Draft results: every pick by round").
+* The draft and combine boards get share cards (the year's first pick, most picks and Pro Bowlers, or the fastest 40, top vertical and most bench reps, with the top ten on the field) and ItemList structured data.
+* Player pages name their Wikipedia article in their structured data (sameAs), and end with a Related panel: the next game, the team's offense and players, the position's leaders, and the draft class and combine.
+* The sitemap carries lastmod: the data build's time on this season's pages, the day after for a final game, none on archived seasons and old board years.
+
+= 2.23.2 =
+* The draft board's pick list reads faster: the pick is one big number (the round shows beside it only when the list is sorted by something else), the team a fixed-size logo and its abbreviation, every player in one name style with his position and school on a line under it (the Pos and School columns are gone), and the round headings are white on near-black with their pick counts. Rows highlight on hover.
+
+= 2.23.1 =
+* The draft and combine boards point at each other plainly: a button beside the year dropdown ("2026 combine results", "2026 draft board") and a big dark link at the foot of each page. A draft before 2000 points at the newest combine and says the combine data starts in 2000.
+
+= 2.23.0 =
+* The season draft board, /draft/{year}/ (SCOPE §63): every pick of a draft back to 1980, round by round, with team (as it was that year, today's logo), school, combine score, Hall of Fame and Pro Bowls, and what each player has done so far (the newest class) or over his career. Round, position and team filters with a live count; every column sorts; Early returns (or Class leaders), picks by position and by school beside it; a year switcher.
+* The season combine board, /combine/{year}/: every combine since 2000, the top five in each drill against history ("5 better since 2000"), then everyone who tested with each result shaded by his percentile at his position since 2000, his combine score and where he was drafted. Position filter, every column sorts.
+* Data: tools/build_boards.py writes data/draft/{year}.json, data/combine/{year}.json and data/boards.json from the nflverse files the build already downloads; the boards stay out of season archives and are listed in the sitemap.
 
 = 2.22.0 =
 * Before the NFL on every player page (SCOPE §62): the draft (round and pick, his class, where he went among his position, Pro Bowls and All-Pro since), the combine (each drill with his percentile against every player at his position tested since 2000, and a score that averages the drills he ran), and the opening of his Wikipedia article with its CC BY-SA credit.

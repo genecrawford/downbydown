@@ -8,7 +8,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 class DBD_Leaders {
 	const TOP    = 10;
-	const GROUPS = array( 'fan' => 'Fantasy', 'wr' => 'Wide receivers', 'te' => 'Tight ends', 'rb' => 'Backs', 'qb' => 'Quarterbacks', 'k' => 'Kickers', 'def' => 'Defenses' );  /* k: SCOPE §47, from players/kickers.json */
+	const GROUPS = array( 'fan' => 'Fantasy', 'wr' => 'Wide receivers', 'te' => 'Tight ends', 'rb' => 'Backs', 'qb' => 'Quarterbacks', 'k' => 'Kickers', 'rush' => 'Pass rushers', 'def' => 'Defenses' );  /* rush: SCOPE §80 */  /* k: SCOPE §47, from players/kickers.json */
 	/* wide receivers and tight ends rank as separate positions, the way fantasy leagues do (SCOPE §38). leaders.json has a wr and a te
 	   group from 1.14.0's build; an older file has only the combined rec group, read here filtered by position. */
 	const SPLIT  = array( 'wr' => array( 'rec', 'WR' ), 'te' => array( 'rec', 'TE' ) );

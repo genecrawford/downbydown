@@ -767,7 +767,7 @@ echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>Te
 foreach ( $mates as $x ) { list( $m, $tc, $y, $td, $ep ) = $x; $href = DBD_Router::url( array( 'player' => $m['id'] ) );
 	echo '<tr class="dbd-trow" data-href="' . esc_url( $href ) . '"><td class="dbd-nm"><span class="dbd-nmi">' . DBD_Marks::player( $a, $m['num'], 30, $m['photo'] ?? null ) . '<a href="' . esc_url( $href ) . '">' . esc_html( $m['name'] ) . '</a><small>' . esc_html( $m['pos'] ) . '</small></span></td><td>' . (int) $tc . '</td><td data-v="' . (int) round( $y ) . '">' . (int) round( $y ) . ( (int) $td ? ' <small>· ' . (int) $td . ' TD</small>' : '' ) . '</td>' . $e( $ep ) . '</tr>'; }
 echo '</tbody></table></div></section>';
-echo '</div></section>' . ( $arch ? '' : DBD_News::player_block( $pid, $p['name'], $a ) ) . '</main>';  /* the news naming him and his highlights, after the stats (SCOPE §54) */
+echo '</div>' . DBD_Seo::related_panel( $a, $p['pos'], $BF ) . '</section>' . ( $arch ? '' : DBD_News::player_block( $pid, $p['name'], $a ) ) . DBD_Signup::strip( 'player' ) . '</main>';  /* the related pages (SCOPE §64), then the news naming him and his highlights, after the stats (SCOPE §54) */
 
 /* ---- SCOPE §31: fold the methods notes, then put the short version under the tiles */
 $rest = ob_get_clean();

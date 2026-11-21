@@ -5,6 +5,7 @@ on:
   pull_request:
     paths:
       - 'tools/build_data.py'
+      - 'tools/build_fan.py'
       - 'tools/kick_career.py'
       - 'plugin/down-by-down/includes/class-dbd-kicker.php'
       - 'plugin/down-by-down/includes/views/kicker.php'
@@ -68,6 +69,36 @@ jobs:
           python3 tools/build_data.py "$pbp" in/roster.csv in/games.csv in/teams.csv /tmp/out
           python3 -c "import json;t=json.load(open('/tmp/out/teams.json'));print(len(t),'teams;',sum(1 for v in t.values() if v.get('logo')),'with logos;',sum(1 for v in t.values() if v.get('logo_s')),'with a logo scale');print(' '.join(k+'='+str(v.get('logo_s')) for k,v in sorted(t.items())))"
           ls /tmp/out/players | head -40 | tr '\n' ' '
+      - name: Check the fantasy page file (SCOPE §78)
+        run: |
+          python3 - <<'PY'
+          import datetime, json, os, shutil, sys
+          sys.path.insert(0, 'tools'); import build_fan
+          S = json.load(open('/tmp/out/schedule.json')); N = int(S['current_week'])
+          games = [g for g in S['weeks'].get(str(N), []) if g.get('game_type', 'REG') == 'REG']
+          if not games: print('no regular-season week ahead; nothing to check'); sys.exit(0)
+          f = f'/tmp/out/fan/w{N}.json'; now = datetime.datetime.now(datetime.timezone.utc)
+          # after the week's first kickoff the build makes no first file (Greptile, PR #146), so the file may rightly be missing then
+          if not os.path.exists(f): assert build_fan.started(games, now), f'the build wrote no {f} before kickoff'; print('week', N, 'is under way and had no file: none made, as it should be')
+          # the freeze, on a copy set back to before kickoff: the build writes the file then, keeps it after the first kickoff, and makes none after it
+          shutil.rmtree('/tmp/frz', ignore_errors=True); shutil.copytree('/tmp/out', '/tmp/frz'); shutil.rmtree('/tmp/frz/fan', ignore_errors=True)
+          k = min(t for t in (build_fan._kick_utc(g) for g in games) if t)
+          for g in games: g['status'] = 'upcoming'; g['home_score'] = g['away_score'] = None
+          S['weeks'][str(N)] = games; json.dump(S, open('/tmp/frz/schedule.json', 'w'))
+          build_fan.build('/tmp/frz', now=k - datetime.timedelta(hours=1))
+          d = json.load(open(f'/tmp/frz/fan/w{N}.json')); build_fan.check(d)
+          if os.path.exists(f): build_fan.check(json.load(open(f)))
+          print('week', N, {p: [r['n'] for r in d['risers'][p]] for p in ('RB', 'WR', 'TE')}, 'byes', d['byes'])
+          mark = dict(d, risers={'RB': [], 'WR': [], 'TE': []}); json.dump(mark, open(f'/tmp/frz/fan/w{N}.json', 'w'))
+          build_fan.build('/tmp/frz', now=k + datetime.timedelta(minutes=1))
+          assert json.load(open(f'/tmp/frz/fan/w{N}.json'))['risers'] == mark['risers'], 'the file changed after the first kickoff'
+          build_fan.build('/tmp/frz', now=k - datetime.timedelta(hours=1))
+          assert json.load(open(f'/tmp/frz/fan/w{N}.json'))['risers'] == d['risers'], 'the file was not rewritten before kickoff'
+          # a week with no file yet gets none after its kickoff: fantasy.json may already count those games (Greptile, PR #146)
+          os.remove(f'/tmp/frz/fan/w{N}.json')
+          assert build_fan.build('/tmp/frz', now=k + datetime.timedelta(minutes=1)) is None and not os.path.exists(f'/tmp/frz/fan/w{N}.json'), 'a first file was made after kickoff'
+          print('frozen after', k.isoformat(), 'and rewritten before it; no first file after it')
+          PY
       - name: Check the EPA split (SCOPE §29)
         run: |
           python3 - <<'PY'

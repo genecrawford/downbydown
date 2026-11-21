@@ -162,4 +162,5 @@ if ( $CR ) {
 		. '<div class="dbd-cr-line"><div><b>' . $tot['g'] . '</b><small>Games</small></div><div><b>' . $tot['fgm'] . '/' . $tot['fga'] . '</b><small>Field goals</small></div><div><b>' . $pct( $tot['fgm'], $tot['fga'] ) . '</b><small>Made</small></div><div><b>' . $lng . '</b><small>Long</small></div><div><b>' . $tot['pm'] . '/' . $tot['pa'] . '</b><small>Extra points</small></div><span class="span">' . esc_html( ( $y0 === $y1 ? (string) $y0 : $y0 . ' to ' . $y1 ) . ' · ' . $ns . ' ' . ( $ns === 1 ? 'season' : 'seasons' ) . ' · ' . $nt . ' ' . ( $nt === 1 ? 'team' : 'teams' ) ) . '</span></div>'
 		. '<p class="dbd-cr-say">' . $say . '</p><div class="dbd-tw"><table class="dbd-stat"><thead><tr><th>Season</th><th>G</th><th>FG</th><th>%</th><th>Long</th><th>50+</th><th>XP</th></tr></thead><tbody>' . $rows . '</tbody></table></div></section></section>';
 }
-echo '</main>';
+$kr = DBD_Data::player_record( $a, $row['id'] );  /* the Related panel, as on every player page (SCOPE §64; Greptile, PR #117) */
+echo DBD_Seo::related_panel( $a, 'K', $kr['bf'] ?? null ) . DBD_Signup::strip( 'kicker' ) . '</main>';

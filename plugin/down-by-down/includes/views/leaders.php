@@ -23,12 +23,15 @@ foreach ( DBD_Leaders::GROUPS as $k => $lab ) { echo '<a href="' . esc_url( $lur
 echo '</div></nav>';
 if ( $g === 'def' ) {
 	echo DBD_Leaders::defenses();  /* SCOPE §39 */
+} elseif ( $g === 'rush' ) {
+	echo DBD_Rush::band() ?: '<div class="dbd-empty"><h2>No pass rushers yet</h2><p>The chart fills in once defenders have played a few games.</p></div>';  /* their own tab (SCOPE §80) */
 } elseif ( $g === 'k' ) {
 	echo DBD_Kicker::leaders_tab();  /* SCOPE §47 */
 } elseif ( $g === 'fan' ) {
 	echo '<section class="dbd-panel ld-tools-p"><div class="dbd-toolbar ld-tools"><div class="dbd-fg"><span>Fantasy scoring</span>' . DBD_Fantasy::seg() . '</div></div></section>';
 	echo DBD_Leaders::fantasy();
 } else {
+	echo DBD_Scatter::band( $g );  /* the tab's chart, above its boards (SCOPE §80) */
 	list( $seg, $html ) = DBD_Leaders::group( $g );
 	if ( $seg ) { echo '<section class="dbd-panel ld-tools-p"><div class="dbd-toolbar ld-tools">' . $seg . '</div></section>'; }
 	echo $html;

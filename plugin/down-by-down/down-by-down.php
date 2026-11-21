@@ -3,7 +3,7 @@
  * Plugin Name: Down by Down
  * Plugin URI:  https://downbydown.com
  * Description: How every NFL offense actually plays, drawn on the field from public play-by-play. Put [down_by_down] on a page and that page becomes the app.
- * Version:     2.22.0
+ * Version:     2.42.0
  * Author:      Period Three
  * Author URI:  https://period-three.com
  * License:     GPL-2.0-or-later
@@ -14,7 +14,7 @@
 
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-define( 'DBD_VERSION', '2.22.0' );
+define( 'DBD_VERSION', '2.42.0' );
 define( 'DBD_FILE', __FILE__ );
 define( 'DBD_PATH', plugin_dir_path( __FILE__ ) );
 define( 'DBD_URL', plugin_dir_url( __FILE__ ) );
@@ -31,10 +31,14 @@ require_once DBD_PATH . 'includes/class-dbd-myteam.php';
 require_once DBD_PATH . 'includes/class-dbd-leaders.php';
 require_once DBD_PATH . 'includes/class-dbd-kicker.php';
 require_once DBD_PATH . 'includes/class-dbd-defense.php';
+require_once DBD_PATH . 'includes/class-dbd-scatter.php';  /* the Leaders charts (SCOPE §80) */
+require_once DBD_PATH . 'includes/class-dbd-rush.php';  /* pass rushers (SCOPE §79) */
 require_once DBD_PATH . 'includes/class-dbd-week.php';
+require_once DBD_PATH . 'includes/class-dbd-fanweek.php';  /* the weekly fantasy page (SCOPE §78) */
 require_once DBD_PATH . 'includes/class-dbd-hub.php';
 require_once DBD_PATH . 'includes/class-dbd-compare.php';
 require_once DBD_PATH . 'includes/class-dbd-season.php';
+require_once DBD_PATH . 'includes/class-dbd-boards.php';
 require_once DBD_PATH . 'includes/class-dbd-sync.php';
 require_once DBD_PATH . 'includes/class-dbd-card.php';
 require_once DBD_PATH . 'includes/class-dbd-urls.php';
@@ -45,6 +49,16 @@ require_once DBD_PATH . 'includes/class-dbd-post.php';
 require_once DBD_PATH . 'includes/class-dbd-news.php';
 require_once DBD_PATH . 'includes/class-dbd-videos.php';
 require_once DBD_PATH . 'includes/class-dbd-email.php';
+require_once DBD_PATH . 'includes/class-dbd-signup.php';
+require_once DBD_PATH . 'includes/class-dbd-pack.php';
+require_once DBD_PATH . 'includes/class-dbd-pack-mail.php';
+require_once DBD_PATH . 'includes/class-dbd-instagram.php';  /* Instagram posts itself (SCOPE §76) */
+require_once DBD_PATH . 'includes/class-dbd-bluesky.php';    /* Bluesky posting for Auto publish (SCOPE §81) */
+require_once DBD_PATH . 'includes/class-dbd-x.php';          /* X posting (SCOPE §83) */
+require_once DBD_PATH . 'includes/class-dbd-threads.php';    /* Threads posting (SCOPE §84) */
+require_once DBD_PATH . 'includes/class-dbd-autopub.php';    /* Auto publish (SCOPE §81) */
+require_once DBD_PATH . 'includes/class-dbd-board-mail.php';
+require_once DBD_PATH . 'includes/class-dbd-growth.php';
 if ( is_admin() ) {
 	require_once DBD_PATH . 'includes/admin/settings.php';
 }
@@ -59,6 +73,13 @@ register_deactivation_hook( __FILE__, function () {
 	DBD_Sync::unschedule();
 	DBD_News::unschedule();
 	wp_clear_scheduled_hook( DBD_Videos::HOOK_FIRST );
+	DBD_Growth::unschedule();
+	DBD_Board_Mail::unschedule();
+	DBD_Pack_Mail::unschedule();
+	DBD_Instagram::unschedule();
+	DBD_Bluesky::unschedule();
+	DBD_X::unschedule();
+	DBD_Threads::unschedule();
 } );
 
 add_action( 'plugins_loaded', function () {
@@ -70,4 +91,12 @@ add_action( 'plugins_loaded', function () {
 	DBD_News::init();
 	DBD_Videos::init();
 	DBD_Email::init();
+	DBD_Growth::init();
+	DBD_Board_Mail::init();
+	DBD_Pack_Mail::init();
+	DBD_Instagram::init();
+	DBD_Bluesky::init();
+	DBD_X::init();
+	DBD_Threads::init();
+	DBD_AutoPub::init();
 } );

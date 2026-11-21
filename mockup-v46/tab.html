@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Share pack mock</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500&family=Tourney:wght@800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#f0f0f1;color:#1d2327;font:13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif}
+a{color:#2271b1}
+.bar{height:32px;background:#1d2327}
+.shell{display:flex;min-height:calc(100vh - 32px)}
+.side{width:160px;background:#1d2327;flex:none}
+.side div{padding:8px 12px;color:#f0f0f1;font-size:14px}.side div.on{background:#2271b1}
+.wrap{flex:1;padding:10px 20px 40px;min-width:0}
+h1{font-size:23px;font-weight:400;margin:9px 0 4px}
+.mock-note{max-width:980px;box-sizing:border-box;margin:0 0 16px;padding:10px 14px;border:1px dashed #c9a400;background:#fffbe6;font-size:13px;line-height:1.5}
+.dbd-lede{margin:2px 0 12px;color:#50575e}
+.nav-tab-wrapper{border-bottom:1px solid #c3c4c7;margin-bottom:20px;display:flex;flex-wrap:wrap;gap:0 4px}
+.nav-tab{display:block;padding:5px 10px;margin-bottom:-1px;border:1px solid #c3c4c7;background:#dcdcde;color:#50575e;font-size:14px;font-weight:600;line-height:1.71;text-decoration:none;cursor:pointer}
+.nav-tab.on{background:#f0f0f1;border-bottom-color:#f0f0f1;color:#000}
+.view{display:none}.view.on{display:block}
+.dbd-box{max-width:980px;background:#fff;border:1px solid #c3c4c7;margin:0 0 20px}
+.dbd-box>h2{margin:0;padding:10px 16px;border-bottom:1px solid #c3c4c7;font-size:14px;line-height:1.4;display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.dbd-box>h2 small{font-weight:400;color:#50575e;font-size:13px}
+.dbd-rows{width:100%;border-collapse:collapse}
+.dbd-rows td{padding:8px 16px;border-top:1px solid #f0f0f1;vertical-align:top}
+.dbd-rows tr:first-child td{border-top:0}
+.dbd-rows td:first-child{width:180px;color:#50575e}
+.dbd-foot{padding:12px 16px;border-top:1px solid #c3c4c7;background:#f6f7f7;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.dbd-foot .description{color:#646970}
+.button{display:inline-block;padding:0 10px;min-height:30px;line-height:28px;border:1px solid #2271b1;border-radius:3px;background:#f6f7f7;color:#2271b1;text-decoration:none;font-size:13px}
+.dbd-grid{max-width:980px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin:0 0 20px}
+.dbd-grid .dbd-box{margin:0;display:flex;flex-direction:column}
+.dbd-grid .dbd-rows{flex:1}
+.dbd-grid .dbd-rows td:first-child{width:110px}
+.dbd-dot{display:inline-block;width:8px;height:8px;border-radius:4px;margin-right:6px;background:#a7aaad}.dbd-dot.ok{background:#00a32a}
+
+.sp-head{max-width:1180px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin:0 0 16px}
+.sp-head select{min-height:30px}
+.sp-head p{margin:0;color:#50575e}
+.sp-item{max-width:1180px}
+.sp-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;padding:16px}
+.sp-card>img{display:block;width:100%;height:auto;border:1px solid #dcdcde}
+.sp-card .cd-wrap{border:1px solid #dcdcde}
+.sp-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.button-primary{background:#2271b1;color:#fff}
+.sp-fits{margin:8px 0 0;color:#50575e}
+.sp-f{margin:0 0 14px}
+.sp-fh{display:flex;align-items:center;gap:10px;margin-bottom:4px}.sp-fh b{flex:1}.sp-fh .cnt{color:#646970;font-size:12px}
+.sp-f textarea{width:100%;box-sizing:border-box;padding:6px 8px;border:1px solid #8c8f94;border-radius:4px;font:13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;resize:vertical;background:#fff;field-sizing:content;min-height:3.2em}
+.cp.ok{border-color:#00a32a;color:#007017}
+.sp-keys{padding:0 16px}
+.sp-g{display:grid;grid-template-columns:260px minmax(0,1fr);gap:20px;padding:16px 0;border-top:1px solid #f0f0f1}.sp-g:first-child{border-top:0}
+.sp-gc img{display:block;width:100%;height:auto;border:1px solid #dcdcde;margin-bottom:8px}
+.sp-gt{display:block;font-size:14px;margin-bottom:8px}
+.sp-gs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-content:start}.sp-gt{grid-column:1/-1;margin:0}
+.sp-kh{display:flex;align-items:center;gap:6px}.sp-kh img{width:22px;height:22px}.sp-kh span{margin-left:auto;color:#646970}
+.sp-k p{margin:6px 0 8px;line-height:1.5}
+.sp-kb{display:flex;flex-wrap:wrap;gap:6px}.sp-kb .button{font-size:12px;min-height:26px;line-height:24px}
+@media (max-width:1000px){.sp-body{grid-template-columns:minmax(0,1fr)}.sp-g{grid-template-columns:minmax(0,1fr)}.sp-gc img{max-width:360px}}
+@media (max-width:782px){.side{display:none}.wrap{padding:10px 12px 40px}.sp-body{padding:12px}.sp-keys{padding:0 12px}}
+@media (max-width:640px){.sp-gs{grid-template-columns:minmax(0,1fr)}}
+
+.cd-wrap{position:relative;width:100%;aspect-ratio:1200/630;overflow:hidden;background:#f4f1ea}
+.cd{position:absolute;left:0;top:0;width:1200px;height:630px;transform-origin:0 0;background:#f4f1ea;color:#121417;font-family:"IBM Plex Sans",sans-serif}
+.cd-top{position:absolute;left:44px;right:44px;top:15px;height:34px;display:flex;justify-content:space-between;align-items:center}
+.cd-logo{height:34px}
+.cd-meta{display:flex;align-items:center;gap:12px;font:700 15px "Barlow Condensed",sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#3b4255}.cd-meta img{height:30px}
+.cd-rule{position:absolute;left:0;right:0;top:64px;height:6px;background:var(--c1)}
+.cd-l{position:absolute;left:44px;top:108px;width:540px}
+.cd-k{display:block;font:700 15px "Barlow Condensed",sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#cb2026}
+.cd-n{display:block;margin-top:14px;font:800 62px/1 "Tourney",sans-serif;text-transform:uppercase;color:#121417}.cd-n em{font-style:normal;color:var(--c1)}
+.cd-big{display:block;margin-top:26px;font:800 96px/1 "Tourney",sans-serif;color:var(--c1)}
+.cd-s{display:block;margin-top:10px;max-width:500px;font:500 22px/1.35 "IBM Plex Sans",sans-serif;color:#3b4255}
+.cd-r{position:absolute;left:648px;top:104px;width:508px}.cd-r.o{left:520px;width:640px;top:100px}
+.cd-k2{display:block;margin-bottom:6px;font:700 15px "Barlow Condensed",sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#6b6f78}
+.cd svg text{font:500 15px "IBM Plex Mono",monospace;fill:#3b4255}.cd svg text.v{font:700 18px "Barlow Condensed",sans-serif;fill:#3b4255}.cd svg text.b{font-weight:700;fill:#121417}.cd svg text.m{fill:#6b6f78}.cd svg text.d{fill:#121417}
+.cd-r.o svg text{font-size:13px}
+.cd-tiles{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:34px}
+.cd-tile{padding:16px;border:1px solid #d9d5cb;background:#fffdf8;border-top:5px solid var(--c1)}
+.cd-tile span{display:block;font:700 13px "Barlow Condensed",sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#6b6f78}
+.cd-tile b{display:flex;align-items:center;gap:8px;margin-top:8px;font:700 26px "Barlow Condensed",sans-serif;text-transform:uppercase}.cd-tile b img{height:30px}
+.cd-tile em{display:block;margin-top:4px;font:800 46px/1 "Tourney",sans-serif;font-style:normal;color:var(--c1)}
+.cd-tile small{display:block;margin-top:8px;font:500 13px/1.4 "IBM Plex Mono",monospace;color:#6b6f78}
+.cd-foot{position:absolute;left:0;right:0;top:586px;height:44px;border-top:1px solid #d9d5cb;display:flex;justify-content:space-between;align-items:center;padding:0 44px;font:500 13px "IBM Plex Mono",monospace;color:#6b6f78}.cd-foot b{color:#121417;font-weight:600}
+
+.faded{opacity:.4}
+.faded-note{color:#8c8f94;font-size:12px;margin:0}
+.dbd-admin .sp-rd,.sp-rd{border-color:#cb2026;color:#cb2026}
+.sp-x{border-color:#0f1419;color:#0f1419}
+.sp-bs{border-color:#1185fe;color:#1185fe}
+.sp-f .sp-acts{margin-top:8px}
+.acc{max-width:1180px;margin:0 0 16px;display:flex;gap:10px 18px;align-items:center;flex-wrap:wrap}
+.acc label{color:#50575e}.acc input{width:200px}
+.test{max-width:1180px;box-sizing:border-box;margin:0 0 16px;padding:12px 14px;border:1px solid #c3c4c7;background:#fff;line-height:1.5}
+.test ol{margin:6px 0 0;padding-left:20px}
+</style></head>
+<body>
+<div class="bar"></div>
+<div class="shell">
+<div class="side"><div>Dashboard</div><div>Posts</div><div>Pages</div><div class="on">Down by Down</div><div>Site Kit</div><div>WPForms</div><div>Settings</div></div>
+<div class="wrap">
+<h1>Down by Down</h1>
+<p class="dbd-lede">Season 2026 · Week 11 · version 2.30.0</p>
+<div class="mock-note" style="max-width:1180px"><b>Mock: Post on X and Post on Bluesky.</b> Each “X and Bluesky” text gets two buttons that open that site’s compose box with the post written, link included. The link is the same one the Reddit button uses, so snaps, targets and offense preview their own card. Two new fields set your accounts; the X handle also goes in every page’s <code>twitter:site</code> tag. Everything else is unchanged and shown faded.</div>
+<nav class="nav-tab-wrapper"><a class="nav-tab">Overview</a><a class="nav-tab">Week in review</a><a class="nav-tab">News and videos</a><a class="nav-tab">Site</a><a class="nav-tab">Data</a><a class="nav-tab">Growth</a><a class="nav-tab on">Share pack</a></nav>
+<div class="test"><b>Two tests before we build (from your own browser, signed in):</b>
+<ol><li><a href="https://x.com/intent/post?text=Chimere%20Dike%20played%2095%25%20of%20the%20Titans%E2%80%99%20snaps%20against%20the%20Jaguars%20in%20Week%2010%2C%20up%20from%2021%25%20in%20his%208%20earlier%20games.%20https%3A%2F%2Fdownbydown.com%2Fplayer%2Fchimere-dike%2F%3Fshare%3Dpack-week-10-snaps" target="_blank" rel="noopener">Open the X test</a>: the compose box should hold the Chimere Dike post with its link.</li>
+<li><a href="https://bsky.app/intent/compose?text=Chimere%20Dike%20played%2095%25%20of%20the%20Titans%E2%80%99%20snaps%20against%20the%20Jaguars%20in%20Week%2010%2C%20up%20from%2021%25%20in%20his%208%20earlier%20games.%20https%3A%2F%2Fdownbydown.com%2Fplayer%2Fchimere-dike%2F%3Fshare%3Dpack-week-10-snaps" target="_blank" rel="noopener">Open the Bluesky test</a>: the same post, and Bluesky should offer a link card for the link.</li></ol>
+Don’t post either one; tell me what was filled in and whether a preview card showed.</div>
+<div class="acc"><span><label for="s">Your subreddit</label> r/<input id="s" value="downbydown" class="faded"></span><span><label for="x">X account</label> @<input id="x" value="dxd_NFLfootball"></span><span><label for="b">Bluesky</label> <input id="b" value="downbydown.bsky.social"></span><button type="button" class="button">Save</button></div>
+<div class="dbd-box sp-item"><h2><span>1. The biggest swing</span></h2><div class="sp-body">
+<div class="sp-l"><div class="sp-card"><img src="https://downbydown.com/?card=game-2026_10_WAS_NYG" width="1200" height="630" alt=""></div><div class="sp-acts faded"><a class="button button-primary">Download image</a><a class="button">Open the page</a><a class="button sp-rd">Post to r/downbydown</a></div></div>
+<div class="sp-r">
+<div class="sp-f faded"><div class="sp-fh"><b>Reddit title</b><button type="button" class="button">Copy</button></div><textarea rows="2" readonly>Week 10’s biggest swing: one play with 1:05 left in the fourth quarter moved the Commanders’ chance of beating the Giants by 39 points. They won 24-21.</textarea></div>
+<div class="sp-f"><div class="sp-fh"><b>X and Bluesky</b><span class="cnt">214 characters with the full link</span><button type="button" class="button">Copy</button></div><textarea rows="3" readonly>Week 10’s biggest swing: one play with 1:05 left in the fourth quarter moved the Commanders’ chance of beating the Giants by 39 points. They won 24-21. https://downbydown.com/game/2026-week-10-commanders-at-giants/</textarea>
+<div class="sp-acts"><a class="button sp-x" href="https://x.com/intent/post?text=Week%2010%E2%80%99s%20biggest%20swing%3A%20one%20play%20with%201%3A05%20left%20in%20the%20fourth%20quarter%20moved%20the%20Commanders%E2%80%99%20chance%20of%20beating%20the%20Giants%20by%2039%20points.%20They%20won%2024-21.%20https%3A%2F%2Fdownbydown.com%2Fgame%2F2026-week-10-commanders-at-giants%2F" target="_blank" rel="noopener">Post on X</a><a class="button sp-bs" href="https://bsky.app/intent/compose?text=Week%2010%E2%80%99s%20biggest%20swing%3A%20one%20play%20with%201%3A05%20left%20in%20the%20fourth%20quarter%20moved%20the%20Commanders%E2%80%99%20chance%20of%20beating%20the%20Giants%20by%2039%20points.%20They%20won%2024-21.%20https%3A%2F%2Fdownbydown.com%2Fgame%2F2026-week-10-commanders-at-giants%2F" target="_blank" rel="noopener">Post on Bluesky</a></div></div>
+</div></div></div><div class="dbd-box sp-item"><h2><span>2. A usage riser</span></h2><div class="sp-body">
+<div class="sp-l"><div class="sp-card"><img src="https://downbydown.com/?card=pack-week-10-snaps" width="1200" height="630" alt=""></div><div class="sp-acts faded"><a class="button button-primary">Download image</a><a class="button">Open the page</a><a class="button sp-rd">Post to r/downbydown</a></div></div>
+<div class="sp-r">
+<div class="sp-f faded"><div class="sp-fh"><b>Reddit title</b><button type="button" class="button">Copy</button></div><textarea rows="2" readonly>Chimere Dike played 95% of the Titans’ snaps against the Jaguars in Week 10, up from 21% in his 8 earlier games.</textarea></div>
+<div class="sp-f"><div class="sp-fh"><b>X and Bluesky</b><span class="cnt">181 characters with the full link</span><button type="button" class="button">Copy</button></div><textarea rows="3" readonly>Chimere Dike played 95% of the Titans’ snaps against the Jaguars in Week 10, up from 21% in his 8 earlier games. https://downbydown.com/player/chimere-dike/?share=pack-week-10-snaps</textarea>
+<div class="sp-acts"><a class="button sp-x" href="https://x.com/intent/post?text=Chimere%20Dike%20played%2095%25%20of%20the%20Titans%E2%80%99%20snaps%20against%20the%20Jaguars%20in%20Week%2010%2C%20up%20from%2021%25%20in%20his%208%20earlier%20games.%20https%3A%2F%2Fdownbydown.com%2Fplayer%2Fchimere-dike%2F%3Fshare%3Dpack-week-10-snaps" target="_blank" rel="noopener">Post on X</a><a class="button sp-bs" href="https://bsky.app/intent/compose?text=Chimere%20Dike%20played%2095%25%20of%20the%20Titans%E2%80%99%20snaps%20against%20the%20Jaguars%20in%20Week%2010%2C%20up%20from%2021%25%20in%20his%208%20earlier%20games.%20https%3A%2F%2Fdownbydown.com%2Fplayer%2Fchimere-dike%2F%3Fshare%3Dpack-week-10-snaps" target="_blank" rel="noopener">Post on Bluesky</a></div></div>
+</div></div></div><div class="dbd-box sp-item"><h2><span>3. Best and worst offense</span></h2><div class="sp-body">
+<div class="sp-l"><div class="sp-card"><img src="https://downbydown.com/?card=pack-week-10-offense" width="1200" height="630" alt=""></div><div class="sp-acts faded"><a class="button button-primary">Download image</a><a class="button">Open the page</a><a class="button sp-rd">Post to r/downbydown</a></div></div>
+<div class="sp-r">
+<div class="sp-f faded"><div class="sp-fh"><b>Reddit title</b><button type="button" class="button">Copy</button></div><textarea rows="2" readonly>Week 10 offenses by EPA a play: the 49ers were best (+0.45 in a 46-40 win over the Cowboys), the Cardinals worst (−0.52 in a 34-6 loss to the Rams).</textarea></div>
+<div class="sp-f"><div class="sp-fh"><b>X and Bluesky</b><span class="cnt">207 characters with the full link</span><button type="button" class="button">Copy</button></div><textarea rows="3" readonly>Week 10 offenses by EPA a play: the 49ers were best (+0.45 in a 46-40 win over the Cowboys), the Cardinals worst (−0.52 in a 34-6 loss to the Rams). https://downbydown.com/week/10/?share=pack-week-10-offense</textarea>
+<div class="sp-acts"><a class="button sp-x" href="https://x.com/intent/post?text=Week%2010%20offenses%20by%20EPA%20a%20play%3A%20the%2049ers%20were%20best%20%28%2B0.45%20in%20a%2046-40%20win%20over%20the%20Cowboys%29%2C%20the%20Cardinals%20worst%20%28%E2%88%920.52%20in%20a%2034-6%20loss%20to%20the%20Rams%29.%20https%3A%2F%2Fdownbydown.com%2Fweek%2F10%2F%3Fshare%3Dpack-week-10-offense" target="_blank" rel="noopener">Post on X</a><a class="button sp-bs" href="https://bsky.app/intent/compose?text=Week%2010%20offenses%20by%20EPA%20a%20play%3A%20the%2049ers%20were%20best%20%28%2B0.45%20in%20a%2046-40%20win%20over%20the%20Cowboys%29%2C%20the%20Cardinals%20worst%20%28%E2%88%920.52%20in%20a%2034-6%20loss%20to%20the%20Rams%29.%20https%3A%2F%2Fdownbydown.com%2Fweek%2F10%2F%3Fshare%3Dpack-week-10-offense" target="_blank" rel="noopener">Post on Bluesky</a></div></div>
+</div></div></div><div class="dbd-box sp-item"><h2><span>4. A target-share mover</span></h2><div class="sp-body">
+<div class="sp-l"><div class="sp-card"><img src="https://downbydown.com/?card=pack-week-10-targets" width="1200" height="630" alt=""></div><div class="sp-acts faded"><a class="button button-primary">Download image</a><a class="button">Open the page</a><a class="button sp-rd">Post to r/downbydown</a></div></div>
+<div class="sp-r">
+<div class="sp-f faded"><div class="sp-fh"><b>Reddit title</b><button type="button" class="button">Copy</button></div><textarea rows="2" readonly>Nico Collins drew 44% of the Texans’ targets against the Browns in Week 10, up from 21% in his 6 earlier games.</textarea></div>
+<div class="sp-f"><div class="sp-fh"><b>X and Bluesky</b><span class="cnt">182 characters with the full link</span><button type="button" class="button">Copy</button></div><textarea rows="3" readonly>Nico Collins drew 44% of the Texans’ targets against the Browns in Week 10, up from 21% in his 6 earlier games. https://downbydown.com/player/nico-collins/?share=pack-week-10-targets</textarea>
+<div class="sp-acts"><a class="button sp-x" href="https://x.com/intent/post?text=Nico%20Collins%20drew%2044%25%20of%20the%20Texans%E2%80%99%20targets%20against%20the%20Browns%20in%20Week%2010%2C%20up%20from%2021%25%20in%20his%206%20earlier%20games.%20https%3A%2F%2Fdownbydown.com%2Fplayer%2Fnico-collins%2F%3Fshare%3Dpack-week-10-targets" target="_blank" rel="noopener">Post on X</a><a class="button sp-bs" href="https://bsky.app/intent/compose?text=Nico%20Collins%20drew%2044%25%20of%20the%20Texans%E2%80%99%20targets%20against%20the%20Browns%20in%20Week%2010%2C%20up%20from%2021%25%20in%20his%206%20earlier%20games.%20https%3A%2F%2Fdownbydown.com%2Fplayer%2Fnico-collins%2F%3Fshare%3Dpack-week-10-targets" target="_blank" rel="noopener">Post on Bluesky</a></div></div>
+</div></div></div>
+<div class="dbd-box sp-item"><h2><span>5. Keys to the game, Week 11</span><small>Every side gets Post on X and Post on Bluesky after its Reddit buttons.</small></h2><div class="sp-keys"><div class="sp-g"><div class="sp-gc"><img src="https://downbydown.com/?card=game-2026_11_IND_HOU" width="1200" height="630" alt="" loading="lazy"></div><div class="sp-gs"><b class="sp-gt">Colts at Texans</b><div class="sp-k"><div class="sp-kh"><img src="https://a.espncdn.com/i/teamlogos/nfl/500/ind.png" alt=""><b>Colts offense</b><span>r/Colts</span></div><p><b>Red zone touchdowns.</b> Colts score a touchdown on 65% of red zone trips (10th). Texans allow 68% (23rd).</p><div class="sp-kb"><button type="button" class="button faded">Copy title</button><button type="button" class="button faded">Copy comment</button><button type="button" class="button faded">Copy for X and Bluesky</button><a class="button sp-rd faded">Post to r/downbydown</a><a class="button sp-rd faded">Post to r/Colts</a><a class="button sp-x" href="https://x.com/intent/post?text=Colts%20at%20Texans%3A%20Colts%20score%20a%20touchdown%20on%2065%25%20of%20red%20zone%20trips%20%2810th%29.%20Texans%20allow%2068%25%20%2823rd%29.%20https%3A%2F%2Fdownbydown.com%2Fgame%2F2026-week-11-colts-at-texans%2F" target="_blank" rel="noopener">Post on X</a><a class="button sp-bs" href="https://bsky.app/intent/compose?text=Colts%20at%20Texans%3A%20Colts%20score%20a%20touchdown%20on%2065%25%20of%20red%20zone%20trips%20%2810th%29.%20Texans%20allow%2068%25%20%2823rd%29.%20https%3A%2F%2Fdownbydown.com%2Fgame%2F2026-week-11-colts-at-texans%2F" target="_blank" rel="noopener">Post on Bluesky</a></div></div><div class="sp-k"><div class="sp-kh"><img src="https://a.espncdn.com/i/teamlogos/nfl/500/hou.png" alt=""><b>Texans offense</b><span>r/Texans</span></div><p><b>Wideouts feast.</b> Colts give up 149 yards a game to wide receivers (16th), against a league average of 148. Texans&#x27; wide receivers produce 196 (4th).</p><div class="sp-kb"><button type="button" class="button faded">Copy title</button><button type="button" class="button faded">Copy comment</button><button type="button" class="button faded">Copy for X and Bluesky</button><a class="button sp-rd faded">Post to r/downbydown</a><a class="button sp-rd faded">Post to r/Texans</a><a class="button sp-x" href="https://x.com/intent/post?text=Colts%20at%20Texans%3A%20Colts%20give%20up%20149%20yards%20a%20game%20to%20wide%20receivers%20%2816th%29%2C%20against%20a%20league%20average%20of%20148.%20Texans%27%20wide%20receivers%20produce%20196%20%284th%29.%20https%3A%2F%2Fdownbydown.com%2Fgame%2F2026-week-11-colts-at-texans%2Ftexans%2F" target="_blank" rel="noopener">Post on X</a><a class="button sp-bs" href="https://bsky.app/intent/compose?text=Colts%20at%20Texans%3A%20Colts%20give%20up%20149%20yards%20a%20game%20to%20wide%20receivers%20%2816th%29%2C%20against%20a%20league%20average%20of%20148.%20Texans%27%20wide%20receivers%20produce%20196%20%284th%29.%20https%3A%2F%2Fdownbydown.com%2Fgame%2F2026-week-11-colts-at-texans%2Ftexans%2F" target="_blank" rel="noopener">Post on Bluesky</a></div></div></div></div><div class="sp-g"><div class="sp-gc"><img src="https://downbydown.com/?card=game-2026_11_MIA_BUF" width="1200" height="630" alt="" loading="lazy"></div><div class="sp-gs"><b class="sp-gt">Dolphins at Bills</b><div class="sp-k"><div class="sp-kh"><img src="https://a.espncdn.com/i/teamlogos/nfl/500/mia.png" alt=""><b>Dolphins offense</b><span>r/miamidolphins</span></div><p><b>Backs catch passes.</b> Bills give up 44 yards a game to running backs (30th), against a league average of 33. Dolphins&#x27; running backs produce 23 (27th).</p><div class="sp-kb"><button type="button" class="button faded">Copy title</button><button type="button" class="button faded">Copy comment</button><button type="button" class="button faded">Copy for X and Bluesky</button><a class="button sp-rd faded">Post to r/downbydown</a><a class="button sp-rd faded">Post to r/miamidolphins</a><a class="button sp-x" href="https://x.com/intent/post?text=Dolphins%20at%20Bills%3A%20Bills%20give%20up%2044%20yards%20a%20game%20to%20running%20backs%20%2830th%29%2C%20against%20a%20league%20average%20of%2033.%20Dolphins%27%20running%20backs%20produce%2023%20%2827th%29.%20https%3A%2F%2Fdownbydown.com%2Fgame%2F2026-week-11-dolphins-at-bills%2F" target="_blank" rel="noopener">Post on X</a><a class="button sp-bs" href="https://bsky.app/intent/compose?text=Dolphins%20at%20Bills%3A%20Bills%20give%20up%2044%20yards%20a%20game%20to%20running%20backs%20%2830th%29%2C%20against%20a%20league%20average%20of%2033.%20Dolphins%27%20running%20backs%20produce%2023%20%2827th%29.%20https%3A%2F%2Fdownbydown.com%2Fgame%2F2026-week-11-dolphins-at-bills%2F" target="_blank" rel="noopener">Post on Bluesky</a></div></div><div class="sp-k"><div class="sp-kh"><img src="https://a.espncdn.com/i/teamlogos/nfl/500/buf.png" alt=""><b>Bills offense</b><span>r/buffalobills</span></div><p><b>Throw it.</b> Bills gain +0.16 EPA per dropback (5th). Dolphins allow +0.16 (28th).</p><div class="sp-kb"><button type="button" class="button faded">Copy title</button><button type="button" class="button faded">Copy comment</button><button type="button" class="button faded">Copy for X and Bluesky</button><a class="button sp-rd faded">Post to r/downbydown</a><a class="button sp-rd faded">Post to r/buffalobills</a><a class="button sp-x" href="https://x.com/intent/post?text=Dolphins%20at%20Bills%3A%20Bills%20gain%20%2B0.16%20EPA%20per%20dropback%20%285th%29.%20Dolphins%20allow%20%2B0.16%20%2828th%29.%20https%3A%2F%2Fdownbydown.com%2Fgame%2F2026-week-11-dolphins-at-bills%2Fbills%2F" target="_blank" rel="noopener">Post on X</a><a class="button sp-bs" href="https://bsky.app/intent/compose?text=Dolphins%20at%20Bills%3A%20Bills%20gain%20%2B0.16%20EPA%20per%20dropback%20%285th%29.%20Dolphins%20allow%20%2B0.16%20%2828th%29.%20https%3A%2F%2Fdownbydown.com%2Fgame%2F2026-week-11-dolphins-at-bills%2Fbills%2F" target="_blank" rel="noopener">Post on Bluesky</a></div></div></div></div><p class="faded-note" style="padding:0 0 16px">… and the other games the same way.</p></div></div>
+</div></div></body></html>
