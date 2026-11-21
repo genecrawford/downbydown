@@ -2680,6 +2680,36 @@ Gene asked which data sources exist for the NFL draft and combine, and whether W
 1. Show the Wikipedia paragraph, or only the link (pill) at a minimum? Default in the mock: both.
 2. Keep the combine score, or show the drills only?
 
+## 63. Season draft and combine boards (scoped and mocked 2026-11-15, `mockup-v38/`)
+
+Gene: "explore what a season draft board/page and a season combine board/page could look like", as offseason traffic pages. The data is the same nflverse `draft_picks` and `combine` files §62 added to the build. The mocks use the real 2026 class, open from disk, and filter and sort with a small inline script.
+
+**The draft board, `/draft/{year}/`** (`draft-2026.html`):
+- **Header:** "The 2026 draft", with a sentence written from the data ("The Raiders took Fernando Mendoza first. WRs went most often (36), and Ohio St. sent the most players (11). The Dolphins made the most picks (13). 202 of the 257 have played a snap so far."). A year switcher reaches back to 1980.
+- **Filter panel (the §61 pattern):** a header count ("36 of 257 picks"), Round chips, Position chips (small groups folded: OLB into LB, OG into G, DL and NT into DT, DB into S, FB into RB), and a Team dropdown.
+- **Every pick, by round:** pick and round, team logo, player (linked when he has a player page), position, school, combine score (0 to 100 against his position since 2000, shaded), and "so far" (games plus the line that fits his position: passing, rushing, receiving, or tackles, sacks and INTs). Every column sorts.
+- **Beside it:** Early returns (the class's leaders so far in receiving yards, rushing yards and sacks), picks by position, picks by school.
+
+**The combine board, `/combine/{year}/`** (`combine-2026.html`):
+- **Header:** "The 2026 combine", with a sentence (fastest 40, how many who tested were drafted).
+- **Six leader lists** (40, vertical, broad jump, bench, 3-cone, shuttle), top five each, each badged against history ("5 better since 2000", "best since 2000").
+- **Every player who tested, in one sortable table:** height, weight, the six drills, each result shaded green to red by his percentile at his position since 2000, the combine score, and where he was drafted (or "Undrafted"). Position chips with counts and the header count filter it.
+
+**The offseason calendar** is what makes these traffic pages:
+- The combine page fills in during combine week (late February), when nflverse posts the results.
+- The draft page fills in over draft weekend (late April).
+- Through the season, the draft page's "so far" column and Early returns keep the newest class moving.
+
+**Build:**
+- `tools/build_data.py` writes `data/draft/{year}.json` and `data/combine/{year}.json` for every year in the files: about 250 picks and about 330 players a year, compact rows. The combine score and percentiles reuse §62's pools.
+- `DBD_Sync::ALLOW` adds `draft/\d{4}` and `combine/\d{4}`.
+- New routes and views `draft` and `combine` (`DBD_Urls`, `views/draft.php`, `views/combine.php`, `assets/boards.js` for the filters and sorting), with share cards and meta descriptions like the other pages.
+- The newest year is the default. The Divi menu is Gene's to add links to.
+
+**Open questions:**
+1. The draft page's "so far" stats come from nflverse's draft file, updated weekly. Should they also link each rookie to his player page where one exists? (Default: yes.)
+2. Should the combine page also show the undrafted players' current teams, where a roster has them? (Default: no; only drafted or "Undrafted".)
+
 ## 64. Growing traffic without ads: scope and plans (2026-11-15)
 
 Gene asked for ways to grow visitors without paying for ads, then for a scope and plan for each. Six plans follow. Each says where the site stands today (checked live on 2026-11-15), what to build in the plugin (each goes through the usual scope, mock and build), what is Gene's to do by hand, the effort, and how to tell if it's working.
