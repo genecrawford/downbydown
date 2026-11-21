@@ -170,9 +170,9 @@ class DBD_Tall {
 		$b = $c->title( $lines, $sub, 56, 540, 128, 96 ); $y = $b + 15; $rh = ( $H - 104 - $y ) / count( $R );
 		foreach ( $R as $i => $r ) {
 			$ry = $y + $i * $rh; list( $f, $l ) = self::split( $r['full'] ); $c->tile( $r['t'], 56, $ry + 3, 92, (int) ( $rh - 12 ) );
-			$vx = ! empty( $r['x'] ) ? 516 - $c->w( (string) $r['x'], 's', 26 ) - 14 : 596 - $c->w( (string) $r['vs'], 'b', 64 ) - 14;
+			$vl = 596 - $c->w( (string) $r['vs'], 'b', 64 ) - 14; $xr = min( 516, $vl ); $vx = ! empty( $r['x'] ) ? $xr - $c->w( (string) $r['x'], 's', 26 ) - 14 : $vl;  /* a big number pushes the second stat left */
 			$c->text( 164, $ry + $rh * 0.43, self::up( $f ), 's', 27, $c->t['ink'] ); $lu = self::up( $l ); $c->text( 164, $ry + $rh * 0.43 + 28, $lu, 'b', $c->fit( $lu, 'b', 30, max( 120, min( 270, $vx - 164 ) ) ), $c->t['ink'] );
-			if ( ! empty( $r['x'] ) ) { $c->text( 516, $ry + $rh * 0.70, (string) $r['x'], 's', 26, $c->t['mut'], true ); }
+			if ( ! empty( $r['x'] ) ) { $c->text( $xr, $ry + $rh * 0.70, (string) $r['x'], 's', 26, $c->t['mut'], true ); }
 			$c->text( 596, $ry + $rh * 0.76, (string) $r['vs'], 'b', 64, $c->t['ink'], true );
 			if ( $i ) { $c->rect( 56, $ry - 3, 540, 1, $c->t['line'] ); }
 		}
@@ -263,7 +263,7 @@ class DBD_Tall {
 		$lab = $bw < 44 ? 22 : 30;
 		foreach ( $ser as $i => $x ) {
 			$bx = 56 + $i * $bw; $wk = (string) ( $i + 1 ); $c->text( $bx + $bw / 2 - $c->w( $wk, 's', 26 ) / 2, $cb + 32, $wk, 's', 26, $c->t['mut'] );
-			if ( $x === null ) { $c->text( $bx + $bw / 2 - $c->w( 'BYE', 's', 22 ) / 2, $cb - 8, 'BYE', 's', 22, $c->t['mut'] ); continue; }
+			if ( $x === null ) { $off = in_array( $t, DBD_Data::byes( $i + 1 ), true ) ? 'BYE' : 'DNP'; $c->text( $bx + $bw / 2 - $c->w( $off, 's', 22 ) / 2, $cb - 8, $off, 's', 22, $c->t['mut'] ); continue; }  /* a game he missed isn't a bye */
 			$hh = max( 4, ( $cb - $ct - 34 ) * (float) $x / $mx ); $last = $i === count( $ser ) - 1;
 			$c->rect( $bx + 6, $cb - $hh, $bw - 12, $hh, $last ? $c->t['red'] : ( $c->th === 'black' ? $c->t['line'] : '#cfcabd' ) );
 			$tx = (string) (int) round( (float) $x ); $c->text( $bx + $bw / 2 - $c->w( $tx, 'b', $lab ) / 2, $cb - $hh - 8, $tx, 'b', $lab, $last ? $c->t['ink'] : $c->t['mut'] );
