@@ -896,7 +896,7 @@ if ( $view === 'autopub' ) {
 		$GLOBALS['dbd_opt']['dbd_pack_th'] = 'someone_else'; $e = DBD_Threads::save( array( 'dbd_th_set' => array( 'on' => '1' ), 'dbd_th_token_new' => 'short1' ) );
 		$ck( 'a changed Threads account forgets the token first, whatever else was pasted', ! DBD_Threads::conn() && strpos( $e, 'Paste the app’s Threads App secret' ) === 0, $e ); unset( $GLOBALS['dbd_opt']['dbd_pack_th'] );
 		/* ---- the tall graphics on every network (SCOPE §85) */
-		DBD_Tall::$off = false; DBD_Pack::$now = 0; $GLOBALS['xs']['posts'] = array(); $GLOBALS['thf']['posts'] = array(); $GLOBALS['thf']['c'] = array(); $GLOBALS['bs']['records'] = array();
+		DBD_Bluesky::$max_blob = 1000000; DBD_Tall::$off = false; DBD_Pack::$now = 0; $GLOBALS['xs']['posts'] = array(); $GLOBALS['thf']['posts'] = array(); $GLOBALS['thf']['c'] = array(); $GLOBALS['bs']['records'] = array();
 		$GLOBALS['dbd_opt']['dbd_bsky_conn'] = array( 'pass' => 'good-pass', 'handle' => 'downbydown.bsky.social', 'did' => 'did:plc:dbd', 'checked' => time() );
 		$GLOBALS['dbd_opt']['dbd_x_conn'] = array( 'ck' => 'ck1', 'cs' => 'cs1', 'at' => 'at1', 'as' => 'as1', 'id' => '99', 'username' => 'dxd_NFLfootball', 'checked' => time() ); $GLOBALS['dbd_opt']['dbd_pack_x'] = 'dxd_NFLfootball';
 		$GLOBALS['dbd_opt']['dbd_th_conn'] = array( 'token' => 'long1', 'secret' => 'sec1', 'id' => 'th99', 'username' => 'down_by_down', 'expires' => time() + 40 * 86400, 'checked' => time(), 'err' => '' );
@@ -916,6 +916,7 @@ if ( $view === 'autopub' ) {
 		$kg0 = null; foreach ( DBD_Pack::keys( $n ) as $kg ) { if ( ! DBD_Router::is_final( $kg['g'] ) ) { $kg0 = $kg; break; } }
 		if ( $kg0 ) {
 			$sd = $kg0['sides'][0]; $sl = DBD_AutoPub::slot( $n, $sd ); $tick = strtotime( DBD_Data::kickoff( $kg0['g'] )['utc'] );
+			foreach ( array( 'dbd_ig_job_', 'dbd_bsky_job_', 'dbd_x_job_', 'dbd_th_job_' ) as $o ) { unset( $GLOBALS['dbd_opt'][ $o . DBD_AutoPub::key( $n, $sl ) ] ); }  /* a clean side, whatever the checks above posted */
 			DBD_Pack::$now = $tick - 60; $before = DBD_Pack::find( $n, $sl ) !== null && DBD_AutoPub::ready( $n, $sl, $sd ) !== array() && DBD_Card::render( DBD_Tall::key( $n, $sl ) ) !== null;
 			DBD_Pack::$now = $tick; $after = DBD_Pack::find( $n, $sl ) === null && DBD_AutoPub::ready( $n, $sl, $sd ) === array() && DBD_Card::render( DBD_Tall::key( $n, $sl ) ) === null && isset( DBD_AutoPub::publish( $n, $sl )['item'] );
 			$ck( 'a keys side: offered and drawn before kickoff; no button, no graphic, no post from kickoff on', $before && $after );
@@ -1064,7 +1065,7 @@ if ( $view === 'pack' ) {
 	$ck( in_array( 'rush', $ks, true ) === ( $n === DBD_Rush::through() ), 'pass rushers only for the week the defense files run through (SCOPE §79)' );
 	foreach ( $items as $it ) { if ( $it['k'] === 'rush' ) { $ck( strpos( $it['link'], 'rush' ) !== false && strpos( $it['link'], 'def' ) === false, 'pass rushers link to their own tab (SCOPE §80), got ' . $it['link'] ); } }
 	foreach ( $items as $it ) { $ck( isset( DBD_Pack::NUM[ $it['k'] ] ), $it['k'] . ': a fixed number' ); }
-	$ck( DBD_Pack::NUM === array( 'swing' => 1, 'snaps' => 2, 'offense' => 3, 'targets' => 4, 'leaders' => 5, 'rush' => 6, 'keys' => 7 ), 'the fixed numbers' );
+	$ck( DBD_Pack::NUM === array( 'swing' => 1, 'snaps' => 2, 'offense' => 3, 'targets' => 4, 'leaders' => 5, 'rush' => 6, 'keys' => 7, 'board' => 8 ), 'the fixed numbers' );
 	/* Week leaders (2.33.0, SCOPE §75): each panel's leader is the box score's top, worked out here on its own */
 	$bx = DBD_Data::get( 'box/w' . $n . '.json' ); $br = array();
 	foreach ( (array) ( $bx['games'] ?? array() ) as $g ) { foreach ( array( 'away', 'home' ) as $sd ) { foreach ( (array) ( $g[ $sd ]['off'] ?? array() ) as $r ) { $x = array_combine( $bx['keys'], $r ); $x['td'] = $x['rushing_tds'] + $x['receiving_tds']; $x['t'] = $g[ $sd ]['team']; $br[] = $x; } } }
