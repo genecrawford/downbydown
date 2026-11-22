@@ -181,7 +181,7 @@ class DBD_Pack {
 	}
 
 	/** Each item's fixed number on the tab, so a week missing one doesn't renumber the rest (Greptile, PR #125). */
-	const NUM = array( 'swing' => 1, 'snaps' => 2, 'offense' => 3, 'targets' => 4, 'leaders' => 5, 'rush' => 6, 'keys' => 7, 'board' => 8 );  /* Week leaders went in as 5 (SCOPE §75), pass rushers as 6 (SCOPE §79), League Leaders as 8 (SCOPE §85) */
+	const NUM = array( 'swing' => 1, 'snaps' => 2, 'offense' => 3, 'targets' => 4, 'leaders' => 5, 'rush' => 6, 'keys' => 7, 'board' => 8, 'rtd' => 9, 'recs' => 10, 'sacks' => 11 );  /* Week leaders went in as 5 (SCOPE §75), pass rushers as 6 (SCOPE §79), League Leaders as 8 (SCOPE §85), the weekly boards as 9 to 11 (SCOPE §86) */
 
 	/** The cards week $n's pack draws (for the harness): the item keys that have a pack card. */
 	public static function cards( $n ) { $o = array(); foreach ( self::items( $n ) as $it ) { if ( strpos( $it['card'], 'pack-' ) === 0 ) { $o[] = $it['card']; } } return $o; }
@@ -340,7 +340,7 @@ class DBD_Pack {
 
 	/** Week $n's item for a slot ('swing' … 'rush'), or a keys side for 'keys-{game}-{team}' carrying its game's card; null when there's none (SCOPE §81). */
 	public static function find( $n, $slot ) {
-		$slot = (string) $slot; if ( $slot === 'board' ) { return self::board_item( $n ); }
+		$slot = (string) $slot; if ( $slot === 'board' || isset( DBD_Tall::WEEKLY[ $slot ] ) ) { return self::board_item( $n, $slot ); }
 		if ( strpos( $slot, 'keys-' ) !== 0 ) { foreach ( self::items( $n ) as $it ) { if ( ( $it['k'] ?? '' ) === $slot ) { return $it; } } return null; }
 		foreach ( self::keys( $n ) as $kg ) { if ( self::started( $kg['g'] ) ) { continue; } foreach ( $kg['sides'] as $sd ) {  /* a preview is no use once the game's on (SCOPE §85) */ if ( $sd['sq'] === 'ig-week-' . (int) $n . '-' . $slot ) { $sd['card'] = $kg['card']; return $sd; } } }
 		return null;
@@ -362,17 +362,27 @@ class DBD_Pack {
 
 	/* ---- League Leaders (2.43.0, SCOPE §85): Monday's post, a season board, one stat a week; not part of Tuesday's carousel or thread */
 
-	public static function board_item( $n ) {
-		if ( DBD_Tall::$off ) { return null; }
+	const BOARD = array(
+		'board' => array( 'League Leaders', 'league-leaders', 'The season’s top 11 in one stat, a different stat each week.' ),
+		'rtd'   => array( 'Rushing TDs', 'rushing-tds', 'The season’s rushing TD leaders, every Wednesday.' ),
+		'recs'  => array( 'Receptions', 'receptions', 'The season’s receptions leaders, every Thursday.' ),
+		'sacks' => array( 'Most Sacks by a Defense', 'most-sacks', 'The defenses with the most sacks this season, every Friday.' ),
+	);
+	/** Week $n's season boards, slot => item: Monday's rotation, then the weekly boards (SCOPE §86). */
+	public static function board_items( $n ) { $out = array(); foreach ( array_keys( self::BOARD ) as $sl ) { if ( ( $b = self::board_item( $n, $sl ) ) ) { $out[ $sl ] = $b; } } return $out; }
+
+	public static function board_item( $n, $slot = 'board' ) {
+		if ( DBD_Tall::$off || ! isset( self::BOARD[ $slot ] ) ) { return null; }
 		$W = DBD_Week::file( $n ); if ( ! $W || empty( $W['complete'] ) ) { return null; }
-		$s = DBD_Tall::board_spec( $n ); if ( ! $s ) { return null; }
-		$R = $s['rows']; $what = $s['stat'][3]; $top = array_values( array_filter( $R, function ( $x ) use ( $R ) { return (float) $x['v'] === (float) $R[0]['v']; } ) ); $c = count( $top );
-		$who = $c === 1 ? $top[0]['full'] . ' leads' : ( $c === 2 ? $top[0]['full'] . ' and ' . $top[1]['full'] . ' lead' : $top[0]['full'] . ', ' . $top[1]['full'] . ' and ' . ( $c - 2 ) . ( $c === 3 ? ' other' : ' others' ) . ' lead' );
-		$short = 'League leaders in ' . $what . ' through Week ' . (int) $n . ': ' . $who . ' with ' . $R[0]['vs'] . '.';
-		$link = DBD_Router::url( $s['stat'][0] === 'sk' ? array( 'view' => 'leaders', 'g' => 'rush' ) : array( 'view' => 'leaders' ) ); $teams = array_values( array_unique( array_column( array_slice( $R, 0, 3 ), 't' ) ) );
-		return array( 'k' => 'board', 'h' => 'League Leaders', 'why' => 'The season’s top 11 in one stat, a different stat each week.', 'card' => 'page-leaders', 'file' => 'dbd-week-' . (int) $n . '-league-leaders.jpg', 'fits' => array( 'r/nfl' ),
+		$s = DBD_Tall::board_spec( $n, $slot ); if ( ! $s ) { return null; }
+		$R = $s['rows']; $what = $s['stat'][3]; $top = array_values( array_filter( $R, function ( $x ) use ( $R ) { return (float) $x['v'] === (float) $R[0]['v']; } ) ); $c = count( $top ); $is_team = $slot === 'sacks'; $B = self::BOARD[ $slot ];
+		$nm = function ( $x ) use ( $is_team ) { return $is_team ? $x['nick'] : $x['full']; };
+		$who = ( $is_team ? 'the ' : '' ) . ( $c === 1 ? $nm( $top[0] ) . ( $is_team ? ' lead' : ' leads' ) : ( $c === 2 ? $nm( $top[0] ) . ' and ' . $nm( $top[1] ) . ' lead' : $nm( $top[0] ) . ', ' . $nm( $top[1] ) . ' and ' . ( $c - 2 ) . ( $c === 3 ? ' other' : ' others' ) . ' lead' ) );
+		$short = ( $is_team ? 'Most sacks by a defense' : 'League leaders in ' . $what ) . ' through Week ' . (int) $n . ': ' . $who . ' with ' . $R[0]['vs'] . '.';
+		$link = DBD_Router::url( $is_team || $s['stat'][0] === 'sk' ? array( 'view' => 'leaders', 'g' => 'rush' ) : array( 'view' => 'leaders' ) ); $teams = array_values( array_unique( array_column( array_slice( $R, 0, 3 ), 't' ) ) ); $jpg = 'dbd-week-' . (int) $n . '-' . $B[1] . '.jpg';
+		return array( 'k' => $slot, 'h' => $B[0], 'why' => $B[2], 'card' => 'page-leaders', 'file' => $jpg, 'fits' => array( 'r/nfl' ),
 			'title' => $short, 'comment' => 'Every leaderboard, all season: ' . $link, 'post' => self::post( $short, $short, $link ), 'tl' => $short, 'ts' => $short, 'link' => $link,
-			'lead' => self::last( $R[0]['full'] ) . '’s ' . $R[0]['vs'], 'teams' => $teams, 'sq' => DBD_Tall::key( $n, 'board' ), 'sqfile' => 'dbd-week-' . (int) $n . '-league-leaders.jpg' );
+			'lead' => ( $is_team ? $R[0]['nick'] . '’ ' : self::last( $R[0]['full'] ) . '’s ' ) . $R[0]['vs'], 'teams' => $teams, 'sq' => DBD_Tall::key( $n, $slot ), 'sqfile' => $jpg );
 	}
 
 	/* ---- the two new cards' specs (DBD_Card draws them) */

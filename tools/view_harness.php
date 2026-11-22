@@ -921,6 +921,16 @@ if ( $view === 'autopub' ) {
 			DBD_Pack::$now = $tick; $after = DBD_Pack::find( $n, $sl ) === null && DBD_AutoPub::ready( $n, $sl, $sd ) === array() && DBD_Card::render( DBD_Tall::key( $n, $sl ) ) === null && isset( DBD_AutoPub::publish( $n, $sl )['item'] );
 			$ck( 'a keys side: offered and drawn before kickoff; no button, no graphic, no post from kickoff on', $before && $after );
 		} else { echo "  (no game left to kick off this week; skipped the keys check)\n"; }
+		/* the three weekly boards (SCOPE §86): 5:00 PM on their days, in time order, on all four networks */
+		$from0 = DBD_Tall::$from; DBD_Tall::$from = array(); DBD_Pack::$now = null; $ny = new DateTimeZone( 'America/New_York' ); $hm = array(); foreach ( array( 'rtd', 'recs', 'sacks' ) as $sl ) { $hm[] = wp_date( 'D G:i', DBD_Instagram::slot_time( $n, $sl ), $ny ); }
+		$ck( 'the weekly boards: Wednesday, Thursday and Friday at 5:00 PM', $hm === array( 'Wed 17:00', 'Thu 17:00', 'Fri 17:00' ), json_encode( $hm ) );
+		$tp0 = array_map( function ( $sl ) use ( $n ) { return DBD_Instagram::slot_time( $n, $sl ); }, array_keys( DBD_Instagram::plan( $n ) ) ); $tp1 = $tp0; sort( $tp1 ); $ck( 'the plan runs in time order, so the tab’s Next is right', $tp0 === $tp1 && isset( DBD_Instagram::plan( $n )['sacks'] ) && ! array_intersect( array( 'rtd', 'recs', 'sacks' ), array_column( DBD_Instagram::plan( $n )['carousel'] ?? array(), 'k' ) ) );
+		foreach ( array( 'rtd', 'recs', 'sacks' ) as $sl ) {
+			$wk = DBD_Instagram::key( $season, $n, $sl ); foreach ( array( 'dbd_ig_job_', 'dbd_bsky_job_', 'dbd_x_job_', 'dbd_th_job_' ) as $o ) { unset( $GLOBALS['dbd_opt'][ $o . $wk ] ); }
+			$errs = DBD_AutoPub::publish( $n, $sl ); DBD_Instagram::send( $wk, true );
+			$ck( "the $sl board reaches all four networks", ! $errs && DBD_Instagram::job( $wk )['state'] === 'sent' && DBD_Bluesky::job( $wk )['state'] === 'sent' && DBD_X::job( $wk )['state'] === 'sent' && DBD_Threads::job( $wk )['state'] === 'sent', json_encode( $errs ) );
+		}
+		DBD_Tall::$from = $from0;
 		DBD_Tall::$off = true; DBD_Pack::$now = null;
 	} catch ( Throwable $e ) { fwrite( STDERR, 'FATAL in autopub: ' . $e->getMessage() . ' at ' . basename( $e->getFile() ) . ':' . $e->getLine() . "\n" ); exit( 1 ); }
 	echo "autopub week $n: $bad problems, $warnings warnings\n"; exit( $bad || $warnings ? 1 : 0 );
@@ -944,9 +954,25 @@ if ( $view === 'tall' ) {
 		foreach ( array( 'tall-week-99-black-swing', 'tall-week-99-paper-board', 'tall-week-' . $n . '-paper-keys-2026_99_AAA_BBB-AAA' ) as $k ) { $ck( "$k draws nothing", DBD_Card::render( $k ) === null ); }
 		foreach ( array( 'tall-week-1-red-swing', 'tall-week-1-black-nope', 'tall-week-123-black-swing' ) as $k ) { $ck( "$k isn't a valid key", ! DBD_Card::valid( $k ) ); }
 		/* League Leaders: the rotation, the order, the top 11 */
-		$seen = array(); for ( $w = 1; $w <= 8; $w++ ) { $seen[ DBD_Tall::stat( $w )[0] ] = 1; } $ck( 'eight weeks show all eight stats', count( $seen ) === 8 ); $ck( 'Week 10 is rushing TDs', DBD_Tall::stat( 10 )[0] === 'rushing_tds' );
-		foreach ( range( max( 1, $n - 7 ), $n ) as $w ) { $s = DBD_Tall::board_spec( $w ); if ( ! $s ) { echo "  (Week $w: no " . DBD_Tall::stat( $w )[1] . " board from this data)\n"; continue; } $R = $s['rows']; $o = count( $R ) <= 11; foreach ( $R as $i => $r ) { if ( $i && ( $R[ $i - 1 ]['v'] < $r['v'] || ( $R[ $i - 1 ]['v'] == $r['v'] && strcmp( DBD_Pack::last( $R[ $i - 1 ]['full'] ), DBD_Pack::last( $r['full'] ) ) > 0 ) ) ) { $o = false; } } $ck( 'Week ' . $w . ' ' . $s['stat'][1] . ': top 11, most first, ties by last name (' . $R[0]['full'] . ' ' . $R[0]['vs'] . ')', $o ); }
+		$seen = array(); for ( $w = 3; $w <= 10; $w++ ) { $seen[ DBD_Tall::stat( $w )[0] ] = 1; } $ck( 'Weeks 3 to 10 of 2026 keep all eight stats', (int) DBD_Data::season() !== 2026 || count( $seen ) === 8 ); $ck( 'Week 10 of 2026 is still rushing TDs', (int) DBD_Data::season() !== 2026 || DBD_Tall::stat( 10 )[0] === 'rushing_tds' );
+		$rot = array(); for ( $w = 11; $w <= 18; $w++ ) { $rot[] = DBD_Tall::stat( $w )[0]; } $ck( 'from Week 11, Monday rotates the six stats without rushing TDs or receptions', $rot === array( 'receiving_yards', 'receiving_tds', 'sk', 'passing_yards', 'passing_tds', 'rushing_yards', 'receiving_yards', 'receiving_tds' ), json_encode( $rot ) );
+		foreach ( range( max( 1, $n - 7 ), $n ) as $w ) { $s = DBD_Tall::board_spec( $w ); if ( ! $s ) { echo "  (Week $w: no " . DBD_Tall::stat( $w )[1] . " board from this data)\n"; continue; } $R = $s['rows']; $o = count( $R ) <= 13; foreach ( $R as $i => $r ) { if ( $i && ( $R[ $i - 1 ]['v'] < $r['v'] || ( $R[ $i - 1 ]['v'] == $r['v'] && strcmp( DBD_Pack::last( $R[ $i - 1 ]['full'] ), DBD_Pack::last( $r['full'] ) ) > 0 ) ) ) { $o = false; } } $ck( 'Week ' . $w . ' ' . $s['stat'][1] . ': 13 rows at most, most first, ties by last name (' . $R[0]['full'] . ' ' . $R[0]['vs'] . ')', $o ); }
 		$it = DBD_Pack::board_item( $n ); $ck( 'its post: names the stat and the week, fits X', $it && strpos( $it['tl'], 'through Week ' . $n ) !== false && DBD_Pack::xlen( $it['post'] ) <= 280 && DBD_Card::valid( $it['sq'] ), json_encode( $it['tl'] ?? null ) ); echo '  ' . ( $it['tl'] ?? '' ) . "\n";
+		/* the three weekly boards (SCOPE §86) */
+		$from0 = DBD_Tall::$from; DBD_Tall::$from = array( (int) DBD_Data::season() => $n + 1 ); $none = array_keys( DBD_Pack::board_items( $n ) ) === array( 'board' ) && DBD_Pack::find( $n, 'rtd' ) === null && DBD_Card::render( DBD_Tall::key( $n, 'sacks', 'black' ), $fetch ) === null;
+		$ck( 'a week before the first one has only Monday’s board', $none ); DBD_Tall::$from = array();
+		$ck( 'a week from the first one has all four', array_keys( DBD_Pack::board_items( $n ) ) === array( 'board', 'rtd', 'recs', 'sacks' ) );
+		foreach ( array( 'black', 'paper' ) as $look ) { foreach ( array( 'rtd', 'recs', 'sacks' ) as $sl ) { $k = DBD_Tall::key( $n, $sl, $look ); $ck( "$k is a valid key", DBD_Card::valid( $k ) ); $save( DBD_Card::render( $k, $fetch ), $look . '-board-' . $sl ); } }
+		$pl = array(); foreach ( glob( DBD_Data::dir() . '/plays/def/*.json' ) ?: array() as $f ) { $d = json_decode( (string) file_get_contents( $f ), true ); $K = array_flip( $d['keys'] ); foreach ( $d['plays'] as $x ) { if ( $x[ $K['k'] ] === 'sack' && (int) explode( '_', $x[ $K['g'] ] )[1] <= $n ) { $pl[ $d['team'] ] = ( $pl[ $d['team'] ] ?? 0 ) + 1; } } }
+		$st = DBD_Tall::board_spec( $n, 'sacks' ); $off = array(); foreach ( $st['rows'] as $r ) { if ( (int) $r['v'] !== (int) ( $pl[ $r['t'] ] ?? -1 ) ) { $off[] = $r['t']; } } $ck( 'Most Sacks matches the play-by-play for every team shown', $pl && ! $off, json_encode( $off ) );
+		$ko = true; foreach ( $st['rows'] as $i => $r ) { if ( $i && ( $st['rows'][ $i - 1 ]['v'] < $r['v'] || ( $st['rows'][ $i - 1 ]['v'] == $r['v'] && strcmp( $st['rows'][ $i - 1 ]['full'], $r['full'] ) > 0 ) ) ) { $ko = false; } if ( $r['city'] . ' ' . $r['nick'] !== $r['full'] ) { $ko = false; } } $ck( 'teams in order, each split into city and name', $ko );
+		foreach ( array( 'rtd', 'recs', 'sacks' ) as $sl ) { $it = DBD_Pack::board_item( $n, $sl ); $ck( "the $sl post names the week and fits X", $it && $it['k'] === $sl && strpos( $it['tl'], 'through Week ' . $n ) !== false && DBD_Pack::xlen( $it['post'] ) <= 280 && DBD_Card::valid( $it['sq'] ), json_encode( $it['tl'] ?? null ) ); echo '  ' . ( $it['tl'] ?? '' ) . "\n"; }
+		$cutm = new ReflectionMethod( 'DBD_Tall', 'cut' ); $cutm->setAccessible( true ); $mk = function ( $v ) { return array_map( function ( $x ) { return array( 'v' => (float) $x ); }, $v ); }; $len = function ( $v ) use ( $cutm, $mk ) { return count( $cutm->invoke( null, $mk( $v ) ) ); };
+		$ck( 'the cut: no tie at 11', $len( array( 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8 ) ) === 11 );
+		$ck( 'the cut: a tie across 11 keeps all of it, to 13', $len( array( 20, 19, 18, 17, 16, 15, 14, 13, 12, 10, 10, 10, 10, 9 ) ) === 13 );
+		$ck( 'the cut: a longer tie stops above it', $len( array( 20, 19, 18, 17, 16, 15, 14, 10, 10, 10, 10, 10, 10, 10, 9 ) ) === 7 );
+		$ck( 'the cut: never fewer than 5 rows from a tie', $len( array( 20, 19, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9 ) ) === 11 );
+		DBD_Tall::$from = $from0;
 		/* the weekly look */
 		$ws = DBD_Pack::weeks(); $a = $ws[0]; $b = $ws[1] ?? $ws[0];
 		$ck( 'Black the first time', DBD_Tall::look( $a ) === 'black' && DBD_Tall::key( $a, 'swing' ) === "tall-week-$a-black-swing" );
@@ -1065,7 +1091,7 @@ if ( $view === 'pack' ) {
 	$ck( in_array( 'rush', $ks, true ) === ( $n === DBD_Rush::through() ), 'pass rushers only for the week the defense files run through (SCOPE §79)' );
 	foreach ( $items as $it ) { if ( $it['k'] === 'rush' ) { $ck( strpos( $it['link'], 'rush' ) !== false && strpos( $it['link'], 'def' ) === false, 'pass rushers link to their own tab (SCOPE §80), got ' . $it['link'] ); } }
 	foreach ( $items as $it ) { $ck( isset( DBD_Pack::NUM[ $it['k'] ] ), $it['k'] . ': a fixed number' ); }
-	$ck( DBD_Pack::NUM === array( 'swing' => 1, 'snaps' => 2, 'offense' => 3, 'targets' => 4, 'leaders' => 5, 'rush' => 6, 'keys' => 7, 'board' => 8 ), 'the fixed numbers' );
+	$ck( DBD_Pack::NUM === array( 'swing' => 1, 'snaps' => 2, 'offense' => 3, 'targets' => 4, 'leaders' => 5, 'rush' => 6, 'keys' => 7, 'board' => 8, 'rtd' => 9, 'recs' => 10, 'sacks' => 11 ), 'the fixed numbers' );
 	/* Week leaders (2.33.0, SCOPE §75): each panel's leader is the box score's top, worked out here on its own */
 	$bx = DBD_Data::get( 'box/w' . $n . '.json' ); $br = array();
 	foreach ( (array) ( $bx['games'] ?? array() ) as $g ) { foreach ( array( 'away', 'home' ) as $sd ) { foreach ( (array) ( $g[ $sd ]['off'] ?? array() ) as $r ) { $x = array_combine( $bx['keys'], $r ); $x['td'] = $x['rushing_tds'] + $x['receiving_tds']; $x['t'] = $g[ $sd ]['team']; $br[] = $x; } } }
@@ -1255,7 +1281,7 @@ if ( $view === 'admin' ) {
 		'Bluesky posting', 'name="dbd_bsky_pass_new"', 'Connected as @downbydown.bsky.social', 'name="dbd_bsky_disconnect"', 'name="dbd_ap_set[ig]"', 'name="dbd_ap_set[bs]"', 'Reddit and Facebook can’t post on their own.' );  /* Auto publish (SCOPE §81) */
 	array_push( $want['sp'], 'X posting', 'name="dbd_x_set[on]" value="1" checked', 'name="dbd_x_ck_new"', 'name="dbd_x_cs_new"', 'name="dbd_x_at_new"', 'name="dbd_x_as_new"', 'Paste all four together.', 'name="dbd_ap_set[x]" value="1" checked' );  /* X posting (SCOPE §83): not connected in this harness */
 	array_push( $want['sp'], 'Threads posting', 'name="dbd_pack_th"', 'value="down_by_down"', 'name="dbd_th_set[on]" value="1" checked', 'name="dbd_th_secret_new"', 'name="dbd_th_token_new"', 'threads_manage_replies', 'User Token Generator', 'name="dbd_ap_set[th]" value="1" checked' );  /* Threads posting (SCOPE §84) */
-	array_push( $want['sp'], 'name="dbd_bsky_set[on]" value="1" checked', 'Post on Tuesday, then one item a day Wednesday to Sunday, 9:00 AM Eastern', 'Bluesky this week', 'The thread: ', 'Bluesky: nothing posted for Week ' );  /* Bluesky's days (SCOPE §82) */
+	array_push( $want['sp'], 'name="dbd_bsky_set[on]" value="1" checked', 'Post on Tuesday, then one item a day through Monday, 9:00 AM Eastern, and the weekly boards Wednesday to Friday, 5:00 PM', 'Bluesky this week', 'The thread: ', 'Bluesky: nothing posted for Week ' );  /* Bluesky's days (SCOPE §82) */
 	if ( in_array( 'rush', array_column( DBD_Pack::items( DBD_Pack::newest() ), 'k' ), true ) ) { array_push( $want['sp'], 'Pass rushers', '-pass-rushers.png"' ); }  /* SCOPE §79, only for the week the defense files run through */
 	$want['ov'][] = 'Open Growth'; $want['ov'][] = 'data-g="ov-visits"'; $want['ov'][] = 'data-g="ov-clicks"';
 	$bad = 0; $dir = getenv( 'DBD_HARNESS_HTML' ); if ( $dir && ! is_dir( $dir ) ) { mkdir( $dir, 0777, true ); }
