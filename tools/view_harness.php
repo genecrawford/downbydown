@@ -1314,13 +1314,15 @@ if ( $view === 'admin' ) {
 		/* the calendar (SCOPE §87): what each record shows, which view opens, and the clock it reads */
 		$cal = array(); $cc = function ( $what, $ok ) use ( &$cal, &$bad ) { if ( ! $ok ) { $cal[] = $what; $bad++; } };
 		$sn = DBD_Pack::newest(); $key = DBD_AutoPub::key( $sn, 'swing' ); $jk = 'dbd_bsky_job_' . $key; $was = $GLOBALS['dbd_opt'][ $jk ] ?? null; $at = gmmktime( 14, 0, 0, 11, 17, 2026 );
+		$wc = $GLOBALS['dbd_opt']['dbd_bsky_conn'] ?? null; $ws = $GLOBALS['dbd_opt']['dbd_bsky_set'] ?? null; $GLOBALS['dbd_opt']['dbd_bsky_conn'] = array( 'pass' => 'p', 'handle' => 'downbydown.bsky.social', 'did' => 'did:plc:test', 'checked' => time() ); $GLOBALS['dbd_opt']['dbd_bsky_set'] = array( 'on' => true );
 		foreach ( array( array( 'booked', 'scheduled', 'Scheduled Tue 9:00 AM' ), array( 'sent', 'posted', 'Posted Tue 9:00 AM' ), array( 'failed: nope', 'failed', 'Didn’t post: nope' ), array( 'skipped: more than a day late', 'skipped', 'Skipped: more than a day late' ), array( 'not posted: off', 'skipped', 'Not posted: off' ), array( 'retrying: slow', 'scheduled', 'Retrying: slow' ) ) as $c ) {
 			$GLOBALS['dbd_opt'][ $jk ] = array( 'state' => $c[0], 'at' => $at, 'slot_at' => $at, 'sent_at' => $at, 'link' => 'https://example.test/p' ); $x = dbd_share_state( $key, 'bs', $at );
 			$cc( 'state ' . $c[0] . ' => ' . json_encode( $x ), $x['class'] === $c[1] && $x['line'] === $c[2] );
 			if ( $c[1] === 'failed' ) { $cc( 'a failed post has Try again', strpos( $x['again'], 'dbd_bsky_again' ) !== false ); }
 			if ( $c[1] === 'posted' ) { $cc( 'a sent post has its link', $x['link'] === 'https://example.test/p' ); }
 		}
-		if ( $was === null ) { unset( $GLOBALS['dbd_opt'][ $jk ] ); } else { $GLOBALS['dbd_opt'][ $jk ] = $was; }
+		$GLOBALS['dbd_opt']['dbd_bsky_set'] = array( 'on' => false ); $GLOBALS['dbd_opt'][ $jk ] = array( 'state' => 'booked', 'at' => $at, 'slot_at' => $at ); $x = dbd_share_state( $key, 'bs', $at ); $cc( 'a booked post with the switch off reads Off', $x['class'] === 'idle' && $x['word'] === 'Off' );
+		foreach ( array( 'dbd_bsky_conn' => $wc, 'dbd_bsky_set' => $ws, $jk => $was ) as $ok_k => $ok_v ) { if ( $ok_v === null ) { unset( $GLOBALS['dbd_opt'][ $ok_k ] ); } else { $GLOBALS['dbd_opt'][ $ok_k ] = $ok_v; } }
 		$cc( 'no record, item off the schedule', dbd_share_state( DBD_AutoPub::key( $sn, 'rush' ), 'bs', 0, 'extra' )['class'] === 'idle' );
 		foreach ( array( array( array( 'view' => 'keys' ), 'keys' ), array( array( 'view' => 'accounts' ), 'accounts' ), array( array( 'view' => 'nope' ), 'schedule' ), array( array( 'pack' => 'saved' ), 'accounts' ), array( array( 'pack' => 'sent' ), 'accounts' ), array( array( 'pack' => 'igagain' ), 'schedule' ), array( array( 'pack' => 'igerror' ), 'schedule' ), array( array(), 'schedule' ) ) as $c ) { $_GET = $c[0]; $cc( 'view for ' . json_encode( $c[0] ), dbd_share_view() === $c[1] ); }
 		$ps = dbd_share_posts( $sn, true ); $ts = array_column( $ps, 't' ); $st2 = $ts; sort( $st2 ); $cc( 'posts in time order', $ts === $st2 && $ps );

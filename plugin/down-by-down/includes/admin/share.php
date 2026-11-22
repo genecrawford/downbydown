@@ -306,9 +306,10 @@ function dbd_share_keys( $n, $ready ) {
 	if ( ! $keys ) { echo '<p class="sp-wait">' . esc_html( $ready ? 'No keys to the game for Week ' . ( $n + 1 ) . '.' : 'The keys for Week ' . ( $n + 1 ) . ' appear after Week ' . $n . '’s games.' ) . '</p>'; return; }
 	$nk = function ( $t ) { return DBD_Data::team( $t )['nick'] ?? $t; };
 	echo '<h3 class="sp-kh">' . esc_html( 'Keys to the game, Week ' . ( $n + 1 ) ) . '</h3><p class="sp-intro">Each team’s biggest edge in its next game, for its own fans. These aren’t on the schedule, so post the ones you want before kickoff. Reddit, X, Bluesky and Threads open with the post filled in.</p><div class="sp-games">';
+	$first = 0; foreach ( $keys as $i => $kg ) { if ( ! DBD_Pack::started( $kg['g'] ) ) { $first = $i; break; } }  /* the next game still worth posting */
 	foreach ( $keys as $i => $kg ) {
 		$g = $kg['g']; $img = DBD_Card::url( $kg['card'] ); $off = DBD_Pack::started( $g );
-		echo '<details class="sp-game"' . ( $i === 0 ? ' open' : '' ) . '><summary><span class="sp-gn">' . esc_html( $nk( $g['away'] ) . ' at ' . $nk( $g['home'] ) ) . '</span>' . ( $off ? '<span class="sp-goff">Kicked off</span>' : '' ) . '<span class="sp-gt"><span class="o">Open</span><span class="x">Close</span></span></summary>'
+		echo '<details class="sp-game"' . ( $i === $first ? ' open' : '' ) . '><summary><span class="sp-gn">' . esc_html( $nk( $g['away'] ) . ' at ' . $nk( $g['home'] ) ) . '</span>' . ( $off ? '<span class="sp-goff">Kicked off</span>' : '' ) . '<span class="sp-gt"><span class="o">Open</span><span class="x">Close</span></span></summary>'
 			. '<p class="sp-gl"><a href="' . esc_url( $kg['link'] ) . '" target="_blank" rel="noopener">Open the game</a><a href="' . esc_url( $img ) . '" download="' . esc_attr( $kg['file'] ) . '">Download the game card</a></p><div class="sp-sides">';
 		foreach ( $kg['sides'] as $sd ) {
 			echo '<div class="sp-ks" id="' . esc_attr( 'sp-' . DBD_AutoPub::slot( $n, $sd ) ) . '"><div class="sp-kt">' . DBD_Marks::tile_svg( $sd['t'], 24 ) . '<div><b>' . esc_html( $nk( $sd['t'] ) . ' offense.' ) . '</b> ' . esc_html( rtrim( $sd['head'], '.' ) ) . '. <span>' . esc_html( $sd['say'] ) . '</span></div></div>'
