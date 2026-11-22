@@ -56,7 +56,8 @@ class DBD_Tall {
 	public static function look_action() {
 		$n = (int) ( $_POST['week'] ?? 0 ); check_admin_referer( 'dbd_pack_look_' . $n ); if ( ! current_user_can( 'manage_options' ) ) { wp_die( 'No.' ); }
 		self::set_look( $n, sanitize_key( wp_unslash( (string) ( $_POST['look'] ?? '' ) ) ) );
-		wp_safe_redirect( add_query_arg( array( 'page' => 'down-by-down-share', 'week' => $n ), admin_url( 'admin.php' ) ) ); exit;
+		$args = array( 'page' => 'down-by-down-share', 'week' => $n ); if ( sanitize_key( wp_unslash( (string) ( $_POST['view'] ?? '' ) ) ) === 'keys' ) { $args['view'] = 'keys'; }  /* back to the view it was changed on (SCOPE §87) */
+		wp_safe_redirect( add_query_arg( $args, admin_url( 'admin.php' ) ) ); exit;
 	}
 
 	/* ------------------------------------------------------------------ keys and files */

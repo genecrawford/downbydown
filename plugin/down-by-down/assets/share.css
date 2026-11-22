@@ -1,0 +1,195 @@
+/* The Share pack tab (SCOPE §87): a week calendar, one post open at a time, Keys and Accounts in their own views. Light, flat, WordPress's own buttons. */
+.dbd-admin .sp{--sp-ink:#1d2327;--sp-mut:#50575e;--sp-faint:#646970;--sp-line:#dcdcde;--sp-line2:#c3c4c7;--sp-blue:#2271b1;--sp-blue2:#135e96;--sp-tint:#f0f6fc;--sp-red:#b32d2e;max-width:1500px;margin-top:20px;font-size:14px;line-height:1.5;color:var(--sp-ink)}
+.dbd-admin .sp *{box-sizing:border-box}
+.dbd-admin .sp-note{margin:0 0 16px}
+
+.dbd-admin .sp-views{display:flex;flex-wrap:wrap;gap:4px 28px;margin:0 0 28px;border-bottom:1px solid var(--sp-line)}
+.dbd-admin .sp-views a{display:block;padding:4px 0 11px;margin-bottom:-1px;border-bottom:3px solid transparent;color:var(--sp-mut);font-size:16px;font-weight:600;text-decoration:none}
+.dbd-admin .sp-views a:hover{color:var(--sp-ink)}
+.dbd-admin .sp-views a[aria-current=page]{color:var(--sp-ink);border-bottom-color:var(--sp-ink)}
+
+.dbd-admin .sp-weekbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;margin-bottom:10px}
+.dbd-admin .sp-weekbar form{margin:0}
+.dbd-admin .sp-step{display:flex;align-items:center;gap:10px}
+.dbd-admin .sp-step h2{margin:0;padding:0;border:0;min-width:112px;text-align:center;font-size:26px;line-height:1.15;font-weight:700;color:var(--sp-ink)}
+.dbd-admin .sp-step .button{display:inline-flex;align-items:center;justify-content:center;width:36px;min-height:32px;padding:0;font-size:18px;line-height:1}
+.dbd-admin .sp-range{color:var(--sp-mut);font-size:15px}
+.dbd-admin .sp-look{display:flex;align-items:center;gap:6px;margin-left:auto!important;color:var(--sp-mut);font-size:13px}
+.dbd-admin .sp-look span{margin-right:4px}
+.dbd-admin .sp-look .button[aria-pressed=true]{background:var(--sp-ink);border-color:var(--sp-ink);color:#fff}
+
+.dbd-admin .sp-next{margin:0 0 20px;max-width:900px;font-size:16px}
+.dbd-admin .sp-next b{font-weight:600}
+.dbd-admin .sp-alert{margin:-8px 0 14px;padding:10px 14px;background:#fff;border:1px solid var(--sp-line2)}
+.dbd-admin .sp-wait{margin:0 0 20px;padding:12px 16px;background:#fff;border:1px solid var(--sp-line)}
+
+/* the calendar: placed by column and row, and in day order in the page, so a narrow screen reads it as a list */
+.dbd-admin .sp-cal{position:relative;display:grid;grid-template-columns:76px repeat(7,minmax(0,1fr));grid-template-rows:auto repeat(var(--sp-rows),auto);background:#fff;border:1px solid var(--sp-line2)}
+.dbd-admin .sp-cal>*{grid-column:var(--c);grid-row:var(--r)}
+.dbd-admin .sp-cal>.sp-todaycol{grid-row:1/-1;background:var(--sp-tint)}
+.dbd-admin .sp-cal>.sp-rowline{grid-column:1/-1;border-top:1px solid var(--sp-line)}
+.dbd-admin .sp-dayhead{position:relative;padding:14px 10px 12px}
+.dbd-admin .sp-dayhead .d{display:block;color:var(--sp-mut);font-size:13px;font-weight:600}
+.dbd-admin .sp-dayhead .n{display:block;font-size:22px;line-height:1.2;font-weight:700}
+.dbd-admin .sp-dayhead.today .d,.dbd-admin .sp-dayhead.today .n{color:var(--sp-blue2)}
+.dbd-admin .sp-timelab{position:relative;padding:16px 0 0 12px;color:var(--sp-mut);font-size:12px;font-weight:600;white-space:nowrap}
+.dbd-admin .sp-post{position:relative;display:block;align-self:start;margin:6px;padding:6px 6px 9px;border:2px solid transparent;border-radius:4px;color:inherit;text-decoration:none;transition:background-color .12s,border-color .12s}
+.dbd-admin .sp-post:hover{background:#f6f7f7;color:inherit}
+.dbd-admin .sp-post:focus{box-shadow:none;outline:2px solid var(--sp-blue);outline-offset:1px}
+.dbd-admin .sp-post[aria-current=true]{border-color:var(--sp-blue);background:#fff}
+.dbd-admin .sp-thumb{display:block;aspect-ratio:4/5;overflow:hidden;border-radius:2px;background:#e7e8ea}
+.dbd-admin .sp-thumb img{display:block;width:100%;height:100%;object-fit:cover}
+.dbd-admin .sp-thumb.empty{display:flex;align-items:center;justify-content:center;padding:8px;color:var(--sp-faint);font-size:12px;line-height:1.3;text-align:center}
+.dbd-admin .sp-pi{display:block;min-width:0}
+.dbd-admin .sp-ptime{display:none;color:var(--sp-mut);font-size:13px}
+.dbd-admin .sp-pn{display:block;min-height:2.6em;margin:8px 0 7px;font-size:13px;font-weight:600;line-height:1.3}
+.dbd-admin .sp-marks{display:flex;flex-wrap:wrap;gap:3px}
+.dbd-admin .sp-m{display:inline-flex;align-items:center;justify-content:center;width:25px;height:20px;border:1px solid transparent;border-radius:2px;font-size:10px;font-weight:700;line-height:1}
+.dbd-admin .sp-m.posted{background:var(--sp-ink);color:#fff}
+.dbd-admin .sp-m.scheduled{background:#fff;border-color:#646970;color:var(--sp-ink)}
+.dbd-admin .sp-m.skipped{background:#f0f0f1;color:#646970;text-decoration:line-through}
+.dbd-admin .sp-m.failed{background:var(--sp-red);color:#fff}
+.dbd-admin .sp-m.idle{background:#f6f7f7;border-color:var(--sp-line);color:#646970}
+.dbd-admin .sp-legend{display:flex;flex-wrap:wrap;align-items:center;gap:6px 20px;margin:12px 0 28px;color:var(--sp-mut);font-size:13px}
+.dbd-admin .sp-legend>span{display:inline-flex;align-items:center;gap:6px}
+.dbd-admin .sp-exh{margin:0 0 8px;font-size:15px}
+.dbd-admin .sp-extras{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,170px));gap:6px;margin-bottom:24px}
+.dbd-admin .sp-extras .sp-post{margin:0;background:#fff;border-color:var(--sp-line)}
+.dbd-admin .sp-extras .sp-post[aria-current=true]{border-color:var(--sp-blue)}
+
+/* one post, open below the calendar; without JavaScript they all show, one after another */
+.dbd-admin .sp-d{display:grid;grid-template-columns:280px minmax(0,1fr);gap:32px;margin-bottom:20px;padding:28px;background:#fff;border:1px solid var(--sp-line2);scroll-margin-top:48px}
+.dbd-admin .sp.js .sp-d{display:none}
+.dbd-admin .sp.js .sp-d.on{display:grid}
+.dbd-admin .sp-d figure{margin:0}
+.dbd-admin .sp-card{display:block}
+.dbd-admin .sp-card img{display:block;width:100%;height:auto;aspect-ratio:1080/1350;background:#f4f1ea}
+.dbd-admin .sp-noimg{display:flex;align-items:center;justify-content:center;aspect-ratio:4/5;padding:20px;background:#e7e8ea;color:var(--sp-mut);text-align:center}
+.dbd-admin .sp-dl{display:flex;flex-wrap:wrap;gap:6px 18px;margin:12px 0 0;font-size:13px}
+.dbd-admin .sp-dm{min-width:0;max-width:720px}
+.dbd-admin .sp-when{margin:0 0 2px;color:var(--sp-mut)}
+.dbd-admin .sp-d h3{margin:0 0 10px;font-size:24px;line-height:1.2}
+.dbd-admin .sp-tk{margin:0 0 24px;font-size:15px;line-height:1.5}
+.dbd-admin .sp-d h4{margin:24px 0 8px;font-size:14px;font-weight:600}
+.dbd-admin .sp-tk+h4{margin-top:0}
+.dbd-admin .sp-charts{margin:-12px 0 24px 20px;color:var(--sp-mut)}
+.dbd-admin .sp-charts li{margin:2px 0}
+.dbd-admin .sp-nets{width:100%;border-collapse:collapse}
+.dbd-admin .sp-nets th,.dbd-admin .sp-nets td{padding:9px 12px 9px 0;border-top:1px solid var(--sp-line);vertical-align:middle;text-align:left;font-size:14px}
+.dbd-admin .sp-nets tr:last-child th,.dbd-admin .sp-nets tr:last-child td{border-bottom:1px solid var(--sp-line)}
+.dbd-admin .sp-nets th{width:110px;font-weight:600}
+.dbd-admin .sp-nets td:last-child{padding-right:0;text-align:right;white-space:nowrap}
+.dbd-admin .sp-sd{display:inline-block;width:9px;height:9px;margin-right:8px;border:1px solid transparent;border-radius:50%}
+.dbd-admin .sp-sd.posted{background:var(--sp-ink)}
+.dbd-admin .sp-sd.scheduled{background:#fff;border-color:#646970}
+.dbd-admin .sp-sd.skipped{background:var(--sp-line2)}
+.dbd-admin .sp-sd.failed{background:var(--sp-red)}
+.dbd-admin .sp-sd.idle{background:#f0f0f1;border-color:var(--sp-line2)}
+.dbd-admin .sp-ap{margin:20px 0 0}
+.dbd-admin .sp-apd>summary{display:inline-block;list-style:none;height:auto;white-space:normal}
+.dbd-admin .sp-apd>summary::-webkit-details-marker{display:none}
+.dbd-admin .sp-ask{margin-top:10px;padding:14px 16px;background:var(--sp-tint);border:1px solid #c5d9ed}
+.dbd-admin .sp-ask p{margin:0 0 10px}
+.dbd-admin .sp-ask form{margin:0}
+.dbd-admin .sp-aps{margin:8px 0 0;color:#3c434a;line-height:1.8}
+.dbd-admin .sp-row{display:flex;flex-wrap:wrap;gap:6px}
+.dbd-admin .sp-row .button.ok,.dbd-admin .sp-cp.ok{border-color:#00a32a;color:#007017}
+.dbd-admin .sp-help{margin:8px 0 0;color:var(--sp-mut);font-size:13px}
+.dbd-admin .sp-fits{margin:8px 0 0;color:var(--sp-faint);font-size:13px}
+.dbd-admin .sp-tx{margin-top:20px}
+.dbd-admin .sp-tx>summary{padding:4px 0;color:var(--sp-blue);font-weight:600;cursor:pointer}
+.dbd-admin .sp-f{margin:14px 0 0}
+.dbd-admin .sp-fh{display:flex;align-items:center;gap:10px;margin-bottom:4px;font-size:13px}
+.dbd-admin .sp-fh b{flex:1;font-weight:600}
+.dbd-admin .sp-fh .cnt{color:var(--sp-faint);font-size:12px}
+.dbd-admin .sp-fh .cnt.over{color:var(--sp-red);font-weight:600}
+.dbd-admin .sp-f textarea{width:100%;min-height:3.2em;padding:7px 9px;font-size:13px;line-height:1.5;background:#f6f7f7;resize:vertical;field-sizing:content}
+
+/* Keys to the game */
+.dbd-admin .sp-kh{margin:14px 0 4px;font-size:17px}
+.dbd-admin .sp-intro{margin:0 0 20px;max-width:760px;color:var(--sp-mut);font-size:15px}
+.dbd-admin .sp-games{background:#fff;border:1px solid var(--sp-line2)}
+.dbd-admin .sp-game{border-top:1px solid var(--sp-line)}
+.dbd-admin .sp-game:first-child{border-top:0}
+.dbd-admin .sp-game>summary{display:flex;align-items:center;gap:16px;padding:15px 20px;font-size:15px;font-weight:600;list-style:none;cursor:pointer}
+.dbd-admin .sp-game>summary::-webkit-details-marker{display:none}
+.dbd-admin .sp-game>summary:hover{background:#f6f7f7}
+.dbd-admin .sp-goff{color:var(--sp-faint);font-size:13px;font-weight:400}
+.dbd-admin .sp-gt{margin-left:auto;color:var(--sp-blue);font-size:13px;font-weight:400}
+.dbd-admin .sp-gt .x,.dbd-admin .sp-game[open] .sp-gt .o{display:none}
+.dbd-admin .sp-game[open] .sp-gt .x{display:inline}
+.dbd-admin .sp-gl{display:flex;flex-wrap:wrap;gap:6px 18px;margin:0;padding:0 20px 12px;font-size:13px}
+.dbd-admin .sp-sides{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:32px;padding:6px 20px 24px}
+.dbd-admin .sp-ks{min-width:0;scroll-margin-top:48px}
+.dbd-admin .sp-kt{display:grid;grid-template-columns:24px minmax(0,1fr);gap:10px;margin-bottom:12px;line-height:1.5}
+.dbd-admin .sp-kt svg{width:24px;height:24px}
+.dbd-admin .sp-kt b{font-weight:600}
+.dbd-admin .sp-kt span{color:var(--sp-mut)}
+.dbd-admin .sp-ks .sp-ap{margin:0 0 12px}
+.dbd-admin .sp-ks .sp-tx{margin-top:10px}
+
+/* Accounts and email */
+.dbd-admin .sp-panel{margin-bottom:28px;background:#fff;border:1px solid var(--sp-line2)}
+.dbd-admin .sp-panel>h3{margin:0;padding:16px 20px;border-bottom:1px solid var(--sp-line);font-size:17px}
+.dbd-admin .sp-acct{width:100%;border-collapse:collapse}
+.dbd-admin .sp-acct thead th{padding:10px 12px;border-bottom:1px solid var(--sp-line);color:var(--sp-mut);font-size:13px;font-weight:600;text-align:left}
+.dbd-admin .sp-arow th,.dbd-admin .sp-arow td{padding:14px 12px;border-bottom:1px solid var(--sp-line);vertical-align:middle;text-align:left;font-size:14px}
+.dbd-admin .sp-arow th{font-weight:600}
+.dbd-admin .sp-acct thead th:first-child,.dbd-admin .sp-arow th{padding-left:20px}
+.dbd-admin .sp-acct thead th:last-child,.dbd-admin .sp-chgc{padding-right:20px!important;text-align:right!important}
+.dbd-admin .sp-handle{overflow-wrap:anywhere}
+.dbd-admin .sp-lab{display:none}
+.dbd-admin .sp-edit>td{padding:20px;background:#f6f7f7;border-bottom:1px solid var(--sp-line)}
+.dbd-admin .sp.js .sp-edit:not(.open){display:none}
+.dbd-admin .sp:not(.js) .sp-chg{display:none}
+.dbd-admin .sp-pb{padding:20px}
+.dbd-admin .sp-fg{display:grid;grid-template-columns:170px minmax(0,460px);gap:12px 16px;align-items:start}
+.dbd-admin .sp-fg>label,.dbd-admin .sp-fg>span{padding-top:6px;color:var(--sp-mut)}
+.dbd-admin .sp-fg input[type=text],.dbd-admin .sp-fg input[type=password],.dbd-admin .sp-fg textarea{width:100%;max-width:100%}
+.dbd-admin .sp-fg .description{margin:4px 0 0}
+.dbd-admin .sp-pre{display:flex;align-items:center;gap:6px}
+.dbd-admin .sp-pre input{flex:1;min-width:0}
+.dbd-admin .sp-plain{padding-top:6px}
+.dbd-admin .sp-disc{display:block;margin-top:6px}
+.dbd-admin .sp-save{display:flex;justify-content:flex-end}
+
+@media (max-width:1320px){.dbd-admin .sp-m{width:22px}}
+@media (max-width:1180px){
+	.dbd-admin .sp-cal{display:block;background:none;border:0}
+	.dbd-admin .sp-todaycol,.dbd-admin .sp-rowline,.dbd-admin .sp-timelab{display:none}
+	.dbd-admin .sp-dayhead{display:flex;align-items:baseline;gap:8px;padding:18px 0 7px}
+	.dbd-admin .sp-dayhead .d,.dbd-admin .sp-dayhead .n{color:var(--sp-ink);font-size:17px;font-weight:700}
+	.dbd-admin .sp-dayhead.today::after{content:"Today";color:var(--sp-blue2);font-size:13px;font-weight:600}
+	.dbd-admin .sp-cal .sp-post{display:grid;grid-template-columns:64px minmax(0,1fr);gap:14px;align-items:center;margin:0 0 6px;padding:8px;background:#fff;border:1px solid var(--sp-line2)}
+	.dbd-admin .sp-cal .sp-post[aria-current=true]{padding:7px;border:2px solid var(--sp-blue)}
+	.dbd-admin .sp-ptime{display:block}
+	.dbd-admin .sp-pn{min-height:0;margin:0 0 6px;font-size:14px}
+	.dbd-admin .sp-m{width:25px}
+}
+@media (max-width:782px){
+	.dbd-admin .sp-views{gap:14px;flex-wrap:nowrap;margin-bottom:20px}
+	.dbd-admin .sp-views a{padding:8px 0 10px;font-size:14px;white-space:nowrap}
+	.dbd-admin .sp-weekbar{align-items:flex-start}
+	.dbd-admin .sp-range{width:100%}
+	.dbd-admin .sp-look{width:100%;margin-left:0!important}
+	.dbd-admin .sp-step .button{width:44px;min-height:40px}
+	.dbd-admin .sp-d{display:block;padding:18px}
+	.dbd-admin .sp.js .sp-d.on{display:block}
+	.dbd-admin .sp-d figure{max-width:300px;margin-bottom:20px}
+	.dbd-admin .sp-nets th{width:88px}
+	.dbd-admin .sp-sides{grid-template-columns:minmax(0,1fr);gap:24px;padding:4px 16px 20px}
+	.dbd-admin .sp-game>summary{padding:14px 16px}
+	.dbd-admin .sp-gl{padding:0 16px 10px}
+	.dbd-admin .sp-acct thead{display:none}
+	.dbd-admin .sp-acct,.dbd-admin .sp-acct tbody,.dbd-admin .sp-arow,.dbd-admin .sp-arow th,.dbd-admin .sp-arow td,.dbd-admin .sp-edit,.dbd-admin .sp-edit>td{display:block;width:100%}
+	.dbd-admin .sp-arow{padding:12px 16px;border-bottom:1px solid var(--sp-line)}
+	.dbd-admin .sp-arow th,.dbd-admin .sp-arow td{padding:3px 0!important;border:0;text-align:left!important}
+	.dbd-admin .sp.js .sp-edit:not(.open){display:none}
+	.dbd-admin .sp-lab{display:inline}
+	.dbd-admin .sp-onl{display:none}
+	.dbd-admin .sp-edit>td{padding:16px}
+	.dbd-admin .sp-fg{grid-template-columns:minmax(0,1fr);gap:5px}
+	.dbd-admin .sp-fg>label,.dbd-admin .sp-fg>span{margin-top:8px;padding-top:0}
+	.dbd-admin .sp-fg>span:empty{display:none}
+}
+@media (prefers-reduced-motion:reduce){.dbd-admin .sp-post{transition:none}}

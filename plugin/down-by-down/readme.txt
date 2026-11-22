@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.44.0
+Stable tag: 2.45.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,12 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.45.0 =
+* The Share pack is now three views (SCOPE §87): Schedule, Keys to the game, and Accounts and email.
+* Schedule shows the week as a Tuesday-to-Monday calendar at 9:00 AM and 5:00 PM, each post with its graphic and a mark per network. Clicking one opens its status, posting buttons, downloads and texts below the calendar.
+* The line at the top says what posts next, and the coming week shows before its games finish.
+* Nothing about what posts, when or where changed.
 
 = 2.44.0 =
 * Three more weekly boards (SCOPE §86), starting with Week 11, at 5:00 PM Eastern on all four networks: Rushing TDs on Wednesday, Receptions on Thursday, and Most Sacks by a Defense on Friday.

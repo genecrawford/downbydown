@@ -113,7 +113,8 @@ class DBD_AutoPub {
 		$n = (int) ( $_POST['week'] ?? 0 ); $slot = sanitize_text_field( wp_unslash( (string) ( $_POST['slot'] ?? '' ) ) );
 		check_admin_referer( 'dbd_ap_' . $n . '_' . $slot ); if ( ! current_user_can( 'manage_options' ) ) { wp_die( 'No.' ); }
 		$errs = self::publish( $n, $slot );
-		$args = array( 'page' => 'down-by-down-share', 'week' => $n ); if ( isset( $errs['item'] ) ) { $args['pack'] = 'igerror'; $args['pack_err'] = rawurlencode( $errs['item'] ); }
-		wp_safe_redirect( add_query_arg( $args, admin_url( 'admin.php' ) ) . ( isset( $errs['item'] ) ? '#dbd-pack-settings' : '#sp-' . $slot ) ); exit;
+		$args = array( 'page' => 'down-by-down-share', 'week' => $n ); if ( strpos( $slot, 'keys-' ) === 0 ) { $args['view'] = 'keys'; }  /* back to the view it was pressed on (SCOPE §87) */
+		if ( isset( $errs['item'] ) ) { $args['pack'] = 'igerror'; $args['pack_err'] = rawurlencode( $errs['item'] ); }
+		wp_safe_redirect( add_query_arg( $args, admin_url( 'admin.php' ) ) . ( isset( $errs['item'] ) ? '' : '#sp-' . $slot ) ); exit;
 	}
 }
