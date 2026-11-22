@@ -3466,3 +3466,20 @@ Gene: "let's make a few more like the 'league leaders' one, leading rushing TD's
 - **Schedule:** each board is its own weekly post at 5:00 PM Eastern, Rushing TDs on Wednesday, Receptions on Thursday, Most Sacks on Friday, so the numbers include the week that just finished. About $0.60 more a week on X.
 - **First round:** Week 11's boards, on November 25, 26 and 27.
 - **Monday's rotation:** Rushing TDs and receptions leave it so nothing repeats, which leaves six stats. Week 10's Rushing TDs post on November 23 goes out as planned. After that: Week 11 receiving yards, 12 receiving TDs, 13 individual sacks, 14 passing yards, 15 passing TDs, 16 rushing yards, 17 receiving yards, 18 receiving TDs.
+
+## 87. A clearer Share pack page (scoped and mocked 2026-11-22, `mockup-v60/`; Gene: "build the ux updates"; built as 2.45.0)
+
+Gene: "we need to clean up the UX of this Share Pack page, it's too condensed and stacked on top of each other and the publishing calendar is hard to get a mental model of".
+
+**What's wrong today:** the schedule exists only as sentences in Settings, each network keeps its own "this week" list at the bottom, the graphics run in one long stack, the new boards land after Keys to the game instead of in time order, and thirteen Keys games and every setting share the same scroll.
+
+**What it changes (the page only; no change to what posts, when, or where):**
+
+1. **Three views under Share pack:** Schedule, Keys to the game, Accounts and email. The address remembers the view, so a save or a post returns to it.
+2. **A week calendar:** Tuesday through Monday across, 9:00 AM and 5:00 PM down, today marked. The 5:00 PM row shows only for weeks that have evening posts. Each post is one card: its graphic, its name, and four marks (IG, BS, X, TH) showing posted, scheduled, skipped or failed.
+3. **One post at a time:** clicking a card opens it below the calendar with each network's status and link, Auto publish, the by-hand buttons, downloads and the texts to copy. Nothing that's on the page today goes away.
+4. **A plain line at the top:** what posts next, when, and where. Anything that failed appears there with Try again.
+5. **Next week shows early:** the coming week's calendar is visible before its games finish, with the posts named and their graphics filled in once the data is complete.
+6. **Keys to the game gets its own view:** one row per game, opened when needed. These aren't on the schedule, so they stay separate from the calendar.
+7. **Accounts and email becomes a table:** one row per network with its account, connection, weekly switch and Auto publish switch. Credentials open only when changing them. The Tuesday email and the by-hand accounts sit below it.
+8. **Phones:** the calendar becomes a day-by-day list.

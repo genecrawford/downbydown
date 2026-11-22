@@ -1268,28 +1268,32 @@ if ( $view === 'admin' ) {
 		'st' => array( 'Photos and logos', 'Addresses', 'Search and sharing', 'Using it in the theme', 'value="dbd"' ),
 		'dt' => array( 'Current data', 'Sync log', 'Seasons', 'Share cards', 'value="dbd_data"', 'harness-token' ),
 		'gr' => array( 'Visits by source', 'data-g="sources"', 'Google search', 'data-g="search"', 'Titles to tune', 'data-g="tune"', 'data-g="copy"', 'Top landing pages', 'data-g="landing"', 'Brevo isn’t set up', 'data-g="shares"', 'data-g="signups"', 'analytics.google.com/analytics/web/#/p123456/', 'resource_id=https%3A%2F%2Fexample.test%2F', 'page=googlesitekit-dashboard' ) );
-	$want['sp'] = array( 'Week ', ' pack</h2>', 'name="week"', 'Click where you want to post.', 'Change the list', 'class="sp-open"',
-		'The biggest swing', 'A usage riser', 'Best and worst offense', 'A target-share mover', 'Week leaders', '-leaders.png"', 'Keys to the game, Week ', 'Post it', 'Also fits r/',
+	$want['sp'] = array( 'class="sp-views"', 'class="sp-cal"', 'class="sp-post"', 'class="sp-legend"', 'class="sp-next"', 'class="sp-d on"', 'Where it goes', '9:00 AM', 'name="week"', 'Reddit, X, Bluesky and Threads open with the post filled in.',
+		'The biggest swing', 'A usage riser', 'Best and worst offense', 'A target-share mover', 'Week leaders', '-leaders.png"', 'Keys to the game, Week ', 'class="sp-game"', 'Post by hand', 'Also fits r/',
 		'<details class="sp-tx"><summary>Texts to copy</summary>', 'Reddit title', 'Reddit first comment, with the link', 'X and Bluesky', ' of 280', 'Instagram caption', 'class="button button-small sp-cp"',
 		'download="dbd-week-', 'card=pack-week-', 'Download graphic', 'card=tall-week-', 'Download the game card',
 		'class="button sp-rd" aria-label="Post to r/downbydown"', 'https://www.reddit.com/r/downbydown/submit?url=', 'share%3Dpack-week-', '>r/downbydown</a>',
 		'class="button sp-x" aria-label="Post on X"', 'https://x.com/intent/post?text=', 'class="button sp-bs" aria-label="Post on Bluesky"', 'https://bsky.app/intent/compose?text=', 'class="button sp-th" aria-label="Post on Threads"', 'https://www.threads.com/intent/post?text=', '>Threads</a>',
-		'class="button sp-fb"', 'sharer.php?u=', '>Facebook</a>', 'class="button sp-cp sp-ig"', '>Instagram</button>', 'aria-label="Download the graphic">Graphic</a>',
-		'<details class="dbd-box sp-set" id="dbd-pack-settings"', 'Settings: the Tuesday email, your accounts, Instagram, Bluesky, X and Threads posting', 'value="dbd_pack_settings"', 'name="dbd_pack_mail_set[on]"', 'name="dbd_pack_mail_set[to]"', 'Brevo isn’t set up',
-		'name="dbd_pack_sub"', 'name="dbd_pack_x"', 'name="dbd_pack_bsky"', 'name="dbd_pack_fb"', 'name="dbd_pack_ig"', 'Open the group', 'Save settings', 'id="dbd-pack-settings"><summary>', 'Instagram posting', 'name="dbd_ig_set[on]"', 'name="dbd_ig_set[account]"', 'name="dbd_ig_token_new"', 'Paste the token from your Meta app', 'Instagram isn’t connected yet.' );  /* SCOPE §68, §71–74; the settings box starts closed */
-	array_push( $want['sp'], 'class="sp-ap"', 'class="sp-apd"', '<summary class="button button-primary">Auto publish</summary>', 'value="dbd_auto_publish"', 'name="slot" value="swing"', 'to Bluesky now?</b>', 'Posts it to Bluesky now.', 'class="button button-primary sp-apgo"', 'class="button sp-apx"', 'id="sp-swing"', 'id="sp-keys-', 'name="slot" value="keys-',
-		'Bluesky posting', 'name="dbd_bsky_pass_new"', 'Connected as @downbydown.bsky.social', 'name="dbd_bsky_disconnect"', 'name="dbd_ap_set[ig]"', 'name="dbd_ap_set[bs]"', 'Reddit and Facebook can’t post on their own.' );  /* Auto publish (SCOPE §81) */
-	array_push( $want['sp'], 'X posting', 'name="dbd_x_set[on]" value="1" checked', 'name="dbd_x_ck_new"', 'name="dbd_x_cs_new"', 'name="dbd_x_at_new"', 'name="dbd_x_as_new"', 'Paste all four together.', 'name="dbd_ap_set[x]" value="1" checked' );  /* X posting (SCOPE §83): not connected in this harness */
-	array_push( $want['sp'], 'Threads posting', 'name="dbd_pack_th"', 'value="down_by_down"', 'name="dbd_th_set[on]" value="1" checked', 'name="dbd_th_secret_new"', 'name="dbd_th_token_new"', 'threads_manage_replies', 'User Token Generator', 'name="dbd_ap_set[th]" value="1" checked' );  /* Threads posting (SCOPE §84) */
-	array_push( $want['sp'], 'name="dbd_bsky_set[on]" value="1" checked', 'Post on Tuesday, then one item a day through Monday, 9:00 AM Eastern, and the weekly boards Wednesday to Friday, 5:00 PM', 'Bluesky this week', 'The thread: ', 'Bluesky: nothing posted for Week ' );  /* Bluesky's days (SCOPE §82) */
+		'class="button sp-fb"', 'sharer.php?u=', '>Facebook</a>', 'class="button sp-cp sp-ig"', '>Instagram caption</button>', 'aria-label="Download the graphic">Graphic</a>',
+		'<form id="dbd-pack-settings"', 'Posting accounts', 'Posted by hand', 'The Tuesday email', 'class="sp-acct"', 'class="button sp-chg"', 'value="dbd_pack_settings"', 'name="dbd_pack_mail_set[on]"', 'name="dbd_pack_mail_set[to]"', 'Brevo isn’t set up',
+		'name="dbd_pack_sub"', 'name="dbd_pack_x"', 'name="dbd_pack_bsky"', 'name="dbd_pack_fb"', 'name="dbd_pack_ig"', 'Open the group', 'Save settings', 'name="dbd_ig_set[on]"', 'name="dbd_ig_set[account]"', 'name="dbd_ig_token_new"', 'Paste the token from your Meta app', 'Not connected' );  /* SCOPE §68, §71–74, §87 */
+	array_push( $want['sp'], 'class="sp-ap"', 'class="sp-apd"', '<summary class="button button-primary">Post now to ', 'value="dbd_auto_publish"', 'name="slot" value="swing"', 'to Bluesky now?</b>', 'class="button button-primary sp-apgo"', 'class="button sp-apx"', 'id="sp-swing"', 'id="sp-keys-', 'name="slot" value="keys-',
+		'name="dbd_bsky_pass_new"', 'Connected as @downbydown.bsky.social', 'name="dbd_bsky_disconnect"', 'name="dbd_ap_set[ig]"', 'name="dbd_ap_set[bs]"', 'Reddit and Facebook can’t post on their own.' );  /* Auto publish (SCOPE §81) */
+	array_push( $want['sp'], 'name="dbd_x_set[on]" value="1" checked', 'name="dbd_x_ck_new"', 'name="dbd_x_cs_new"', 'name="dbd_x_at_new"', 'name="dbd_x_as_new"', 'Paste all four together.', 'name="dbd_ap_set[x]" value="1" checked' );  /* X posting (SCOPE §83): not connected in this harness */
+	array_push( $want['sp'], 'name="dbd_pack_th"', 'value="down_by_down"', 'name="dbd_th_set[on]" value="1" checked', 'name="dbd_th_secret_new"', 'name="dbd_th_token_new"', 'threads_manage_replies', 'User Token Generator', 'name="dbd_ap_set[th]" value="1" checked' );  /* Threads posting (SCOPE §84) */
+	array_push( $want['sp'], 'name="dbd_bsky_set[on]" value="1" checked' );  /* Bluesky's days (SCOPE §82) */
 	if ( in_array( 'rush', array_column( DBD_Pack::items( DBD_Pack::newest() ), 'k' ), true ) ) { array_push( $want['sp'], 'Pass rushers', '-pass-rushers.png"' ); }  /* SCOPE §79, only for the week the defense files run through */
 	$want['ov'][] = 'Open Growth'; $want['ov'][] = 'data-g="ov-visits"'; $want['ov'][] = 'data-g="ov-clicks"';
 	$bad = 0; $dir = getenv( 'DBD_HARNESS_HTML' ); if ( $dir && ! is_dir( $dir ) ) { mkdir( $dir, 0777, true ); }
 	foreach ( dbd_admin_tabs() as $k => $t ) {
 		if ( $arg && $arg !== 'all' && $arg !== $k ) { continue; }
-		$_GET = array( 'page' => $t[0] );
-		ob_start(); try { dbd_settings_page(); } catch ( Throwable $e ) { ob_end_clean(); fwrite( STDERR, "FATAL in admin $k: " . $e->getMessage() . ' at ' . basename( $e->getFile() ) . ':' . $e->getLine() . "\n" ); exit( 1 ); }
-		$h = ob_get_clean(); $miss = array_filter( $want[ $k ], function ( $x ) use ( $h ) { return strpos( $h, $x ) === false; } );
+		$h = '';  /* the Share pack's three views, one page each (SCOPE §87) */
+		foreach ( $k === 'sp' ? array( 'schedule', 'keys', 'accounts' ) : array( '' ) as $spv ) {
+			$_GET = array( 'page' => $t[0] ) + ( $spv !== '' ? array( 'view' => $spv ) : array() );
+			ob_start(); try { dbd_settings_page(); } catch ( Throwable $e ) { ob_end_clean(); fwrite( STDERR, "FATAL in admin $k: " . $e->getMessage() . ' at ' . basename( $e->getFile() ) . ':' . $e->getLine() . "\n" ); exit( 1 ); }
+			$h .= ob_get_clean();
+		}
+		$miss = array_filter( $want[ $k ], function ( $x ) use ( $h ) { return strpos( $h, $x ) === false; } );
 		$forms = substr_count( $h, '<form' ); $nested = preg_match( '#<form(?:(?!</form>).)*<form#s', $h );
 		echo "  admin $k (" . $t[1] . '): ' . strlen( $h ) . " bytes, $forms forms" . ( $miss ? ', MISSING: ' . implode( ' | ', $miss ) : '' ) . ( $nested ? ', A FORM INSIDE A FORM' : '' ) . "\n";
 		$bad += count( $miss ) + $nested;
@@ -1300,13 +1304,32 @@ if ( $view === 'admin' ) {
 		$to = dbd_pack_settings_save( array( 'week' => '9', 'dbd_pack_mail_set' => array( 'on' => '1', 'to' => "Erik@Example.test\nbad\ngene@example.test, gene@example.test" ), 'dbd_pack_sub' => 'https://www.reddit.com/r/DownByDown/', 'dbd_pack_x' => '@dxd_NFLfootball', 'dbd_pack_bsky' => '@DownByDown.bsky.social', 'dbd_pack_fb' => 'facebook.com/groups/42/', 'dbd_pack_ig' => 'https://instagram.com/down_by_down/' ) );
 		$got = array( get_option( 'dbd_pack_mail_set' ), get_option( 'dbd_pack_sub' ), get_option( 'dbd_pack_x' ), get_option( 'dbd_pack_bsky' ), get_option( 'dbd_pack_fb' ), get_option( 'dbd_pack_ig' ) );
 		$ok = $got === array( array( 'on' => true, 'to' => array( 'erik@example.test', 'gene@example.test' ) ), 'DownByDown', 'dxd_NFLfootball', 'downbydown.bsky.social', 'https://www.facebook.com/groups/42', 'down_by_down' );
-		$ok2 = strpos( $to, 'page=down-by-down-share' ) !== false && strpos( $to, 'week=9' ) !== false && strpos( $to, 'pack=saved' ) !== false && substr( $to, -strlen( '#dbd-pack-settings' ) ) === '#dbd-pack-settings';
+		$ok2 = strpos( $to, 'page=down-by-down-share' ) !== false && strpos( $to, 'week=9' ) !== false && strpos( $to, 'pack=saved' ) !== false && strpos( $to, 'view=accounts' ) !== false && strpos( $to, '#' ) === false;
 		dbd_pack_settings_save( array( 'dbd_pack_mail_set' => array( 'to' => 'a@example.test' ), 'dbd_pack_sub' => '', 'dbd_pack_fb' => 'https://evil.test/' ) );
 		$ok3 = get_option( 'dbd_pack_mail_set' ) === array( 'on' => false, 'to' => array( 'a@example.test' ) ) && get_option( 'dbd_pack_sub' ) === '' && get_option( 'dbd_pack_fb' ) === '';
 		echo '  sp save: ' . ( $ok && $ok2 && $ok3 ? 'ok' : 'WRONG ' . json_encode( array( $ok, $ok2, $ok3, $got ) ) . ' ' . $to ) . "\n"; $bad += $ok && $ok2 && $ok3 ? 0 : 1;
 		$_GET = array( 'page' => 'down-by-down-share', 'pack' => 'saved' ); ob_start(); dbd_settings_page(); $h2 = ob_get_clean();
-		$open = strpos( $h2, 'id="dbd-pack-settings" open>' ) !== false && strpos( $h2, 'Settings saved.' ) !== false;
-		echo '  sp after a save: ' . ( $open ? 'the settings box is open with its notice' : 'WRONG: the settings box should open with "Settings saved."' ) . "\n"; $bad += $open ? 0 : 1;
+		$open = strpos( $h2, '<form id="dbd-pack-settings"' ) !== false && strpos( $h2, 'Settings saved.' ) !== false;
+		echo '  sp after a save: ' . ( $open ? 'Accounts and email opens with its notice' : 'WRONG: a save should come back to Accounts and email with "Settings saved."' ) . "\n"; $bad += $open ? 0 : 1;
+		/* the calendar (SCOPE §87): what each record shows, which view opens, and the clock it reads */
+		$cal = array(); $cc = function ( $what, $ok ) use ( &$cal, &$bad ) { if ( ! $ok ) { $cal[] = $what; $bad++; } };
+		$sn = DBD_Pack::newest(); $key = DBD_AutoPub::key( $sn, 'swing' ); $jk = 'dbd_bsky_job_' . $key; $was = $GLOBALS['dbd_opt'][ $jk ] ?? null; $at = gmmktime( 14, 0, 0, 11, 17, 2026 );
+		foreach ( array( array( 'booked', 'scheduled', 'Scheduled Tue 9:00 AM' ), array( 'sent', 'posted', 'Posted Tue 9:00 AM' ), array( 'failed: nope', 'failed', 'Didn’t post: nope' ), array( 'skipped: more than a day late', 'skipped', 'Skipped: more than a day late' ), array( 'not posted: off', 'skipped', 'Not posted: off' ), array( 'retrying: slow', 'scheduled', 'Retrying: slow' ) ) as $c ) {
+			$GLOBALS['dbd_opt'][ $jk ] = array( 'state' => $c[0], 'at' => $at, 'slot_at' => $at, 'sent_at' => $at, 'link' => 'https://example.test/p' ); $x = dbd_share_state( $key, 'bs', $at );
+			$cc( 'state ' . $c[0] . ' => ' . json_encode( $x ), $x['class'] === $c[1] && $x['line'] === $c[2] );
+			if ( $c[1] === 'failed' ) { $cc( 'a failed post has Try again', strpos( $x['again'], 'dbd_bsky_again' ) !== false ); }
+			if ( $c[1] === 'posted' ) { $cc( 'a sent post has its link', $x['link'] === 'https://example.test/p' ); }
+		}
+		if ( $was === null ) { unset( $GLOBALS['dbd_opt'][ $jk ] ); } else { $GLOBALS['dbd_opt'][ $jk ] = $was; }
+		$cc( 'no record, item off the schedule', dbd_share_state( DBD_AutoPub::key( $sn, 'rush' ), 'bs', 0, 'extra' )['class'] === 'idle' );
+		foreach ( array( array( array( 'view' => 'keys' ), 'keys' ), array( array( 'view' => 'accounts' ), 'accounts' ), array( array( 'view' => 'nope' ), 'schedule' ), array( array( 'pack' => 'saved' ), 'accounts' ), array( array( 'pack' => 'sent' ), 'accounts' ), array( array( 'pack' => 'igagain' ), 'schedule' ), array( array( 'pack' => 'igerror' ), 'schedule' ), array( array(), 'schedule' ) ) as $c ) { $_GET = $c[0]; $cc( 'view for ' . json_encode( $c[0] ), dbd_share_view() === $c[1] ); }
+		$ps = dbd_share_posts( $sn, true ); $ts = array_column( $ps, 't' ); $st2 = $ts; sort( $st2 ); $cc( 'posts in time order', $ts === $st2 && $ps );
+		foreach ( $ps as $p ) { $cc( $p['slot'] . ' sits on its clock', dbd_share_et( $p['t'], 'D g:i A' ) === array( 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun', 'Mon' )[ $p['day'] ] . ( $p['eve'] ? ' 5:00 PM' : ' 9:00 AM' ) ); }
+		$cc( 'after Week 18 nothing is coming up', dbd_share_upcoming( array( 18 ) ) === 0 && dbd_share_upcoming( array() ) === 0 );
+		$fu = DBD_Tall::$from; DBD_Tall::$from = array( (int) DBD_Data::season() => 1 ); $pl = dbd_share_posts( $sn, false ); DBD_Tall::$from = array( (int) DBD_Data::season() => 99 ); $pl2 = dbd_share_posts( $sn, false ); DBD_Tall::$from = $fu;
+		$cc( 'a coming week lists all ten posts, unposted', count( $pl ) === 10 && ! array_filter( $pl, function ( $p ) { return $p['pic'] !== ''; } ) );
+		$cc( 'a week before the boards has no evening posts', count( $pl2 ) === 7 && ! array_filter( $pl2, function ( $p ) { return $p['eve']; } ) );
+		echo '  sp calendar: ' . ( $cal ? 'WRONG ' . implode( ' | ', $cal ) : 'ok' ) . "\n";
 	}
 	echo "admin: $bad problems, $warnings warnings\n"; exit( $bad || $warnings ? 1 : 0 );
 }
