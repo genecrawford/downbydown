@@ -3447,3 +3447,22 @@ Gene, showing the NFL's "League Leaders: Rushing TDs" post: "let's spec/mock som
 
 **Tests:** each graphic renders at 1080×1350 in both looks for every pack item and keys side, the weekly pick carries forward and doesn't change a post already out, long names and big numbers fit, a missing photo or logo falls back, a week missing an item draws nothing, and the JPEG stays under Bluesky's 1 MB if it's used there.
 
+
+## 86. Three more league boards (scoped and mocked 2026-11-21, `mockup-v59/`; all decided; built as 2.44.0)
+
+Gene: "let's make a few more like the 'league leaders' one, leading rushing TD's, Leading Receptions, and Most Sacks by a defense".
+
+**What it adds:** three season boards in the League Leaders layout, in the week's Black or Paper look, on all four networks and Auto publish:
+
+1. **Rushing TDs:** the top players, the leader's headshot in the panel.
+2. **Receptions:** the same.
+3. **Most Sacks by a Defense (new):** teams instead of players, the leading team's logo, number and name in the panel. A team's count is the sacks its opponents' quarterbacks took, because five teams have a sack no individual was credited with (Week 10: CAR, JAX, ARI, LV, KC). Summing players would undercount them by one. Checked against the play-by-play through Week 10: all 32 teams match.
+
+**Ties at the cut:** a board shows 11 rows, but a tie across the 11th spot keeps everyone tied, up to 13 rows. Past 13, the board stops above the tie, unless that would leave fewer than 5 rows (early in a season), when it shows the plain top 11. Week 10's sacks board needs this: four teams are tied at 26 for 9th through 12th.
+
+**Already in the rotation:** Monday's League Leaders rotates eight stats. Rushing TDs is Week 10 (this Monday), receptions Week 13, individual sacks Week 14.
+
+**Decision (Gene, 2026-11-22): "Every week."**
+- **Schedule:** each board is its own weekly post at 5:00 PM Eastern, Rushing TDs on Wednesday, Receptions on Thursday, Most Sacks on Friday, so the numbers include the week that just finished. About $0.60 more a week on X.
+- **First round:** Week 11's boards, on November 25, 26 and 27.
+- **Monday's rotation:** Rushing TDs and receptions leave it so nothing repeats, which leaves six stats. Week 10's Rushing TDs post on November 23 goes out as planned. After that: Week 11 receiving yards, 12 receiving TDs, 13 individual sacks, 14 passing yards, 15 passing TDs, 16 rushing yards, 17 receiving yards, 18 receiving TDs.

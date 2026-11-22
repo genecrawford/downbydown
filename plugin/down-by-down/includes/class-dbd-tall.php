@@ -26,10 +26,16 @@ class DBD_Tall {
 		array( 'receiving_yards', 'RECEIVING YARDS', 'RECEIVING YARDS', 'receiving yards' ), array( 'receiving_tds', 'RECEIVING TDS', 'RECEIVING TDS', 'receiving TDs' ),
 		array( 'receptions', 'RECEPTIONS', 'RECEPTIONS', 'receptions' ), array( 'sk', 'SACKS', 'SACKS', 'sacks' ),
 	);
-	const TOP = 11;
+	const TOP = 11; const MOST = 13;  /* a tie across the 11th spot can run a board to 13 rows (SCOPE §86) */
+	/* Monday's rotation from Week 11 of 2026 on (indexes into STATS): rushing TDs and receptions have their own boards now */
+	const ROTATION = array( 4, 5, 7, 0, 1, 2 );
+	/* The weekly boards (SCOPE §86): slot => its stat in STATS; -1 is the team sacks board */
+	const WEEKLY = array( 'rtd' => 3, 'recs' => 6, 'sacks' => -1 );
+	/** Season => the first week with the weekly boards and the six-stat rotation. Earlier weeks of 2026 keep what they had. The harness empties it. */
+	public static $from = array( 2026 => 11 );
 	/** The harness's older posting tests set this: no graphics, no League Leaders, no kickoff guard, so they keep covering the text-and-card fallback. */
 	public static $off = false;
-	const SLOTS = 'swing|snaps|offense|targets|leaders|rush|board|keys-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}-[A-Z]{2,3}';
+	const SLOTS = 'swing|snaps|offense|targets|leaders|rush|board|rtd|recs|sacks|keys-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}-[A-Z]{2,3}';
 
 	public static function init() { add_action( 'admin_post_dbd_pack_look', array( __CLASS__, 'look_action' ) ); }
 
@@ -72,14 +78,42 @@ class DBD_Tall {
 
 	/* ------------------------------------------------------------------ League Leaders */
 
-	/** The week's stat in the rotation (Week 10: rushing TDs). */
-	public static function stat( $n ) { return self::STATS[ ( (int) $n + 1 ) % count( self::STATS ) ]; }
+	/** Does week $n have the weekly boards and the six-stat rotation? */
+	public static function weekly( $n ) { return (int) $n >= (int) ( self::$from[ (int) DBD_Data::season() ] ?? 0 ); }
+	/** Monday's stat in the rotation (Week 10: rushing TDs, the last of the eight; Week 11: receiving yards, the first of the six). */
+	public static function stat( $n ) { return self::weekly( $n ) ? self::STATS[ self::ROTATION[ ( (int) $n + 1 ) % count( self::ROTATION ) ] ] : self::STATS[ ( (int) $n + 1 ) % count( self::STATS ) ]; }
 
 	private static function sk( $v ) { return rtrim( rtrim( number_format( (float) $v, 1 ), '0' ), '.' ); }
 
-	/** The season board through week $n: array( 'stat' => …, 'rows' => [ id, full, t, num, v, vs ] ), the top 11, ties in last-name order; null when there's nothing to rank. */
-	public static function board_spec( $n ) {
-		$st = self::stat( $n ); $k = $st[0]; $tot = array();
+	/** The top 11. A tie across the 11th spot keeps everyone tied, up to 13 rows; past that the board stops above the tie, unless that leaves fewer than 5 rows. */
+	private static function cut( $rows ) {
+		$t = self::TOP; if ( count( $rows ) <= $t || (float) $rows[ $t ]['v'] !== (float) $rows[ $t - 1 ]['v'] ) { return array_slice( $rows, 0, $t ); }
+		$v = (float) $rows[ $t - 1 ]['v']; $end = $t; while ( isset( $rows[ $end ] ) && (float) $rows[ $end ]['v'] === $v ) { $end++; }
+		if ( $end <= self::MOST ) { return array_slice( $rows, 0, $end ); }
+		$top = $t - 1; while ( $top > 0 && (float) $rows[ $top - 1 ]['v'] === $v ) { $top--; }
+		return array_slice( $rows, 0, $top >= 5 ? $top : $t );
+	}
+
+	/** Most sacks by a defense through week $n: the sacks its opponents' quarterbacks took, since some sacks are credited to no player (SCOPE §86). */
+	private static function team_sacks( $n ) {
+		$tot = array();
+		for ( $w = 1; $w <= (int) $n; $w++ ) { foreach ( (array) DBD_Pack::box_rows( $w ) as $x ) { $o = (string) $x['o']; $tot[ $o ] = ( $tot[ $o ] ?? 0 ) + (int) ( $x['sacks_suffered'] ?? 0 ); } }
+		$rows = array();
+		foreach ( $tot as $t => $v ) {
+			if ( $v <= 0 ) { continue; } $t = (string) $t; $m = DBD_Data::team( $t ) ?: array(); $nick = (string) ( $m['nick'] ?? $t ); $name = (string) ( $m['name'] ?? $nick );
+			$city = substr( $name, -strlen( $nick ) ) === $nick ? trim( substr( $name, 0, strlen( $name ) - strlen( $nick ) ) ) : '';
+			$rows[] = array( 'id' => '', 'team' => true, 'full' => $name, 'nick' => $nick, 'city' => $city, 't' => $t, 'num' => '', 'v' => (float) $v, 'vs' => (string) (int) $v );
+		}
+		if ( ! $rows ) { return null; }
+		usort( $rows, function ( $a, $b ) { return array( -$a['v'], $a['full'] ) <=> array( -$b['v'], $b['full'] ); } );
+		return array( 'stat' => array( 'team_sacks', 'MOST SACKS', 'SACKS', 'sacks' ), 'rows' => self::cut( $rows ) );
+	}
+
+	/** A season board through week $n ('board' is Monday's rotation; 'rtd', 'recs', 'sacks' the weekly boards): array( 'stat' => …, 'rows' => [ id, full, t, num, v, vs ] ), ties in last-name order; null when there's nothing to rank. */
+	public static function board_spec( $n, $slot = 'board' ) {
+		if ( $slot !== 'board' && ( ! isset( self::WEEKLY[ $slot ] ) || ! self::weekly( $n ) ) ) { return null; }
+		if ( $slot === 'sacks' ) { return self::team_sacks( $n ); }
+		$st = $slot === 'board' ? self::stat( $n ) : self::STATS[ self::WEEKLY[ $slot ] ]; $k = $st[0]; $tot = array();
 		if ( $k === 'sk' ) {
 			foreach ( array_keys( DBD_Data::teams() ) as $t ) { $d = DBD_Data::defense( $t ); if ( ! $d ) { continue; } $thru = (int) ( $d['through'] ?? 0 );
 				foreach ( (array) ( $d['defenders'] ?? array() ) as $p ) {
@@ -100,7 +134,7 @@ class DBD_Tall {
 		}
 		$rows = array_values( array_filter( $tot, function ( $x ) { return $x['v'] > 0; } ) ); if ( ! $rows ) { return null; }
 		usort( $rows, function ( $a, $b ) { return array( -$a['v'], DBD_Pack::last( $a['full'] ), $a['full'] ) <=> array( -$b['v'], DBD_Pack::last( $b['full'] ), $b['full'] ); } );
-		$rows = array_slice( $rows, 0, self::TOP );
+		$rows = self::cut( $rows );
 		foreach ( $rows as $i => $r ) { $rows[ $i ]['vs'] = $k === 'sk' ? self::sk( $r['v'] ) : number_format( (float) $r['v'] ); }
 		return array( 'stat' => $st, 'rows' => $rows );
 	}
@@ -139,7 +173,9 @@ class DBD_Tall {
 		if ( strpos( $slot, 'keys-' ) === 0 ) { $s = self::spec_keys( $n, $slot ); return $s ? self::draw_keys( new DBD_Tall_Canvas( $look, $fetch ), $s ) : null; }
 		$W = DBD_Week::file( $n ); if ( ! $W || empty( $W['complete'] ) ) { return null; }
 		switch ( $slot ) {
-			case 'board':   $s = self::board_spec( $n ); if ( ! $s ) { return null; } return self::board( new DBD_Tall_Canvas( $look, $fetch ), array( 'LEAGUE LEADERS', $s['stat'][1] ), 'THROUGH WEEK ' . $n, $s['rows'], $s['stat'][2] );
+			case 'board': case 'rtd': case 'recs': case 'sacks':
+				$s = self::board_spec( $n, $slot ); if ( ! $s ) { return null; }
+				return self::board( new DBD_Tall_Canvas( $look, $fetch ), $slot === 'sacks' ? array( 'MOST SACKS', 'BY A DEFENSE' ) : array( 'LEAGUE LEADERS', $s['stat'][1] ), 'THROUGH WEEK ' . $n, $s['rows'], $s['stat'][2] );
 			case 'rush':    return self::draw_rush( $n, $look, $fetch );
 			case 'leaders': $s = DBD_Pack::spec_leaders( $n ); return $s ? self::draw_leaders( new DBD_Tall_Canvas( $look, $fetch ), $s, $n ) : null;
 			case 'offense': $s = DBD_Pack::spec_offense( $n ); return $s ? self::draw_offense( new DBD_Tall_Canvas( $look, $fetch ), $s, $n ) : null;
@@ -149,13 +185,13 @@ class DBD_Tall {
 		return null;
 	}
 
-	/** The ranked board: rows of id, full, t, vs (and x, a small second stat), the leader on the team-color panel. */
+	/** The ranked board: rows of id, full, t, vs (and x, a small second stat), the leader on the team-color panel. A team row (team, city, nick) shows the logo there, not a headshot. */
 	private static function board( $c, $lines, $sub, $R, $lab ) {
 		if ( ! $c->ok ) { return null; }
 		$W = self::W; $H = self::H; $lead = $R[0]; $c1 = self::c1( $lead['t'] ); $px0 = 640; $ink = self::on( $c1 ); $cx = ( $px0 + $W ) / 2; $nn = (string) $lead['vs']; $pw = $W - $px0;
-		$num = (string) ( $lead['num'] ?? '' ); if ( $num === '' ) { $num = self::num_of( $lead['id'], $lead['t'] ); }
+		$is_team = ! empty( $lead['team'] ); $num = (string) ( $lead['num'] ?? '' ); if ( $num === '' && ! $is_team ) { $num = self::num_of( $lead['id'], $lead['t'] ); }
 		$c->rect( $px0, 0, $pw, $H, $c1 );
-		if ( $c->head_ok( $lead['id'], $lead['t'] ) ) {
+		if ( ! $is_team && $c->head_ok( $lead['id'], $lead['t'] ) ) {
 			$c->logo( $lead['t'], $cx - 66, 54, 132, true );
 			$p = $c->fit( $nn, 'b', 300, $pw - 36 ); $c->text( $cx - $c->w( $nn, 'b', $p ) / 2, 438, $nn, 'b', $p, $ink );
 			$pl = $c->fit( $lab, 's', 40, $pw - 36 ); $c->text( $cx - $c->w( $lab, 's', $pl ) / 2, 496, $lab, 's', $pl, $ink );
@@ -169,7 +205,7 @@ class DBD_Tall {
 		}
 		$b = $c->title( $lines, $sub, 56, 540, 128, 96 ); $y = $b + 15; $rh = ( $H - 104 - $y ) / count( $R );
 		foreach ( $R as $i => $r ) {
-			$ry = $y + $i * $rh; list( $f, $l ) = self::split( $r['full'] ); $c->tile( $r['t'], 56, $ry + 3, 92, (int) ( $rh - 12 ) );
+			$ry = $y + $i * $rh; list( $f, $l ) = ! empty( $r['team'] ) ? array( (string) $r['city'], (string) $r['nick'] ) : self::split( $r['full'] ); $c->tile( $r['t'], 56, $ry + 3, 92, (int) ( $rh - 12 ) );
 			$vl = 596 - $c->w( (string) $r['vs'], 'b', 64 ) - 14; $xr = min( 516, $vl ); $vx = ! empty( $r['x'] ) ? $xr - $c->w( (string) $r['x'], 's', 26 ) - 14 : $vl;  /* a big number pushes the second stat left */
 			$c->text( 164, $ry + $rh * 0.43, self::up( $f ), 's', 27, $c->t['ink'] ); $lu = self::up( $l ); $c->text( 164, $ry + $rh * 0.43 + 28, $lu, 'b', $c->fit( $lu, 'b', 30, max( 120, min( 270, $vx - 164 ) ) ), $c->t['ink'] );
 			if ( ! empty( $r['x'] ) ) { $c->text( $xr, $ry + $rh * 0.70, (string) $r['x'], 's', 26, $c->t['mut'], true ); }

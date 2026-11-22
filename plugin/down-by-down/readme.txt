@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.43.0
+Stable tag: 2.44.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,12 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.44.0 =
+* Three more weekly boards (SCOPE §86), starting with Week 11, at 5:00 PM Eastern on all four networks: Rushing TDs on Wednesday, Receptions on Thursday, and Most Sacks by a Defense on Friday.
+* Most Sacks ranks teams by the sacks their opponents' quarterbacks took, which includes sacks credited to no player.
+* Monday's League Leaders rotates six stats from Week 11, since rushing TDs and receptions have their own boards.
+* A tie across a board's 11th spot now keeps everyone tied, up to 13 rows.
 
 = 2.43.0 =
 * New social graphics (SCOPE §85): every post gets a tall 1080 × 1350 graphic in place of the shrunken square, with a ranked board, a player spotlight or a game layout. Black and Paper looks, picked week by week at the top of the Share pack.

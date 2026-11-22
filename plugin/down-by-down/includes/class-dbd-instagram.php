@@ -34,8 +34,8 @@ class DBD_Instagram {
 	const LIFE      = 60 * 86400;     /* a long-lived token's life */
 	const TZ        = 'America/New_York';
 	/* each slot and its day after the week's Tuesday */
-	const SLOTS = array( 'carousel' => 0, 'swing' => 1, 'snaps' => 2, 'offense' => 3, 'targets' => 4, 'leaders' => 5, 'board' => 6 );  /* Monday's League Leaders (SCOPE §85) */
-	const LABEL = array( 'carousel' => 'the carousel', 'swing' => 'the biggest swing', 'snaps' => 'the usage riser', 'offense' => 'best and worst offense', 'targets' => 'the target-share mover', 'leaders' => 'week leaders', 'board' => 'League Leaders' );
+	const SLOTS = array( 'carousel' => 0, 'swing' => 1, 'rtd' => 1, 'snaps' => 2, 'recs' => 2, 'offense' => 3, 'sacks' => 3, 'targets' => 4, 'leaders' => 5, 'board' => 6 );  /* in time order; Monday's League Leaders (SCOPE §85); the weekly boards go at 5:00 PM on their days (SCOPE §86) */
+	const LABEL = array( 'carousel' => 'the carousel', 'swing' => 'the biggest swing', 'snaps' => 'the usage riser', 'offense' => 'best and worst offense', 'targets' => 'the target-share mover', 'leaders' => 'week leaders', 'board' => 'League Leaders', 'rtd' => 'the rushing TDs board', 'recs' => 'the receptions board', 'sacks' => 'the defense sacks board' );
 
 	/** How to wait between status checks; the harness swaps it for one that doesn't. */
 	public static $wait = 'sleep';
@@ -161,7 +161,7 @@ class DBD_Instagram {
 
 	public static function key( $season, $n, $slot ) { return (int) $season . '-w' . (int) $n . '-' . $slot; }
 	/** A post key's season, week and slot: the weekly slots, or an item only Auto publish posts (pass rushers, a keys side; SCOPE §81). */
-	public static function parse( $key ) { return preg_match( '/^(\d{4})-w(\d{1,2})-(carousel|swing|snaps|offense|targets|leaders|board|rush|keys-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}-[A-Z]{2,3})$/', (string) $key, $m ) ? array( (int) $m[1], (int) $m[2], $m[3] ) : null; }
+	public static function parse( $key ) { return preg_match( '/^(\d{4})-w(\d{1,2})-(carousel|swing|snaps|offense|targets|leaders|board|rtd|recs|sacks|rush|keys-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}-[A-Z]{2,3})$/', (string) $key, $m ) ? array( (int) $m[1], (int) $m[2], $m[3] ) : null; }
 	/** A slot's name in a sentence: 'the biggest swing', 'pass rushers', 'the Bills keys'. */
 	public static function label( $slot ) {
 		if ( isset( self::LABEL[ $slot ] ) ) { return self::LABEL[ $slot ]; }
@@ -169,11 +169,11 @@ class DBD_Instagram {
 		return preg_match( '/^keys-.+-([A-Z]{2,3})$/', (string) $slot, $m ) ? 'the ' . ( DBD_Data::team( $m[1] )['nick'] ?? $m[1] ) . ' keys' : (string) $slot;
 	}
 
-	/** When a slot of week $n posts: 9:00 AM Eastern, its days after the week's Tuesday (the date counted in Eastern time, so DST can't move it). */
+	/** When a slot of week $n posts: 9:00 AM Eastern (the weekly boards 5:00 PM), its days after the week's Tuesday (the date counted in Eastern time, so DST can't move it). */
 	public static function slot_time( $n, $slot ) {
 		$tue = DBD_Post::tuesday( $n ); if ( ! $tue || ! isset( self::SLOTS[ $slot ] ) ) { return 0; }
 		$d = new DateTime( '@' . (int) $tue ); $d->setTimezone( new DateTimeZone( self::TZ ) ); $d->setTime( 9, 0 );
-		if ( self::SLOTS[ $slot ] ) { $d->modify( '+' . self::SLOTS[ $slot ] . ' days' ); $d->setTime( 9, 0 ); }
+		if ( self::SLOTS[ $slot ] ) { $d->modify( '+' . self::SLOTS[ $slot ] . ' days' ); $d->setTime( isset( DBD_Tall::WEEKLY[ $slot ] ) ? 17 : 9, 0 ); }
 		return $d->getTimestamp();
 	}
 
@@ -182,8 +182,8 @@ class DBD_Instagram {
 		$items = array_values( array_filter( DBD_Pack::items( $n ), function ( $it ) { return ! empty( $it['sq'] ); } ) ); $by = array();
 		foreach ( $items as $it ) { $by[ $it['k'] ] = $it; }
 		$out = array(); if ( count( $items ) >= 2 ) { $out['carousel'] = $items; }
+		foreach ( DBD_Pack::board_items( $n ) as $sl => $b ) { $by[ $sl ] = $b; }  /* the season boards have their own times, never in the carousel */
 		foreach ( array_keys( self::SLOTS ) as $sl ) { if ( isset( $by[ $sl ] ) ) { $out[ $sl ] = array( $by[ $sl ] ); } }
-		if ( ( $b = DBD_Pack::board_item( $n ) ) ) { $out['board'] = array( $b ); }  /* its own day, never in the carousel */
 		return $out;
 	}
 	/** The items a slot shows: the plan's, or for an item outside it (Auto publish), the item itself when it has a square. */

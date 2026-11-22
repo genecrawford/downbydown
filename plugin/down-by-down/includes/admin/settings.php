@@ -518,7 +518,7 @@ function dbd_pack_settings_box( $n ) {
 			<label for="dbd-pack-th">Threads</label><?php echo $fld( 'dbd-pack-th', DBD_Pack::OPT_TH, DBD_Pack::our_th(), '@', 240, 'The Threads profile’s name; the Instagram account’s by default.' ); ?>
 			<span></span><p class="description" style="margin:0">Clear an account to hide its button.</p>
 			<div class="sp-sh">Instagram posting</div>
-			<span>Post it</span><div><label><input type="checkbox" name="<?php echo esc_attr( DBD_Instagram::OPT_SET ); ?>[on]" value="1"<?php echo DBD_Instagram::settings()['on'] ? ' checked' : ''; ?>> Post the carousel on Tuesday, then one item a day Wednesday to Sunday, 9:00 AM Eastern</label></div>
+			<span>Post it</span><div><label><input type="checkbox" name="<?php echo esc_attr( DBD_Instagram::OPT_SET ); ?>[on]" value="1"<?php echo DBD_Instagram::settings()['on'] ? ' checked' : ''; ?>> Post the carousel on Tuesday, then one item a day through Monday, 9:00 AM Eastern, and the weekly boards Wednesday to Friday, 5:00 PM</label></div>
 			<label for="dbd-ig-acc">Instagram account ID</label><div><input type="text" id="dbd-ig-acc" name="<?php echo esc_attr( DBD_Instagram::OPT_SET ); ?>[account]" value="<?php echo esc_attr( DBD_Instagram::settings()['account'] ); ?>" inputmode="numeric" autocomplete="off" style="width:220px;max-width:100%"><p class="description" style="margin:4px 0 0">The number under the account in your Meta app. Needed for a token that starts EAA.</p></div>
 			<label for="dbd-ig-token">Access token</label><div><input type="password" id="dbd-ig-token" name="dbd_ig_token_new" value="" autocomplete="off" placeholder="<?php echo esc_attr( DBD_Instagram::token() ? 'Paste a new token to replace it' : 'Paste the token from your Meta app' ); ?>" style="width:420px;max-width:100%">
 				<?php $it = DBD_Instagram::token();
@@ -535,7 +535,7 @@ function dbd_pack_settings_box( $n ) {
 					echo '<p class="description">In your Meta app (Instagram, API setup with Unified login), make a configuration with @' . esc_html( DBD_Pack::our_ig() !== '' ? DBD_Pack::our_ig() : 'your account' ) . ', then Generate token and paste it here. It’s checked when you save, and never shown again.</p>';
 				} ?></div>
 			<div class="sp-sh">Bluesky posting</div>
-			<span>Post it</span><div><label><input type="checkbox" name="<?php echo esc_attr( DBD_Bluesky::OPT_SET ); ?>[on]" value="1"<?php echo DBD_Bluesky::settings()['on'] ? ' checked' : ''; ?>> Post on Tuesday, then one item a day Wednesday to Sunday, 9:00 AM Eastern</label><p class="description" style="margin:4px 0 0">Tuesday is a thread: a first post naming the week, each item replying under it. Untick it and Bluesky posts only when you press Auto publish.</p></div>
+			<span>Post it</span><div><label><input type="checkbox" name="<?php echo esc_attr( DBD_Bluesky::OPT_SET ); ?>[on]" value="1"<?php echo DBD_Bluesky::settings()['on'] ? ' checked' : ''; ?>> Post on Tuesday, then one item a day through Monday, 9:00 AM Eastern, and the weekly boards Wednesday to Friday, 5:00 PM</label><p class="description" style="margin:4px 0 0">Tuesday is a thread: a first post naming the week, each item replying under it. Untick it and Bluesky posts only when you press Auto publish.</p></div>
 			<span>Account</span><div style="padding-top:5px"><?php echo DBD_Pack::our_bsky() !== '' ? '@' . esc_html( DBD_Pack::our_bsky() ) . ' <span class="description">(from Your accounts above)</span>' : '<span class="description">Add the Bluesky account above first.</span>'; ?></div>
 			<label for="dbd-bsky-pass">App password</label><div><input type="password" id="dbd-bsky-pass" name="dbd_bsky_pass_new" value="" autocomplete="off" placeholder="<?php echo esc_attr( DBD_Bluesky::conn() ? 'Paste a new app password to replace it' : 'Paste an app password from Bluesky' ); ?>" style="width:420px;max-width:100%">
 				<?php $bc = DBD_Bluesky::conn();
@@ -546,7 +546,7 @@ function dbd_pack_settings_box( $n ) {
 					echo '<p class="description">Make one in Bluesky: Settings → Privacy and security → App passwords → Add. It’s checked when you save, and never shown again.</p>';
 				} ?></div>
 			<div class="sp-sh">X posting</div>
-			<span>Post it</span><div><label><input type="checkbox" name="<?php echo esc_attr( DBD_X::OPT_SET ); ?>[on]" value="1"<?php echo DBD_X::settings()['on'] ? ' checked' : ''; ?>> Post on Tuesday, then one item a day Wednesday to Sunday, 9:00 AM Eastern</label><p class="description" style="margin:4px 0 0">Tuesday is a thread: a first post naming the week, each item replying under it. Untick it and X posts only when you press Auto publish.</p>
+			<span>Post it</span><div><label><input type="checkbox" name="<?php echo esc_attr( DBD_X::OPT_SET ); ?>[on]" value="1"<?php echo DBD_X::settings()['on'] ? ' checked' : ''; ?>> Post on Tuesday, then one item a day through Monday, 9:00 AM Eastern, and the weekly boards Wednesday to Friday, 5:00 PM</label><p class="description" style="margin:4px 0 0">Tuesday is a thread: a first post naming the week, each item replying under it. Untick it and X posts only when you press Auto publish.</p>
 				<label style="display:block;margin-top:8px"><input type="checkbox" name="<?php echo esc_attr( DBD_X::OPT_SET ); ?>[img]" value="1"<?php echo DBD_X::settings()['img'] ? ' checked' : ''; ?>> Attach the graphic to each X post</label><p class="description" style="margin:4px 0 0">Off, X posts stay text and link. X’s price list doesn’t show what an image upload costs, so check the first one on the usage page in the X console.</p></div>
 			<span>Account</span><div style="padding-top:5px"><?php echo DBD_Pack::our_x() !== '' ? '@' . esc_html( DBD_Pack::our_x() ) . ' <span class="description">(from Your accounts above)</span>' : '<span class="description">Add the X account above first.</span>'; ?></div>
 			<?php $xc = DBD_X::conn(); foreach ( DBD_X::KEYS as $f => $lab ) : ?>
@@ -564,7 +564,7 @@ function dbd_pack_settings_box( $n ) {
 			<span>This month</span><div style="padding-top:5px"><?php echo esc_html( $xm . ( $xm === 1 ? ' post' : ' posts' ) . ', about $' . number_format( $xm * DBD_X::PRICE, 2 ) . ' at X’s price.' ); ?> <span class="description">Your credit balance is in the X Developer Console.</span></div>
 			<?php endif; ?>
 			<div class="sp-sh">Threads posting</div>
-			<span>Post it</span><div><label><input type="checkbox" name="<?php echo esc_attr( DBD_Threads::OPT_SET ); ?>[on]" value="1"<?php echo DBD_Threads::settings()['on'] ? ' checked' : ''; ?>> Post on Tuesday, then one item a day Wednesday to Sunday, 9:00 AM Eastern</label><p class="description" style="margin:4px 0 0">Tuesday is a thread: a first post naming the week, each item replying under it. Untick it and Threads posts only when you press Auto publish.</p></div>
+			<span>Post it</span><div><label><input type="checkbox" name="<?php echo esc_attr( DBD_Threads::OPT_SET ); ?>[on]" value="1"<?php echo DBD_Threads::settings()['on'] ? ' checked' : ''; ?>> Post on Tuesday, then one item a day through Monday, 9:00 AM Eastern, and the weekly boards Wednesday to Friday, 5:00 PM</label><p class="description" style="margin:4px 0 0">Tuesday is a thread: a first post naming the week, each item replying under it. Untick it and Threads posts only when you press Auto publish.</p></div>
 			<span>Account</span><div style="padding-top:5px"><?php echo DBD_Pack::our_th() !== '' ? '@' . esc_html( DBD_Pack::our_th() ) . ' <span class="description">(from Your accounts above)</span>' : '<span class="description">Add the Threads account above first.</span>'; ?></div>
 			<?php $tc = DBD_Threads::conn(); ?>
 			<label for="dbd-th-secret">Threads App secret</label><div><input type="password" id="dbd-th-secret" name="dbd_th_secret_new" value="" autocomplete="off" placeholder="<?php echo esc_attr( $tc ? 'Kept; paste a new one to replace it' : 'From the Meta app’s Threads settings' ); ?>" style="width:420px;max-width:100%"></div>
@@ -741,7 +741,7 @@ function dbd_tab_share() {
 		}
 		echo '</section>';
 	}
-	if ( ( $bi = DBD_Pack::board_item( $n ) ) ) { $pack_item( $bi ); }  /* League Leaders, Mondays (SCOPE §85) */
+	foreach ( DBD_Pack::board_items( $n ) as $bi ) { $pack_item( $bi ); }  /* League Leaders on Mondays (SCOPE §85), the weekly boards (SCOPE §86) */
 	dbd_pack_settings_box( $n );
 }
 
