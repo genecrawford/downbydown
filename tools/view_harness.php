@@ -1434,21 +1434,25 @@ if ( $view === 'playoffs' ) {
 		$GLOBALS['dbd_opt'][ DBD_Playoffs::OPT ] = 1;
 		if ( DBD_Router::route_path( 'playoffs/' )['view'] !== 'playoffs' ) { $fail( '/playoffs/ should open with the switch on' ); }
 		if ( DBD_Router::route_path( 'playoffs/nope/' )['view'] !== 'notfound' ) { $fail( 'an unknown game should be not found' ); }
-		if ( substr_count( DBD_Playoffs::hero(), 'class="po-pc' ) !== 14 ) { $fail( 'today’s hero should draw 14 teams' ); }
+		$h0 = DBD_Playoffs::hero(); if ( preg_match_all( '/class="po-g[ "]/', $h0 ) !== 15 || substr_count( $h0, 'data-t=' ) < 14 ) { $fail( 'today’s bracket hero should draw 15 cards and the 14 teams; got ' . preg_match_all( '/class="po-g[ "]/', $h0 ) . ' cards, ' . substr_count( $h0, 'data-t=' ) . ' teams, ' . strlen( $h0 ) . ' bytes' ); }
 		$save( 'po-today', DBD_Playoffs::hero() );
 		unset( $GLOBALS['dbd_opt'][ DBD_Playoffs::OPT ] );
 	}
 	/* every stage, replayed from the 2025 archive */
 	if ( ! DBD_Data::use_season( 2025 ) ) { $fail( 'no 2025 archive' ); }
 	DBD_Playoffs::$seeds = json_decode( (string) file_get_contents( __DIR__ . '/fixtures/playoffs-2025.json' ), true )['seeds'];
-	$want = array( 0 => array( 14, 0, '>14<' ), 1 => array( 14, 0, '>14<' ), 2 => array( 14, 8, '>8<' ), 3 => array( 14, 12, '>4<' ), 4 => array( 14, 14, '>2<' ), 5 => array( 13, 15, 'Seahawks win Super Bowl LX' ) );
+	/* the bracket hero (SCOPE §92): stage => solid chalk lines (a winner carried on), gold ones (the champion's), cards still to be set, the title */
+	$want = array( 0 => array( 0, 0, 7, 'The road to Super Bowl LX' ), 1 => array( 0, 0, 7, 'Wild Card weekend' ), 2 => array( 8, 0, 3, 'The Divisional round' ), 3 => array( 12, 0, 1, 'The conference championships' ), 4 => array( 14, 0, 0, 'Super Bowl LX is set' ), 5 => array( 11, 3, 0, 'The Seahawks win Super Bowl LX' ) );
 	foreach ( $want as $st => $w ) {
 		DBD_Playoffs::$replay = $st; DBD_Playoffs::reset();
 		if ( DBD_Playoffs::stage() !== $st ) { $fail( "replay $st reads as stage " . DBD_Playoffs::stage() ); }
 		$h = DBD_Playoffs::hero(); $pg = DBD_Playoffs::page();
-		if ( substr_count( $h, 'class="po-pc' ) !== $w[0] ) { $fail( "stage $st draws " . substr_count( $h, 'class="po-pc' ) . ' teams' ); }
-		if ( substr_count( $h, '<path ' ) !== $w[1] ) { $fail( "stage $st draws " . substr_count( $h, '<path ' ) . ' routes' ); }
-		if ( strpos( $h, $w[2] ) === false ) { $fail( "stage $st is missing $w[2]" ); }
+		if ( preg_match_all( '/class="po-g[ "]/', $h ) !== 15 ) { $fail( "stage $st draws " . preg_match_all( '/class="po-g[ "]/', $h ) . ' cards' ); }
+		if ( ! preg_match( '/data-ln="([^"]*)"/', $h, $lm ) || ! is_array( $L = json_decode( html_entity_decode( $lm[1], ENT_QUOTES ), true ) ) || count( $L ) !== 14 ) { $fail( "stage $st’s chalk" ); }
+		$cl = array_count_values( array_column( $L, 4 ) ); $tb = substr_count( $h, ' tbd' );
+		if ( ( $cl['w'] ?? 0 ) !== $w[0] || ( $cl['g'] ?? 0 ) !== $w[1] || $tb !== $w[2] ) { $fail( "stage $st: " . ( $cl['w'] ?? 0 ) . ' winner lines, ' . ( $cl['g'] ?? 0 ) . " gold, $tb to be set" ); }
+		if ( strpos( $h, '<h1>' . $w[3] . '</h1>' ) === false ) { $fail( "stage $st is missing $w[3]" ); }
+		foreach ( $L as $l ) { foreach ( array( 0, 2 ) as $e ) { if ( strpos( $h, 'id="pob-' . $l[ $e ] . '"' ) === false ) { $fail( "stage $st: a line to a card that isn’t there, {$l[ $e ]}" ); } } }
 		if ( preg_match( '/Week (19|2\d)/', $h . $pg ) ) { $fail( "stage $st calls a playoff round a week" ); }
 		$save( 'po-hero-' . $st, $h . '<div class="wrap">' . $pg . '</div>' );
 	}
