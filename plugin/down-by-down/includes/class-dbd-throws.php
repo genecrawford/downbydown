@@ -6,7 +6,10 @@
  *   - The game page: each team's throws, every passer. The QB page: his games from every team he threw for this season, newest first, so a
  *     player who changed teams has all of them (the old chart read only his current team's file).
  * Each row: quarter, clock, down, distance, result (c complete, i incomplete, x intercepted), air yards, yards, lane (0 left, 1 middle,
- * 2 right, -1 none), touchdown, receiver key, passer key, EPA. Names and numbers ride along once, keyed the same way.
+ * 2 right, -1 none), touchdown, receiver key, passer key, EPA, the offense's score margin (2.49.0, for the replay). Names and numbers ride
+ * along once, keyed the same way.
+ *   - 2.49.0 (SCOPE §91): the panel also carries the league's field-use spreads (every QB game with 20+ throws, every QB season with 150+),
+ *     worked out once per data update, so the script can say how evenly a game or season spread the ball against the rest.
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
@@ -35,7 +38,8 @@ class DBD_Throws {
 		}
 		$lane = array( 'left' => 0, 'middle' => 1, 'right' => 2 );
 		return array( (int) ( $p['q'] ?? 0 ), (string) ( $p['t'] ?? '' ), (int) ( $p['dn'] ?? 0 ), (int) ( $p['togo'] ?? 0 ), array( 'comp' => 'c', 'inc' => 'i', 'int' => 'x' )[ $p['k'] ],
-			(int) $p['air'], (int) ( $p['yds'] ?? 0 ), $lane[ $p['loc'] ?? '' ] ?? -1, ! empty( $p['td'] ) ? 1 : 0, $rk, $qk, round( (float) ( $p['epa'] ?? 0 ), 2 ) );
+			(int) $p['air'], (int) ( $p['yds'] ?? 0 ), $lane[ $p['loc'] ?? '' ] ?? -1, ! empty( $p['td'] ) ? 1 : 0, $rk, $qk, round( (float) ( $p['epa'] ?? 0 ), 2 ),
+			isset( $p['sd'] ) && is_numeric( $p['sd'] ) ? (int) $p['sd'] : null );
 	}
 
 	private static function team_info( $t ) { $x = DBD_Data::team( $t ) ?: array(); $c = (string) ( $x['c1'] ?? '' ); return array( 'nick' => (string) ( $x['nick'] ?? $t ), 'c1' => preg_match( '/^#[0-9a-fA-F]{6}$/', $c ) ? $c : '#3b4255' ); }
@@ -73,13 +77,48 @@ class DBD_Throws {
 		return array( 'kind' => 'qb', 'sets' => $sets, 'names' => $names, 'qb' => $id );
 	}
 
+	/* ------------------------------------------------------------------ field use (SCOPE §91) */
+
+	const MIN_GAME = 20; const MIN_SEASON = 150;
+	/** A depth band: behind the line, 0 to 9, 10 to 19, 20+. */
+	public static function band( $a ) { return $a < 0 ? 0 : ( $a < 10 ? 1 : ( $a < 20 ? 2 : 3 ) ); }
+	/** How evenly a list of zone counts spreads across the 12 zones: 1 perfectly even, 0 all in one (normalized entropy). */
+	public static function spread( $counts ) {
+		$n = array_sum( $counts ); if ( $n <= 0 ) { return 0.0; } $e = 0.0;
+		foreach ( $counts as $c ) { if ( $c > 0 ) { $p = $c / $n; $e -= $p * log( $p ); } }
+		return round( $e / log( 12 ), 4 );
+	}
+	/** Every QB game's spread (20+ throws with a direction) and every QB season's (150+), sorted: array( 'g' => [...], 's' => [...] ). Read file by file and dropped, so the 32 play files are never all in memory; kept until the data changes. */
+	public static function league() {
+		$m = DBD_Data::manifest(); $key = 'dbd_thr_lg_' . md5( (int) DBD_Data::season() . '|' . (string) ( $m['built_at'] ?? '' ) . '|' . DBD_VERSION );
+		$c = get_transient( $key ); if ( is_array( $c ) && isset( $c['g'], $c['s'] ) ) { return $c; }
+		$games = array(); $seasons = array(); $lane = array( 'left' => 0, 'middle' => 1, 'right' => 2 );
+		foreach ( array_keys( DBD_Data::teams() ) as $t ) {
+			$path = DBD_Data::dir() . '/plays/' . $t . '.json'; if ( ! is_readable( $path ) ) { continue; }
+			$f = json_decode( (string) file_get_contents( $path ), true ); if ( ! is_array( $f ) || empty( $f['keys'] ) ) { continue; }
+			$K = array_flip( (array) $f['keys'] ); if ( ! isset( $K['pt'], $K['k'], $K['air'], $K['loc'], $K['qb'], $K['g'] ) ) { continue; }
+			foreach ( (array) ( $f['plays'] ?? array() ) as $r ) {
+				if ( ( $r[ $K['pt'] ] ?? '' ) !== 'pass' || ! in_array( $r[ $K['k'] ] ?? '', array( 'comp', 'inc', 'int' ), true ) || ! is_numeric( $r[ $K['air'] ] ?? null ) || ! isset( $lane[ $r[ $K['loc'] ] ?? '' ] ) ) { continue; }
+				$q = (string) ( $r[ $K['qb'] ] ?? '' ); if ( $q === '' ) { continue; } $z = $lane[ $r[ $K['loc'] ] ] * 4 + self::band( (float) $r[ $K['air'] ] ); $g = $r[ $K['g'] ] . '|' . $q;
+				$games[ $g ][ $z ] = ( $games[ $g ][ $z ] ?? 0 ) + 1; $seasons[ $q ][ $z ] = ( $seasons[ $q ][ $z ] ?? 0 ) + 1;
+			}
+			unset( $f );
+		}
+		$o = array( 'g' => array(), 's' => array() );
+		foreach ( $games as $z ) { if ( array_sum( $z ) >= self::MIN_GAME ) { $o['g'][] = self::spread( $z ); } }
+		foreach ( $seasons as $z ) { if ( array_sum( $z ) >= self::MIN_SEASON ) { $o['s'][] = self::spread( $z ); } }
+		sort( $o['g'] ); sort( $o['s'] ); set_transient( $key, $o, DAY_IN_SECONDS );
+		return $o;
+	}
+
 	/** The panel: a shell the script fills, with the throws embedded. '' with nothing to draw. */
 	public static function panel( $d, $head, $sub ) {
 		if ( ! $d ) { return ''; }
+		$d['lg'] = self::league() + array( 'min' => array( self::MIN_GAME, self::MIN_SEASON ) );
 		$json = wp_json_encode( $d, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE );
 		return '<section class="dbd-panel dbd-thr" data-kind="' . esc_attr( $d['kind'] ) . '"><div class="dbd-ph"><span class="dbd-lab"><b>' . esc_html( $head ) . '</b> · ' . esc_html( $sub ) . '</span><span class="dbd-thr-pick"></span></div>'
 			. '<div class="dbd-thr-b"><p class="dbd-note">The field draws here once the page’s script loads.</p></div><script type="application/json" class="dbd-thr-d">' . $json . '</script></section>';
 	}
 	public static function game_panel( $g ) { return self::panel( self::game( $g ), 'Every throw', 'air yards from the line of scrimmage, one team at a time' ); }
-	public static function qb_panel( $p ) { return self::panel( self::qb( $p ), 'Where he throws', 'one game at a time, every pass' ); }
+	public static function qb_panel( $p ) { return self::panel( self::qb( $p ), 'Where he throws', 'one game at a time, or the whole season' ); }
 }

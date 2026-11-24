@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.48.0
+Stable tag: 2.49.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,11 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.49.0 =
+* Every throw gets three additions (SCOPE §91). Whole season at the top of a quarterback's game picker: every throw at once, and hover names the game.
+* Replay: a game's throws go out in order, one a second (two at 2×), with Pause, step back and forward, and Show all. The line below gives the quarter, clock, score margin and down.
+* Field use: zones touched of 12, and how evenly he spread the ball against every quarterback game this season with 20+ throws (seasons with 150+ for the season view). Show zones draws them on the field.
 
 = 2.48.0 =
 * Every throw, one game at a time (SCOPE §90): an upright field as wide as the panel, each pass a dot by air yards and side of the field.

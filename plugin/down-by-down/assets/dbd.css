@@ -2241,3 +2241,21 @@ html:not([data-fx]) .dbd [data-fx="half"],html[data-fx="std"] .dbd [data-fx="std
 .dbd .dbd-thr-chips button{font:500 12px var(--dbd-body);border:1px solid var(--dbd-line-2);background:#fff;color:var(--dbd-ink-2);border-radius:999px;padding:3px 10px;margin:0;cursor:pointer;line-height:1.5}
 .dbd .dbd-thr-chips button[aria-pressed=true]{background:var(--dbd-ink);border-color:var(--dbd-ink);color:#fff}
 .dbd .dbd-thr-seg button:focus-visible,.dbd .dbd-thr-chips button:focus-visible,.dbd .dbd-thr-pick select:focus-visible{outline:2px solid var(--dbd-red);outline-offset:2px}
+/* 2.49.0 (SCOPE §91): field use, the replay's controls, Show zones, and the replay's line drawing out */
+.dbd .dbd-thr-say{margin-bottom:4px}
+.dbd .dbd-thr-use{margin:0 0 12px;font-size:14px;color:var(--dbd-ink-2)}
+.dbd .dbd-thr-use b{color:var(--dbd-ink)}
+.dbd .dbd-thr-use[hidden]{display:none}
+.dbd .dbd-thr-tools{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:0 0 12px}
+.dbd .dbd-thr-rp{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}
+.dbd .dbd-thr-btn{font:600 13px var(--dbd-body);border:1px solid var(--dbd-line-2);background:#fff;color:var(--dbd-ink);border-radius:5px;padding:4px 12px;margin:0;line-height:1.5;cursor:pointer}
+.dbd .dbd-thr-btn.is-go{background:var(--dbd-ink);border-color:var(--dbd-ink);color:#fff}
+.dbd .dbd-thr-btn[disabled]{opacity:.4;cursor:default}
+.dbd .dbd-thr-btn:focus-visible,.dbd .dbd-thr-zt input:focus-visible{outline:2px solid var(--dbd-red);outline-offset:2px}
+.dbd .dbd-thr-at{font:500 13px var(--dbd-mono);color:var(--dbd-ink-2)}
+.dbd .dbd-thr-rpn{font-size:13px;color:var(--dbd-muted)}
+.dbd .dbd-thr-zt{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--dbd-ink-2);cursor:pointer}
+.dbd .dbd-thr-zt input{margin:0}
+@keyframes dbd-thr-draw{from{stroke-dashoffset:var(--len)}to{stroke-dashoffset:0}}
+.dbd .dbd-thr-arc.is-drawing{stroke-dasharray:var(--len);animation:dbd-thr-draw .7s ease-out forwards}
+@media (prefers-reduced-motion:reduce){.dbd .dbd-thr-arc.is-drawing{animation:none;stroke-dasharray:none}}
