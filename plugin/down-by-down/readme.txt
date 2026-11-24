@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.49.0
+Stable tag: 2.49.1
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,9 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.49.1 =
+* A quarterback's throw chart (SCOPE §90, §91) shows under the How he's used panel instead of behind its On the field tab, so it's on the page without a click. Receivers and running backs keep their tab.
 
 = 2.49.0 =
 * Every throw gets three additions (SCOPE §91). Whole season at the top of a quarterback's game picker: every throw at once, and hover names the game.

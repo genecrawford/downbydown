@@ -3589,3 +3589,5 @@ Gene, from §90's "Not included": "then let's scope: A season view of every thro
 
 **As built:** each throw carries the offense's score margin; the panel carries the league's spreads, worked out once per data update (a transient keyed on the data build) by reading the play files one at a time.
 
+**2.49.1 (2026-11-24):** Gene couldn't find the chart on a quarterback's page; it was in the How he's used panel's fourth tab, On the field, and the panel opens on Playstyle. Gene: "On the player's page, put it under the Playstyle info and don't hide it." A quarterback's chart now sits under that panel, always showing, and his On the field tab is gone. Receivers and running backs keep theirs.
+
