@@ -183,11 +183,11 @@ class DBD_Playoffs {
 		$s = self::super_bowl(); $x = $s && ! empty( $s['date'] ) ? array( $s['date'], (string) ( $s['stadium'] ?? '' ) ) : ( self::SB_SITE[ (int) DBD_Data::season() ] ?? array( '', '' ) );
 		$d = $x[0] !== '' ? DateTime::createFromFormat( '!Y-m-d', $x[0] ) : false; return array( $d ? $d->format( 'M j' ) : '', $x[1] );
 	}
-	/** A team's row on a card: seed, logo, team, and the score once it's final (the record before). It links to the game's preview. */
+	/** A team's row on a card: seed, logo, team, and the score once it's final (the record before). It links to the team's page (2.50.1). */
 	private static function bh_row( $t, $g = null ) {
 		if ( $t === '' ) { return '<span class="po-r tb">To be set</span>'; }
 		$f = $g && self::final_( $g ); $w = $f && self::winner( $g ) === $t; $sc = $f ? (int) ( $g['home'] === $t ? $g['home_score'] : $g['away_score'] ) : null;
-		$href = $g && ! empty( $g['id'] ) ? self::link( $g ) : self::link();
+		$href = DBD_Router::url( array( 'team' => $t ) );
 		return '<a class="po-r' . ( $f ? ( $w ? ' w' : ' l' ) : '' ) . '" data-t="' . esc_attr( $t ) . '" href="' . esc_url( $href ) . '" aria-label="' . esc_attr( self::nick( $t ) . ', ' . self::seed( $t ) . ' seed' . ( $f ? ', ' . $sc : '' ) ) . '">'
 			. '<span class="sd">' . (int) self::seed( $t ) . '</span><span class="tl">' . DBD_Marks::tile( $t, 22 ) . '</span><span class="nm">' . esc_html( self::nick( $t ) ) . '</span>'
 			. ( $f ? '<span class="sc">' . $sc . '</span>' : '<span class="rc">' . esc_html( self::rec( $t ) ) . '</span>' ) . '</a>';
@@ -215,12 +215,13 @@ class DBD_Playoffs {
 			$cg = self::round( 'CON', $c )[0] ?? null;
 			$h = '<div class="po-g bye s2" id="pob-' . $c . '-bye" style="--x:' . $X( $c, 7.5 ) . '%;--y:21%;--w:' . $CW . '%;--d:.05s"><span class="wh">Bye</span>' . self::bh_row( $one ) . '</div>';
 			foreach ( $wc as $i => $g ) { $h .= self::bh_card( $c . '-wc' . $i, 'Wild Card', $g + array( 'id' => '' ), $X( $c, 7.5 ), array( 38, 58, 78 )[ $i ], $CW, .1 + $i * .06, $i === 2 ? 's2' : '' ); }
-			foreach ( array( 0, 1 ) as $i ) { $h .= self::bh_card( $c . '-dv' . $i, 'Divisional', $dv[ $i ] ?? null, $X( $c, 21 ), $i ? 68 : 29.5, $CW, .45 + $i * .06 ); }
+			$wait = $one !== '' && ! $dv ? array( 'id' => '', 'away' => '', 'home' => $one, 'home_score' => null, 'away_score' => null ) : null;  /* the 1 seed is in the Divisional round already, hosting the lowest seed left (2.50.1) */
+			foreach ( array( 0, 1 ) as $i ) { $h .= self::bh_card( $c . '-dv' . $i, 'Divisional', $dv[ $i ] ?? ( $i ? null : $wait ), $X( $c, 21 ), $i ? 68 : 29.5, $CW, .45 + $i * .06 ); }
 			$h .= self::bh_card( $c . '-cg', esc_html( $c ) . ' Championship', $cg, $X( $c, 34.5 ), 49, $CW, .75, 's2' );
 			$cards[ $c ] = $h;
 			/* the chalk: [ from card, from team, to card, to team, p planned / w a winner / g the champion, team, side, h across or d down ] */
 			$dvOf = function ( $t ) use ( $dv ) { foreach ( $dv as $i => $g ) { if ( $t !== '' && self::has( $g, $t ) ) { return $i; } } return -1; };
-			$k = $dvOf( $one ); $ln[] = $k >= 0 ? array( $c . '-bye', $one, $c . '-dv' . $k, $one, $cls( $one ), $one, $side, 'h' ) : array( $c . '-bye', '', $c . '-dv0', '', 'p', '', $side, 'h' );
+			$k = $wait ? 0 : $dvOf( $one ); $ln[] = $k >= 0 ? array( $c . '-bye', $one, $c . '-dv' . $k, $one, $cls( $one ), $one, $side, 'h' ) : array( $c . '-bye', '', $c . '-dv0', '', 'p', '', $side, 'h' );
 			foreach ( $wc as $i => $g ) { $w = self::winner( $g ); $k = $dvOf( $w ); $ln[] = $k >= 0 ? array( $c . '-wc' . $i, $w, $c . '-dv' . $k, $w, $cls( $w ), $w, $side, 'h' ) : array( $c . '-wc' . $i, '', $c . '-dv' . ( $i ? 1 : 0 ), '', 'p', '', $side, 'h' ); }
 			foreach ( array( 0, 1 ) as $i ) { $g = $dv[ $i ] ?? null; $w = $g ? self::winner( $g ) : ''; $ln[] = $w !== '' && $cg && self::has( $cg, $w ) ? array( $c . '-dv' . $i, $w, $c . '-cg', $w, $cls( $w ), $w, $side, 'h' ) : array( $c . '-dv' . $i, '', $c . '-cg', '', 'p', '', $side, 'h' ); }
 			$w = $cg ? self::winner( $cg ) : ''; $ln[] = $w !== '' && $sb && self::has( $sb, $w ) ? array( $c . '-cg', $w, 'sb', $w, $cls( $w ), $w, $side, 'd' ) : array( $c . '-cg', '', 'sb', '', 'p', '', $side, 'd' );

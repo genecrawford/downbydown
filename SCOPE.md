@@ -3604,3 +3604,5 @@ Gene: "On the home page for the playoff, show the bracket, but make it look cool
 - **Narrow screens** (under 1100px): the bracket stands up: AFC (bye, Wild Card, Divisional, Championship), the Super Bowl, then NFC.
 - The strip of games under the hero stays. Until the schedule carries the Super Bowl, its card reads Feb 14 · SoFi Stadium (`SB_SITE`).
 
+**2.50.1 (2026-11-24):** Gene: "can you put the team that is leading with the bye on that part of the bracket on week 1 of the playoff, also make each team link off to their own team pages". Until the Divisional games are on the schedule, each 1 seed sits in its conference's top Divisional card (it hosts the lowest seed left), with solid chalk from its bye; the other row reads "To be set." Every team row now links to the team's page instead of the game's preview.
+
