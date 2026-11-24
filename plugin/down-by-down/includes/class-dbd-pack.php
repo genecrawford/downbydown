@@ -342,6 +342,7 @@ class DBD_Pack {
 	/** Week $n's item for a slot ('swing' … 'rush'), or a keys side for 'keys-{game}-{team}' carrying its game's card; null when there's none (SCOPE §81). */
 	public static function find( $n, $slot ) {
 		$slot = (string) $slot; if ( $slot === 'board' || isset( DBD_Tall::WEEKLY[ $slot ] ) ) { return self::board_item( $n, $slot ); }
+		if ( DBD_PoPosts::is_slot( $slot ) ) { return DBD_PoPosts::item( $n, $slot ); }  /* a playoff post (SCOPE §89) */
 		if ( strpos( $slot, 'keys-' ) !== 0 ) { foreach ( self::items( $n ) as $it ) { if ( ( $it['k'] ?? '' ) === $slot ) { return $it; } } return null; }
 		foreach ( self::keys( $n ) as $kg ) { if ( self::started( $kg['g'] ) ) { continue; } foreach ( $kg['sides'] as $sd ) {  /* a preview is no use once the game's on (SCOPE §85) */ if ( $sd['sq'] === 'ig-week-' . (int) $n . '-' . $slot ) { $sd['card'] = $kg['card']; return $sd; } } }
 		return null;

@@ -310,7 +310,7 @@ class DBD_Playoffs {
 	private static function sg( $v ) { return ( $v > 0 ? '+' : '' ) . number_format( (float) $v, 2 ); }
 	private static function ord( $n ) { $n = (int) $n; return $n . ( $n % 100 >= 11 && $n % 100 <= 13 ? 'th' : ( array( 1 => 'st', 2 => 'nd', 3 => 'rd' )[ $n % 10 ] ?? 'th' ) ); }
 	/** Where a team can win it: the bigger gap between its offense's rank and the other defense's, passing or running. */
-	private static function edge( $t, $o ) {
+	public static function edge( $t, $o ) {
 		$M = DBD_Data::metrics(); $x = $M['off'][ $t ] ?? null; $d = $M['defense'][ $o ] ?? null; $rx = $M['rank']['off'][ $t ] ?? null; $rd = $M['rank']['def'][ $o ] ?? null;
 		if ( ! $x || ! $d || ! $rx || ! $rd ) { return null; }
 		$pass = ( (int) $rd['pass_epa'] - (int) $rx['pass_epa'] ) >= ( (int) $rd['run_epa'] - (int) $rx['run_epa'] ); $k = $pass ? 'pass_epa' : 'run_epa';
@@ -323,12 +323,10 @@ class DBD_Playoffs {
 		return '<a class="mline" href="' . esc_url( self::link( $g ) ) . '"><span class="mt">' . $lg( $g['away'] ) . esc_html( self::nick( $g['away'] ) ) . ( $f ? ' ' . (int) $g['away_score'] : '' ) . ' <span class="at">at</span> ' . $lg( $g['home'] ) . esc_html( self::nick( $g['home'] ) ) . ( $f ? ' ' . (int) $g['home_score'] : '' ) . '</span><span class="mw">' . esc_html( $f ? 'Final' : self::clock( $g ) ) . '</span>'
 			. ( $e ? '<span class="me"><b>' . esc_html( self::nick( $g['away'] ) ) . ':</b> ' . esc_html( strtolower( $e['head'] ) . '. ' . $e['say'] ) . '</span>' : '' ) . '</a>';
 	}
-	/** Playoff totals from the final games' box scores: passing, rushing and receiving yards, touchdowns, sacks. */
-	private static function leaders() {
-		$st = self::stage(); $h = '<section class="pn"><h2>Playoff leaders</h2>';
-		$fin = array_filter( self::games(), array( __CLASS__, 'final_' ) );
-		if ( ! $fin ) { return $h . '<p class="empty">These start after the first playoff game. Regular-season boards stay as they are.</p></section>'; }
+	/** Playoff totals from the final games' box scores (SCOPE §88), in the rounds given (all of them by default): key => id => id, n, t, v, g (games). */
+	public static function totals( $rounds = null ) {
 		$T = array( 'py' => array(), 'ry' => array(), 'recy' => array(), 'td' => array(), 'sk' => array() );
+		$fin = array_filter( self::games(), function ( $g ) use ( $rounds ) { return self::final_( $g ) && ( $rounds === null || in_array( $g['r'], (array) $rounds, true ) ); } );
 		foreach ( $fin as $g ) {
 			$b = DBD_Data::box( $g ); if ( ! $b ) { continue; } $K = (array) $b['keys'];
 			foreach ( array( 'away', 'home' ) as $sd ) {
@@ -336,12 +334,20 @@ class DBD_Playoffs {
 				foreach ( (array) ( $b[ $sd ]['off'] ?? array() ) as $r ) {
 					if ( count( $r ) !== count( $K ) ) { continue; } $x = array_combine( $K, $r ); $p = DBD_Data::player( (string) $x['id'] ); $nm = ! empty( $p['name'] ) ? (string) $p['name'] : (string) $x['name'];
 					foreach ( array( 'py' => (int) $x['passing_yards'], 'ry' => (int) $x['rushing_yards'], 'recy' => (int) $x['receiving_yards'], 'td' => (int) $x['passing_tds'] + (int) $x['rushing_tds'] + (int) $x['receiving_tds'] ) as $k => $v ) {
-						if ( ! $v ) { continue; } if ( ! isset( $T[ $k ][ $x['id'] ] ) ) { $T[ $k ][ $x['id'] ] = array( 'n' => $nm, 't' => $t, 'v' => 0 ); } $T[ $k ][ $x['id'] ]['v'] += $v;
+						if ( ! $v ) { continue; } if ( ! isset( $T[ $k ][ $x['id'] ] ) ) { $T[ $k ][ $x['id'] ] = array( 'id' => (string) $x['id'], 'n' => $nm, 't' => $t, 'v' => 0, 'g' => 0 ); } $T[ $k ][ $x['id'] ]['v'] += $v; $T[ $k ][ $x['id'] ]['g']++;
 					}
 				}
-				foreach ( (array) ( $b[ $sd ]['d'] ?? array() ) as $d ) { if ( empty( $d[1] ) ) { continue; } $id = $t . $d[0]; if ( ! isset( $T['sk'][ $id ] ) ) { $T['sk'][ $id ] = array( 'n' => (string) $d[0], 't' => $t, 'v' => 0 ); } $T['sk'][ $id ]['v'] += (float) $d[1]; }
+				foreach ( (array) ( $b[ $sd ]['d'] ?? array() ) as $d ) { if ( empty( $d[1] ) ) { continue; } $id = $t . $d[0]; if ( ! isset( $T['sk'][ $id ] ) ) { $T['sk'][ $id ] = array( 'id' => '', 'n' => (string) $d[0], 't' => $t, 'v' => 0, 'g' => 0 ); } $T['sk'][ $id ]['v'] += (float) $d[1]; $T['sk'][ $id ]['g']++; }
 			}
 		}
+		return $T;
+	}
+	/** The page's playoff leaders: passing, rushing and receiving yards, touchdowns, sacks. */
+	private static function leaders() {
+		$st = self::stage(); $h = '<section class="pn"><h2>Playoff leaders</h2>';
+		$fin = array_filter( self::games(), array( __CLASS__, 'final_' ) );
+		if ( ! $fin ) { return $h . '<p class="empty">These start after the first playoff game. Regular-season boards stay as they are.</p></section>'; }
+		$T = self::totals();
 		foreach ( array( 'py' => 'Passing yards', 'ry' => 'Rushing yards', 'recy' => 'Receiving yards', 'td' => 'Touchdowns', 'sk' => 'Sacks' ) as $k => $lab ) {
 			$L = array_values( $T[ $k ] ); usort( $L, function ( $a, $b ) { return array( -$a['v'], $a['n'] ) <=> array( -$b['v'], $b['n'] ); } );
 			$h .= '<div class="lead-b"><h3>' . esc_html( $lab ) . '</h3>';

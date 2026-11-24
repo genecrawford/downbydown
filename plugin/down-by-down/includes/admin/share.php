@@ -281,6 +281,73 @@ function dbd_share_schedule( $n, $ready, $up ) {
 	foreach ( array_merge( $posts, $extras ) as $p ) { echo dbd_share_detail( $n, $p, $p['slot'] === $sel, $ready ); }
 }
 
+/* ------------------------------------------------------------------ the playoff posts (SCOPE §89), folded away under the calendar */
+
+/** The eleven playoff posts in time order, each shaped like a calendar post, with 'n' (its playoff week) and 'wait' (what it waits for). */
+function dbd_share_po_posts() {
+	$out = array(); $on = DBD_Playoffs::on();
+	foreach ( DBD_PoPosts::PLAN as $n => $slots ) {
+		foreach ( $slots as $sl ) {
+			$it = DBD_PoPosts::item( $n, $sl ); $t = DBD_PoPosts::time( $n, $sl ); $key = DBD_AutoPub::key( $n, $sl ); $st = array();
+			foreach ( dbd_share_nets() as $net => $N ) {
+				$c = $N[2];
+				$st[ $net ] = ! $on && ! $c::job( $key ) ? array( 'class' => 'idle', 'word' => 'Off', 'line' => 'The Playoffs switch is off', 'link' => '', 'again' => '', 'at' => 0 )
+					: ( ! $t ? array( 'class' => 'scheduled', 'word' => 'Planned', 'line' => 'Planned', 'link' => '', 'again' => '', 'at' => 0 ) : dbd_share_state( $key, $net, $t, $it ? 'week' : 'planned' ) );
+			}
+			$out[] = array( 'n' => $n, 'slot' => 'po' . $n . '-' . $sl, 'name' => $it ? (string) $it['h'] : DBD_PoPosts::name( $n, $sl ), 't' => $t, 'day' => -1, 'eve' => false,
+				'items' => $it ? array( $it ) : array(), 'it' => $it, 'pic' => $it ? DBD_Tall::preview( $n, $it ) : '', 'st' => $st, 'wait' => $it ? '' : DBD_PoPosts::waiting( $n, $sl ) );
+		}
+	}
+	usort( $out, function ( $a, $b ) { return $a['t'] <=> $b['t']; } );
+	return $out;
+}
+
+/** A playoff post's card: its date and time, since the list spans five weeks. */
+function dbd_share_po_card( $p ) {
+	$words = array(); foreach ( dbd_share_nets() as $k => $N ) { $words[] = $N[0] . ' ' . $p['st'][ $k ]['word']; }
+	$when = $p['t'] ? dbd_share_et( $p['t'], 'D, M j' ) . ', ' . dbd_share_et( $p['t'], 'g:i A' ) : 'Date to come';
+	$img = $p['pic'] !== '' ? '<span class="sp-thumb"><img src="' . esc_url( $p['pic'] ) . '" width="1080" height="1350" alt="" loading="lazy"></span>' : '<span class="sp-thumb empty">Not ready yet</span>';
+	return '<a class="sp-post" href="#sp-' . esc_attr( $p['slot'] ) . '" data-slot="' . esc_attr( $p['slot'] ) . '" aria-label="' . esc_attr( $when . ', ' . $p['name'] . '. ' . implode( ', ', $words ) ) . '">' . $img
+		. '<span class="sp-pi"><span class="sp-ptime">' . esc_html( $when ) . '</span><span class="sp-pn">' . esc_html( $p['name'] ) . '</span>' . dbd_share_marks( $p ) . '</span></a>';
+}
+
+/** A playoff post that isn't ready: when it goes, what it waits for, and where it goes. */
+function dbd_share_po_wait( $p ) {
+	$rows = ''; foreach ( dbd_share_nets() as $k => $N ) { $s = $p['st'][ $k ]; $rows .= '<tr><th scope="row">' . esc_html( $N[0] ) . '</th><td><span class="sp-sd ' . esc_attr( $s['class'] ) . '"></span>' . esc_html( $s['line'] ) . '</td><td></td></tr>'; }
+	$when = $p['t'] ? dbd_share_et( $p['t'], 'l, F j' ) . ' at ' . dbd_share_et( $p['t'], 'g:i A' ) : 'Date to come';
+	return '<section class="sp-d" id="sp-' . esc_attr( $p['slot'] ) . '" data-slot="' . esc_attr( $p['slot'] ) . '" aria-label="' . esc_attr( $p['name'] ) . '"><figure><div class="sp-noimg">The graphic appears when the post is ready.</div></figure>'
+		. '<div class="sp-dm"><p class="sp-when">' . esc_html( $when ) . '</p><h3>' . esc_html( $p['name'] ) . '</h3><p class="sp-tk">' . esc_html( $p['wait'] ) . '</p><h4>Where it goes</h4><table class="sp-nets">' . $rows . '</table></div></section>';
+}
+
+/** The section's one line: off, or what's next, or how many are out. */
+function dbd_share_po_line( $posts ) {
+	$ts = array_values( array_filter( array_column( $posts, 't' ) ) ); $range = $ts ? dbd_share_et( min( $ts ), 'F j' ) . ' to ' . dbd_share_et( max( $ts ), 'F j' ) : '';
+	if ( ! DBD_Playoffs::on() ) { return 'Eleven posts' . ( $range !== '' ? ', ' . $range : '' ) . '. The Playoffs switch is off, so none will post.'; }
+	$next = null; $out = 0;
+	foreach ( $posts as $p ) {
+		$all = true; foreach ( $p['st'] as $s ) { if ( $s['class'] !== 'posted' ) { $all = false; } if ( $s['class'] === 'scheduled' && $s['at'] && ( ! $next || $s['at'] < $next[0] ) ) { $next = array( $s['at'], $p['name'] ); } }
+		if ( $all ) { $out++; }
+	}
+	if ( $next ) { return 'Next: ' . $next[1] . ', ' . dbd_share_et( $next[0], 'l, F j' ) . ' at ' . dbd_share_et( $next[0], 'g:i A' ) . '.' . ( $out ? ' ' . $out . ' of ' . count( $posts ) . ' posted.' : '' ); }
+	return $out ? $out . ' of ' . count( $posts ) . ' posted.' : 'Eleven posts' . ( $range !== '' ? ', ' . $range : '' ) . '. Each one books when its games are in.';
+}
+
+/** The folded section: closed until the regular season ends (or a playoff post's button brings you back), so it's out of the way until then. */
+function dbd_share_playoffs() {
+	if ( DBD_Data::archived() ) { return; }
+	$posts = dbd_share_po_posts(); $on = DBD_Playoffs::on(); $lk = DBD_Tall::look( DBD_PoPosts::WEEKS[0] );
+	$open = ! empty( $_GET['pop'] ) || DBD_PoPosts::item( 19, 'pset' ) !== null;
+	echo '<details class="sp-po" id="sp-po"' . ( $open ? ' open' : '' ) . '><summary><span class="sp-poh">Playoff posts</span><span class="sp-pos">' . esc_html( dbd_share_po_line( $posts ) ) . '</span><span class="sp-gt"><span class="o">Open</span><span class="x">Close</span></span></summary><div class="sp-pob">';
+	echo '<p class="sp-intro">A preview before each round, the bracket after it, and three posts before the Super Bowl, at noon Eastern on the networks that post by themselves. Each one is booked when its games are in, and only while the Playoffs switch is on.'
+		. ( $on ? '' : ' <a href="' . esc_url( dbd_admin_url( 'po' ) ) . '">Open the Playoffs switch</a>' ) . '</p>';
+	echo '<form class="sp-look sp-polook" method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><input type="hidden" name="action" value="dbd_pack_look"><input type="hidden" name="week" value="' . (int) DBD_PoPosts::WEEKS[0] . '"><input type="hidden" name="po" value="1">'
+		. wp_nonce_field( 'dbd_pack_look_' . DBD_PoPosts::WEEKS[0], '_wpnonce', true, false )
+		. '<span>Playoff graphics</span><button class="button" name="look" value="black" aria-pressed="' . ( $lk === 'black' ? 'true' : 'false' ) . '">Black</button><button class="button" name="look" value="paper" aria-pressed="' . ( $lk === 'paper' ? 'true' : 'false' ) . '">Paper</button></form>';
+	echo '<div class="sp-extras sp-polist">'; foreach ( $posts as $p ) { echo dbd_share_po_card( $p ); } echo '</div>';  /* escaped where they're built */
+	foreach ( $posts as $p ) { echo $p['it'] ? dbd_share_detail( $p['n'], $p, false, true ) : dbd_share_po_wait( $p ); }
+	echo '</div></details>';
+}
+
 /** The week's arrows, its dates, a jump to any week, and its Black or Paper look. */
 function dbd_share_weekbar( $n, $all, $weeks, $view ) {
 	$asc = $all; sort( $asc ); $i = array_search( $n, $asc, true ); $prev = $i > 0 ? $asc[ $i - 1 ] : 0; $next = $i < count( $asc ) - 1 ? $asc[ $i + 1 ] : 0;
@@ -445,7 +512,7 @@ function dbd_tab_share() {
 	elseif ( ! $n ) { echo '<p class="sp-wait">The pack starts after Week 1’s games are all in.</p>'; }
 	else {
 		dbd_share_weekbar( $n, $all, $weeks, $view );
-		if ( $view === 'keys' ) { dbd_share_keys( $n, $ready ); } else { dbd_share_schedule( $n, $ready, $up ); }
+		if ( $view === 'keys' ) { dbd_share_keys( $n, $ready ); } else { dbd_share_schedule( $n, $ready, $up ); dbd_share_playoffs(); }
 	}
 	echo '</div>';
 }

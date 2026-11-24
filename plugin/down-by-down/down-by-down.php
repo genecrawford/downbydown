@@ -3,7 +3,7 @@
  * Plugin Name: Down by Down
  * Plugin URI:  https://downbydown.com
  * Description: How every NFL offense actually plays, drawn on the field from public play-by-play. Put [down_by_down] on a page and that page becomes the app.
- * Version:     2.46.0
+ * Version:     2.47.0
  * Author:      Period Three
  * Author URI:  https://period-three.com
  * License:     GPL-2.0-or-later
@@ -14,7 +14,7 @@
 
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-define( 'DBD_VERSION', '2.46.0' );
+define( 'DBD_VERSION', '2.47.0' );
 define( 'DBD_FILE', __FILE__ );
 define( 'DBD_PATH', plugin_dir_path( __FILE__ ) );
 define( 'DBD_URL', plugin_dir_url( __FILE__ ) );
@@ -57,6 +57,7 @@ require_once DBD_PATH . 'includes/class-dbd-instagram.php';  /* Instagram posts 
 require_once DBD_PATH . 'includes/class-dbd-bluesky.php';    /* Bluesky posting for Auto publish (SCOPE §81) */
 require_once DBD_PATH . 'includes/class-dbd-x.php';          /* X posting (SCOPE §83) */
 require_once DBD_PATH . 'includes/class-dbd-threads.php';    /* Threads posting (SCOPE §84) */
+require_once DBD_PATH . 'includes/class-dbd-po-posts.php';   /* playoff posts (SCOPE §89) */
 require_once DBD_PATH . 'includes/class-dbd-tall.php';       /* the tall social graphics (SCOPE §85) */
 require_once DBD_PATH . 'includes/class-dbd-autopub.php';    /* Auto publish (SCOPE §81) */
 require_once DBD_PATH . 'includes/class-dbd-board-mail.php';

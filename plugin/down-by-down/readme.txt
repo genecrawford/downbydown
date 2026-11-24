@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.46.0
+Stable tag: 2.47.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,12 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.47.0 =
+* Playoff posts (SCOPE §89): eleven posts from the day after Week 18 to the day after the Super Bowl, at noon Eastern on Instagram, Bluesky, X and Threads.
+* A preview before each round, the bracket with scores after it, then the road to the Super Bowl, playoff leaders, a Super Bowl preview and the champions.
+* Each post books once its games are in, and only while the Playoffs switch is on. Auto publish, retries and Try again work as they do for the weekly posts.
+* The Share pack's Schedule view has them in their own folded section, closed during the regular season, with their own Black or Paper pick.
 
 = 2.46.0 =
 * Playoffs and the Super Bowl (SCOPE §88), behind one On/Off switch on the new Playoffs tab. It ships off.
