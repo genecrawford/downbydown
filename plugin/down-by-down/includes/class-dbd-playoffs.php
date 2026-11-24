@@ -111,15 +111,6 @@ class DBD_Playoffs {
 		$o = array(); foreach ( array( array( 2, 7 ), array( 3, 6 ), array( 4, 5 ) ) as $p ) { $o[] = array( 'proj' => true, 'r' => 'WC', 'conf' => $c, 'home' => self::at_seed( $c, $p[0] ), 'away' => self::at_seed( $c, $p[1] ) ); }
 		return $o;
 	}
-	/** A conference's teams by bracket column: the Wild Card field, Divisional, Conference, the Super Bowl team. */
-	private static function cols( $c ) {
-		$cols = array( array( self::at_seed( $c, 1 ) ), array(), array(), array() );
-		foreach ( self::wc_pairs( $c ) as $g ) { $cols[0][] = $g['home']; $cols[0][] = $g['away']; }
-		foreach ( self::round( 'DIV', $c ) as $g ) { $cols[1][] = $g['home']; $cols[1][] = $g['away']; }
-		foreach ( self::round( 'CON', $c ) as $g ) { $cols[2][] = $g['home']; $cols[2][] = $g['away']; }
-		$s = self::super_bowl(); if ( $s ) { foreach ( array( $s['home'], $s['away'] ) as $t ) { if ( self::conf_of( $t ) === $c ) { $cols[3][] = $t; } } }
-		return $cols;
-	}
 	private static function roman( $n ) { $o = ''; foreach ( array( 50 => 'L', 40 => 'XL', 10 => 'X', 9 => 'IX', 5 => 'V', 4 => 'IV', 1 => 'I' ) as $v => $s ) { while ( $n >= $v ) { $o .= $s; $n -= $v; } } return $o; }
 	private static function sb_name() { return 'Super Bowl ' . self::roman( (int) DBD_Data::season() - 1965 ); }
 	private static function clock( $g ) {
@@ -159,55 +150,9 @@ class DBD_Playoffs {
 		$h = self::hero(); set_transient( $key, $h, 6 * HOUR_IN_SECONDS ); return $h;
 	}
 
-	/** A team on the field: where it stands wide (x, y) and on a phone (vx, vy), its size in each, and whether it's out. */
-	private static function pieces() {
-		$ch = self::champion(); $ps = array(); $rs = array();
-		foreach ( array( 'AFC', 'NFC' ) as $c ) {
-			$cols = self::cols( $c ); $L = $c === 'AFC'; $far = array();
-			foreach ( $cols as $k => $l ) { foreach ( $l as $i => $t ) { $far[ $t ] = array( $k, $i, count( $l ) ); } }
-			$spot = function ( $k, $i, $n ) use ( $L ) { return array( $L ? self::HX[ $k ] : 100 - self::HX[ $k ], 12 + 76 * ( $i + .5 ) / $n ); };
-			$live = array(); $gone = array();
-			$by = array_keys( $far ); usort( $by, function ( $a, $b ) { return self::seed( $a ) <=> self::seed( $b ); } );
-			foreach ( $by as $t ) { if ( self::lost( $t ) ) { $gone[] = $t; } elseif ( $t !== $ch ) { $live[] = $t; } }
-			$n = count( $live ); $vsize = $n >= 5 ? 'min(40px,10.5vw)' : ( $n >= 3 ? '56px' : ( $n === 2 ? '72px' : '88px' ) );
-			foreach ( array( array( $gone, 10.6, 89.4, '25px', false ), array( $live, 19.5, 79, $vsize, $n <= 4 ) ) as $row ) {
-				foreach ( $row[0] as $i => $t ) {
-					list( $k, $ci, $cn ) = $far[ $t ]; $out = self::lost( $t ); list( $x, $y ) = $spot( $k, $ci, $cn );
-					$size = $out ? ( $k === 3 ? 'clamp(70px,6.6vw,96px)' : 'clamp(34px,3vw,44px)' ) : array( 'clamp(42px,3.8vw,56px)', 'clamp(50px,4.6vw,66px)', 'clamp(60px,5.7vw,84px)', 'clamp(92px,9vw,132px)' )[ $k ];
-					$ps[] = array( 't' => $t, 'x' => $x, 'y' => $y, 'size' => $size, 'out' => $out, 'big' => $k === 3, 'vx' => 6 + 88 * ( $i + .5 ) / count( $row[0] ), 'vy' => $L ? $row[1] : $row[2], 'vsize' => $row[3], 'vbig' => ! $out && $n <= 2, 'vlab' => $row[4], 'sx' => $L ? 3.5 : 96.5, 'vsy' => $L ? 3.5 : 96.5 );
-				}
-			}
-			foreach ( $cols as $k => $l ) { if ( ! $k ) { continue; } foreach ( $l as $i => $t ) { $p = array_search( $t, $cols[ $k - 1 ], true ); if ( $p !== false ) { $rs[] = array( $L, $t, $spot( $k - 1, $p, count( $cols[ $k - 1 ] ) ), $spot( $k, $i, count( $l ) ) ); } } }
-			if ( $ch !== '' && in_array( $ch, $cols[3], true ) ) { $rs[] = array( $L, $ch, $spot( 3, 0, 1 ), array( 50, 37 ) ); }
-		}
-		return array( $ps, $rs );
-	}
 	private static function chip( $t ) {
 		$lg = DBD_Data::logo( $t );
 		return '<b class="po-ab">' . esc_html( $t ) . '</b>' . ( $lg ? '<img src="' . esc_url( DBD_Marks::logo_src( $lg, 96 ) ) . '" alt="" width="96" height="96" onerror="this.remove()">' : '' );
-	}
-	private static function route_svg( $rs, $left ) {
-		$o = '';
-		foreach ( $rs as $r ) {
-			if ( $r[0] !== $left ) { continue; } list( $ax, $ay ) = $r[2]; list( $bx, $by ) = $r[3]; $dx = ( $bx - $ax ) * .55;
-			$o .= '<path data-t="' . esc_attr( $r[1] ) . '" d="M' . round( $ax, 2 ) . ' ' . round( $ay, 2 ) . 'C' . round( $ax + $dx, 2 ) . ' ' . round( $ay, 2 ) . ' ' . round( $bx - $dx, 2 ) . ' ' . round( $by, 2 ) . ' ' . round( $bx, 2 ) . ' ' . round( $by, 2 ) . '"/>';
-		}
-		return '<svg class="po-rt ' . ( $left ? 'l' : 'r' ) . '" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' . $o . '</svg>';
-	}
-	private static function hero_copy( $st ) {
-		$sb = self::super_bowl(); $ch = self::champion(); $bracket = self::link();
-		if ( $ch !== '' ) {
-			$lose = $sb['home'] === $ch ? $sb['away'] : $sb['home'];
-			return array( '<div class="po-cl" style="--c2:' . esc_attr( self::color( $ch, 'c2' ) ) . '">' . self::chip( $ch ) . '</div>', self::nick( $ch ) . ' win ' . self::sb_name(),
-				'<b>' . max( (int) $sb['home_score'], (int) $sb['away_score'] ) . '-' . min( (int) $sb['home_score'], (int) $sb['away_score'] ) . '</b> over the ' . esc_html( self::nick( $lose ) ) . ' at ' . esc_html( (string) ( $sb['stadium'] ?? '' ) ) . '.', array( 'The Super Bowl', self::link( $sb ) ) );
-		}
-		$n = array( 14, 14, 8, 4, 2 )[ $st ]; $big = '<div class="po-n"><b>' . $n . '</b><span>teams<br>' . ( $st ? 'left' : 'in' ) . '</span></div>';
-		if ( ! $st ) { return array( $big, 'If the season ended today', 'Seeds update after every game until Week 18 sets the real bracket.', null ); }
-		if ( $st === 4 ) { return array( $big, self::sb_name(), '<b>' . esc_html( self::nick( $sb['away'] ) . ' at ' . self::nick( $sb['home'] ) ) . '.</b><br><span class="nb">' . esc_html( self::clock( $sb ) ) . '</span><br><span class="nb">' . esc_html( (string) ( $sb['stadium'] ?? '' ) ) . '</span>', array( 'The matchup', self::link( $sb ) ) ); }
-		$r = array_keys( self::IDX )[ $st - 1 ]; $nx = self::next_game( $r ); $first = self::round( $r )[0] ?? null;
-		$h = array( 1 => 'Wild Card weekend', 2 => 'The Divisional round', 3 => 'Conference championships' )[ $st ];
-		$p = $nx ? '<b>Next: ' . esc_html( self::nick( $nx['away'] ) . ' at ' . self::nick( $nx['home'] ) ) . '.</b><br><span class="nb">' . esc_html( self::clock( $nx ) ) . '</span>' : 'Every game this round is final.';
-		return array( $big, $h, $p, array( 'Game previews', self::link( $nx ?: $first ) ) );
 	}
 	private static function tiles( $hd, $sub, $games ) {
 		$o = '';
@@ -223,44 +168,105 @@ class DBD_Playoffs {
 		if ( $st === 4 ) { return self::tiles( 'How they got here', 'The conference championships', self::round( 'CON' ) ); }
 		return DBD_Blocks::render( 'games' );
 	}
+	/* ------------------------------------------------------------------ the home page's bracket (2.50.0, SCOPE §92) */
+
+	/** Where the Super Bowl is, until the schedule carries it: season => array( date, stadium ). */
+	const SB_SITE = array( 2026 => array( '2027-02-14', 'SoFi Stadium' ) );
+	/** The Super Bowl: its schedule row, or its two teams from the conference winners until the row is there, or null. */
+	private static function sb_game() {
+		$s = self::super_bowl(); if ( $s ) { return $s; }
+		$w = array(); foreach ( self::round( 'CON' ) as $g ) { if ( self::final_( $g ) ) { $w[ $g['conf'] ] = self::winner( $g ); } }
+		return isset( $w['AFC'], $w['NFC'] ) ? array( 'id' => '', 'r' => 'SB', 'conf' => '', 'away' => $w['NFC'], 'home' => $w['AFC'], 'home_score' => null, 'away_score' => null, 'date' => '', 'time' => '', 'stadium' => '' ) : null;
+	}
+	/** The Super Bowl's date and stadium: array( 'Feb 14', 'SoFi Stadium' ), from its row or SB_SITE. */
+	private static function sb_where() {
+		$s = self::super_bowl(); $x = $s && ! empty( $s['date'] ) ? array( $s['date'], (string) ( $s['stadium'] ?? '' ) ) : ( self::SB_SITE[ (int) DBD_Data::season() ] ?? array( '', '' ) );
+		$d = $x[0] !== '' ? DateTime::createFromFormat( '!Y-m-d', $x[0] ) : false; return array( $d ? $d->format( 'M j' ) : '', $x[1] );
+	}
+	/** A team's row on a card: seed, logo, team, and the score once it's final (the record before). It links to the game's preview. */
+	private static function bh_row( $t, $g = null ) {
+		if ( $t === '' ) { return '<span class="po-r tb">To be set</span>'; }
+		$f = $g && self::final_( $g ); $w = $f && self::winner( $g ) === $t; $sc = $f ? (int) ( $g['home'] === $t ? $g['home_score'] : $g['away_score'] ) : null;
+		$href = $g && ! empty( $g['id'] ) ? self::link( $g ) : self::link();
+		return '<a class="po-r' . ( $f ? ( $w ? ' w' : ' l' ) : '' ) . '" data-t="' . esc_attr( $t ) . '" href="' . esc_url( $href ) . '" aria-label="' . esc_attr( self::nick( $t ) . ', ' . self::seed( $t ) . ' seed' . ( $f ? ', ' . $sc : '' ) ) . '">'
+			. '<span class="sd">' . (int) self::seed( $t ) . '</span><span class="tl">' . DBD_Marks::tile( $t, 22 ) . '</span><span class="nm">' . esc_html( self::nick( $t ) ) . '</span>'
+			. ( $f ? '<span class="sc">' . $sc . '</span>' : '<span class="rc">' . esc_html( self::rec( $t ) ) . '</span>' ) . '</a>';
+	}
+	/** A card on the turf: where it sits wide (left and middle as shares of the field, its width), its heading, and its two rows. */
+	private static function bh_card( $id, $head, $g, $x, $y, $w, $delay, $cls = '' ) {
+		$rows = $g ? self::bh_row( (string) $g['away'], $g ) . self::bh_row( (string) $g['home'], $g ) : self::bh_row( '' ) . self::bh_row( '' );
+		return '<div class="po-g' . ( $g ? '' : ' tbd' ) . ( $cls !== '' ? ' ' . $cls : '' ) . '" id="pob-' . esc_attr( $id ) . '" style="--x:' . $x . '%;--y:' . $y . '%;--w:' . $w . '%;--d:' . $delay . 's"><span class="wh">' . $head . '</span>' . $rows . '</div>';
+	}
+
+	/**
+	 * The home page's playoff hero (SCOPE §92): the bracket on the floodlit field. AFC from the left end zone, NFC from the right, the Super
+	 * Bowl below midfield. Each game is a card on the turf; the chalk (drawn by playoffs.js from data-ln) carries each winner to its next
+	 * card, dashed where a winner will go. Super Bowl week colors the end zones; the champion's run turns gold, its logo sits under the
+	 * title, the field takes its color and confetti falls. Below 1100px it stands up: AFC, the Super Bowl, then NFC.
+	 */
 	public static function hero() {
 		if ( ! self::ready() ) { return ''; }
-		$st = self::stage(); $ch = self::champion(); $sb = $st >= 4 ? self::super_bowl() : null; list( $ps, $rs ) = self::pieces();
-		$A = ''; $N = ''; if ( $sb ) { foreach ( array( $sb['home'], $sb['away'] ) as $t ) { if ( self::conf_of( $t ) === 'AFC' ) { $A = $t; } else { $N = $t; } } }
-		$ca = ''; $cn = '';
-		if ( $A !== '' && $N !== '' ) {
-			$ca = self::color( $A, 'c1' ); $cn = self::color( $N, 'c1' ); list( $r1, $g1, $b1 ) = DBD_Tall::rgb( $ca ); list( $r2, $g2, $b2 ) = DBD_Tall::rgb( $cn );
-			if ( sqrt( ( $r1 - $r2 ) ** 2 + ( $g1 - $g2 ) ** 2 + ( $b1 - $b2 ) ** 2 ) < 70 ) { $ca = self::color( $A, 'c2' ); }  /* two navy teams: the AFC side takes its second color */
+		$st = self::stage(); $sb = self::sb_game(); $ch = self::champion(); $sbn = self::sb_name(); $ln = array(); $cards = array(); $CW = 12;
+		$X = function ( $c, $x ) use ( $CW ) { return $c === 'AFC' ? $x : 100 - $x - $CW; };
+		$cls = function ( $t ) use ( $ch ) { return $t === '' ? 'p' : ( $ch !== '' && $t === $ch ? 'g' : 'w' ); };
+		foreach ( array( 'AFC', 'NFC' ) as $c ) {
+			$one = self::at_seed( $c, 1 ); $side = $c === 'AFC' ? 'l' : 'r'; $wc = array_values( self::wc_pairs( $c ) );
+			$dv = self::round( 'DIV', $c ); usort( $dv, function ( $a, $b ) use ( $one ) { return ( self::has( $a, $one ) ? 0 : 1 ) <=> ( self::has( $b, $one ) ? 0 : 1 ); } );
+			$cg = self::round( 'CON', $c )[0] ?? null;
+			$h = '<div class="po-g bye s2" id="pob-' . $c . '-bye" style="--x:' . $X( $c, 7.5 ) . '%;--y:21%;--w:' . $CW . '%;--d:.05s"><span class="wh">Bye</span>' . self::bh_row( $one ) . '</div>';
+			foreach ( $wc as $i => $g ) { $h .= self::bh_card( $c . '-wc' . $i, 'Wild Card', $g + array( 'id' => '' ), $X( $c, 7.5 ), array( 38, 58, 78 )[ $i ], $CW, .1 + $i * .06, $i === 2 ? 's2' : '' ); }
+			foreach ( array( 0, 1 ) as $i ) { $h .= self::bh_card( $c . '-dv' . $i, 'Divisional', $dv[ $i ] ?? null, $X( $c, 21 ), $i ? 68 : 29.5, $CW, .45 + $i * .06 ); }
+			$h .= self::bh_card( $c . '-cg', esc_html( $c ) . ' Championship', $cg, $X( $c, 34.5 ), 49, $CW, .75, 's2' );
+			$cards[ $c ] = $h;
+			/* the chalk: [ from card, from team, to card, to team, p planned / w a winner / g the champion, team, side, h across or d down ] */
+			$dvOf = function ( $t ) use ( $dv ) { foreach ( $dv as $i => $g ) { if ( $t !== '' && self::has( $g, $t ) ) { return $i; } } return -1; };
+			$k = $dvOf( $one ); $ln[] = $k >= 0 ? array( $c . '-bye', $one, $c . '-dv' . $k, $one, $cls( $one ), $one, $side, 'h' ) : array( $c . '-bye', '', $c . '-dv0', '', 'p', '', $side, 'h' );
+			foreach ( $wc as $i => $g ) { $w = self::winner( $g ); $k = $dvOf( $w ); $ln[] = $k >= 0 ? array( $c . '-wc' . $i, $w, $c . '-dv' . $k, $w, $cls( $w ), $w, $side, 'h' ) : array( $c . '-wc' . $i, '', $c . '-dv' . ( $i ? 1 : 0 ), '', 'p', '', $side, 'h' ); }
+			foreach ( array( 0, 1 ) as $i ) { $g = $dv[ $i ] ?? null; $w = $g ? self::winner( $g ) : ''; $ln[] = $w !== '' && $cg && self::has( $cg, $w ) ? array( $c . '-dv' . $i, $w, $c . '-cg', $w, $cls( $w ), $w, $side, 'h' ) : array( $c . '-dv' . $i, '', $c . '-cg', '', 'p', '', $side, 'h' ); }
+			$w = $cg ? self::winner( $cg ) : ''; $ln[] = $w !== '' && $sb && self::has( $sb, $w ) ? array( $c . '-cg', $w, 'sb', $w, $cls( $w ), $w, $side, 'd' ) : array( $c . '-cg', '', 'sb', '', 'p', '', $side, 'd' );
 		}
-		$wash = $ch !== '' ? 'background:color-mix(in srgb,' . self::color( $ch, 'c1' ) . ' 84%,#000)' : ( $sb ? 'background:linear-gradient(var(--po-wd),' . $ca . ',#101a14 40%,#101a14 60%,' . $cn . ')' : '' );
+		/* the Super Bowl, below midfield, AFC first */
+		list( $sd, $sv ) = self::sb_where(); $where = trim( $sd . ( $sd !== '' && $sv !== '' ? ' · ' : '' ) . $sv );
+		$rows = self::bh_row( '' ) . self::bh_row( '' ); $A = ''; $N = '';
+		if ( $sb ) { $rows = ''; foreach ( array( $sb['away'], $sb['home'] ) as $t ) { if ( self::conf_of( $t ) === 'AFC' ) { $A = $t; } else { $N = $t; } } foreach ( array( $A, $N ) as $t ) { $rows .= self::bh_row( $t, $sb ); } }
+		$sbc = '<div class="po-g sb s2' . ( $sb ? '' : ' tbd' ) . ( $ch !== '' ? ' won' : '' ) . '" id="pob-sb" style="--x:42%;--y:73%;--w:16%;--d:1s"><span class="wh">' . esc_html( $sbn ) . ( $where !== '' ? '<small>' . esc_html( $where ) . '</small>' : '' ) . '</span>' . $rows . '</div>';
+		/* the words over midfield, and where the second button goes */
+		$act = null;
+		if ( $ch !== '' ) {
+			$lose = $sb['home'] === $ch ? $sb['away'] : $sb['home']; $t1 = 'The ' . self::nick( $ch ) . ' win ' . $sbn;
+			$t2 = self::nick( $ch ) . ' ' . max( (int) $sb['home_score'], (int) $sb['away_score'] ) . ', ' . self::nick( $lose ) . ' ' . min( (int) $sb['home_score'], (int) $sb['away_score'] ) . ( ! empty( $sb['stadium'] ) ? ' · ' . $sb['stadium'] : '' );
+			$act = array( 'The Super Bowl', self::link( $sb ) );
+		} elseif ( $st === 4 ) {
+			$t1 = $sbn . ' is set'; $t2 = self::nick( $sb['away'] ) . ' vs ' . self::nick( $sb['home'] ) . ' · ' . self::clock( $sb ) . ( $sv !== '' ? ' · ' . $sv : '' ); $act = array( 'The Super Bowl preview', self::link( $sb ) );
+		} elseif ( $st === 0 ) {
+			$t1 = 'The road to ' . $sbn; $t2 = 'If the season ended today. Seeds update after every game until Week 18 sets them.';
+		} else {
+			$r = array_keys( self::IDX )[ $st - 1 ]; $nx = self::next_game( $r ); $first = self::round( $r )[0] ?? null;
+			$t1 = array( 1 => 'Wild Card weekend', 2 => 'The Divisional round', 3 => 'The conference championships' )[ $st ];
+			$t2 = $nx ? 'Next: ' . self::nick( $nx['away'] ) . ' at ' . self::nick( $nx['home'] ) . ', ' . self::clock( $nx ) . '.' : 'Every game this round is final.';
+			$act = array( 'Game previews', self::link( $nx ?: $first ) );
+		}
+		/* the end zones: AFC and NFC, the two Super Bowl teams in their colors, then the champion's */
+		$ca = $A !== '' ? self::color( $A, 'c1' ) : ''; $cn = $N !== '' ? self::color( $N, 'c1' ) : '';
+		if ( $ca !== '' && $cn !== '' ) { list( $r1, $g1, $b1 ) = DBD_Tall::rgb( $ca ); list( $r2, $g2, $b2 ) = DBD_Tall::rgb( $cn ); if ( sqrt( ( $r1 - $r2 ) ** 2 + ( $g1 - $g2 ) ** 2 + ( $b1 - $b2 ) ** 2 ) < 70 ) { $ca = self::color( $A, 'c2' ); } }  /* two navy teams: the AFC side takes its second color */
 		$ez = function ( $side, $t, $col, $word ) use ( $ch ) {
-			if ( $ch !== '' ) { $col = self::color( $ch, 'c2' ); $word = self::nick( $ch ); } elseif ( $t !== '' ) { $word = self::nick( $t ); }
-			$st = $col !== '' ? ' style="--ezc:' . esc_attr( $col ) . ';--ezi:' . esc_attr( DBD_Tall::on( $col ) ) . '"' : '';
-			return '<div class="po-ez ' . $side . '"' . $st . ' aria-hidden="true">' . esc_html( $word ) . '</div>';
+			if ( $ch !== '' ) { $col = self::color( $ch, 'c1' ); $word = self::nick( $ch ); } elseif ( $t !== '' ) { $word = self::nick( $t ); }
+			return '<div class="po-ez ' . $side . '"' . ( $col !== '' ? ' style="--ezc:' . esc_attr( $col ) . ';--ezi:' . esc_attr( DBD_Tall::on( $col ) ) . '"' : '' ) . '>' . esc_html( $word ) . '</div>';
 		};
+		$wash = $ch !== '' ? '<div class="po-wash" style="' . esc_attr( 'background:radial-gradient(70% 80% at 50% 45%,' . self::color( $ch, 'c1' ) . 'aa,' . self::color( $ch, 'c1' ) . '44 60%,transparent)' ) . '"></div>' : '';
 		$yd = ''; foreach ( array( 10 => 10, 20 => 20, 30 => 30, 40 => 40, 60 => 40, 70 => 30, 80 => 20, 90 => 10 ) as $at => $n ) { $yd .= '<span style="left:' . $at . '%">' . $n . '</span>'; }
-		$pcs = '';
-		foreach ( $ps as $i => $p ) {
-			$g = null; foreach ( self::games() as $x ) { if ( self::has( $x, $p['t'] ) && ( ! $g || self::IDX[ $x['r'] ] >= self::IDX[ $g['r'] ] ) ) { $g = $x; } }
-			$tag = $g ? 'a' : 'span'; $href = $g ? ' href="' . esc_url( self::link( $g ) ) . '"' : '';
-			$cl = 'po-pc' . ( $p['out'] ? ' out' : '' ) . ( $p['big'] ? ' big' : '' ) . ( $p['vbig'] ? ' vbig' : '' ) . ( $p['vlab'] ? '' : ' vnolb' );
-			$sty = sprintf( '--c:%s;--x:%.2f%%;--y:%.2f%%;--vx:%.2f%%;--vy:%.2f%%;--sx:%.1f%%;--vsy:%.1f%%;--s:%s;--vs:%s;--i:%d', self::color( $p['t'], 'c1' ), $p['x'], $p['y'], $p['vx'], $p['vy'], $p['sx'], $p['vsy'], $p['size'], $p['vsize'], $i );
-			$pcs .= '<' . $tag . ' class="' . $cl . '" data-t="' . esc_attr( $p['t'] ) . '"' . $href . ' style="' . esc_attr( $sty ) . '" aria-label="' . esc_attr( self::nick( $p['t'] ) . ', ' . self::seed( $p['t'] ) . ' seed' . ( $p['out'] ? ', out' : '' ) ) . '">' . self::chip( $p['t'] ) . '<span class="sd">' . self::seed( $p['t'] ) . '</span><span class="lb">' . esc_html( self::nick( $p['t'] ) ) . '</span></' . $tag . '>';
-		}
-		list( $big, $h, $para, $act ) = self::hero_copy( $st );
-		$btn = $act ? '<a class="po-btn" href="' . esc_url( $act[1] ) . '">' . esc_html( $act[0] ) . '</a><a class="po-btn ln" href="' . esc_url( self::link() ) . '">The full bracket</a>' : '<a class="po-btn" href="' . esc_url( self::link() ) . '">The full bracket</a><a class="po-btn ln" href="#po-strip">See this week</a>';
+		$champ = $ch !== '' ? '<div class="po-bch s2">' . self::chip( $ch ) . '<strong>' . esc_html( $sbn ) . ' champions</strong></div>' : '';
 		$cf = '';
 		if ( $ch !== '' ) {
-			$cols = array( self::color( $ch, 'c2' ), '#ffffff', '#ffd84d', self::color( $ch, 'c2' ), '#ffffff' ); $x = 7;
-			for ( $i = 0; $i < 120; $i++ ) {
-				$x = ( $x * 37 + 11 ) % 1009;
-				$cf .= sprintf( '<i style="left:%.1f%%;--y:%d%%;--w:%dpx;--h:%dpx;--p:%s;--r:%ddeg;--d:%.2fs;--l:%.2fs"></i>', $x / 10.09, 6 + ( $x * 13 ) % 89, 5 + $x % 6, 9 + $x % 9, $cols[ $i % 5 ], ( $x * 7 ) % 180, 1.5 + ( $x % 12 ) / 10, ( $i % 24 ) / 30 );
-			}
+			$cols = array( self::color( $ch, 'c2' ), '#ffffff', '#ffd84d', self::color( $ch, 'c1' ), '#ffffff' ); $x = 7;
+			for ( $i = 0; $i < 110; $i++ ) { $x = ( $x * 37 + 11 ) % 1009; $cf .= sprintf( '<i style="left:%.1f%%;--y:%d%%;--w:%dpx;--h:%dpx;--p:%s;--r:%ddeg;--d:%.2fs;--l:%.2fs"></i>', $x / 10.09, 6 + ( $x * 13 ) % 89, 5 + $x % 6, 9 + $x % 9, $cols[ $i % 5 ], ( $x * 7 ) % 180, 1.5 + ( $x % 12 ) / 10, ( $i % 24 ) / 30 ); }
 			$cf = '<div class="po-cf" aria-hidden="true">' . $cf . '</div>';
 		}
-		return '<section class="dbd-po po-h" aria-label="The playoffs"><div class="po-f' . ( $sb ? ' lit' : '' ) . '" data-pofield><div class="po-grass"></div>' . ( $wash !== '' ? '<div class="po-wash" style="' . esc_attr( $wash ) . '"></div>' : '' ) . '<div class="po-light"></div><div class="po-lines"></div><div class="po-yd" aria-hidden="true">' . $yd . '</div>'
-			. $ez( 'l', $A, $ca, 'AFC' ) . $ez( 'r', $N, $cn, 'NFC' ) . self::route_svg( $rs, true ) . self::route_svg( $rs, false ) . $pcs
-			. '<div class="po-c">' . $big . '<h1>' . esc_html( $h ) . '</h1><p>' . $para . '</p><div class="po-b">' . $btn . '</div></div>' . $cf . '</div><div class="po-strip" id="po-strip">' . self::strip( $st ) . '</div></section>';
+		$bb = '<div class="po-bb"><a class="po-btn" href="' . esc_url( self::link() ) . '">The full bracket</a>' . ( $act ? '<a class="po-btn ln" href="' . esc_url( $act[1] ) . '">' . esc_html( $act[0] ) . '</a>' : '' ) . '</div>';
+		return '<section class="dbd-po po-h po-bh" aria-label="The playoff bracket"><div class="po-f" data-pob><div class="po-grass"></div>' . $wash . '<div class="po-light"></div><div class="po-yd" aria-hidden="true">' . $yd . '</div>'
+			. '<div class="po-bt"><h1>' . esc_html( $t1 ) . '</h1><p>' . esc_html( $t2 ) . '</p></div>'
+			. $ez( 'l', $A, $ca, 'AFC' ) . $cards['AFC'] . $sbc . $champ . $ez( 'r', $N, $cn, 'NFC' ) . $cards['NFC'] . $bb
+			. '<svg class="po-ch" aria-hidden="true" data-ln="' . esc_attr( wp_json_encode( $ln ) ) . '"></svg>' . $cf . '</div><div class="po-strip" id="po-strip">' . self::strip( $st ) . '</div></section>';
 	}
 
 	/* ------------------------------------------------------------------ the bracket */

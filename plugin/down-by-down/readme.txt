@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.49.1
+Stable tag: 2.50.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,11 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.50.0 =
+* The home page's playoff hero is now the bracket on the floodlit field (SCOPE §92): AFC from the left end zone, NFC from the right, the Super Bowl below midfield, each game a card on the turf.
+* Chalk lines carry each winner into the next round, dashed where a winner will go, and draw themselves in as the cards rise round by round. Hover or tap a team to follow its run.
+* Super Bowl week colors the end zones; the champion's run turns gold, its logo sits under the title, the field takes its color and confetti falls. Below 1100px wide the bracket stands up: AFC, the Super Bowl, then NFC.
 
 = 2.49.1 =
 * A quarterback's throw chart (SCOPE §90, §91) shows under the How he's used panel instead of behind its On the field tab, so it's on the page without a click. Receivers and running backs keep their tab.

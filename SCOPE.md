@@ -3591,3 +3591,16 @@ Gene, from §90's "Not included": "then let's scope: A season view of every thro
 
 **2.49.1 (2026-11-24):** Gene couldn't find the chart on a quarterback's page; it was in the How he's used panel's fourth tab, On the field, and the panel opens on Playstyle. Gene: "On the player's page, put it under the Playstyle info and don't hide it." A quarterback's chart now sits under that panel, always showing, and his On the field tab is gone. Receivers and running backs keep theirs.
 
+
+## 92. The bracket on the home page (scoped and mocked 2026-11-24, `mockup-v66/`; Gene: "Build it"; built as 2.50.0)
+
+Gene: "On the home page for the playoff, show the bracket, but make it look cool". The playoff hero (§88's teams marching to midfield) becomes the bracket, drawn on the same floodlit field, behind the same Playoffs switch.
+
+- **The field:** AFC from the left end zone, NFC from the right, the Super Bowl below midfield. Each game is a dark glass card on the turf: seed, logo, team, and the score once final (the record before). A loser dims and is struck through. Cards still to be set are dashed outlines reading "To be set."
+- **The chalk:** lines carry each winner to its next card; dashed lines show where winners will go. The two conference champions' lines run down into the Super Bowl. On load the cards rise round by round and the chalk draws itself in; with reduced motion it all just appears.
+- **Following a team:** hover or tap a team to light its whole run and dim the rest. Each row links to that game's preview.
+- **The words over midfield:** "The road to Super Bowl LXI" with "If the season ended today…" before the bracket is set; then the round, and the next game; "Super Bowl LXI is set"; "The Seahawks win Super Bowl LX". The buttons: the full bracket, and the round's previews or the Super Bowl.
+- **Super Bowl week** colors the end zones with the two teams. **When it ends** the champion's run turns gold, its logo and "champions" sit under the title, the end zones and field take its color, and confetti falls.
+- **Narrow screens** (under 1100px): the bracket stands up: AFC (bye, Wild Card, Divisional, Championship), the Super Bowl, then NFC.
+- The strip of games under the hero stays. Until the schedule carries the Super Bowl, its card reads Feb 14 · SoFi Stadium (`SB_SITE`).
+
