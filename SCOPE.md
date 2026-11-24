@@ -3606,3 +3606,16 @@ Gene: "On the home page for the playoff, show the bracket, but make it look cool
 
 **2.50.1 (2026-11-24):** Gene: "can you put the team that is leading with the bye on that part of the bracket on week 1 of the playoff, also make each team link off to their own team pages". Until the Divisional games are on the schedule, each 1 seed sits in its conference's top Divisional card (it hosts the lowest seed left), with solid chalk from its bye; the other row reads "To be set." Every team row now links to the team's page instead of the game's preview.
 
+
+## 93. Every throw, laid out under the field (scoped and mocked 2026-11-24, `mockup-v67/`; Gene: "This is great, build this."; built as 2.51.0)
+
+Gene, sharing a screenshot of the QB chart: "rework the controls and information surrounding the field, put everything under it and design for better and cleaner ux and understanding of how it work".
+
+- **The field takes the panel's full width.** The depth split no longer runs down its left side; the yard lines (LINE, 10 YDS, 20 YDS…) mark depth. Only the game picker (or the game page's team switch) stays above, in the panel's heading, since it chooses what the field shows.
+- **Under the field, in the order it's used:**
+  1. **A replay bar**, like a video player: Play or Pause, back and forward a throw, a timeline of the game (Q1 to Q4) with every throw a tick in its result's color (tap one to jump to it), the count ("5 of 38"), and 1× or 2×. "Show all" is gone: the field shows every throw until Play, and pausing or finishing puts them back. The whole-season view says the replay works one game at a time.
+  2. **The throw you're on:** what happened and to whom in a sentence, the quarter, clock, score, down and distance and where it went under it, and air yards, yards and EPA on the right. Before you pick one, it says how.
+  3. **The game in two lines:** the passing line (with TDs and INTs), and field use with "Show the 12 zones" beside it.
+  4. **By depth** as a table (completions, yards, TDs, INTs) beside the key to the dots.
+  5. **The picks:** highlight a receiver; on a game page, the passer picks sit with them.
+
