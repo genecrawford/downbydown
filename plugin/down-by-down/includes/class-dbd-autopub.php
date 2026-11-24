@@ -94,6 +94,7 @@ class DBD_AutoPub {
 	/** The networks the button would post to now. */
 	public static function ready( $n, $slot, $it = null ) {
 		if ( DBD_Pack::slot_started( $slot ) ) { return array(); }  /* a keys post is a preview: none once its game has kicked off (SCOPE §85) */
+		if ( DBD_PoPosts::is_slot( $slot ) && ! DBD_Playoffs::on() ) { return array(); }  /* a playoff post links to pages visitors can't see while the switch is off (SCOPE §89) */
 		$st = self::states( $n, $slot, $it );
 		return array_values( array_filter( self::nets(), function ( $x ) use ( $st ) { return ( $st[ $x ][0] ?? '' ) === 'ready'; } ) );
 	}
@@ -114,7 +115,8 @@ class DBD_AutoPub {
 		check_admin_referer( 'dbd_ap_' . $n . '_' . $slot ); if ( ! current_user_can( 'manage_options' ) ) { wp_die( 'No.' ); }
 		$errs = self::publish( $n, $slot );
 		$args = array( 'page' => 'down-by-down-share', 'week' => $n ); if ( strpos( $slot, 'keys-' ) === 0 ) { $args['view'] = 'keys'; }  /* back to the view it was pressed on (SCOPE §87) */
+		$po = DBD_PoPosts::is_slot( $slot ); if ( $po ) { $args = array( 'page' => 'down-by-down-share', 'pop' => 1 ); }  /* back to the playoff posts, opened (SCOPE §89) */
 		if ( isset( $errs['item'] ) ) { $args['pack'] = 'igerror'; $args['pack_err'] = rawurlencode( $errs['item'] ); }
-		wp_safe_redirect( add_query_arg( $args, admin_url( 'admin.php' ) ) . ( isset( $errs['item'] ) ? '' : '#sp-' . $slot ) ); exit;
+		wp_safe_redirect( add_query_arg( $args, admin_url( 'admin.php' ) ) . ( isset( $errs['item'] ) ? '' : '#sp-' . ( $po ? 'po' . $n . '-' : '' ) . $slot ) ); exit;
 	}
 }

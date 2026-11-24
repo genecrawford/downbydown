@@ -37,6 +37,12 @@ Not affiliated with the NFL or any team. No team logos are used; team marks are 
 * On a finished game's page after the box score, one team at a time, with a pick for each passer when a team used more than one.
 * On a quarterback's page in the On the field tab, with a game picker. It lists every game he threw in, from every team he played for this season.
 
+= 2.47.0 =
+* Playoff posts (SCOPE §89): eleven posts from the day after Week 18 to the day after the Super Bowl, at noon Eastern on Instagram, Bluesky, X and Threads.
+* A preview before each round, the bracket with scores after it, then the road to the Super Bowl, playoff leaders, a Super Bowl preview and the champions.
+* Each post books once its games are in, and only while the Playoffs switch is on. Auto publish, retries and Try again work as they do for the weekly posts.
+* The Share pack's Schedule view has them in their own folded section, closed during the regular season, with their own Black or Paper pick.
+
 = 2.46.0 =
 * Playoffs and the Super Bowl (SCOPE §88), behind one On/Off switch on the new Playoffs tab. It ships off.
 * On: a playoff hero takes over the home page, /playoffs/ has the bracket on the field, this round's games and playoff leaders, and every game gets a preview.

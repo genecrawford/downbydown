@@ -3518,7 +3518,39 @@ Gene: "I would be cool to have a bracket page or some, replacement section, I co
 
 **In 2.46.0 for social:** the weekly pack, its boards and its schedule stop at Week 18, so nothing playoff-related posts by itself and no playoff stat reaches a season board.
 
-**Still to scope and mock, before Wild Card (January 9):** round-based social posts (a preview of each round, a results post, the Super Bowl gap) and whether the bracket becomes a social graphic. Both post publicly to four networks and neither has been mocked.
+**Round-based social posts and a bracket graphic** were scoped next, before Wild Card weekend (January 16 to 18, 2027): see §89.
+
+
+## 89. Playoff posts (scoped and mocked 2026-11-24, `mockup-v63/`; Gene: "Yes, build it, but put them in their own closed/folded section so they're not in the way during the regular season."; built as 2.47.0)
+
+Gene: "Yes, scope them" (round-by-round playoff posts, and whether the bracket becomes a graphic). Wild Card weekend is January 16 to 18, 2027 (Week 18 ends January 10), and Super Bowl LXI is February 14.
+
+**Eleven posts, all at 12:00 PM Eastern,** so they never land on a weekly post (9:00 AM and 5:00 PM). Week 18's own posts still run through Monday, January 18.
+
+| Day (2026 season) | Post | Graphic | Links to |
+|---|---|---|---|
+| Mon, Jan 11 | The field is set | Bracket | /playoffs/ |
+| Thu, Jan 14 | Wild Card preview (6 games) | Preview | /playoffs/ |
+| Tue, Jan 19 | Wild Card results | Bracket | /playoffs/ |
+| Thu, Jan 21 | Divisional preview (4 games) | Preview | /playoffs/ |
+| Mon, Jan 25 | Divisional results | Bracket | /playoffs/ |
+| Thu, Jan 28 | Conference Championship preview (2 games) | Preview | /playoffs/ |
+| Mon, Feb 1 | Super Bowl LXI is set | Bracket | /playoffs/super-bowl/ |
+| Wed, Feb 3 | The road to the Super Bowl | Road | /playoffs/super-bowl/ |
+| Wed, Feb 10 | Playoff leaders | Board | /playoffs/ |
+| Fri, Feb 12 | Super Bowl preview | Preview | /playoffs/super-bowl/ |
+| Mon, Feb 15 | Champions | Bracket | /playoffs/ |
+
+**The rules:**
+- A preview goes the Thursday before its round (the Super Bowl's, the Friday before), once all the round's games are on the schedule and none has kicked off. A results post goes the day after the round's last game, once they're all final. The road goes the Wednesday after the conference games; playoff leaders the Wednesday before the Super Bowl. Until the schedule has a round, its days are counted from Week 18's last game.
+- Posts book only while the Playoffs switch is on (§88), because every post links to the playoff pages.
+- Each bracket graphic draws its own stage (the field, after each round, the champion), so a later redraw never shows later rounds. The Wild Card games come from the seeds; the schedule adds the scores.
+- Everything else is the weekly posts' (§84's parity rule): all four networks, the tall 1080 × 1350 graphics in Black or Paper, Auto publish, the records, retries and Try again. About $2.20 on X for all eleven.
+- Not included: a post for each game (each has its own preview page to share by hand), and a Tuesday thread or email for the playoff rounds.
+
+**Decision (Gene, 2026-11-24):** "put them in their own closed/folded section so they're not in the way during the regular season." On the Share pack's Schedule view, under the week's calendar, one **Playoff posts** section folds them away: closed until every Week 18 game is final (or a playoff post's button brings you back), with one line saying the switch is off, or what's next. Inside: its own Black or Paper pick for the playoff graphics (the weekly default stays as it was), a card per post with its date, and each post's panel.
+
+**As built:** posts are pack-style items on Weeks 19 to 22 (`DBD_PoPosts`), so each network's existing booking runs over the newest pack week and then any playoff week with posts.
 
 
 ## 90. Every throw, one game at a time (scoped and mocked 2026-11-24, `mockup-v64/`; Gene: "Build it"; built as 2.48.0)

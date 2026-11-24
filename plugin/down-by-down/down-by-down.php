@@ -38,8 +38,8 @@ require_once DBD_PATH . 'includes/class-dbd-fanweek.php';  /* the weekly fantasy
 require_once DBD_PATH . 'includes/class-dbd-hub.php';
 require_once DBD_PATH . 'includes/class-dbd-compare.php';
 require_once DBD_PATH . 'includes/class-dbd-season.php';
-require_once DBD_PATH . 'includes/class-dbd-playoffs.php';
-require_once DBD_PATH . 'includes/class-dbd-throws.php';     /* every throw, one game at a time (SCOPE §90) */  /* the playoffs (SCOPE §88) */
+require_once DBD_PATH . 'includes/class-dbd-playoffs.php';  /* the playoffs (SCOPE §88) */
+require_once DBD_PATH . 'includes/class-dbd-throws.php';    /* every throw, one game at a time (SCOPE §90) */
 require_once DBD_PATH . 'includes/class-dbd-boards.php';
 require_once DBD_PATH . 'includes/class-dbd-sync.php';
 require_once DBD_PATH . 'includes/class-dbd-card.php';
@@ -58,6 +58,7 @@ require_once DBD_PATH . 'includes/class-dbd-instagram.php';  /* Instagram posts 
 require_once DBD_PATH . 'includes/class-dbd-bluesky.php';    /* Bluesky posting for Auto publish (SCOPE §81) */
 require_once DBD_PATH . 'includes/class-dbd-x.php';          /* X posting (SCOPE §83) */
 require_once DBD_PATH . 'includes/class-dbd-threads.php';    /* Threads posting (SCOPE §84) */
+require_once DBD_PATH . 'includes/class-dbd-po-posts.php';   /* playoff posts (SCOPE §89) */
 require_once DBD_PATH . 'includes/class-dbd-tall.php';       /* the tall social graphics (SCOPE §85) */
 require_once DBD_PATH . 'includes/class-dbd-autopub.php';    /* Auto publish (SCOPE §81) */
 require_once DBD_PATH . 'includes/class-dbd-board-mail.php';

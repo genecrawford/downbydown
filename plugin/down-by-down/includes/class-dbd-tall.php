@@ -35,7 +35,7 @@ class DBD_Tall {
 	public static $from = array( 2026 => 11 );
 	/** The harness's older posting tests set this: no graphics, no League Leaders, no kickoff guard, so they keep covering the text-and-card fallback. */
 	public static $off = false;
-	const SLOTS = 'swing|snaps|offense|targets|leaders|rush|board|rtd|recs|sacks|keys-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}-[A-Z]{2,3}';
+	const SLOTS = 'swing|snaps|offense|targets|leaders|rush|board|rtd|recs|sacks|pset|pprev|pres|proad|plead|keys-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}-[A-Z]{2,3}';
 
 	public static function init() { add_action( 'admin_post_dbd_pack_look', array( __CLASS__, 'look_action' ) ); }
 
@@ -53,16 +53,28 @@ class DBD_Tall {
 		$w[ self::wk( $n ) ] = $look; update_option( self::OPT, array( 'w' => $w, 'last' => $look ), false );
 		return true;
 	}
+	/** The playoff posts' look (SCOPE §89): all four playoff weeks at once. The weekly pick (the default for a new week) stays as it was. */
+	public static function set_po_look( $look ) {
+		if ( ! isset( self::TH[ $look ] ) ) { return false; }
+		$s = self::store(); $w = is_array( $s['w'] ?? null ) ? $s['w'] : array(); foreach ( DBD_PoPosts::WEEKS as $x ) { $w[ self::wk( $x ) ] = $look; }
+		$s['w'] = $w; update_option( self::OPT, $s, false ); return true;
+	}
 	public static function look_action() {
 		$n = (int) ( $_POST['week'] ?? 0 ); check_admin_referer( 'dbd_pack_look_' . $n ); if ( ! current_user_can( 'manage_options' ) ) { wp_die( 'No.' ); }
-		self::set_look( $n, sanitize_key( wp_unslash( (string) ( $_POST['look'] ?? '' ) ) ) );
+		$look = sanitize_key( wp_unslash( (string) ( $_POST['look'] ?? '' ) ) );
+		if ( ! empty( $_POST['po'] ) ) { self::set_po_look( $look ); wp_safe_redirect( add_query_arg( array( 'page' => 'down-by-down-share', 'pop' => 1 ), admin_url( 'admin.php' ) ) . '#sp-po' ); exit; }
+		self::set_look( $n, $look );
 		$args = array( 'page' => 'down-by-down-share', 'week' => $n ); if ( sanitize_key( wp_unslash( (string) ( $_POST['view'] ?? '' ) ) ) === 'keys' ) { $args['view'] = 'keys'; }  /* back to the view it was changed on (SCOPE §87) */
 		wp_safe_redirect( add_query_arg( $args, admin_url( 'admin.php' ) ) ); exit;
 	}
 
 	/* ------------------------------------------------------------------ keys and files */
 
-	public static function parse( $key ) { return preg_match( '/^tall-week-(\d{1,2})-(black|paper)-(' . self::SLOTS . ')$/', (string) $key, $m ) && (int) $m[1] <= DBD_Pack::LAST_WEEK ? array( (int) $m[1], $m[2], $m[3] ) : null; }  /* a playoff week has no season board (SCOPE §88) */
+	public static function parse( $key ) {
+		if ( ! preg_match( '/^tall-week-(\d{1,2})-(black|paper)-(' . self::SLOTS . ')$/', (string) $key, $m ) ) { return null; }
+		$po = DBD_PoPosts::is_slot( $m[3] );  /* a playoff week has no season board (SCOPE §88), only its own posts (SCOPE §89) */
+		return ( $po ? DBD_PoPosts::valid( (int) $m[1], $m[3] ) : (int) $m[1] <= DBD_Pack::LAST_WEEK ) ? array( (int) $m[1], $m[2], $m[3] ) : null;
+	}
 	public static function key( $n, $slot, $look = null ) { return 'tall-week-' . (int) $n . '-' . ( $look ?? self::look( $n ) ) . '-' . $slot; }
 	/** An item's or keys side's graphic key in the week's look, or ''. */
 	public static function key_of( $n, $it ) { $slot = DBD_AutoPub::slot( $n, $it ); return $slot === '' ? '' : self::key( $n, $slot ); }
@@ -172,6 +184,7 @@ class DBD_Tall {
 	public static function render( $key, $fetch ) {
 		$p = self::parse( $key ); if ( ! $p ) { return null; } list( $n, $look, $slot ) = $p;
 		if ( strpos( $slot, 'keys-' ) === 0 ) { $s = self::spec_keys( $n, $slot ); return $s ? self::draw_keys( new DBD_Tall_Canvas( $look, $fetch ), $s ) : null; }
+		if ( DBD_PoPosts::is_slot( $slot ) ) { return DBD_PoPosts::render( $n, $slot, $look, $fetch ); }  /* the playoff posts (SCOPE §89) */
 		$W = DBD_Week::file( $n ); if ( ! $W || empty( $W['complete'] ) ) { return null; }
 		switch ( $slot ) {
 			case 'board': case 'rtd': case 'recs': case 'sacks':
