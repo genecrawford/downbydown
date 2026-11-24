@@ -20,6 +20,17 @@ jobs:
           find plugin tools -name '*.php' -print0 | xargs -0 -n1 php -l
       - name: The playoffs (SCOPE §88)
         run: php tools/view_harness.php data playoffs x
+      - name: Every throw (SCOPE §90)
+        run: |
+          php tools/view_harness.php data throws x
+          mkdir -p /tmp/thr
+          DBD_HARNESS_HTML=/tmp/thr php tools/view_harness.php data game 2026_11_MIN_SF > /dev/null
+          grep -q 'class="dbd-panel dbd-thr" data-kind="game"' /tmp/thr/game-2026_11_MIN_SF.html || { echo "a finished game should have the throws panel"; exit 1; }
+          DBD_HARNESS_HTML=/tmp/thr php tools/view_harness.php data player 00-0029604 > /dev/null
+          grep -Eq 'class="[^"]*dbd-thr"[^>]*data-kind="qb"' /tmp/thr/player-00-0029604.html || { echo "a quarterback's page should have the throws panel"; exit 1; }
+          if grep -q 'id="dbd-pmap"' /tmp/thr/player-00-0029604.html; then echo "a quarterback's page should not have the old map"; exit 1; fi
+          DBD_HARNESS_HTML=/tmp/thr php tools/view_harness.php data player 00-0036322 > /dev/null
+          grep -q 'id="dbd-pmap"' /tmp/thr/player-00-0036322.html || { echo "a receiver's page keeps the old map"; exit 1; }
       - name: The weekly fantasy page (SCOPE §78)
         run: |
           set -e

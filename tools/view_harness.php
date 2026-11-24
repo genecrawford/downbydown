@@ -76,7 +76,7 @@ function wp_schedule_single_event() {} function wp_next_scheduled() { return fal
 
 /* ---- the plugin, minus the bootstrap and admin. The SEO class extends a WordPress sitemap base class; an empty stand-in lets it load. */
 if ( ! class_exists( 'WP_Sitemaps_Provider' ) ) { class WP_Sitemaps_Provider { public $name = ''; public $object_type = ''; } }
-foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-kicker', 'class-dbd-defense', 'class-dbd-scatter', 'class-dbd-rush', 'class-dbd-week', 'class-dbd-fanweek', 'class-dbd-playoffs', 'class-dbd-po-posts', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-boards', 'class-dbd-sync', 'class-dbd-tall', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo', 'class-dbd-blocks', 'class-dbd-post', 'class-dbd-news', 'class-dbd-email', 'class-dbd-videos', 'class-dbd-growth', 'class-dbd-signup', 'class-dbd-pack', 'class-dbd-pack-mail', 'class-dbd-instagram', 'class-dbd-bluesky', 'class-dbd-x', 'class-dbd-threads', 'class-dbd-autopub', 'class-dbd-board-mail' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
+foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-kicker', 'class-dbd-defense', 'class-dbd-scatter', 'class-dbd-rush', 'class-dbd-week', 'class-dbd-fanweek', 'class-dbd-playoffs', 'class-dbd-po-posts', 'class-dbd-throws', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-boards', 'class-dbd-sync', 'class-dbd-tall', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo', 'class-dbd-blocks', 'class-dbd-post', 'class-dbd-news', 'class-dbd-email', 'class-dbd-videos', 'class-dbd-growth', 'class-dbd-signup', 'class-dbd-pack', 'class-dbd-pack-mail', 'class-dbd-instagram', 'class-dbd-bluesky', 'class-dbd-x', 'class-dbd-threads', 'class-dbd-autopub', 'class-dbd-board-mail' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
 
 if ( getenv( 'DBD_HARNESS_SIGN' ) ) { $GLOBALS['dbd_opt'] = array( 'dbd_email' => array( 'on' => true, 'key' => 'harness', 'list' => 4, 'tpl' => 5 ) ); }  /* the email set up, so pages draw the signup strip (SCOPE §66) */
 if ( getenv( 'DBD_HARNESS_NOW' ) && class_exists( 'DBD_News' ) ) { DBD_News::$now = (int) getenv( 'DBD_HARNESS_NOW' ); }
@@ -1391,6 +1391,25 @@ if ( $view === 'block' || $view === 'page' ) {
 	exit( $warnings ? 1 : 0 );
 }
 
+/* ---- every throw (SCOPE §90): a finished game's throws team by team, a quarterback's games from every team he threw for, and the panel's embedded data */
+if ( $view === 'throws' ) {
+	$fail = function ( $m ) { fwrite( STDERR, "throws: $m\n" ); exit( 1 ); };
+	$g = DBD_Data::game( '2026_11_MIN_SF' ); if ( ! $g ) { $fail( 'no Week 11 Vikings at 49ers' ); }
+	$d = DBD_Throws::game( $g ); if ( ! $d || count( $d['sets'] ) !== 2 ) { $fail( 'the game should have both teams’ throws' ); }
+	if ( $d['sets'][0]['t'] !== 'MIN' || count( $d['sets'][0]['rows'] ) !== 43 || $d['sets'][1]['t'] !== 'SF' || count( $d['sets'][1]['rows'] ) !== 27 ) { $fail( 'Vikings 43 and 49ers 27 throws, away first; got ' . $d['sets'][0]['t'] . ' ' . count( $d['sets'][0]['rows'] ) . ', ' . $d['sets'][1]['t'] . ' ' . count( $d['sets'][1]['rows'] ) ); }
+	if ( ( $d['names']['00-0029604'] ?? null ) !== array( 'Kirk Cousins', '8' ) ) { $fail( 'Cousins’ name and number' ); }
+	foreach ( $d['sets'] as $s ) { foreach ( $s['rows'] as $r ) { if ( count( $r ) !== 12 || ! in_array( $r[4], array( 'c', 'i', 'x' ), true ) || $r[7] < -1 || $r[7] > 2 || ! isset( $d['names'][ $r[10] ] ) ) { $fail( 'a bad row: ' . json_encode( $r ) ); } } }
+	$h = DBD_Throws::game_panel( $g ); if ( strpos( $h, 'class="dbd-panel dbd-thr" data-kind="game"' ) === false || ! preg_match( '#<script type="application/json" class="dbd-thr-d">(.*)</script>#s', $h, $m ) || ! is_array( json_decode( $m[1], true ) ) ) { $fail( 'the game panel or its data' ); }
+	foreach ( DBD_Data::week_games( 18 ) as $x ) { if ( ! DBD_Router::is_final( $x ) && DBD_Throws::game_panel( $x ) !== '' ) { $fail( 'a game still to play has no throws panel' ); } }
+	$rec = DBD_Data::player_record( 'MIN', '00-0029604' ); $q = DBD_Throws::qb( $rec + array( 'team' => 'MIN' ) ); if ( ! $q ) { $fail( 'Cousins has no games' ); }
+	$wk = array_column( $q['sets'], 'week' ); $tm = array_unique( array_column( $q['sets'], 't' ) ); $n = 0; foreach ( $q['sets'] as $s ) { $n += count( $s['rows'] ); }
+	if ( count( array_unique( array_column( $q['sets'], 'g' ) ) ) !== count( $q['sets'] ) ) { $fail( 'one entry a game' ); }
+	$sorted = $wk; rsort( $sorted ); if ( $wk !== $sorted || ! in_array( 'LV', $tm, true ) || ! in_array( 'MIN', $tm, true ) || ! in_array( 1, $wk, true ) || $n < 381 ) { $fail( 'Cousins’ games, newest first, Raiders and Vikings, 381+ throws; got ' . implode( ',', $wk ) . ' / ' . implode( ',', $tm ) . " / $n" ); }
+	if ( DBD_Throws::qb( array( 'id' => '00-0000000', 'team' => 'MIN' ) ) !== null ) { $fail( 'a player with no throws has no panel' ); }
+	if ( $out = getenv( 'DBD_HARNESS_HTML' ) ) { file_put_contents( $out . '/throws-game.html', $h ); file_put_contents( $out . '/throws-qb.html', DBD_Throws::qb_panel( $rec + array( 'team' => 'MIN' ) ) ); }
+	if ( $warnings ) { $fail( "$warnings warnings" ); }
+	echo 'throws: the game (' . count( $d['sets'][0]['rows'] ) . ' and ' . count( $d['sets'][1]['rows'] ) . ' throws), Cousins (' . count( $q['sets'] ) . " games, $n throws) and the panels all pass\n"; exit( 0 );
+}
 /* ---- the playoffs (SCOPE §88): the switch, every stage replayed from the 2025 archive, each game's preview, and the weekly pack stopping at Week 18 */
 if ( $view === 'playoffs' ) {
 	$fail = function ( $m ) { fwrite( STDERR, "playoffs: $m\n" ); exit( 1 ); };

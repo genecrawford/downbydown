@@ -3552,3 +3552,27 @@ Gene: "Yes, scope them" (round-by-round playoff posts, and whether the bracket b
 
 **As built:** posts are pack-style items on Weeks 19 to 22 (`DBD_PoPosts`), so each network's existing booking runs over the newest pack week and then any playoff week with posts.
 
+
+## 90. Every throw, one game at a time (scoped and mocked 2026-11-24, `mockup-v64/`; Gene: "Build it"; built as 2.48.0)
+
+Gene, sharing a "Pass Splash" screenshot of Kirk Cousins' Week 11 throws: "scope and mock. let's look at putting it on the game and qb player page. Do you have depth of passes though? Make the field as wide as the page section not tall like this graphic." Then: "This is only for the QB for that one game. No the season. So if it's on a QB's page, we'd need to put a selector for the individual game. Also turn the field vertical and make it wide, not sideways. Put a line between the QB icon and the receiver when I mouse over the individual dot."
+
+**The data:** every pass in the play files has its air yards (how far past the line of scrimmage it was thrown) and its third of the field. 10,693 of this season's 10,752 attempts have both; the rest are two-point tries. Cousins' Week 11 game has 38 attempts, the screenshot's count.
+
+**What it shows:**
+- One game at a time. The field stands upright and fills the panel's width: the line of scrimmage near the bottom, the quarterback behind it in his team's color with his number, depth up the field, his left on the left.
+- Each throw is a dot by air yards and third of the field: complete, incomplete, intercepted, touchdown. Within a third, a dot's place across it is spread out (the data has no exact spot), and the panel says so.
+- Hover, focus or tap a throw: a line arcs from the quarterback to it (dashed for a miss, red for an interception, green for a touchdown), the receiver is named with his number, and the play is written below: quarter, clock, down and distance, passer, receiver, yards, EPA.
+- The depth split (behind the line, 0 to 9, 10 to 19, 20+, each with completions, attempts and yards) runs down the left side, lined up with the field; on a narrow panel it moves under the field. Each third shows its completions and attempts across the top.
+- Picking a receiver lights up his targets.
+
+**Where:**
+- **A finished game's page:** a new "Every throw" panel after the box score, one team at a time. A team that used more than one passer gets a pick for each, and the quarterback's marker shows whoever threw the one you're on.
+- **A quarterback's page:** the How he's used panel's On the field tab, in place of the tall half-width chart, with a game picker, newest first. Receivers' and backs' pages keep their charts.
+
+**Fixed along the way:** the old chart read only the player's current team's play file, so Cousins' page had 69 of his 381 throws (his Vikings games). The new chart reads every team he threw for this season.
+
+**As built:** `DBD_Throws` gathers the throws and embeds them in the panel; `assets/passchart.js` draws it. No change to the data build.
+
+**Not included:** a season view of every throw at once, an animated replay, a field-use grade.
+

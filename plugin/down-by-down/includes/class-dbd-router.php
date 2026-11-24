@@ -461,6 +461,7 @@ class DBD_Router {
 			}
 			wp_enqueue_script( 'dbd-marks', DBD_URL . 'assets/marks.js', array(), DBD_VERSION, true );
 			wp_enqueue_script( 'dbd-player', DBD_URL . 'assets/player.js', array( 'dbd-marks' ), DBD_VERSION, true );
+			if ( ( $p['pos'] ?? '' ) === 'QB' ) { wp_enqueue_script( 'dbd-passchart', DBD_URL . 'assets/passchart.js', array(), DBD_VERSION, true ); }  /* every throw (SCOPE §90) */
 			wp_localize_script( 'dbd-player', 'DBD_PLAYER', array(
 				'id'      => $p['id'],
 				'short'   => $rec['short'] ?? '',
@@ -507,7 +508,7 @@ class DBD_Router {
 			wp_enqueue_script( 'dbd-myteam', DBD_URL . 'assets/myteam.js', array( 'dbd-marks' ), DBD_VERSION, true );
 			wp_localize_script( 'dbd-myteam', 'DBD_MT', array( 'base' => self::url(), 'ids' => array_map( function ( $p ) { return $p['id']; }, $r['myteam'] ), 'max' => DBD_MyTeam::MAX, 'given' => self::q( 'myteam' ) !== '', 'teams' => DBD_Data::teams(), 'heads' => DBD_Data::headshots() ) );
 		}
-		if ( $r['view'] === 'game' ) { wp_enqueue_script( 'dbd-game', DBD_URL . 'assets/game.js', array(), DBD_VERSION, true ); }  /* the win probability scrubber */
+		if ( $r['view'] === 'game' ) { wp_enqueue_script( 'dbd-game', DBD_URL . 'assets/game.js', array(), DBD_VERSION, true ); wp_enqueue_script( 'dbd-passchart', DBD_URL . 'assets/passchart.js', array(), DBD_VERSION, true ); }  /* the win probability scrubber; every throw (SCOPE §90) */
 		if ( $r['view'] === 'players' ) {
 			wp_enqueue_script( 'dbd-marks', DBD_URL . 'assets/marks.js', array(), DBD_VERSION, true );
 			wp_enqueue_script( 'dbd-players', DBD_URL . 'assets/players.js', array( 'dbd-marks' ), DBD_VERSION, true );
