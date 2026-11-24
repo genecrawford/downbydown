@@ -22,6 +22,7 @@ function dbd_admin_tabs() {
 		'dt' => array( 'down-by-down-data', 'Data' ),
 		'gr' => array( 'down-by-down-growth', 'Growth' ),
 		'sp' => array( 'down-by-down-share', 'Share pack' ),
+		'po' => array( 'down-by-down-playoffs', 'Playoffs' ),
 	);
 }
 function dbd_admin_url( $tab = 'ov', $args = array(), $hash = '' ) {
@@ -311,6 +312,7 @@ function dbd_settings_page() {
 			case 'dt': dbd_tab_data(); break;
 			case 'gr': dbd_tab_growth(); break;
 			case 'sp': dbd_tab_share(); break;
+			case 'po': dbd_tab_playoffs(); break;
 			default:   dbd_tab_overview();
 		}
 		?>
@@ -321,6 +323,7 @@ function dbd_settings_page() {
 function dbd_admin_notices() {
 	$n = array();
 	if ( isset( $_GET['settings-updated'] ) ) { $n[] = array( 'success', 'Saved.' ); }
+	if ( isset( $_GET['po'] ) ) { $n[] = array( 'success', $_GET['po'] === 'on' ? 'The playoffs are on.' : 'The playoffs are off.' ); }
 	if ( isset( $_GET['synced'] ) ) { $n[] = $_GET['synced'] ? array( 'success', 'Synced.' ) : array( 'error', 'The sync failed. The sync log on the Data tab says why.' ); }
 	if ( isset( $_GET['cleared'] ) ) { $n[] = array( 'success', (int) $_GET['cleared'] . ' cached cards cleared. They are drawn again the next time a page is shared.' ); }
 	if ( isset( $_GET['written'] ) ) { $wn = (int) $_GET['written']; $n[] = array( 'success', $wn ? $wn . ' weekly post' . ( $wn === 1 ? '' : 's' ) . ' written.' : 'No new posts: every finished week already has one, or was deleted.' ); }
@@ -634,6 +637,25 @@ function dbd_tab_news() {
 }
 
 /* ------------------------------------------------------------------ Site */
+
+/* ------------------------------------------------------------------ Playoffs (SCOPE §88) */
+
+function dbd_tab_playoffs() {
+	$on = DBD_Playoffs::on(); $ready = DBD_Playoffs::ready();
+	$form = '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">' . wp_nonce_field( 'dbd_playoffs_switch', '_wpnonce', true, false ) . '<input type="hidden" name="action" value="dbd_playoffs_switch">' . ( $on ? '' : '<input type="hidden" name="on" value="1">' ) . '<button class="button' . ( $on ? '' : ' button-primary' ) . '">' . ( $on ? 'Turn off' : 'Turn on' ) . '</button></form>';
+	?>
+	<div class="dbd-box"><h2>Playoff coverage</h2>
+		<table class="dbd-rows">
+			<tr><td>Status</td><td><span class="dbd-dot <?php echo $on ? 'ok' : ''; ?>"></span><strong><?php echo $on ? 'On' : 'Off'; ?></strong>. <?php echo esc_html( $on ? 'Visitors see the playoff hero and the playoff pages.' : 'Visitors see the normal home page, and the playoff pages are hidden.' ); ?></td></tr>
+			<tr><td>Right now</td><td><?php echo esc_html( DBD_Playoffs::status() ); ?></td></tr>
+			<tr><td>What it controls</td><td>The home page hero, <code>/playoffs/</code>, and every game preview. Weekly social posts don't change.</td></tr>
+			<tr><td>Timing</td><td>A change can take up to 10 minutes to reach every visitor.</td></tr>
+		</table>
+		<div class="dbd-foot"><?php echo $form; ?>
+			<?php if ( $ready ) : ?><a class="button" href="<?php echo esc_url( add_query_arg( DBD_Playoffs::PREVIEW, 1, home_url( '/' ) ) ); ?>" target="_blank" rel="noopener">Preview the home page</a><a class="button" href="<?php echo esc_url( DBD_Router::url( array( 'view' => 'playoffs' ) ) ); ?>" target="_blank" rel="noopener">Preview the bracket</a><?php endif; ?>
+		</div></div>
+	<?php
+}
 
 function dbd_tab_site() {
 	$plain = ! get_option( 'permalink_structure' ); $aid = DBD_Urls::page_id();

@@ -3483,3 +3483,39 @@ Gene: "we need to clean up the UX of this Share Pack page, it's too condensed an
 6. **Keys to the game gets its own view:** one row per game, opened when needed. These aren't on the schedule, so they stay separate from the calendar.
 7. **Accounts and email becomes a table:** one row per network with its account, connection, weekly switch and Auto publish switch. Credentials open only when changing them. The Tuesday email and the by-hand accounts sit below it.
 8. **Phones:** the calendar becomes a day-by-day list.
+
+## 88. Playoffs and the Super Bowl (built as 2.46.0, 2026-11-23, mocks `mockup-v61/` and `mockup-v62/`)
+
+Gene: "I would be cool to have a bracket page or some, replacement section, I could put on the home page".
+
+**What's already there:** playoff games have game pages and round-by-round week in review, and a finished season gets a bracket on its season page. There's no live bracket, no playoff landing page, no previews and no postseason leaders.
+
+**What it adds:**
+
+1. **The bracket, drawn on the field.** AFC from the left end zone, NFC from the right, the Super Bowl at midfield. Each winner's route is chalked to its next game, and hovering a team follows its whole run. On a narrow screen it becomes a round-by-round list.
+2. **A home page section.** A new `[dbd_block type="playoffs"]` holds the bracket, what's next and a link to the full page. It shows only in playoff season, so it can stay on the Divi page and needs no seasonal editing.
+3. **A `/playoffs/` page.** The bracket, this round's games with each one's biggest edge, and playoff leaders in passing, rushing and receiving yards, touchdowns and sacks.
+4. **A preview for every game.** Date, place and line, where each team can win it, offense against defense, each team's road, and the series before the game. After the final it adds the biggest plays and who led each team.
+5. **A Super Bowl page.** The same page at full size, from the moment both teams are set through the final.
+6. **The bracket's five stages.** If the season ended today, then each round as it's set, then the champion. Winners move on after each data update.
+
+**The data:**
+
+- **Seeds** come from nflverse's `standings.csv`, which applies the NFL's tiebreakers. It matches all 14 real 2025 seeds, the Wild Card pairings and the Divisional reseeding. The current site picture stays record-then-point-differential until this replaces it.
+- **Reseeding:** the top seed left plays the lowest seed left, so Divisional and Conference games appear from the real schedule rather than fixed bracket lines.
+- **Super Bowl LXI** is February 14, 2027 at SoFi Stadium. Once the schedule carries the game, its row is the source.
+
+**Fixes this needs before the playoffs:**
+
+- League Leaders and the three weekly boards count every week up to `$n`, so a playoff week would add postseason stats to season totals and read "Through Week 19." They stop at Week 18, and playoff boards use their own totals.
+- The weekly social calendar assumes Weeks 1 to 18. It gets round-based posts: a preview of each round, then a results post, with Super Bowl posts through the two-week gap.
+
+**Not in this release:** win-probability charts for playoff games, because the data build leaves them out today, and clinching and elimination marks.
+
+**Decided:** the home page gets a playoff hero (`mockup-v62/`) in place of the normal hero. Gene: "make something splashy that replaces the hero". Gene then replaced the date rule with a control: "give me a control in the backend to turn it on and off when i want to". So there are no automatic dates. Down by Down › Playoffs has one On/Off switch, off by default, covering the hero, `/playoffs/` and every game preview. While it's off, a logged-in admin can preview all of it.
+
+**The playoff hero.** A floodlit field with the conference end zones. All 14 teams start at their end zone and march toward midfield round by round, with chalk routes behind the winners and eliminated teams left grey where they lost. The number painted on the 50 counts who's left: 14, 8, 4, 2. For Super Bowl week the end zones and field take the two teams' colors. When it ends, the field takes the champion's colors, confetti falls and the champion's logo lands on the 50. The strip under the field keeps this week's games until Week 18, then shows the current round, the conference championships, and finally the champion's road. On phones the field turns vertical, AFC at the top and NFC at the bottom. The plugin draws it where the normal hero (`.dxd-hero`) starts and hides that one, so the Divi page needs no edit. This replaces the separate home section in item 2.
+
+**In 2.46.0 for social:** the weekly pack, its boards and its schedule stop at Week 18, so nothing playoff-related posts by itself and no playoff stat reaches a season board.
+
+**Still to scope and mock, before Wild Card (January 9):** round-based social posts (a preview of each round, a results post, the Super Bowl gap) and whether the bracket becomes a social graphic. Both post publicly to four networks and neither has been mocked.

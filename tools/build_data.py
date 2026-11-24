@@ -1674,6 +1674,10 @@ print('week in review:', len(_wk_done), 'weeks', _wk_done[-3:])
 import build_fan
 build_fan.build(out)
 
+# ---------------------------------------------------------------- the playoff seeds (SCOPE §88): playoffs.json, from nflverse's standings
+import build_playoffs
+build_playoffs.build(out, season)
+
 # ---------------------------------------------------------------- manifest
 files = {}
 for root, dirs_, names in os.walk(out):

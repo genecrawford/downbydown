@@ -138,10 +138,11 @@ class DBD_Pack {
 		return preg_match( '/^pack-week-\d{1,2}-(snaps|targets|offense|leaders|rush)$/', $v ) && DBD_Card::valid( $v ) ? $v : '';
 	}
 
-	/** The finished weeks that have their movers, newest first. */
+	const LAST_WEEK = 18;  /* the weekly pack, its boards and its schedule are the regular season's (SCOPE §88) */
+	/** The finished regular-season weeks that have their movers, newest first. */
 	public static function weeks() {
 		$o = array();
-		foreach ( DBD_Week::weeks() as $w ) { $f = DBD_Week::file( $w ); if ( $f && ! empty( $f['complete'] ) && ! empty( $f['movers'] ) ) { $o[] = (int) $w; } }
+		foreach ( DBD_Week::weeks() as $w ) { if ( (int) $w > self::LAST_WEEK ) { continue; } $f = DBD_Week::file( $w ); if ( $f && ! empty( $f['complete'] ) && ! empty( $f['movers'] ) ) { $o[] = (int) $w; } }
 		rsort( $o ); return $o;
 	}
 	public static function newest() { $w = self::weeks(); return $w ? $w[0] : 0; }

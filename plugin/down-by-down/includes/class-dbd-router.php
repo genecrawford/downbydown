@@ -200,6 +200,9 @@ class DBD_Router {
 			$ys = DBD_Boards::years( $view ); $y = (int) self::q( 'y' );
 			$r['view'] = $ys ? $view : 'notfound'; $r['y'] = in_array( $y, $ys, true ) ? $y : ( $ys[0] ?? 0 );
 			if ( $y && ! in_array( $y, $ys, true ) ) { $r['view'] = 'notfound'; }
+		} elseif ( $view === 'playoffs' ) {  /* SCOPE §88: behind the Playoffs switch; a game's preview names a playoff game */
+			$pg = self::q( 'pg' ); $ok = DBD_Playoffs::visible() && ( $pg === '' || DBD_Playoffs::game_slug( $pg ) !== '' );
+			$r['view'] = $ok ? 'playoffs' : 'notfound'; $r['pgame'] = $ok ? $pg : '';
 		} elseif ( $view === 'week' ) {  /* the week in review (SCOPE §40): a week with a final game, the latest by default */
 			$r['view'] = 'week'; $ok = DBD_Week::weeks();
 			$r['week'] = ( $week && in_array( $week, $ok, true ) ) ? $week : DBD_Week::default_week();
@@ -287,6 +290,7 @@ class DBD_Router {
 		if ( $r['view'] === 'teams' ) { $args = array( 'view' => 'teams' ); }
 		if ( $r['view'] === 'myteam' ) { $args = ( $full && self::q( 'myteam' ) !== '' ) ? array( 'myteam' => self::q( 'myteam' ) ) : array( 'view' => 'myteam' ); }
 		if ( $r['view'] === 'week' ) { $args = array( 'view' => 'week', 'week' => $r['week'] ); }
+		if ( $r['view'] === 'playoffs' ) { $args = array( 'view' => 'playoffs' ); if ( ! empty( $r['pgame'] ) ) { $args['pg'] = $r['pgame']; } }
 		if ( $r['view'] === 'fantasy' ) { $args = array( 'view' => 'fantasy' ); if ( $r['week'] ) { $args['week'] = $r['week']; } }
 		if ( $r['view'] === 'draft' || $r['view'] === 'combine' ) { $args = array( 'view' => $r['view'], 'y' => $r['y'] ); }
 		if ( $r['view'] === 'leaders' ) { $args = array( 'view' => 'leaders' ); if ( $r['lboard'] !== '' ) { $args['b'] = $r['lboard']; } elseif ( $r['lgroup'] !== 'fan' ) { $args['g'] = $r['lgroup']; } }
@@ -316,6 +320,8 @@ class DBD_Router {
 	private static function seo_base() {
 		$r = self::$route; $site = 'Down by Down'; $season = DBD_Data::season();
 		switch ( $r['view'] ?? 'hub' ) {
+			case 'playoffs':
+				return DBD_Playoffs::seo( $r );
 			case 'season':
 				$sb = DBD_Season::super_bowl(); $T = DBD_Data::teams(); $w = $sb ? ( $sb['home_score'] > $sb['away_score'] ? $sb['home'] : $sb['away'] ) : null;
 				return array( "$season NFL season recap: playoffs, standings, leaders", "How the $season NFL season ended" . ( $w ? ': the ' . ( $T[ $w ]['name'] ?? $w ) . ' won the Super Bowl' : '' ) . '. The playoffs, final standings, who led, and every team, player and week, kept as it finished.' );
@@ -487,6 +493,7 @@ class DBD_Router {
 		if ( $r['view'] === 'leaders' ) { wp_enqueue_script( 'dbd-leaders', DBD_URL . 'assets/leaders.js', array(), DBD_VERSION, true ); }
 		if ( $r['view'] === 'leaders' && in_array( $r['lgroup'] ?? '', array( 'wr', 'te', 'rb', 'qb', 'rush' ), true ) && ( $r['lboard'] ?? '' ) === '' ) { wp_enqueue_script( 'dbd-scatter', DBD_URL . 'assets/scatter.js', array(), DBD_VERSION, true ); }  /* the charts' shared highlight and Show all (SCOPE §80) */
 		if ( $r['view'] === 'draft' || $r['view'] === 'combine' ) { wp_enqueue_script( 'dbd-boards', DBD_URL . 'assets/boards.js', array(), DBD_VERSION, true ); }
+		if ( $r['view'] === 'playoffs' ) { DBD_Playoffs::assets(); }
 		if ( $r['view'] === 'week' ) { wp_enqueue_script( 'dbd-week', DBD_URL . 'assets/week.js', array(), DBD_VERSION, true ); }
 		if ( $r['view'] === 'hub' ) {  /* SCOPE §41: the My team card. Always loaded: right after an update the player list may not have synced yet, and a cached page without the script would keep the card empty; hub.js does nothing if the list is missing */
 			wp_enqueue_script( 'dbd-marks', DBD_URL . 'assets/marks.js', array(), DBD_VERSION, true );
