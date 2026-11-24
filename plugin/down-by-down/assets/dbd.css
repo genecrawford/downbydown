@@ -2204,3 +2204,40 @@ html:not([data-fx]) .dbd [data-fx="half"],html[data-fx="std"] .dbd [data-fx="std
 .dbd .pr-more{margin:10px var(--dbd-edge) 4px}
 @container dbd (max-width:640px){.dbd .pr-t .c-h,.dbd .pr-t .c-s{display:none}.dbd .pr-chart{padding:4px 6px 8px}.dbd .pr-svg.wide{display:none}.dbd .pr-svg.narrow{display:block}}
 @container dbd (max-width:420px){.dbd .pr-t .c-p{display:none}.dbd .pr-t th,.dbd .pr-t td{padding:6px}}
+/* Every throw, one game at a time (SCOPE §90): the pass chart on a game's page and a quarterback's page; assets/passchart.js draws it */
+.dbd .dbd-thr-pick select{font:500 13px var(--dbd-body);padding:4px 8px;border:1px solid var(--dbd-line-2);border-radius:5px;background:#fff;color:var(--dbd-ink);max-width:100%}
+.dbd .dbd-thr-seg{display:inline-flex;border:1px solid var(--dbd-line-2);border-radius:5px;overflow:hidden}
+.dbd .dbd-thr-seg button{font:600 12px var(--dbd-display);letter-spacing:.1em;text-transform:uppercase;border:0;border-radius:0;background:transparent;color:var(--dbd-ink-2);padding:5px 12px;margin:0;cursor:pointer}
+.dbd .dbd-thr-seg button[aria-pressed=true]{background:var(--dbd-ink);color:#fff}
+.dbd .dbd-thr-b{padding:12px 14px 14px}
+.dbd .dbd-thr-say{margin:0 0 12px;font-size:14px;color:var(--dbd-ink-2)}
+.dbd .dbd-thr-vf{display:grid;grid-template-columns:132px minmax(0,1fr);gap:12px}
+.dbd .dbd-thr-gut{position:relative}
+.dbd .dbd-thr-gut .band{position:absolute;left:0;right:0;display:flex;flex-direction:column;justify-content:center;padding-right:10px;border-top:1px solid var(--dbd-line-2);text-align:right;line-height:1.35}
+.dbd .dbd-thr-gut .n,.dbd .dbd-thr-tbl .n{font:700 11px var(--dbd-display);text-transform:uppercase;letter-spacing:.12em;color:var(--dbd-muted)}
+.dbd .dbd-thr-gut .v{font:600 13px var(--dbd-mono);color:var(--dbd-ink)}
+.dbd .dbd-thr-gut .y{font:500 12px var(--dbd-mono);color:var(--dbd-muted)}
+.dbd .dbd-thr-tbl{display:none;grid-template-columns:repeat(4,minmax(0,1fr));margin-top:8px;border-top:1px solid var(--dbd-line-2)}
+.dbd .dbd-thr-tbl div{padding:6px 4px 0;border-left:1px solid var(--dbd-line)}
+.dbd .dbd-thr-tbl div:first-child{border-left:0}
+.dbd .dbd-thr-tbl span{display:block}
+.dbd .dbd-thr-tbl .n{font-size:10px;letter-spacing:.08em}
+.dbd .dbd-thr-tbl .v{font:600 12px var(--dbd-mono);color:var(--dbd-ink)}
+.dbd .dbd-thr-tbl .y{font:500 11px var(--dbd-mono);color:var(--dbd-muted)}
+.dbd .dbd-thr.is-narrow .dbd-thr-vf{grid-template-columns:minmax(0,1fr)}
+.dbd .dbd-thr.is-narrow .dbd-thr-gut{display:none}
+.dbd .dbd-thr.is-narrow .dbd-thr-tbl{display:grid}
+.dbd .dbd-thr-fld svg{display:block;width:100%;height:auto;border-radius:4px;touch-action:manipulation}
+.dbd .dbd-thr-fld [data-i]:focus{outline:none}
+.dbd .dbd-thr-fld [data-i]:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.dbd .dbd-thr-info{min-height:44px;margin:10px 0 0;font-size:14px;color:var(--dbd-ink-2)}
+.dbd .dbd-thr-info b{color:var(--dbd-ink)}
+.dbd .dbd-thr-key{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:4px;font-size:12px;color:var(--dbd-muted)}
+.dbd .dbd-thr-key span{display:inline-flex;align-items:center;gap:5px}
+.dbd .dbd-thr-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.dbd .dbd-thr-qbs{margin:0 0 14px}
+.dbd .dbd-thr-chips[hidden]{display:none}
+.dbd .dbd-thr-chips .cl{align-self:center;margin-right:2px;font:700 11px var(--dbd-display);text-transform:uppercase;letter-spacing:.12em;color:var(--dbd-muted)}
+.dbd .dbd-thr-chips button{font:500 12px var(--dbd-body);border:1px solid var(--dbd-line-2);background:#fff;color:var(--dbd-ink-2);border-radius:999px;padding:3px 10px;margin:0;cursor:pointer;line-height:1.5}
+.dbd .dbd-thr-chips button[aria-pressed=true]{background:var(--dbd-ink);border-color:var(--dbd-ink);color:#fff}
+.dbd .dbd-thr-seg button:focus-visible,.dbd .dbd-thr-chips button:focus-visible,.dbd .dbd-thr-pick select:focus-visible{outline:2px solid var(--dbd-red);outline-offset:2px}

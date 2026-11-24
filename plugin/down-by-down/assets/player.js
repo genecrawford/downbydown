@@ -60,7 +60,7 @@
   if (cxp) { var cxb = document.createElement('button'); cxb.type = 'button'; cxb.className = 'dbd-cx-more'; cxb.textContent = 'All columns'; cxb.addEventListener('click', function () { cxp.classList.toggle('is-all'); cxb.textContent = cxp.classList.contains('is-all') ? 'Core columns' : 'All columns'; }); var cxh = cxp.querySelector('.dbd-ph'); if (cxh) cxh.appendChild(cxb); }
 
   fetch(C.dataUrl, { credentials: 'omit' }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(boot)
-    .catch(function (err) { $('#dbd-pmap').innerHTML = '<p class="dbd-note">Could not load the plays (' + esc(err.message || err) + ').</p>'; $('#dbd-mapn').textContent = ''; var bd = $('#dbd-bands'); if (bd) bd.innerHTML = ''; });
+    .catch(function (err) { if (!$('#dbd-pmap')) return; $('#dbd-pmap').innerHTML = '<p class="dbd-note">Could not load the plays (' + esc(err.message || err) + ').</p>'; $('#dbd-mapn').textContent = ''; var bd = $('#dbd-bands'); if (bd) bd.innerHTML = ''; });
 
   function boot(RAW) {
     var K = RAW.keys, P = RAW.plays.map(function (r, i) { var o = { i: i }; K.forEach(function (k, j) { o[k] = r[j]; }); return o; }), G = RAW.games || [], gIdx = {};
@@ -110,6 +110,7 @@
       g += '</svg>';  /* the counts under the line are carries; the caption at the top says so */
       return g;
     }
+    if ($('#dbd-pmap')) {  /* the old field map and depth bands: receivers and backs (a quarterback's page has the new chart, SCOPE §90) */
     var runFirst = grp === 'rb' && runs.length >= tgts.length;
     if (runFirst) {
       $('#dbd-map1h').textContent = 'Carries by gap'; $('#dbd-pmap').innerHTML = runmap(runs, C.num, 0, C.accent); $('#dbd-mapn').textContent = runs.length + ' carries · ' + tgts.length + ' targets';
@@ -127,6 +128,8 @@
     $('#dbd-bands').innerHTML = bSet.length ? bands.map(function (b) { var a = bSet.filter(b[1]), c = a.filter(function (p) { return p.k === 'comp'; }).length, y = a.reduce(function (s, p) { return s + (p.yds || 0); }, 0); return '<div class="n">' + b[0] + '</div><div class="bar"><i style="--w:' + (a.length / bmax * 100) + '%"></i><i class="c" style="--w:' + (c / bmax * 100) + '%"></i></div><div class="t">' + a.length + ' tgt · ' + c + ' rec · ' + y + ' yds</div>'; }).join('') : '<p class="dbd-note" style="padding:0">No targets in the play file yet.</p>';
     var deep = bSet.filter(bands[3][1]), shortB = bSet.filter(bands[1][1]);
     $('#dbd-bandnote').textContent = bSet.length ? 'Green is the caught share of each bar. Deep: ' + (deep.length ? pc(deep.filter(function (p) { return p.k === 'comp'; }).length, deep.length) + ' caught' : 'no targets') + (shortB.length ? ', short: ' + pc(shortB.filter(function (p) { return p.k === 'comp'; }).length, shortB.length) : '') + '.' : '';
+
+    }
 
     /* ---- situations */
     var touches = grp === 'qb' ? qbPass : mine.filter(function (p) { return isT(p) || p.k === 'run'; });

@@ -160,6 +160,7 @@ if ( $BX && ! empty( $BX['keys'] ) ) {
 	}
 	echo '<section class="dbd-panel dbd-box"><div class="dbd-ph"><span class="dbd-lab"><b>Box score</b> · every offensive player who touched the ball</span><span class="dbd-badge">Week ' . (int) $g['week'] . '</span></div>';
 	echo '<p class="dbd-wp-say">' . implode( ' ', $bsay ) . '</p><div class="dbd-bx2">' . $bcols . '</div><p class="dbd-note">' . ( $bpbp ? 'Each player\'s line for this game counted from the play-by-play, since nflverse\'s weekly stats for it haven\'t posted yet; they replace these lines with the next build once they do. The percentage' : 'Each player\'s line for this game from nflverse\'s weekly stats; the percentage' ) . ' beside his name is his share of the offense\'s snaps. Share is his part of the team\'s carries or targets in this game. Defense lists sacks and interceptions; kicking lists field goals.</p></section>';
+	echo DBD_Throws::game_panel( $g );  /* every throw, one team at a time (SCOPE §90) */
 }
 
 /* ---- the lineups (SCOPE §32): an upcoming game draws this offense against the other team's defense from the depth charts; a final has the box score instead */
