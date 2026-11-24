@@ -1398,7 +1398,7 @@ if ( $view === 'throws' ) {
 	$d = DBD_Throws::game( $g ); if ( ! $d || count( $d['sets'] ) !== 2 ) { $fail( 'the game should have both teams’ throws' ); }
 	if ( $d['sets'][0]['t'] !== 'MIN' || count( $d['sets'][0]['rows'] ) !== 43 || $d['sets'][1]['t'] !== 'SF' || count( $d['sets'][1]['rows'] ) !== 27 ) { $fail( 'Vikings 43 and 49ers 27 throws, away first; got ' . $d['sets'][0]['t'] . ' ' . count( $d['sets'][0]['rows'] ) . ', ' . $d['sets'][1]['t'] . ' ' . count( $d['sets'][1]['rows'] ) ); }
 	if ( ( $d['names']['00-0029604'] ?? null ) !== array( 'Kirk Cousins', '8' ) ) { $fail( 'Cousins’ name and number' ); }
-	foreach ( $d['sets'] as $s ) { foreach ( $s['rows'] as $r ) { if ( count( $r ) !== 12 || ! in_array( $r[4], array( 'c', 'i', 'x' ), true ) || $r[7] < -1 || $r[7] > 2 || ! isset( $d['names'][ $r[10] ] ) ) { $fail( 'a bad row: ' . json_encode( $r ) ); } } }
+	foreach ( $d['sets'] as $s ) { foreach ( $s['rows'] as $r ) { if ( count( $r ) !== 13 || ( $r[12] !== null && ! is_int( $r[12] ) ) || ! in_array( $r[4], array( 'c', 'i', 'x' ), true ) || $r[7] < -1 || $r[7] > 2 || ! isset( $d['names'][ $r[10] ] ) ) { $fail( 'a bad row: ' . json_encode( $r ) ); } } }
 	$h = DBD_Throws::game_panel( $g ); if ( strpos( $h, 'class="dbd-panel dbd-thr" data-kind="game"' ) === false || ! preg_match( '#<script type="application/json" class="dbd-thr-d">(.*)</script>#s', $h, $m ) || ! is_array( json_decode( $m[1], true ) ) ) { $fail( 'the game panel or its data' ); }
 	foreach ( DBD_Data::week_games( 18 ) as $x ) { if ( ! DBD_Router::is_final( $x ) && DBD_Throws::game_panel( $x ) !== '' ) { $fail( 'a game still to play has no throws panel' ); } }
 	$rec = DBD_Data::player_record( 'MIN', '00-0029604' ); $q = DBD_Throws::qb( $rec + array( 'team' => 'MIN' ) ); if ( ! $q ) { $fail( 'Cousins has no games' ); }
@@ -1406,9 +1406,17 @@ if ( $view === 'throws' ) {
 	if ( count( array_unique( array_column( $q['sets'], 'g' ) ) ) !== count( $q['sets'] ) ) { $fail( 'one entry a game' ); }
 	$sorted = $wk; rsort( $sorted ); if ( $wk !== $sorted || ! in_array( 'LV', $tm, true ) || ! in_array( 'MIN', $tm, true ) || ! in_array( 1, $wk, true ) || $n < 381 ) { $fail( 'Cousins’ games, newest first, Raiders and Vikings, 381+ throws; got ' . implode( ',', $wk ) . ' / ' . implode( ',', $tm ) . " / $n" ); }
 	if ( DBD_Throws::qb( array( 'id' => '00-0000000', 'team' => 'MIN' ) ) !== null ) { $fail( 'a player with no throws has no panel' ); }
+	/* field use (SCOPE §91): the league's spreads, sorted and between 0 and 1, and the replay's score margin */
+	$lg = DBD_Throws::league(); $sg = $lg['g']; $ss = $lg['s']; $s2 = $sg; sort( $s2 ); $s3 = $ss; sort( $s3 );
+	if ( count( $sg ) < 200 || count( $ss ) < 20 || $s2 !== $sg || $s3 !== $ss || min( $sg ) < 0 || max( $sg ) > 1 || min( $ss ) < 0 || max( $ss ) > 1 ) { $fail( 'the league spreads: ' . count( $sg ) . ' games, ' . count( $ss ) . ' seasons' ); }
+	if ( DBD_Throws::spread( array( 5, 5 ) ) !== round( log( 2 ) / log( 12 ), 4 ) || DBD_Throws::spread( array( 9 ) ) !== 0.0 || DBD_Throws::spread( array_fill( 0, 12, 3 ) ) !== 1.0 ) { $fail( 'the spread measure' ); }
+	if ( DBD_Throws::band( -1 ) !== 0 || DBD_Throws::band( 0 ) !== 1 || DBD_Throws::band( 10 ) !== 2 || DBD_Throws::band( 20 ) !== 3 ) { $fail( 'the depth bands' ); }
+	if ( $d['sets'][0]['rows'][3][12] !== -7 ) { $fail( 'the Vikings were down 7 on their fourth throw, not ' . var_export( $d['sets'][0]['rows'][3][12], true ) ); }
+	$pj = json_decode( preg_replace( '#^.*<script type="application/json" class="dbd-thr-d">(.*)</script>.*$#s', '$1', DBD_Throws::qb_panel( $rec + array( 'team' => 'MIN' ) ) ), true );
+	if ( empty( $pj['lg']['g'] ) || ( $pj['lg']['min'] ?? null ) !== array( 20, 150 ) ) { $fail( 'the panel should carry the league spreads' ); }
 	if ( $out = getenv( 'DBD_HARNESS_HTML' ) ) { file_put_contents( $out . '/throws-game.html', $h ); file_put_contents( $out . '/throws-qb.html', DBD_Throws::qb_panel( $rec + array( 'team' => 'MIN' ) ) ); }
 	if ( $warnings ) { $fail( "$warnings warnings" ); }
-	echo 'throws: the game (' . count( $d['sets'][0]['rows'] ) . ' and ' . count( $d['sets'][1]['rows'] ) . ' throws), Cousins (' . count( $q['sets'] ) . " games, $n throws) and the panels all pass\n"; exit( 0 );
+	echo 'throws: the game (' . count( $d['sets'][0]['rows'] ) . ' and ' . count( $d['sets'][1]['rows'] ) . ' throws), Cousins (' . count( $q['sets'] ) . " games, $n throws), field use (" . count( $sg ) . ' games, ' . count( $ss ) . " seasons) and the panels all pass\n"; exit( 0 );
 }
 /* ---- the playoffs (SCOPE §88): the switch, every stage replayed from the 2025 archive, each game's preview, and the weekly pack stopping at Week 18 */
 if ( $view === 'playoffs' ) {

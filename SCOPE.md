@@ -3576,3 +3576,16 @@ Gene, sharing a "Pass Splash" screenshot of Kirk Cousins' Week 11 throws: "scope
 
 **Not included:** a season view of every throw at once, an animated replay, a field-use grade.
 
+
+## 91. Every throw: a season view, a replay, and field use (scoped and mocked 2026-11-24, `mockup-v65/`; Gene: "Percentile line", then "Build it"; built as 2.49.0)
+
+Gene, from §90's "Not included": "then let's scope: A season view of every throw at once. An animated replay, throw by throw. A grade for how much of the field he used."
+
+1. **A season view.** Whole season sits at the top of the QB page's game picker; his newest game stays the default. Every throw from every team he played for (381 for Cousins), the dots smaller and see-through so clusters show; hover names the game. The depth split, the thirds and the receiver picks count the season. The game page doesn't change.
+2. **A replay.** Replay clears the field and sends the game's throws out in the order they happened, one a second: the arc draws from the quarterback to the ball, the dot stays, and the line below gives the quarter, clock, score margin ("down 7", from the play file's margin for the offense) and down. Pause and Play, back and forward, 1× or 2×, Show all; a counter reads "4 of 38". Both pages, one game at a time; the season view says replay works one game at a time. With reduced motion, the arcs appear without drawing.
+3. **Field use.** 12 zones: left, middle and right, by behind the line, 0 to 9, 10 to 19 and 20+. Zones touched alone says little (this season's middle game reaches 10 of 12; nearly all reach 9 to 11), so the line also says how evenly he spread the ball (normalized entropy across the zones) against every QB game this season with 20+ throws, or QB season with 150+ for the season view. Under the minimum: too few throws to compare. Show zones draws the 12 zones with each one's throws.
+
+**Decision (Gene, 2026-11-24): "Percentile line."** No letter grade: "Field use: 11 of 12 zones, spread more evenly than 53% of quarterback games this season (20+ throws)."
+
+**As built:** each throw carries the offense's score margin; the panel carries the league's spreads, worked out once per data update (a transient keyed on the data build) by reading the play files one at a time.
+
