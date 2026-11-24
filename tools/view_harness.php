@@ -1442,7 +1442,7 @@ if ( $view === 'playoffs' ) {
 	if ( ! DBD_Data::use_season( 2025 ) ) { $fail( 'no 2025 archive' ); }
 	DBD_Playoffs::$seeds = json_decode( (string) file_get_contents( __DIR__ . '/fixtures/playoffs-2025.json' ), true )['seeds'];
 	/* the bracket hero (SCOPE §92): stage => solid chalk lines (a winner carried on), gold ones (the champion's), cards still to be set, the title */
-	$want = array( 0 => array( 0, 0, 7, 'The road to Super Bowl LX' ), 1 => array( 0, 0, 7, 'Wild Card weekend' ), 2 => array( 8, 0, 3, 'The Divisional round' ), 3 => array( 12, 0, 1, 'The conference championships' ), 4 => array( 14, 0, 0, 'Super Bowl LX is set' ), 5 => array( 11, 3, 0, 'The Seahawks win Super Bowl LX' ) );
+	$want = array( 0 => array( 2, 0, 5, 'The road to Super Bowl LX' ), 1 => array( 2, 0, 5, 'Wild Card weekend' ), 2 => array( 8, 0, 3, 'The Divisional round' ), 3 => array( 12, 0, 1, 'The conference championships' ), 4 => array( 14, 0, 0, 'Super Bowl LX is set' ), 5 => array( 11, 3, 0, 'The Seahawks win Super Bowl LX' ) );
 	foreach ( $want as $st => $w ) {
 		DBD_Playoffs::$replay = $st; DBD_Playoffs::reset();
 		if ( DBD_Playoffs::stage() !== $st ) { $fail( "replay $st reads as stage " . DBD_Playoffs::stage() ); }
@@ -1453,6 +1453,11 @@ if ( $view === 'playoffs' ) {
 		if ( ( $cl['w'] ?? 0 ) !== $w[0] || ( $cl['g'] ?? 0 ) !== $w[1] || $tb !== $w[2] ) { $fail( "stage $st: " . ( $cl['w'] ?? 0 ) . ' winner lines, ' . ( $cl['g'] ?? 0 ) . " gold, $tb to be set" ); }
 		if ( strpos( $h, '<h1>' . $w[3] . '</h1>' ) === false ) { $fail( "stage $st is missing $w[3]" ); }
 		foreach ( $L as $l ) { foreach ( array( 0, 2 ) as $e ) { if ( strpos( $h, 'id="pob-' . $l[ $e ] . '"' ) === false ) { $fail( "stage $st: a line to a card that isn’t there, {$l[ $e ]}" ); } } }
+		/* 2.50.1: the 1 seeds wait in their Divisional cards, and every team links to its own page */
+		foreach ( array( 'AFC' => 'DEN', 'NFC' => 'SEA' ) as $cf => $one ) { if ( ! preg_match( '#id="pob-' . $cf . '-dv\d"[^>]*>(?:(?!id="pob-).)*data-t="' . $one . '"#s', $h ) ) { $fail( "stage $st: the $cf 1 seed should be in a Divisional card" ); } }
+		preg_match_all( '#<a class="po-r[^"]*" data-t="([A-Z]{2,3})" href="([^"]*)"#', $h, $am, PREG_SET_ORDER );
+		if ( count( $am ) < 16 ) { $fail( "stage $st: only " . count( $am ) . ' team rows' ); }
+		foreach ( $am as $a ) { if ( $a[2] !== DBD_Router::url( array( 'team' => $a[1] ) ) ) { $fail( "stage $st: {$a[1]} links to {$a[2]}, not its team page" ); } }
 		if ( preg_match( '/Week (19|2\d)/', $h . $pg ) ) { $fail( "stage $st calls a playoff round a week" ); }
 		$save( 'po-hero-' . $st, $h . '<div class="wrap">' . $pg . '</div>' );
 	}
