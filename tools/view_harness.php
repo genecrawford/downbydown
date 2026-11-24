@@ -950,7 +950,7 @@ if ( $view === 'tall' ) {
 		echo "  drew $c graphics in " . round( microtime( true ) - $sec, 1 ) . "s\n";
 		$GLOBALS['dbd_opt']['dbd_headshots'] = false; $save( DBD_Card::render( DBD_Tall::key( $n, 'board', 'black' ), $fetch ), 'nophoto-board' ); $save( DBD_Card::render( DBD_Tall::key( $n, 'snaps', 'paper' ), $fetch ), 'nophoto-snaps' ); $save( DBD_Card::render( DBD_Tall::key( $n, 'leaders', 'black' ), $fetch ), 'nophoto-leaders' ); unset( $GLOBALS['dbd_opt']['dbd_headshots'] );
 		$bd = new ReflectionMethod( 'DBD_Tall', 'board' ); $bd->setAccessible( true ); $long = array(); for ( $i = 0; $i < 11; $i++ ) { $long[] = array( 'id' => '00-00000' . sprintf( '%02d', $i ), 'full' => 'Christopher Oluwaseun Amon-Ra St. Brown-Montgomery III', 't' => 'JAX', 'num' => 88, 'vs' => '12,345', 'x' => '12.5 SACKS' ); }
-		$save( $bd->invoke( null, new DBD_Tall_Canvas( 'black', null ), array( 'LEAGUE LEADERS', 'RECEIVING YARDS' ), 'THROUGH WEEK 18', $long, 'RECEIVING YARDS' ), 'long-names' );
+		$save( $bd->invoke( null, new DBD_Tall_Canvas( 'black', $fetch ), array( 'LEAGUE LEADERS', 'RECEIVING YARDS' ), 'THROUGH WEEK 18', $long, 'RECEIVING YARDS' ), 'long-names' );
 		foreach ( array( 'tall-week-99-black-swing', 'tall-week-99-paper-board', 'tall-week-' . $n . '-paper-keys-2026_99_AAA_BBB-AAA' ) as $k ) { $ck( "$k draws nothing", DBD_Card::render( $k ) === null ); }
 		foreach ( array( 'tall-week-1-red-swing', 'tall-week-1-black-nope', 'tall-week-123-black-swing' ) as $k ) { $ck( "$k isn't a valid key", ! DBD_Card::valid( $k ) ); }
 		/* League Leaders: the rotation, the order, the top 11 */
