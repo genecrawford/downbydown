@@ -18,6 +18,8 @@ jobs:
         run: |
           set -e
           find plugin tools -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: The playoffs (SCOPE §88)
+        run: php tools/view_harness.php data playoffs x
       - name: The weekly fantasy page (SCOPE §78)
         run: |
           set -e

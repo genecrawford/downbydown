@@ -76,7 +76,7 @@ function wp_schedule_single_event() {} function wp_next_scheduled() { return fal
 
 /* ---- the plugin, minus the bootstrap and admin. The SEO class extends a WordPress sitemap base class; an empty stand-in lets it load. */
 if ( ! class_exists( 'WP_Sitemaps_Provider' ) ) { class WP_Sitemaps_Provider { public $name = ''; public $object_type = ''; } }
-foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-kicker', 'class-dbd-defense', 'class-dbd-scatter', 'class-dbd-rush', 'class-dbd-week', 'class-dbd-fanweek', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-boards', 'class-dbd-sync', 'class-dbd-tall', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo', 'class-dbd-blocks', 'class-dbd-post', 'class-dbd-news', 'class-dbd-email', 'class-dbd-videos', 'class-dbd-growth', 'class-dbd-signup', 'class-dbd-pack', 'class-dbd-pack-mail', 'class-dbd-instagram', 'class-dbd-bluesky', 'class-dbd-x', 'class-dbd-threads', 'class-dbd-autopub', 'class-dbd-board-mail' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
+foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-kicker', 'class-dbd-defense', 'class-dbd-scatter', 'class-dbd-rush', 'class-dbd-week', 'class-dbd-fanweek', 'class-dbd-playoffs', 'class-dbd-hub', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-boards', 'class-dbd-sync', 'class-dbd-tall', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo', 'class-dbd-blocks', 'class-dbd-post', 'class-dbd-news', 'class-dbd-email', 'class-dbd-videos', 'class-dbd-growth', 'class-dbd-signup', 'class-dbd-pack', 'class-dbd-pack-mail', 'class-dbd-instagram', 'class-dbd-bluesky', 'class-dbd-x', 'class-dbd-threads', 'class-dbd-autopub', 'class-dbd-board-mail' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
 
 if ( getenv( 'DBD_HARNESS_SIGN' ) ) { $GLOBALS['dbd_opt'] = array( 'dbd_email' => array( 'on' => true, 'key' => 'harness', 'list' => 4, 'tpl' => 5 ) ); }  /* the email set up, so pages draw the signup strip (SCOPE §66) */
 if ( getenv( 'DBD_HARNESS_NOW' ) && class_exists( 'DBD_News' ) ) { DBD_News::$now = (int) getenv( 'DBD_HARNESS_NOW' ); }
@@ -1283,6 +1283,7 @@ if ( $view === 'admin' ) {
 	array_push( $want['sp'], 'name="dbd_pack_th"', 'value="down_by_down"', 'name="dbd_th_set[on]" value="1" checked', 'name="dbd_th_secret_new"', 'name="dbd_th_token_new"', 'threads_manage_replies', 'User Token Generator', 'name="dbd_ap_set[th]" value="1" checked' );  /* Threads posting (SCOPE §84) */
 	array_push( $want['sp'], 'name="dbd_bsky_set[on]" value="1" checked' );  /* Bluesky's days (SCOPE §82) */
 	if ( in_array( 'rush', array_column( DBD_Pack::items( DBD_Pack::newest() ), 'k' ), true ) ) { array_push( $want['sp'], 'Pass rushers', '-pass-rushers.png"' ); }  /* SCOPE §79, only for the week the defense files run through */
+	$want['po'] = array( 'Playoff coverage', 'Turn on', 'value="dbd_playoffs_switch"', 'What it controls' );  /* the Playoffs switch (SCOPE §88) */
 	$want['ov'][] = 'Open Growth'; $want['ov'][] = 'data-g="ov-visits"'; $want['ov'][] = 'data-g="ov-clicks"';
 	$bad = 0; $dir = getenv( 'DBD_HARNESS_HTML' ); if ( $dir && ! is_dir( $dir ) ) { mkdir( $dir, 0777, true ); }
 	foreach ( dbd_admin_tabs() as $k => $t ) {
@@ -1388,6 +1389,58 @@ if ( $view === 'block' || $view === 'page' ) {
 		file_put_contents( $dir . '/' . $name . '.html', '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' . $fonts . $divi . '<link rel="stylesheet" href="assets/blocks.css"></head><body>' . $html . '</body></html>' );
 	}
 	exit( $warnings ? 1 : 0 );
+}
+
+/* ---- the playoffs (SCOPE §88): the switch, every stage replayed from the 2025 archive, each game's preview, and the weekly pack stopping at Week 18 */
+if ( $view === 'playoffs' ) {
+	$fail = function ( $m ) { fwrite( STDERR, "playoffs: $m\n" ); exit( 1 ); };
+	$out = getenv( 'DBD_HARNESS_HTML' ); $GLOBALS['dbd_opt'] = array();
+	if ( ! function_exists( 'is_admin' ) ) { eval( 'function is_admin() { return false; }' ); }
+	$rp = new ReflectionProperty( 'DBD_Router', 'page_url' ); $rp->setAccessible( true ); $rp->setValue( null, 'https://example.test/' );
+	$save = function ( $name, $body ) use ( $out ) {
+		if ( ! $out ) { return; } if ( ! is_dir( $out . '/assets' ) ) { mkdir( $out . '/assets', 0777, true ); } foreach ( array( 'dbd.css', 'blocks.css', 'playoffs.css', 'playoffs.js' ) as $f ) { copy( DBD_PATH . 'assets/' . $f, $out . '/assets/' . $f ); }
+		file_put_contents( $out . '/' . $name . '.html', '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link href="https://fonts.googleapis.com/css2?family=Tourney:wght@800&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="assets/dbd.css"><link rel="stylesheet" href="assets/blocks.css"><link rel="stylesheet" href="assets/playoffs.css"><style>body{margin:0;background:#f4f1ea}.wrap{max-width:1320px;margin:0 auto;padding:0 24px}</style></head><body>' . $body . '<script src="assets/playoffs.js"></script></body></html>' );
+	};
+	/* the switch, on this season's real seeds */
+	if ( DBD_Playoffs::ready() ) {
+		if ( DBD_Router::route_path( 'playoffs/' )['view'] !== 'notfound' ) { $fail( '/playoffs/ should be hidden while the switch is off' ); }
+		$GLOBALS['dbd_opt'][ DBD_Playoffs::OPT ] = 1;
+		if ( DBD_Router::route_path( 'playoffs/' )['view'] !== 'playoffs' ) { $fail( '/playoffs/ should open with the switch on' ); }
+		if ( DBD_Router::route_path( 'playoffs/nope/' )['view'] !== 'notfound' ) { $fail( 'an unknown game should be not found' ); }
+		if ( substr_count( DBD_Playoffs::hero(), 'class="po-pc' ) !== 14 ) { $fail( 'today’s hero should draw 14 teams' ); }
+		$save( 'po-today', DBD_Playoffs::hero() );
+		unset( $GLOBALS['dbd_opt'][ DBD_Playoffs::OPT ] );
+	}
+	/* every stage, replayed from the 2025 archive */
+	if ( ! DBD_Data::use_season( 2025 ) ) { $fail( 'no 2025 archive' ); }
+	DBD_Playoffs::$seeds = json_decode( (string) file_get_contents( __DIR__ . '/fixtures/playoffs-2025.json' ), true )['seeds'];
+	$want = array( 0 => array( 14, 0, '>14<' ), 1 => array( 14, 0, '>14<' ), 2 => array( 14, 8, '>8<' ), 3 => array( 14, 12, '>4<' ), 4 => array( 14, 14, '>2<' ), 5 => array( 13, 15, 'Seahawks win Super Bowl LX' ) );
+	foreach ( $want as $st => $w ) {
+		DBD_Playoffs::$replay = $st; DBD_Playoffs::reset();
+		if ( DBD_Playoffs::stage() !== $st ) { $fail( "replay $st reads as stage " . DBD_Playoffs::stage() ); }
+		$h = DBD_Playoffs::hero(); $pg = DBD_Playoffs::page();
+		if ( substr_count( $h, 'class="po-pc' ) !== $w[0] ) { $fail( "stage $st draws " . substr_count( $h, 'class="po-pc' ) . ' teams' ); }
+		if ( substr_count( $h, '<path ' ) !== $w[1] ) { $fail( "stage $st draws " . substr_count( $h, '<path ' ) . ' routes' ); }
+		if ( strpos( $h, $w[2] ) === false ) { $fail( "stage $st is missing $w[2]" ); }
+		if ( preg_match( '/Week (19|2\d)/', $h . $pg ) ) { $fail( "stage $st calls a playoff round a week" ); }
+		$save( 'po-hero-' . $st, $h . '<div class="wrap">' . $pg . '</div>' );
+	}
+	$games = DBD_Playoffs::games(); if ( count( $games ) !== 13 ) { $fail( count( $games ) . ' playoff games' ); }
+	foreach ( $games as $g ) {
+		DBD_Playoffs::$replay = 5; DBD_Playoffs::reset(); $sl = DBD_Playoffs::slug( $g ); if ( DBD_Playoffs::id_of( $sl ) !== $g['id'] ) { $fail( "slug $sl" ); }
+		foreach ( array( 5, DBD_Playoffs::IDX[ $g['r'] ] ) as $st ) {
+			DBD_Playoffs::$replay = $st; DBD_Playoffs::reset(); $x = DBD_Playoffs::game_page( $g['id'] );
+			foreach ( array( 'can win it', 'going in' ) as $i => $need ) { if ( ( $st === 5 ) === (bool) $i && strpos( $x, $need ) === false ) { $fail( $g['id'] . " at stage $st is missing “{$need}”" ); } }
+			if ( strpos( $x, ' road</h3>' ) === false || strpos( $x, 'series before' ) === false ) { $fail( $g['id'] . ' is missing a panel' ); }
+		}
+	}
+	DBD_Playoffs::$replay = 5; DBD_Playoffs::reset(); $sb = DBD_Playoffs::super_bowl(); $save( 'po-game-sb', '<div class="wrap">' . DBD_Playoffs::game_page( $sb['id'] ) . '</div>' );
+	DBD_Playoffs::$replay = 3; DBD_Playoffs::reset(); $save( 'po-game-con', '<div class="wrap">' . DBD_Playoffs::game_page( DBD_Playoffs::games()[10]['id'] ) . '</div>' );
+	/* the weekly pack and its boards stop at Week 18 */
+	if ( max( DBD_Pack::weeks() ) > 18 ) { $fail( 'the pack holds a playoff week' ); }
+	if ( DBD_Tall::parse( 'tall-week-19-black-board' ) !== null || DBD_Tall::parse( 'tall-week-18-black-board' ) === null ) { $fail( 'the boards should stop at Week 18' ); }
+	if ( $warnings ) { $fail( "$warnings warnings" ); }
+	echo "playoffs: every stage, " . count( $games ) . " previews, the switch and the Week 18 stop all pass\n"; exit( 0 );
 }
 
 /* ---- route the request the way the page would */

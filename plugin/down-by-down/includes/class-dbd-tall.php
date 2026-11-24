@@ -62,7 +62,7 @@ class DBD_Tall {
 
 	/* ------------------------------------------------------------------ keys and files */
 
-	public static function parse( $key ) { return preg_match( '/^tall-week-(\d{1,2})-(black|paper)-(' . self::SLOTS . ')$/', (string) $key, $m ) ? array( (int) $m[1], $m[2], $m[3] ) : null; }
+	public static function parse( $key ) { return preg_match( '/^tall-week-(\d{1,2})-(black|paper)-(' . self::SLOTS . ')$/', (string) $key, $m ) && (int) $m[1] <= DBD_Pack::LAST_WEEK ? array( (int) $m[1], $m[2], $m[3] ) : null; }  /* a playoff week has no season board (SCOPE §88) */
 	public static function key( $n, $slot, $look = null ) { return 'tall-week-' . (int) $n . '-' . ( $look ?? self::look( $n ) ) . '-' . $slot; }
 	/** An item's or keys side's graphic key in the week's look, or ''. */
 	public static function key_of( $n, $it ) { $slot = DBD_AutoPub::slot( $n, $it ); return $slot === '' ? '' : self::key( $n, $slot ); }

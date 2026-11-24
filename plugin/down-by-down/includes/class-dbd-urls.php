@@ -15,8 +15,8 @@ class DBD_Urls {
 	const OPT_PAGE = 'dbd_app_page';      /* the page that holds the shortcode */
 	const OPT_SIG  = 'dbd_rewrite_sig';   /* what the rewrite rules were last flushed for */
 	const OPT_ROOT = 'dbd_root_paths';    /* app paths stay at the site root when the app page isn't the front page (/hub/); on by default */
-	const BASES    = 'team|game|player|compare|players|leaders|week|matchups|teams|my-team|draft|combine|fantasy';  /* draft, combine: the season boards (SCOPE §63; Greptile, PR #112); fantasy: the weekly fantasy page (SCOPE §78) */
-	const ROUTE_KEYS = array( 'team', 'game', 'player', 'compare', 'view', 'side', 'week', 'g', 'y' );  /* a path decides these; the query string can't override them */
+	const BASES    = 'team|game|player|compare|players|leaders|week|matchups|teams|my-team|draft|combine|fantasy|playoffs';  /* draft, combine: the season boards (SCOPE §63; Greptile, PR #112); fantasy: the weekly fantasy page (SCOPE §78) */
+	const ROUTE_KEYS = array( 'team', 'game', 'player', 'compare', 'view', 'side', 'week', 'g', 'y', 'pg' );  /* a path decides these; the query string can't override them */
 
 	private static $on = null; private static $page = null; private static $players = null; private static $games = null;
 
@@ -203,6 +203,10 @@ class DBD_Urls {
 			case 'fantasy':  /* the weekly fantasy page (SCOPE §78): /fantasy/ is the newest week, /fantasy/week/11/ a week */
 				if ( ! $n ) { return array( 'view' => 'fantasy' ); }
 				return ( $n === 2 && $seg[0] === 'week' && ctype_digit( $seg[1] ) ) ? array( 'view' => 'fantasy', 'week' => $seg[1] ) : $nf;
+			case 'playoffs':  /* SCOPE §88: /playoffs/ is the bracket, /playoffs/{game}/ a game's preview */
+				if ( ! $n ) { return array( 'view' => 'playoffs' ); }
+				$id = $n === 1 ? DBD_Playoffs::id_of( $seg[0] ) : '';
+				return $id !== '' ? array( 'view' => 'playoffs', 'pg' => $id ) : $nf;
 			case 'draft':
 			case 'combine':  /* the season boards (SCOPE §63): /draft/ is the newest, /draft/2026/ a year */
 				if ( ! $n ) { return array( 'view' => $b ); }
@@ -244,6 +248,7 @@ class DBD_Urls {
 			elseif ( $v === 'week' ) { $p = 'week/' . ( ! empty( $a['week'] ) ? (int) $a['week'] . '/' : '' ); unset( $a['week'] ); }
 			elseif ( $v === 'fantasy' ) { $p = 'fantasy/' . ( ! empty( $a['week'] ) ? 'week/' . (int) $a['week'] . '/' : '' ); unset( $a['week'] ); }
 			elseif ( $v === 'matchups' ) { $p = 'matchups/' . ( ! empty( $a['week'] ) ? 'week-' . (int) $a['week'] . '/' : '' ); unset( $a['week'] ); }
+			elseif ( $v === 'playoffs' ) { $s = ! empty( $a['pg'] ) ? DBD_Playoffs::game_slug( $a['pg'] ) : ''; $p = 'playoffs/' . ( $s !== '' ? $s . '/' : '' ); unset( $a['pg'] ); }
 			elseif ( $v === 'draft' || $v === 'combine' ) { $p = $v . '/' . ( ! empty( $a['y'] ) ? (int) $a['y'] . '/' : '' ); unset( $a['y'] ); }
 			else { return null; }
 			unset( $a['view'] );
