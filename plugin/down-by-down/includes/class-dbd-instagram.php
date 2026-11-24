@@ -35,7 +35,7 @@ class DBD_Instagram {
 	const TZ        = 'America/New_York';
 	/* each slot and its day after the week's Tuesday */
 	const SLOTS = array( 'carousel' => 0, 'swing' => 1, 'rtd' => 1, 'snaps' => 2, 'recs' => 2, 'offense' => 3, 'sacks' => 3, 'targets' => 4, 'leaders' => 5, 'board' => 6 );  /* in time order; Monday's League Leaders (SCOPE §85); the weekly boards go at 5:00 PM on their days (SCOPE §86) */
-	const LABEL = array( 'carousel' => 'the carousel', 'swing' => 'the biggest swing', 'snaps' => 'the usage riser', 'offense' => 'best and worst offense', 'targets' => 'the target-share mover', 'leaders' => 'week leaders', 'board' => 'League Leaders', 'rtd' => 'the rushing TDs board', 'recs' => 'the receptions board', 'sacks' => 'the defense sacks board' );
+	const LABEL = array( 'carousel' => 'the carousel', 'swing' => 'the biggest swing', 'snaps' => 'the usage riser', 'offense' => 'best and worst offense', 'targets' => 'the target-share mover', 'leaders' => 'week leaders', 'board' => 'League Leaders', 'rtd' => 'the rushing TDs board', 'recs' => 'the receptions board', 'sacks' => 'the defense sacks board', 'pset' => 'the playoff field', 'pprev' => 'the round preview', 'pres' => 'the round results', 'proad' => 'the road to the Super Bowl', 'plead' => 'playoff leaders' );  /* the playoff posts (SCOPE §89) */
 
 	/** How to wait between status checks; the harness swaps it for one that doesn't. */
 	public static $wait = 'sleep';
@@ -161,7 +161,7 @@ class DBD_Instagram {
 
 	public static function key( $season, $n, $slot ) { return (int) $season . '-w' . (int) $n . '-' . $slot; }
 	/** A post key's season, week and slot: the weekly slots, or an item only Auto publish posts (pass rushers, a keys side; SCOPE §81). */
-	public static function parse( $key ) { return preg_match( '/^(\d{4})-w(\d{1,2})-(carousel|swing|snaps|offense|targets|leaders|board|rtd|recs|sacks|rush|keys-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}-[A-Z]{2,3})$/', (string) $key, $m ) ? array( (int) $m[1], (int) $m[2], $m[3] ) : null; }
+	public static function parse( $key ) { return preg_match( '/^(\d{4})-w(\d{1,2})-(carousel|swing|snaps|offense|targets|leaders|board|rtd|recs|sacks|rush|pset|pprev|pres|proad|plead|keys-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}-[A-Z]{2,3})$/', (string) $key, $m ) ? array( (int) $m[1], (int) $m[2], $m[3] ) : null; }
 	/** A slot's name in a sentence: 'the biggest swing', 'pass rushers', 'the Bills keys'. */
 	public static function label( $slot ) {
 		if ( isset( self::LABEL[ $slot ] ) ) { return self::LABEL[ $slot ]; }
@@ -171,6 +171,7 @@ class DBD_Instagram {
 
 	/** When a slot of week $n posts: 9:00 AM Eastern (the weekly boards 5:00 PM), its days after the week's Tuesday (the date counted in Eastern time, so DST can't move it). */
 	public static function slot_time( $n, $slot ) {
+		if ( DBD_PoPosts::is_slot( $slot ) ) { return DBD_PoPosts::time( $n, $slot ); }  /* noon, on the playoff calendar (SCOPE §89) */
 		$tue = DBD_Post::tuesday( $n ); if ( ! $tue || ! isset( self::SLOTS[ $slot ] ) ) { return 0; }
 		$d = new DateTime( '@' . (int) $tue ); $d->setTimezone( new DateTimeZone( self::TZ ) ); $d->setTime( 9, 0 );
 		if ( self::SLOTS[ $slot ] ) { $d->modify( '+' . self::SLOTS[ $slot ] . ' days' ); $d->setTime( isset( DBD_Tall::WEEKLY[ $slot ] ) ? 17 : 9, 0 ); }
@@ -179,6 +180,7 @@ class DBD_Instagram {
 
 	/** Week $n's posts: slot => the items it shows (the carousel, all of them with a square; a daily slot, its own item). Missing items leave their day out. */
 	public static function plan( $n ) {
+		if ( (int) $n > DBD_Pack::LAST_WEEK ) { return DBD_PoPosts::plan( $n ); }  /* a playoff week: its own posts, while the Playoffs switch is on (SCOPE §89) */
 		$items = array_values( array_filter( DBD_Pack::items( $n ), function ( $it ) { return ! empty( $it['sq'] ); } ) ); $by = array();
 		foreach ( $items as $it ) { $by[ $it['k'] ] = $it; }
 		$out = array(); if ( count( $items ) >= 2 ) { $out['carousel'] = $items; }
@@ -223,24 +225,34 @@ class DBD_Instagram {
 		return array( $s, $book );
 	}
 
+	/** The weeks whose posts book after a sync: the newest pack week, and any playoff week with posts (SCOPE §89). */
+	public static function book_weeks() {
+		$o = array(); $n = DBD_Pack::newest(); if ( $n ) { $o[] = $n; }
+		foreach ( DBD_PoPosts::WEEKS as $w ) { if ( self::plan( $w ) ) { $o[] = $w; } }
+		return $o;
+	}
+
 	/** After each sync: book the newest week's posts, and book again any whose event went missing. */
 	public static function note( $unused = null, $now = null ) {
 		if ( ! self::on() || DBD_Data::archived() ) { return array(); }
-		$n = DBD_Pack::newest(); if ( ! $n ) { return array(); }
-		$now = $now ?? time(); $season = (int) DBD_Data::season(); $slots = array_keys( self::plan( $n ) ); $times = array();
-		foreach ( $slots as $sl ) { $times[ $sl ] = self::slot_time( $n, $sl ); }
-		$s0 = self::state_for( $season, $n, $slots ); list( $s, $book ) = self::decide( $s0, $season, $n, $slots, $times, $now );
-		/* each new record is added once (add_option fails when another request got there first), and only then booked */
-		foreach ( $s['jobs'] as $key => $j ) { if ( ! isset( $s0['jobs'][ $key ] ) && ! add_option( self::OPT_JOB . $key, $j, '', false ) ) { unset( $book[ $key ] ); } }
-		foreach ( $book as $key => $at ) { wp_schedule_single_event( $at, self::HOOK, array( $key ) ); }
-		foreach ( $slots as $sl ) {
-			$key = self::key( $season, $n, $sl ); $st = (string) ( $s['jobs'][ $key ]['state'] ?? '' );
-			$late = empty( $s['jobs'][ $key ]['force'] ) && $now > (int) ( $s['jobs'][ $key ]['slot_at'] ?? $s['jobs'][ $key ]['at'] ?? 0 ) + self::LATE;  /* no bringing back a post past its cutoff (Greptile, PR #144) */
-			if ( ! isset( $book[ $key ] ) && ! $late && ( $st === 'booked' || strpos( $st, 'retrying' ) === 0 ) && ! wp_next_scheduled( self::HOOK, array( $key ) ) ) {
-				$at = max( (int) $now + 60, (int) ( $s['jobs'][ $key ]['at'] ?? 0 ) ); wp_schedule_single_event( $at, self::HOOK, array( $key ) ); $book[ $key ] = $at;
+		$all = array();
+		foreach ( DBD_Instagram::book_weeks() as $n ) {  /* the newest pack week, then any playoff week with posts (SCOPE §89) */
+			$now = $now ?? time(); $season = (int) DBD_Data::season(); $slots = array_keys( self::plan( $n ) ); $times = array();
+			foreach ( $slots as $sl ) { $times[ $sl ] = self::slot_time( $n, $sl ); }
+			$s0 = self::state_for( $season, $n, $slots ); list( $s, $book ) = self::decide( $s0, $season, $n, $slots, $times, $now );
+			/* each new record is added once (add_option fails when another request got there first), and only then booked */
+			foreach ( $s['jobs'] as $key => $j ) { if ( ! isset( $s0['jobs'][ $key ] ) && ! add_option( self::OPT_JOB . $key, $j, '', false ) ) { unset( $book[ $key ] ); } }
+			foreach ( $book as $key => $at ) { wp_schedule_single_event( $at, self::HOOK, array( $key ) ); }
+			foreach ( $slots as $sl ) {
+				$key = self::key( $season, $n, $sl ); $st = (string) ( $s['jobs'][ $key ]['state'] ?? '' );
+				$late = empty( $s['jobs'][ $key ]['force'] ) && $now > (int) ( $s['jobs'][ $key ]['slot_at'] ?? $s['jobs'][ $key ]['at'] ?? 0 ) + self::LATE;  /* no bringing back a post past its cutoff (Greptile, PR #144) */
+				if ( ! isset( $book[ $key ] ) && ! $late && ( $st === 'booked' || strpos( $st, 'retrying' ) === 0 ) && ! wp_next_scheduled( self::HOOK, array( $key ) ) ) {
+					$at = max( (int) $now + 60, (int) ( $s['jobs'][ $key ]['at'] ?? 0 ) ); wp_schedule_single_event( $at, self::HOOK, array( $key ) ); $book[ $key ] = $at;
+				}
 			}
+			$all += $book;
 		}
-		return $book;
+		return $all;
 	}
 
 	/* ------------------------------------------------------------------ posting */

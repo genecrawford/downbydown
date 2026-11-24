@@ -118,6 +118,20 @@
 .dbd-admin .sp-gt{margin-left:auto;color:var(--sp-blue);font-size:13px;font-weight:400}
 .dbd-admin .sp-gt .x,.dbd-admin .sp-game[open] .sp-gt .o{display:none}
 .dbd-admin .sp-game[open] .sp-gt .x{display:inline}
+/* the playoff posts (SCOPE §89): one folded section under the calendar */
+.dbd-admin .sp-po{margin:36px 0 20px;background:#fff;border:1px solid var(--sp-line2)}
+.dbd-admin .sp-po>summary{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 16px;padding:16px 20px;list-style:none;cursor:pointer}
+.dbd-admin .sp-po>summary::-webkit-details-marker{display:none}
+.dbd-admin .sp-po>summary:hover{background:#f6f7f7}
+.dbd-admin .sp-poh{font-size:17px;font-weight:600}
+.dbd-admin .sp-pos{color:var(--sp-mut)}
+.dbd-admin .sp-po[open] .sp-gt .o{display:none}
+.dbd-admin .sp-po[open] .sp-gt .x{display:inline}
+.dbd-admin .sp-pob{padding:4px 20px 20px;border-top:1px solid var(--sp-line)}
+.dbd-admin .sp-pob .sp-intro{margin-top:16px}
+.dbd-admin .sp-polook{justify-content:flex-start;margin:0 0 16px!important}
+.dbd-admin .sp-polist{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.dbd-admin .sp-pob .sp-d{border-color:var(--sp-line)}
 .dbd-admin .sp-gl{display:flex;flex-wrap:wrap;gap:6px 18px;margin:0;padding:0 20px 12px;font-size:13px}
 .dbd-admin .sp-sides{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:32px;padding:6px 20px 24px}
 .dbd-admin .sp-ks{min-width:0;scroll-margin-top:48px}

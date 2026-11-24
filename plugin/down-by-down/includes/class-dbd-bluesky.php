@@ -231,22 +231,25 @@ class DBD_Bluesky {
 	/** After each sync: book the newest week's posts on Instagram's days and times, and book again any whose event went missing. */
 	public static function note( $unused = null, $now = null ) {
 		if ( ! self::on() || DBD_Data::archived() ) { return array(); }
-		$n = DBD_Pack::newest(); if ( ! $n ) { return array(); }
-		$now = $now ?? time(); $season = (int) DBD_Data::season(); $slots = array_keys( DBD_Instagram::plan( $n ) ); $times = array();
-		foreach ( $slots as $sl ) { $times[ $sl ] = DBD_Instagram::slot_time( $n, $sl ); }
-		$s0 = self::state_for( $season, $n, $slots ); list( $s, $book ) = DBD_Instagram::decide( $s0, $season, $n, $slots, $times, $now );
-		/* each new record is added once (add_option fails when another request got there first), and only then booked; an item already sent
-		   with Auto publish has its record, so its day is never booked */
-		foreach ( $s['jobs'] as $key => $j ) { if ( ! isset( $s0['jobs'][ $key ] ) && ! add_option( self::OPT_JOB . $key, $j, '', false ) ) { unset( $book[ $key ] ); } }
-		foreach ( $book as $key => $at ) { wp_schedule_single_event( $at, self::HOOK, array( $key ) ); }
-		foreach ( $slots as $sl ) {
-			$key = DBD_Instagram::key( $season, $n, $sl ); $j = $s['jobs'][ $key ] ?? array(); $st = (string) ( $j['state'] ?? '' );
-			$late = empty( $j['force'] ) && $now > (int) ( $j['slot_at'] ?? $j['at'] ?? 0 ) + DBD_Instagram::LATE;
-			if ( ! isset( $book[ $key ] ) && ! $late && ( $st === 'booked' || strpos( $st, 'retrying' ) === 0 ) && ! wp_next_scheduled( self::HOOK, array( $key ) ) ) {
-				$at = max( (int) $now + 60, (int) ( $j['at'] ?? 0 ) ); wp_schedule_single_event( $at, self::HOOK, array( $key ) ); $book[ $key ] = $at;
+		$all = array();
+		foreach ( DBD_Instagram::book_weeks() as $n ) {  /* the newest pack week, then any playoff week with posts (SCOPE §89) */
+			$now = $now ?? time(); $season = (int) DBD_Data::season(); $slots = array_keys( DBD_Instagram::plan( $n ) ); $times = array();
+			foreach ( $slots as $sl ) { $times[ $sl ] = DBD_Instagram::slot_time( $n, $sl ); }
+			$s0 = self::state_for( $season, $n, $slots ); list( $s, $book ) = DBD_Instagram::decide( $s0, $season, $n, $slots, $times, $now );
+			/* each new record is added once (add_option fails when another request got there first), and only then booked; an item already sent
+			   with Auto publish has its record, so its day is never booked */
+			foreach ( $s['jobs'] as $key => $j ) { if ( ! isset( $s0['jobs'][ $key ] ) && ! add_option( self::OPT_JOB . $key, $j, '', false ) ) { unset( $book[ $key ] ); } }
+			foreach ( $book as $key => $at ) { wp_schedule_single_event( $at, self::HOOK, array( $key ) ); }
+			foreach ( $slots as $sl ) {
+				$key = DBD_Instagram::key( $season, $n, $sl ); $j = $s['jobs'][ $key ] ?? array(); $st = (string) ( $j['state'] ?? '' );
+				$late = empty( $j['force'] ) && $now > (int) ( $j['slot_at'] ?? $j['at'] ?? 0 ) + DBD_Instagram::LATE;
+				if ( ! isset( $book[ $key ] ) && ! $late && ( $st === 'booked' || strpos( $st, 'retrying' ) === 0 ) && ! wp_next_scheduled( self::HOOK, array( $key ) ) ) {
+					$at = max( (int) $now + 60, (int) ( $j['at'] ?? 0 ) ); wp_schedule_single_event( $at, self::HOOK, array( $key ) ); $book[ $key ] = $at;
+				}
 			}
+			$all += $book;
 		}
-		return $book;
+		return $all;
 	}
 
 	/**
