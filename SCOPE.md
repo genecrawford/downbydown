@@ -3619,3 +3619,14 @@ Gene, sharing a screenshot of the QB chart: "rework the controls and information
   4. **By depth** as a table (completions, yards, TDs, INTs) beside the key to the dots.
   5. **The picks:** highlight a receiver; on a game page, the passer picks sit with them.
 
+
+## 94. Follow icons in the footer (scoped and mocked 2026-11-26, `mockup-v68/`; Gene: "Build it"; built as 2.52.0)
+
+Gene: "need to figure out where to put svg icons of all the social networks for down by down on the site at." Placement agreed: "Footer, scope and mock".
+
+- One row of six icons in the Divi footer, above the "Every NFL snap" line: X, Bluesky, Threads, Instagram, the Facebook group, r/downbydown. Each opens the account in a new tab.
+- Accounts come from the Share pack settings (`DBD_Pack::our_x/our_bsky/our_th/our_ig/our_fb/our_sub`), the same ones auto-posting uses; a cleared account drops its icon.
+- White at 70% on the black footer; full white plus a faint round backing on hover and keyboard focus. 40×40 tap targets, 20px glyphs; fits one line at 375 wide. Takes the surrounding text color (`currentColor`).
+- Built as a new live-block type, `[dbd_block type="follow"]`, pasted into the Theme Builder footer by Gene. Unlike the other blocks it doesn't need data, so it renders before the first build. SVGs inline in the plugin (Simple Icons shapes, CC0); no files or icon fonts. Screen-reader label per link ("Down x Down on Bluesky").
+- Not included: header or newsletter placement, follower counts, brand colors on hover.
+- Build notes: the icons' CSS rides inline with the first row on a page (`nav.hb-follow.hb-follow`, doubled to hold against Divi's link rules), so `follow` skips `enqueue()`; `render()` returns it before the data check and the cache. Divi's footer section text is grey (#666) and only the text module is white, so the shortcode Gene pastes is `[dbd_block type="follow" color="#fff"]`. Hover backing is a neutral `rgba(128,128,128,.2)` so it reads on light or dark.

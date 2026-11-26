@@ -543,6 +543,12 @@ jobs:
           php tools/view_harness.php data block hero-map 'player=00-0036322'
           php tools/view_harness.php data block games
           php tools/view_harness.php data block counts
+          # the footer's follow icons (2.52.0): six links from the Share pack defaults, its own CSS, no data needed
+          php tools/view_harness.php data block follow 'color=#fff'
+          test "$(grep -o 'aria-label="Down x Down on ' blockpages/block-follow.html | wc -l)" -eq 6
+          grep -q 'href="https://bsky.app/profile/downbydown.bsky.social"' blockpages/block-follow.html
+          grep -q 'class="dbd-hb hb-follow" aria-label="Follow Down x Down" style="color:#fff"' blockpages/block-follow.html
+          test "$(grep -o '<style>nav.hb-follow' blockpages/block-follow.html | wc -l)" -eq 1
           php tools/view_harness.php data block week-highlights
           # the sections Gene pastes into Divi, with the plugin's blocks drawn in, for review
           php tools/view_harness.php data page divi/home-hero.html

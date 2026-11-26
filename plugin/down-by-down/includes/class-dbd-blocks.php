@@ -14,12 +14,16 @@
  *   leaders   season leader boards (boards="wr.tshare,wr.epat,qb.epadb" by default; "ppr" is the PPR points board; top="5", 3 to 10)
  *   teams     all 32 teams by division, best record first, each linked to its page
  *   newsletter-preview  the latest finished week as the Tuesday email: subject, headline, the swing, the play, the risers
+ *   follow    (2.52.0, SCOPE §94) a row of icons linking to the site's accounts: X, Bluesky, Threads, Instagram, the Facebook group and
+ *             the subreddit, from the Share pack settings (a cleared account drops its icon). It needs no data and isn't cached, and it
+ *             carries its own few lines of CSS, so the site footer doesn't pull in blocks.css and the fonts on every page. color="#fff" sets
+ *             the icons' color; without it they take the surrounding text color.
  * Styles: assets/blocks.css. The blocks inherit the surrounding text color for their headings and lines, so they sit on any background.
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 class DBD_Blocks {
-	const TYPES = array( 'hero-map', 'games', 'counts', 'week-highlights', 'matchup', 'player-card', 'movers', 'fantasy', 'leaders', 'teams', 'newsletter-preview' );
+	const TYPES = array( 'hero-map', 'games', 'counts', 'week-highlights', 'matchup', 'player-card', 'movers', 'fantasy', 'leaders', 'teams', 'newsletter-preview', 'follow' );
 
 	public static function init() {
 		add_shortcode( 'dbd_block', array( __CLASS__, 'shortcode' ) );
@@ -42,12 +46,14 @@ class DBD_Blocks {
 		$a = is_array( $atts ) ? array_change_key_case( $atts, CASE_LOWER ) : array();
 		$type = strtolower( trim( (string) ( $a['type'] ?? '' ) ) );
 		if ( ! in_array( $type, self::TYPES, true ) ) { return ''; }
+		if ( $type === 'follow' ) { return self::b_follow( $a ); }  /* its own CSS rides along: no stylesheet or fonts for a footer on every page */
 		self::enqueue();  /* a block in a Theme Builder layout isn't in the page's content: its styles print in the footer instead */
 		return self::render( $type, $a );
 	}
 
 	/** One block's HTML, cached until the next data build (hero-map reads every team's player file). */
 	public static function render( $type, $a = array() ) {
+		if ( $type === 'follow' ) { return self::b_follow( $a ); }
 		$was = DBD_Data::archived() ? DBD_Data::season() : null; DBD_Data::use_season( null );  /* blocks always show this season */
 		if ( ! DBD_Data::has_data() ) { DBD_Data::use_season( $was ); return ''; }
 		unset( $a['type'] ); ksort( $a );
@@ -60,6 +66,54 @@ class DBD_Blocks {
 		}
 		DBD_Data::use_season( $was );
 		return $html;
+	}
+
+
+	/* ------------------------------------------------------------------ follow (SCOPE §94) */
+
+	/** The six networks' marks, 24 by 24 (Simple Icons, CC0). */
+	const ICONS = array(
+		'x' => 'M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z',
+		'bluesky' => 'M12 10.8c-1.087-2.114-4.046-6.053-6.798-7.995C2.566.944 1.561 1.266.902 1.565.139 1.908 0 3.08 0 3.768c0 .69.378 5.65.624 6.479.815 2.736 3.713 3.66 6.383 3.364.136-.02.275-.039.415-.056-.138.022-.276.04-.415.056-3.912.58-7.387 2.005-2.83 7.078 5.013 5.19 6.87-1.113 7.823-4.308.953 3.195 2.05 9.271 7.733 4.308 4.267-4.308 1.172-6.498-2.74-7.078a8.741 8.741 0 0 1-.415-.056c.14.017.279.036.415.056 2.67.297 5.568-.628 6.383-3.364.246-.828.624-5.79.624-6.478 0-.69-.139-1.861-.902-2.206-.659-.298-1.664-.62-4.3 1.24C16.046 4.748 13.087 8.687 12 10.8Z',
+		'threads' => 'M12.186 24h-.007c-3.581-.024-6.334-1.205-8.184-3.509C2.35 18.44 1.5 15.586 1.472 12.01v-.017c.03-3.579.879-6.43 2.525-8.482C5.845 1.205 8.6.024 12.18 0h.014c2.746.02 5.043.725 6.826 2.098 1.677 1.29 2.858 3.13 3.509 5.467l-2.04.569c-1.104-3.96-3.898-5.984-8.304-6.015-2.91.022-5.11.936-6.54 2.717C4.307 6.504 3.616 8.914 3.589 12c.027 3.086.718 5.496 2.057 7.164 1.43 1.783 3.631 2.698 6.54 2.717 2.623-.02 4.358-.631 5.8-2.045 1.647-1.613 1.618-3.593 1.09-4.798-.31-.71-.873-1.3-1.634-1.75-.192 1.352-.622 2.446-1.284 3.272-.886 1.102-2.14 1.704-3.73 1.79-1.202.065-2.361-.218-3.259-.801-1.063-.689-1.685-1.74-1.752-2.964-.065-1.19.408-2.285 1.33-3.082.88-.76 2.119-1.207 3.583-1.291a13.853 13.853 0 0 1 3.02.142c-.126-.742-.375-1.332-.75-1.757-.513-.586-1.308-.883-2.359-.89h-.029c-.844 0-1.992.232-2.721 1.32L7.734 7.847c.98-1.454 2.568-2.256 4.478-2.256h.044c3.194.02 5.097 1.975 5.287 5.388.108.046.216.094.321.142 1.49.7 2.58 1.761 3.154 3.07.797 1.82.871 4.79-1.548 7.158-1.85 1.81-4.094 2.628-7.277 2.65Zm1.003-11.69c-.242 0-.487.007-.739.021-1.836.103-2.98.946-2.916 2.143.067 1.256 1.452 1.839 2.784 1.767 1.224-.065 2.818-.543 3.086-3.71a10.5 10.5 0 0 0-2.215-.221z',
+		'instagram' => 'M12 0C8.74 0 8.333.015 7.053.072 5.775.132 4.905.333 4.14.63c-.789.306-1.459.717-2.126 1.384S.935 3.35.63 4.14C.333 4.905.131 5.775.072 7.053.012 8.333 0 8.74 0 12s.015 3.667.072 4.947c.06 1.277.261 2.148.558 2.913.306.788.717 1.459 1.384 2.126.667.666 1.336 1.079 2.126 1.384.766.296 1.636.499 2.913.558C8.333 23.988 8.74 24 12 24s3.667-.015 4.947-.072c1.277-.06 2.148-.262 2.913-.558.788-.306 1.459-.718 2.126-1.384.666-.667 1.079-1.335 1.384-2.126.296-.765.499-1.636.558-2.913.06-1.28.072-1.687.072-4.947s-.015-3.667-.072-4.947c-.06-1.277-.262-2.149-.558-2.913-.306-.789-.718-1.459-1.384-2.126C21.319 1.347 20.651.935 19.86.63c-.765-.297-1.636-.499-2.913-.558C15.667.012 15.26 0 12 0zm0 2.16c3.203 0 3.585.016 4.85.071 1.17.055 1.805.249 2.227.415.562.217.96.477 1.382.896.419.42.679.819.896 1.381.164.422.36 1.057.413 2.227.057 1.266.07 1.646.07 4.85s-.015 3.585-.074 4.85c-.061 1.17-.256 1.805-.421 2.227-.224.562-.479.96-.899 1.382-.419.419-.824.679-1.38.896-.42.164-1.065.36-2.235.413-1.274.057-1.649.07-4.859.07-3.211 0-3.586-.015-4.859-.074-1.171-.061-1.816-.256-2.236-.421-.569-.224-.96-.479-1.379-.899-.421-.419-.69-.824-.9-1.38-.165-.42-.359-1.065-.42-2.235-.045-1.26-.061-1.649-.061-4.844 0-3.196.016-3.586.061-4.861.061-1.17.255-1.814.42-2.234.21-.57.479-.96.9-1.381.419-.419.81-.689 1.379-.898.42-.166 1.051-.361 2.221-.421 1.275-.045 1.65-.06 4.859-.06l.045.03zm0 3.678c-3.405 0-6.162 2.76-6.162 6.162 0 3.405 2.76 6.162 6.162 6.162 3.405 0 6.162-2.76 6.162-6.162 0-3.405-2.76-6.162-6.162-6.162zM12 16c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm7.846-10.405c0 .795-.646 1.44-1.44 1.44-.795 0-1.44-.646-1.44-1.44 0-.794.646-1.439 1.44-1.439.793-.001 1.44.645 1.44 1.439z',
+		'facebook' => 'M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647Z',
+		'reddit' => 'M12 0C5.373 0 0 5.373 0 12c0 3.314 1.343 6.314 3.515 8.485l-2.286 2.286C.775 23.225 1.097 24 1.738 24H12c6.627 0 12-5.373 12-12S18.627 0 12 0Zm4.388 3.199c1.104 0 1.999.895 1.999 1.999 0 1.105-.895 2-1.999 2-.946 0-1.739-.657-1.947-1.539v.002c-1.147.162-2.032 1.15-2.032 2.341v.007c1.776.067 3.4.567 4.686 1.363.473-.363 1.064-.58 1.707-.58 1.547 0 2.802 1.254 2.802 2.802 0 1.117-.655 2.081-1.601 2.531-.088 3.256-3.637 5.876-7.997 5.876-4.361 0-7.905-2.617-7.998-5.87-.954-.447-1.614-1.415-1.614-2.538 0-1.548 1.255-2.802 2.803-2.802.645 0 1.239.218 1.712.585 1.275-.79 2.881-1.291 4.64-1.365v-.01c0-1.663 1.263-3.034 2.88-3.207.188-.911.993-1.595 1.959-1.595Zm-8.085 8.376c-.784 0-1.459.78-1.506 1.797-.047 1.016.64 1.429 1.426 1.429.786 0 1.371-.369 1.418-1.385.047-1.017-.553-1.841-1.338-1.841Zm7.406 0c-.786 0-1.385.824-1.338 1.841.047 1.017.634 1.385 1.418 1.385.785 0 1.473-.413 1.426-1.429-.046-1.017-.721-1.797-1.506-1.797Zm-3.703 4.013c-.974 0-1.907.048-2.77.135-.147.015-.241.168-.183.305.483 1.154 1.622 1.964 2.953 1.964 1.33 0 2.47-.81 2.953-1.964.057-.137-.037-.29-.184-.305-.863-.087-1.795-.135-2.769-.135Z',
+	);
+	private static $follow_css = false;
+
+	/** The accounts with a link, in order: [ icon, name, url ]. Each from the Share pack settings; a cleared one is left out. */
+	public static function follow_links() {
+		$o = array(); $x = DBD_Pack::our_x(); $b = DBD_Pack::our_bsky(); $t = DBD_Pack::our_th(); $i = DBD_Pack::our_ig(); $f = DBD_Pack::our_fb(); $r = DBD_Pack::our_sub();
+		if ( $x !== '' ) { $o[] = array( 'x', 'X', 'https://x.com/' . $x ); }
+		if ( $b !== '' ) { $o[] = array( 'bluesky', 'Bluesky', 'https://bsky.app/profile/' . $b ); }
+		if ( $t !== '' ) { $o[] = array( 'threads', 'Threads', 'https://www.threads.com/@' . $t ); }
+		if ( $i !== '' ) { $o[] = array( 'instagram', 'Instagram', 'https://www.instagram.com/' . $i . '/' ); }
+		if ( $f !== '' ) { $o[] = array( 'facebook', 'Facebook', $f ); }
+		if ( $r !== '' ) { $o[] = array( 'reddit', 'Reddit', 'https://www.reddit.com/r/' . $r . '/' ); }
+		return $o;
+	}
+
+	/** The row of icons, with its CSS the first time on a page; '' when no account is set. */
+	private static function b_follow( $a ) {
+		$links = self::follow_links(); if ( ! $links ) { return ''; }
+		$c = trim( (string) ( $a['color'] ?? '' ) ); $style = preg_match( '/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i', $c ) ? ' style="color:' . $c . '"' : '';
+		$h = '';
+		if ( ! self::$follow_css ) {
+			self::$follow_css = true;
+			$h .= '<style>nav.hb-follow.hb-follow{display:flex;justify-content:center;flex-wrap:wrap;gap:6px;margin:0 0 18px;padding:0}'
+				. 'nav.hb-follow.hb-follow a{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;color:inherit;opacity:.7;text-decoration:none;transition:opacity .15s ease,background-color .15s ease}'
+				. 'nav.hb-follow.hb-follow a:hover,nav.hb-follow.hb-follow a:focus-visible{opacity:1;background:rgba(128,128,128,.2)}'
+				. 'nav.hb-follow.hb-follow a:focus-visible{outline:2px solid currentColor;outline-offset:2px}'
+				. 'nav.hb-follow.hb-follow svg{display:block;width:20px;height:20px;fill:currentColor}'
+				. '@media (prefers-reduced-motion:reduce){nav.hb-follow.hb-follow a{transition:none}}</style>';
+		}
+		$h .= '<nav class="dbd-hb hb-follow" aria-label="Follow Down x Down"' . $style . '>';
+		foreach ( $links as $l ) {
+			$h .= '<a href="' . esc_url( $l[2] ) . '" target="_blank" rel="noopener" aria-label="Down x Down on ' . esc_attr( $l[1] ) . '" title="' . esc_attr( $l[1] ) . '">'
+				. '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="' . esc_attr( self::ICONS[ $l[0] ] ) . '"/></svg></a>';
+		}
+		return $h . '</nav>';
 	}
 
 	private static function nick( $a ) { return DBD_Data::team( $a )['nick'] ?? $a; }

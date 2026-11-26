@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.51.0
+Stable tag: 2.52.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,11 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.52.0 =
+* Follow icons (SCOPE §94): a new live block, [dbd_block type="follow"], draws a row of icons linking to the site's accounts on X, Bluesky, Threads, Instagram, the Facebook group and Reddit, for the Divi footer.
+* The accounts come from the Share pack settings the auto-posting uses; a cleared account drops its icon. color="#fff" sets the icons' color, or they take the surrounding text color.
+* The icons are inline SVG with a few lines of their own CSS, so the footer loads no stylesheet, fonts or images for them.
 
 = 2.51.0 =
 * The throw chart (SCOPE §93) puts nothing beside the field and everything under it: a replay bar with a timeline of the game's throws, the throw you're on, the game's line and field use, a by-depth table beside the key, then the receiver and passer picks.
