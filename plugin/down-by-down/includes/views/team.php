@@ -11,7 +11,8 @@ list( $kBg, $kAc ) = DBD_Marks::deep( $t );
 echo '<main class="dbd-content' . ( $def ? ' dbd-defview' : '' ) . '" style="--dbd-team:' . esc_attr( DBD_Marks::accent( $t ) ) . ';--k-bg:' . esc_attr( $kBg ) . ';--k-ac:' . esc_attr( $kAc ) . '">';
 echo '<header class="dbd-tpanel"><div class="tp-mark">' . DBD_Marks::tile( $a, 96, true ) . '</div><div class="tp-main">';
 $tpPl = $through ? DBD_Hub::place( $a ) : 0;  /* SCOPE §100: the division place by the NFL's order, and the mark once there is one */
-echo '<p class="tp-kick" id="dbd-kicker">' . esc_html( $through ? "$season season · Weeks 1 to $through · " . DBD_Data::record_text( $a ) . ( $tpPl ? ' · ' . DBD_Grades::ordinal( $tpPl ) . ' in the ' . ( $t['div'] ?? '' ) : '' ) : "$season season · Preseason" ) . '</p>';
+$tpPlT = $tpPl ? ' · ' . DBD_Grades::ordinal( $tpPl ) . ' in the ' . ( $t['div'] ?? '' ) : '';  /* team-explorer.js rewrites the line and adds data-place back (Greptile, PR #175) */
+echo '<p class="tp-kick" id="dbd-kicker"' . ( $tpPlT !== '' ? ' data-place="' . esc_attr( $tpPlT ) . '"' : '' ) . '>' . esc_html( $through ? "$season season · Weeks 1 to $through · " . DBD_Data::record_text( $a ) . $tpPlT : "$season season · Preseason" ) . '</p>';
 if ( $through && DBD_Hub::mark( $a ) !== '' ) {
 	$tpSd = 0; foreach ( (array) ( DBD_Data::standings()['conf'][ $t['conf'] ?? '' ] ?? array() ) as $tpI => $tpR ) { if ( ( $tpR[0] ?? '' ) === $a ) { $tpSd = $tpI + 1; } }
 	echo '<p class="tp-clinch">' . DBD_Hub::badge( $a ) . esc_html( DBD_Hub::mark_text( $a ) . ( ! in_array( DBD_Hub::mark( $a ), array( 'e', '*' ), true ) && $tpSd >= 1 && $tpSd <= 7 ? ' · ' . DBD_Grades::ordinal( $tpSd ) . ' seed' : '' ) ) . '</p>';

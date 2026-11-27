@@ -344,7 +344,8 @@
   "plays/def/SF.json": "c110a8d2ab845f0cc0da239049702ff7ccf189fa",
   "plays/def/TB.json": "896926a02e53c3dc8f4db71ef66303d621c1c775",
   "plays/def/TEN.json": "1c7521829b89f7293372000b32db894f2dfbd962",
-  "plays/def/WAS.json": "06fe01c4bc8c8e52c1bbea6b62566bf9dbba030f"
+  "plays/def/WAS.json": "06fe01c4bc8c8e52c1bbea6b62566bf9dbba030f",
+  "standings.json": "e4528f477e5a3dcbd592d1eb44f6775da0e0e785"
  },
  "archive": {
   "2025": "d7910add5f6bb3735d53e26353d8240211bb9c09"

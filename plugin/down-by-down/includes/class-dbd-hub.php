@@ -160,15 +160,28 @@ class DBD_Hub {
 	public static function badge( $a ) {
 		$m = self::mark( $a ); if ( $m === '' ) { return ''; }
 		$t = self::mark_text( $a );
-		return '<abbr class="dbd-cm cm-' . ( $m === '*' ? 'top' : $m ) . '" data-tip="' . esc_attr( $t ) . '" aria-label="' . esc_attr( $t ) . '">' . esc_html( $m ) . '</abbr>';
+		return '<abbr class="dbd-cm cm-' . ( $m === '*' ? 'top' : $m ) . '" data-tip="' . esc_attr( $t ) . '" aria-label="' . esc_attr( $t ) . '" tabindex="0">' . esc_html( $m ) . '</abbr>';
 	}
-	/** "Ahead of the Bengals on head to head" for a tie the order broke, or ''. */
+	/** "Ahead of the Bengals on head to head" for a tie the order broke, or ''. A tie of three or more can be broken in stages:
+	 *  "Ahead of the Saints on division record and the Falcons on head to head", each club named with the step that dropped it. */
 	public static function why( $w ) {
-		if ( ! is_array( $w ) || ! isset( self::STEPS[ $w['s'] ?? '' ] ) ) { return ''; }
-		$n = array_values( array_map( function ( $a ) { return 'the ' . self::nick( $a ); }, array_filter( (array) ( $w['o'] ?? array() ), 'is_string' ) ) );
-		if ( ! $n ) { return ''; }
-		$last = array_pop( $n );
-		return 'Ahead of ' . ( $n ? implode( ', ', $n ) . ' and ' . $last : $last ) . ' on ' . self::STEPS[ $w['s'] ];
+		if ( ! is_array( $w ) ) { return ''; }
+		$parts = isset( $w['p'] ) ? (array) $w['p'] : array( array( $w['s'] ?? '', $w['o'] ?? array() ) );
+		$names = function ( $xs ) {
+			$n = array_values( array_map( function ( $a ) { return 'the ' . self::nick( $a ); }, array_filter( (array) $xs, 'is_string' ) ) );
+			if ( ! $n ) { return ''; }
+			$last = array_pop( $n );
+			return $n ? implode( ', ', $n ) . ' and ' . $last : $last;
+		};
+		$out = array();
+		foreach ( $parts as $p ) {
+			if ( ! is_array( $p ) || ! isset( self::STEPS[ $p[0] ?? '' ] ) ) { continue; }
+			$nm = $names( $p[1] ?? array() ); if ( $nm === '' ) { continue; }
+			$out[] = $nm . ' on ' . self::STEPS[ $p[0] ];
+		}
+		if ( ! $out ) { return ''; }
+		$last = array_pop( $out );
+		return 'Ahead of ' . ( $out ? implode( ', ', $out ) . ' and ' . $last : $last );
 	}
 	public static function why_html( $w ) { $t = self::why( $w ); return $t === '' ? '' : '<span class="dbd-why">' . esc_html( $t ) . '</span>'; }
 	/** A team's place in its division by the NFL's order (1 to 4), or 0 without standings.json. */

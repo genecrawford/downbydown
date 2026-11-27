@@ -3,7 +3,8 @@
     s = Season(teams, games)   # teams: {abbr: {'conf', 'div'}}; games: [(home, away, home_score, away_score)], regular-season finals only
     s.division('AFC North')     # [(abbr, why)]
     s.conference('AFC')         # [(abbr, why)], seeds 1 to 16 in order
-    why: None, or {'s': step, 'o': [the clubs it finished ahead of in that tie]}
+    why: None, or {'p': [[step, [clubs]], …]}: the clubs it finished ahead of in that tie, each with the step that dropped them, in order
+         (a tie of three or more can be broken in stages: one club drops on division record, then head to head decides the rest)
 
 Steps (NFL rules):
   Division, 2 clubs: head to head, division record, common games, conference record, strength of victory, strength of schedule,
@@ -119,8 +120,9 @@ class Season:
         raise ValueError(name)
 
     def top(self, S, kind):
-        """The club that wins a tie among S, and the step that decided it."""
+        """The club that wins a tie among S, and the stages that broke it: [(step, [clubs that dropped out at it])]."""
         S = sorted(S)
+        parts = []
         while len(S) > 1:
             steps = STEPS_DIV if kind == 'div' else (('h2h',) if len(S) == 2 else ('sweep',)) + STEPS_WC
             for name in steps:
@@ -132,15 +134,14 @@ class Season:
                 if name == 'sweep' and best <= 0:  # nobody swept: a club that lost to all the others drops out
                     keep = [a for a in S if v[a] >= 0]
                 if len(keep) < len(S):
-                    if len(keep) == 1:
-                        return keep[0], name
+                    parts.append((name, [a for a in S if a not in keep]))
                     S = keep  # start again at step 1 with the clubs left
                     break
-        return S[0], None
+        return S[0], parts
 
     @staticmethod
-    def _why(pick, step, tied):
-        return {'s': step, 'o': sorted(x for x in tied if x != pick)} if step else None
+    def _why(parts):
+        return {'p': [[step, sorted(cl)] for step, cl in parts]} if parts else None
 
     # ---- division order
     def division(self, div):
@@ -152,8 +153,8 @@ class Season:
             if len(tied) == 1:
                 out.append((tied[0], None))
             else:
-                a, step = self.top(tied, 'div')
-                out.append((a, self._why(a, step, tied)))
+                a, parts = self.top(tied, 'div')
+                out.append((a, self._why(parts)))
             left.remove(out[-1][0])
         return out
 
@@ -173,8 +174,8 @@ class Season:
                     pick = heads[0]
                     why = dwhy.get(pick) if len(tied) > 1 else None  # level only with clubs from its own division
                 else:
-                    pick, step = self.top(heads, 'wc')
-                    why = self._why(pick, step, tied)
+                    pick, parts = self.top(heads, 'wc')
+                    why = self._why(parts)
                 out.append((pick, why))
                 left.remove(pick)
         return out

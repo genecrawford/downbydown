@@ -33,8 +33,8 @@ jobs:
           assert d['checked'] == 'espn', d['checked']
           assert len(d['marks']) == 32 and d['marks']['DEN'] == '*' and d['marks']['SEA'] == '*' and d['marks']['MIN'] == 'e', d['marks']
           afc = d['conf']['AFC']
-          assert afc[0] == ['DEN', {'s': 'common', 'o': ['NE']}], afc[0]
-          assert afc[4] == ['HOU', {'s': 'h2h', 'o': ['BUF']}], afc[4]
+          assert afc[0] == ['DEN', {'p': [['common', ['NE']]]}], afc[0]
+          assert afc[4] == ['HOU', {'p': [['h2h', ['BUF']]]}], afc[4]
           assert [r[0] for r in d['div']['NFC North']] == ['CHI', 'GB', 'MIN', 'DET'], d['div']['NFC North']
           assert all(len(v) == 16 for v in d['conf'].values()) and all(len(v) == 4 for v in d['div'].values())
           print('engine matches ESPN on 2025: 32 places, 32 marks')
@@ -57,7 +57,7 @@ jobs:
           d = json.load(open(sys.argv[1]))
           afc = [r[0] for r in d['conf']['AFC']]
           d['marks'] = {afc[0]: '*', afc[1]: 'x', afc[15]: 'e'}; d['since'] = {k: d['through'] for k in d['marks']}
-          json.dump(d, open(sys.argv[1], 'w')); open('/tmp/stm/teams.txt', 'w').write(' '.join([afc[0], afc[15]]))
+          json.dump(d, open(sys.argv[1], 'w')); open('/tmp/stm/teams.txt', 'w').write(' '.join([afc[0], afc[15]]) + '\n')
           PY
           read TOP LAST < /tmp/stm/teams.txt
           DBD_HARNESS_HTML=/tmp/stm php tools/view_harness.php "$M" hub > /dev/null
@@ -67,7 +67,7 @@ jobs:
           grep -q 'class="dbd-trow dbd-elim"' "$f" || { echo "an eliminated team's division row should be greyed"; exit 1; }
           DBD_HARNESS_HTML=/tmp/stm php tools/view_harness.php "$M" team "$TOP" > /dev/null
           grep -q '<p class="tp-clinch"><abbr class="dbd-cm cm-top"' /tmp/stm/team-$TOP.html || { echo "the team page should name its mark"; exit 1; }
-          grep -q 'id="dbd-kicker">[^<]* · 1st in the AFC ' /tmp/stm/team-$TOP.html || { echo "the team page should give its division place"; exit 1; }
+          grep -q 'id="dbd-kicker" data-place=" · 1st in the AFC [A-Za-z]*">[^<]* · 1st in the AFC ' /tmp/stm/team-$TOP.html || { echo "the team page should give its division place"; exit 1; }
       - name: Every throw (SCOPE §90)
         run: |
           php tools/view_harness.php data throws x
