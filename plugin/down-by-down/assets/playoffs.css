@@ -84,6 +84,8 @@ a.po-pc:hover,a.po-pc:focus-visible{outline-color:#fff}
 .dbd.dbd-view-playoffs:has(.po-wide){overflow:visible}
 body:has(.po-wide){overflow-x:clip}
 .dbd-po.po-bh.po-wide{width:100vw;margin-left:calc(50% - 50vw);margin-right:0}
+/* with the Divi sidebar beside the app (above 900px), the window isn't the app's: the bracket stays in the app's column (Greptile, PR #170) */
+@media (min-width:901px){body.dbd-app .et_pb_column:not(:only-child) .dbd-po.po-bh.po-wide{width:auto;margin-left:0}}
 .dbd-po.po-bh.po-wide .po-bt p b{font-weight:700}
 
 /* ---- the page and each game's preview */
