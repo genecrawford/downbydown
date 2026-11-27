@@ -1459,7 +1459,11 @@ if ( $view === 'playoffs' ) {
 		if ( count( $am ) < 16 ) { $fail( "stage $st: only " . count( $am ) . ' team rows' ); }
 		foreach ( $am as $a ) { if ( $a[2] !== DBD_Router::url( array( 'team' => $a[1] ) ) ) { $fail( "stage $st: {$a[1]} links to {$a[2]}, not its team page" ); } }
 		if ( preg_match( '/Week (19|2\d)/', $h . $pg ) ) { $fail( "stage $st calls a playoff round a week" ); }
-		$save( 'po-hero-' . $st, $h . '<div class="wrap">' . $pg . '</div>' );
+		/* the playoffs page draws this same bracket, full width, with its own title and no buttons or games strip (2.55.0, SCOPE §97) */
+		if ( preg_match_all( '/class="po-g[ "]/', $pg ) !== 15 || strpos( $pg, 'po-bh po-wide' ) === false || strpos( $pg, 'po-btn' ) !== false || strpos( $pg, 'id="po-strip"' ) !== false
+			|| strpos( $pg, '<h1>' . DBD_Data::season() . ' Playoffs</h1>' ) === false || strpos( $pg, 'po-field' ) !== false || strpos( $pg, 'po-list' ) !== false || strpos( $pg, 'class="two"' ) === false ) { $fail( "stage $st: the playoffs page should draw the home bracket full width with its own title and its panels" ); }
+		$save( 'po-hero-' . $st, $h );
+		$save( 'po-page-' . $st, $pg );
 	}
 	$games = DBD_Playoffs::games(); if ( count( $games ) !== 13 ) { $fail( count( $games ) . ' playoff games' ); }
 	foreach ( $games as $g ) {
