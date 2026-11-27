@@ -10,6 +10,9 @@
  * along once, keyed the same way.
  *   - 2.49.0 (SCOPE §91): the panel also carries the league's field-use spreads (every QB game with 20+ throws, every QB season with 150+),
  *     worked out once per data update, so the script can say how evenly a game or season spread the ball against the rest.
+ *   - 2.56.0 (SCOPE §98): the same panel for everyone else, drawn by assets/touchchart.js. A receiver or tight end gets every target
+ *     ("Where he's targeted"); a back gets his designed runs and his catches on one field ("Where he gets the ball"). It replaces the
+ *     player page's old On the field tab.
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
@@ -77,6 +80,65 @@ class DBD_Throws {
 		return array( 'kind' => 'qb', 'sets' => $sets, 'names' => $names, 'qb' => $id );
 	}
 
+	/* ------------------------------------------------------------------ receivers and backs (SCOPE §98) */
+
+	/** The seven gaps the play data names, left to right; anything without a side or gap counts as the middle. */
+	const GAPS = array( 'left|end' => 0, 'left|tackle' => 1, 'left|guard' => 2, 'right|guard' => 4, 'right|tackle' => 5, 'right|end' => 6 );
+	private static function gap( $p ) { $l = (string) ( $p['loc'] ?? '' ); return $l === 'middle' ? 3 : ( self::GAPS[ $l . '|' . (string) ( $p['gap'] ?? '' ) ] ?? 3 ); }
+	/** The play as it finally stood: after a replay reversal the description carries the overturned call first, then the corrected play (Greptile, PR #172). */
+	private static function ruling( $p ) { $d = (string) ( $p['desc'] ?? '' ); $i = strrpos( $d, 'REVERSED' ); return $i === false ? $d : substr( $d, $i + 8 ); }
+	/** A fumble the other team recovered, from the play's final ruling (the play files carry no fumble field). */
+	public static function lost( $p, $team ) { return preg_match( '/FUMBLES.*?RECOVERED by ([A-Z]{2,3})-/', self::ruling( $p ), $m ) && $m[1] !== $team ? 1 : 0; }
+	/** His touchdown: the play's flag also covers the defense's (a pick-six, a fumble returned), so a target counts only when caught and kept, a carry only when kept (Greptile, PR #172). */
+	private static function own_td( $p, $team, $caught ) { return ! empty( $p['td'] ) && $caught && ! self::lost( $p, $team ) ? 1 : 0; }
+	/** A designed run (scrambles and kneels left out). */
+	private static function is_carry( $p ) { return ( $p['pt'] ?? '' ) === 'run' && ( $p['k'] ?? '' ) === 'run'; }
+	private static function margin( $p ) { return isset( $p['sd'] ) && is_numeric( $p['sd'] ) ? (int) $p['sd'] : null; }
+	/** A target: q, clock, down, distance, result (c i x), air, yards, lane, td, passer key, EPA, margin, yards after the catch, dropped, contested, fumble lost. */
+	private static function target_row( $p, $team, &$names ) {
+		$qk = (string) ( $p['qb'] ?? '' );
+		if ( $qk !== '' && ! isset( $names[ $qk ] ) ) { $x = DBD_Data::player( $qk ) ?: array(); $names[ $qk ] = array( (string) ( $x['name'] ?? '' ), isset( $x['num'] ) && $x['num'] !== '' && $x['num'] !== null ? (string) (int) $x['num'] : '' ); }
+		$lane = array( 'left' => 0, 'middle' => 1, 'right' => 2 );
+		return array( (int) ( $p['q'] ?? 0 ), (string) ( $p['t'] ?? '' ), (int) ( $p['dn'] ?? 0 ), (int) ( $p['togo'] ?? 0 ), array( 'comp' => 'c', 'inc' => 'i', 'int' => 'x' )[ $p['k'] ],
+			(int) $p['air'], (int) ( $p['yds'] ?? 0 ), $lane[ $p['loc'] ?? '' ] ?? -1, self::own_td( $p, $team, $p['k'] === 'comp' ), $qk, round( (float) ( $p['epa'] ?? 0 ), 2 ), self::margin( $p ),
+			is_numeric( $p['yac'] ?? null ) ? (int) $p['yac'] : 0, ! empty( $p['drop'] ) ? 1 : 0, ! empty( $p['cont'] ) ? 1 : 0, self::lost( $p, $team ) );
+	}
+	/** A carry: q, clock, down, distance, yards, gap (0 left end .. 6 right end), td, successful, first down, EPA, margin, fumble lost. */
+	private static function carry_row( $p, $team ) {
+		return array( (int) ( $p['q'] ?? 0 ), (string) ( $p['t'] ?? '' ), (int) ( $p['dn'] ?? 0 ), (int) ( $p['togo'] ?? 0 ), (int) ( $p['yds'] ?? 0 ), self::gap( $p ), self::own_td( $p, $team, true ),
+			! empty( $p['succ'] ) ? 1 : 0, ! empty( $p['fd'] ) ? 1 : 0, round( (float) ( $p['epa'] ?? 0 ), 2 ), self::margin( $p ), self::lost( $p, $team ) );
+	}
+
+	/**
+	 * A receiver's targets, or a back's carries and catches, this season, game by game newest first, from every team he played for:
+	 * array( 'kind' => 'rx'|'rb', 'sets' => [ g, week, t, opp, home, label, nick, c1, 't' => targets, 'c' => carries ], 'names', 'me' ), or null.
+	 * A back's targets are his catches only (Gene: throws "when they get a reception").
+	 */
+	public static function player( $p, $back ) {
+		$id = (string) ( $p['id'] ?? '' ); if ( $id === '' ) { return null; }
+		$teams = array( (string) ( $p['team'] ?? '' ) ); foreach ( (array) ( $p['weeks'] ?? array() ) as $w ) { if ( ! empty( $w['team'] ) ) { $teams[] = (string) $w['team']; } }
+		$names = array(); $by = array(); $n = 0;
+		foreach ( array_unique( array_filter( $teams ) ) as $t ) {
+			foreach ( self::plays( $t ) as $x ) {
+				if ( ( $x['pid'] ?? '' ) !== $id ) { continue; }
+				$run = $back && self::is_carry( $x ); $tgt = self::is_throw( $x ) && ( ! $back || $x['k'] === 'comp' );
+				if ( ! $run && ! $tgt ) { continue; }
+				$gid = (string) ( $x['g'] ?? '' ); if ( ! preg_match( '/^\d{4}_(\d{2})_([A-Z]{2,3})_([A-Z]{2,3})$/', $gid, $m ) ) { continue; }
+				if ( ! isset( $by[ $gid ] ) ) { $home = $m[3] === $t; $by[ $gid ] = array( 'g' => $gid, 'week' => (int) $m[1], 't' => $t, 'opp' => $home ? $m[2] : $m[3], 'home' => $home, 'tg' => array(), 'c' => array() ); }
+				if ( $run ) { $by[ $gid ]['c'][] = self::carry_row( $x, $t ); } else { $by[ $gid ]['tg'][] = self::target_row( $x, $t, $names ); }
+				$n++;
+			}
+		}
+		if ( ! $n ) { return null; }
+		$sets = array_values( $by ); usort( $sets, function ( $a, $b ) { return $b['week'] <=> $a['week']; } );
+		foreach ( $sets as $i => $s ) {
+			$wl = DBD_Router::week_label( $s['week'] ); $wl = is_string( $wl ) && $wl !== '' ? $wl : 'Week ' . $s['week'];
+			$sets[ $i ] += self::team_info( $s['t'] ) + array( 'label' => $wl . ( $s['home'] ? ' vs ' : ' at ' ) . self::team_info( $s['opp'] )['nick'], 'wl' => $wl );
+		}
+		$me = isset( $p['num'] ) && $p['num'] !== '' && $p['num'] !== null ? (string) (int) $p['num'] : '';
+		return array( 'kind' => $back ? 'rb' : 'rx', 'sets' => $sets, 'names' => $names, 'me' => $me );
+	}
+
 	/* ------------------------------------------------------------------ field use (SCOPE §91) */
 
 	const MIN_GAME = 20; const MIN_SEASON = 150;
@@ -114,11 +176,13 @@ class DBD_Throws {
 	/** The panel: a shell the script fills, with the throws embedded. '' with nothing to draw. */
 	public static function panel( $d, $head, $sub ) {
 		if ( ! $d ) { return ''; }
-		$d['lg'] = self::league() + array( 'min' => array( self::MIN_GAME, self::MIN_SEASON ) );
+		if ( in_array( $d['kind'], array( 'qb', 'game' ), true ) ) { $d['lg'] = self::league() + array( 'min' => array( self::MIN_GAME, self::MIN_SEASON ) ); }  /* field use is the quarterback's */
 		$json = wp_json_encode( $d, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE );
 		return '<section class="dbd-panel dbd-thr" data-kind="' . esc_attr( $d['kind'] ) . '"><div class="dbd-ph"><span class="dbd-lab"><b>' . esc_html( $head ) . '</b> · ' . esc_html( $sub ) . '</span><span class="dbd-thr-pick"></span></div>'
 			. '<div class="dbd-thr-b"><p class="dbd-note">The field draws here once the page’s script loads.</p></div><script type="application/json" class="dbd-thr-d">' . $json . '</script></section>';
 	}
 	public static function game_panel( $g ) { return self::panel( self::game( $g ), 'Every throw', 'air yards from the line of scrimmage, one team at a time' ); }
 	public static function qb_panel( $p ) { return self::panel( self::qb( $p ), 'Where he throws', 'one game at a time, or the whole season' ); }
+	/** A receiver's or a back's panel (SCOPE §98); '' with nothing to draw. */
+	public static function player_panel( $p, $back ) { return self::panel( self::player( $p, $back ), $back ? 'Where he gets the ball' : 'Where he’s targeted', 'one game at a time, or the whole season' ); }
 }

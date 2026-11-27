@@ -368,8 +368,9 @@ if ( $EP && ! empty( $EP['gr'] ) && $lzLg && ( $grp !== 'rb' || (int) ( $EP['tg'
 	echo '<p class="dbd-note">Every ' . ( $grp === 'qb' ? 'pass attempt' : 'target' ) . ' with a charted depth and direction this season; sacks and throws with no charted direction are left out. Left and right are as the offense sees the field. Cells with fewer than three ' . $lzU[0] . ' show no EPA.</p></section>';
 }
 $usedP[] = array( 'Depth by direction', ob_get_clean() );
-/* ---- field map + depth bands (JS). A quarterback's throws (SCOPE §90) sit under the panel, always showing (2.49.1, Gene: "put it under the Playstyle info and don't hide it"); everyone else keeps the tab */
-$thr = $grp === 'qb' ? DBD_Throws::qb_panel( $p + array( 'team' => $a ) ) : '';  /* every throw, one game at a time or the season, from every team he threw for */
+/* ---- field map + depth bands (JS). A quarterback's throws (SCOPE §90) sit under the panel, always showing (2.49.1, Gene: "put it under the Playstyle info and don't hide it").
+   2.56.0 (SCOPE §98): receivers and backs get the same, every target or every carry and catch, and the old On the field tab goes (Gene: "Build, replace tab"); the tab stays only for a player with nothing to draw */
+$thr = $grp === 'qb' ? DBD_Throws::qb_panel( $p + array( 'team' => $a ) ) : DBD_Throws::player_panel( $p + array( 'team' => $a ), $grp === 'rb' );  /* one game at a time or the season, from every team he played for */
 if ( $thr === '' ) {
 ob_start();
 echo '<section class="dbd-panel" id="dbd-pmap-panel"><div class="dbd-ph"><span class="dbd-lab"><b id="dbd-maplab">' . ( $grp === 'qb' ? 'Where he throws' : ( $grp === 'rb' ? 'Where he runs' : 'Where the ball finds him' ) ) . '</b> · from the play file</span><span class="dbd-badge" id="dbd-mapn">loading</span></div>';
