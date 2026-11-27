@@ -1,4 +1,4 @@
-/* The site header, [dbd_block type="nav"] (2.53.0, SCOPE §95). Printed inline once a page by DBD_Nav. Every rule is doubled
+/* The site header, the nav live block (2.53.0, SCOPE §95). Printed inline once a page by DBD_Nav. Every rule is doubled
    (.dxn.dxn) so Divi's own list, heading, link, button and input rules lose. Divi's header section, row and module go full
    width with no padding, and sit above the page so the panels can open over it. */
 .et-l--header:has(.dxn),.et_pb_section:has(.dxn){position:relative;z-index:1000}
@@ -31,7 +31,7 @@
 .dxn.dxn .dxn-top:hover .dxn-l::after,.dxn.dxn .dxn-top:focus-visible .dxn-l::after,.dxn.dxn .dxn-top[aria-current] .dxn-l::after,.dxn.dxn .dxn-top[aria-expanded="true"] .dxn-l::after{transform:scaleX(1)}
 .dxn.dxn .dxn-top:focus-visible{outline:2px solid #fff;outline-offset:-6px;border-radius:4px}
 /* Playoffs: only while the Playoffs switch shows them, a red block */
-.dxn.dxn .dxn-po{display:flex;align-items:center;margin-right:6px}
+.dxn.dxn .dxn-po{display:flex;align-items:center;margin-left:6px}
 .dxn.dxn .dxn-po .dxn-top{padding:8px 11px;background:var(--dxn-red);opacity:1;border-radius:3px}
 .dxn.dxn .dxn-po .dxn-top:hover{background:#e0262d}
 .dxn.dxn .dxn-po .dxn-l::after{display:none}

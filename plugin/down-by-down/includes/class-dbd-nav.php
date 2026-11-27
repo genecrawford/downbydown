@@ -145,7 +145,8 @@ class DBD_Nav {
 		$h = '';
 		if ( ! self::$css ) {
 			self::$css = true;
-			$css = (string) @file_get_contents( DBD_PATH . 'assets/nav.css' );
+			/* comments out: Divi runs shortcodes over a module's output again, so a comment naming the shortcode would draw a second header */
+			$css = trim( (string) preg_replace( array( '#/\*.*?\*/#s', '/\s*\n\s*/' ), array( '', "\n" ), (string) @file_get_contents( DBD_PATH . 'assets/nav.css' ) ) );
 			$h .= '<style id="dxn-css">' . $css . '</style>';
 			if ( function_exists( 'wp_enqueue_script' ) ) { wp_enqueue_script( 'dbd-nav', DBD_URL . 'assets/nav.js', array(), DBD_VERSION, true ); }
 		}
@@ -154,13 +155,13 @@ class DBD_Nav {
 			. '<a class="dxn-home" href="' . esc_url( home_url( '/' ) ) . '" aria-label="Down x Down home">' . trim( $logo ) . '</a>'
 			. '<button class="dxn-burger" type="button" aria-expanded="false" aria-controls="' . $id . '-nav" aria-label="Menu"><span></span><span></span><span></span></button>'
 			. '<nav class="dxn-nav" id="' . $id . '-nav" aria-label="Main"><div class="dxn-msearch">' . self::search( $id . '-m', $players, $find ) . '</div><ul class="dxn-list">';
-		if ( $playoffs ) {
-			$h .= '<li class="dxn-po"><a class="dxn-top" href="' . esc_url( $po_url ) . '"' . ( $cur === 'playoffs' ? ' aria-current="page"' : '' ) . '><span class="dxn-l">Playoffs</span></a></li>';
-		}
 		foreach ( $groups as $k => $g ) {
 			$h .= '<li class="dxn-item dxn-' . $k . '"><button class="dxn-top" type="button" aria-expanded="false" aria-controls="' . $id . '-' . $k . '"' . ( $cur === $k ? ' aria-current="true"' : '' ) . '>'
 				. '<span class="dxn-l">' . esc_html( $g[0] ) . '</span><svg viewBox="0 0 10 6" aria-hidden="true" focusable="false"><path d="M1 1l4 4 4-4"/></svg></button>'
 				. '<div class="dxn-panel" id="' . $id . '-' . $k . '"><div class="dxn-in dxn-in-' . $k . '">' . $g[1] . '</div></div></li>';
+		}
+		if ( $playoffs ) {  /* last on the bar (Gene, 2.53.1) */
+			$h .= '<li class="dxn-po"><a class="dxn-top" href="' . esc_url( $po_url ) . '"' . ( $cur === 'playoffs' ? ' aria-current="page"' : '' ) . '><span class="dxn-l">Playoffs</span></a></li>';
 		}
 		$h .= '</ul></nav><div class="dxn-dsearch">' . self::search( $id . '-d', $players, $find ) . '</div></div></header>';
 		return $h;

@@ -563,6 +563,9 @@ jobs:
           grep -q 'data-find="[^"]*dbd/v1/find"' "$f"
           grep -q '<input type="hidden" name="view" value="players">' "$f"
           if grep -q '>About<' "$f"; then echo "About is not in the header (Gene)"; exit 1; fi
+          # nothing printed may name a shortcode: Divi runs shortcodes over the module's output again (2.53.1)
+          if grep -q 'dbd_block' "$f"; then echo "the header's output names a shortcode"; exit 1; fi
+          if grep -q '/\*' "$f" && sed -n '/<style id="dxn-css">/,/<\/style>/p' "$f" | grep -q '/\*'; then echo "comments left in the header CSS"; exit 1; fi
           php tools/view_harness.php data block week-highlights
           # the sections Gene pastes into Divi, with the plugin's blocks drawn in, for review
           php tools/view_harness.php data page divi/home-hero.html
