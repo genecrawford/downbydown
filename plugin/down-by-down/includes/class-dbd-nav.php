@@ -116,6 +116,17 @@ class DBD_Nav {
 			. '<ul class="dxn-sugg" id="' . $id . '-l" role="listbox" hidden></ul></form>';
 	}
 
+	/** The site's accounts (the footer's follow icons, from the Share pack settings) for the right edge of a panel (Gene, 2.53.1). */
+	private static function follow() {
+		$links = DBD_Blocks::follow_links(); if ( ! $links ) { return ''; }
+		$h = '<div class="dxn-follow" role="group" aria-label="Follow Down x Down">';
+		foreach ( $links as $l ) {
+			$h .= '<a href="' . esc_url( $l[2] ) . '" target="_blank" rel="noopener" aria-label="Down x Down on ' . esc_attr( $l[1] ) . '" title="' . esc_attr( $l[1] ) . '">'
+				. '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="' . DBD_Blocks::ICONS[ $l[0] ] . '"/></svg></a>';
+		}
+		return $h . '</div>';
+	}
+
 	public static function render( $a = array() ) {
 		/* the menu always points at this season, even on a past season's page (the season picker under it moves between seasons) */
 		$was = DBD_Data::archived() ? DBD_Data::season() : 0; if ( $was ) { DBD_Data::use_season( 0 ); }
@@ -129,13 +140,14 @@ class DBD_Nav {
 		$playoffs = class_exists( 'DBD_Playoffs' ) && DBD_Playoffs::visible();
 		$also = array( array( 'News', $news ) );
 		if ( $playoffs ) { array_unshift( $also, array( 'Playoffs', $u( array( 'view' => 'playoffs' ) ) ) ); }  /* hidden playoffs pages are not found (Greptile, PR #167) */
+		$soc = self::follow();  /* not in Teams, whose panel is the 32 teams (Gene) */
 		$groups = array(
 			'week'    => array( 'This week', self::col( 'This week', array( array( 'The slate', $hub ), array( 'Standings', $hub . '#dbd-teams' ), array( 'Games by week', $u( array( 'view' => 'matchups' ) ) ), array( 'Week in review', $u( array( 'view' => 'week' ) ) ) ) )
-				. self::col( 'Also', $also ) ),
+				. self::col( 'Also', $also ) . $soc ),
 			'teams'   => array( 'Teams', self::teams_grid( $u ) . '<p class="dxn-foot"><a href="' . esc_url( $hub . '#dbd-teams' ) . '">Standings</a><a href="' . esc_url( $u( array( 'view' => 'teams' ) ) ) . '">Play explorer</a></p>' ),
 			'players' => array( 'Players', self::col( 'Players', array( array( 'All players', $u( array( 'view' => 'players' ) ) ), array( 'Compare players', $u( array( 'compare' => 'none' ) ) ) ) )
-				. self::col( 'Leaders', $lead ) . self::col( 'Before the NFL', array( array( 'Draft', $u( array( 'view' => 'draft' ) ) ), array( 'Combine', $u( array( 'view' => 'combine' ) ) ) ) ) ),
-			'fantasy' => array( 'Fantasy', self::col( 'Fantasy', array( array( 'This week in fantasy', $u( array( 'view' => 'fantasy' ) ) ), array( 'Fantasy leaders', $u( array( 'view' => 'leaders' ) ) ), array( 'My team', $u( array( 'view' => 'myteam' ) ) ) ) ) ),
+				. self::col( 'Leaders', $lead ) . self::col( 'Before the NFL', array( array( 'Draft', $u( array( 'view' => 'draft' ) ) ), array( 'Combine', $u( array( 'view' => 'combine' ) ) ) ) ) . $soc ),
+			'fantasy' => array( 'Fantasy', self::col( 'Fantasy', array( array( 'This week in fantasy', $u( array( 'view' => 'fantasy' ) ) ), array( 'Fantasy leaders', $u( array( 'view' => 'leaders' ) ) ), array( 'My team', $u( array( 'view' => 'myteam' ) ) ) ) ) . $soc ),
 		);
 		$po_url   = $u( array( 'view' => 'playoffs' ) );
 		$players  = $u( array( 'view' => 'players' ) );

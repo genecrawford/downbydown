@@ -34,6 +34,7 @@ Not affiliated with the NFL or any team. No team logos are used; team marks are 
 = 2.53.1 =
 * The header's CSS prints without its comments. One named the shortcode, and Divi runs shortcodes over a module's output again, so a hidden second header rode inside the style tag on every page.
 * Playoffs moves to the end of the header's list (Gene).
+* The site's social icons sit at the right edge of the This week, Players and Fantasy panels (from the Share pack settings, like the footer's).
 
 = 2.53.0 =
 * The site header as a live block, `[dbd_block type="nav"]`, for the Divi Theme Builder header (SCOPE §95): This week, Teams, Players and Fantasy open panels in place of ten flat links, with every Leaders tab, Compare, Draft, Combine and This week in fantasy one click away.

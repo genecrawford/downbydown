@@ -3638,7 +3638,7 @@ Gene: "before we tackle any new pages or additions, we should probably redesign 
 **Today:** the Divi header (`divi/header.html`, one Code module) has ten flat links: Slate, Teams, Players, Matchups, Week in review, Play explorer, Leaders, Draft, My team, News. Below 1180 wide it wraps to two rows. Slate and Teams are spots on /hub/, not pages. Teams and Play explorer both end at choosing a team; Slate and Matchups both show this week's games. Fantasy, Playoffs, Combine, Compare and About aren't in it.
 
 **New:** the same bar and look (near-black, chalk lettering, red first-down line), regrouped:
-- Logo · This week ▾ · Teams ▾ · Players ▾ · Fantasy ▾ · Playoffs (red, only while the Playoffs switch is on; moved last at Gene's ask in 2.53.1) · search box. No About link (Gene, 2026-11-26).
+- Logo · This week ▾ · Teams ▾ · Players ▾ · Fantasy ▾ · Playoffs (red, only while the Playoffs switch is on; moved last at Gene's ask in 2.53.1) · search box. The This week, Players and Fantasy panels end with the site's social icons at their right edge (Gene, 2.53.1; not in Teams). No About link (Gene, 2026-11-26).
 - **This week:** The slate (/hub/), Standings (/hub/#dbd-teams), Games by week (/matchups/), Week in review (/week/); Playoffs, News.
 - **Teams:** all 32 by division (AFC left, NFC right) with jersey tiles, straight to /team/{abbr}/; Standings and Play explorer at the foot.
 - **Players:** All players, Compare players; every Leaders tab (Fantasy, Wide receivers, Tight ends, Backs, Quarterbacks, Kickers, Pass rushers, Defenses); Before the NFL: Draft, Combine.

@@ -43,6 +43,11 @@
 .dxn.dxn .dxn-col a:hover,.dxn.dxn .dxn-col a:focus-visible,.dxn.dxn .dxn-foot a:hover,.dxn.dxn .dxn-foot a:focus-visible,.dxn.dxn .dxn-div a:hover span,.dxn.dxn .dxn-div a:focus-visible span{opacity:1;text-decoration:underline;text-decoration-color:var(--dxn-red);text-decoration-thickness:2px;text-underline-offset:4px}
 .dxn.dxn .dxn-panel a:focus-visible{outline:2px solid #fff;outline-offset:2px;border-radius:2px}
 .dxn.dxn .dxn-in-players .dxn-col:nth-child(2) ul{columns:2;column-gap:32px}
+/* the site's accounts at the panel's right edge, two rows of three (not in Teams) */
+.dxn.dxn .dxn-follow{display:grid;grid-template-columns:repeat(3,36px);gap:4px;align-content:start;margin-left:auto;padding-top:2px}
+.dxn.dxn .dxn-follow a{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;color:#fff;opacity:.7;text-decoration:none;transition:opacity .15s,background-color .15s}
+.dxn.dxn .dxn-follow a:hover,.dxn.dxn .dxn-follow a:focus-visible{opacity:1;background:rgba(255,255,255,.12)}
+.dxn.dxn .dxn-follow svg{display:block;width:18px;height:18px;fill:currentColor}
 /* Teams: AFC left, NFC right, four divisions each */
 .dxn.dxn .dxn-in-teams{display:grid;grid-template-columns:1fr 1fr;gap:20px 48px}
 .dxn.dxn .dxn-conf{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
@@ -115,4 +120,6 @@
   .dxn.dxn .dxn-div a span:not(.dxn-tile){max-width:100%;overflow:hidden;text-overflow:ellipsis}
   .dxn.dxn .dxn-tile{width:32px;height:26px;font-size:11px}
   .dxn.dxn .dxn-foot{margin-top:10px}
+  .dxn.dxn .dxn-follow{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 0;padding:0}
+  .dxn.dxn .dxn-follow a{width:40px;height:40px}
 }
