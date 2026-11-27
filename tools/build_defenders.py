@@ -157,9 +157,11 @@ def build(out, season, through, pbp, stats, pfrd, snaps, roster, draft, taken_sl
     def wk(pid, w):
         p = P.setdefault(pid, dict(weeks={}, plays=[]))
         return p['weeks'].setdefault(int(w), defaultdict(float))
+    posted = set()  # (team, week) whose weekly stat lines are out: snap counts can post first (Greptile, PR #176)
     for r in records(stats):
         if s_(r.get('season_type')) not in ('REG', '') or s_(r.get('position_group')) not in ('DL', 'LB', 'DB'):
             continue
+        posted.add((s_(r.get('team')), int(f(r['week']))))
         x = wk(s_(r['player_id']), f(r['week']))
         x['team'] = s_(r.get('team')); x['opp'] = s_(r.get('opponent_team'))
         x['tkl'] = f(r.get('def_tackles_solo')) + f(r.get('def_tackle_assists'))
@@ -182,6 +184,7 @@ def build(out, season, through, pbp, stats, pfrd, snaps, roster, draft, taken_sl
         x['team'] = x.get('team') or s_(r.get('team')); x['opp'] = x.get('opp') or s_(r.get('opponent'))
     # who gets a page: a defensive snap this season, on a roster we know
     P = {pid: p for pid, p in P.items() if pid in ros and any(w.get('snaps', 0) > 0 for w in p['weeks'].values())}
+    # (a week held back below can leave a player with no weeks; his page then says his stats are pending)
     # every play the play-by-play credits him with
     if pbp is not None:
         for r in records(pbp, PBP_COLS):
@@ -212,6 +215,12 @@ def build(out, season, through, pbp, stats, pfrd, snaps, roster, draft, taken_sl
                 P[pid]['plays'].append([int(f(r['week'])), s_(r.get('posteam')), int(f(r.get('qtr'))), s_(r.get('time')), dn, int(f(r.get('ydstogo'))) if dn else None,
                                         k, lane, int(f(r.get('yards_gained'))), air, round(f(r.get('epa')), 2), 1 if has('forced_fumble_player_1_player_id', 'forced_fumble_player_2_player_id') else 0,
                                         desc[:400]])
+    # a week whose stat lines aren't posted yet for his team is held back: not a zero game, not in his totals or ranks, and the
+    # game log says the stats are pending
+    for pid, p in P.items():
+        p['pend'] = sorted(w for w, x in p['weeks'].items() if x.get('team') and (x['team'], w) not in posted)
+        for w in p['pend']:
+            del p['weeks'][w]
     # season lines, roles and pools
     for pid, p in P.items():
         W = [w for w in p['weeks'].values() if w.get('snaps', 0) > 0 or w.get('_st')]
@@ -281,7 +290,7 @@ def build(out, season, through, pbp, stats, pfrd, snaps, roster, draft, taken_sl
                    exp=int(f(r.get('years_exp'))), rookie=int(f(r.get('rookie_year'))) if s_(r.get('rookie_year')) else None, draft=dr.get(pid),
                    s={k: rnd(v) for k, v in s.items()}, r={k: [rnd(x) for x in v] for k, v in p['r'].items()}, tr=p['tr'], like=p['like'],
                    w=[[w, x.get('team', ''), x.get('opp', '')] + [rnd(x.get(k, 0.0)) for k in WK[3:]] for w, x in sorted(p['weeks'].items())],
-                   pl=sorted(p['plays'], key=lambda x: (x[0], -x[2], x[3])),
+                   pl=sorted(p['plays'], key=lambda x: (x[0], -x[2], x[3])), pend=p['pend'],
                    car=[years[y][pid] for y in sorted(years) if pid in years[y]] + ([now[pid]] if pid in now else []))
         by_team[p['team']][pid] = rec
         index.append(dict(id=pid, name=rec['name'], team=p['team'], pos=p['pos'], role=p['role'], q=rec['q'], num=rec['num'], photo=photo, slug=p['slug'],

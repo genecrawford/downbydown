@@ -201,7 +201,7 @@ jobs:
           lp = max(R, key=lambda p: (p['prs'], x(p)))['name']; ls = max(R, key=lambda p: (p.get('sk') or 0, y(p)))['name']
           say = re.search(r'<p class="dbd-mv-say">(.*?)</p>', band).group(1)
           if lp.replace("'", '&#039;') not in say or ls.replace("'", '&#039;') not in say: sys.exit('the read does not name the leaders: ' + say)
-          if '/player/' in band or 'player=' in band: sys.exit('a rusher links to a player page; defenders have none')
+          if 'player=' not in band: sys.exit('a rusher should link to his own page (SCOPE §101)')
           hc = band.count('class="pr-h"')
           if not N <= hc <= 2 * N: sys.exit(f'{hc} highlight labels for {N} rushers on two charts')  # a team name with no clear spot is left off (Greptile, PR #148)
           if 'class="pr-team"' not in band: sys.exit('the shared Highlight menu is missing')
