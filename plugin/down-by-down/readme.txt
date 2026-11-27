@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.56.1
+Stable tag: 2.57.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,10 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.57.0 =
+* The player header in his team's colors (SCOPE §99): a band in the team's main color with a faint stripe and the team logo behind him, text that stays readable on light and dark teams, and a photo about twice as tall.
+* Clearer choices: Compare, Add to My team and Share card as buttons under his name, and players like him as one-tap Compare chips. The side card is gone; the team and his snap share sit above the name. Kicker pages get the same.
 
 = 2.56.1 =
 * On a phone, the throw, target and carry charts' header wraps: the game picker drops under the label instead of squeezing it into a one-letter column.
