@@ -208,6 +208,6 @@
     /* a panel inside a closed tab or band has no width yet: draw it when it first shows */
     if (!sec.clientWidth && 'ResizeObserver' in window) { var ro = new ResizeObserver(function () { if (sec.clientWidth) { ro.disconnect(); lw0 = sec.clientWidth; render(); } }); ro.observe(sec); }
   }
-  function boot() { [].forEach.call(document.querySelectorAll('.dbd-thr'), mount); }
+  function boot() { [].forEach.call(document.querySelectorAll('.dbd-thr:not([data-kind=rx]):not([data-kind=rb])'), mount); }  /* a receiver's or back's panel is touchchart.js's (SCOPE §98) */
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();

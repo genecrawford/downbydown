@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.55.1
+Stable tag: 2.56.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,10 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.56.0 =
+* Every target, every carry (SCOPE §98): the quarterback chart's field for everyone else, under How he's used, one game at a time or the whole season, with the replay. Receivers and tight ends get Where he's targeted: each target where the ball reached him, a tail for the yards after the catch, drops, lost fumbles and the passer. Backs get Where he gets the ball: runs drawn as runs, from him through his gap to where he was stopped, and catches drawn as throws.
+* It replaces the old On the field tab on receiver and back pages.
 
 = 2.55.1 =
 * The playoff bracket (home page and /playoffs/) stands up below 1280 wide instead of 1100, where the field's cards were too narrow for team names; rows are a little tighter, and a nickname still too long shrinks to fit.

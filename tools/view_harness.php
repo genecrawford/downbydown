@@ -1414,9 +1414,26 @@ if ( $view === 'throws' ) {
 	if ( $d['sets'][0]['rows'][3][12] !== -7 ) { $fail( 'the Vikings were down 7 on their fourth throw, not ' . var_export( $d['sets'][0]['rows'][3][12], true ) ); }
 	$pj = json_decode( preg_replace( '#^.*<script type="application/json" class="dbd-thr-d">(.*)</script>.*$#s', '$1', DBD_Throws::qb_panel( $rec + array( 'team' => 'MIN' ) ) ), true );
 	if ( empty( $pj['lg']['g'] ) || ( $pj['lg']['min'] ?? null ) !== array( 20, 150 ) ) { $fail( 'the panel should carry the league spreads' ); }
-	if ( $out = getenv( 'DBD_HARNESS_HTML' ) ) { file_put_contents( $out . '/throws-game.html', $h ); file_put_contents( $out . '/throws-qb.html', DBD_Throws::qb_panel( $rec + array( 'team' => 'MIN' ) ) ); }
+	/* every target, every carry (SCOPE §98): Jefferson's targets, Aaron Jones's carries and catches, game by game newest first */
+	$jr = DBD_Data::player_record( 'MIN', '00-0036322' ); $jj = DBD_Throws::player( $jr + array( 'team' => 'MIN' ), false );
+	if ( ! $jj || $jj['kind'] !== 'rx' || $jj['me'] !== '18' ) { $fail( 'Jefferson should have a receiver panel with his number' ); }
+	$jw = array_column( $jj['sets'], 'week' ); $js = $jw; rsort( $js ); if ( $jw !== $js ) { $fail( 'Jefferson’s games newest first' ); }
+	$jn = 0; $jfl = 0; foreach ( $jj['sets'] as $st ) { if ( $st['c'] ) { $fail( 'a receiver’s panel carries no runs' ); } foreach ( $st['tg'] as $r ) { $jn++; $jfl += $r[15];
+		if ( count( $r ) !== 16 || ! in_array( $r[4], array( 'c', 'i', 'x' ), true ) || $r[7] < -1 || $r[7] > 2 || ( $r[9] !== '' && ! isset( $jj['names'][ $r[9] ] ) ) ) { $fail( 'a Jefferson target row: ' . wp_json_encode( $r ) ); } } }
+	$j11 = array_values( array_filter( $jj['sets'], function ( $x ) { return $x['g'] === '2026_11_MIN_SF'; } ) );
+	if ( $jn < 73 || ! $j11 || count( $j11[0]['tg'] ) !== 9 || $jfl < 1 ) { $fail( "Jefferson: 73+ targets, 9 at the 49ers, a lost fumble; got $jn, " . ( $j11 ? count( $j11[0]['tg'] ) : 0 ) . ", $jfl" ); }
+	$ar = DBD_Data::player_record( 'MIN', '00-0033293' ); $aj = DBD_Throws::player( $ar + array( 'team' => 'MIN' ), true );
+	if ( ! $aj || $aj['kind'] !== 'rb' || $aj['me'] !== '33' ) { $fail( 'Aaron Jones should have a back’s panel with his number' ); }
+	$an = 0; $ac = 0; foreach ( $aj['sets'] as $st ) { foreach ( $st['c'] as $r ) { $an++; if ( count( $r ) !== 12 || $r[5] < 0 || $r[5] > 6 || ! is_int( $r[4] ) ) { $fail( 'a Jones carry row: ' . wp_json_encode( $r ) ); } } foreach ( $st['tg'] as $r ) { $ac++; if ( $r[4] !== 'c' ) { $fail( 'a back’s panel carries his catches only' ); } } }
+	$a11 = array_values( array_filter( $aj['sets'], function ( $x ) { return $x['g'] === '2026_11_MIN_SF'; } ) );
+	if ( $an < 134 || $ac < 1 || ! $a11 || count( $a11[0]['c'] ) !== 8 || count( $a11[0]['tg'] ) !== 1 ) { $fail( "Jones: 134+ carries, catches, 8 carries and 1 catch at the 49ers; got $an, $ac" ); }
+	if ( DBD_Throws::player( array( 'id' => '00-0000000', 'team' => 'MIN' ), true ) !== null ) { $fail( 'a player with no carries or targets has no panel' ); }
+	if ( DBD_Throws::lost( array( 'desc' => 'A.Jones up the middle. FUMBLES (99-X), RECOVERED by MIN-71-C.Darrisaw at MIN 30.' ), 'MIN' ) !== 0 || DBD_Throws::lost( array( 'desc' => 'pass to J.Jefferson. FUMBLES (2-D.Lenoir), RECOVERED by SF-2-D.Lenoir at SF 25.' ), 'MIN' ) !== 1 ) { $fail( 'a fumble is lost only when the other team recovers it' ); }
+	$rxh = DBD_Throws::player_panel( $jr + array( 'team' => 'MIN' ), false ); $rbh = DBD_Throws::player_panel( $ar + array( 'team' => 'MIN' ), true );
+	if ( strpos( $rxh, 'data-kind="rx"' ) === false || strpos( $rbh, 'data-kind="rb"' ) === false || strpos( $rxh, '<b>Where he’s targeted</b>' ) === false || strpos( $rbh, '<b>Where he gets the ball</b>' ) === false || strpos( $rxh, '"lg":' ) !== false ) { $fail( 'the receiver and back panels' ); }
+	if ( $out = getenv( 'DBD_HARNESS_HTML' ) ) { file_put_contents( $out . '/throws-game.html', $h ); file_put_contents( $out . '/throws-qb.html', DBD_Throws::qb_panel( $rec + array( 'team' => 'MIN' ) ) ); file_put_contents( $out . '/throws-rx.html', $rxh ); file_put_contents( $out . '/throws-rb.html', $rbh ); }
 	if ( $warnings ) { $fail( "$warnings warnings" ); }
-	echo 'throws: the game (' . count( $d['sets'][0]['rows'] ) . ' and ' . count( $d['sets'][1]['rows'] ) . ' throws), Cousins (' . count( $q['sets'] ) . " games, $n throws), field use (" . count( $sg ) . ' games, ' . count( $ss ) . " seasons) and the panels all pass\n"; exit( 0 );
+	echo 'throws: the game (' . count( $d['sets'][0]['rows'] ) . ' and ' . count( $d['sets'][1]['rows'] ) . ' throws), Cousins (' . count( $q['sets'] ) . " games, $n throws), field use (" . count( $sg ) . ' games, ' . count( $ss ) . " seasons) Jefferson ($jn targets), Jones ($an carries, $ac catches) and the panels all pass\n"; exit( 0 );
 }
 /* ---- the playoffs (SCOPE §88): the switch, every stage replayed from the 2025 archive, each game's preview, and the weekly pack stopping at Week 18 */
 if ( $view === 'playoffs' ) {

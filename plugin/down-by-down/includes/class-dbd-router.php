@@ -462,6 +462,7 @@ class DBD_Router {
 			wp_enqueue_script( 'dbd-marks', DBD_URL . 'assets/marks.js', array(), DBD_VERSION, true );
 			wp_enqueue_script( 'dbd-player', DBD_URL . 'assets/player.js', array( 'dbd-marks' ), DBD_VERSION, true );
 			if ( ( $p['pos'] ?? '' ) === 'QB' ) { wp_enqueue_script( 'dbd-passchart', DBD_URL . 'assets/passchart.js', array(), DBD_VERSION, true ); }  /* every throw (SCOPE §90) */
+			else { wp_enqueue_script( 'dbd-touchchart', DBD_URL . 'assets/touchchart.js', array(), DBD_VERSION, true ); }  /* every target, every carry (SCOPE §98) */
 			wp_localize_script( 'dbd-player', 'DBD_PLAYER', array(
 				'id'      => $p['id'],
 				'short'   => $rec['short'] ?? '',
