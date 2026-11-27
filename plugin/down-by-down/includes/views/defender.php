@@ -40,7 +40,7 @@ $age = ''; if ( ! empty( $d['born'] ) && ( $bt = strtotime( $d['born'] ) ) ) { $
 $dr = is_array( $d['draft'] ?? null ) ? 'Round ' . (int) $d['draft'][0] . ', pick ' . (int) $d['draft'][1] . ' (' . (int) $d['draft'][2] . ')' : ( ! empty( $d['rookie'] ) ? 'Undrafted (' . (int) $d['rookie'] . ')' : '' );
 $bio = array_filter( array( $age, $d['ht'] ?? '', ! empty( $d['wt'] ) ? (int) $d['wt'] . ' lb' : '', $d['col'] ?? '', $dr ) );
 echo '<p class="dbd-sub t-stagger-line t-stagger-line--3">' . esc_html( implode( ' · ', $bio ) ) . ( $bio ? '. ' : '' ) . 'Snap share <b>' . (int) round( (float) ( $s['snap'] ?? 0 ) ) . '%</b> across ' . (int) $s['g'] . ' ' . ( (int) $s['g'] === 1 ? 'game' : 'games' ) . '.</p>';
-$rush = DBD_Router::url( array( 'view' => 'leaders', 'g' => 'def' ) ) . '#ld-rush';
+$rush = DBD_Router::url( array( 'view' => 'leaders', 'g' => 'rush' ) );  /* the Pass rushers tab */
 echo '<div class="dbd-pills"><span class="dbd-pill">' . esc_html( $RN[ $role ][1] ) . '</span><a class="dbd-pill" href="' . esc_url( $turl ) . '">' . esc_html( $nick ) . ' defense</a>'
 	. ( $role === 'front' && ! $arch ? '<a class="dbd-pill" href="' . esc_url( $rush ) . '">Pass rushers chart</a>' : '' ) . ( is_array( $d['draft'] ?? null ) ? '<a class="dbd-pill" href="' . esc_url( DBD_Router::url( array( 'view' => 'draft', 'y' => (int) $d['draft'][2] ) ) ) . '">The ' . (int) $d['draft'][2] . ' draft</a>' : '' ) . '</div>';
 $like = array_values( array_filter( array_map( array( 'DBD_Data', 'defender' ), (array) ( $d['like'] ?? array() ) ) ) );

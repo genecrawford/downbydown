@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.59.0
+Stable tag: 2.59.1
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,9 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.59.1 =
+* A defender page's Pass rushers links open the Pass rushers tab (/leaders/rush/).
 
 = 2.59.0 =
 * A page for every defender (SCOPE §101), at /player/name/ like everyone else: the header in his team's colors, tiles and a Scorecard ranked against his role (the front, linebackers or the secondary), the short version, every play he made on the field with key chips to filter it, his biggest plays, the 18-week game log, and his career back to his rookie year.
