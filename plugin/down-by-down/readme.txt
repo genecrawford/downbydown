@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.57.0
+Stable tag: 2.58.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,11 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.58.0 =
+* Standings by the NFL's tiebreakers (SCOPE §100): the hub's playoff picture and division tables now follow the NFL's own steps (head to head, division record, common games, conference record, strength of victory and of schedule), and a line under any team that finished level says what put it ahead.
+* The NFL's clinch and elimination marks, from ESPN's standings: a small letter after the team's name with a key under the tables; eliminated teams are greyed and listed apart. The team page header gives the division place and, once there is one, the mark.
+* The data build writes standings.json (tools/tiebreak.py, checked against ESPN's seeds every run).
 
 = 2.57.0 =
 * The player header in his team's colors (SCOPE §99): a band in the team's main color with a faint stripe and the team logo behind him, text that stays readable on light and dark teams, and a photo about twice as tall.

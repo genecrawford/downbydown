@@ -31,7 +31,7 @@
     var PASSRATE = C.passrate || 0.57;
 
     var snaps = document.getElementById('dbd-snaps'); if (snaps) snaps.textContent = P.length.toLocaleString('en-US');  /* the Snaps number in the team panel (SCOPE §57) */
-    var kick = document.getElementById('dbd-kicker'); if (kick && lastWeek) kick.textContent = SEASON + ' season · Weeks 1 to ' + lastWeek + (byes.length ? ' · Bye week ' + byes.join(', ') : '') + ' · ' + W + '-' + L;
+    var kick = document.getElementById('dbd-kicker'); if (kick && lastWeek) kick.textContent = SEASON + ' season · Weeks 1 to ' + lastWeek + (byes.length ? ' · Bye week ' + byes.join(', ') : '') + ' · ' + W + '-' + L + (kick.getAttribute('data-place') || '');  /* the division place (SCOPE §100) */
 
     host.innerHTML =
       '<section class="dbd-panel dbd-filters"><div class="dbd-ph"><span class="dbd-lab"><b>Filter the snaps</b> · <span id="dbd-fsum"></span></span><button class="dbd-reset" id="dbd-reset" type="button">Reset</button></div>' +

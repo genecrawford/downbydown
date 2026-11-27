@@ -282,6 +282,12 @@ class DBD_Data {
 		return $rec;
 	}
 
+	/** SCOPE §100: standings.json (the NFL's order and tiebreak steps, ESPN's clinch marks) for the season showing, or null. */
+	public static function standings() {
+		$f = self::get( 'standings.json' );
+		return is_array( $f ) && (int) ( $f['season'] ?? 0 ) === (int) self::season() && ! empty( $f['conf']['AFC'] ) && ! empty( $f['conf']['NFC'] ) && ! empty( $f['div'] ) ? $f : null;
+	}
+
 	public static function record_text( $abbr ) {
 		$r = self::records()[ $abbr ] ?? array( 0, 0, 0 );
 		return $r[0] . '-' . $r[1] . ( $r[2] ? '-' . $r[2] : '' );

@@ -20,6 +20,54 @@ jobs:
           find plugin tools -name '*.php' -print0 | xargs -0 -n1 php -l
       - name: The playoffs (SCOPE §88)
         run: php tools/view_harness.php data playoffs x
+      - name: The NFL's tiebreakers and the clinch marks (SCOPE §100)
+        run: |
+          set -e
+          # the engine against ESPN's 2025 final table: every place, every mark
+          T=$(mktemp -d); cp data/archive/2025/teams.json data/archive/2025/schedule.json "$T/"
+          python3 - "$T" <<'PY'
+          import json, sys
+          sys.path.insert(0, 'tools'); import build_playoffs as b
+          b.standings(sys.argv[1], 2025, open('tools/fixtures/espn-standings-2025.json').read())
+          d = json.load(open(sys.argv[1] + '/standings.json'))
+          assert d['checked'] == 'espn', d['checked']
+          assert len(d['marks']) == 32 and d['marks']['DEN'] == '*' and d['marks']['SEA'] == '*' and d['marks']['MIN'] == 'e', d['marks']
+          afc = d['conf']['AFC']
+          assert afc[0] == ['DEN', {'p': [['common', ['NE']]]}], afc[0]
+          assert afc[4] == ['HOU', {'p': [['h2h', ['BUF']]]}], afc[4]
+          assert [r[0] for r in d['div']['NFC North']] == ['CHI', 'GB', 'MIN', 'DET'], d['div']['NFC North']
+          assert all(len(v) == 16 for v in d['conf'].values()) and all(len(v) == 4 for v in d['div'].values())
+          print('engine matches ESPN on 2025: 32 places, 32 marks')
+          PY
+          # the hub and a team page with this season's file, without it, and with marks
+          mkdir -p /tmp/st
+          test -f data/standings.json || { echo "data/standings.json is missing"; exit 1; }
+          DBD_HARNESS_HTML=/tmp/st php tools/view_harness.php data hub > /dev/null
+          f=$(ls -t /tmp/st/hub*.html | head -1)
+          grep -qF "Seeds and division places use the NFL&#039;s tiebreakers" "$f" || { echo "the hub should say it uses the NFL's tiebreakers"; exit 1; }
+          grep -qF 'class="dbd-cmkey"' "$f" || { echo "the hub should carry the key to the marks"; exit 1; }
+          if grep -q 'are not applied' "$f"; then echo "the old note should be gone when standings.json is in"; exit 1; fi
+          D=$(mktemp -d); cp -r data/. "$D/"; rm "$D/standings.json"; mkdir -p /tmp/st0
+          DBD_HARNESS_HTML=/tmp/st0 php tools/view_harness.php "$D" hub > /dev/null
+          grep -q 'are not applied' /tmp/st0/hub*.html || { echo "without standings.json the hub should keep its old order and note"; exit 1; }
+          if grep -q 'dbd-cm ' /tmp/st0/hub*.html; then echo "no marks without standings.json"; exit 1; fi
+          M=$(mktemp -d); cp -r data/. "$M/"; mkdir -p /tmp/stm
+          python3 - "$M/standings.json" <<'PY'
+          import json, sys
+          d = json.load(open(sys.argv[1]))
+          afc = [r[0] for r in d['conf']['AFC']]
+          d['marks'] = {afc[0]: '*', afc[1]: 'x', afc[15]: 'e'}; d['since'] = {k: d['through'] for k in d['marks']}
+          json.dump(d, open(sys.argv[1], 'w')); open('/tmp/stm/teams.txt', 'w').write(' '.join([afc[0], afc[15]]) + '\n')
+          PY
+          read TOP LAST < /tmp/stm/teams.txt
+          DBD_HARNESS_HTML=/tmp/stm php tools/view_harness.php "$M" hub > /dev/null
+          f=$(ls -t /tmp/stm/hub*.html | head -1)
+          grep -qF 'class="dbd-cm cm-top" data-tip="Clinched the top seed and the only bye"' "$f" || { echo "the top seed should carry its mark"; exit 1; }
+          grep -qF 'class="hb-out hb-gone"' "$f" || { echo "an eliminated team should be listed as eliminated"; exit 1; }
+          grep -q 'class="dbd-trow dbd-elim"' "$f" || { echo "an eliminated team's division row should be greyed"; exit 1; }
+          DBD_HARNESS_HTML=/tmp/stm php tools/view_harness.php "$M" team "$TOP" > /dev/null
+          grep -q '<p class="tp-clinch"><abbr class="dbd-cm cm-top"' /tmp/stm/team-$TOP.html || { echo "the team page should name its mark"; exit 1; }
+          grep -q 'id="dbd-kicker" data-place=" · 1st in the AFC [A-Za-z]*">[^<]* · 1st in the AFC ' /tmp/stm/team-$TOP.html || { echo "the team page should give its division place"; exit 1; }
       - name: Every throw (SCOPE §90)
         run: |
           php tools/view_harness.php data throws x

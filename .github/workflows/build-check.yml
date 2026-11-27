@@ -6,6 +6,8 @@ on:
     paths:
       - 'tools/build_data.py'
       - 'tools/build_fan.py'
+      - 'tools/build_playoffs.py'
+      - 'tools/tiebreak.py'
       - 'tools/kick_career.py'
       - 'plugin/down-by-down/includes/class-dbd-kicker.php'
       - 'plugin/down-by-down/includes/views/kicker.php'
@@ -69,6 +71,27 @@ jobs:
           python3 tools/build_data.py "$pbp" in/roster.csv in/games.csv in/teams.csv /tmp/out
           python3 -c "import json;t=json.load(open('/tmp/out/teams.json'));print(len(t),'teams;',sum(1 for v in t.values() if v.get('logo')),'with logos;',sum(1 for v in t.values() if v.get('logo_s')),'with a logo scale');print(' '.join(k+'='+str(v.get('logo_s')) for k,v in sorted(t.items())))"
           ls /tmp/out/players | head -40 | tr '\n' ' '
+      - name: Check the standings file (SCOPE §100)
+        run: |
+          python3 - <<'PY'
+          import json
+          d = json.load(open('/tmp/out/standings.json')); t = json.load(open('/tmp/out/teams.json'))
+          T = {a for a, v in t.items() if v.get('conf') in ('AFC', 'NFC')}
+          for c in ('AFC', 'NFC'):
+              rows = [r[0] for r in d['conf'][c]]
+              assert sorted(rows) == sorted(a for a in T if t[a]['conf'] == c), (c, rows)
+          pos = {r[0]: i for c in d['conf'] for i, r in enumerate(d['conf'][c])}
+          for dv, rows in d['div'].items():
+              ts = [r[0] for r in rows]
+              assert len(ts) == 4 and ts == sorted(ts, key=lambda a: pos[a]), (dv, ts)
+              assert all(t[a]['div'] == dv for a in ts), dv
+          lead = {rows[0][0] for rows in d['div'].values()}
+          for c in ('AFC', 'NFC'):
+              assert {r[0] for r in d['conf'][c][:4]} == {a for a in lead if t[a]['conf'] == c}, 'seeds 1 to 4 are the division leaders'
+          for a, m in d['marks'].items():
+              assert m in ('*', 'z', 'y', 'x', 'e') and a in T, (a, m)
+          print('standings:', d['checked'], 'through week', d['through'], '·', len(d['marks']), 'marks')
+          PY
       - name: Check the fantasy page file (SCOPE §78)
         run: |
           python3 - <<'PY'

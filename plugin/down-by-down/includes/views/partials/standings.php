@@ -9,18 +9,25 @@ $rb      = function ( $r ) use ( $tier ) {
 	if ( ! $r ) { return '<span class="dbd-note">–</span>'; }
 	return '<div class="dbd-rb"><b>' . (int) $r . '</b><i class="' . $tier( $r ) . '" style="--w:' . round( ( 33 - $r ) / 32 * 100 ) . '%"></i></div>';
 };
-echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>' . esc_html( $conf ) . '</b> · EPA per play, ranked 1 to 32</span><span class="dbd-badge">Off · Def</span></div><div class="dbd-tw"><table class="dbd-stand"><colgroup><col><col class="c-rec"><col class="c-rk"><col class="c-rk"></colgroup>';
+echo '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>' . esc_html( $conf ) . '</b> · ' . ( DBD_Data::standings() ? 'in division order, ' : '' ) . 'EPA per play, ranked 1 to 32</span><span class="dbd-badge">Off · Def</span></div><div class="dbd-tw"><table class="dbd-stand"><colgroup><col><col class="c-rec"><col class="c-rk"><col class="c-rk"></colgroup>';
 foreach ( array( 'East', 'North', 'South', 'West' ) as $d ) {
 	$div = "$conf $d";
 	$rows = array_filter( $teams, function ( $t ) use ( $div ) { return ( $t['div'] ?? '' ) === $div; } );
-	uksort( $rows, function ( $a, $b ) {
-		$c = DBD_Data::win_pct( $b ) <=> DBD_Data::win_pct( $a );
-		return $c ?: ( (int) DBD_Data::rank( 'off', $a ) ?: 99 ) <=> ( (int) DBD_Data::rank( 'off', $b ) ?: 99 );
-	} );
+	$nfl = DBD_Hub::division_order( $div ); $why = array();  /* SCOPE §100: the NFL's order and tiebreak lines when standings.json is in */
+	if ( $nfl && count( $nfl ) === count( $rows ) ) {
+		$o = array(); foreach ( $nfl as $r ) { if ( isset( $rows[ $r[0] ?? '' ] ) ) { $o[ $r[0] ] = $rows[ $r[0] ]; $why[ $r[0] ] = $r[1] ?? null; } }
+		if ( count( $o ) === count( $rows ) ) { $rows = $o; } else { $why = array(); }
+	}
+	if ( ! $why ) {
+		uksort( $rows, function ( $a, $b ) {
+			$c = DBD_Data::win_pct( $b ) <=> DBD_Data::win_pct( $a );
+			return $c ?: ( (int) DBD_Data::rank( 'off', $a ) ?: 99 ) <=> ( (int) DBD_Data::rank( 'off', $b ) ?: 99 );
+		} );
+	}
 	echo '<tr class="dbd-dv"><td colspan="2">' . esc_html( $div ) . '</td><td class="rh">Off</td><td class="rh">Def</td></tr>';
 	foreach ( $rows as $a => $t ) {
 		$href = DBD_Router::url( array( 'team' => $a ) );
-		echo '<tr class="dbd-trow" data-href="' . esc_url( $href ) . '"><td class="dbd-nm"><span class="dbd-nmi">' . DBD_Marks::tile( $a, 24 ) . '<a href="' . esc_url( $href ) . '"><span class="full">' . esc_html( $t['name'] ) . '</span><span class="short">' . esc_html( $t['nick'] ) . '</span></a><small>' . esc_html( $a ) . '</small></span></td>';
+		echo '<tr class="dbd-trow' . ( DBD_Hub::mark( $a ) === 'e' ? ' dbd-elim' : '' ) . '" data-href="' . esc_url( $href ) . '"><td class="dbd-nm"><span class="dbd-nmi">' . DBD_Marks::tile( $a, 24 ) . '<a href="' . esc_url( $href ) . '"><span class="full">' . esc_html( $t['name'] ) . '</span><span class="short">' . esc_html( $t['nick'] ) . '</span></a>' . DBD_Hub::badge( $a ) . '<small>' . esc_html( $a ) . '</small></span>' . DBD_Hub::why_html( $why[ $a ] ?? null ) . '</td>';
 		echo '<td class="dbd-rec">' . esc_html( DBD_Data::record_text( $a ) ) . ( isset( $byes[ $a ] ) ? '<i>Bye</i>' : '' ) . '</td>';
 		echo '<td class="dbd-rk-cell">' . ( $ranked ? $rb( DBD_Data::rank( 'off', $a ) ) : '' ) . '</td><td class="dbd-rk-cell">' . ( $ranked ? $rb( DBD_Data::rank( 'def', $a ) ) : '' ) . '</td></tr>';
 	}

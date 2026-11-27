@@ -3705,3 +3705,143 @@ Gene (screenshot of Aaron Jones's header): "let's rework this section, work in m
 Traps found mocking: the photo img is `position:absolute; left:50%; translateX(-50%)` (reset it); existing phone rules pin the photo to grid column 2; an existing rule forces the Compare button's text white.
 
 **Built as 2.57.0** (Gene: "Build it"): new classes so the old header's rules can't reach it: `.dbd-pband` (+ `is-light`), `.dbd-bteam`, `.dbd-bacts`, `.dbd-blike` / `.dbd-bchip`, `.dbd-bphoto` (`DBD_Marks::hero_photo( …, 350, 'dbd-bphoto' )`, CDN h_700). Colors from `DBD_Marks::band()` (WCAG luminance; logo watermark via `--blg`); buttons and chips from `DBD_Marks::band_actions()` / `band_like()`, shared by player.php and kicker.php. Injury pill gets `inj` (amber; `inj bad` red). Container breakpoints 900 / 600. CI: Jefferson's band colors, buttons, 3 chips, no `dbd-hcard`; Kamara's band `is-light`; Reichard's kicker page has the chips.
+
+## 100. Clinched, eliminated, and the NFL's tiebreakers (scoped and mocked 2026-11-27, `mockup-v74/`; all decided)
+
+Gene: "scope and mock" the parked item "Clinching and elimination marks with the NFL's full tiebreakers" (§41 left it out). Today the hub's Playoff picture seeds by record, then point differential, with a note saying the NFL's tiebreakers aren't applied. The Divisions tab sorts ties by offense rank. Neither has any clinch marks.
+
+**The mock** is the live /hub/ Standings band, redrawn, with a switch between **Today** (2026, Week 12; nobody has clinched yet) and **With marks** (2025 after Week 18, so every mark shows). There's also a sample of the team page header line. It shows real data only.
+
+**What changes**
+- **Seeds and division order by the NFL's tiebreakers.** A new engine, `tools/tiebreak.py`, follows the NFL's steps:
+  - Division ties: head to head, division record, common games, conference record, strength of victory, strength of schedule, net points in common games, net points, coin toss. When a club drops out of a 3+ tie, the rest start again at step 1.
+  - Wild card and seeding: division ties first, then head to head (a sweep for 3+), conference record, common games (minimum 4), and the same steps after.
+  - It skips the combined-ranking steps, which no tie in either season reached.
+  - **Checked against ESPN's standings: all 32 places, both conferences, 2025 final and 2026 now, 0 mismatches**, including 18 finishes decided by a tiebreaker.
+- **It already changes today's picture.** The live hub has the Steelers 6th and the Browns 7th, because Pittsburgh has the better point differential. The NFL has the Browns 6th on division record.
+- **A line under any team that finished level** says what put it ahead: "Ahead of the Bengals on head to head", "Ahead of the Steelers on division record", "Ahead of the Falcons and the Buccaneers on head to head". The Divisions tab puts this line under the name row. The old note about tiebreakers not being applied goes.
+- **The NFL's marks** appear as a small badge after the team name, with a tooltip:
+  - `*` the top seed and the only bye
+  - `z` the division
+  - `y` a wild card
+  - `x` a playoff spot
+  - `e` eliminated
+
+  A key sits under the tables. Eliminated rows are greyed, and the Outside line splits into "Outside" and "Eliminated". Until the first mark, a line reads "No team has clinched a spot or been eliminated yet."
+- **Team page header:** the season line gains the division place ("10-1 · 1st in the AFC East"). Once a team has a mark, a line under it names it: "Clinched a wild card · 6th seed".
+
+**Where the marks come from (decision 1, decided 2026-11-27: Gene chose "ESPN's marks").**
+- **Recommended:** ESPN's standings feed (`site.api.espn.com/apis/v2/sports/football/nfl/standings`, `clincher`). These are the same marks the NFL publishes. Proving a clinch ourselves means checking every way the remaining games can go, which isn't practical before the last few weeks.
+- The build reads the marks once a run and never removes one: a mark can only move up (x to y/z to `*`) or appear. If ESPN fails, the build keeps the last file.
+- Sanity checks before writing:
+  - a `z` team leads its division
+  - an `e` team is outside the top 7
+  - our seeds match ESPN's and nflverse's
+
+  If our seeds disagree with theirs, the reason lines are dropped for that run and the build log says why.
+
+**Data:** `standings.json`, written by `tools/build_playoffs.py` (with `tools/tiebreak.py`), holds:
+- per conference, the order 1 to 16 with each tie's step and the teams it beat
+- per division, the order with the same reason lines
+- the marks and the week they appeared
+
+The sync allowlist gains `standings`. The bracket's `playoffs.json` stays as is (nflverse's seeds already match).
+
+**Plugin:** `DBD_Hub::picture()` and the Divisions partial read `standings.json`, falling back to today's order when the file is missing. The team header gets the place line and the mark. There's a small `.dbd-mk` badge style. CI renders the hub with a fixture carrying every mark.
+
+**Decision 2 (decided 2026-11-27: Gene chose "Standings and team only"):** no marks on the bracket cards (home hero and /playoffs/); the marks show on the hub standings and team pages only. Recommended: standings and team pages only. The bracket cards are tight, and once the playoffs start every bracket team has clinched.
+
+**Left out:**
+- "What it takes" clinching scenarios for the week ahead
+- playoff odds by simulation
+- a social post when a team clinches
+
+All three are possible later; the engine is the base for the first two.
+
+**Acceptance:**
+- Today: Browns 6th, Steelers 7th in the AFC; Jaguars over the Bengals at 3 on head to head; nobody marked.
+- 2025 example: Broncos `*` over the Patriots on common games; Texans over the Bills on head to head; Rams over the 49ers on common games; Vikings over the Lions on head to head in the NFC North.
+- Phones: no sideways scroll at 375.
+
+Size: M.
+
+**Built as 2.58.0** (Gene: "Build it"): `tools/tiebreak.py` (the engine) and `build_playoffs.standings()` write `standings.json` (`conf` 1 to 16 and `div` as [team, why], `marks`, `since`, `checked`); ESPN refuses a user agent with a URL in it, so the build sends a plain one. Plugin: `DBD_Data::standings()`, `DBD_Hub::mark()/badge()/why()/place()/division_order()`, the Divisions partial and the team header read it; without the file everything keeps its old order and note. Classes `dbd-cm` (the mark; `dbd-mk` was already the jersey tile), `dbd-why`, `dbd-elim`, `dbd-cmkey`, `dbd-cmnone`, `tp-clinch`, `hb-gone`. CI: the engine against a trimmed ESPN 2025 fixture (`tools/fixtures/espn-standings-2025.json`), the hub with, without and with injected marks, the team header; the build check validates a fresh file.
+
+## 101. A page for every defender (scoped and mocked 2026-11-27, `mockup-v75/`)
+
+Gene: "scope and mock" the parked item "Pages for individual defenders" (§39 and §79 left them out). Defenders today appear only in their team's defense tables and on the Pass rushers chart, and their names link to the team's defense page.
+
+**The mock** is the live player page shell with the view redrawn for two Vikings: **Dallas Turner** (edge) and **Byron Murphy** (corner). A switch flips between them. Every defender in the league is computed from nflverse's 2026 files (weekly stats, PFR advanced defense, snap counts, play-by-play), so every rank and percentile is real. Turner's line matches the defense tab exactly (29 tackles, 8 sacks, 31 pressures, 80% of snaps), and so does Murphy's (44 tackles, 4 interceptions, 51 targets).
+
+**The page, top to bottom**
+- **Header:** the team-color band from §99.
+  - "Vikings defense" with his snap share, the season line, the name, and his bio and draft line.
+  - Pills: injury listing, his role, the team's defense page, and the Pass rushers chart or the draft class.
+  - Players like him: chips for the three nearest defenders in the same role on the Scorecard's first four figures. They link to those players' pages.
+  - No Compare, My team or Share card buttons in this release. Compare and the card are built for offense and would need a defensive version; My team is fantasy for offense.
+- **Tiles**, eight, by role, each ranked in his pool:
+  - The front: pressures, sacks, QB hits, tackles for loss, tackles, forced fumbles, hurries, snap share.
+  - The secondary: thrown at him, catches allowed, yards allowed, passer rating allowed, interceptions, passes defended, tackles, snap share.
+  - Linebackers mix the two.
+- **The short version:**
+  - How good: "Turner's 3.1 pressures a game are 3rd of 190 pass rushers and linemen, and his 8 sacks 8th."
+  - Where he wins: "25 of his 48 plays end at or behind the line."
+  - Lately.
+  - Next opponent: their sack rate allowed for the front, EPA a dropback for coverage players.
+  - Coverage players also get On the ball and The cost: "67% of throws at him are caught (league median 58%)".
+- **How good is he:** the player page's Scorecard, with league percentiles in his role's pool.
+  - The front (190): pressures, sacks, QB hits and TFL a game; the share of pressures that become sacks; tackles; missed tackle rate; snap share.
+  - Linebackers (85): tackles, TFL, pressures, yards a target, passer rating allowed, missed tackles, snap share.
+  - The secondary (195): passer rating allowed, yards a target, catches allowed, plays on the ball, tackles, missed tackles, snap share.
+  - Who counts: a regular role means half the team's games or more, on 40% or more of the defense's snaps in his games, the §79 rule. Coverage rates need 10 targets. A linebacker who rushes more than he covers counts with the front, as on the defense tab.
+- **Where he makes plays:** the throw and touch chart's field, turned for the defense, with every play he's credited with in the play-by-play.
+  - Tackles are blue dots and shared tackles hollow blue.
+  - Tackles for loss and sacks are red.
+  - QB hits are amber rings.
+  - Passes defended are purple diamonds and interceptions green diamonds.
+  - A forced fumble gets a green ring.
+  - Each play sits in the lane the play names, at the yard line where it ended. The field grows for deep interceptions.
+  - Key chips filter by kind, and the counts are on the chips. Hovering or tapping a play shows it underneath: what happened, the game situation, the play text and EPA.
+  - Then **His biggest plays**, the six that took the most EPA from the offense.
+- **Week by week:** the game log, all 18 weeks (bye, did not play, next game and ahead rows, as on offense pages).
+  - The front: snap %, tackles, TFL, sacks, QB hits, pressures, hurries, passes defended, forced fumbles.
+  - Coverage: snap %, tackles, targets, catches, yards, TD, passer rating, interceptions, passes defended.
+  - Columns fold on narrow screens.
+- **Career:** season by season back to his rookie year. The mock shows 2025 and 2026, which the site keeps now; the build reads every season from nflverse's yearly weekly-stats files, as offense careers do.
+- **More:** his unit by snap share (links), next game, the team's defense page, Leaders, and the draft class.
+
+**Elsewhere on the site** (defender names become links)
+- the defense tab's three defender tables
+- the Pass rushers chart and its table
+- the box score's defense line
+- the lineups board
+- Players to watch
+- the Players index, which gains Front / Linebackers / Secondary filters
+- the nav search ("find"), which returns defenders
+
+**URLs (decision 1):** the same `/player/{slug}/` family as offense, so one search and one route. Recommended. Slugs follow the existing rule, and duplicate names already get the existing tiebreak. There is one live case: Justin Jefferson the receiver and Justin Jefferson the Browns linebacker, so the receiver keeps today's slug.
+
+**Data:** the build writes `defenders/{TEAM}.json`. Each regular defender gets:
+- bio, photo, role and draft
+- the weekly line: snaps, tackles, TFL, sacks, hits, pressures, hurries, blitzes, coverage, takeaways
+- the season line
+- a career block by year
+- every credited play: week, kind, lane, yard line, air yards, EPA, play text
+
+It also writes `defenders/league.json`, the three pools' distributions and ranks. The players index gains defenders (about 470 with a regular role, plus anyone with a snap; the index already pages at 50). The sync allowlist gains `defenders/[A-Z]{2,3}` and `defenders/league`. The build check validates every team's file: season equals the sum of its weeks, and every credited play's player is on that team's roster that week.
+
+**Plugin:** the router sends a defender's id to `views/defender.php` (header via `DBD_Marks::band()`, tiles, short version, Scorecard via `DBD_Grades`'s percentile helpers, game log, career, More). The field is a new `kind` in `touchchart.js`, so it gets the same tooltips, keyboard support and phone layout, with a narrower field drawn on phones. Also: SEO title and description ("Dallas Turner stats 2026: pressures, sacks and every play"), card meta later, and harness mode `defender` with CI checks on Turner's and Murphy's pages.
+
+**Left out:**
+- Compare for defenders
+- a defender share card
+- IDP fantasy
+- coverage charts by receiver (nflverse has no defender id on targets other than passes defended and interceptions)
+- special teams tackles
+
+**Acceptance:**
+- Turner: 31 pressures (3rd of 190 a game), 8 sacks, 22 QB hits, 80% of snaps, 48 plays on the field (9 sacks, 14 QB hits, 3 passes defended).
+- Murphy: a 62.9 passer rating allowed (30th of 189), 4 interceptions, 8 passes defended, 52 plays on the field.
+- Both: the game log shows Week 6 as the bye. No sideways scroll at 375, and no text under 11px.
+
+Size: L (one release, maybe two: the page first, then the links across the site).
