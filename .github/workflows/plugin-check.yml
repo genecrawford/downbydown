@@ -549,6 +549,18 @@ jobs:
           grep -q 'href="https://bsky.app/profile/downbydown.bsky.social"' blockpages/block-follow.html
           grep -q 'class="dbd-hb hb-follow" aria-label="Follow Down x Down" style="color:#fff"' blockpages/block-follow.html
           test "$(grep -o '<style>nav.hb-follow' blockpages/block-follow.html | wc -l)" -eq 1
+          # the site header (2.53.0, SCOPE §95): four groups, all 32 teams, every Leaders tab, no About, its CSS once, search wired up
+          php tools/view_harness.php data block nav
+          f=blockpages/block-nav.html
+          grep -q '<header class="dxn">' "$f"
+          test "$(grep -o 'class="dxn-item dxn-' "$f" | wc -l)" -eq 4
+          test "$(grep -o 'data-t="[A-Z]*"' "$f" | wc -l)" -eq 32
+          test "$(grep -o '<style id="dxn-css">' "$f" | wc -l)" -eq 1
+          for g in wr te rb qb k rush def; do grep -q "view=leaders&amp;g=$g\"\|view=leaders&g=$g\"" "$f" || { echo "no Leaders link for $g"; exit 1; }; done
+          for v in matchups week playoffs players draft combine fantasy myteam teams; do grep -q "view=$v\"" "$f" || { echo "no link to $v"; exit 1; }; done
+          grep -q 'data-find="[^"]*dbd/v1/find"' "$f"
+          grep -q '<input type="hidden" name="view" value="players">' "$f"
+          if grep -q '>About<' "$f"; then echo "About is not in the header (Gene)"; exit 1; fi
           php tools/view_harness.php data block week-highlights
           # the sections Gene pastes into Divi, with the plugin's blocks drawn in, for review
           php tools/view_harness.php data page divi/home-hero.html

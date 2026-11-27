@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.52.0
+Stable tag: 2.53.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,11 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.53.0 =
+* The site header as a live block, `[dbd_block type="nav"]`, for the Divi Theme Builder header (SCOPE §95): This week, Teams, Players and Fantasy open panels in place of ten flat links, with every Leaders tab, Compare, Draft, Combine and This week in fantasy one click away.
+* Teams lists all 32 by division, each straight to its page. Playoffs shows as a red link while the Playoffs switch is on.
+* A search box finds players and teams as you type (GET dbd/v1/find, fetched on first use); Enter with no pick searches the Players page.
 
 = 2.52.0 =
 * Follow icons (SCOPE §94): a new live block, [dbd_block type="follow"], draws a row of icons linking to the site's accounts on X, Bluesky, Threads, Instagram, the Facebook group and Reddit, for the Divi footer.

@@ -3630,3 +3630,23 @@ Gene: "need to figure out where to put svg icons of all the social networks for 
 - Built as a new live-block type, `[dbd_block type="follow"]`, pasted into the Theme Builder footer by Gene. Unlike the other blocks it doesn't need data, so it renders before the first build. SVGs inline in the plugin (Simple Icons shapes, CC0); no files or icon fonts. Screen-reader label per link ("Down x Down on Bluesky").
 - Not included: header or newsletter placement, follower counts, brand colors on hover.
 - Build notes: the icons' CSS rides inline with the first row on a page (`nav.hb-follow.hb-follow`, doubled to hold against Divi's link rules), so `follow` skips `enqueue()`; `render()` returns it before the data check and the cache. Divi's footer section text is grey (#666) and only the text module is white, so the shortcode Gene pastes is `[dbd_block type="follow" color="#fff"]`. Hover backing is a neutral `rgba(128,128,128,.2)` so it reads on light or dark.
+
+## 95. The navigation, regrouped (scoped and mocked 2026-11-26, `mockup-v69/`; Gene: "build it, but we don't need the about page linked up in the header")
+
+Gene: "before we tackle any new pages or additions, we should probably redesign the navigation, it's getting very cluttered and unorganized."
+
+**Today:** the Divi header (`divi/header.html`, one Code module) has ten flat links: Slate, Teams, Players, Matchups, Week in review, Play explorer, Leaders, Draft, My team, News. Below 1180 wide it wraps to two rows. Slate and Teams are spots on /hub/, not pages. Teams and Play explorer both end at choosing a team; Slate and Matchups both show this week's games. Fantasy, Playoffs, Combine, Compare and About aren't in it.
+
+**New:** the same bar and look (near-black, chalk lettering, red first-down line), regrouped:
+- Logo · Playoffs (red, only while the Playoffs switch is on) · This week ▾ · Teams ▾ · Players ▾ · Fantasy ▾ · search box. No About link (Gene, 2026-11-26).
+- **This week:** The slate (/hub/), Standings (/hub/#dbd-teams), Games by week (/matchups/), Week in review (/week/); Playoffs, News.
+- **Teams:** all 32 by division (AFC left, NFC right) with jersey tiles, straight to /team/{abbr}/; Standings and Play explorer at the foot.
+- **Players:** All players, Compare players; every Leaders tab (Fantasy, Wide receivers, Tight ends, Backs, Quarterbacks, Kickers, Pass rushers, Defenses); Before the NFL: Draft, Combine.
+- **Fantasy:** This week in fantasy (/fantasy/), Fantasy leaders (/leaders/), My team.
+- Panels open on click (and on a short hover with a mouse); Escape, outside click or a second click closes. The section you're in keeps the red line (player, compare, leaders, draft, combine → Players; team → Teams; fantasy, My team → Fantasy; hub, matchups, game, week, news → This week).
+- Search: players and teams as you type from the synced player list; Enter without a pick goes to /players/?q=. On a phone it's at the top of the open menu.
+- One row down to ~760 wide, phone layout below (logo + menu button; search, then the groups as rows that expand one at a time; Teams = 8 division rows of 4 tiles).
+
+**Not included:** the footer, the plugin's breadcrumb/season bar, past seasons (season picker covers them), new pages.
+
+**Built as 2.53.0** (Gene chose a plugin block): `[dbd_block type="nav"]` → `DBD_Nav` (`includes/class-dbd-nav.php`). CSS `assets/nav.css` printed inline once a page (doubled `.dxn.dxn` selectors beat Divi; `:has(.dxn)` rules take Divi's header section/row/module full width and above the page); `assets/nav.js` in the footer; logo `assets/nav-logo.svg`. Links come from `DBD_Router::url()` for this season even on a past season's page. Search players come from `GET dbd/v1/find` (name, team, position, link; transient per players/index.json version; Cache-Control public 1h), fetched on first focus; teams from the Teams panel. Playoffs shows when `DBD_Playoffs::visible()`. Group underline from the route (`DBD_Nav::GROUP`), News page → This week. One row from 960 wide (tighter from 1120), phone menu below. Gene pastes the shortcode into the Theme Builder header's Code module in place of `divi/header.html` (kept for undo).
