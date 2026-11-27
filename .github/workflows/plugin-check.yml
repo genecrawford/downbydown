@@ -570,17 +570,17 @@ jobs:
           if grep -q 'dbd_block' "$f"; then echo "the header's output names a shortcode"; exit 1; fi
           # the site footer (2.54.0, SCOPE §96): the footer's own lines word for word, the header's links plus About, 32 teams, 6 icons, CSS once, no comments
           php tools/view_harness.php data block footer
-          f=blockpages/block-footer.html
-          grep -q '<footer class="dxf">' "$f"
-          for m in '>Every NFL snap, drawn on the field.</p>' '>Data: nflverse. Not affiliated with the NFL.</p>' 'By <a href="https://period-three.com/">Period Three</a>' '>About</a>'; do grep -qF "$m" "$f" || { echo "the footer is missing $m"; exit 1; }; done
-          test "$(grep -o 'data-t="[A-Z]*"' "$f" | wc -l)" -eq 32
-          test "$(grep -o 'aria-label="Down x Down on ' "$f" | wc -l)" -eq 6
-          test "$(grep -o '<style id="dxf-css">' "$f" | wc -l)" -eq 1
-          for g in wr te rb qb k rush def; do grep -q "view=leaders&amp;g=$g\"\|view=leaders&g=$g\"" "$f" || { echo "the footer has no Leaders link for $g"; exit 1; }; done
-          for v in matchups week players draft combine fantasy myteam; do grep -q "view=$v\"" "$f" || { echo "the footer has no link to $v"; exit 1; }; done
-          if grep -q 'dbd_block' "$f"; then echo "the footer's output names a shortcode"; exit 1; fi
-          if sed -n '/<style id="dxf-css">/,/<\/style>/p' "$f" | grep -q '/\*'; then echo "comments left in the footer CSS"; exit 1; fi
-          if grep -q 'id="dxn-clip-' "$f"; then echo "the footer logo reuses the header logo's ids"; exit 1; fi
+          ff=blockpages/block-footer.html
+          grep -q '<footer class="dxf">' "$ff"
+          for m in '>Every NFL snap, drawn on the field.</p>' '>Data: nflverse. Not affiliated with the NFL.</p>' 'By <a href="https://period-three.com/">Period Three</a>' '>About</a>'; do grep -qF "$m" "$ff" || { echo "the footer is missing $m"; exit 1; }; done
+          test "$(grep -o 'data-t="[A-Z]*"' "$ff" | wc -l)" -eq 32
+          test "$(grep -o 'aria-label="Down x Down on ' "$ff" | wc -l)" -eq 6
+          test "$(grep -o '<style id="dxf-css">' "$ff" | wc -l)" -eq 1
+          for g in wr te rb qb k rush def; do grep -q "view=leaders&amp;g=$g\"\|view=leaders&g=$g\"" "$ff" || { echo "the footer has no Leaders link for $g"; exit 1; }; done
+          for v in matchups week players draft combine fantasy myteam; do grep -q "view=$v\"" "$ff" || { echo "the footer has no link to $v"; exit 1; }; done
+          if grep -q 'dbd_block' "$ff"; then echo "the footer's output names a shortcode"; exit 1; fi
+          if sed -n '/<style id="dxf-css">/,/<\/style>/p' "$ff" | grep -q '/\*'; then echo "comments left in the footer CSS"; exit 1; fi
+          if grep -q 'id="dxn-clip-' "$ff"; then echo "the footer logo reuses the header logo's ids"; exit 1; fi
           if grep -q '/\*' "$f" && sed -n '/<style id="dxn-css">/,/<\/style>/p' "$f" | grep -q '/\*'; then echo "comments left in the header CSS"; exit 1; fi
           php tools/view_harness.php data block week-highlights
           # the sections Gene pastes into Divi, with the plugin's blocks drawn in, for review
