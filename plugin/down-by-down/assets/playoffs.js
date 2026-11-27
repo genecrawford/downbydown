@@ -26,9 +26,18 @@
 		svg.setAttribute('viewBox', '0 0 ' + B.width + ' ' + B.height); svg.innerHTML = h;
 		[].forEach.call(svg.querySelectorAll('path'), function (p) { p.style.setProperty('--len', Math.ceil(p.getTotalLength()) + 1); });
 	}
+	/* a nickname too long for its card shrinks to fit, down to three quarters of its size; past that it ends in an ellipsis (2.55.1) */
+	function fit(f) {
+		[].forEach.call(f.querySelectorAll('.po-r .nm'), function (n) {
+			n.style.fontSize = '';
+			if (n.scrollWidth <= n.clientWidth + .5) return;
+			var base = parseFloat(getComputedStyle(n).fontSize), k = Math.max(.75, n.clientWidth / n.scrollWidth);
+			n.style.fontSize = (base * k).toFixed(2) + 'px';
+		});
+	}
 	function hero() {
 		document.querySelectorAll('[data-pob]').forEach(function (f) {
-			chalk(f);
+			fit(f); chalk(f);
 			if (!f.classList.contains('go')) { void f.offsetWidth; f.classList.add('go'); setTimeout(function () { f.classList.add('done'); }, 2600); }  /* the end state, even where the animations don't run */
 		});
 	}
