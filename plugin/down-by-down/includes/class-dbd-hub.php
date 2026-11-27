@@ -147,28 +147,78 @@ class DBD_Hub {
 		return $d;
 	}
 
-	/** Seeds 1 to 7 by record then point differential (the NFL's tiebreakers are not applied), the hunt within a game of the 7th, and the rest. */
+	/* ------------------------------------------------------------ SCOPE §100: the NFL's order, its tiebreakers and the clinch marks (standings.json) */
+	const MARKS = array( '*' => 'Clinched the top seed and the only bye', 'z' => 'Clinched the %s', 'y' => 'Clinched a wild card', 'x' => 'Clinched a playoff spot', 'e' => 'Eliminated from the playoffs' );
+	const STEPS = array( 'h2h' => 'head to head', 'sweep' => 'head to head', 'div' => 'division record', 'common' => 'record in common games', 'conf' => 'conference record',
+		'sov' => 'strength of victory', 'sos' => 'strength of schedule', 'npc' => 'net points in common games', 'npconf' => 'net points in conference games', 'np' => 'net points', 'coin' => 'a coin toss' );
+	const NOTE_NFL = 'Seeds and division places use the NFL\'s tiebreakers: head to head, division record, common games, conference record, then strength of victory and of schedule. Where teams finish level, the line under the name says what put one ahead. The marks are the NFL\'s, from ESPN\'s standings, and update with each data build. Diff is points scored minus allowed.';
+
+	/** The NFL's mark for a team ('*', 'z', 'y', 'x', 'e') or ''. */
+	public static function mark( $a ) { $s = DBD_Data::standings(); $m = (string) ( $s['marks'][ $a ] ?? '' ); return isset( self::MARKS[ $m ] ) ? $m : ''; }
+	public static function mark_text( $a ) { $m = self::mark( $a ); return $m === '' ? '' : ( $m === 'z' ? sprintf( self::MARKS['z'], DBD_Data::team( $a )['div'] ?? 'division' ) : self::MARKS[ $m ] ); }
+	/** The small letter after a team's name, with its meaning in the tooltip. */
+	public static function badge( $a ) {
+		$m = self::mark( $a ); if ( $m === '' ) { return ''; }
+		$t = self::mark_text( $a );
+		return '<abbr class="dbd-cm cm-' . ( $m === '*' ? 'top' : $m ) . '" data-tip="' . esc_attr( $t ) . '" aria-label="' . esc_attr( $t ) . '">' . esc_html( $m ) . '</abbr>';
+	}
+	/** "Ahead of the Bengals on head to head" for a tie the order broke, or ''. */
+	public static function why( $w ) {
+		if ( ! is_array( $w ) || ! isset( self::STEPS[ $w['s'] ?? '' ] ) ) { return ''; }
+		$n = array_values( array_map( function ( $a ) { return 'the ' . self::nick( $a ); }, array_filter( (array) ( $w['o'] ?? array() ), 'is_string' ) ) );
+		if ( ! $n ) { return ''; }
+		$last = array_pop( $n );
+		return 'Ahead of ' . ( $n ? implode( ', ', $n ) . ' and ' . $last : $last ) . ' on ' . self::STEPS[ $w['s'] ];
+	}
+	public static function why_html( $w ) { $t = self::why( $w ); return $t === '' ? '' : '<span class="dbd-why">' . esc_html( $t ) . '</span>'; }
+	/** A team's place in its division by the NFL's order (1 to 4), or 0 without standings.json. */
+	public static function place( $a ) {
+		$s = DBD_Data::standings(); $d = DBD_Data::team( $a )['div'] ?? '';
+		foreach ( (array) ( $s['div'][ $d ] ?? array() ) as $i => $r ) { if ( ( $r[0] ?? '' ) === $a ) { return $i + 1; } }
+		return 0;
+	}
+	/** The NFL's division order: [[team, why]], or null without standings.json (the Divisions tab then keeps its old order). */
+	public static function division_order( $div ) { $s = DBD_Data::standings(); return $s && ! empty( $s['div'][ $div ] ) ? (array) $s['div'][ $div ] : null; }
+	/** The key to the marks, under the tables. */
+	private static function key() {
+		$k = '<p class="dbd-cmkey">';
+		foreach ( array( '*' => 'the top seed and the only bye', 'z' => 'the division', 'y' => 'a wild card', 'x' => 'a playoff spot', 'e' => 'eliminated' ) as $m => $t ) {
+			$k .= '<span><abbr class="dbd-cm cm-' . ( $m === '*' ? 'top' : $m ) . '" aria-hidden="true">' . esc_html( $m ) . '</abbr>' . esc_html( $t ) . '</span>';
+		}
+		return $k . '</p>';
+	}
+
+	/** Seeds 1 to 7, the hunt within a game of the 7th, and the rest. By the NFL's order and tiebreakers from standings.json (SCOPE §100);
+	 *  without the file, by record then point differential as before. */
 	public static function picture( $conf ) {
 		$teams = DBD_Data::teams(); $rec = DBD_Data::records(); $pd = self::diffs();
-		$key = function ( $a ) use ( $pd ) { return array( DBD_Data::win_pct( $a ), $pd[ $a ] ?? 0 ); };
-		$cmp = function ( $a, $b ) use ( $key ) { return $key( $b ) <=> $key( $a ); };
 		$in = array_keys( array_filter( $teams, function ( $t ) use ( $conf ) { return ( $t['conf'] ?? '' ) === $conf; } ) );
 		if ( ! $in ) { return ''; }
-		$lead = array();
-		foreach ( array( 'East', 'North', 'South', 'West' ) as $d ) {
-			$dv = array_values( array_filter( $in, function ( $a ) use ( $teams, $conf, $d ) { return ( $teams[ $a ]['div'] ?? '' ) === "$conf $d"; } ) );
-			if ( $dv ) { usort( $dv, $cmp ); $lead[] = $dv[0]; }
+		$S = DBD_Data::standings(); $why = array();
+		$ord = $S ? array_values( array_filter( (array) ( $S['conf'][ $conf ] ?? array() ), function ( $r ) use ( $teams ) { return is_array( $r ) && isset( $teams[ $r[0] ?? '' ] ); } ) ) : array();
+		if ( count( $ord ) === count( $in ) ) {
+			$all = array(); foreach ( $ord as $r ) { $all[] = $r[0]; $why[ $r[0] ] = $r[1] ?? null; }
+			$lead = array_slice( $all, 0, 4 ); $wc = array_slice( $all, 4, 3 ); $rest = array_slice( $all, 7 );
+		} else {
+			$key = function ( $a ) use ( $pd ) { return array( DBD_Data::win_pct( $a ), $pd[ $a ] ?? 0 ); };
+			$cmp = function ( $a, $b ) use ( $key ) { return $key( $b ) <=> $key( $a ); };
+			$lead = array();
+			foreach ( array( 'East', 'North', 'South', 'West' ) as $d ) {
+				$dv = array_values( array_filter( $in, function ( $a ) use ( $teams, $conf, $d ) { return ( $teams[ $a ]['div'] ?? '' ) === "$conf $d"; } ) );
+				if ( $dv ) { usort( $dv, $cmp ); $lead[] = $dv[0]; }
+			}
+			usort( $lead, $cmp );
+			$rest = array_values( array_diff( $in, $lead ) ); usort( $rest, $cmp );
+			$wc = array_slice( $rest, 0, 3 ); $rest = array_slice( $rest, 3 );
 		}
-		usort( $lead, $cmp );
-		$rest = array_values( array_diff( $in, $lead ) ); usort( $rest, $cmp );
-		$wc = array_slice( $rest, 0, 3 ); $seven = end( $wc );
+		$seven = end( $wc );
 		$gb = function ( $a ) use ( $rec, $seven ) { return ( ( $rec[ $seven ][0] - $rec[ $a ][0] ) + ( $rec[ $a ][1] - $rec[ $seven ][1] ) ) / 2; };
 		$gbt = function ( $x ) { if ( $x <= 0 ) { return 'tied with the 7th seed'; } $w = floor( $x ); return ( $w ? (int) $w : '' ) . ( $x - $w ? '½' : '' ) . ( $x <= 1 ? ' game' : ' games' ) . ' back'; };
-		$hunt = array(); $out = array();
-		foreach ( array_slice( $rest, 3 ) as $a ) { if ( $gb( $a ) <= 1 ) { $hunt[] = $a; } else { $out[] = $a; } }
-		$row = function ( $seed, $a, $tag ) use ( $teams, $pd ) {
+		$hunt = array(); $out = array(); $gone = array();
+		foreach ( $rest as $a ) { if ( self::mark( $a ) === 'e' ) { $gone[] = $a; } elseif ( $gb( $a ) <= 1 ) { $hunt[] = $a; } else { $out[] = $a; } }
+		$row = function ( $seed, $a, $tag ) use ( $teams, $pd, $why ) {
 			$href = DBD_Router::url( array( 'team' => $a ) ); $d = (int) ( $pd[ $a ] ?? 0 );
-			return '<tr><td class="sd">' . esc_html( (string) $seed ) . '</td><td class="dbd-nm"><span class="dbd-nmi">' . DBD_Marks::tile( $a, 24 ) . '<a href="' . esc_url( $href ) . '"><span class="full">' . esc_html( $teams[ $a ]['name'] ) . '</span><span class="short">' . esc_html( $teams[ $a ]['nick'] ) . '</span></a><small>' . esc_html( $tag ) . '</small></span></td>'
+			return '<tr' . ( self::mark( $a ) === 'e' ? ' class="dbd-elim"' : '' ) . '><td class="sd">' . esc_html( (string) $seed ) . '</td><td class="dbd-nm"><span class="dbd-nmi">' . DBD_Marks::tile( $a, 24 ) . '<a href="' . esc_url( $href ) . '"><span class="full">' . esc_html( $teams[ $a ]['name'] ) . '</span><span class="short">' . esc_html( $teams[ $a ]['nick'] ) . '</span></a>' . self::badge( $a ) . '<small>' . esc_html( $tag ) . '</small></span>' . self::why_html( $why[ $a ] ?? null ) . '</td>'
 				. '<td class="dbd-rec">' . esc_html( DBD_Data::record_text( $a ) ) . '</td><td class="pd ' . ( $d > 0 ? 'pos' : ( $d < 0 ? 'neg' : '' ) ) . '">' . ( $d > 0 ? '+' : '' ) . $d . '</td></tr>';
 		};
 		$b = '';
@@ -176,18 +226,21 @@ class DBD_Hub {
 		foreach ( $wc as $i => $a ) { $b .= $row( $i + 5, $a, 'wild card' ); }
 		$b .= '<tr class="dbd-dv"><td colspan="4">In the hunt · within one game of the 7th seed</td></tr>';
 		if ( $hunt ) { foreach ( $hunt as $a ) { $b .= $row( '', $a, $gbt( $gb( $a ) ) ); } } else { $b .= '<tr><td colspan="4" class="dbd-note">Nobody within a game.</td></tr>'; }
+		$list = function ( $xs ) { return esc_html( implode( ', ', array_map( function ( $a ) { return self::nick( $a ) . ' ' . DBD_Data::record_text( $a ); }, $xs ) ) ); };
 		return '<section class="dbd-panel"><div class="dbd-ph"><span class="dbd-lab"><b>' . esc_html( $conf ) . '</b> · if the season ended today</span><span class="dbd-badge">Seeds 1 to 7</span></div>'
 			. '<div class="dbd-tw"><table class="dbd-stand hb-pic"><thead><tr><th>Seed</th><th>Team</th><th>Record</th><th>Diff</th></tr></thead><tbody>' . $b . '</tbody></table></div>'
-			. ( $out ? '<p class="hb-out">Outside: ' . esc_html( implode( ', ', array_map( function ( $a ) { return self::nick( $a ) . ' ' . DBD_Data::record_text( $a ); }, $out ) ) ) . '</p>' : '' ) . '</section>';
+			. ( $out ? '<p class="hb-out">Outside: ' . $list( $out ) . '</p>' : '' )
+			. ( $gone ? '<p class="hb-out hb-gone"><abbr class="dbd-cm cm-e" aria-hidden="true">e</abbr>Eliminated: ' . $list( $gone ) . '</p>' : '' ) . '</section>';
 	}
 
 	/** The standings band: Playoff picture (default) and Divisions (today's tables). Before Week 1 only the divisions show. */
 	public static function standings( $divisions_html ) {
 		$played = array_sum( array_map( function ( $r ) { return $r[0] + $r[1] + $r[2]; }, DBD_Data::records() ) ) > 0;
 		if ( ! $played ) { return '<section class="dbd-band" id="hb-stand">' . $divisions_html . '</section>'; }
+		$S = DBD_Data::standings();
 		$tabs = '<div class="dbd-ph dbd-tabh"><div class="dbd-seg t-tabs dbd-btabs" role="tablist"><span class="t-tabs-pill" aria-hidden="true"></span><button class="t-tab" type="button" role="tab" aria-selected="true" data-pane="0">Playoff picture</button><button class="t-tab" type="button" role="tab" aria-selected="false" data-pane="1">Divisions</button></div></div>';
 		return '<section class="dbd-band" id="hb-stand"><h2 class="dbd-bandh">Standings<span>the playoff picture today, and every division</span></h2><section class="dbd-panel dbd-tabbed hb-stand">' . $tabs
-			. '<section class="dbd-pane" data-pane="0"><div class="dbd-two">' . self::picture( 'AFC' ) . self::picture( 'NFC' ) . '</div><p class="dbd-note">Seeds go by record, then point differential: the four division leaders first, then the three best records left. The NFL\'s own tiebreakers (head to head, division and conference record) are not applied, so a tie on record can land the other way. Diff is points scored minus allowed.</p></section>'
-			. '<section class="dbd-pane" data-pane="1" hidden>' . $divisions_html . '</section></section></section>';
+			. '<section class="dbd-pane" data-pane="0">' . ( $S && ! array_filter( (array) ( $S['marks'] ?? array() ) ) ? '<p class="dbd-cmnone">No team has clinched a spot or been eliminated yet.</p>' : '' ) . '<div class="dbd-two">' . self::picture( 'AFC' ) . self::picture( 'NFC' ) . '</div>' . ( $S ? self::key() . '<p class="dbd-note">' . esc_html( self::NOTE_NFL ) . '</p>' : '<p class="dbd-note">Seeds go by record, then point differential: the four division leaders first, then the three best records left. The NFL\'s own tiebreakers (head to head, division and conference record) are not applied, so a tie on record can land the other way. Diff is points scored minus allowed.</p>' ) . '</section>'
+			. '<section class="dbd-pane" data-pane="1" hidden>' . $divisions_html . ( $S ? self::key() . '<p class="dbd-note">' . esc_html( self::NOTE_NFL ) . '</p>' : '' ) . '</section></section></section>';
 	}
 }
