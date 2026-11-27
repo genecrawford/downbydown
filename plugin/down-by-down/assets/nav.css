@@ -1,0 +1,118 @@
+/* The site header, [dbd_block type="nav"] (2.53.0, SCOPE §95). Printed inline once a page by DBD_Nav. Every rule is doubled
+   (.dxn.dxn) so Divi's own list, heading, link, button and input rules lose. Divi's header section, row and module go full
+   width with no padding, and sit above the page so the panels can open over it. */
+.et-l--header:has(.dxn),.et_pb_section:has(.dxn){position:relative;z-index:1000}
+.et_pb_section:has(.dxn),.et_pb_row:has(.dxn),.et_pb_column:has(.dxn){padding:0!important;margin:0!important;background:#0f1311!important}
+.et_pb_row:has(.dxn){width:100%!important;max-width:none!important}
+.et_pb_module:has(.dxn){align-items:stretch!important;margin:0!important}
+.et_pb_code_inner:has(.dxn),.et_pb_text_inner:has(.dxn){width:100%!important;max-width:none!important}
+.dxn.dxn{--dxn-red:#cb2026;--dxn-pn:#171c19;--dxn-rule:rgba(255,255,255,.14);position:relative;display:block;width:100%;margin:0;padding:0;background:#0f1311;border-bottom:2px solid rgba(255,255,255,.9);color:#fff;font-family:"Barlow Condensed","Arial Narrow",sans-serif;text-align:left;-webkit-font-smoothing:auto;-moz-osx-font-smoothing:auto}
+.dxn.dxn::after{content:"";position:absolute;left:0;right:0;bottom:0;height:7px;pointer-events:none;background:repeating-linear-gradient(90deg,rgba(255,255,255,.28) 0 1px,transparent 1px 2%)}
+.dxn.dxn *{box-sizing:border-box}
+.dxn.dxn ul{margin:0;padding:0;list-style:none}
+.dxn.dxn li{margin:0;padding:0;list-style:none;line-height:inherit}
+.dxn.dxn li::before{content:none}
+.dxn.dxn h3{margin:0 0 8px;padding:0;font:700 13px/1.2 "Barlow Condensed","Arial Narrow",sans-serif;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.55)}
+.dxn.dxn .dxn-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.dxn.dxn .dxn-bar{display:flex;align-items:center;gap:28px;max-width:1240px;margin:0 auto;padding:0 clamp(16px,4vw,48px)}
+.dxn.dxn .dxn-home{display:block;flex:none;padding:12px 0 14px;line-height:0}
+.dxn.dxn .dxn-logo{display:block;width:170px;height:auto}
+.dxn .dxn-logo .lg-word,.dxn .dxn-logo .lg-ball{fill:#fff}
+.dxn .dxn-logo .lg-x,.dxn .dxn-logo .lg-flame{fill:#cb2026}
+.dxn.dxn .dxn-nav{flex:1;min-width:0}
+.dxn.dxn .dxn-msearch,.dxn.dxn .dxn-burger{display:none}
+.dxn.dxn .dxn-list{display:flex;align-items:stretch}
+.dxn.dxn .dxn-top{position:relative;display:flex;align-items:center;gap:7px;margin:0;padding:24px 12px 27px;background:none;border:0;border-radius:0;box-shadow:none;color:#fff;opacity:.82;font:700 15px/1 "Barlow Condensed","Arial Narrow",sans-serif;letter-spacing:.12em;text-transform:uppercase;text-decoration:none;white-space:nowrap;cursor:pointer;transition:opacity .15s}
+.dxn.dxn .dxn-top svg{display:block;width:10px;height:6px;fill:none;stroke:currentColor;stroke-width:1.6;transition:transform .2s ease-out}
+.dxn.dxn .dxn-top[aria-expanded="true"] svg{transform:rotate(180deg)}
+.dxn.dxn .dxn-l{position:relative;display:block}
+.dxn.dxn .dxn-l::after{content:"";position:absolute;left:0;right:0;bottom:-12px;height:3px;background:var(--dxn-red);transform:scaleX(0);transform-origin:left center;transition:transform .2s ease-out}
+.dxn.dxn .dxn-top:hover,.dxn.dxn .dxn-top:focus-visible,.dxn.dxn .dxn-top[aria-current],.dxn.dxn .dxn-top[aria-expanded="true"]{opacity:1}
+.dxn.dxn .dxn-top:hover .dxn-l::after,.dxn.dxn .dxn-top:focus-visible .dxn-l::after,.dxn.dxn .dxn-top[aria-current] .dxn-l::after,.dxn.dxn .dxn-top[aria-expanded="true"] .dxn-l::after{transform:scaleX(1)}
+.dxn.dxn .dxn-top:focus-visible{outline:2px solid #fff;outline-offset:-6px;border-radius:4px}
+/* Playoffs: only while the Playoffs switch shows them, a red block */
+.dxn.dxn .dxn-po{display:flex;align-items:center;margin-right:6px}
+.dxn.dxn .dxn-po .dxn-top{padding:8px 11px;background:var(--dxn-red);opacity:1;border-radius:3px}
+.dxn.dxn .dxn-po .dxn-top:hover{background:#e0262d}
+.dxn.dxn .dxn-po .dxn-l::after{display:none}
+/* the panels: full width under the bar */
+.dxn.dxn .dxn-panel{position:absolute;left:0;right:0;top:100%;margin-top:2px;background:var(--dxn-pn);border-bottom:2px solid rgba(255,255,255,.9);visibility:hidden;opacity:0;transform:translateY(-4px);transition:opacity .16s ease-out,transform .16s ease-out,visibility 0s .16s}
+.dxn.dxn .dxn-item.open .dxn-panel,.dxn.dxn:not(.dxn-js) .dxn-item:hover .dxn-panel,.dxn.dxn:not(.dxn-js) .dxn-item:focus-within .dxn-panel{visibility:visible;opacity:1;transform:none;transition:opacity .16s ease-out,transform .16s ease-out}
+.dxn.dxn .dxn-in{display:flex;gap:56px;max-width:1240px;margin:0 auto;padding:24px clamp(16px,4vw,48px) 28px}
+.dxn.dxn .dxn-col a,.dxn.dxn .dxn-foot a{display:block;padding:5px 0;color:#fff;opacity:.9;font:500 15px/1.35 "IBM Plex Sans",Arial,sans-serif;letter-spacing:0;text-transform:none;text-decoration:none}
+.dxn.dxn .dxn-col a:hover,.dxn.dxn .dxn-col a:focus-visible,.dxn.dxn .dxn-foot a:hover,.dxn.dxn .dxn-foot a:focus-visible,.dxn.dxn .dxn-div a:hover span,.dxn.dxn .dxn-div a:focus-visible span{opacity:1;text-decoration:underline;text-decoration-color:var(--dxn-red);text-decoration-thickness:2px;text-underline-offset:4px}
+.dxn.dxn .dxn-panel a:focus-visible{outline:2px solid #fff;outline-offset:2px;border-radius:2px}
+.dxn.dxn .dxn-in-players .dxn-col:nth-child(2) ul{columns:2;column-gap:32px}
+/* Teams: AFC left, NFC right, four divisions each */
+.dxn.dxn .dxn-in-teams{display:grid;grid-template-columns:1fr 1fr;gap:20px 48px}
+.dxn.dxn .dxn-conf{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.dxn.dxn .dxn-div a{display:flex;align-items:center;gap:9px;padding:4px 0;color:#fff;text-decoration:none;font:500 14px/1.3 "IBM Plex Sans",Arial,sans-serif}
+.dxn.dxn .dxn-div a span:not(.dxn-tile){opacity:.9;white-space:nowrap}
+.dxn.dxn .dxn-tile{flex:none;display:inline-flex;align-items:center;justify-content:center;width:28px;height:22px;background:var(--c1);border-top:4px solid var(--c2);border-radius:2px;color:#fff;font:700 10px/1 "Barlow Condensed","Arial Narrow",sans-serif;letter-spacing:.04em;box-shadow:inset 0 0 0 1px rgba(255,255,255,.18);opacity:1;text-decoration:none}
+.dxn.dxn .dxn-foot{grid-column:1/-1;display:flex;gap:28px;margin:0;padding:12px 0 0;border-top:1px solid var(--dxn-rule)}
+/* search */
+.dxn.dxn .dxn-dsearch{flex:none;width:240px;margin-left:auto}
+.dxn.dxn .dxn-search{position:relative;display:flex;align-items:center;margin:0;padding:0}
+.dxn.dxn .dxn-search svg{position:absolute;left:10px;top:50%;width:16px;height:16px;margin-top:-8px;fill:none;stroke:rgba(255,255,255,.7);stroke-width:1.8;pointer-events:none}
+.dxn.dxn .dxn-search input{display:block;width:100%;height:36px;margin:0;padding:0 10px 0 33px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.24);border-radius:4px;box-shadow:none;color:#fff;font:500 14px/1 "IBM Plex Sans",Arial,sans-serif;-webkit-appearance:none;appearance:none}
+.dxn.dxn .dxn-search input::placeholder{color:rgba(255,255,255,.6);opacity:1}
+.dxn.dxn .dxn-search input:focus{outline:2px solid #fff;outline-offset:1px;background:rgba(255,255,255,.12)}
+.dxn.dxn .dxn-search input::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none}
+.dxn.dxn .dxn-sugg{position:absolute;z-index:20;top:calc(100% + 6px);right:0;width:320px;max-width:calc(100vw - 32px);padding:6px 0;background:#fff;border:1px solid #c9ccd3;border-radius:4px}
+.dxn.dxn .dxn-sugg[hidden]{display:none}
+.dxn.dxn .dxn-sugg a{display:flex;align-items:center;gap:10px;padding:7px 12px;color:#16181d;text-decoration:none;font:500 14px/1.3 "IBM Plex Sans",Arial,sans-serif}
+.dxn.dxn .dxn-sugg small{margin-left:auto;padding-left:8px;color:#5d616a;font-size:12px;white-space:nowrap}
+.dxn.dxn .dxn-sugg li[aria-selected="true"] a,.dxn.dxn .dxn-sugg a:hover{background:#efeee9}
+.dxn.dxn .dxn-sugg .dxn-none{padding:7px 12px;color:#5d616a;font:500 14px/1.3 "IBM Plex Sans",Arial,sans-serif}
+@media (prefers-reduced-motion:reduce){.dxn.dxn *{transition:none!important}}
+/* narrower desktops: tighter spacing before the bar gives way to the phone layout */
+@media (max-width:1120px){
+  .dxn.dxn .dxn-bar{gap:18px}
+  .dxn.dxn .dxn-logo{width:150px}
+  .dxn.dxn .dxn-top{padding-left:9px;padding-right:9px;letter-spacing:.1em}
+  .dxn.dxn .dxn-dsearch{width:190px}
+  .dxn.dxn .dxn-in{gap:40px}
+  .dxn.dxn .dxn-in-teams{grid-template-columns:1fr;gap:16px}
+}
+/* a phone: the logo and a menu button; the open menu is search, then the groups as rows that open one at a time */
+@media (max-width:959px){
+  .dxn.dxn .dxn-bar{flex-wrap:wrap;justify-content:space-between;gap:0;padding:0 16px}
+  .dxn.dxn .dxn-home{padding:14px 0 16px}
+  .dxn.dxn .dxn-logo{width:150px}
+  .dxn.dxn .dxn-dsearch{display:none}
+  .dxn.dxn .dxn-burger{display:flex;flex-direction:column;justify-content:center;gap:5px;width:44px;height:44px;margin:0 -8px 2px 0;padding:0 10px;background:none;border:0;border-radius:6px;cursor:pointer}
+  .dxn.dxn .dxn-burger span{display:block;width:24px;height:2px;background:#fff;border-radius:1px;transition:transform .2s ease-out,opacity .15s}
+  .dxn.dxn.dxn-open .dxn-burger span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+  .dxn.dxn.dxn-open .dxn-burger span:nth-child(2){opacity:0}
+  .dxn.dxn.dxn-open .dxn-burger span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+  .dxn.dxn .dxn-burger:focus-visible{outline:2px solid #fff;outline-offset:0}
+  .dxn.dxn.dxn-js .dxn-nav{display:none}
+  .dxn.dxn .dxn-nav{flex:none;width:100%;padding-bottom:14px}
+  .dxn.dxn.dxn-open .dxn-nav{display:block}
+  .dxn.dxn .dxn-msearch{display:block;padding:2px 0 14px}
+  .dxn.dxn .dxn-msearch .dxn-sugg{left:0;right:auto;width:100%}
+  .dxn.dxn .dxn-search input{height:42px;font-size:16px}
+  .dxn.dxn .dxn-list{display:block}
+  .dxn.dxn .dxn-list>li{border-top:1px solid var(--dxn-rule)}
+  .dxn.dxn .dxn-top{width:100%;justify-content:space-between;padding:15px 0 16px;font-size:17px;letter-spacing:.1em}
+  .dxn.dxn .dxn-l::after{bottom:-8px}
+  .dxn.dxn .dxn-po{display:block;margin:0;padding:12px 0}
+  .dxn.dxn .dxn-po .dxn-top{display:inline-flex;width:auto;padding:9px 12px}
+  .dxn.dxn .dxn-panel{position:static;margin:0;border:0;background:none;display:none;visibility:visible;opacity:1;transform:none;transition:none}
+  .dxn.dxn .dxn-item.open .dxn-panel{display:block}
+  .dxn.dxn.dxn-js .dxn-item:not(.open) .dxn-panel{display:none}
+  .dxn.dxn:not(.dxn-js) .dxn-panel{display:block}
+  .dxn.dxn .dxn-in{display:grid;grid-template-columns:1fr 1fr;gap:14px 20px;padding:0 0 18px}
+  .dxn.dxn .dxn-in-players .dxn-col:nth-child(2){grid-row:span 2}
+  .dxn.dxn .dxn-in-players .dxn-col:nth-child(2) ul{columns:1}
+  .dxn.dxn .dxn-col a,.dxn.dxn .dxn-foot a{padding:7px 0}
+  .dxn.dxn .dxn-in-teams{display:block}
+  .dxn.dxn .dxn-conf{display:block}
+  .dxn.dxn .dxn-div{display:grid;grid-template-columns:52px minmax(0,1fr);align-items:center;padding:5px 0}
+  .dxn.dxn .dxn-div h3{margin:0;font-size:12px;letter-spacing:.1em}
+  .dxn.dxn .dxn-div ul{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+  .dxn.dxn .dxn-div a{flex-direction:column;gap:4px;padding:5px 0;font-size:10.5px;letter-spacing:-.01em;text-align:center}
+  .dxn.dxn .dxn-div a span:not(.dxn-tile){max-width:100%;overflow:hidden;text-overflow:ellipsis}
+  .dxn.dxn .dxn-tile{width:32px;height:26px;font-size:11px}
+  .dxn.dxn .dxn-foot{margin-top:10px}
+}

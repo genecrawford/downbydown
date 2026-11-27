@@ -18,12 +18,14 @@
  *             the subreddit, from the Share pack settings (a cleared account drops its icon). It needs no data and isn't cached, and it
  *             carries its own few lines of CSS, so the site footer doesn't pull in blocks.css and the fonts on every page. color="#fff" sets
  *             the icons' color; without it they take the surrounding text color.
+ *   nav       (2.53.0, SCOPE §95) the site header for the Divi Theme Builder header: logo, Playoffs while the switch shows them, This
+ *             week, Teams, Players and Fantasy panels, and search. See class-dbd-nav.php.
  * Styles: assets/blocks.css. The blocks inherit the surrounding text color for their headings and lines, so they sit on any background.
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 class DBD_Blocks {
-	const TYPES = array( 'hero-map', 'games', 'counts', 'week-highlights', 'matchup', 'player-card', 'movers', 'fantasy', 'leaders', 'teams', 'newsletter-preview', 'follow' );
+	const TYPES = array( 'hero-map', 'games', 'counts', 'week-highlights', 'matchup', 'player-card', 'movers', 'fantasy', 'leaders', 'teams', 'newsletter-preview', 'follow', 'nav' );
 
 	public static function init() {
 		add_shortcode( 'dbd_block', array( __CLASS__, 'shortcode' ) );
@@ -47,6 +49,7 @@ class DBD_Blocks {
 		$type = strtolower( trim( (string) ( $a['type'] ?? '' ) ) );
 		if ( ! in_array( $type, self::TYPES, true ) ) { return ''; }
 		if ( $type === 'follow' ) { return self::b_follow( $a ); }  /* its own CSS rides along: no stylesheet or fonts for a footer on every page */
+		if ( $type === 'nav' ) { return DBD_Nav::render( $a ); }  /* the site header (SCOPE §95): its own CSS and script, like follow */
 		self::enqueue();  /* a block in a Theme Builder layout isn't in the page's content: its styles print in the footer instead */
 		return self::render( $type, $a );
 	}
@@ -54,6 +57,7 @@ class DBD_Blocks {
 	/** One block's HTML, cached until the next data build (hero-map reads every team's player file). */
 	public static function render( $type, $a = array() ) {
 		if ( $type === 'follow' ) { return self::b_follow( $a ); }
+		if ( $type === 'nav' ) { return DBD_Nav::render( $a ); }
 		$was = DBD_Data::archived() ? DBD_Data::season() : null; DBD_Data::use_season( null );  /* blocks always show this season */
 		if ( ! DBD_Data::has_data() ) { DBD_Data::use_season( $was ); return ''; }
 		unset( $a['type'] ); ksort( $a );
