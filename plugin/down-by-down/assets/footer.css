@@ -1,0 +1,62 @@
+/* The site footer, the footer live block (2.54.0, SCOPE §96). Printed inline once a page by DBD_Nav::footer(), comments stripped.
+   Every rule is doubled (.dxf.dxf) so Divi's footer list, heading and link rules lose; Divi's footer section, row and module go full
+   width with no padding. */
+.et_pb_section:has(.dxf),.et_pb_row:has(.dxf),.et_pb_column:has(.dxf){padding:0!important;margin:0!important;background:#0f1311!important}
+.et_pb_row:has(.dxf){width:100%!important;max-width:none!important}
+.et_pb_module:has(.dxf){align-items:stretch!important;margin:0!important}
+.et_pb_code_inner:has(.dxf),.et_pb_text_inner:has(.dxf){width:100%!important;max-width:none!important}
+.dxf.dxf{position:relative;display:block;width:100%;margin:0;padding:0;background:#0f1311;color:#fff;border-top:2px solid rgba(255,255,255,.9);font:500 14px/1.45 "IBM Plex Sans",Arial,sans-serif;text-align:left}
+.dxf.dxf::before{content:"";position:absolute;left:0;right:0;top:0;height:7px;pointer-events:none;background:repeating-linear-gradient(90deg,rgba(255,255,255,.28) 0 1px,transparent 1px 2%)}
+.dxf.dxf *{box-sizing:border-box}
+.dxf.dxf ul{margin:0;padding:0;list-style:none}
+.dxf.dxf li{margin:0;padding:0;list-style:none;line-height:inherit}
+.dxf.dxf li::before{content:none}
+.dxf.dxf p{margin:0;padding:0}
+.dxf.dxf h3{margin:0 0 10px;padding:0;font:700 13px/1.2 "Barlow Condensed","Arial Narrow",sans-serif;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.55)}
+.dxf.dxf h4{margin:0 0 6px;padding:0;font:700 12px/1.2 "Barlow Condensed","Arial Narrow",sans-serif;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.45)}
+.dxf.dxf a{color:#fff;text-decoration:none}
+.dxf.dxf a:focus-visible{outline:2px solid #fff;outline-offset:2px;border-radius:2px}
+.dxf.dxf .dxf-in{max-width:1240px;margin:0 auto;padding:40px clamp(16px,4vw,48px) 28px}
+.dxf.dxf .dxf-top{display:flex;align-items:center;gap:24px;padding-bottom:26px;border-bottom:1px solid rgba(255,255,255,.14)}
+.dxf.dxf .dxf-home{flex:none;display:block;line-height:0}
+.dxf.dxf .dxf-logo{display:block;width:150px;height:auto}
+.dxf .dxf-logo .lg-word,.dxf .dxf-logo .lg-ball{fill:#fff}
+.dxf .dxf-logo .lg-x,.dxf .dxf-logo .lg-flame{fill:#cb2026}
+.dxf.dxf .dxf-line{color:rgba(255,255,255,.75);font-size:14px}
+.dxf.dxf .dxf-follow{display:flex;gap:4px;margin-left:auto}
+.dxf.dxf .dxf-follow a{display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;opacity:.7;transition:opacity .15s,background-color .15s}
+.dxf.dxf .dxf-follow a:hover,.dxf.dxf .dxf-follow a:focus-visible{opacity:1;background:rgba(255,255,255,.12)}
+.dxf.dxf .dxf-follow svg{display:block;width:18px;height:18px;fill:currentColor}
+.dxf.dxf .dxf-links{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:24px;padding:28px 0}
+.dxf.dxf .dxf-col a{display:block;padding:4px 0;font-size:14px;opacity:.88}
+.dxf.dxf .dxf-col a:hover,.dxf.dxf .dxf-col a:focus-visible,.dxf.dxf .dxf-div a:hover span:not(.dxn-tile),.dxf.dxf .dxf-div a:focus-visible span:not(.dxn-tile){opacity:1;text-decoration:underline;text-decoration-color:#cb2026;text-decoration-thickness:2px;text-underline-offset:4px}
+.dxf.dxf .dxf-teams{padding:24px 0 28px;border-top:1px solid rgba(255,255,255,.14)}
+.dxf.dxf .dxf-divs{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.dxf.dxf .dxf-conf{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.dxf.dxf .dxf-div a{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:13px}
+.dxf.dxf .dxf-div a span:not(.dxn-tile){opacity:.88;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dxf.dxf .dxn-tile{flex:none;display:inline-flex;align-items:center;justify-content:center;width:26px;height:20px;background:var(--c1);border-top:4px solid var(--c2);border-radius:2px;color:#fff;font:700 9.5px/1 "Barlow Condensed","Arial Narrow",sans-serif;letter-spacing:.04em;box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)}
+.dxf.dxf .dxf-base{display:flex;justify-content:space-between;gap:16px;padding-top:18px;border-top:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.6);font-size:13px}
+.dxf.dxf .dxf-base a{color:#2ea3f2}
+@media (prefers-reduced-motion:reduce){.dxf.dxf *{transition:none!important}}
+/* narrower desktops: the teams go AFC above NFC */
+@media (max-width:1120px){
+  .dxf.dxf .dxf-divs{grid-template-columns:1fr}
+}
+/* a phone: the top row stacks, link columns two to a row, teams as 8 division rows of 4 tiles */
+@media (max-width:759px){
+  .dxf.dxf .dxf-in{padding:32px 16px 24px}
+  .dxf.dxf .dxf-top{flex-wrap:wrap;gap:12px}
+  .dxf.dxf .dxf-line{flex-basis:100%}
+  .dxf.dxf .dxf-follow{margin-left:-8px;flex-wrap:wrap}
+  .dxf.dxf .dxf-links{grid-template-columns:1fr 1fr;gap:20px}
+  .dxf.dxf .dxf-col a{padding:6px 0}
+  .dxf.dxf .dxf-divs,.dxf.dxf .dxf-conf{display:block}
+  .dxf.dxf .dxf-div{display:grid;grid-template-columns:52px minmax(0,1fr);align-items:center;padding:4px 0}
+  .dxf.dxf .dxf-div h4{margin:0;font-size:11px}
+  .dxf.dxf .dxf-div ul{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+  .dxf.dxf .dxf-div a{flex-direction:column;gap:3px;font-size:10.5px;text-align:center}
+  .dxf.dxf .dxf-div a span:not(.dxn-tile){max-width:100%}
+  .dxf.dxf .dxn-tile{width:30px;height:24px;font-size:10.5px}
+  .dxf.dxf .dxf-base{flex-direction:column;gap:6px}
+}

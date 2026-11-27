@@ -3650,3 +3650,18 @@ Gene: "before we tackle any new pages or additions, we should probably redesign 
 **Not included:** the footer, the plugin's breadcrumb/season bar, past seasons (season picker covers them), new pages.
 
 **Built as 2.53.0** (Gene chose a plugin block): `[dbd_block type="nav"]` → `DBD_Nav` (`includes/class-dbd-nav.php`). CSS `assets/nav.css` printed inline once a page (doubled `.dxn.dxn` selectors beat Divi; `:has(.dxn)` rules take Divi's header section/row/module full width and above the page); `assets/nav.js` in the footer; logo `assets/nav-logo.svg`. Links come from `DBD_Router::url()` for this season even on a past season's page. Search players come from `GET dbd/v1/find` (name, team, position, link; transient per players/index.json version; Cache-Control public 1h), fetched on first focus; teams from the Teams panel. Playoffs shows when `DBD_Playoffs::visible()`. Group underline from the route (`DBD_Nav::GROUP`), News page → This week. One row from 960 wide (tighter from 1120), phone menu below. Gene pastes the shortcode into the Theme Builder header's Code module in place of `divi/header.html` (kept for undo).
+
+## 96. A full footer (scoped and mocked 2026-11-27, `mockup-v70/`)
+
+Gene: "next, build out a full footer with all this stuff in it."
+
+**Today:** the Divi footer is a Code module with the follow icons (`[dbd_block type="follow" color="#fff"]`) and a Text module: "Every NFL snap, drawn on the field. Data: nflverse. Not affiliated with the NFL." / "By Period Three".
+
+**Mock:** the header's near-black with the chalk sideline along the top edge.
+- Top row: logo · "Every NFL snap, drawn on the field." · the six social icons on the right.
+- Link columns: This week (The slate, Standings, Games by week, Week in review, Playoffs while the switch is on, News) · Players (All players, Compare players, Draft, Combine) · Leaders (all 8 tabs) · Fantasy (This week in fantasy, Fantasy leaders, My team) · Down x Down (About).
+- Teams: all 32 by division with jersey tiles.
+- Bottom line: "Data: nflverse. Not affiliated with the NFL." · "By Period Three".
+- Phone: top row stacks, link columns two to a row, Teams as 8 division rows of 4 tiles.
+
+**Built as 2.54.0** (Gene: "Yes, build it", as a plugin block like the header): `[dbd_block type="footer"]` → `DBD_Nav::footer()`, CSS `assets/footer.css` printed inline once with comments stripped (`DBD_Nav::inline_css`, shared with the header). The header and footer read one link set, `DBD_Nav::urls()`, built once a page for this season. Footer logo gets its own clip-path ids. Gene pastes the shortcode into the Theme Builder footer in place of today's follow-icons Code module and Text module (both stay recoverable in Divi's history).

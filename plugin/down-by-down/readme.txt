@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.53.1
+Stable tag: 2.54.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,10 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.54.0 =
+* The site footer as a live block, `[dbd_block type="footer"]`, for the Divi Theme Builder footer (SCOPE §96): the logo, "Every NFL snap, drawn on the field." and the social icons; This week, Players, Leaders, Fantasy and About; all 32 teams by division; the nflverse and Period Three lines.
+* The header and footer share one set of links, built once a page, so they never drift apart.
 
 = 2.53.1 =
 * The header's CSS prints without its comments. One named the shortcode, and Divi runs shortcodes over a module's output again, so a hidden second header rode inside the style tag on every page.

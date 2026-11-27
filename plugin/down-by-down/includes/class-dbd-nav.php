@@ -69,8 +69,8 @@ class DBD_Nav {
 		return '<li><a href="' . esc_url( $url ) . '">' . esc_html( $label ) . '</a></li>';
 	}
 
-	private static function col( $title, $links ) {
-		$h = '<div class="dxn-col"><h3>' . esc_html( $title ) . '</h3><ul>';
+	private static function col( $title, $links, $cls = 'dxn-col' ) {
+		$h = '<div class="' . $cls . '"><h3>' . esc_html( $title ) . '</h3><ul>';
 		foreach ( $links as $l ) { $h .= self::link( $l[0], $l[1] ); }
 		return $h . '</ul></div>';
 	}
@@ -81,18 +81,18 @@ class DBD_Nav {
 		return '<span class="dxn-tile" style="--c1:' . $c1 . ';--c2:' . $c2 . '">' . esc_html( $abbr ) . '</span>';
 	}
 
-	private static function teams_grid( $u ) {
+	private static function teams_grid( $urls, $cls = 'dxn' ) {
 		$T = DBD_Data::teams(); if ( ! $T ) { return ''; }
 		$h = '';
 		foreach ( array( 'AFC', 'NFC' ) as $conf ) {
-			$h .= '<div class="dxn-conf">';
+			$h .= '<div class="' . $cls . '-conf">';
 			foreach ( self::DIVS as $d ) {
 				if ( strpos( $d, $conf ) !== 0 ) { continue; }
 				$in = array(); foreach ( $T as $a => $t ) { if ( ( $t['div'] ?? '' ) === $d ) { $in[ $a ] = $t; } }
 				uasort( $in, function ( $x, $y ) { return strcmp( (string) ( $x['nick'] ?? '' ), (string) ( $y['nick'] ?? '' ) ); } );
-				$h .= '<div class="dxn-div"><h3>' . esc_html( $d ) . '</h3><ul>';
+				$h .= '<div class="' . $cls . '-div"><' . ( $cls === 'dxn' ? 'h3' : 'h4' ) . '>' . esc_html( $d ) . '</' . ( $cls === 'dxn' ? 'h3' : 'h4' ) . '><ul>';
 				foreach ( $in as $a => $t ) {
-					$h .= '<li><a href="' . esc_url( $u( array( 'team' => $a ) ) ) . '" data-t="' . esc_attr( $a ) . '" data-n="' . esc_attr( $t['name'] ?? $a ) . '" data-k="' . esc_attr( $t['nick'] ?? $a ) . '">'
+					$h .= '<li><a href="' . esc_url( $urls[ $a ] ?? '' ) . '" data-t="' . esc_attr( $a ) . '" data-n="' . esc_attr( $t['name'] ?? $a ) . '" data-k="' . esc_attr( $t['nick'] ?? $a ) . '">'
 						. self::tile( $a, $t ) . '<span>' . esc_html( $t['nick'] ?? $a ) . '</span></a></li>';
 				}
 				$h .= '</ul></div>';
@@ -117,9 +117,9 @@ class DBD_Nav {
 	}
 
 	/** The site's accounts (the footer's follow icons, from the Share pack settings) for the right edge of a panel (Gene, 2.53.1). */
-	private static function follow() {
+	private static function follow( $cls = 'dxn-follow' ) {
 		$links = DBD_Blocks::follow_links(); if ( ! $links ) { return ''; }
-		$h = '<div class="dxn-follow" role="group" aria-label="Follow Down x Down">';
+		$h = '<div class="' . $cls . '" role="group" aria-label="Follow Down x Down">';
 		foreach ( $links as $l ) {
 			$h .= '<a href="' . esc_url( $l[2] ) . '" target="_blank" rel="noopener" aria-label="Down x Down on ' . esc_attr( $l[1] ) . '" title="' . esc_attr( $l[1] ) . '">'
 				. '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="' . DBD_Blocks::ICONS[ $l[0] ] . '"/></svg></a>';
@@ -127,39 +127,56 @@ class DBD_Nav {
 		return $h . '</div>';
 	}
 
-	public static function render( $a = array() ) {
-		/* the menu always points at this season, even on a past season's page (the season picker under it moves between seasons) */
+	/**
+	 * Every address the header and the footer link to, built once a page so the two never drift apart (2.54.0). Always this season's,
+	 * even on a past season's page (the season picker under the header moves between seasons).
+	 */
+	private static $urls = null;
+	private static function urls() {
+		if ( self::$urls !== null ) { return self::$urls; }
 		$was = DBD_Data::archived() ? DBD_Data::season() : 0; if ( $was ) { DBD_Data::use_season( 0 ); }
 		$u = function ( $args = array() ) { return DBD_Router::url( $args ); };
-		$hub  = $u();
-		$news = home_url( '/news/' );
-		if ( function_exists( 'get_page_by_path' ) ) { $p = get_page_by_path( 'news' ); if ( $p ) { $news = get_permalink( $p ); } }
-		$find = function_exists( 'rest_url' ) ? rest_url( 'dbd/v1/find' ) : home_url( '/?rest_route=/dbd/v1/find' );
-		$lead = array();
+		$page = function ( $slug ) { $p = function_exists( 'get_page_by_path' ) ? get_page_by_path( $slug ) : null; return $p ? get_permalink( $p ) : home_url( '/' . $slug . '/' ); };
+		$hub = $u(); $lead = array();
 		foreach ( DBD_Leaders::GROUPS as $g => $label ) { $lead[] = array( $label, $u( $g === 'fan' ? array( 'view' => 'leaders' ) : array( 'view' => 'leaders', 'g' => $g ) ) ); }
-		$playoffs = class_exists( 'DBD_Playoffs' ) && DBD_Playoffs::visible();
-		$also = array( array( 'News', $news ) );
-		if ( $playoffs ) { array_unshift( $also, array( 'Playoffs', $u( array( 'view' => 'playoffs' ) ) ) ); }  /* hidden playoffs pages are not found (Greptile, PR #167) */
+		$team = array(); foreach ( DBD_Data::teams() as $ab => $t ) { $team[ $ab ] = $u( array( 'team' => $ab ) ); }
+		$r = array(
+			'hub' => $hub, 'standings' => $hub . '#dbd-teams', 'matchups' => $u( array( 'view' => 'matchups' ) ), 'week' => $u( array( 'view' => 'week' ) ),
+			'playoffs' => $u( array( 'view' => 'playoffs' ) ), 'po' => class_exists( 'DBD_Playoffs' ) && DBD_Playoffs::visible(), 'news' => $page( 'news' ), 'about' => $page( 'about' ),
+			'teams' => $u( array( 'view' => 'teams' ) ), 'team' => $team, 'players' => $u( array( 'view' => 'players' ) ), 'compare' => $u( array( 'compare' => 'none' ) ),
+			'draft' => $u( array( 'view' => 'draft' ) ), 'combine' => $u( array( 'view' => 'combine' ) ), 'lead' => $lead,
+			'fantasy' => $u( array( 'view' => 'fantasy' ) ), 'leaders' => $u( array( 'view' => 'leaders' ) ), 'myteam' => $u( array( 'view' => 'myteam' ) ),
+			'find' => function_exists( 'rest_url' ) ? rest_url( 'dbd/v1/find' ) : home_url( '/?rest_route=/dbd/v1/find' ),
+		);
+		if ( $was ) { DBD_Data::use_season( $was ); }
+		return self::$urls = $r;
+	}
+
+	/** A stylesheet printed inline once a page, comments out: Divi runs shortcodes over a module's output again, so a comment naming the shortcode would draw it twice (2.53.1). */
+	private static function inline_css( $file, $id ) {
+		return '<style id="' . $id . '">' . trim( (string) preg_replace( array( '#/\*.*?\*/#s', '/\s*\n\s*/' ), array( '', "\n" ), (string) @file_get_contents( DBD_PATH . 'assets/' . $file ) ) ) . '</style>';
+	}
+
+	public static function render( $a = array() ) {
+		$U = self::urls();
+		$also = array( array( 'News', $U['news'] ) );
+		if ( $U['po'] ) { array_unshift( $also, array( 'Playoffs', $U['playoffs'] ) ); }  /* hidden playoffs pages are not found (Greptile, PR #167) */
 		$soc = self::follow();  /* not in Teams, whose panel is the 32 teams (Gene) */
 		$groups = array(
-			'week'    => array( 'This week', self::col( 'This week', array( array( 'The slate', $hub ), array( 'Standings', $hub . '#dbd-teams' ), array( 'Games by week', $u( array( 'view' => 'matchups' ) ) ), array( 'Week in review', $u( array( 'view' => 'week' ) ) ) ) )
+			'week'    => array( 'This week', self::col( 'This week', array( array( 'The slate', $U['hub'] ), array( 'Standings', $U['standings'] ), array( 'Games by week', $U['matchups'] ), array( 'Week in review', $U['week'] ) ) )
 				. self::col( 'Also', $also ) . $soc ),
-			'teams'   => array( 'Teams', self::teams_grid( $u ) . '<p class="dxn-foot"><a href="' . esc_url( $hub . '#dbd-teams' ) . '">Standings</a><a href="' . esc_url( $u( array( 'view' => 'teams' ) ) ) . '">Play explorer</a></p>' ),
-			'players' => array( 'Players', self::col( 'Players', array( array( 'All players', $u( array( 'view' => 'players' ) ) ), array( 'Compare players', $u( array( 'compare' => 'none' ) ) ) ) )
-				. self::col( 'Leaders', $lead ) . self::col( 'Before the NFL', array( array( 'Draft', $u( array( 'view' => 'draft' ) ) ), array( 'Combine', $u( array( 'view' => 'combine' ) ) ) ) ) . $soc ),
-			'fantasy' => array( 'Fantasy', self::col( 'Fantasy', array( array( 'This week in fantasy', $u( array( 'view' => 'fantasy' ) ) ), array( 'Fantasy leaders', $u( array( 'view' => 'leaders' ) ) ), array( 'My team', $u( array( 'view' => 'myteam' ) ) ) ) ) . $soc ),
+			'teams'   => array( 'Teams', self::teams_grid( $U['team'] ) . '<p class="dxn-foot"><a href="' . esc_url( $U['standings'] ) . '">Standings</a><a href="' . esc_url( $U['teams'] ) . '">Play explorer</a></p>' ),
+			'players' => array( 'Players', self::col( 'Players', array( array( 'All players', $U['players'] ), array( 'Compare players', $U['compare'] ) ) )
+				. self::col( 'Leaders', $U['lead'] ) . self::col( 'Before the NFL', array( array( 'Draft', $U['draft'] ), array( 'Combine', $U['combine'] ) ) ) . $soc ),
+			'fantasy' => array( 'Fantasy', self::col( 'Fantasy', array( array( 'This week in fantasy', $U['fantasy'] ), array( 'Fantasy leaders', $U['leaders'] ), array( 'My team', $U['myteam'] ) ) ) . $soc ),
 		);
-		$po_url   = $u( array( 'view' => 'playoffs' ) );
-		$players  = $u( array( 'view' => 'players' ) );
-		if ( $was ) { DBD_Data::use_season( $was ); }
+		$playoffs = $U['po']; $po_url = $U['playoffs']; $players = $U['players']; $find = $U['find'];
 
 		$cur = self::current(); $id = 'dxn' . ( ++self::$n );
 		$h = '';
 		if ( ! self::$css ) {
 			self::$css = true;
-			/* comments out: Divi runs shortcodes over a module's output again, so a comment naming the shortcode would draw a second header */
-			$css = trim( (string) preg_replace( array( '#/\*.*?\*/#s', '/\s*\n\s*/' ), array( '', "\n" ), (string) @file_get_contents( DBD_PATH . 'assets/nav.css' ) ) );
-			$h .= '<style id="dxn-css">' . $css . '</style>';
+			$h .= self::inline_css( 'nav.css', 'dxn-css' );
 			if ( function_exists( 'wp_enqueue_script' ) ) { wp_enqueue_script( 'dbd-nav', DBD_URL . 'assets/nav.js', array(), DBD_VERSION, true ); }
 		}
 		$logo = (string) @file_get_contents( DBD_PATH . 'assets/nav-logo.svg' );
@@ -176,6 +193,40 @@ class DBD_Nav {
 			$h .= '<li class="dxn-po"><a class="dxn-top" href="' . esc_url( $po_url ) . '"' . ( $cur === 'playoffs' ? ' aria-current="page"' : '' ) . '><span class="dxn-l">Playoffs</span></a></li>';
 		}
 		$h .= '</ul></nav><div class="dxn-dsearch">' . self::search( $id . '-d', $players, $find ) . '</div></div></header>';
+		return $h;
+	}
+
+	/* ------------------------------------------------------------------ the footer (2.54.0, SCOPE §96) */
+
+	private static $fcss = false;
+
+	/**
+	 * The site footer, the header's companion: logo, the line "Every NFL snap, drawn on the field." and the social icons; the header's
+	 * links laid out flat (This week, Players, Leaders, Fantasy, and About, the one page the header leaves out); all 32 teams by division;
+	 * then the footer's own two lines. Same links as the header (urls()), Playoffs only while the switch shows them.
+	 */
+	public static function footer( $a = array() ) {
+		$U = self::urls();
+		$week = array( array( 'The slate', $U['hub'] ), array( 'Standings', $U['standings'] ), array( 'Games by week', $U['matchups'] ), array( 'Week in review', $U['week'] ) );
+		if ( $U['po'] ) { $week[] = array( 'Playoffs', $U['playoffs'] ); }
+		$week[] = array( 'News', $U['news'] );
+		$h = '';
+		if ( ! self::$fcss ) { self::$fcss = true; $h .= self::inline_css( 'footer.css', 'dxf-css' ); }
+		$logo = str_replace( array( 'class="dxn-logo"', 'dxn-clip-' ), array( 'class="dxf-logo"', 'dxf-clip-' ), trim( (string) @file_get_contents( DBD_PATH . 'assets/nav-logo.svg' ) ) );  /* its own ids: the header's logo is on the same page */
+		$h .= '<footer class="dxf"><div class="dxf-in">'
+			. '<div class="dxf-top"><a class="dxf-home" href="' . esc_url( home_url( '/' ) ) . '" aria-label="Down x Down home">' . $logo . '</a>'
+			. '<p class="dxf-line">Every NFL snap, drawn on the field.</p>' . self::follow( 'dxf-follow' ) . '</div>'
+			. '<nav class="dxf-links" aria-label="Site">'
+			. self::col( 'This week', $week, 'dxf-col' )
+			. self::col( 'Players', array( array( 'All players', $U['players'] ), array( 'Compare players', $U['compare'] ), array( 'Draft', $U['draft'] ), array( 'Combine', $U['combine'] ) ), 'dxf-col' )
+			. self::col( 'Leaders', $U['lead'], 'dxf-col' )
+			. self::col( 'Fantasy', array( array( 'This week in fantasy', $U['fantasy'] ), array( 'Fantasy leaders', $U['leaders'] ), array( 'My team', $U['myteam'] ) ), 'dxf-col' )
+			. self::col( 'Down x Down', array( array( 'About', $U['about'] ) ), 'dxf-col' )
+			. '</nav>';
+		$grid = self::teams_grid( $U['team'], 'dxf' );
+		if ( $grid !== '' ) { $h .= '<div class="dxf-teams"><h3>Teams</h3><div class="dxf-divs">' . $grid . '</div></div>'; }
+		$h .= '<div class="dxf-base"><p>Data: nflverse. Not affiliated with the NFL.</p><p>By <a href="https://period-three.com/">Period Three</a></p></div>'
+			. '</div></footer>';
 		return $h;
 	}
 }

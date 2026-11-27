@@ -20,12 +20,14 @@
  *             the icons' color; without it they take the surrounding text color.
  *   nav       (2.53.0, SCOPE §95) the site header for the Divi Theme Builder header: logo, Playoffs while the switch shows them, This
  *             week, Teams, Players and Fantasy panels, and search. See class-dbd-nav.php.
+ *   footer    (2.54.0, SCOPE §96) the site footer for the Divi Theme Builder footer: logo, line and social icons, the header's links
+ *             laid out flat plus About, all 32 teams, the nflverse and Period Three lines. See DBD_Nav::footer().
  * Styles: assets/blocks.css. The blocks inherit the surrounding text color for their headings and lines, so they sit on any background.
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 class DBD_Blocks {
-	const TYPES = array( 'hero-map', 'games', 'counts', 'week-highlights', 'matchup', 'player-card', 'movers', 'fantasy', 'leaders', 'teams', 'newsletter-preview', 'follow', 'nav' );
+	const TYPES = array( 'hero-map', 'games', 'counts', 'week-highlights', 'matchup', 'player-card', 'movers', 'fantasy', 'leaders', 'teams', 'newsletter-preview', 'follow', 'nav', 'footer' );
 
 	public static function init() {
 		add_shortcode( 'dbd_block', array( __CLASS__, 'shortcode' ) );
@@ -50,6 +52,7 @@ class DBD_Blocks {
 		if ( ! in_array( $type, self::TYPES, true ) ) { return ''; }
 		if ( $type === 'follow' ) { return self::b_follow( $a ); }  /* its own CSS rides along: no stylesheet or fonts for a footer on every page */
 		if ( $type === 'nav' ) { return DBD_Nav::render( $a ); }  /* the site header (SCOPE §95): its own CSS and script, like follow */
+		if ( $type === 'footer' ) { return DBD_Nav::footer( $a ); }  /* the site footer (SCOPE §96): its own CSS, the header's links */
 		self::enqueue();  /* a block in a Theme Builder layout isn't in the page's content: its styles print in the footer instead */
 		return self::render( $type, $a );
 	}
@@ -58,6 +61,7 @@ class DBD_Blocks {
 	public static function render( $type, $a = array() ) {
 		if ( $type === 'follow' ) { return self::b_follow( $a ); }
 		if ( $type === 'nav' ) { return DBD_Nav::render( $a ); }
+		if ( $type === 'footer' ) { return DBD_Nav::footer( $a ); }
 		$was = DBD_Data::archived() ? DBD_Data::season() : null; DBD_Data::use_season( null );  /* blocks always show this season */
 		if ( ! DBD_Data::has_data() ) { DBD_Data::use_season( $was ); return ''; }
 		unset( $a['type'] ); ksort( $a );
