@@ -3665,3 +3665,15 @@ Gene: "next, build out a full footer with all this stuff in it."
 - Phone: top row stacks, link columns two to a row, Teams as 8 division rows of 4 tiles.
 
 **Built as 2.54.0** (Gene: "Yes, build it", as a plugin block like the header): `[dbd_block type="footer"]` → `DBD_Nav::footer()`, CSS `assets/footer.css` printed inline once with comments stripped (`DBD_Nav::inline_css`, shared with the header). The header and footer read one link set, `DBD_Nav::urls()`, built once a page for this season. Footer logo gets its own clip-path ids. Gene pastes the shortcode into the Theme Builder footer in place of today's follow-icons Code module and Text module (both stay recoverable in Divi's history).
+
+## 97. The playoffs page bracket matches the home page (scoped and mocked 2026-11-27, `mockup-v71/`)
+
+Gene: "let's make the bracket stuff on https://downbydown.com/playoffs/ match up more with the home page one."
+
+**Today:** /playoffs/ draws the older §88 bracket (`DBD_Playoffs::bracket()`: flat field, light cards, red Super Bowl box, column headings; `list_view()` on phones). The home page draws §92's `DBD_Playoffs::hero()` (floodlit field, colored end zones, dark cards with records, chalk from data-ln, 1 seeds pre-placed, champion gold + confetti; stands up AFC / SB / NFC under 1100px).
+
+**Mock (screenshots of the live page with the hero injected in the browser):** /playoffs/ gets the hero's field full width, with the page's h1 "2026 Playoffs" and its lead line on the field in place of the hero title; no hero buttons or games strip; the matchups and Playoff leaders panels below unchanged. Phones get the hero's stacked layout instead of the list. Build: one bracket function for both pages; the old bracket, list view and their CSS/JS removed.
+
+**Open:** card links. Home rows link to team pages; today's /playoffs/ cards link to game previews. Mock keeps team links; the card heading could link to the preview once a game is scheduled.
+
+**Built as 2.55.0** (Gene: "Build it", as mocked, so team links only): `DBD_Playoffs::hero( true )` = page mode (h1 "{season} Playoffs" + `lead()` on the field, no `.po-bb` buttons, no `.po-strip`), section class `po-wide` (100vw, centered; `.dbd.dbd-view-playoffs:has(.po-wide)` lets it out, `body:has(.po-wide)` clips sideways overflow). It sits before `.po-pg` so the page's own h1 rule can't reach it. Removed: `bracket()`, `list_view()`, `column()`, `sb_card()`, `card()`, `row()`, `blank()`, `bye()`, their CSS, and playoffs.js `routes()` / `[data-bracket]`. Harness checks the page at every replay stage.

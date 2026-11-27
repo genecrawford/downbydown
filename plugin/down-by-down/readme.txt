@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.54.0
+Stable tag: 2.55.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,9 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.55.0 =
+* The playoffs page draws the home page's bracket (SCOPE §97): the floodlit field, colored end zones, dark cards with records and the chalk lines, full width, with the page's title and line on the field and the same stacked layout on phones. The old flat bracket and its phone list are gone.
 
 = 2.54.0 =
 * The site footer as a live block, `[dbd_block type="footer"]`, for the Divi Theme Builder footer (SCOPE §96): the logo, "Every NFL snap, drawn on the field." and the social icons; This week, Players, Leaders, Fantasy and About; all 32 teams by division; the nflverse and Period Three lines.

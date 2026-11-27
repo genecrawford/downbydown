@@ -203,8 +203,10 @@ class DBD_Playoffs {
 	 * Bowl below midfield. Each game is a card on the turf; the chalk (drawn by playoffs.js from data-ln) carries each winner to its next
 	 * card, dashed where a winner will go. Super Bowl week colors the end zones; the champion's run turns gold, its logo sits under the
 	 * title, the field takes its color and confetti falls. Below 1100px it stands up: AFC, the Super Bowl, then NFC.
+	 * $page (2.55.0, SCOPE §97): the playoffs page draws this same bracket, full width, with its own title and line on the field and
+	 * without the buttons and games strip (the full bracket is the page itself).
 	 */
-	public static function hero() {
+	public static function hero( $page = false ) {
 		if ( ! self::ready() ) { return ''; }
 		$st = self::stage(); $sb = self::sb_game(); $ch = self::champion(); $sbn = self::sb_name(); $ln = array(); $cards = array(); $CW = 12;
 		$X = function ( $c, $x ) use ( $CW ) { return $c === 'AFC' ? $x : 100 - $x - $CW; };
@@ -263,53 +265,12 @@ class DBD_Playoffs {
 			for ( $i = 0; $i < 110; $i++ ) { $x = ( $x * 37 + 11 ) % 1009; $cf .= sprintf( '<i style="left:%.1f%%;--y:%d%%;--w:%dpx;--h:%dpx;--p:%s;--r:%ddeg;--d:%.2fs;--l:%.2fs"></i>', $x / 10.09, 6 + ( $x * 13 ) % 89, 5 + $x % 6, 9 + $x % 9, $cols[ $i % 5 ], ( $x * 7 ) % 180, 1.5 + ( $x % 12 ) / 10, ( $i % 24 ) / 30 ); }
 			$cf = '<div class="po-cf" aria-hidden="true">' . $cf . '</div>';
 		}
-		$bb = '<div class="po-bb"><a class="po-btn" href="' . esc_url( self::link() ) . '">The full bracket</a>' . ( $act ? '<a class="po-btn ln" href="' . esc_url( $act[1] ) . '">' . esc_html( $act[0] ) . '</a>' : '' ) . '</div>';
-		return '<section class="dbd-po po-h po-bh" aria-label="The playoff bracket"><div class="po-f" data-pob><div class="po-grass"></div>' . $wash . '<div class="po-light"></div><div class="po-yd" aria-hidden="true">' . $yd . '</div>'
-			. '<div class="po-bt"><h1>' . esc_html( $t1 ) . '</h1><p>' . esc_html( $t2 ) . '</p></div>'
+		$bb = $page ? '' : '<div class="po-bb"><a class="po-btn" href="' . esc_url( self::link() ) . '">The full bracket</a>' . ( $act ? '<a class="po-btn ln" href="' . esc_url( $act[1] ) . '">' . esc_html( $act[0] ) . '</a>' : '' ) . '</div>';
+		$bt = $page ? '<h1>' . (int) DBD_Data::season() . ' Playoffs</h1><p>' . self::lead() . '</p>' : '<h1>' . esc_html( $t1 ) . '</h1><p>' . esc_html( $t2 ) . '</p>';  /* lead() escapes its own parts */
+		return '<section class="dbd-po po-h po-bh' . ( $page ? ' po-wide' : '' ) . '" aria-label="The playoff bracket"><div class="po-f" data-pob><div class="po-grass"></div>' . $wash . '<div class="po-light"></div><div class="po-yd" aria-hidden="true">' . $yd . '</div>'
+			. '<div class="po-bt">' . $bt . '</div>'
 			. $ez( 'l', $A, $ca, 'AFC' ) . $cards['AFC'] . $sbc . $champ . $ez( 'r', $N, $cn, 'NFC' ) . $cards['NFC'] . $bb
-			. '<svg class="po-ch" aria-hidden="true" data-ln="' . esc_attr( wp_json_encode( $ln ) ) . '"></svg>' . $cf . '</div><div class="po-strip" id="po-strip">' . self::strip( $st ) . '</div></section>';
-	}
-
-	/* ------------------------------------------------------------------ the bracket */
-
-	private static function row( $t, $g = null, $extra = '' ) {
-		if ( $t === '' || $t === null ) { return '<div class="rw tbd"><span class="sd"></span><i></i><span class="nm">To be set</span><span></span></div>'; }
-		$real = $g && empty( $g['proj'] ); $f = $real && self::final_( $g ); $won = $f && self::winner( $g ) === $t; $sc = $f ? (int) ( $t === $g['home'] ? $g['home_score'] : $g['away_score'] ) : $extra;
-		return '<div class="rw' . ( $won ? ' w' : ( $f ? ' l' : '' ) ) . '" data-t="' . esc_attr( $t ) . '"' . ( $real ? ' data-r="' . esc_attr( $g['r'] ) . '"' : '' ) . '><span class="sd">' . self::seed( $t ) . '</span>' . DBD_Marks::tile( $t, 20 ) . '<span class="nm">' . esc_html( self::nick( $t ) ) . '</span><span class="sc">' . esc_html( (string) $sc ) . '</span></div>';
-	}
-	private static function card( $g ) {
-		if ( ! empty( $g['proj'] ) ) { return '<div class="g"><span class="wh">If it ended today</span>' . self::row( $g['home'], $g ) . self::row( $g['away'], $g ) . '</div>'; }
-		$f = self::final_( $g ); $lab = $f ? 'Final' : self::clock( $g );
-		return '<a class="g" href="' . esc_url( self::link( $g ) ) . '"><span class="wh">' . esc_html( $lab ) . '</span>' . self::row( $g['home'], $g ) . self::row( $g['away'], $g ) . '</a>';
-	}
-	private static function blank() { return '<div class="g"><span class="wh">&nbsp;</span>' . self::row( '' ) . self::row( '' ) . '</div>'; }
-	private static function bye( $c ) { $t = self::at_seed( $c, 1 ); return '<div class="g bye"><span class="wh">First-round bye</span><div class="rw" data-t="' . esc_attr( $t ) . '" data-bye="1"><span class="sd">1</span>' . DBD_Marks::tile( $t, 20 ) . '<span class="nm">' . esc_html( self::nick( $t ) ) . '</span><span class="sc">BYE</span></div></div>'; }
-	private static function column( $r, $c ) {
-		if ( $r === 'WC' ) { $h = self::bye( $c ); foreach ( self::wc_pairs( $c ) as $g ) { $h .= self::card( $g ); } }
-		else { $x = self::round( $r, $c ); $h = $x ? implode( '', array_map( array( __CLASS__, 'card' ), $x ) ) : ( $r === 'DIV' ? self::blank() . self::blank() : self::blank() ); }
-		return '<div class="col"><div class="colh">' . esc_html( self::ROUNDS[ $r ] ) . '</div><div class="stack">' . $h . '</div></div>';
-	}
-	private static function sb_card() {
-		$g = self::super_bowl(); $f = $g && self::final_( $g ); $tag = $g ? 'a' : 'div'; $href = $g ? ' href="' . esc_url( self::link( $g ) ) . '"' : '';
-		$sub = $g ? esc_html( self::clock( $g ) ) . '<br>' . esc_html( (string) ( $g['stadium'] ?? '' ) ) : esc_html( self::sb_name() );
-		$rows = $g ? self::row( $g['away'], $g ) . self::row( $g['home'], $g ) : self::row( '' ) . self::row( '' );
-		return '<div class="col"><div class="colh"></div><div class="stack"><' . $tag . ' class="sbbox"' . $href . '><span class="tt">Super Bowl</span><span class="wh">' . $sub . '</span>' . $rows . ( $f ? '<span class="champ">' . esc_html( self::nick( self::winner( $g ) ) ) . ' win it</span>' : '' ) . '</' . $tag . '></div></div>';
-	}
-	private static function list_view() {
-		$o = '<h3>Wild Card</h3>';
-		foreach ( array( 'AFC', 'NFC' ) as $c ) { $o .= '<div class="conf">' . $c . '</div><div class="gs">' . self::bye( $c ); foreach ( self::wc_pairs( $c ) as $g ) { $o .= self::card( $g ); } $o .= '</div>'; }
-		foreach ( array( 'DIV', 'CON' ) as $r ) {
-			$o .= '<h3>' . esc_html( self::ROUNDS[ $r ] ) . '</h3>';
-			if ( ! self::round( $r ) ) { $o .= '<div class="gs">' . self::blank() . '</div>'; continue; }
-			foreach ( array( 'AFC', 'NFC' ) as $c ) { $o .= '<div class="conf">' . $c . '</div><div class="gs">' . implode( '', array_map( array( __CLASS__, 'card' ), self::round( $r, $c ) ) ) . '</div>'; }
-		}
-		$s = self::super_bowl();
-		return '<div class="po-list">' . $o . '<h3>Super Bowl</h3><div class="gs">' . ( $s ? self::card( $s ) : self::blank() ) . '</div></div>';
-	}
-	public static function bracket() {
-		$yd = ''; foreach ( array( 10, 20, 30, 40, 50, 40, 30, 20, 10 ) as $n ) { $yd .= '<span>' . $n . '</span>'; }
-		return '<div class="po-field" data-bracket data-champ="' . esc_attr( self::champion() ) . '"><div class="ez l">AFC</div>' . self::column( 'WC', 'AFC' ) . self::column( 'DIV', 'AFC' ) . self::column( 'CON', 'AFC' ) . self::sb_card() . self::column( 'CON', 'NFC' ) . self::column( 'DIV', 'NFC' ) . self::column( 'WC', 'NFC' )
-			. '<div class="ez r">NFC</div><svg class="routes" aria-hidden="true"></svg><div class="yards" aria-hidden="true">' . $yd . '</div></div>' . self::list_view();
+			. '<svg class="po-ch" aria-hidden="true" data-ln="' . esc_attr( wp_json_encode( $ln ) ) . '"></svg>' . $cf . '</div>' . ( $page ? '' : '<div class="po-strip" id="po-strip">' . self::strip( $st ) . '</div>' ) . '</section>';
 	}
 
 	/* ------------------------------------------------------------------ the page */
@@ -375,8 +336,8 @@ class DBD_Playoffs {
 		$st = self::stage(); $r = $st ? array_keys( self::IDX )[ min( $st, 4 ) - 1 ] : '';
 		$cur = $st ? self::round( $r ) : array_merge( self::wc_pairs( 'AFC' ), self::wc_pairs( 'NFC' ) );
 		$head = ! $st ? 'If the season ended today' : ( $st >= 4 ? ( $st === 5 ? 'The Super Bowl' : self::sb_name() ) : 'The ' . self::ROUNDS[ $r ] . ' round' );
-		return '<div class="dbd-po po-pg">' . self::off_note() . '<h1>' . (int) DBD_Data::season() . ' Playoffs</h1><p class="lead">' . self::lead() . '</p>' . self::bracket()
-			. '<div class="two"><section class="pn"><h2>' . esc_html( $head ) . '</h2>' . implode( '', array_map( array( __CLASS__, 'mline' ), $cur ) ) . '</section>' . self::leaders() . '</div></div>';
+		return self::off_note() . self::hero( true )  /* the home page's bracket, full width (SCOPE §97) */
+			. '<div class="dbd-po po-pg"><div class="two"><section class="pn"><h2>' . esc_html( $head ) . '</h2>' . implode( '', array_map( array( __CLASS__, 'mline' ), $cur ) ) . '</section>' . self::leaders() . '</div></div>';
 	}
 
 	/* ------------------------------------------------------------------ a game's preview */
