@@ -116,6 +116,17 @@ class DBD_Nav {
 			. '<ul class="dxn-sugg" id="' . $id . '-l" role="listbox" hidden></ul></form>';
 	}
 
+	/** The site's accounts (the footer's follow icons, from the Share pack settings) for the right edge of a panel (Gene, 2.53.1). */
+	private static function follow() {
+		$links = DBD_Blocks::follow_links(); if ( ! $links ) { return ''; }
+		$h = '<div class="dxn-follow" role="group" aria-label="Follow Down x Down">';
+		foreach ( $links as $l ) {
+			$h .= '<a href="' . esc_url( $l[2] ) . '" target="_blank" rel="noopener" aria-label="Down x Down on ' . esc_attr( $l[1] ) . '" title="' . esc_attr( $l[1] ) . '">'
+				. '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="' . DBD_Blocks::ICONS[ $l[0] ] . '"/></svg></a>';
+		}
+		return $h . '</div>';
+	}
+
 	public static function render( $a = array() ) {
 		/* the menu always points at this season, even on a past season's page (the season picker under it moves between seasons) */
 		$was = DBD_Data::archived() ? DBD_Data::season() : 0; if ( $was ) { DBD_Data::use_season( 0 ); }
@@ -129,13 +140,14 @@ class DBD_Nav {
 		$playoffs = class_exists( 'DBD_Playoffs' ) && DBD_Playoffs::visible();
 		$also = array( array( 'News', $news ) );
 		if ( $playoffs ) { array_unshift( $also, array( 'Playoffs', $u( array( 'view' => 'playoffs' ) ) ) ); }  /* hidden playoffs pages are not found (Greptile, PR #167) */
+		$soc = self::follow();  /* not in Teams, whose panel is the 32 teams (Gene) */
 		$groups = array(
 			'week'    => array( 'This week', self::col( 'This week', array( array( 'The slate', $hub ), array( 'Standings', $hub . '#dbd-teams' ), array( 'Games by week', $u( array( 'view' => 'matchups' ) ) ), array( 'Week in review', $u( array( 'view' => 'week' ) ) ) ) )
-				. self::col( 'Also', $also ) ),
+				. self::col( 'Also', $also ) . $soc ),
 			'teams'   => array( 'Teams', self::teams_grid( $u ) . '<p class="dxn-foot"><a href="' . esc_url( $hub . '#dbd-teams' ) . '">Standings</a><a href="' . esc_url( $u( array( 'view' => 'teams' ) ) ) . '">Play explorer</a></p>' ),
 			'players' => array( 'Players', self::col( 'Players', array( array( 'All players', $u( array( 'view' => 'players' ) ) ), array( 'Compare players', $u( array( 'compare' => 'none' ) ) ) ) )
-				. self::col( 'Leaders', $lead ) . self::col( 'Before the NFL', array( array( 'Draft', $u( array( 'view' => 'draft' ) ) ), array( 'Combine', $u( array( 'view' => 'combine' ) ) ) ) ) ),
-			'fantasy' => array( 'Fantasy', self::col( 'Fantasy', array( array( 'This week in fantasy', $u( array( 'view' => 'fantasy' ) ) ), array( 'Fantasy leaders', $u( array( 'view' => 'leaders' ) ) ), array( 'My team', $u( array( 'view' => 'myteam' ) ) ) ) ) ),
+				. self::col( 'Leaders', $lead ) . self::col( 'Before the NFL', array( array( 'Draft', $u( array( 'view' => 'draft' ) ) ), array( 'Combine', $u( array( 'view' => 'combine' ) ) ) ) ) . $soc ),
+			'fantasy' => array( 'Fantasy', self::col( 'Fantasy', array( array( 'This week in fantasy', $u( array( 'view' => 'fantasy' ) ) ), array( 'Fantasy leaders', $u( array( 'view' => 'leaders' ) ) ), array( 'My team', $u( array( 'view' => 'myteam' ) ) ) ) ) . $soc ),
 		);
 		$po_url   = $u( array( 'view' => 'playoffs' ) );
 		$players  = $u( array( 'view' => 'players' ) );
@@ -145,7 +157,8 @@ class DBD_Nav {
 		$h = '';
 		if ( ! self::$css ) {
 			self::$css = true;
-			$css = (string) @file_get_contents( DBD_PATH . 'assets/nav.css' );
+			/* comments out: Divi runs shortcodes over a module's output again, so a comment naming the shortcode would draw a second header */
+			$css = trim( (string) preg_replace( array( '#/\*.*?\*/#s', '/\s*\n\s*/' ), array( '', "\n" ), (string) @file_get_contents( DBD_PATH . 'assets/nav.css' ) ) );
 			$h .= '<style id="dxn-css">' . $css . '</style>';
 			if ( function_exists( 'wp_enqueue_script' ) ) { wp_enqueue_script( 'dbd-nav', DBD_URL . 'assets/nav.js', array(), DBD_VERSION, true ); }
 		}
@@ -154,13 +167,13 @@ class DBD_Nav {
 			. '<a class="dxn-home" href="' . esc_url( home_url( '/' ) ) . '" aria-label="Down x Down home">' . trim( $logo ) . '</a>'
 			. '<button class="dxn-burger" type="button" aria-expanded="false" aria-controls="' . $id . '-nav" aria-label="Menu"><span></span><span></span><span></span></button>'
 			. '<nav class="dxn-nav" id="' . $id . '-nav" aria-label="Main"><div class="dxn-msearch">' . self::search( $id . '-m', $players, $find ) . '</div><ul class="dxn-list">';
-		if ( $playoffs ) {
-			$h .= '<li class="dxn-po"><a class="dxn-top" href="' . esc_url( $po_url ) . '"' . ( $cur === 'playoffs' ? ' aria-current="page"' : '' ) . '><span class="dxn-l">Playoffs</span></a></li>';
-		}
 		foreach ( $groups as $k => $g ) {
 			$h .= '<li class="dxn-item dxn-' . $k . '"><button class="dxn-top" type="button" aria-expanded="false" aria-controls="' . $id . '-' . $k . '"' . ( $cur === $k ? ' aria-current="true"' : '' ) . '>'
 				. '<span class="dxn-l">' . esc_html( $g[0] ) . '</span><svg viewBox="0 0 10 6" aria-hidden="true" focusable="false"><path d="M1 1l4 4 4-4"/></svg></button>'
 				. '<div class="dxn-panel" id="' . $id . '-' . $k . '"><div class="dxn-in dxn-in-' . $k . '">' . $g[1] . '</div></div></li>';
+		}
+		if ( $playoffs ) {  /* last on the bar (Gene, 2.53.1) */
+			$h .= '<li class="dxn-po"><a class="dxn-top" href="' . esc_url( $po_url ) . '"' . ( $cur === 'playoffs' ? ' aria-current="page"' : '' ) . '><span class="dxn-l">Playoffs</span></a></li>';
 		}
 		$h .= '</ul></nav><div class="dxn-dsearch">' . self::search( $id . '-d', $players, $find ) . '</div></div></header>';
 		return $h;
