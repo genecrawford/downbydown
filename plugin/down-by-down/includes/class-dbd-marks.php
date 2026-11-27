@@ -38,10 +38,14 @@ class DBD_Marks {
 	 */
 	public static function band( $abbr ) {
 		$t = DBD_Data::team( $abbr ) ?: array(); $c1 = self::color( $t['c1'] ?? '', '#161e36' ); $c2 = self::color( $t['c2'] ?? '', '#ffffff' );
-		$light = self::lum( $c1 ) > 0.35; $ink = $light ? '#121417' : '#ffffff';
-		if ( ! $light && self::lum( $c2 ) < 0.05 ) { $c2 = '#ffffff'; }
-		$on2 = self::lum( $c2 ) > 0.35 ? '#121417' : '#ffffff'; $kick = self::contrast( $c1, $c2 ) < 3 ? $ink : $c2;
-		$v = array( '--b1' => $c1, '--b2' => $c2, '--bink' => $ink, '--bink2' => $light ? 'rgba(18,20,23,.75)' : 'rgba(255,255,255,.82)', '--bon2' => $on2, '--bkick' => $kick );
+		/* text by actual contrast, not a brightness cutoff: the Titans' light blue reads better with dark text (Greptile, PR #174) */
+		$best = function ( $bg ) { return self::contrast( '#ffffff', $bg ) >= self::contrast( '#121417', $bg ) ? '#ffffff' : '#121417'; };
+		$ink = $best( $c1 ); $light = $ink !== '#ffffff';
+		if ( ! $light && self::lum( $c2 ) < 0.05 ) { $c2 = '#ffffff'; }  /* a black second color on a dark band reads as nothing */
+		$on2 = $best( $c2 ); $kick = self::contrast( $c1, $c2 ) >= 4.5 ? $c2 : $ink;  /* the season line is small: 4.5:1 or it takes the text color */
+		/* the muted text (the bio, the team's snap share) is the text color blended toward the band: as soft as 4.5:1 allows */
+		$ink2 = $ink; foreach ( array( 0.75, 0.82, 0.9 ) as $al ) { $m = self::blend( $ink, $c1, $al ); if ( self::contrast( $m, $c1 ) >= 4.5 ) { $ink2 = $m; break; } }
+		$v = array( '--b1' => $c1, '--b2' => $c2, '--bink' => $ink, '--bink2' => $ink2, '--bon2' => $on2, '--bkick' => $kick );
 		$lg = DBD_Data::logos() ? DBD_Data::logo( $abbr ) : null;
 		$css = ''; foreach ( $v as $k => $x ) { $css .= $k . ':' . $x . ';'; }
 		$lu = $lg ? self::logo_src( $lg, 192 ) : ''; if ( preg_match( '#^https://[^\s"\'()<>]+$#', $lu ) ) { $css .= '--blg:url("' . $lu . '");'; }  /* printed through esc_attr, which keeps the & readable */
@@ -52,6 +56,12 @@ class DBD_Marks {
 	 * The band's buttons (SCOPE §99): Compare (filled, the team's second color), Add to My team (outlined; "On My team" once added, with a
 	 * link to it), Share card (quiet). The player page's Compare carries the id player.js builds the tray link from.
 	 */
+	/** $fg laid over $bg at $alpha, as a hex color. */
+	private static function blend( $fg, $bg, $alpha ) {
+		$f = ltrim( $fg, '#' ); $g = ltrim( $bg, '#' ); $o = '#';
+		foreach ( array( 0, 2, 4 ) as $i ) { $o .= sprintf( '%02x', (int) round( hexdec( substr( $f, $i, 2 ) ) * $alpha + hexdec( substr( $g, $i, 2 ) ) * ( 1 - $alpha ) ) ); }
+		return $o;
+	}
 	public static function band_actions( $p, $cmp_url, $arch, $tray ) {
 		$ic = function ( $d ) { return '<svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="' . $d . '"/></svg>'; };
 		$h = '<div class="dbd-bacts"><a class="dbd-cmp-btn"' . ( $tray ? ' id="dbd-cmp-btn" data-id="' . esc_attr( $p['id'] ) . '" data-base="' . esc_url( DBD_Router::url() ) . '"' : '' ) . ' href="' . esc_url( $cmp_url ) . '">'

@@ -2316,7 +2316,7 @@ html:not([data-fx]) .dbd [data-fx="half"],html[data-fx="std"] .dbd [data-fx="std
 .dbd .dbd-pband .dbd-bacts{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:20px}
 .dbd .dbd-pband .dbd-bacts>a:where(:not(.dbd-mtopen)),.dbd .dbd-pband .dbd-bacts>button{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:42px;margin:0;padding:0 16px;border:2px solid transparent;border-radius:6px;background:none;box-shadow:none;font:700 13px var(--dbd-display);letter-spacing:.1em;text-transform:uppercase;text-decoration:none;cursor:pointer;transition:filter .15s}
 .dbd .dbd-pband .dbd-bacts svg{flex:none}
-.dbd .dbd-pband .dbd-bacts .dbd-cmp-btn{background:var(--b2);color:var(--bon2)}
+.dbd .dbd-pband .dbd-bacts .dbd-cmp-btn{background:var(--b2);color:var(--bon2)!important}  /* the old Compare rule forces white with !important (Greptile, PR #174) */
 .dbd .dbd-pband .dbd-bacts .dbd-cmp-btn:hover{filter:brightness(1.08)}
 .dbd .dbd-pband .dbd-bacts .dbd-mtbtn{border-color:var(--bink);color:var(--bink)}
 .dbd .dbd-pband .dbd-bacts .dbd-mtbtn .off,.dbd .dbd-pband .dbd-bacts .dbd-mtbtn .on{align-items:center;gap:8px}
