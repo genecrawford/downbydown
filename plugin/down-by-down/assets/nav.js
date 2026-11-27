@@ -28,6 +28,7 @@
 				if (phone(h) || !fine || !fine.matches) { return; }
 				clearTimeout(timer); timer = setTimeout(function () { closeAll(h, li); setItem(li, true); }, 140);
 			});
+			li.addEventListener('mouseleave', function () { clearTimeout(timer); });  /* only a sustained hover opens a group (Greptile, PR #167) */
 		});
 		h.addEventListener('mouseenter', function () { clearTimeout(timer); });
 		h.addEventListener('mouseleave', function () {
@@ -89,7 +90,7 @@
 	}
 	document.querySelectorAll('.dxn-search').forEach(function (f) {
 		var i = f.querySelector('input[type=search]'), u = f.querySelector('.dxn-sugg'), sel = -1, url = f.getAttribute('data-find');
-		function hide() { u.hidden = true; i.setAttribute('aria-expanded', 'false'); i.removeAttribute('aria-activedescendant'); }
+		function hide() { sel = -1; u.hidden = true; i.setAttribute('aria-expanded', 'false'); i.removeAttribute('aria-activedescendant'); }
 		function draw() {
 			sel = -1;
 			if (!i.value.trim()) { hide(); return; }
@@ -108,9 +109,10 @@
 			var n = u.querySelectorAll('li[role=option]').length;
 			if (e.key === 'ArrowDown' && n) { e.preventDefault(); sel = Math.min(n - 1, sel + 1); mark(); }
 			else if (e.key === 'ArrowUp' && n) { e.preventDefault(); sel = Math.max(-1, sel - 1); mark(); }
-			else if (e.key === 'Enter' && sel >= 0) { e.preventDefault(); window.location.href = u.querySelectorAll('li[role=option] a')[sel].href; }
+			else if (e.key === 'Enter' && sel >= 0 && !u.hidden) { e.preventDefault(); window.location.href = u.querySelectorAll('li[role=option] a')[sel].href; }
 			else if (e.key === 'Escape' && !u.hidden) { e.stopPropagation(); hide(); }
 		});
 		document.addEventListener('click', function (e) { if (!f.contains(e.target)) { hide(); } });
+		f.addEventListener('focusout', function (e) { if (!(e.relatedTarget && f.contains(e.relatedTarget))) { hide(); } });  /* Tab away closes the list; Tab through its links keeps it (Greptile, PR #167) */
 	});
 })();

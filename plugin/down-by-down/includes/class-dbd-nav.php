@@ -41,7 +41,8 @@ class DBD_Nav {
 	}
 
 	public static function find_rows() {
-		$key = 'dbd_nav_find_' . md5( DBD_VERSION . '|' . DBD_Data::file_version( 'players/index.json' ) );
+		/* the key carries the routing too (pretty paths, root or page-prefixed paths) through an address built the same way (Greptile, PR #167) */
+		$key = 'dbd_nav_find_' . md5( DBD_VERSION . '|' . DBD_Data::file_version( 'players/index.json' ) . '|' . DBD_Router::url( array( 'view' => 'players' ) ) . '|' . ( DBD_Urls::on() ? 1 : 0 ) );
 		$c = get_transient( $key ); if ( is_array( $c ) ) { return $c; }
 		$out = array();
 		foreach ( DBD_Data::player_index() as $p ) {
@@ -125,15 +126,17 @@ class DBD_Nav {
 		$find = function_exists( 'rest_url' ) ? rest_url( 'dbd/v1/find' ) : home_url( '/?rest_route=/dbd/v1/find' );
 		$lead = array();
 		foreach ( DBD_Leaders::GROUPS as $g => $label ) { $lead[] = array( $label, $u( $g === 'fan' ? array( 'view' => 'leaders' ) : array( 'view' => 'leaders', 'g' => $g ) ) ); }
+		$playoffs = class_exists( 'DBD_Playoffs' ) && DBD_Playoffs::visible();
+		$also = array( array( 'News', $news ) );
+		if ( $playoffs ) { array_unshift( $also, array( 'Playoffs', $u( array( 'view' => 'playoffs' ) ) ) ); }  /* hidden playoffs pages are not found (Greptile, PR #167) */
 		$groups = array(
 			'week'    => array( 'This week', self::col( 'This week', array( array( 'The slate', $hub ), array( 'Standings', $hub . '#dbd-teams' ), array( 'Games by week', $u( array( 'view' => 'matchups' ) ) ), array( 'Week in review', $u( array( 'view' => 'week' ) ) ) ) )
-				. self::col( 'Also', array( array( 'Playoffs', $u( array( 'view' => 'playoffs' ) ) ), array( 'News', $news ) ) ) ),
+				. self::col( 'Also', $also ) ),
 			'teams'   => array( 'Teams', self::teams_grid( $u ) . '<p class="dxn-foot"><a href="' . esc_url( $hub . '#dbd-teams' ) . '">Standings</a><a href="' . esc_url( $u( array( 'view' => 'teams' ) ) ) . '">Play explorer</a></p>' ),
 			'players' => array( 'Players', self::col( 'Players', array( array( 'All players', $u( array( 'view' => 'players' ) ) ), array( 'Compare players', $u( array( 'compare' => 'none' ) ) ) ) )
 				. self::col( 'Leaders', $lead ) . self::col( 'Before the NFL', array( array( 'Draft', $u( array( 'view' => 'draft' ) ) ), array( 'Combine', $u( array( 'view' => 'combine' ) ) ) ) ) ),
 			'fantasy' => array( 'Fantasy', self::col( 'Fantasy', array( array( 'This week in fantasy', $u( array( 'view' => 'fantasy' ) ) ), array( 'Fantasy leaders', $u( array( 'view' => 'leaders' ) ) ), array( 'My team', $u( array( 'view' => 'myteam' ) ) ) ) ) ),
 		);
-		$playoffs = class_exists( 'DBD_Playoffs' ) && DBD_Playoffs::visible();
 		$po_url   = $u( array( 'view' => 'playoffs' ) );
 		$players  = $u( array( 'view' => 'players' ) );
 		if ( $was ) { DBD_Data::use_season( $was ); }

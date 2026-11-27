@@ -557,7 +557,9 @@ jobs:
           test "$(grep -o 'data-t="[A-Z]*"' "$f" | wc -l)" -eq 32
           test "$(grep -o '<style id="dxn-css">' "$f" | wc -l)" -eq 1
           for g in wr te rb qb k rush def; do grep -q "view=leaders&amp;g=$g\"\|view=leaders&g=$g\"" "$f" || { echo "no Leaders link for $g"; exit 1; }; done
-          for v in matchups week playoffs players draft combine fantasy myteam teams; do grep -q "view=$v\"" "$f" || { echo "no link to $v"; exit 1; }; done
+          # Playoffs: linked only while the switch shows them, on the bar and under This week alike (Greptile, PR #167)
+          if grep -q 'class="dxn-po"' "$f"; then test "$(grep -o 'view=playoffs"' "$f" | wc -l)" -eq 2; else if grep -q 'view=playoffs"' "$f"; then echo "a hidden Playoffs page is linked"; exit 1; fi; fi
+          for v in matchups week players draft combine fantasy myteam teams; do grep -q "view=$v\"" "$f" || { echo "no link to $v"; exit 1; }; done
           grep -q 'data-find="[^"]*dbd/v1/find"' "$f"
           grep -q '<input type="hidden" name="view" value="players">' "$f"
           if grep -q '>About<' "$f"; then echo "About is not in the header (Gene)"; exit 1; fi
