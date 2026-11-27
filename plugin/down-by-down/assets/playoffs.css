@@ -171,7 +171,9 @@ body:has(.po-wide){overflow-x:clip}
 @keyframes po-rise{from{opacity:0;translate:0 10px}to{opacity:1;translate:0 0}}
 @keyframes po-chalk{to{stroke-dashoffset:0}}
 @keyframes po-chalkp{0%{stroke-dasharray:var(--len);stroke-dashoffset:var(--len)}99%{stroke-dasharray:var(--len);stroke-dashoffset:0}100%{stroke-dasharray:3 6;stroke-dashoffset:0}}
-@media (max-width:1099px){
+/* stands up by the bracket's own width, not the window's: the same on the home page, and right beside a Divi sidebar (Greptile, PR #170) */
+.po-bh{container:pob/inline-size}
+@container pob (max-width:1099px){
 .po-bh .po-f{height:auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;align-content:start;padding:20px 12px 26px}
 .po-bh .po-f>*{min-width:0}
 .po-bh .s2,.po-bh .po-ez,.po-bh .po-bt,.po-bh .po-bb{grid-column:1/-1}
