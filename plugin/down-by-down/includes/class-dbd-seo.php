@@ -102,6 +102,7 @@ class DBD_Seo {
 			$list[] = array( 'loc' => $u( array( 'view' => 'players' ) ), 'changefreq' => 'daily', 'priority' => 0.8 );
 			foreach ( array_keys( DBD_Data::teams() ) as $a ) { $list[] = array( 'loc' => $u( array( 'view' => 'players', 'team' => $a ) ), 'changefreq' => 'weekly' ); }
 			foreach ( DBD_Data::player_index() as $p ) { $list[] = array( 'loc' => $u( array( 'player' => $p['id'] ) ), 'changefreq' => 'weekly', 'priority' => 0.6 ); }
+			foreach ( DBD_Data::defender_index() as $p ) { if ( ! empty( $p['q'] ) ) { $list[] = array( 'loc' => $u( array( 'player' => $p['id'] ) ), 'changefreq' => 'weekly', 'priority' => 0.5 ); } }  /* defenders with a regular role (SCOPE §101) */
 		}
 		foreach ( ( DBD_Data::schedule()['weeks'] ?? array() ) as $games ) {
 			foreach ( $games as $g ) {

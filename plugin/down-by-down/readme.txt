@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.58.0
+Stable tag: 2.59.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,11 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.59.0 =
+* A page for every defender (SCOPE §101), at /player/name/ like everyone else: the header in his team's colors, tiles and a Scorecard ranked against his role (the front, linebackers or the secondary), the short version, every play he made on the field with key chips to filter it, his biggest plays, the 18-week game log, and his career back to his rookie year.
+* Defender names link to their pages from the defense tab, the pass rushers table, box scores and the lineups board; the Players index gains a Defenders panel; the site search and the sitemap include them.
+* The data build writes defenders/index.json and defenders/{TEAM}.json (tools/build_defenders.py), with careers cached in career/d{year}.json.
 
 = 2.58.0 =
 * Standings by the NFL's tiebreakers (SCOPE §100): the hub's playoff picture and division tables now follow the NFL's own steps (head to head, division record, common games, conference record, strength of victory and of schedule), and a line under any team that finished level says what put it ahead.

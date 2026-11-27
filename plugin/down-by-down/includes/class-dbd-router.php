@@ -111,6 +111,7 @@ class DBD_Router {
 		DBD_Data::use_season( $target );
 		switch ( $r['view'] ) {
 			case 'player': if ( ! DBD_Data::player( $r['player']['id'] ) ) { $args = array( 'view' => 'players', 'q' => $r['player']['name'] ); } break;
+			case 'defender': if ( ! DBD_Data::defender( $r['player']['id'] ) ) { $args = array( 'team' => $r['player']['team'], 'side' => 'def' ); } break;
 			case 'compare': foreach ( $r['compare'] as $p ) { if ( ! DBD_Data::player( $p['id'] ) ) { $args = array( 'view' => 'players' ); break; } } break;
 			case 'game': $args = array( 'view' => 'matchups', 'week' => (int) $r['game']['week'] ); break;
 			case 'week': case 'matchups': if ( ! empty( $args['week'] ) && ! in_array( (int) $args['week'], $r['view'] === 'week' ? DBD_Week::weeks() : DBD_Data::weeks(), true ) ) { unset( $args['week'] ); } break;
@@ -178,9 +179,10 @@ class DBD_Router {
 		$pid   = self::q( 'player' );
 		if ( $pid !== '' ) {
 			$row = preg_match( '/^\d{2}-\d{7}$/', $pid ) ? DBD_Data::player( $pid ) : null;
-			$r['view']   = $row ? 'player' : 'notfound';
-			$r['player'] = $row;
-			$r['team']   = $row ? $row['team'] : '';
+			$drow = ! $row && preg_match( '/^\d{2}-\d{7}$/', $pid ) ? DBD_Data::defender( $pid ) : null;  /* SCOPE §101: a defender's page, in the same /player/ family */
+			$r['view']   = $row ? 'player' : ( $drow ? 'defender' : 'notfound' );
+			$r['player'] = $row ?: $drow;
+			$r['team']   = $row ? $row['team'] : ( $drow ? $drow['team'] : '' );
 		} elseif ( self::q( 'compare' ) !== '' ) {
 			$rows = array(); $grp = ''; $mixed = false;
 			foreach ( array_unique( array_map( 'trim', explode( ',', self::q( 'compare' ) ) ) ) as $id ) {
@@ -294,7 +296,7 @@ class DBD_Router {
 		if ( $r['view'] === 'fantasy' ) { $args = array( 'view' => 'fantasy' ); if ( $r['week'] ) { $args['week'] = $r['week']; } }
 		if ( $r['view'] === 'draft' || $r['view'] === 'combine' ) { $args = array( 'view' => $r['view'], 'y' => $r['y'] ); }
 		if ( $r['view'] === 'leaders' ) { $args = array( 'view' => 'leaders' ); if ( $r['lboard'] !== '' ) { $args['b'] = $r['lboard']; } elseif ( $r['lgroup'] !== 'fan' ) { $args['g'] = $r['lgroup']; } }
-		if ( $r['view'] === 'player' ) { $args = array( 'player' => $r['player']['id'] ); }
+		if ( $r['view'] === 'player' || $r['view'] === 'defender' ) { $args = array( 'player' => $r['player']['id'] ); }
 		if ( $r['view'] === 'players' ) { $args = array( 'view' => 'players' ); if ( $r['pteam'] ) { $args['pt'] = $r['pteam']; } if ( $r['pos'] ) { $args['pos'] = $r['pos']; } if ( $full && $r['q'] !== '' ) { $args['q'] = $r['q']; } }
 		if ( $r['view'] === 'teamplayers' ) { $args = array( 'view' => 'players', 'team' => $r['pteam'] ); }
 		if ( $r['view'] === 'compare' ) { $ids = array_map( function ( $p ) { return $p['id']; }, $r['compare'] ); if ( ! $full ) { sort( $ids ); } $args = $ids ? array( 'compare' => implode( ',', $ids ) ) : ( $full ? array( 'compare' => 'none' ) : array( 'view' => 'players' ) ); }
@@ -347,6 +349,9 @@ class DBD_Router {
 				if ( DBD_Kicker::is( $p ) ) { return array( "{$p['name']} stats $season: field goals, range, kicks", "Every field goal {$p['name']} has tried in $season, drawn on the field: makes over expected for his distances, range, extra points, kickoffs, the kicks that swung games, the game log with conditions, and his career." ); }
 				$what = array( 'QB' => 'passing, EPA, game log', 'RB' => 'carries, targets, snaps' )[ $p['pos'] ] ?? 'targets, snaps, EPA';  /* what people search first, then what the page has (SCOPE §64) */
 				return array( "{$p['name']} stats $season: $what", "Where the ball finds {$p['name']}: every target and carry of the $season season on the field, the game log, snap share, usage by down, quarter and score, and the latest injury report." );
+			case 'defender':  /* SCOPE §101 */
+				$p = $r['player']; $what = array( 'front' => 'pressures, sacks and every play', 'lb' => 'tackles, coverage and every play', 'db' => 'coverage, interceptions and every play' )[ $p['role'] ?? 'front' ] ?? 'every play';
+				return array( "{$p['name']} stats $season: $what", "Every tackle, sack, hit and pass {$p['name']} got a hand on in $season, drawn on the field: where he ranks against the league at his role, the game log, and his career." );
 			case 'compare':
 				$names = array_map( function ( $p ) { return $p['name']; }, $r['compare'] );
 				return array( $names ? implode( ' vs ', $names ) : 'Compare players', $names ? 'Side by side: where each grades against the league, where the ball finds each of them, and how their weeks line up.' : 'Pick two or three players of one position and see them side by side.' );
@@ -452,6 +457,7 @@ class DBD_Router {
 				'side'      => $def ? 'def' : 'off',
 			) );
 		}
+		if ( $r['view'] === 'defender' ) { wp_enqueue_script( 'dbd-defchart', DBD_URL . 'assets/defchart.js', array(), DBD_VERSION, true ); }  /* every play he made (SCOPE §101) */
 		if ( $r['view'] === 'player' && ! DBD_Kicker::is( $r['player'] ) ) {  /* a kicker's page is all PHP (SCOPE §47) */
 			$p = $r['player']; $t = DBD_Data::team( $p['team'] ); $rel = 'plays/' . $p['team'] . '.json'; $rec = DBD_Data::player_record( $p['team'], $p['id'] );
 			$roster = array();

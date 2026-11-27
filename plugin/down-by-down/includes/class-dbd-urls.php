@@ -126,6 +126,12 @@ class DBD_Urls {
 			if ( empty( $p['slug'] ) && $n[ $s ] > 1 ) { $s .= '-' . strtolower( (string) ( $p['pos'] ?? '' ) ) . '-' . substr( (string) $p['id'], -4 ); }
 			$m['id'][ $p['id'] ] = $s; $m['slug'][ $s ] = $p['id'];
 		}
+		foreach ( DBD_Data::defender_index() as $p ) {  /* SCOPE §101: the build gives each defender a slug no offensive player has; a clash still can't take one */
+			if ( empty( $p['id'] ) || isset( $m['id'][ $p['id'] ] ) ) { continue; }
+			$s = ! empty( $p['slug'] ) ? (string) $p['slug'] : self::slugify( $p['name'] ?? '' );
+			if ( isset( $m['slug'][ $s ] ) ) { $s .= '-' . strtolower( (string) ( $p['pos'] ?? 'def' ) ) . '-' . substr( (string) $p['id'], -4 ); }
+			$m['id'][ $p['id'] ] = $s; $m['slug'][ $s ] = $p['id'];
+		}
 		return self::$players = $m;
 	}
 

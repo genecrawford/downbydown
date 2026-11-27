@@ -2371,3 +2371,27 @@ html:not([data-fx]) .dbd [data-fx="half"],html[data-fx="std"] .dbd [data-fx="std
   .dbd .dbd-pband .dbd-bacts>a:where(:not(.dbd-mtopen)),.dbd .dbd-pband .dbd-bacts>button{flex:1 1 auto}
   .dbd .dbd-pband .dbd-bacts .dbd-mtopen{flex-basis:100%;text-align:center}
 }
+
+/* SCOPE §101: a page for every defender: the every-play field (assets/defchart.js), its key chips, the biggest plays */
+.dbd .dbd-dfc-b{padding:14px var(--dbd-edge)}
+.dbd .dbd-dfc-keys{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 10px}
+.dbd .dbd-dfc-k{display:inline-flex;align-items:center;gap:7px;margin:0;padding:5px 10px;border:1px solid var(--dbd-line-2);border-radius:5px;background:#fff;color:var(--dbd-ink);font:500 13px var(--dbd-body);cursor:pointer}
+.dbd .dbd-dfc-k b{font-weight:600}
+.dbd .dbd-dfc-k[aria-pressed=false]{opacity:.45}
+.dbd .dbd-dfc-k i{display:inline-block;flex:none;width:11px;height:11px;border-radius:50%;background:var(--c);box-sizing:border-box}
+.dbd .dbd-dfc-k i.ring{background:transparent;border:2px solid var(--c)}
+.dbd .dbd-dfc-k i.dia{width:9px;height:9px;border-radius:1px;transform:rotate(45deg)}
+.dbd .dbd-dfc-ff{display:inline-flex;align-items:center;gap:7px;padding:5px 4px;font:500 13px var(--dbd-body);color:var(--dbd-muted)}
+.dbd .dbd-dfc-ff i{display:inline-block;width:13px;height:13px;border-radius:50%;border:2px solid #4fd18b;box-sizing:border-box}
+.dbd .dbd-dfc-fld svg{display:block;width:100%;height:auto;border-radius:4px;touch-action:manipulation}
+.dbd .dbd-dfc-fld [data-i]{cursor:pointer}
+.dbd .dbd-dfc-fld [data-i]:focus{outline:none}
+.dbd .dbd-dfc-fld [data-i]:focus-visible,.dbd .dbd-dfc-fld [data-i].on{stroke:#fff;stroke-width:2.5}
+.dbd .dbd-dfc-fld .off{display:none}
+.dbd .dbd-dfc-d{margin-top:4px;font-size:13px;color:var(--dbd-ink-2)}
+.dbd .dbd-dfbig td.dbd-dfd{white-space:normal;min-width:240px;font-size:13px;color:var(--dbd-ink-2)}
+.dbd .dbd-dfp .dbd-glog .z{color:var(--dbd-muted);opacity:.6}
+.dbd .dbd-dfp .dbd-crtot td{font-weight:600;border-top:2px solid var(--dbd-line-2)}
+@container dbd (max-width:600px){.dbd .dbd-dfc-b{padding:12px 8px}.dbd .dbd-dfc-k{padding:4px 8px;font-size:12px}}
+.dbd .dbd-dfp .dbd-score td.n,.dbd .dbd-dfp .dbd-score td.n small{white-space:normal}
+.dbd .dbd-dfbig td:nth-child(2),.dbd .dbd-dfbig td:nth-child(3){white-space:normal}
