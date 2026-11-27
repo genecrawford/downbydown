@@ -2206,6 +2206,7 @@ html:not([data-fx]) .dbd [data-fx="half"],html[data-fx="std"] .dbd [data-fx="std
 @container dbd (max-width:420px){.dbd .pr-t .c-p{display:none}.dbd .pr-t th,.dbd .pr-t td{padding:6px}}
 /* Every throw (SCOPE §90, §91), laid out under the field (2.51.0, SCOPE §93): the field, the replay bar, the throw, the game, depth and the key,
    then the picks. assets/passchart.js draws it */
+.dbd .dbd-thr>.dbd-ph{flex-wrap:wrap;row-gap:8px}.dbd .dbd-thr>.dbd-ph>.dbd-lab{flex:1 1 240px;min-width:0}.dbd .dbd-thr-pick{max-width:100%}  /* on a phone the game picker drops under the label instead of squeezing it to one letter (2.56.1) */
 .dbd .dbd-thr-pick select{font:500 13px var(--dbd-body);padding:5px 8px;border:1px solid var(--dbd-line-2);border-radius:5px;background:#fff;color:var(--dbd-ink);max-width:100%}
 .dbd .dbd-thr-seg{display:inline-flex;border:1px solid var(--dbd-line-2);border-radius:5px;overflow:hidden}
 .dbd .dbd-thr-seg button{font:600 12px var(--dbd-display);letter-spacing:.1em;text-transform:uppercase;border:0;border-radius:0;background:transparent;color:var(--dbd-ink-2);padding:5px 12px;margin:0;cursor:pointer}
