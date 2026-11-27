@@ -42,7 +42,7 @@ class DBD_Lineup {
 
 	private static function chip( $team, $key, $x, $y, $e, $side ) {
 		$t = DBD_Data::team( $team ); $c = DBD_Marks::accent( $t );
-		$link = $side === 'off' && in_array( $key, self::SKILL, true ) && ! empty( $e['id'] ) && DBD_Data::player_record( $team, $e['id'] );
+		$link = ( $side === 'off' && in_array( $key, self::SKILL, true ) && ! empty( $e['id'] ) && DBD_Data::player_record( $team, $e['id'] ) ) || ( $side === 'def' && ! empty( $e['id'] ) && DBD_Data::defender( $e['id'] ) );  /* defenders' pages (SCOPE §101) */
 		$line = $side === 'off' ? self::off_line( $team, $e['id'] ?? null ) : self::def_line( $e );
 		$tip = '<b>' . esc_html( $e['name'] ?? '' ) . '</b> · ' . esc_html( $e['pos'] ?? '' ) . ( $line ? '<br>' . esc_html( $line ) . ( $side === 'def' ? ' this season' : '' ) : '' );
 		$cls = 'dbd-lup ' . $side . ( in_array( $key, self::STAGGER, true ) ? ' lo' : '' ) . ( $key === 'NB' ? ' fade' : '' ) . ( $link ? ' sk' : '' );
@@ -57,7 +57,7 @@ class DBD_Lineup {
 		foreach ( $keys as $k ) {
 			$e = $lu[ $unit ][ $k ] ?? null; if ( ! $e ) { continue; }
 			$line = $unit === 'off' ? self::off_line( $team, $e['id'] ?? null ) : self::def_line( $e );
-			$nm = $unit === 'off' && in_array( $k, self::SKILL, true ) && ! empty( $e['id'] ) && DBD_Data::player_record( $team, $e['id'] ) ? '<a href="' . esc_url( DBD_Router::url( array( 'player' => $e['id'] ) ) ) . '">' . esc_html( $e['name'] ) . '</a>' : esc_html( $e['name'] ?? '' );
+			$nm = ( ( $unit === 'off' && in_array( $k, self::SKILL, true ) && DBD_Data::player_record( $team, $e['id'] ?? '' ) ) || ( $unit === 'def' && DBD_Data::defender( $e['id'] ?? '' ) ) ) && ! empty( $e['id'] ) ? '<a href="' . esc_url( DBD_Router::url( array( 'player' => $e['id'] ) ) ) . '">' . esc_html( $e['name'] ) . '</a>' : esc_html( $e['name'] ?? '' );
 			$li .= '<li><b>' . esc_html( preg_replace( '/\d/', '', $k ) ) . '</b><span class="n">' . $nm . '<small>' . ( isset( $e['num'] ) && $e['num'] !== null ? '#' . esc_html( (string) $e['num'] ) : '' ) . ( $line ? ' · ' . esc_html( $line ) : '' ) . '</small></span></li>';
 		}
 		return '<div><h4>' . esc_html( $label ) . '</h4><ul class="dbd-lulist">' . $li . '</ul></div>';

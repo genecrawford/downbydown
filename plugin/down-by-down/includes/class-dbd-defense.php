@@ -264,7 +264,7 @@ class DBD_Defense {
 			/* on a phone the player and his first three numbers; the rest fold (SCOPE §43) */
 			$t3 = function ( $i ) { return $i >= 4 ? ' class="dbd-t3"' : ''; };
 			$th = ''; foreach ( $cols as $i => $c ) { $th .= '<th' . $t3( $i ) . '>' . $c[0] . '</th>'; }
-			$tb = ''; foreach ( $rows as $r ) { $tb .= '<tr><td class="n">' . $jt( $r['num'] ) . '<b>' . esc_html( $r['name'] ) . '</b><small>' . esc_html( $r['pos'] ) . '</small></td>'; foreach ( array_slice( $cols, 1 ) as $i => $c ) { $tb .= '<td' . $t3( $i + 1 ) . '>' . $c[1]( $r ) . '</td>'; } $tb .= '</tr>'; }
+			$tb = ''; foreach ( $rows as $r ) { $du = DBD_Data::defender_url( $r['id'] ?? '' ); $tb .= '<tr><td class="n">' . $jt( $r['num'] ) . ( $du ? '<a href="' . esc_url( $du ) . '"><b>' . esc_html( $r['name'] ) . '</b></a>' : '<b>' . esc_html( $r['name'] ) . '</b>' ) . '<small>' . esc_html( $r['pos'] ) . '</small></td>'; foreach ( array_slice( $cols, 1 ) as $i => $c ) { $tb .= '<td' . $t3( $i + 1 ) . '>' . $c[1]( $r ) . '</td>'; } $tb .= '</tr>'; }
 			return '<div class="dbd-tw"><table class="dbd-stat dbd-ddef"><thead><tr>' . $th . '</tr></thead><tbody>' . $tb . '</tbody></table></div>';
 		};
 		$snap = function ( $r ) { return (int) $r['snap'] . '%'; }; $rate = function ( $r ) { return $r['rate'] !== null ? number_format( $r['rate'], 1 ) : ''; };

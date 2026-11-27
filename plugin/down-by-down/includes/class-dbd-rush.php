@@ -96,7 +96,7 @@ class DBD_Rush {
 		$say .= ' Up and to the right of the dashed lines is both.';
 		$tb = '';
 		foreach ( $rows as $i => $x ) {
-			$tb .= '<tr' . ( $i >= self::TOP ? ' class="pr-x"' : '' ) . ' data-t="' . esc_attr( $x['t'] ) . '"><td class="rk">' . ( $i + 1 ) . '</td><td><a href="' . esc_url( DBD_Router::url( array( 'team' => $x['t'], 'side' => 'def' ) ) ) . '">' . esc_html( $x['n'] ) . '</a><small>' . esc_html( $x['t'] . ' · ' . $x['pos'] . ' · ' . $x['g'] . ' games' ) . '</small></td>'
+			$tb .= '<tr' . ( $i >= self::TOP ? ' class="pr-x"' : '' ) . ' data-t="' . esc_attr( $x['t'] ) . '"><td class="rk">' . ( $i + 1 ) . '</td><td><a href="' . esc_url( DBD_Data::defender_url( $x['id'] ) ?: DBD_Router::url( array( 'team' => $x['t'], 'side' => 'def' ) ) ) . '">' . esc_html( $x['n'] ) . '</a><small>' . esc_html( $x['t'] . ' · ' . $x['pos'] . ' · ' . $x['g'] . ' games' ) . '</small></td>'
 				. '<td><b>' . self::n1( $x['x'] ) . '</b></td><td class="c-p">' . (int) $x['prs'] . '</td><td>' . esc_html( self::sk( $x['sk'] ) ) . '</td><td class="c-h">' . (int) $x['qbh'] . '</td><td class="c-h">' . (int) $x['tfl'] . '</td><td class="c-s">' . (int) $x['snap'] . '%</td></tr>';
 		}
 		$small = self::named( $rows, 3 );

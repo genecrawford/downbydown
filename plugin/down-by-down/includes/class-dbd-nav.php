@@ -15,7 +15,7 @@ class DBD_Nav {
 	const GROUP = array(
 		'hub' => 'week', 'season' => 'week', 'matchups' => 'week', 'game' => 'week', 'week' => 'week', 'nodata' => 'week',
 		'team' => 'teams', 'teamplayers' => 'teams', 'teams' => 'teams',
-		'player' => 'players', 'players' => 'players', 'compare' => 'players', 'leaders' => 'players', 'draft' => 'players', 'combine' => 'players',
+		'player' => 'players', 'defender' => 'players', 'players' => 'players', 'compare' => 'players', 'leaders' => 'players', 'draft' => 'players', 'combine' => 'players',
 		'fantasy' => 'fantasy', 'myteam' => 'fantasy',
 	);
 	const DIVS = array( 'AFC East', 'AFC North', 'AFC South', 'AFC West', 'NFC East', 'NFC North', 'NFC South', 'NFC West' );
@@ -42,10 +42,14 @@ class DBD_Nav {
 
 	public static function find_rows() {
 		/* the key carries the routing too (pretty paths, root or page-prefixed paths) through an address built the same way (Greptile, PR #167) */
-		$key = 'dbd_nav_find_' . md5( DBD_VERSION . '|' . DBD_Data::file_version( 'players/index.json' ) . '|' . DBD_Router::url( array( 'view' => 'players' ) ) . '|' . ( DBD_Urls::on() ? 1 : 0 ) );
+		$key = 'dbd_nav_find_' . md5( DBD_VERSION . '|' . DBD_Data::file_version( 'players/index.json' ) . '|' . DBD_Data::file_version( 'defenders/index.json' ) . '|' . DBD_Router::url( array( 'view' => 'players' ) ) . '|' . ( DBD_Urls::on() ? 1 : 0 ) );
 		$c = get_transient( $key ); if ( is_array( $c ) ) { return $c; }
 		$out = array();
 		foreach ( DBD_Data::player_index() as $p ) {
+			if ( empty( $p['id'] ) || empty( $p['name'] ) ) { continue; }
+			$out[] = array( (string) $p['name'], (string) ( $p['team'] ?? '' ), (string) ( $p['pos'] ?? '' ), DBD_Router::url( array( 'player' => $p['id'] ) ) );
+		}
+		foreach ( DBD_Data::defender_index() as $p ) {  /* SCOPE §101 */
 			if ( empty( $p['id'] ) || empty( $p['name'] ) ) { continue; }
 			$out[] = array( (string) $p['name'], (string) ( $p['team'] ?? '' ), (string) ( $p['pos'] ?? '' ), DBD_Router::url( array( 'player' => $p['id'] ) ) );
 		}

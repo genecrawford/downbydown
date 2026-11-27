@@ -8,6 +8,7 @@ on:
       - 'tools/build_fan.py'
       - 'tools/build_playoffs.py'
       - 'tools/tiebreak.py'
+      - 'tools/build_defenders.py'
       - 'tools/kick_career.py'
       - 'plugin/down-by-down/includes/class-dbd-kicker.php'
       - 'plugin/down-by-down/includes/views/kicker.php'
@@ -91,6 +92,29 @@ jobs:
           for a, m in d['marks'].items():
               assert m in ('*', 'z', 'y', 'x', 'e') and a in T, (a, m)
           print('standings:', d['checked'], 'through week', d['through'], '·', len(d['marks']), 'marks')
+          PY
+      - name: Check the defender files (SCOPE §101)
+        run: |
+          python3 - <<'PY'
+          import json, os
+          idx = json.load(open('/tmp/out/defenders/index.json'))
+          assert len(idx['players']) > 500, len(idx['players'])
+          assert all(idx['pools'].get(k, 0) > 40 for k in ('front', 'lb', 'db')), idx['pools']
+          slugs = [p['slug'] for p in idx['players']]
+          off = {p['slug'] for p in json.load(open('/tmp/out/players/index.json'))['players']}
+          assert len(slugs) == len(set(slugs)) and not (set(slugs) & off), 'defender slugs must be unique and not an offensive player\'s'
+          n = 0
+          for f in sorted(os.listdir('/tmp/out/defenders')):
+              if f == 'index.json': continue
+              d = json.load(open('/tmp/out/defenders/' + f)); wk = d['wk']
+              for pid, p in d['players'].items():
+                  assert p['team'] + '.json' == f and p['role'] in ('front', 'lb', 'db'), (f, pid)
+                  assert all(len(w) == len(wk) for w in p['w']) and all(len(x) == len(d['pk']) for x in p['pl']), (f, pid)
+                  tk = sum(w[wk.index('tkl')] for w in p['w'])
+                  assert abs(tk - p['s'].get('tkl', 0)) < 0.01, (pid, tk, p['s'].get('tkl'))
+                  assert all(x[d['pk'].index('k')] in ('tkl', 'ast', 'tfl', 'sack', 'qbh', 'pd', 'int') for x in p['pl']), pid
+                  n += 1
+          print('defenders:', n, 'pages,', idx['pools'])
           PY
       - name: Check the fantasy page file (SCOPE §78)
         run: |

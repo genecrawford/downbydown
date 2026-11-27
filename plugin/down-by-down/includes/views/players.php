@@ -77,5 +77,36 @@ foreach ( $rows as $p ) {
 if ( ! $rows ) { echo '<tr><td colspan="13" class="dbd-note">No players match.</td></tr>'; }
 echo DBD_Router::tierize( ob_get_clean(), array( null, 'dbd-t2', null, 'dbd-t2', null, 'dbd-t2', 'dbd-t2', null, null, null, null, 'dbd-t3', null ) );
 echo '</tbody></table></div><p class="dbd-note">Snap share is the season average of offensive snaps played. Status is the latest practice or game report; blank means no listing. Quarterbacks show pass attempts in the Tgt / Att column, kickers their field goals made and tried. Search matches name, number, team abbreviation or college across every team. Fpts/g is fantasy points a game in the scoring you pick, with the rank at his position among players with enough games. The + at the end of a row adds him to My team. Click a column heading to sort.</p></section>';
+/* ---- defenders (SCOPE §101): the front, linebackers and the secondary, each linking to his page. The team filter and a search apply;
+ * without either, the 50 with the most snaps in each role. */
+$DI = DBD_Data::defender_index();
+if ( $DI ) {
+	$dpanes = ''; $dtabs = ''; $di = 0; $dn = 0;
+	foreach ( array( 'front' => 'The front', 'lb' => 'Linebackers', 'db' => 'The secondary' ) as $role => $rlab ) {
+		$drows = array_values( array_filter( $DI, function ( $p ) use ( $role, $team, $q ) {
+			if ( ( $p['role'] ?? '' ) !== $role ) { return false; }
+			if ( $q !== '' ) { return stripos( (string) $p['name'], $q ) !== false || (string) ( $p['num'] ?? '' ) === $q || strcasecmp( (string) $p['team'], $q ) === 0; }
+			return $team ? $p['team'] === $team : ! empty( $p['q'] );
+		} ) );
+		if ( ! $team && $q === '' ) { $drows = array_slice( $drows, 0, 50 ); }
+		$dn += count( $drows );
+		$tb = '';
+		foreach ( $drows as $p ) {
+			$href = DBD_Router::url( array( 'player' => $p['id'] ) );
+			$tb .= '<tr class="dbd-trow" data-href="' . esc_url( $href ) . '"><td class="dbd-nm"><span class="dbd-nmi">' . DBD_Marks::player( $p['team'], $p['num'] ?? '', 34, $p['photo'] ?? null ) . '<a href="' . esc_url( $href ) . '">' . esc_html( $p['name'] ) . '</a></span></td>'
+				. '<td class="dbd-ptm dbd-t2">' . DBD_Marks::tile( $p['team'], 20 ) . '</td><td class="dbd-ppos">' . esc_html( $p['pos'] ) . '</td><td class="dbd-psnap dbd-t2" data-v="' . (int) $p['snap'] . '">' . (int) $p['snap'] . '%</td><td class="dbd-t3">' . (int) $p['g'] . '</td>'
+				. '<td>' . (int) $p['tkl'] . '</td><td>' . ( (float) $p['sk'] ? rtrim( rtrim( number_format( (float) $p['sk'], 1 ), '0' ), '.' ) : '' ) . '</td><td' . ( $role === 'db' ? ' class="dbd-t2"' : '' ) . '>' . ( $p['prs'] ?: '' ) . '</td><td>' . ( $p['int'] ?: '' ) . '</td><td class="dbd-t2">' . ( $p['pd'] ?: '' ) . '</td></tr>';
+		}
+		if ( $tb === '' ) { $tb = '<tr><td colspan="10" class="dbd-note">No defenders match.</td></tr>'; }
+		$dtabs .= '<button class="t-tab" type="button" role="tab" aria-selected="' . ( $di ? 'false' : 'true' ) . '" data-pane="' . $di . '">' . esc_html( $rlab ) . '</button>';
+		$dpanes .= '<section class="dbd-pane" data-pane="' . $di . '"' . ( $di ? ' hidden' : '' ) . '><div class="dbd-tw"><table class="dbd-plist dbd-stat dbd-sortable"><thead><tr><th>Player</th><th class="dbd-t2">Team</th><th>Pos</th><th class="dbd-t2">Snap %</th><th class="dbd-t3">G</th><th>Tkl</th><th>Sk</th><th' . ( $role === 'db' ? ' class="dbd-t2"' : '' ) . '>Prs</th><th>INT</th><th class="dbd-t2">PD</th></tr></thead><tbody>' . $tb . '</tbody></table></div></section>';
+		$di++;
+	}
+	if ( $q === '' || $dn ) {
+		$dlab = $q !== '' ? 'matching ' . esc_html( $q ) : ( $team ? esc_html( DBD_Data::team( $team )['nick'] ?? $team ) . ', by snap share' : 'the 50 with the most snaps in each role' );
+		echo '<section class="dbd-band" id="dbd-defenders"><h2 class="dbd-bandh">Defenders<span>' . $dlab . '</span></h2><section class="dbd-panel dbd-tabbed"><div class="dbd-ph dbd-tabh"><div class="dbd-seg t-tabs dbd-btabs" role="tablist"><span class="t-tabs-pill" aria-hidden="true"></span>' . $dtabs . '</div></div>'
+			. $dpanes . '<p class="dbd-note">Snap share is the season average of defensive snaps in the games he played. Prs is pressures (Pro Football Reference\'s charting); tackles, sacks, interceptions and passes defended are the play-by-play\'s. Every defender with a snap has a page; the search at the top of the site finds anyone.</p></section></section>';
+	}
+}
 echo '</main>';
 echo '<script type="application/json" id="dbd-pindex">' . wp_json_encode( $idx ) . '</script>';

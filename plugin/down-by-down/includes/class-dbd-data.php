@@ -167,6 +167,37 @@ class DBD_Data {
 		return $m[ $id ] ?? null;
 	}
 
+	/** SCOPE §101: every defender with a defensive snap this season (defenders/index.json): id, name, team, pos, role, q, num, photo, slug and a few season figures. */
+	public static function defender_index() {
+		$i = self::get( 'defenders/index.json' );
+		return is_array( $i ) && (int) ( $i['season'] ?? 0 ) === (int) self::season() ? (array) ( $i['players'] ?? array() ) : array();
+	}
+	public static function defender( $id ) {
+		if ( ! isset( self::$cache['__didx'] ) ) { $m = array(); foreach ( self::defender_index() as $p ) { if ( ! empty( $p['id'] ) ) { $m[ $p['id'] ] = $p; } } self::$cache['__didx'] = $m; }
+		return self::$cache['__didx'][ $id ] ?? null;
+	}
+	/** A defender's page address, or '' when he has none. */
+	public static function defender_url( $id ) { return $id && self::defender( (string) $id ) ? DBD_Router::url( array( 'player' => (string) $id ) ) : ''; }
+	/** A team's defender by the play-by-play's short name ('M.Lawrence'), when exactly one matches; else null. */
+	public static function defender_by_short( $team, $short ) {
+		if ( ! preg_match( '/^([A-Za-z])[A-Za-z]*\.\s*(.+)$/', trim( (string) $short ), $m ) ) { return null; }
+		$hit = array(); $ini = strtolower( $m[1] ); $ln = strtolower( $m[2] );
+		foreach ( self::defender_index() as $p ) {
+			if ( ( $p['team'] ?? '' ) !== $team ) { continue; }
+			$nm = strtolower( (string) ( $p['name'] ?? '' ) ); $sp = strpos( $nm, ' ' );
+			if ( $sp !== false && $nm[0] === $ini && substr( $nm, $sp + 1 ) === $ln ) { $hit[] = $p; }
+		}
+		return count( $hit ) === 1 ? $hit[0] : null;
+	}
+
+	/** A defender's full record from defenders/{TEAM}.json, with the file's key lists under '_keys'. */
+	public static function defender_record( $abbr, $id ) {
+		$f = self::get( 'defenders/' . $abbr . '.json' ); $p = $f['players'][ $id ] ?? null;
+		if ( ! is_array( $p ) ) { return null; }
+		$p['_keys'] = array( 'wk' => (array) ( $f['wk'] ?? array() ), 'pk' => (array) ( $f['pk'] ?? array() ), 'car' => (array) ( $f['car'] ?? array() ) );
+		return $p;
+	}
+
 	/** Full records for one team: weeks, snaps, pfr, inj, depth. */
 	public static function team_players( $abbr ) {
 		$f = self::get( 'players/' . $abbr . '.json' );

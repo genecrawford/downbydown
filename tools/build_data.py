@@ -1528,6 +1528,10 @@ if have_pbp:
         DD[t]['rank'] = D_RANK[t]
         json.dump(dclean(dict(season=season, through=through_week, team=t, **DD[t])), open(f'{out}/defense/{t}.json', 'w'), separators=(',', ':'))
     json.dump(dclean(dict(season=season, through=through_week, lg=DLG, rank=D_RANK, dist=D_DIST, vals=D_VALS, style=S_VALS, off_epa=OFFE, hib={**D_KEYS, **D_EXTRA})), open(f'{out}/defense/league.json', 'w'), separators=(',', ':'))
+    # a page for every defender (SCOPE §101): defenders/index.json and defenders/{TEAM}.json, careers cached in career/d{year}.json
+    import build_defenders
+    build_defenders.build(out, season, through_week, df[[c_ for c_ in build_defenders.PBP_COLS if c_ in df.columns]], stats, PFRD, _sn, _r,
+                          DRAFT, {r_['slug'] for r_ in index_rows}, json.load(open(f'{out}/schedule.json')))
     # the explorer's rows for the snaps each team defended, in the offense files' format
     for t in DTEAMS:
         gids = {p['game_id'] for p in DSN if p['defteam'] == t}

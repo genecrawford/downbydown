@@ -3845,3 +3845,12 @@ It also writes `defenders/league.json`, the three pools' distributions and ranks
 - Both: the game log shows Week 6 as the bye. No sideways scroll at 375, and no text under 11px.
 
 Size: L (one release, maybe two: the page first, then the links across the site).
+
+**Built as 2.59.0** (Gene: "Yes, build it"), in one release:
+- `tools/build_defenders.py` (called by build_data.py after the defense files) writes `defenders/index.json` (897 pages; pools front 190, linebackers 85, secondary 192) and `defenders/{TEAM}.json`, with each player's season line, ranks already worked out (`r`: rank, percentile, pool, median, value), players like him, weekly lines, every credited play and career. Careers come from `career/d{year}.json`, built once per finished season since 2005, the defensive counterpart of `career/{year}.json`.
+- Plugin: `DBD_Data::defender_index()/defender()/defender_record()/defender_url()/defender_by_short()`, the router's `defender` view (`views/defender.php`), slugs shared through `DBD_Urls::players()`, search, sitemap (regular role only), sync allowlist. The field is its own script, `assets/defchart.js`, not a kind in touchchart.js; it keeps the same field and colors.
+- Changes from the mock:
+  - No injury pill, because the defender files carry no injury report yet.
+  - The career table has no pressures, targets or passer rating, because the yearly files don't carry them; the Scorecard does.
+  - The Players index gets a Defenders panel (Front, Linebackers, Secondary tabs; the team filter and search apply on load) rather than filters inside the offense table, which players.js draws.
+  - Murphy ranks 30th of 187 secondary players with 10+ targets.
