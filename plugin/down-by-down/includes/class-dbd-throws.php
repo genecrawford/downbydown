@@ -85,8 +85,12 @@ class DBD_Throws {
 	/** The seven gaps the play data names, left to right; anything without a side or gap counts as the middle. */
 	const GAPS = array( 'left|end' => 0, 'left|tackle' => 1, 'left|guard' => 2, 'right|guard' => 4, 'right|tackle' => 5, 'right|end' => 6 );
 	private static function gap( $p ) { $l = (string) ( $p['loc'] ?? '' ); return $l === 'middle' ? 3 : ( self::GAPS[ $l . '|' . (string) ( $p['gap'] ?? '' ) ] ?? 3 ); }
-	/** A fumble the other team recovered, from the play's description (the play files carry no fumble field). */
-	public static function lost( $p, $team ) { return preg_match( '/FUMBLES.*?RECOVERED by ([A-Z]{2,3})-/', (string) ( $p['desc'] ?? '' ), $m ) && $m[1] !== $team ? 1 : 0; }
+	/** The play as it finally stood: after a replay reversal the description carries the overturned call first, then the corrected play (Greptile, PR #172). */
+	private static function ruling( $p ) { $d = (string) ( $p['desc'] ?? '' ); $i = strrpos( $d, 'REVERSED' ); return $i === false ? $d : substr( $d, $i + 8 ); }
+	/** A fumble the other team recovered, from the play's final ruling (the play files carry no fumble field). */
+	public static function lost( $p, $team ) { return preg_match( '/FUMBLES.*?RECOVERED by ([A-Z]{2,3})-/', self::ruling( $p ), $m ) && $m[1] !== $team ? 1 : 0; }
+	/** His touchdown: the play's flag also covers the defense's (a pick-six, a fumble returned), so a target counts only when caught and kept, a carry only when kept (Greptile, PR #172). */
+	private static function own_td( $p, $team, $caught ) { return ! empty( $p['td'] ) && $caught && ! self::lost( $p, $team ) ? 1 : 0; }
 	/** A designed run (scrambles and kneels left out). */
 	private static function is_carry( $p ) { return ( $p['pt'] ?? '' ) === 'run' && ( $p['k'] ?? '' ) === 'run'; }
 	private static function margin( $p ) { return isset( $p['sd'] ) && is_numeric( $p['sd'] ) ? (int) $p['sd'] : null; }
@@ -96,12 +100,12 @@ class DBD_Throws {
 		if ( $qk !== '' && ! isset( $names[ $qk ] ) ) { $x = DBD_Data::player( $qk ) ?: array(); $names[ $qk ] = array( (string) ( $x['name'] ?? '' ), isset( $x['num'] ) && $x['num'] !== '' && $x['num'] !== null ? (string) (int) $x['num'] : '' ); }
 		$lane = array( 'left' => 0, 'middle' => 1, 'right' => 2 );
 		return array( (int) ( $p['q'] ?? 0 ), (string) ( $p['t'] ?? '' ), (int) ( $p['dn'] ?? 0 ), (int) ( $p['togo'] ?? 0 ), array( 'comp' => 'c', 'inc' => 'i', 'int' => 'x' )[ $p['k'] ],
-			(int) $p['air'], (int) ( $p['yds'] ?? 0 ), $lane[ $p['loc'] ?? '' ] ?? -1, ! empty( $p['td'] ) ? 1 : 0, $qk, round( (float) ( $p['epa'] ?? 0 ), 2 ), self::margin( $p ),
+			(int) $p['air'], (int) ( $p['yds'] ?? 0 ), $lane[ $p['loc'] ?? '' ] ?? -1, self::own_td( $p, $team, $p['k'] === 'comp' ), $qk, round( (float) ( $p['epa'] ?? 0 ), 2 ), self::margin( $p ),
 			is_numeric( $p['yac'] ?? null ) ? (int) $p['yac'] : 0, ! empty( $p['drop'] ) ? 1 : 0, ! empty( $p['cont'] ) ? 1 : 0, self::lost( $p, $team ) );
 	}
 	/** A carry: q, clock, down, distance, yards, gap (0 left end .. 6 right end), td, successful, first down, EPA, margin, fumble lost. */
 	private static function carry_row( $p, $team ) {
-		return array( (int) ( $p['q'] ?? 0 ), (string) ( $p['t'] ?? '' ), (int) ( $p['dn'] ?? 0 ), (int) ( $p['togo'] ?? 0 ), (int) ( $p['yds'] ?? 0 ), self::gap( $p ), ! empty( $p['td'] ) ? 1 : 0,
+		return array( (int) ( $p['q'] ?? 0 ), (string) ( $p['t'] ?? '' ), (int) ( $p['dn'] ?? 0 ), (int) ( $p['togo'] ?? 0 ), (int) ( $p['yds'] ?? 0 ), self::gap( $p ), self::own_td( $p, $team, true ),
 			! empty( $p['succ'] ) ? 1 : 0, ! empty( $p['fd'] ) ? 1 : 0, round( (float) ( $p['epa'] ?? 0 ), 2 ), self::margin( $p ), self::lost( $p, $team ) );
 	}
 

@@ -1429,6 +1429,12 @@ if ( $view === 'throws' ) {
 	if ( $an < 134 || $ac < 1 || ! $a11 || count( $a11[0]['c'] ) !== 8 || count( $a11[0]['tg'] ) !== 1 ) { $fail( "Jones: 134+ carries, catches, 8 carries and 1 catch at the 49ers; got $an, $ac" ); }
 	if ( DBD_Throws::player( array( 'id' => '00-0000000', 'team' => 'MIN' ), true ) !== null ) { $fail( 'a player with no carries or targets has no panel' ); }
 	if ( DBD_Throws::lost( array( 'desc' => 'A.Jones up the middle. FUMBLES (99-X), RECOVERED by MIN-71-C.Darrisaw at MIN 30.' ), 'MIN' ) !== 0 || DBD_Throws::lost( array( 'desc' => 'pass to J.Jefferson. FUMBLES (2-D.Lenoir), RECOVERED by SF-2-D.Lenoir at SF 25.' ), 'MIN' ) !== 1 ) { $fail( 'a fumble is lost only when the other team recovers it' ); }
+	/* the final ruling and his own touchdowns (Greptile, PR #172): Mayer's fumble was reversed on replay; Felton's target was a pick-six */
+	$find = function ( $d, $g, $q, $t ) { foreach ( $d['sets'] as $st ) { if ( $st['g'] !== $g ) { continue; } foreach ( $st['tg'] as $r ) { if ( $r[0] === $q && ltrim( $r[1], '0' ) === ltrim( $t, '0' ) ) { return $r; } } } return null; };
+	$mm = DBD_Throws::player( DBD_Data::player_record( 'LV', '00-0039066' ) + array( 'team' => 'LV' ), false ); $mr = $mm ? $find( $mm, '2026_01_MIA_LV', 2, '10:40' ) : null;
+	if ( ! $mr || $mr[15] !== 0 ) { $fail( 'Mayer’s reversed fumble should not read as lost: ' . wp_json_encode( $mr ) ); }
+	$tf = DBD_Throws::player( DBD_Data::player_record( 'MIN', '00-0040154' ) + array( 'team' => 'MIN' ), false ); $tr = $tf ? $find( $tf, '2026_11_MIN_SF', 2, '2:05' ) : null;
+	if ( ! $tr || $tr[4] !== 'x' || $tr[8] !== 0 ) { $fail( 'Felton’s pick-six is not his touchdown: ' . wp_json_encode( $tr ) ); }
 	$rxh = DBD_Throws::player_panel( $jr + array( 'team' => 'MIN' ), false ); $rbh = DBD_Throws::player_panel( $ar + array( 'team' => 'MIN' ), true );
 	if ( strpos( $rxh, 'data-kind="rx"' ) === false || strpos( $rbh, 'data-kind="rb"' ) === false || strpos( $rxh, '<b>Where he’s targeted</b>' ) === false || strpos( $rbh, '<b>Where he gets the ball</b>' ) === false || strpos( $rxh, '"lg":' ) !== false ) { $fail( 'the receiver and back panels' ); }
 	if ( $out = getenv( 'DBD_HARNESS_HTML' ) ) { file_put_contents( $out . '/throws-game.html', $h ); file_put_contents( $out . '/throws-qb.html', DBD_Throws::qb_panel( $rec + array( 'team' => 'MIN' ) ) ); file_put_contents( $out . '/throws-rx.html', $rxh ); file_put_contents( $out . '/throws-rb.html', $rbh ); }
