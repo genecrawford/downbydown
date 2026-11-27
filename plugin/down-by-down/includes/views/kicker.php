@@ -21,22 +21,20 @@ $inj = $arch ? null : ( $k['inj'] ?? null ); $st = $inj['status'] ?? ''; $icls =
 echo DBD_Router::topbar( array( 'players' => $purl, $nick => $tpurl, $k['name'] => null ) );
 echo '<main class="dbd-content dbd-player dbd-kk" style="--dbd-team:' . esc_attr( DBD_Marks::accent( $t ) ) . '">';
 
-/* ---- hero */
-echo '<div class="dbd-ttitle"><div class="t-stagger">';
+/* ---- hero: the band in his team's colors (2.57.0, SCOPE §99), as on every player page */
+$BAND = DBD_Marks::band( $a );
+echo '<div class="dbd-pband' . $BAND['cls'] . '" style="' . esc_attr( $BAND['style'] ) . '"><div class="t-stagger">';
+echo '<a class="dbd-bteam" href="' . esc_url( $turl ) . '">' . DBD_Marks::pennant( $a, 46 ) . '<span class="t"><b>' . esc_html( $nick ) . ' special teams</b><small>' . esc_html( (int) $k['fga'] . ' field goal ' . ( (int) $k['fga'] === 1 ? 'try' : 'tries' ) . ', ' . (int) $ko[0] . ' kickoffs' ) . '</small></span></a>';
 echo '<p class="dbd-kicker t-stagger-line t-stagger-line--1">' . esc_html( "$season season · K · #" . ( $k['num'] ?? '' ) . ' · ' . DBD_Grades::ordinal( (int) ( $k['exp'] ?? 0 ) + 1 ) . ' season' ) . '</p>';
 echo '<h1 class="t-stagger-line t-stagger-line--2 withmark">' . DBD_Marks::jersey( $a, $k['num'] ?? '', 58 ) . '<span>' . esc_html( $first ) . ' <em>' . esc_html( $last ) . '</em></span></h1>';
 $bio = array_filter( array( ! empty( $k['age'] ) ? 'Age ' . (int) $k['age'] : '', $k['ht'] ?? '', ! empty( $k['wt'] ) ? (int) $k['wt'] . ' lb' : '', $k['col'] ?? '', $k['draft'] ?? '' ) );
 $role = $depth === 'K1' ? 'The ' . $nick . '\' kicker on the depth chart' : ( $depth ? 'Listed <b>' . esc_html( $depth ) . '</b> on the ' . esc_html( $nick ) . '\' depth chart' : '' );
 echo '<p class="dbd-sub t-stagger-line t-stagger-line--3">' . esc_html( implode( ' · ', $bio ) ) . ( $bio ? '. ' : '' ) . ( $role ? ( $depth === 'K1' ? esc_html( $role ) : $role ) . ', ' : '' ) . (int) $k['g'] . ' ' . ( (int) $k['g'] === 1 ? 'game' : 'games' ) . ' this season.</p>';
-echo '<div class="dbd-pills">' . ( $arch ? '' : ( $inj ? '<span class="dbd-pill ' . $icls . '">Week ' . (int) $inj['week'] . ' report · ' . esc_html( (string) $inj['what'] ) . ' · ' . esc_html( str_ireplace( ' in practice', '', $st ) ) . '</span>' : '<span class="dbd-pill good">No injury listing</span>' ) ) . '<span class="dbd-pill">K</span><a class="dbd-pill" href="' . esc_url( $tpurl ) . '">' . esc_html( $nick ) . ' players</a></div>';
+echo '<div class="dbd-pills">' . ( $arch ? '' : ( $inj ? '<span class="dbd-pill inj ' . $icls . '">Week ' . (int) $inj['week'] . ' report · ' . esc_html( (string) $inj['what'] ) . ' · ' . esc_html( str_ireplace( ' in practice', '', $st ) ) . '</span>' : '<span class="dbd-pill good">No injury listing</span>' ) ) . '<span class="dbd-pill">K</span><a class="dbd-pill" href="' . esc_url( $tpurl ) . '">' . esc_html( $nick ) . ' players</a></div>';
 $cmp = function ( $ids ) { return DBD_Router::url( array( 'compare' => implode( ',', $ids ) ) ); };
 $sug = $arch ? array() : DBD_Kicker::suggest( $k, 3 );
-echo '</div>' . DBD_Marks::hero_photo( $a, $k['photo'] ?? null ) . '<div class="dbd-hdr dbd-hcard"><a class="dbd-pn-link" href="' . esc_url( $turl ) . '">' . DBD_Marks::pennant( $a, 40 ) . '<span class="t"><b>' . esc_html( $nick ) . ' special teams</b><small>' . esc_html( (int) $k['fga'] . ' field goal ' . ( (int) $k['fga'] === 1 ? 'try' : 'tries' ) . ', ' . (int) $ko[0] . ' kickoffs' ) . '</small></span></a>';
-echo '<div class="acts"><a class="dbd-cmp-btn" href="' . esc_url( $cmp( array( $k['id'] ) ) ) . '">Compare</a>'
-	. ( DBD_Card::available() ? '<a class="dbd-share" href="' . esc_url( DBD_Card::url( $k['id'] ) ) . '" target="_blank" rel="noopener" data-share-title="' . esc_attr( $k['name'] . ' | Down by Down' ) . '" data-tip="' . esc_attr( 'A 1200 × 630 image of this page for social' ) . '"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>Share card</a>' : '' ) . '</div>';
-if ( ! $arch ) { echo '<button class="dbd-mtbtn" type="button" data-mtid="' . esc_attr( $k['id'] ) . '" data-mtname="' . esc_attr( $k['name'] ) . '" aria-pressed="false"><span class="off">+ My team</span><span class="on">✓ On My team</span></button><a class="dbd-mtopen" href="' . esc_url( DBD_Router::url( array( 'view' => 'myteam' ) ) ) . '">Open My team →</a>'; }
-if ( $sug ) { echo '<div class="dbd-cmp-sug"><span>Kickers like him</span>' . implode( '', array_map( function ( $o ) use ( $cmp, $k ) { return '<a class="r" href="' . esc_url( $cmp( array( $k['id'], $o['id'] ) ) ) . '" title="' . esc_attr( 'Compare with ' . $o['name'] ) . '">' . DBD_Marks::tile( $o['team'], 16 ) . '<b>' . esc_html( $o['name'] ) . '</b><i>Compare →</i></a>'; }, $sug ) ) . '</div>'; }
-echo '</div></div>';
+echo DBD_Marks::band_actions( $k, $cmp( array( $k['id'] ) ), $arch, false ) . DBD_Marks::band_like( $k, $sug, $cmp, 'Compare with' );
+echo '</div>' . DBD_Marks::hero_photo( $a, $k['photo'] ?? null, 350, 'dbd-bphoto' ) . '</div>';
 
 /* ---- tiles, ranked among qualifying kickers */
 $trk = function ( $key, $what ) use ( $k, $N ) {

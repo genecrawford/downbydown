@@ -39,8 +39,11 @@ $turl = DBD_Router::url( array( 'team' => $a ) ); $purl = DBD_Router::url( array
 echo DBD_Router::topbar( array( 'players' => $purl, $t['nick'] => $tpurl, $p['name'] => null ) );
 echo '<main class="dbd-content dbd-player" style="--dbd-team:' . esc_attr( DBD_Marks::accent( $t ) ) . '">';
 
-/* ---- hero */
-echo '<div class="dbd-ttitle"><div class="t-stagger">';
+/* ---- hero: a band in his team's colors (2.57.0, SCOPE §99, Gene: "work in more team colors/branding and make the photo a bit bigger? better
+   UX on those interactive choices"). The team line, the name and facts, three buttons, players like him as Compare chips; the photo on the right. */
+$BAND = DBD_Marks::band( $a );
+echo '<div class="dbd-pband' . $BAND['cls'] . '" style="' . esc_attr( $BAND['style'] ) . '"><div class="t-stagger">';
+echo '<a class="dbd-bteam" href="' . esc_url( $turl ) . '">' . DBD_Marks::pennant( $a, 46 ) . '<span class="t"><b>' . esc_html( $t['nick'] ) . ' offense</b><small id="dbd-psnaps">' . ( $p['snaps'] ? round( $snapAvg ) . '% of snaps' : 'no snap data' ) . '</small></span></a>';
 echo '<p class="dbd-kicker t-stagger-line t-stagger-line--1">' . esc_html( "$season season · {$p['pos']} · #{$p['num']} · " . $ord( (int) $p['exp'] + 1 ) . ' season' ) . '</p>';
 echo '<h1 class="t-stagger-line t-stagger-line--2 withmark">' . DBD_Marks::jersey( $a, $p['num'], 58 ) . '<span>' . esc_html( $first ) . ' <em>' . esc_html( $last ) . '</em></span></h1>';
 $bio = array_filter( array( $p['age'] ? 'Age ' . (int) $p['age'] : '', $p['ht'] ?: '', $p['wt'] ? (int) $p['wt'] . ' lb' : '', $p['col'] ?: '', $p['draft'] ?: '' ) );
@@ -49,15 +52,10 @@ $hwk = $arch ? array() : DBD_Videos::player_weeks( $pid );  /* his NFL highlight
 /* SCOPE §62: the draft and combine band and his Wikipedia article, from the data build */
 $BF = $p['bf'] ?? null; $WK = ! empty( $p['wk'][0] ) ? $p['wk'] : null; $wkUrl = $WK ? 'https://en.wikipedia.org/wiki/' . rawurlencode( str_replace( ' ', '_', (string) $WK[0] ) ) : '';
 $bfPills = ( $BF || $WK ? '<a class="dbd-pill" href="#dbd-before">Draft and combine</a>' : '' ) . ( $WK ? '<a class="dbd-pill" href="' . esc_url( $wkUrl ) . '" target="_blank" rel="noopener">Wikipedia ↗</a>' : '' );
-echo '<div class="dbd-pills">' . ( $hwk ? DBD_Videos::mark( end( $hwk ), DBD_Router::week_label( (int) array_key_last( $hwk ) ) . ' highlights', 'dbd-pill' ) : '' ) . ( $arch ? '' : ( $p['inj'] ? '<span class="dbd-pill ' . $icls . '">Week ' . (int) $p['inj']['week'] . ' report · ' . esc_html( $p['inj']['what'] ) . ' · ' . esc_html( str_ireplace( ' in practice', '', $st ) ) . '</span>' : '<span class="dbd-pill good">No injury listing</span>' ) ) . ( $depth ? '<span class="dbd-pill">' . esc_html( $depth ) . '</span>' : '' ) . '<a class="dbd-pill" href="' . esc_url( $tpurl ) . '">' . esc_html( $t['nick'] ) . ' players</a>' . $bfPills . '</div>';
+echo '<div class="dbd-pills">' . ( $hwk ? DBD_Videos::mark( end( $hwk ), DBD_Router::week_label( (int) array_key_last( $hwk ) ) . ' highlights', 'dbd-pill' ) : '' ) . ( $arch ? '' : ( $p['inj'] ? '<span class="dbd-pill inj ' . $icls . '">Week ' . (int) $p['inj']['week'] . ' report · ' . esc_html( $p['inj']['what'] ) . ' · ' . esc_html( str_ireplace( ' in practice', '', $st ) ) . '</span>' : '<span class="dbd-pill good">No injury listing</span>' ) ) . ( $depth ? '<span class="dbd-pill">' . esc_html( $depth ) . '</span>' : '' ) . '<a class="dbd-pill" href="' . esc_url( $tpurl ) . '">' . esc_html( $t['nick'] ) . ' players</a>' . $bfPills . '</div>';
 $sug = DBD_Grades::suggest( $row, 3 ); $cmp = function ( $ids ) { return DBD_Router::url( array( 'compare' => implode( ',', $ids ) ) ); };
-/* the side card (SCOPE §35): the team with his snap share, two equal actions, then players like him as a list */
-echo '</div>' . DBD_Marks::hero_photo( $a, $p['photo'] ?? null ) . '<div class="dbd-hdr dbd-hcard"><a class="dbd-pn-link" href="' . esc_url( $turl ) . '">' . DBD_Marks::pennant( $a, 40 ) . '<span class="t"><b>' . esc_html( $t['nick'] ) . ' offense</b><small id="dbd-psnaps">' . ( $p['snaps'] ? round( $snapAvg ) . '% of snaps' : 'no snap data' ) . '</small></span></a>';
-echo '<div class="acts"><a class="dbd-cmp-btn" id="dbd-cmp-btn" href="' . esc_url( $cmp( array( $p['id'] ) ) ) . '" data-id="' . esc_attr( $p['id'] ) . '" data-base="' . esc_url( DBD_Router::url() ) . '">Compare</a>'
-	. ( DBD_Card::available() ? '<a class="dbd-share" href="' . esc_url( DBD_Card::url( $p['id'] ) ) . '" target="_blank" rel="noopener" data-share-title="' . esc_attr( $p['name'] . ' | Down by Down' ) . '" data-tip="' . esc_attr( 'A 1200 × 630 image of this page for social' ) . '"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v13"/></svg>Share card</a>' : '' ) . '</div>';
-if ( ! $arch ) echo '<button class="dbd-mtbtn" type="button" data-mtid="' . esc_attr( $p['id'] ) . '" data-mtname="' . esc_attr( $p['name'] ) . '" aria-pressed="false"><span class="off">+ My team</span><span class="on">✓ On My team</span></button><a class="dbd-mtopen" href="' . esc_url( DBD_Router::url( array( 'view' => 'myteam' ) ) ) . '">Open My team →</a>';  /* SCOPE §36: dbd-site.js reads and writes the saved team */
-if ( $sug ) { echo '<div class="dbd-cmp-sug"><span>Players like him</span>' . implode( '', array_map( function ( $o ) use ( $cmp, $p ) { return '<a class="r" href="' . esc_url( $cmp( array( $p['id'], $o['id'] ) ) ) . '" title="' . esc_attr( 'Compare with ' . $o['name'] ) . '">' . DBD_Marks::tile( $o['team'], 16 ) . '<b>' . esc_html( $o['name'] ) . '</b><i>Compare →</i></a>'; }, $sug ) ) . '</div>'; }
-echo '</div></div>';
+echo DBD_Marks::band_actions( $p, $cmp( array( $p['id'] ) ), $arch, true ) . DBD_Marks::band_like( $p, $sug, $cmp, 'Compare with' );
+echo '</div>' . DBD_Marks::hero_photo( $a, $p['photo'] ?? null, 350, 'dbd-bphoto' ) . '</div>';
 
 /* ---- tiles by position group */
 $tg = $sum( 'targets' ); $rc = $sum( 'receptions' ); $ry = $sum( 'receiving_yards' ); $rtd = $sum( 'receiving_tds' ); $air = $sum( 'receiving_air_yards' ); $yac = $sum( 'receiving_yards_after_catch' ); $repa = $sum( 'receiving_epa' ); $rfd = $sum( 'receiving_first_downs' );

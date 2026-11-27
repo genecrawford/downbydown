@@ -37,6 +37,14 @@ jobs:
             if grep -q '>On the field</button>' /tmp/thr/player-$id.html; then echo "$id should have no On the field tab"; exit 1; fi
             if grep -q 'id="dbd-pmap"' /tmp/thr/player-$id.html; then echo "$id should not have the old map"; exit 1; fi
           done
+          # the header band in his team's colors (2.57.0, SCOPE §99): Vikings purple, three buttons, players like him as chips, no side card
+          f=/tmp/thr/player-00-0036322.html
+          grep -q 'class="dbd-pband" style="--b1:#4F2683;--b2:#FFC62F;--bink:#ffffff;' "$f" || { echo "Jefferson's band should be Vikings purple and gold with white text"; exit 1; }
+          for m in 'class="dbd-bteam"' '<a class="dbd-cmp-btn" id="dbd-cmp-btn" data-id="00-0036322"' 'class="dbd-mtbtn"' 'Add to My team' 'class="dbd-blike"><span>Compare with</span>'; do grep -qF "$m" "$f" || { echo "Jefferson's header is missing $m"; exit 1; }; done
+          test "$(grep -o 'class="dbd-bchip"' "$f" | wc -l)" -eq 3 || { echo "three Compare with chips"; exit 1; }
+          if grep -q 'dbd-hcard' "$f"; then echo "the old side card is gone"; exit 1; fi
+          DBD_HARNESS_HTML=/tmp/thr php tools/view_harness.php data player 00-0033906 > /dev/null
+          grep -q 'class="dbd-pband is-light" style="--b1:#D3BC8D;' /tmp/thr/player-00-0033906.html || { echo "a Saints page should get the light band with dark text"; exit 1; }
       - name: The weekly fantasy page (SCOPE §78)
         run: |
           set -e

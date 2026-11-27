@@ -30,6 +30,45 @@ class DBD_Marks {
 		return '#121417';
 	}
 
+	/**
+	 * A player page's header band in his team's colors (2.57.0, SCOPE §99): array( 'style' => CSS variables, 'cls' => ' is-light' or '' ).
+	 * The band is the main color. On a light one (Saints gold) the text turns dark. A black second color on a dark band reads as nothing,
+	 * so it becomes white. The season line takes the second color only where it stands out from the first (not Bills red on blue).
+	 * --lg is the team logo, large and faint behind the player, when logos are on.
+	 */
+	public static function band( $abbr ) {
+		$t = DBD_Data::team( $abbr ) ?: array(); $c1 = self::color( $t['c1'] ?? '', '#161e36' ); $c2 = self::color( $t['c2'] ?? '', '#ffffff' );
+		$light = self::lum( $c1 ) > 0.35; $ink = $light ? '#121417' : '#ffffff';
+		if ( ! $light && self::lum( $c2 ) < 0.05 ) { $c2 = '#ffffff'; }
+		$on2 = self::lum( $c2 ) > 0.35 ? '#121417' : '#ffffff'; $kick = self::contrast( $c1, $c2 ) < 3 ? $ink : $c2;
+		$v = array( '--b1' => $c1, '--b2' => $c2, '--bink' => $ink, '--bink2' => $light ? 'rgba(18,20,23,.75)' : 'rgba(255,255,255,.82)', '--bon2' => $on2, '--bkick' => $kick );
+		$lg = DBD_Data::logos() ? DBD_Data::logo( $abbr ) : null;
+		$css = ''; foreach ( $v as $k => $x ) { $css .= $k . ':' . $x . ';'; }
+		$lu = $lg ? self::logo_src( $lg, 192 ) : ''; if ( preg_match( '#^https://[^\s"\'()<>]+$#', $lu ) ) { $css .= '--blg:url("' . $lu . '");'; }  /* printed through esc_attr, which keeps the & readable */
+		return array( 'style' => $css, 'cls' => $light ? ' is-light' : '' );
+	}
+
+	/**
+	 * The band's buttons (SCOPE §99): Compare (filled, the team's second color), Add to My team (outlined; "On My team" once added, with a
+	 * link to it), Share card (quiet). The player page's Compare carries the id player.js builds the tray link from.
+	 */
+	public static function band_actions( $p, $cmp_url, $arch, $tray ) {
+		$ic = function ( $d ) { return '<svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="' . $d . '"/></svg>'; };
+		$h = '<div class="dbd-bacts"><a class="dbd-cmp-btn"' . ( $tray ? ' id="dbd-cmp-btn" data-id="' . esc_attr( $p['id'] ) . '" data-base="' . esc_url( DBD_Router::url() ) . '"' : '' ) . ' href="' . esc_url( $cmp_url ) . '">'
+			. '<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true" focusable="false"><path fill="currentColor" d="M2 4h5v10H2zM9 7h5v7H9z"/></svg>Compare</a>';
+		if ( ! $arch ) { $h .= '<button class="dbd-mtbtn" type="button" data-mtid="' . esc_attr( $p['id'] ) . '" data-mtname="' . esc_attr( $p['name'] ) . '" aria-pressed="false"><span class="off">' . $ic( 'M8 2.5v11M2.5 8h11' ) . 'Add to My team</span><span class="on">' . $ic( 'M3 8.5l3.2 3.2L13 4.5' ) . 'On My team</span></button>'; }  /* SCOPE §36: dbd-site.js reads and writes the saved team */
+		if ( DBD_Card::available() ) { $h .= '<a class="dbd-share" href="' . esc_url( DBD_Card::url( $p['id'] ) ) . '" target="_blank" rel="noopener" data-share-title="' . esc_attr( $p['name'] . ' | Down by Down' ) . '" data-tip="' . esc_attr( 'A 1200 × 630 image of this page for social' ) . '">' . $ic( 'M8 10V2M5 5l3-3 3 3M3 9v4.5h10V9' ) . 'Share card</a>'; }
+		if ( ! $arch ) { $h .= '<a class="dbd-mtopen" href="' . esc_url( DBD_Router::url( array( 'view' => 'myteam' ) ) ) . '">Open My team →</a>'; }
+		return $h . '</div>';
+	}
+	/** Players like him as one-tap Compare chips, each with his team's mark (SCOPE §99). */
+	public static function band_like( $p, $sug, $cmp, $label ) {
+		if ( ! $sug ) { return ''; }
+		$h = '<div class="dbd-blike"><span>' . esc_html( $label ) . '</span>';
+		foreach ( $sug as $o ) { $h .= '<a class="dbd-bchip" href="' . esc_url( $cmp( array( $p['id'], $o['id'] ) ) ) . '" title="' . esc_attr( 'Compare with ' . $o['name'] ) . '">' . self::tile( $o['team'], 18 ) . '<b>' . esc_html( $o['name'] ) . '</b></a>'; }
+		return $h . '</div>';
+	}
+
 	/** The team's primary color if it reads on a light surface, else its secondary, else ink. */
 	public static function accent( $team, $surface = '#fffdf8' ) {
 		if ( ! $team ) { return '#121417'; }
@@ -128,10 +167,10 @@ class DBD_Marks {
 
 	/** The hero cutout on a player page: the headshot at display height, fitted (not cropped) so the transparent
 	 *  background stays, over a soft team-color glow. Nothing is printed when photos are off or the URL is missing. */
-	public static function hero_photo( $abbr, $photo, $height = 190 ) {
+	public static function hero_photo( $abbr, $photo, $height = 190, $cls = 'dbd-herophoto' ) {
 		if ( ! $photo || ! DBD_Data::headshots() || ! preg_match( '#^https://[^"\'<>\s]+$#', $photo ) ) { return ''; }
 		$src = preg_replace( '#^(https://static\.www\.nfl\.com/image/upload/)f_auto,q_auto/#', '${1}f_auto,q_auto,h_' . ( (int) $height * 2 ) . ',c_fit/', $photo, 1 );
-		return '<figure class="dbd-herophoto" aria-hidden="true"><img src="' . esc_url( $src ) . '" alt="" height="' . (int) $height . '" decoding="async" referrerpolicy="no-referrer" onerror="this.parentNode.remove()"></figure>';
+		return '<figure class="' . esc_attr( $cls ) . '" aria-hidden="true"><img src="' . esc_url( $src ) . '" alt="" height="' . (int) $height . '" decoding="async" referrerpolicy="no-referrer" onerror="this.parentNode.remove()"></figure>';
 	}
 
 	/** The NFL image CDN takes Cloudinary transforms: ask for a face-cropped square at 2x the display size
