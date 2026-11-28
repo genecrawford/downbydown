@@ -130,7 +130,7 @@ class DBD_X {
 
 	/** The item's tall graphic uploaded to X: array( media ID or '', error ). No graphic to send is no error: the post goes as text and link. */
 	private static function upload( $n, $it ) {
-		$f = DBD_Tall::file( $n, $it ); if ( $f === '' ) { return array( '', '' ); }
+		$f = ! empty( $it['_file'] ) ? (string) $it['_file'] : DBD_Tall::file( $n, $it ); if ( $f === '' || ! is_readable( $f ) ) { return array( '', '' ); }  /* a player's share graphic comes as a file (SCOPE §103) */
 		list( , $j, $err ) = self::call( 'POST', 'media/upload', array( 'media' => base64_encode( (string) file_get_contents( $f ) ), 'media_category' => 'tweet_image' ) );
 		if ( $err !== '' || empty( $j['data']['id'] ) ) { return array( '', $err !== '' ? $err : 'X took no image' ); }
 		return array( (string) $j['data']['id'], '' );
@@ -190,6 +190,21 @@ class DBD_X {
 			if ( $err !== '' ) { return self::fail( $key, $err ); }
 			return self::sent( $key, $id, $auto );
 		} finally { if ( ! $held ) { self::unlock( $key ); } }
+	}
+	/**
+	 * A player's share (SCOPE §103): one post of $text, with the graphic $file when "Attach the graphic" is on. array( link, error ).
+	 * One post per $key (a player-week): a key already sent returns its link, and a retry looks for the try before it as post() does.
+	 */
+	public static function share( $key, $text, $file ) {
+		$j = self::job( $key ); if ( ( $j['state'] ?? '' ) === 'sent' ) { return array( (string) ( $j['link'] ?? '' ), '' ); }
+		if ( ! self::connected() ) { return array( '', 'X isn’t connected.' ); }
+		if ( ! self::lock( $key ) ) { return array( '', 'it’s already posting' ); }
+		try {
+			$j = self::fresh_job( $key ) ?: array(); if ( ( $j['state'] ?? '' ) === 'sent' ) { return array( (string) ( $j['link'] ?? '' ), '' ); }
+			list( $id, $err ) = self::part( $j, (string) $text, '', function ( $text, $mid = '', $mat = 0 ) use ( $key ) { self::job_set( $key, array( 'tried' => time(), 'text' => $text, 'mid' => $mid, 'mid_at' => $mat ) ); }, 0, array( '_file' => (string) $file ) );
+			if ( $err !== '' ) { return array( '', self::fail( $key, $err ) ); }
+			self::sent( $key, $id, true ); return array( self::web( $id ), '' );
+		} finally { self::unlock( $key ); }
 	}
 	public static function web( $id ) { $c = self::conn(); return $id !== '' ? 'https://x.com/' . ( $c['username'] ?? 'i' ) . '/status/' . $id : ''; }
 	private static function sent( $key, $id, $auto = false ) {

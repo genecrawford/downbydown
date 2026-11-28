@@ -57,22 +57,8 @@ $tile = function ( $lab, $v, $sub, $rk = null, $n = null ) {
 	return '<div class="dbd-tile"><div class="l">' . esc_html( $lab ) . '</div><div class="v">' . esc_html( (string) $v ) . '</div><div class="s">' . esc_html( $sub ) . '</div>'
 		. ( $rk ? '<div class="dbd-trk' . ( $rk <= 10 ? ' top' : '' ) . '"><b>' . esc_html( DBD_Grades::ordinal( (int) $rk ) ) . '</b> of ' . (int) $n . '</div>' : '' ) . '</div>';
 };
-$tr = function ( $k ) use ( $TR ) { return isset( $TR[ $k ] ) ? array( (int) $TR[ $k ][0], (int) $TR[ $k ][1] ) : array( null, null ); };
-$mr = function ( $k ) use ( $R ) { return isset( $R[ $k ][0] ) && $R[ $k ][0] ? array( (int) $R[ $k ][0], (int) $R[ $k ][2] ) : array( null, null ); };
-$pg = function ( $k, $dp = 1 ) use ( $s, $g ) { return number_format( (float) ( $s[ $k ] ?? 0 ) / $g, $dp ) . ' a game'; };
 $tgt = (float) ( $s['tgt'] ?? 0 );
-$T = array(
-	'prs' => array( 'Pressures', $n0( $s['prs'] ?? 0 ), $pg( 'prs' ), $tr( 'prs' ) ), 'sk' => array( 'Sacks', $n0( $s['sk'] ?? 0 ), $pg( 'sk', 2 ), $tr( 'sk' ) ),
-	'qbh' => array( 'QB hits', $n0( $s['qbh'] ?? 0 ), $pg( 'qbh' ), $tr( 'qbh' ) ), 'tfl' => array( 'Tackles for loss', $n0( $s['tfl'] ?? 0 ), $pg( 'tfl' ), $tr( 'tfl' ) ),
-	'tkl' => array( 'Tackles', $n0( $s['tkl'] ?? 0 ), $pg( 'tkl' ), $tr( 'tkl' ) ), 'ff' => array( 'Forced fumbles', $n0( $s['ff'] ?? 0 ), 'and ' . $n0( $s['pd'] ?? 0 ) . ' passes defended', $tr( 'ff' ) ),
-	'hur' => array( 'Hurries', $n0( $s['hur'] ?? 0 ), 'rushed the passer off his spot', $tr( 'hur' ) ), 'snap' => array( 'Snap share', (int) round( (float) ( $s['snap'] ?? 0 ) ) . '%', "of the defense's snaps", $mr( 'snap' ) ),
-	'tgt' => array( 'Thrown at him', $n0( $tgt ), $pg( 'tgt' ), $tr( 'tgt' ) ), 'cmp' => array( 'Catches allowed', $n0( $s['cmp'] ?? 0 ), $tgt ? round( $s['cmp'] / $tgt * 100 ) . '% of targets' : 'no targets', array( null, null ) ),
-	'yds' => array( 'Yards allowed', $n0( $s['yds'] ?? 0 ), $tgt ? number_format( $s['yds'] / $tgt, 1 ) . ' a target' : 'in coverage', $mr( 'ypt' ) ),
-	'rate' => array( 'Passer rating', isset( $s['rate'] ) && $s['rate'] !== null ? number_format( (float) $s['rate'], 1 ) : '–', 'when thrown at', $mr( 'rate' ) ),
-	'int' => array( 'Interceptions', $n0( $s['int'] ?? 0 ), $n0( $s['tda'] ?? 0 ) . ' TD allowed', $tr( 'int' ) ), 'pd' => array( 'Passes defended', $n0( $s['pd'] ?? 0 ), $pg( 'pd' ), $tr( 'pd' ) ),
-);
-$TK = array( 'front' => array( 'prs', 'sk', 'qbh', 'tfl', 'tkl', 'ff', 'hur', 'snap' ), 'lb' => array( 'tkl', 'tfl', 'sk', 'prs', 'tgt', 'rate', 'pd', 'snap' ), 'db' => array( 'tgt', 'cmp', 'yds', 'rate', 'int', 'pd', 'tkl', 'snap' ) );
-echo '<div class="dbd-tiles">'; foreach ( $TK[ $role ] as $k ) { $x = $T[ $k ]; echo $tile( $x[0], $x[1], $x[2], $q ? $x[3][0] : null, $x[3][1] ); } echo '</div>';
+echo '<div class="dbd-tiles">'; foreach ( DBD_Share::defense_tiles( $d ) as $x ) { echo $tile( $x[0], $x[1], $x[2], $x[3], $x[4] ); } echo '</div>';  /* the tiles, shared with the Share player graphic (SCOPE §103) */
 
 /* ---- the short version */
 $W = array(); $WK = (array) $d['_keys']['wk']; foreach ( (array) $d['w'] as $w ) { $W[] = array_combine( $WK, array_slice( array_pad( (array) $w, count( $WK ), 0 ), 0, count( $WK ) ) ); }

@@ -112,6 +112,17 @@ jobs:
           PY
           DBD_HARNESS_HTML=/tmp/tk php tools/view_harness.php data player 00-0035236 > /dev/null
           grep -q 'g=takeaways">Ball hawks chart</a>' /tmp/tk/player-00-0035236.html || { echo "a corner's page should link the Ball hawks chart"; exit 1; }
+      - name: Share player from the toolbar (SCOPE §103)
+        run: |
+          set -e
+          mkdir -p /tmp/sh
+          node --check plugin/down-by-down/assets/share-player.js
+          DBD_HARNESS_HTML=/tmp/sh php tools/view_harness.php data share
+          ls /tmp/sh/share-*-black.jpg > /dev/null || { echo "the share graphics should be written"; exit 1; }
+          for id in 00-0039924 00-0036322; do DBD_HARNESS_HTML=/tmp/sh php tools/view_harness.php data player $id > /dev/null; done
+          if grep -l 'id="dbd-share"\|id="dbs-data"\|wp-admin-bar-dbd-share' /tmp/sh/player-*.html; then echo "a player page itself should carry none of the Share panel"; exit 1; fi
+          for id in 00-0039924 00-0036322; do [ "$(grep -o 'class="dbd-tile"' /tmp/sh/player-$id.html | wc -l)" -eq 8 ] || { echo "$id should keep its eight tiles"; exit 1; }; done
+          grep -q '<b>3rd</b> of\|<b>[0-9]*[a-z][a-z]</b> of [0-9]' /tmp/sh/player-00-0039924.html || { echo "the defender tiles should keep their ranks"; exit 1; }
       - name: Every throw (SCOPE §90)
         run: |
           php tools/view_harness.php data throws x

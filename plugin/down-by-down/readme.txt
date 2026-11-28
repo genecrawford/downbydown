@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.60.0
+Stable tag: 2.61.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,11 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.61.0 =
+* Share player (SCOPE §103): on a player's page, site admins get a Share player item in the WordPress toolbar. It opens a panel with a 1080 × 1350 graphic of his best-ranked stat (in the week's Share pack look), buttons for his best three, the post's text, Share…, Download graphic and Copy text.
+* Post now sends it to Down by Down's Instagram, Bluesky, X and Threads, one post per player a week on each; Post on X, Bluesky and Threads and Share on Facebook open a new post in whatever account the browser is logged into, with the graphic copied to paste in.
+* Nothing of it is printed for visitors. The hero tiles on player and defender pages are now built by one shared function, so the graphic matches the page.
 
 = 2.60.0 =
 * Leaders → Takeaways (SCOPE §102), the secondary's twin of Pass rushers: Ball hawks, every corner and safety with a regular role on one chart, passes defended a game against interceptions a game, with the team highlight and a table; then every defender's takeaways (interceptions and fumble recoveries), with the fumbles each forced and the ones returned for a score.

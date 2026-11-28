@@ -142,7 +142,7 @@ class DBD_Card {
 
 	/** Card keys: a player id, team-MIN, game-2026_08_MIN_DET, page-hub / page-week-8 / page-leaders … */
 	public static function valid( $key ) {
-		return (bool) preg_match( '/^(\d{2}-\d{7}|team-[A-Z]{2,3}|game-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}|page-(hub|season|matchups|teams|players|leaders|myteam|week-\d{1,2}|fantasy-\d{1,2}|draft-\d{4}|combine-\d{4})|pack-week-\d{1,2}-(snaps|targets|offense|leaders|rush)|ig-week-\d{1,2}-(swing|snaps|offense|targets|leaders|rush|keys-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}-[A-Z]{2,3})|tall-week-\d{1,2}-(black|paper)-(' . DBD_Tall::SLOTS . '))$/', (string) $key );
+		return (bool) preg_match( '/^(\d{2}-\d{7}|team-[A-Z]{2,3}|game-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}|page-(hub|season|matchups|teams|players|leaders|myteam|week-\d{1,2}|fantasy-\d{1,2}|draft-\d{4}|combine-\d{4})|pack-week-\d{1,2}-(snaps|targets|offense|leaders|rush)|ig-week-\d{1,2}-(swing|snaps|offense|targets|leaders|rush|keys-\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}-[A-Z]{2,3})|tall-week-\d{1,2}-(black|paper)-(' . DBD_Tall::SLOTS . ')|share-\d{2}-\d{7}-[a-z]{2,6}-(black|paper))$/', (string) $key );  /* share-: a player's Share graphic (SCOPE §103) */
 	}
 
 	/** The card a route shares: the player's, the team's, the game's, the first compared player's, or the page card. */
@@ -174,7 +174,7 @@ class DBD_Card {
 
 	/** A square as a JPEG (SCOPE §76): Instagram's API takes JPEG only. Only the Instagram squares come this way. */
 	public static function jpg_ok() { return function_exists( 'imagejpeg' ) && function_exists( 'imagetypes' ) && ( imagetypes() & IMG_JPG ); }  /* Greptile, PR #144 */
-	public static function wants_jpg( $key ) { return strpos( (string) $key, 'tall-' ) === 0 || ( strpos( (string) $key, 'ig-' ) === 0 && isset( $_GET['fmt'] ) && $_GET['fmt'] === 'jpg' ); }  /* the tall graphics (SCOPE §85) are always JPEG */
+	public static function wants_jpg( $key ) { return strpos( (string) $key, 'tall-' ) === 0 || strpos( (string) $key, 'share-' ) === 0 || ( strpos( (string) $key, 'ig-' ) === 0 && isset( $_GET['fmt'] ) && $_GET['fmt'] === 'jpg' ); }  /* the tall graphics (SCOPE §85) are always JPEG */
 	public static function jpg_url( $key ) { return add_query_arg( array( 'fmt' => 'jpg' ), self::url( $key ) ); }
 
 	public static function dir() { $up = wp_upload_dir(); return trailingslashit( $up['basedir'] ) . 'down-by-down/cards'; }
@@ -191,7 +191,7 @@ class DBD_Card {
 		$im = self::render( $key, $fetch ); if ( ! $im ) { return array( '', 404 ); }
 		/* write beside the final name, then rename into place, so a request arriving mid-write never streams a half-written PNG */
 		$tmp = $dir . '/.' . wp_generate_password( 12, false ) . '.tmp'; $ok = $jpg ? imagejpeg( $im, $tmp, 90 ) : imagepng( $im, $tmp, 6 );
-		if ( $ok && $jpg && strpos( $key, 'tall-' ) === 0 ) { foreach ( array( 82, 72 ) as $q ) { clearstatcache( true, $tmp ); if ( filesize( $tmp ) < 950000 ) { break; } $ok = imagejpeg( $im, $tmp, $q ); } }  /* under Bluesky's 1 MB (SCOPE §85) */
+		if ( $ok && $jpg && ( strpos( $key, 'tall-' ) === 0 || strpos( $key, 'share-' ) === 0 ) ) { foreach ( array( 82, 72 ) as $q ) { clearstatcache( true, $tmp ); if ( filesize( $tmp ) < 950000 ) { break; } $ok = imagejpeg( $im, $tmp, $q ); } }  /* under Bluesky's 1 MB (SCOPE §85) */
 		imagedestroy( $im );
 		if ( ! $ok || ! file_exists( $tmp ) || filesize( $tmp ) < 1000 || ! @rename( $tmp, $file ) ) { @unlink( $tmp ); return array( '', 500 ); }
 		return array( $file, 0 );
@@ -234,7 +234,8 @@ class DBD_Card {
 			if ( $pm[2] === 'leaders' ) { $s = DBD_Pack::spec_leaders( (int) $pm[1] ); if ( ! $s ) { return null; } foreach ( $s['logos'] as $t ) { $assets['logos'][ $t ] = $logo( $t ); } return self::draw_leaders( $s, $assets ); }  /* SCOPE §75 */
 			$s = DBD_Pack::spec_riser( (int) $pm[1], $pm[2] ); if ( ! $s ) { return null; } $assets['logos'][ $s['team'] ] = $logo( $s['team'] ); return self::draw_riser( $s, $assets );
 		}
-		if ( strpos( $key, 'tall-' ) === 0 ) { return DBD_Tall::render( $key, $fetch ); }  /* the tall social graphics (SCOPE §85) */
+		if ( strpos( $key, 'tall-' ) === 0 ) { return DBD_Tall::render( $key, $fetch ); }
+		if ( strpos( $key, 'share-' ) === 0 ) { return DBD_Share::render( $key, $fetch ); }  /* a player's Share graphic (SCOPE §103) */  /* the tall social graphics (SCOPE §85) */
 		if ( strpos( $key, 'ig-' ) === 0 ) {  /* the Instagram square (SCOPE §73): the headline over the item's own card */
 			$sq = DBD_Pack::spec_square( $key ); if ( ! $sq || ! self::valid( $sq['card'] ) ) { return null; }
 			$inner = self::render( $sq['card'], $fetch ); if ( ! $inner ) { return null; }
