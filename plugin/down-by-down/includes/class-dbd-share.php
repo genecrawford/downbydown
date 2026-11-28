@@ -30,7 +30,7 @@ class DBD_Share {
 	const ROLE_TILES = array( 'front' => array( 'prs', 'sk', 'qbh', 'tfl', 'tkl', 'ff', 'hur', 'snap' ), 'lb' => array( 'tkl', 'tfl', 'sk', 'prs', 'tgt', 'rate', 'pd', 'snap' ), 'db' => array( 'tgt', 'cmp', 'yds', 'rate', 'int', 'pd', 'tkl', 'snap' ) );
 	const ROLE_NAME = array( 'front' => 'pass rushers and linemen', 'lb' => 'linebackers', 'db' => 'defensive backs' );
 	/** The words a stat takes in the post's text, where the tile's own would read badly after the number. */
-	const SAY = array( 'adot' => 'air yards per target', 'sack' => 'sacks taken', 'tpg' => 'touches a game', 'any' => 'ANY/A', 'rate' => 'passer rating allowed', 'yds_d' => 'yards allowed in coverage' );
+	const SAY = array( 'adot' => 'air yards per target', 'sack' => 'sacks taken', 'tpg' => 'touches a game', 'any' => 'ANY/A', 'rate' => 'passer rating allowed' );
 	/** One of a thing, for a count of 1. */
 	const ONE = array( 'targets' => 'target', 'receptions' => 'reception', 'receiving touchdowns' => 'receiving touchdown', 'carries' => 'carry', 'rushing touchdowns' => 'rushing touchdown',
 		'explosive plays' => 'explosive play', 'attempts' => 'attempt', 'touchdown passes' => 'touchdown pass', 'sacks taken' => 'sack taken', 'pressures' => 'pressure', 'sacks' => 'sack',
@@ -157,12 +157,19 @@ class DBD_Share {
 		if ( $s['side'] === 'o' ) {
 			foreach ( self::offense_tiles( $s['rec'], $s['team'] ) as $i => $x ) {
 				if ( ! $x[3] || ! isset( $x['r'] ) || in_array( $x[3], self::SKIP['o'], true ) ) { continue; }
-				$o[] = array( 'k' => $x[3], 'lab' => $x[0], 'v' => (string) $x[1], 'sub' => (string) $x[2], 'r' => $x['r'], 'n' => $x['n'], 'tie' => $x['tie'], 'what' => self::SAY[ $x[3] ] ?? $x[4], 'i' => $i );
+				$e = array( 'k' => $x[3], 'lab' => $x[0], 'v' => (string) $x[1], 'sub' => (string) $x[2], 'r' => $x['r'], 'n' => $x['n'], 'tie' => $x['tie'], 'what' => self::SAY[ $x[3] ] ?? $x[4], 'i' => $i );
+				if ( $x[3] === 'sack' ) { $e = array_merge( $e, array( 'lab' => 'Sack rate', 'v' => (string) strtok( (string) $x[2], ' ' ), 'sub' => (int) $x[1] . ' sacks taken', 'what' => 'sack rate' ) ); }  /* the tile shows sacks taken; its rank is sack rate, fewest first (Greptile, PR #179) */
+				$o[] = $e;
 			}
 		} else {
 			foreach ( self::defense_tiles( $s['rec'] ) as $i => $x ) {
 				if ( ! $x[3] || in_array( $x[5], self::SKIP['d'], true ) ) { continue; }
-				$o[] = array( 'k' => $x[5], 'lab' => $x[0], 'v' => (string) $x[1], 'sub' => (string) $x[2], 'r' => (int) $x[3], 'n' => (int) $x[4], 'tie' => false, 'what' => self::SAY[ $x[5] === 'yds' ? 'yds_d' : $x[5] ] ?? ( $x[0] === 'QB hits' ? 'QB hits' : strtolower( $x[0] ) ), 'i' => $i );
+				$e = array( 'k' => $x[5], 'lab' => $x[0], 'v' => (string) $x[1], 'sub' => (string) $x[2], 'r' => (int) $x[3], 'n' => (int) $x[4], 'tie' => false, 'what' => self::SAY[ $x[5] ] ?? ( $x[0] === 'QB hits' ? 'QB hits' : strtolower( $x[0] ) ), 'i' => $i );
+				if ( $x[5] === 'yds' ) {  /* the tile shows yards allowed; its rank is yards a target, fewest first (Greptile, PR #179) */
+					$sd = (array) ( $s['rec']['s'] ?? array() ); $tg = (float) ( $sd['tgt'] ?? 0 ); if ( ! $tg ) { continue; }
+					$e = array_merge( $e, array( 'lab' => 'Yards a target', 'v' => number_format( (float) ( $sd['yds'] ?? 0 ) / $tg, 1 ), 'sub' => (string) $x[1] . ' yards allowed on ' . (int) $tg . ' targets', 'what' => 'yards a target allowed in coverage' ) );
+				}
+				$o[] = $e;
 			}
 		}
 		$first = self::FIRST[ $s['grp'] ] ?? array();
@@ -203,7 +210,8 @@ class DBD_Share {
 	public static function look() { return DBD_Tall::look( (int) DBD_Data::through_week() ); }
 	public static function key( $id, $k, $look = null ) { return 'share-' . $id . '-' . $k . '-' . ( $look ?? self::look() ); }
 	public static function parse( $key ) { return preg_match( '/^share-(\d{2}-\d{7})-([a-z]{2,6})-(black|paper)$/', (string) $key, $m ) ? array( $m[1], $m[2], $m[3] ) : null; }
-	public static function img_url( $id, $k ) { return DBD_Card::jpg_url( self::key( $id, $k ) ); }
+	/** The graphic's address. It carries the data stamp, so a browser that kept last week's graphic (served with a day's cache) asks again (Greptile, PR #179). */
+	public static function img_url( $id, $k ) { return add_query_arg( array( 'v' => substr( md5( DBD_Card::stamp() . ( DBD_Data::logos() ? '-l' : '' ) ), 0, 8 ) ), DBD_Card::jpg_url( self::key( $id, $k ) ) ); }
 
 	/** Draw a share graphic, 1080 × 1350, or null for a key that isn't one of his ranked stats. */
 	public static function render( $key, $fetch ) {
@@ -319,7 +327,7 @@ class DBD_Share {
 		$s = self::subject( $id ); $st = $s ? self::stat( $s, $k ) : null; if ( ! $st ) { return array( '', 'that stat isn’t one of his ranked stats' ); }
 		if ( ! isset( self::NETS[ $net ] ) ) { return array( '', 'not a network' ); }
 		$key = self::key( $id, $k ); list( $file ) = DBD_Card::ensure( $key, true ); if ( $file === '' ) { return array( '', 'the graphic couldn’t be drawn' ); }
-		$text = self::text( $s, $st ); $link = self::link( $s ); $jk = self::job_key( $id ); $img = DBD_Card::jpg_url( $key );
+		$text = self::text( $s, $st ); $link = self::link( $s ); $jk = self::job_key( $id ); $img = self::img_url( $id, $k );
 		switch ( $net ) {
 			case 'x':    return DBD_X::share( $jk, $text . ' ' . $link, $file );
 			case 'bsky': return DBD_Bluesky::share( $jk, $text, $link, $file, $text );

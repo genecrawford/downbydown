@@ -951,6 +951,10 @@ if ( $view === 'share' ) {
 			if ( in_array( $x['k'], DBD_Share::SKIP[ $s['side'] ], true ) ) { $fail( "$id: {$x['k']} should never be picked" ); }
 			if ( $i && ( $all[ $i - 1 ]['r'] > $x['r'] || ( $all[ $i - 1 ]['r'] === $x['r'] && $pos( $all[ $i - 1 ]['k'] ) > $pos( $x['k'] ) ) ) ) { $fail( "$id: {$all[ $i - 1 ]['k']} before {$x['k']} breaks the order" ); }
 		}
+		foreach ( $all as $x ) {  /* a rank that measures a rate is shared as that rate (Greptile, PR #179) */
+			if ( $x['k'] === 'yds' && $s['side'] === 'd' && ( $x['lab'] !== 'Yards a target' || strpos( DBD_Share::text( $s, $x ), ' yards a target allowed in coverage, ' ) === false ) ) { $fail( "$id: coverage yards should be shared a target" ); }
+			if ( $x['k'] === 'sack' && ( $x['lab'] !== 'Sack rate' || ! preg_match( '/^\d+%$/', $x['v'] ) ) ) { $fail( "$id: sacks taken should be shared as the sack rate, got {$x['v']}" ); }
+		}
 		$tx = DBD_Share::text( $s, $all[0] );
 		if ( ! preg_match( '/^[^:]+: \S+ .+, (T-)?\d+(st|nd|rd|th) of \d+ .+, through Week \d+\.$/u', $tx ) ) { $fail( "$id: text \"$tx\"" ); }
 		if ( ! DBD_Card::valid( DBD_Share::key( $id, $all[0]['k'], 'black' ) ) ) { $fail( "$id: key " . DBD_Share::key( $id, $all[0]['k'], 'black' ) . ' isn’t valid' ); }
@@ -979,7 +983,7 @@ if ( $view === 'share' ) {
 		DBD_Share::$admin = true; DBD_Share::bar( $bar ); $adm = DBD_Share::panel();
 		if ( count( $bar->n ) !== 1 || ( $bar->n[0]['id'] ?? '' ) !== 'dbd-share' ) { $fail( "$id: an admin got no toolbar item" ); } $bar->n = array();
 		if ( strpos( $adm, 'id="dbd-share"' ) === false || ! preg_match( '#<script type="application/json" id="dbs-data">(.*?)</script>#s', $adm, $m ) ) { $fail( "$id: an admin got no panel" ); continue; }
-		$dj = json_decode( $m[1], true ); if ( ! $dj || count( $dj['stats'] ) < 1 || count( $dj['stats'] ) > 3 || count( $dj['nets'] ) !== 4 || strpos( $dj['stats'][0]['img'], 'card=share-' . $id . '-' ) === false ) { $fail( "$id: the panel's data " . substr( $m[1], 0, 200 ) ); }
+		$dj = json_decode( $m[1], true ); if ( ! $dj || count( $dj['stats'] ) < 1 || count( $dj['stats'] ) > 3 || count( $dj['nets'] ) !== 4 || strpos( $dj['stats'][0]['img'], 'card=share-' . $id . '-' ) === false || ! preg_match( '/[?&]v=[0-9a-f]{8}$/', $dj['stats'][0]['img'] ) ) { $fail( "$id: the panel's data " . substr( $m[1], 0, 200 ) ); }
 		foreach ( array( 'Post now', 'Post on X', 'Post on Bluesky', 'Post on Threads', 'Share on Facebook', 'Download graphic', 'Copy text' ) as $w ) { if ( strpos( $adm, $w ) === false ) { $fail( "$id: the panel has no $w" ); } }
 		if ( $dir !== '' ) { file_put_contents( "$dir/panel-$id.html", $adm ); }
 	}
