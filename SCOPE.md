@@ -3915,3 +3915,86 @@ Size: S–M (one release).
 - The nav and footer pick the tab up from `DBD_Leaders::GROUPS`.
 - A corner's or safety's page links "Ball hawks chart" and "Leaders: takeaways".
 - CI renders the tab and checks the board's leader against the data.
+
+## 103. Share a player from the WordPress toolbar (scoped and mocked 2026-11-28, `mockup-v77/`; all decided)
+
+Gene: "scope and mock a "share" button on each player's detail page … that would share their best stat graphically. Only show it to me when i'm logged into Wordpress", then: "you can even put it in the wordpress header bar".
+
+**Where it lives:** a **Share player** item in the WordPress toolbar, on player pages only (offense and defenders). It is added only for site admins (`manage_options`), through `admin_bar_menu`. On phones the toolbar shows icons, so the item keeps its icon and its label.
+
+**Why the toolbar is safe with Cloudflare:** Cloudflare caches player pages for 10 minutes (`cf-cache-status: HIT`, read 2026-11-28). The toolbar is already drawn only for logged-in users and has never reached a visitor, so those pages aren't served from the cache. The item, the panel and its data are printed the same way, only when an admin is logged in. After deploy, a logged-out fetch of a player page must show no `dbd-share` anywhere.
+
+**What it opens:** a panel over the page:
+- The graphic, 1080×1350, in the week's look from the Share pack (Black or Paper, `DBD_Tall::look()`).
+- **Stat:** his best three ranked stats as buttons, the best one picked. A click swaps the graphic and the text.
+- **Text:** one line and the page link, ready to paste. Example: "Dallas Turner: 31 pressures, 3rd of 191 pass rushers and linemen with a regular role, through Week 12."
+- **Share…** opens the phone's or browser's share sheet with the graphic and the text, where the browser has one. It is hidden where it doesn't.
+- **Download graphic** (`dbd-{slug}-{stat}.jpg`) and **Copy text**.
+- Close with ×, Esc or a click outside.
+
+**The best stat:**
+- It is the tile at the top of his page with the best "Nth of N" rank. That's the `trk` ranks for offense and `tr`, or `r` for the rate tiles, for defenders, so the graphic never says something his page doesn't.
+- A tie goes to the stat fans quote first. Per group, in order:
+  - Receivers: yards, TDs, receptions, target share.
+  - Backs: rush yards, rush TD, explosive, touches a game.
+  - Quarterbacks: pass yards, TD passes, EPA a dropback, ANY/A.
+  - The front: sacks, pressures, QB hits, forced fumbles.
+  - Linebackers: tackles, sacks, tackles for loss.
+  - Defensive backs: interceptions, passes defended, passer rating allowed.
+- It is never snap share, "Thrown at him" or catches allowed. Those measure how much he plays or is thrown at, not how well.
+- A player with no ranked tile (outside the qualifying pool, or no regular role) gets no toolbar item.
+- Live picks from 2026-11-28:
+
+  | Player | Pick |
+  | --- | --- |
+  | Turner | pressures, 3rd |
+  | Jefferson | target share, 6th |
+  | Murphy | interceptions, 3rd |
+  | Gibbs | rush yards, 1st (tied with four other 1sts) |
+  | Baun | passes defended, 3rd |
+  | Maye | rush yards, 6th |
+  | Carter | forced fumbles, 2nd |
+
+**The graphic** (a fourth `DBD_Tall` layout, the player spotlight's top half):
+- **Team-color block:** headshot, number, logo, name, position and team, "2026 SEASON · THROUGH WEEK N".
+- **The stat:**
+  - Its name, the number in red, the rank large, and who it's among in the page's own words.
+  - The tile's second line under it.
+  - A QB's "Rush" tile reads Rush yards, with the number alone.
+- **Also:** his next two ranked stats, then the foot.
+- Served as `?card=share-{player id}-{stat}-w{N}-{look}`. It is JPEG, cached and pruned like the other tall graphics, so a new week or look makes a new file. It follows the headshots switch, with the same fallbacks.
+
+**Decided (Gene, 2026-11-28):** "yes auto post, but also a choice to let me post to another logged in accoutn tha's not dxd's", then: "by default to post to the accounts connected via the plugin for dxd we're already posting to AND have an option to post to whatever accounts I have signed in via the browser (as in my personal accounts)". So Down by Down's accounts come first and are ticked by default, and his own accounts are the option below.
+- **Post as Down by Down:** the panel gets a **Post** row for Down by Down's own Instagram, Bluesky, X and Threads accounts, the four Auto publish uses, through the same clients. It treats all four networks alike (§84).
+  - A box per network, all ticked, and one **Post now** button.
+  - Each network shows posted, with a link to the post, or failed, with Try again.
+  - The graphic is the post's image, with the text and the link as the caption.
+  - X follows its "Attach the graphic" switch, and each X post costs about $0.20.
+  - A player posted this week is marked, so the same post doesn't go twice by accident.
+- **Post from your own account** (Gene: "not connected via the plugin, just in the browser"): four buttons that use whatever account the browser is logged into. Nothing is stored in the plugin.
+  - The buttons are the Share pack's own: **Post on X**, **Post on Bluesky**, **Post on Threads** and **Share on Facebook**. Each opens that site's compose page in a new tab with the text and link filled in. The addresses are `x.com/intent/post`, `bsky.app/intent/compose`, `threads.com/intent/post` and Facebook's sharer.
+  - Compose links can't carry an image. So each click also copies the graphic to the clipboard, as a PNG, and the button reads "Graphic copied, paste it in" for a moment. Paste it into the post (⌘V).
+  - Where the browser can't copy an image, the click downloads the graphic instead and says so.
+  - Instagram has no compose page. From a phone, Share… reaches it, and any app, with the graphic attached.
+
+- **Stat buttons** (Gene: "Best three"): his best three ranked stats, as in the mock.
+- **Look** (Gene: "Week's look"): the graphic follows the week's Share pack look. There is no switch in the panel.
+
+**Left out:** a log of what was shared; sharing from team or game pages.
+
+**Tests:**
+- The harness renders a player page as an admin and as a visitor. The visitor's page has no `dbd-share` and no panel.
+- The pick for every fixture player matches the rule, including a tie and a player with no ranks.
+- Every `share-` key draws at 1080×1350 in both looks, and a bad key 404s.
+- On the live site after deploy, logged out: no item, no panel.
+
+Size: M (one release).
+
+**Built as 2.61.0** (Gene: "Build it"):
+- `DBD_Share` (`class-dbd-share.php`):
+  - The hero tiles for both page kinds (`offense_tiles()`, `defense_tiles()`). The player and defender pages now call them, and 66 pages rendered byte-identical before and after.
+  - The rule (`stats()`), the text, and the graphic (`share-{id}-{stat}-{look}` cards, through `DBD_Card`).
+  - The toolbar item (`admin_bar_menu`), the panel in `wp_footer`, and Post now (`wp_ajax_dbd_share_post`).
+- Each network client gained `share()`, reusing its lock, record and lost-reply checks. X's follows the "Attach the graphic" switch. Each network keeps one post per player a week (`share-{season}-w{N}-{id}`): once posted, that box shows "posted · View" and can't post him again that week.
+- `assets/share-player.js` and `.css` load only for admins on a player's page.
+- CI: the harness `share` mode checks the rule's order and SKIP over every player, the text, the graphics in both looks, that bad keys don't draw, and visitor vs admin output. A kicker and a player with no ranks get nothing.

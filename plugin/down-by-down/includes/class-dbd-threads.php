@@ -227,6 +227,20 @@ class DBD_Threads {
 			return self::sent( $key, $id, $auto );
 		} finally { if ( ! $held ) { self::unlock( $key ); } }
 	}
+	/** A player's share (SCOPE §103): the graphic at $image_url with $text (its link in it). array( link, error ); one post per $key, as post() does. */
+	public static function share( $key, $text, $image_url ) {
+		$j = self::job( $key ); if ( ( $j['state'] ?? '' ) === 'sent' ) { return array( (string) ( $j['link'] ?? '' ), '' ); }
+		if ( ! self::connected() ) { return array( '', 'Threads isn’t connected.' ); }
+		if ( ! self::lock( $key ) ) { return array( '', 'it’s already posting' ); }
+		try {
+			$j = self::fresh_job( $key ) ?: array(); if ( ( $j['state'] ?? '' ) === 'sent' ) { return array( (string) ( $j['link'] ?? '' ), '' ); }
+			$t = (string) $text; if ( mb_strlen( $t ) > self::MAX ) { $t = rtrim( mb_substr( $t, 0, self::MAX - 1 ) ) . '…'; }
+			$params = (array) ( $j['params'] ?? array( 'media_type' => 'IMAGE', 'image_url' => (string) $image_url, 'text' => $t ) );
+			list( $id, $err ) = self::part( $j, $params, function ( $cid ) use ( $key, $params ) { self::job_set( $key, array( 'container' => $cid, 'params' => $params ) ); } );
+			if ( $err !== '' ) { return array( '', self::fail( $key, $err ) ); }
+			self::sent( $key, $id, true ); return array( (string) ( self::job( $key )['link'] ?? '' ), '' );
+		} finally { self::unlock( $key ); }
+	}
 	private static function sent( $key, $id, $auto = false ) {
 		list( , $j ) = self::call( 'GET', $id, array( 'fields' => 'permalink' ) );
 		$f = array( 'state' => 'sent', 'id' => $id, 'link' => (string) ( $j['permalink'] ?? '' ), 'sent_at' => time(), 'err' => '', 'force' => false ); if ( $auto ) { $f['auto'] = true; }

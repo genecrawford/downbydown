@@ -76,7 +76,7 @@ function wp_schedule_single_event() {} function wp_next_scheduled() { return fal
 
 /* ---- the plugin, minus the bootstrap and admin. The SEO class extends a WordPress sitemap base class; an empty stand-in lets it load. */
 if ( ! class_exists( 'WP_Sitemaps_Provider' ) ) { class WP_Sitemaps_Provider { public $name = ''; public $object_type = ''; } }
-foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-kicker', 'class-dbd-defense', 'class-dbd-scatter', 'class-dbd-rush', 'class-dbd-week', 'class-dbd-fanweek', 'class-dbd-playoffs', 'class-dbd-po-posts', 'class-dbd-throws', 'class-dbd-hub', 'class-dbd-hawk', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-boards', 'class-dbd-sync', 'class-dbd-tall', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo', 'class-dbd-blocks', 'class-dbd-nav', 'class-dbd-post', 'class-dbd-news', 'class-dbd-email', 'class-dbd-videos', 'class-dbd-growth', 'class-dbd-signup', 'class-dbd-pack', 'class-dbd-pack-mail', 'class-dbd-instagram', 'class-dbd-bluesky', 'class-dbd-x', 'class-dbd-threads', 'class-dbd-autopub', 'class-dbd-board-mail' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
+foreach ( array( 'class-dbd-data', 'class-dbd-marks', 'class-dbd-grades', 'class-dbd-metrics', 'class-dbd-takeaways', 'class-dbd-lineup', 'class-dbd-fantasy', 'class-dbd-myteam', 'class-dbd-leaders', 'class-dbd-kicker', 'class-dbd-defense', 'class-dbd-scatter', 'class-dbd-rush', 'class-dbd-week', 'class-dbd-fanweek', 'class-dbd-playoffs', 'class-dbd-po-posts', 'class-dbd-throws', 'class-dbd-hub', 'class-dbd-hawk', 'class-dbd-compare', 'class-dbd-season', 'class-dbd-boards', 'class-dbd-sync', 'class-dbd-tall', 'class-dbd-card', 'class-dbd-urls', 'class-dbd-router', 'class-dbd-seo', 'class-dbd-blocks', 'class-dbd-nav', 'class-dbd-post', 'class-dbd-news', 'class-dbd-email', 'class-dbd-videos', 'class-dbd-growth', 'class-dbd-signup', 'class-dbd-pack', 'class-dbd-pack-mail', 'class-dbd-instagram', 'class-dbd-bluesky', 'class-dbd-x', 'class-dbd-threads', 'class-dbd-autopub', 'class-dbd-share', 'class-dbd-board-mail' ) as $c ) { $f = DBD_PATH . 'includes/' . $c . '.php'; if ( is_readable( $f ) ) { require $f; } }
 
 if ( getenv( 'DBD_HARNESS_SIGN' ) ) { $GLOBALS['dbd_opt'] = array( 'dbd_email' => array( 'on' => true, 'key' => 'harness', 'list' => 4, 'tpl' => 5 ) ); }  /* the email set up, so pages draw the signup strip (SCOPE §66) */
 if ( getenv( 'DBD_HARNESS_NOW' ) && class_exists( 'DBD_News' ) ) { DBD_News::$now = (int) getenv( 'DBD_HARNESS_NOW' ); }
@@ -185,7 +185,7 @@ if ( $view === 'card' ) {
 	if ( ! $im ) { fwrite( STDERR, "render( $arg ) returned nothing\n" ); exit( 4 ); }
 	imagepng( $im, $out, 6 ); imagedestroy( $im ); $sz = getimagesize( $out );
 	echo "card $arg: {$sz[0]}x{$sz[1]}, " . round( microtime( true ) - $t0, 2 ) . "s, $warnings warnings -> $out\n";
-	$want = strpos( (string) $arg, 'tall-' ) === 0 ? array( 1080, 1350 ) : ( strpos( (string) $arg, 'ig-' ) === 0 ? array( 1080, 1080 ) : array( 1200, 630 ) );  /* the Instagram squares (SCOPE §73) */
+	$want = ( strpos( (string) $arg, 'tall-' ) === 0 || strpos( (string) $arg, 'share-' ) === 0 ) ? array( 1080, 1350 ) : ( strpos( (string) $arg, 'ig-' ) === 0 ? array( 1080, 1080 ) : array( 1200, 630 ) );  /* the Instagram squares (SCOPE §73) */
 	exit( $sz[0] === $want[0] && $sz[1] === $want[1] && ! $warnings ? 0 : 5 );
 }
 
@@ -936,6 +936,66 @@ if ( $view === 'autopub' ) {
 	echo "autopub week $n: $bad problems, $warnings warnings\n"; exit( $bad || $warnings ? 1 : 0 );
 }
 /* ---- the tall graphics (SCOPE §85): every post in both looks at 1080×1350 under 1 MB, long names, the fallbacks, League Leaders and the weekly look. Images land in $arg/ */
+/* ---- Share player (SCOPE §103): the best-stat rule over every player, the graphics, and nothing for a visitor.
+   share [ids]: the picks for these players (default: a spread of positions) are printed; the checks run over everyone. */
+if ( $view === 'share' ) {
+	$bad = 0; $fail = function ( $m ) use ( &$bad ) { $bad++; echo "  WRONG: $m\n"; };
+	$ids = array(); foreach ( DBD_Data::player_index() as $r0 ) { if ( ! DBD_Kicker::is( $r0 ) ) { $ids[] = $r0['id']; } }
+	foreach ( DBD_Data::defender_index() as $r0 ) { $ids[] = (string) ( $r0['id'] ?? '' ); }
+	$ids = array_values( array_unique( array_filter( $ids ) ) ); $ranked = 0; $none = null; $seen = array( 'o' => 0, 'd' => 0 );
+	foreach ( $ids as $id ) {
+		$s = DBD_Share::subject( $id ); if ( ! $s ) { continue; } $seen[ $s['side'] ]++;
+		$all = DBD_Share::stats( $s ); if ( ! $all ) { $none = $none ?? $id; continue; } $ranked++;
+		$first = DBD_Share::FIRST[ $s['grp'] ] ?? array(); $pos = function ( $k ) use ( $first ) { $i = array_search( $k, $first, true ); return $i === false ? 99 : $i; };
+		foreach ( $all as $i => $x ) {
+			if ( in_array( $x['k'], DBD_Share::SKIP[ $s['side'] ], true ) ) { $fail( "$id: {$x['k']} should never be picked" ); }
+			if ( $i && ( $all[ $i - 1 ]['r'] > $x['r'] || ( $all[ $i - 1 ]['r'] === $x['r'] && $pos( $all[ $i - 1 ]['k'] ) > $pos( $x['k'] ) ) ) ) { $fail( "$id: {$all[ $i - 1 ]['k']} before {$x['k']} breaks the order" ); }
+		}
+		foreach ( $all as $x ) {  /* a rank that measures a rate is shared as that rate (Greptile, PR #179) */
+			if ( $x['k'] === 'yds' && $s['side'] === 'd' && ( $x['lab'] !== 'Yards a target' || strpos( DBD_Share::text( $s, $x ), ' yards a target allowed in coverage, ' ) === false ) ) { $fail( "$id: coverage yards should be shared a target" ); }
+			if ( $x['k'] === 'sack' && ( $x['lab'] !== 'Sack rate' || ! preg_match( '/^\d+%$/', $x['v'] ) ) ) { $fail( "$id: sacks taken should be shared as the sack rate, got {$x['v']}" ); }
+		}
+		$tx = DBD_Share::text( $s, $all[0] );
+		if ( ! preg_match( '/^[^:]+: \S+ .+, (T-)?\d+(st|nd|rd|th) of \d+ .+, through Week \d+\.$/u', $tx ) ) { $fail( "$id: text \"$tx\"" ); }
+		if ( ! DBD_Card::valid( DBD_Share::key( $id, $all[0]['k'], 'black' ) ) ) { $fail( "$id: key " . DBD_Share::key( $id, $all[0]['k'], 'black' ) . ' isn’t valid' ); }
+	}
+	if ( $seen['o'] < 100 || $seen['d'] < 100 ) { $fail( 'too few players read: ' . json_encode( $seen ) ); }
+	/* the graphics: a spread of positions, best three, both looks */
+	$show = isset( $argv[3] ) ? explode( ',', $argv[3] ) : array( '00-0039924', '00-0036322', '00-0035236', '00-0039139', '00-0036418', '00-0039851', '00-0038386' ); $drawn = 0; $noop = function () { return null; };
+	$dir = getenv( 'DBD_HARNESS_HTML' ) ?: ''; if ( $dir !== '' && ! is_dir( $dir ) ) { mkdir( $dir, 0777, true ); }
+	foreach ( $show as $id ) {
+		$s = DBD_Share::subject( $id ); $all = DBD_Share::stats( $s ); if ( ! $all ) { echo "  $id: no ranked stats\n"; continue; }
+		echo '  ' . $s['name'] . ': ' . implode( ' · ', array_map( function ( $x ) { return $x['lab'] . ' ' . $x['v'] . ' (' . $x['rank'] . ' of ' . $x['n'] . ')'; }, array_slice( $all, 0, 3 ) ) ) . "\n    " . DBD_Share::text( $s, $all[0] ) . "\n";
+		foreach ( array_slice( $all, 0, 3 ) as $j => $x ) { foreach ( array( 'black', 'paper' ) as $look ) {
+			if ( $j && $look === 'paper' ) { continue; }
+			$key = DBD_Share::key( $id, $x['k'], $look ); $im = DBD_Card::render( $key, $noop );
+			if ( ! $im || imagesx( $im ) !== 1080 || imagesy( $im ) !== 1350 ) { $fail( "$key didn’t draw at 1080 × 1350" ); continue; }
+			if ( $dir !== '' ) { imagejpeg( $im, "$dir/$key.jpg", 86 ); } imagedestroy( $im ); $drawn++;
+		} }
+	}
+	foreach ( array( 'share-00-0039924-snap-black', 'share-00-0039924-zzz-black', 'share-00-0000000-prs-black', 'share-00-0039924-prs-blue' ) as $k ) { if ( DBD_Card::valid( $k ) && DBD_Card::render( $k, $noop ) ) { $fail( "$k should not draw" ); } }
+	/* the toolbar and panel: nothing for a visitor, the item and the panel for an admin, nothing on a page with no ranked stats */
+	$bar = new class { public $n = array(); public function add_node( $a ) { $this->n[] = $a; } };
+	$at = function ( $id ) { $dr = DBD_Data::player( $id ) ? 'player' : 'defender'; DBD_Router::$route = array( 'view' => $dr, 'player' => array( 'id' => $id ) ); };
+	foreach ( array( '00-0039924', '00-0036322' ) as $id ) {
+		$at( $id ); DBD_Share::$admin = false; DBD_Share::bar( $bar ); $vis = DBD_Share::panel();
+		if ( $bar->n || $vis !== '' ) { $fail( "$id: a visitor got the toolbar item or the panel" ); }
+		DBD_Share::$admin = true; DBD_Share::bar( $bar ); $adm = DBD_Share::panel();
+		if ( count( $bar->n ) !== 1 || ( $bar->n[0]['id'] ?? '' ) !== 'dbd-share' ) { $fail( "$id: an admin got no toolbar item" ); } $bar->n = array();
+		if ( strpos( $adm, 'id="dbd-share"' ) === false || ! preg_match( '#<script type="application/json" id="dbs-data">(.*?)</script>#s', $adm, $m ) ) { $fail( "$id: an admin got no panel" ); continue; }
+		$dj = json_decode( $m[1], true ); if ( ! $dj || count( $dj['stats'] ) < 1 || count( $dj['stats'] ) > 3 || count( $dj['nets'] ) !== 4 || strpos( $dj['stats'][0]['img'], 'card=share-' . $id . '-' ) === false || ! preg_match( '/[?&]v=[0-9a-f]{8}$/', $dj['stats'][0]['img'] ) ) { $fail( "$id: the panel's data " . substr( $m[1], 0, 200 ) ); }
+		foreach ( array( 'Post now', 'Post on X', 'Post on Bluesky', 'Post on Threads', 'Share on Facebook', 'Download graphic', 'Copy text' ) as $w ) { if ( strpos( $adm, $w ) === false ) { $fail( "$id: the panel has no $w" ); } }
+		if ( $dir !== '' ) { file_put_contents( "$dir/panel-$id.html", $adm ); }
+	}
+	if ( $none ) { $at( $none ); DBD_Share::$admin = true; DBD_Share::bar( $bar ); if ( $bar->n || DBD_Share::panel() !== '' ) { $fail( "$none has no ranked stats but got the item" ); } $bar->n = array(); }
+	$kick = null; foreach ( DBD_Data::player_index() as $r0 ) { if ( DBD_Kicker::is( $r0 ) ) { $kick = $r0['id']; break; } }
+	if ( $kick && DBD_Share::subject( $kick ) ) { $fail( 'a kicker should have no share' ); }
+	DBD_Share::$admin = null;
+	if ( $warnings ) { $fail( "$warnings warnings" ); }
+	echo "share: {$seen['o']} offense and {$seen['d']} defenders read, $ranked with ranked stats" . ( $none ? ", $none without" : '' ) . ", $drawn graphics drawn, " . ( $bad ? "$bad WRONG" : 'all pass' ) . "\n";
+	exit( $bad ? 1 : 0 );
+}
+
 if ( $view === 'tall' ) {
 	$GLOBALS['dbd_opt'] = array(); $dir = $arg ?: 'tall'; if ( ! is_dir( $dir ) ) { mkdir( $dir ); } $bad = 0; $ck = function ( $what, $ok, $got = '' ) use ( &$bad ) { echo '  ' . ( $ok ? 'ok' : 'WRONG' ) . ": $what" . ( $ok ? '' : " (got: $got)" ) . "\n"; $bad += ! $ok; };
 	$fetch = getenv( 'DBD_HARNESS_LOGOS' ) ? function ( $u ) { $b = @file_get_contents( $u, false, stream_context_create( array( 'http' => array( 'timeout' => 10 ) ) ) ); return $b ?: null; } : null;

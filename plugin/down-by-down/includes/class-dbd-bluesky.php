@@ -193,9 +193,9 @@ class DBD_Bluesky {
 			if ( $gc !== 400 && $gc !== 404 ) { return array( null, 'Bluesky didn’t say whether the last try went out; try again in a minute' ); }
 		} else { $rkey = self::tid(); $save( $rkey ); }
 		$thumb = null; $image = null; $card = (string) ( $it['card'] ?? '' ); $kp = DBD_Instagram::parse( $key );
-		if ( $it && $kp ) {  /* the tall graphic, when it's drawn and under Bluesky's limit (SCOPE §85); the link card otherwise */
-			$gf = DBD_Tall::file( (int) $kp[1], $it );
-			if ( $gf !== '' && filesize( $gf ) <= self::$max_blob ) {
+		if ( $it && ( $kp || ! empty( $it['_file'] ) ) ) {  /* the tall graphic, when it's drawn and under Bluesky's limit (SCOPE §85); the link card otherwise. A player's share graphic comes as a file (SCOPE §103) */
+			$gf = ! empty( $it['_file'] ) ? (string) $it['_file'] : DBD_Tall::file( (int) $kp[1], $it );
+			if ( $gf !== '' && is_readable( $gf ) && filesize( $gf ) <= self::$max_blob ) {
 				list( , $bj, $err ) = self::authed( 'com.atproto.repo.uploadBlob', (string) file_get_contents( $gf ), 'image/jpeg' );
 				if ( $err !== '' ) { return array( null, $err ); }
 				$image = $bj['blob'] ?? null;
@@ -214,6 +214,26 @@ class DBD_Bluesky {
 		return array( array( 'uri' => (string) $rj['uri'], 'cid' => (string) ( $rj['cid'] ?? '' ), 'rkey' => $rkey ), '' );
 	}
 
+	/** A player's share (SCOPE §103): $text, his page's link shown short (the facet carries it), and the graphic $file. array( link, error ); one post per $key. */
+	public static function share( $key, $text, $link, $file, $alt ) {
+		$j = self::job( $key ); if ( ( $j['state'] ?? '' ) === 'sent' ) { return array( (string) ( $j['link'] ?? '' ), '' ); }
+		$c = self::conn(); if ( ! self::connected() ) { return array( '', 'Bluesky isn’t connected.' ); }
+		if ( ! self::lock( $key ) ) { return array( '', 'it’s already posting' ); }
+		try {
+			$j = self::fresh_job( $key ); if ( ( $j['state'] ?? '' ) === 'sent' ) { return array( (string) ( $j['link'] ?? '' ), '' ); }
+			list( $p, $err ) = self::part( $key, (array) ( $j ?? array() ), function ( $thumb, $image = null ) use ( $text, $link, $alt ) { return self::share_record( $text, $link, $alt, $image ); }, array( '_file' => (string) $file ), 'rkey' );
+			if ( $err !== '' ) { return array( '', self::fail( $key, $err ) ); }
+			self::sent( $key, $p['uri'], (string) $c['handle'], true ); return array( self::web( $p['uri'], (string) $c['handle'] ), '' );
+		} finally { self::unlock( $key ); }
+	}
+	/** A share's record: the text and the short link with its facet, and the graphic when it went up. */
+	public static function share_record( $text, $link, $alt, $image = null, $now = null ) {
+		$show = self::short_link( $link ); $t = (string) $text . ' ' . $show; $at = strlen( (string) $text ) + 1;  /* byte offsets, as Bluesky counts them */
+		$r = array( '$type' => 'app.bsky.feed.post', 'text' => $t, 'createdAt' => gmdate( 'Y-m-d\TH:i:s.000\Z', (int) ( $now ?? time() ) ), 'langs' => array( 'en' ),
+			'facets' => array( array( 'index' => array( 'byteStart' => $at, 'byteEnd' => $at + strlen( $show ) ), 'features' => array( array( '$type' => 'app.bsky.richtext.facet#link', 'uri' => (string) $link ) ) ) ) );
+		if ( $image ) { $r['embed'] = array( '$type' => 'app.bsky.embed.images', 'images' => array( array( 'image' => $image, 'alt' => (string) $alt, 'aspectRatio' => array( 'width' => DBD_Tall::W, 'height' => DBD_Tall::H ) ) ) ); }
+		return $r;
+	}
 	private static function sent( $key, $uri, $handle, $auto = false ) {
 		$f = array( 'state' => 'sent', 'uri' => $uri, 'link' => self::web( $uri, $handle ), 'sent_at' => time(), 'err' => '', 'force' => false ); if ( $auto ) { $f['auto'] = true; }
 		self::job_set( $key, $f ); return '';

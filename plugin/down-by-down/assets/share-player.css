@@ -1,0 +1,50 @@
+/* Share player (SCOPE §103): the toolbar item and the panel it opens. Admins only; plain and light, WordPress's own blues. */
+#wpadminbar #wp-admin-bar-dbd-share .ab-icon:before{content:"\f237";top:2px}
+@media screen and (max-width:782px){#wpadminbar li#wp-admin-bar-dbd-share{display:block}#wpadminbar #wp-admin-bar-dbd-share>.ab-item{display:flex;align-items:center;width:auto;padding:0 10px}#wpadminbar #wp-admin-bar-dbd-share .ab-icon:before{top:0}#wpadminbar #wp-admin-bar-dbd-share .ab-label{display:inline;font-size:14px}}
+dialog.dbs *{box-sizing:border-box;letter-spacing:normal;text-transform:none}
+dialog.dbs[open]{margin:auto;overflow:auto}
+dialog.dbs p{padding:0}
+dialog.dbs .dbs-b[hidden]{display:none}
+dialog.dbs{width:min(860px,calc(100vw - 32px));max-height:calc(100vh - 32px);padding:0;border:1px solid #c3c4c7;border-radius:6px;background:#fff;color:#1d2327;font:15px/1.5 "IBM Plex Sans",system-ui,sans-serif}
+dialog.dbs::backdrop{background:rgba(18,20,23,.55)}
+dialog.dbs .dbs-in{display:grid;grid-template-columns:minmax(0,360px) minmax(0,1fr);gap:16px 24px;padding:20px}
+dialog.dbs .dbs-fig{margin:0}
+dialog.dbs .dbs-fig img{display:block;width:100%;height:auto;border:1px solid #e6e6e6}
+dialog.dbs .dbs-top{grid-column:1/-1;display:flex;align-items:start;justify-content:space-between;gap:12px}
+dialog.dbs .dbs-first{margin-top:0}
+dialog.dbs .dbs-top h2{margin:0;font:700 26px/1.1 "Barlow Condensed",sans-serif;color:#121417}
+dialog.dbs .dbs-x{flex:none;width:36px;height:36px;margin:-6px -6px 0 0;border:0;background:none;font-size:26px;line-height:1;color:#50575e;cursor:pointer;border-radius:4px}
+dialog.dbs .dbs-x:hover{background:#f0f0f1;color:#121417}
+dialog.dbs .dbs-lab{margin:16px 0 6px;font-size:13px;font-weight:600;color:#50575e}
+dialog.dbs .dbs-stats{display:flex;flex-wrap:wrap;gap:6px}
+dialog.dbs .dbs-stats button{padding:6px 12px;border:1px solid #c3c4c7;border-radius:999px;background:#fff;color:#1d2327;font:inherit;font-size:14px;cursor:pointer}
+dialog.dbs .dbs-stats button small{color:#646970;font-size:13px;margin-left:4px}
+dialog.dbs .dbs-stats button[aria-pressed=true]{background:#121417;border-color:#121417;color:#fff}
+dialog.dbs .dbs-stats button[aria-pressed=true] small{color:#c3c4c7}
+dialog.dbs #dbs-t{display:block;width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #c3c4c7;border-radius:4px;font:inherit;font-size:14px;line-height:1.45;resize:vertical;background:#fbfbfb;color:#1d2327}
+dialog.dbs .dbs-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+dialog.dbs .dbs-b{display:inline-flex;align-items:center;min-height:38px;padding:0 14px;border:1px solid #2271b1;border-radius:4px;background:#fff;color:#2271b1;font:inherit;font-size:14px;font-weight:600;text-decoration:none;cursor:pointer}
+dialog.dbs .dbs-b:hover{background:#f0f6fc;color:#135e96}
+dialog.dbs .dbs-b.pri{background:#2271b1;color:#fff}
+dialog.dbs .dbs-b.pri:hover{background:#135e96;color:#fff}
+dialog.dbs .dbs-b:focus-visible,dialog.dbs .dbs-stats button:focus-visible,dialog.dbs .dbs-x:focus-visible{outline:2px solid #2271b1;outline-offset:2px}
+dialog.dbs .dbs-msg{min-height:1.5em;margin:8px 0 0;font-size:14px;color:#1e7f4a}
+dialog.dbs .dbs-note{margin:6px 0 0;font-size:13px;color:#646970}
+dialog.dbs .dbs-post{margin-top:6px;padding-top:2px;border-top:1px solid #e6e6e6}
+dialog.dbs .dbs-post .dbs-lab{margin-top:14px}
+dialog.dbs .dbs-post .dbs-btns{margin-top:10px}
+dialog.dbs .dbs-nets{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:14px}
+dialog.dbs .dbs-nets label{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+dialog.dbs .dbs-nets input{width:16px;height:16px;margin:0;accent-color:#2271b1}
+dialog.dbs .dbs-st{margin:8px 0 0;padding:0;list-style:none;font-size:14px}
+dialog.dbs .dbs-st li{padding:3px 0}
+dialog.dbs .dbs-st b{font-weight:600;color:#1e7f4a}
+dialog.dbs .dbs-st a{color:#2271b1}
+dialog.dbs .dbs-own .dbs-b{font-weight:500}
+dialog.dbs .dbs-hint{margin:8px 0 0;font-size:13px;color:#646970;max-width:52ch}
+@media (max-width:700px){dialog.dbs .dbs-in{grid-template-columns:1fr;gap:12px;padding:16px}dialog.dbs .dbs-fig{max-width:300px}}
+dialog.dbs .dbs-done{font-size:13px;color:#1e7f4a}
+dialog.dbs .dbs-off{font-size:13px;color:#646970}
+dialog.dbs .dbs-nets input:disabled+*,dialog.dbs .dbs-nets label:has(input:disabled){cursor:default;color:#646970}
+dialog.dbs .dbs-fail{font-weight:600;color:#b32d2e}
+dialog.dbs .dbs-now:disabled{opacity:.6;cursor:progress}

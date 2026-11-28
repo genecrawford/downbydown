@@ -311,6 +311,50 @@ class DBD_Instagram {
 		return array( '', $err !== '' ? $err : 'Instagram didn’t publish it' );
 	}
 
+	/**
+	 * A player's share (SCOPE §103): one image post of the graphic at $image_url with $caption. array( link, error ). One post per $key: a sent
+	 * key returns its link; a container from an earlier try is asked about first, as publish() does, so a lost reply is never posted twice.
+	 */
+	public static function share( $key, $caption, $image_url ) {
+		$job = self::job( $key ) ?: array(); if ( ( $job['state'] ?? '' ) === 'sent' ) { return array( (string) ( $job['link'] ?? '' ), '' ); }
+		if ( ! self::can_post() ) { return array( '', 'Instagram isn’t connected.' ); }
+		$lock = 'dbd_ig_lock_' . $key;
+		if ( ! add_option( $lock, time(), '', false ) ) { if ( time() - (int) get_option( $lock, 0 ) < 600 ) { return array( '', 'it’s already posting' ); } update_option( $lock, time(), false ); }
+		try {
+			/* read the record again now the lock is ours, from the database itself: a press that finished meanwhile has posted it, and this
+			   request's option cache wouldn't show that (Greptile, PR #179; the other three clients' fresh_job()) */
+			$job = self::fresh_share_job( $key ) ?: array(); if ( ( $job['state'] ?? '' ) === 'sent' ) { return array( (string) ( $job['link'] ?? '' ), '' ); }
+			$t = self::token(); $uid = (string) ( $t['user_id'] ?? '' ); $cid = (string) ( $job['container'] ?? '' ); $media = '';
+			if ( $cid !== '' ) {
+				$st = self::status_of( $cid );
+				if ( $st === '' ) { return array( '', 'Instagram didn’t say whether the last try went out; try again in a minute' ); }
+				if ( $st === 'ERROR' || $st === 'EXPIRED' ) { $cid = ''; }
+			}
+			if ( $cid === '' ) {
+				list( , $j, $err ) = self::api( 'POST', $uid . '/media', array( 'image_url' => (string) $image_url, 'caption' => (string) $caption ) );
+				if ( $err !== '' || empty( $j['id'] ) ) { return array( '', self::share_fail( $key, $err !== '' ? $err : 'Instagram made no post' ) ); }
+				$cid = (string) $j['id']; self::job_set( $key, array( 'container' => $cid ) );
+			}
+			$st = self::ready( $cid );
+			if ( $st !== 'PUBLISHED' ) {
+				if ( $st !== 'FINISHED' ) { return array( '', self::share_fail( $key, 'the post isn’t ready (' . ( $st !== '' ? $st : 'no answer' ) . ')' ) ); }
+				list( , $j, $err ) = self::api( 'POST', $uid . '/media_publish', array( 'creation_id' => $cid ) );
+				if ( $err === '' && ! empty( $j['id'] ) ) { $media = (string) $j['id']; }
+				elseif ( self::status_of( $cid ) !== 'PUBLISHED' ) { return array( '', self::share_fail( $key, $err !== '' ? $err : 'Instagram didn’t publish it' ) ); }
+			}
+			$link = ''; if ( $media !== '' ) { list( , $j ) = self::api( 'GET', $media, array( 'fields' => 'permalink' ) ); $link = (string) ( $j['permalink'] ?? '' ); }
+			self::job_set( $key, array( 'state' => 'sent', 'media' => $media, 'link' => $link, 'sent_at' => time(), 'auto' => true ) );
+			return array( $link, '' );
+		} finally { delete_option( $lock ); }
+	}
+	private static function fresh_share_job( $key ) {
+		global $wpdb;
+		if ( ! isset( $wpdb ) || ! is_object( $wpdb ) || ! method_exists( $wpdb, 'get_var' ) ) { return self::job( $key ); }
+		$v = $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s LIMIT 1", self::OPT_JOB . $key ) );
+		$j = $v === null ? null : maybe_unserialize( $v ); return is_array( $j ) ? $j : null;
+	}
+	private static function share_fail( $key, $err ) { self::job_set( $key, array( 'state' => 'failed: ' . $err, 'err' => $err ) ); return $err; }
+
 	/** The booked post: published once, retried on failure. $force posts now whatever the time (Post now, Try again). */
 	public static function send( $key, $force = false ) {
 		$kp = self::parse( $key ); $job = self::job( $key ); if ( ! $kp || ! $job ) { return; }
