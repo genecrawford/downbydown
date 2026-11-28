@@ -79,7 +79,7 @@ METRICS = {
 TOTALS = ('prs', 'sk', 'qbh', 'tfl', 'tkl', 'ff', 'hur', 'tgt', 'int', 'pd')
 
 
-RECOVER = ['fumble_recovery_1_player_id', 'fumble_recovery_1_team', 'fumble_recovery_2_player_id', 'fumble_recovery_2_team']
+RECOVER = ['fumble_recovery_1_player_id', 'fumble_recovery_1_team', 'fumble_recovery_2_player_id', 'fumble_recovery_2_team', 'fumbled_1_team', 'fumbled_2_team']
 S_KEYS = ('tkl', 'tfl', 'sk', 'qbh', 'int', 'pd', 'ff', 'fr', 'dtd', 'prs', 'hur', 'blz', 'tgt', 'cmp', 'yds', 'tda', 'mt', 'tklp')  # every season line carries all of them, 0 when he has none
 PBP_COLS = CREDIT + RECOVER + ['season_type', 'week', 'posteam', 'defteam', 'qtr', 'time', 'down', 'ydstogo', 'play_type', 'yards_gained', 'air_yards', 'pass_location', 'run_location', 'run_gap', 'epa', 'desc', 'sack']
 
@@ -195,7 +195,8 @@ def build(out, season, through, pbp, stats, pfrd, snaps, roster, draft, taken_sl
             if s_(r.get('play_type')) in ('pass', 'run'):  # SCOPE §102: a fumble he recovered for his defense (the offense's ball)
                 for n in ('1', '2'):
                     rp = s_(r.get('fumble_recovery_%s_player_id' % n))
-                    if rp in P and s_(r.get('fumble_recovery_%s_team' % n)) == s_(r.get('defteam')) != s_(r.get('posteam')):
+                    fum = s_(r.get('fumbled_%s_team' % n)) or s_(r.get('fumbled_1_team'))  # the offense fumbled: a defender losing his own interception to a teammate is no new takeaway (Greptile, PR #178)
+                    if rp in P and fum == s_(r.get('posteam')) and s_(r.get('fumble_recovery_%s_team' % n)) == s_(r.get('defteam')) != fum:
                         x = wk(rp, f(r['week'])); x['fr'] = x.get('fr', 0.0) + 1.0
             hit = defaultdict(set)
             for c in CREDIT:

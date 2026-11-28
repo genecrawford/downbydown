@@ -196,7 +196,7 @@ jobs:
           if grep -q 'id="ld-rush"' pages/leaders-def.html; then echo "pass rushers belong on their own tab, not Defenses (SCOPE §80)"; exit 1; fi
           php tools/view_harness.php data leaders rush > /dev/null
           f=pages/leaders-rush.html
-          python3 -c "import re,sys; h=open('$f').read(); t=re.findall(r'aria-label=\"Leaders\".*?</nav>', h, re.S)[0]; n=re.findall(r'>([^<]+)</a>', t); sys.exit(0 if n.index('Pass rushers') + 1 == n.index('Defenses') and 'aria-current' in t.split('Pass rushers')[0].rsplit('<a', 1)[1] else 'the tab bar: ' + str(n))"
+          python3 -c "import re,sys; h=open('$f').read(); t=re.findall(r'aria-label=\"Leaders\".*?</nav>', h, re.S)[0]; n=re.findall(r'>([^<]+)</a>', t); sys.exit(0 if n.index('Pass rushers') + 1 == n.index('Takeaways') == n.index('Defenses') - 1 and 'aria-current' in t.split('Pass rushers')[0].rsplit('<a', 1)[1] else 'the tab bar: ' + str(n))"
           # the rules worked out here on their own, then the band checked against them
           python3 - "$f" <<'PY'
           import glob, json, re, sys
