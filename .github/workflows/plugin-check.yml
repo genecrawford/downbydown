@@ -89,6 +89,29 @@ jobs:
           grep -q 'id="dbd-defenders"' /tmp/df/players-*.html || { echo "the Players index should list defenders"; exit 1; }
           DBD_HARNESS_PRETTY=1 php tools/view_harness.php data path "player/dallas-turner/" | grep -q 'route defender' || { echo "/player/dallas-turner/ should route"; exit 1; }
           DBD_HARNESS_PRETTY=1 php tools/view_harness.php data sitemap | grep -q '/player/dallas-turner/' || { echo "the sitemap should list defenders with a regular role"; exit 1; }
+      - name: Takeaways, the secondary's twin of Pass rushers (SCOPE §102)
+        run: |
+          set -e
+          mkdir -p /tmp/tk
+          DBD_HARNESS_HTML=/tmp/tk php tools/view_harness.php data leaders takeaways | grep -q 'route leaders' || { echo "/leaders/takeaways/ should render"; exit 1; }
+          f=/tmp/tk/leaders-takeaways.html
+          grep -q 'id="ld-hawks"' $f && grep -q 'id="ld-takeaways"' $f || { echo "the tab should carry the chart and the board"; exit 1; }
+          grep -q 'aria-label="Passes defended a game against interceptions a game, [0-9]* defensive backs"' $f || { echo "the chart should be passes defended against interceptions"; exit 1; }
+          [ "$(grep -o 'class="dbd-cbtn pr-more"' $f | wc -l)" -eq 2 ] || { echo "the chart's table and the board each get a Show all"; exit 1; }
+          grep -q '<a href="[^"]*?player=[0-9-]*">' $f || { echo "names should link to their pages"; exit 1; }
+          python3 - "$f" <<'PY'
+          import json, os, re, sys
+          h = open(sys.argv[1]).read()
+          P = {}
+          for n in os.listdir('data/defenders'):
+              if n != 'index.json' and ' ' not in n: P.update(json.load(open('data/defenders/' + n))['players'])
+          lead = max(P.values(), key=lambda p: (p['s']['int'] + p['s']['fr'], p['s']['ff'], p['s']['int']))
+          say = re.findall(r'<p class="dbd-mv-say">(.*?)</p>', h)[1]
+          assert lead['name'].replace("'", '&#039;') in say, ('the board should lead with the most takeaways', lead['name'], say)
+          print('takeaways leader:', lead['name'], int(lead['s']['int'] + lead['s']['fr']))
+          PY
+          DBD_HARNESS_HTML=/tmp/tk php tools/view_harness.php data player 00-0035236 > /dev/null
+          grep -q 'g=takeaways">Ball hawks chart</a>' /tmp/tk/player-00-0035236.html || { echo "a corner's page should link the Ball hawks chart"; exit 1; }
       - name: Every throw (SCOPE §90)
         run: |
           php tools/view_harness.php data throws x
@@ -173,7 +196,7 @@ jobs:
           if grep -q 'id="ld-rush"' pages/leaders-def.html; then echo "pass rushers belong on their own tab, not Defenses (SCOPE §80)"; exit 1; fi
           php tools/view_harness.php data leaders rush > /dev/null
           f=pages/leaders-rush.html
-          python3 -c "import re,sys; h=open('$f').read(); t=re.findall(r'aria-label=\"Leaders\".*?</nav>', h, re.S)[0]; n=re.findall(r'>([^<]+)</a>', t); sys.exit(0 if n.index('Pass rushers') + 1 == n.index('Defenses') and 'aria-current' in t.split('Pass rushers')[0].rsplit('<a', 1)[1] else 'the tab bar: ' + str(n))"
+          python3 -c "import re,sys; h=open('$f').read(); t=re.findall(r'aria-label=\"Leaders\".*?</nav>', h, re.S)[0]; n=re.findall(r'>([^<]+)</a>', t); sys.exit(0 if n.index('Pass rushers') + 1 == n.index('Takeaways') == n.index('Defenses') - 1 and 'aria-current' in t.split('Pass rushers')[0].rsplit('<a', 1)[1] else 'the tab bar: ' + str(n))"
           # the rules worked out here on their own, then the band checked against them
           python3 - "$f" <<'PY'
           import glob, json, re, sys

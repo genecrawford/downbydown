@@ -1,5 +1,5 @@
 /* The Leaders charts (SCOPE §79–80): every chart's Highlight menu shares one team, remembered on the device so it carries to every tab;
-   Show all opens the pass rushers' table. A reader's choice sends an Analytics event; a restored one doesn't. No dependencies. */
+   Show all opens the table above it. A reader's choice sends an Analytics event; a restored one doesn't. No dependencies. */
 (function () {
   var K = 'dbd_pr_team', menus = document.querySelectorAll('.pr-team');
   if (!menus.length) return;
@@ -21,6 +21,11 @@
     });
   });
   try { var v = (localStorage.getItem(K) || '').replace(/[^A-Z]/g, ''); if (v) { hl(v); } } catch (e) {}
-  var m = document.getElementById('pr-more');
-  if (m) m.addEventListener('click', function () { document.querySelectorAll('.pr-t tbody tr.pr-x').forEach(function (r) { r.classList.remove('pr-x'); }); m.remove(); });
+  /* each Show all opens the table just above it: the chart's, or the takeaways board (SCOPE §102) */
+  document.querySelectorAll('.pr-more').forEach(function (m) {
+    m.addEventListener('click', function () {
+      var box = m.previousElementSibling; while (box && !box.querySelector('.pr-t')) box = box.previousElementSibling;
+      (box || document).querySelectorAll('.pr-t tbody tr.pr-x').forEach(function (r) { r.classList.remove('pr-x'); }); m.remove();
+    });
+  });
 })();

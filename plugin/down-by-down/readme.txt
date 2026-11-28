@@ -4,7 +4,7 @@ Tags: nfl, football, analytics, play-by-play
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 2.59.1
+Stable tag: 2.60.0
 License: GPLv2 or later
 
 How every NFL offense actually plays, drawn on the field from public play-by-play data.
@@ -30,6 +30,11 @@ build calls `POST /wp-json/dbd/v1/sync` with the token shown on Settings > Down 
 Not affiliated with the NFL or any team. No team logos are used; team marks are generated from team colors.
 
 == Changelog ==
+
+= 2.60.0 =
+* Leaders → Takeaways (SCOPE §102), the secondary's twin of Pass rushers: Ball hawks, every corner and safety with a regular role on one chart, passes defended a game against interceptions a game, with the team highlight and a table; then every defender's takeaways (interceptions and fumble recoveries), with the fumbles each forced and the ones returned for a score.
+* Corners' and safeties' pages link the Ball hawks chart. Show all now opens the table it sits under.
+* The defender files carry fumble recoveries and defensive touchdowns, and every season line carries every figure (0 when he has none).
 
 = 2.59.1 =
 * A defender page's Pass rushers links open the Pass rushers tab (/leaders/rush/).

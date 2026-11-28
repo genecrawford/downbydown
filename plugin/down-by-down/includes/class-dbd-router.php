@@ -362,7 +362,7 @@ class DBD_Router {
 			case 'leaders':
 				if ( $r['lboard'] !== '' && ( $B = DBD_Leaders::board( $r['lboard'] ) ) ) { $bt = preg_match( '/^[A-Z][a-z]/', $B['title'] ) ? lcfirst( $B['title'] ) : $B['title'];
 					return array( "NFL $bt leaders $season", "Every NFL player ranked by {$B['title']} in $season" . ( $B['sub'] !== '' ? " ({$B['sub']})" : '' ) . ', with position and minimum-usage filters.' ); }
-				$gw = array( 'fan' => 'fantasy', 'wr' => 'receiving', 'te' => 'tight end', 'rb' => 'rushing', 'qb' => 'passing', 'k' => 'kicking', 'rush' => 'pass rushing', 'def' => 'defense' )[ $r['lgroup'] ] ?? 'stat';
+				$gw = array( 'fan' => 'fantasy', 'wr' => 'receiving', 'te' => 'tight end', 'rb' => 'rushing', 'qb' => 'passing', 'k' => 'kicking', 'rush' => 'pass rushing', 'takeaways' => 'interception and takeaway', 'def' => 'defense' )[ $r['lgroup'] ] ?? 'stat';
 				return array( "NFL $gw leaders $season", "Who leads the NFL in $season: fantasy points by position, target share, EPA, yards after the catch, sack rate and every other stat on Down by Down, the top ten on each board." );
 			case 'week':
 				$wl = DBD_Router::week_label( $r['week'] );
@@ -499,7 +499,7 @@ class DBD_Router {
 			wp_localize_script( 'dbd-compare', 'DBD_CMP', array( 'base' => self::url(), 'group' => $r['cgroup'], 'players' => $pl, 'files' => $files, 'teams' => DBD_Data::teams(), 'heads' => DBD_Data::headshots(), 'series' => $series, 'labels' => $labels, 'yds' => array( 'rec' => 'Receiving yards', 'rb' => 'Scrimmage yards', 'qb' => 'Passing yards' )[ DBD_Grades::kind( $r['cgroup'] ) ] ?? 'Yards' ) );
 		}
 		if ( $r['view'] === 'leaders' ) { wp_enqueue_script( 'dbd-leaders', DBD_URL . 'assets/leaders.js', array(), DBD_VERSION, true ); }
-		if ( $r['view'] === 'leaders' && in_array( $r['lgroup'] ?? '', array( 'wr', 'te', 'rb', 'qb', 'rush' ), true ) && ( $r['lboard'] ?? '' ) === '' ) { wp_enqueue_script( 'dbd-scatter', DBD_URL . 'assets/scatter.js', array(), DBD_VERSION, true ); }  /* the charts' shared highlight and Show all (SCOPE §80) */
+		if ( $r['view'] === 'leaders' && in_array( $r['lgroup'] ?? '', array( 'wr', 'te', 'rb', 'qb', 'rush', 'takeaways' ), true ) && ( $r['lboard'] ?? '' ) === '' ) { wp_enqueue_script( 'dbd-scatter', DBD_URL . 'assets/scatter.js', array(), DBD_VERSION, true ); }  /* the charts' shared highlight and Show all (SCOPE §80) */
 		if ( $r['view'] === 'draft' || $r['view'] === 'combine' ) { wp_enqueue_script( 'dbd-boards', DBD_URL . 'assets/boards.js', array(), DBD_VERSION, true ); }
 		if ( $r['view'] === 'playoffs' ) { DBD_Playoffs::assets(); }
 		if ( $r['view'] === 'week' ) { wp_enqueue_script( 'dbd-week', DBD_URL . 'assets/week.js', array(), DBD_VERSION, true ); }

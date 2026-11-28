@@ -41,8 +41,9 @@ $dr = is_array( $d['draft'] ?? null ) ? 'Round ' . (int) $d['draft'][0] . ', pic
 $bio = array_filter( array( $age, $d['ht'] ?? '', ! empty( $d['wt'] ) ? (int) $d['wt'] . ' lb' : '', $d['col'] ?? '', $dr ) );
 echo '<p class="dbd-sub t-stagger-line t-stagger-line--3">' . esc_html( implode( ' · ', $bio ) ) . ( $bio ? '. ' : '' ) . 'Snap share <b>' . (int) round( (float) ( $s['snap'] ?? 0 ) ) . '%</b> across ' . (int) $s['g'] . ' ' . ( (int) $s['g'] === 1 ? 'game' : 'games' ) . '.</p>';
 $rush = DBD_Router::url( array( 'view' => 'leaders', 'g' => 'rush' ) );  /* the Pass rushers tab */
+$hawk = DBD_Router::url( array( 'view' => 'leaders', 'g' => 'takeaways' ) );  /* the Takeaways tab (SCOPE §102) */
 echo '<div class="dbd-pills"><span class="dbd-pill">' . esc_html( $RN[ $role ][1] ) . '</span><a class="dbd-pill" href="' . esc_url( $turl ) . '">' . esc_html( $nick ) . ' defense</a>'
-	. ( $role === 'front' && ! $arch ? '<a class="dbd-pill" href="' . esc_url( $rush ) . '">Pass rushers chart</a>' : '' ) . ( is_array( $d['draft'] ?? null ) ? '<a class="dbd-pill" href="' . esc_url( DBD_Router::url( array( 'view' => 'draft', 'y' => (int) $d['draft'][2] ) ) ) . '">The ' . (int) $d['draft'][2] . ' draft</a>' : '' ) . '</div>';
+	. ( $role === 'front' && ! $arch ? '<a class="dbd-pill" href="' . esc_url( $rush ) . '">Pass rushers chart</a>' : '' ) . ( $role === 'db' && ! $arch ? '<a class="dbd-pill" href="' . esc_url( $hawk ) . '">Ball hawks chart</a>' : '' ) . ( is_array( $d['draft'] ?? null ) ? '<a class="dbd-pill" href="' . esc_url( DBD_Router::url( array( 'view' => 'draft', 'y' => (int) $d['draft'][2] ) ) ) . '">The ' . (int) $d['draft'][2] . ' draft</a>' : '' ) . '</div>';
 $like = array_values( array_filter( array_map( array( 'DBD_Data', 'defender' ), (array) ( $d['like'] ?? array() ) ) ) );
 if ( $like && ! $arch ) {
 	echo '<div class="dbd-blike"><span>Players like him</span>';
@@ -189,7 +190,7 @@ if ( $unit ) { echo '<section class="dbd-panel"><div class="dbd-ph"><span class=
 $rel = array();
 if ( $nx && ( $ng = DBD_Data::team_game( $a, (int) $nx['wk'] ) ) ) { $rel[] = array( DBD_Router::url( $ng['home'] === $a ? array( 'game' => $ng['id'], 'side' => 'home' ) : array( 'game' => $ng['id'] ) ), 'Next game: ' . ( $ng['home'] === $a ? 'vs ' : 'at ' ) . ( DBD_Data::team( $nx['opp'] )['nick'] ?? $nx['opp'] ) . ', Week ' . (int) $nx['wk'] ); }
 $rel[] = array( $turl, $nick . ' defense' );
-$rel[] = array( $role === 'front' ? $rush : DBD_Router::url( array( 'view' => 'leaders', 'g' => 'def' ) ), $role === 'front' ? 'Leaders: pass rushers' : 'Leaders: defenses' );
+$rel[] = $role === 'front' ? array( $rush, 'Leaders: pass rushers' ) : ( $role === 'db' ? array( $hawk, 'Leaders: takeaways' ) : array( DBD_Router::url( array( 'view' => 'leaders', 'g' => 'def' ) ), 'Leaders: defenses' ) );
 if ( is_array( $d['draft'] ?? null ) ) { $rel[] = array( DBD_Router::url( array( 'view' => 'draft', 'y' => (int) $d['draft'][2] ) ), 'The ' . (int) $d['draft'][2] . ' draft class' ); }
 echo '<section class="dbd-panel dbd-related"><div class="dbd-ph"><span class="dbd-lab"><b>Related</b></span></div><div class="dbd-pb dbd-pills">' . implode( '', array_map( function ( $x ) { return '<a class="dbd-pill" href="' . esc_url( $x[0] ) . '">' . esc_html( $x[1] ) . '</a>'; }, $rel ) ) . '</div></section></section>';
 echo DBD_Signup::strip( 'player' ) . '</main>';

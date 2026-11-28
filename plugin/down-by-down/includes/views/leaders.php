@@ -23,6 +23,8 @@ foreach ( DBD_Leaders::GROUPS as $k => $lab ) { echo '<a href="' . esc_url( $lur
 echo '</div></nav>';
 if ( $g === 'def' ) {
 	echo DBD_Leaders::defenses();  /* SCOPE §39 */
+} elseif ( $g === 'takeaways' ) {
+	echo DBD_Hawk::tab();  /* ball hawks and takeaways (SCOPE §102) */
 } elseif ( $g === 'rush' ) {
 	echo DBD_Rush::band() ?: '<div class="dbd-empty"><h2>No pass rushers yet</h2><p>The chart fills in once defenders have played a few games.</p></div>';  /* their own tab (SCOPE §80) */
 } elseif ( $g === 'k' ) {

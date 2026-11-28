@@ -79,7 +79,9 @@ METRICS = {
 TOTALS = ('prs', 'sk', 'qbh', 'tfl', 'tkl', 'ff', 'hur', 'tgt', 'int', 'pd')
 
 
-PBP_COLS = CREDIT + ['season_type', 'week', 'posteam', 'qtr', 'time', 'down', 'ydstogo', 'play_type', 'yards_gained', 'air_yards', 'pass_location', 'run_location', 'run_gap', 'epa', 'desc', 'sack']
+RECOVER = ['fumble_recovery_1_player_id', 'fumble_recovery_1_team', 'fumble_recovery_2_player_id', 'fumble_recovery_2_team', 'fumbled_1_team', 'fumbled_2_team']
+S_KEYS = ('tkl', 'tfl', 'sk', 'qbh', 'int', 'pd', 'ff', 'fr', 'dtd', 'prs', 'hur', 'blz', 'tgt', 'cmp', 'yds', 'tda', 'mt', 'tklp')  # every season line carries all of them, 0 when he has none
+PBP_COLS = CREDIT + RECOVER + ['season_type', 'week', 'posteam', 'defteam', 'qtr', 'time', 'down', 'ydstogo', 'play_type', 'yards_gained', 'air_yards', 'pass_location', 'run_location', 'run_gap', 'epa', 'desc', 'sack']
 
 
 def records(rows, cols=None):
@@ -165,7 +167,7 @@ def build(out, season, through, pbp, stats, pfrd, snaps, roster, draft, taken_sl
         x = wk(s_(r['player_id']), f(r['week']))
         x['team'] = s_(r.get('team')); x['opp'] = s_(r.get('opponent_team'))
         x['tkl'] = f(r.get('def_tackles_solo')) + f(r.get('def_tackle_assists'))
-        for k, col in (('tfl', 'def_tackles_for_loss'), ('sk', 'def_sacks'), ('qbh', 'def_qb_hits'), ('int', 'def_interceptions'), ('pd', 'def_pass_defended'), ('ff', 'def_fumbles_forced')):
+        for k, col in (('tfl', 'def_tackles_for_loss'), ('sk', 'def_sacks'), ('qbh', 'def_qb_hits'), ('int', 'def_interceptions'), ('pd', 'def_pass_defended'), ('ff', 'def_fumbles_forced'), ('dtd', 'def_tds')):
             x[k] = f(r.get(col))
         x['_st'] = 1
     for r in records(pfrd):
@@ -190,6 +192,12 @@ def build(out, season, through, pbp, stats, pfrd, snaps, roster, draft, taken_sl
         for r in records(pbp, PBP_COLS):
             if s_(r.get('season_type')) not in ('REG', ''):
                 continue
+            if s_(r.get('play_type')) in ('pass', 'run'):  # SCOPE §102: a fumble he recovered for his defense (the offense's ball)
+                for n in ('1', '2'):
+                    rp = s_(r.get('fumble_recovery_%s_player_id' % n))
+                    fum = s_(r.get('fumbled_%s_team' % n)) or s_(r.get('fumbled_1_team'))  # the offense fumbled: a defender losing his own interception to a teammate is no new takeaway (Greptile, PR #178)
+                    if rp in P and fum == s_(r.get('posteam')) and s_(r.get('fumble_recovery_%s_team' % n)) == s_(r.get('defteam')) != fum:
+                        x = wk(rp, f(r['week'])); x['fr'] = x.get('fr', 0.0) + 1.0
             hit = defaultdict(set)
             for c in CREDIT:
                 if s_(r.get(c)) in P:
@@ -229,6 +237,8 @@ def build(out, season, through, pbp, stats, pfrd, snaps, roster, draft, taken_sl
             for k, v in w.items():
                 if isinstance(v, float) and k not in ('sp', 'snaps', '_st'):
                     s[k] += v
+        for k in S_KEYS:
+            s.setdefault(k, 0.0)
         played = [w for w in W if w.get('snaps', 0) > 0]
         s['g'] = len(played) or len(W)
         s['snap'] = sum(w['sp'] for w in played) / len(played) * 100 if played else 0.0

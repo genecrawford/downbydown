@@ -113,6 +113,7 @@ jobs:
                   tk = sum(w[wk.index('tkl')] for w in p['w'])
                   assert abs(tk - p['s'].get('tkl', 0)) < 0.01, (pid, tk, p['s'].get('tkl'))
                   assert all(x[d['pk'].index('k')] in ('tkl', 'ast', 'tfl', 'sack', 'qbh', 'pd', 'int') for x in p['pl']), pid
+                  assert all(k in p['s'] for k in ('tkl', 'tfl', 'sk', 'qbh', 'int', 'pd', 'ff', 'fr', 'dtd', 'prs', 'tgt')), (pid, 'every season line carries every key (SCOPE §102)')
                   n += 1
           print('defenders:', n, 'pages,', idx['pools'])
           PY
