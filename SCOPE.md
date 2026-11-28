@@ -3854,3 +3854,64 @@ Size: L (one release, maybe two: the page first, then the links across the site)
   - The career table has no pressures, targets or passer rating, because the yearly files don't carry them; the Scorecard does.
   - The Players index gets a Defenders panel (Front, Linebackers, Secondary tabs; the team filter and search apply on load) rather than filters inside the offense table, which players.js draws.
   - Murphy ranks 30th of 187 secondary players with 10+ targets.
+
+## 102. Takeaways: the secondary's twin of Pass rushers (scoped and mocked 2026-11-27, `mockup-v76/`)
+
+Gene: "we have pass rushers but not CBs or Safeties how do we accommodate them, INTs are very important to the game. Maybe we track takeaways (Fmbl recoveries and INTs) like we do pass rush?" Then "yes" to scope and mock.
+
+**The mock** is the live Leaders page with a new **Takeaways** tab after Pass rushers (`/leaders/takeaways/`). It is drawn by a prototype class run with real PHP on WP Engine through the view harness, so the chart is the site's own `DBD_Scatter` with the same Highlight menu, tooltips, labels and Show all as Pass rushers. The data is this season's defender files (SCOPE §101) plus fumble recoveries counted from the play-by-play. Real 2026 numbers through Week 12.
+
+**1. Ball hawks** (the chart), the mirror of pressures against sacks:
+- Every corner and safety with a regular role, the §101 secondary pool: 192 through Week 12.
+- Passes defended a game across: he got a hand on the throw, interceptions included. Interceptions a game up: he caught it.
+- Dots in team colors, dashed lines at the middle of the pack, the top eight on each axis named (three on phones).
+- **The read:** "Xavier McKinney (Packers) catches the most: 6 interceptions, 0.55 a game. Deonte Banks (Giants) gets a hand on the most: 14 passes defended, 1.75 a game."
+- **Under the chart, a table:** interceptions, passes defended, passes defended a game, targets, passer rating allowed (from 10 targets) and snap share. It shows the top 10 by interceptions, then Show all.
+- Every name links to his page.
+
+**2. Takeaways** (the board), every defender:
+- The columns:
+  - **Total:** his takeaways, interceptions plus fumbles he recovered.
+  - **INT** and **FR** (fumbles recovered).
+  - **FF:** the fumbles he forced, shown beside the takeaways rather than counted in them, because the punch is the skill and the bounce is often luck.
+  - **TD:** takeaways he returned for a score.
+- Sorted by total, then forced fumbles. The top 15 show, then Show all (371 defenders and 395 takeaways through Week 12).
+- **The read:** "Xavier McKinney has the most takeaways: 6. David Bailey (Jets) forces the most fumbles: 6."
+- Linebackers' interceptions (Alex Anzalone has 4) live here; the chart stays corners and safeties, as Gene asked.
+
+**Data:** build_defenders.py adds two figures to each season line:
+- **`fr`:** fumbles he recovered on the other team's pass or run plays, from the play-by-play's recovery fields.
+- **`dtd`:** defensive touchdowns, from nflverse's weekly stats.
+
+Also found while mocking: a defender with no stat lines yet is missing keys in his season line (`ff`, `int`…). The build will always write every key as 0.
+
+**Plugin:**
+- A `DBD_Hawk` class, called by `views/leaders.php` for the new `takeaways` group (`DBD_Leaders::GROUPS`), which also adds the path `/leaders/takeaways/`.
+- `scatter.js`'s Show all works per table, so the chart's table and the board each open on their own.
+- Board cells tighten on phones.
+- The Players menu and the footer list "Takeaways" next to Pass rushers, and a corner's or safety's page gets a "Ball hawks chart" pill like the edge rusher's "Pass rushers chart".
+- CI renders the tab and checks the leaders, links and both Show alls.
+
+**Choices for Gene:**
+1. A weekly social graphic and Share pack item for Ball hawks, like Pass rushers has (the chart on the green panel, the two leaders, posted on its own day)? Recommended later, once the tab is live.
+
+**Left out:**
+- Coverage charts by receiver: nflverse names no defender on targets other than passes defended and interceptions.
+- Special-teams takeaways.
+- Takeaways allowed by offenses.
+
+**Acceptance:**
+- 192 corners and safeties on the chart, with McKinney 6 INT (0.55 a game) top and Banks 14 PD (1.75 a game) the furthest right.
+- Board: McKinney 6 at the top, Bailey 6 forced fumbles, 371 defenders.
+- Highlight a team and its dots and rows light up. Both Show alls work.
+- No sideways scroll at 375.
+
+Size: S–M (one release).
+
+**Built as 2.60.0** (Gene: "Build it"):
+- `DBD_Hawk` (`class-dbd-hawk.php`) draws the tab through `DBD_Scatter`.
+- `build_defenders.py` adds `fr` (recoveries on the other team's pass or run plays) and `dtd`, and writes every season-line key (`S_KEYS`).
+- `scatter.js`'s Show all opens the table above each button (the board rows use `pr-x` too).
+- The nav and footer pick the tab up from `DBD_Leaders::GROUPS`.
+- A corner's or safety's page links "Ball hawks chart" and "Leaders: takeaways".
+- CI renders the tab and checks the board's leader against the data.

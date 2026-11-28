@@ -2395,3 +2395,6 @@ html:not([data-fx]) .dbd [data-fx="half"],html[data-fx="std"] .dbd [data-fx="std
 @container dbd (max-width:600px){.dbd .dbd-dfc-b{padding:12px 8px}.dbd .dbd-dfc-k{padding:4px 8px;font-size:12px}}
 .dbd .dbd-dfp .dbd-score td.n,.dbd .dbd-dfp .dbd-score td.n small{white-space:normal}
 .dbd .dbd-dfbig td:nth-child(2),.dbd .dbd-dfbig td:nth-child(3){white-space:normal}
+
+/* SCOPE §102: the takeaways board's cells tighten on phones */
+@container dbd (max-width:600px){.dbd .tk-t th,.dbd .tk-t td{padding-left:5px;padding-right:5px}}
